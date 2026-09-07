@@ -5,6 +5,8 @@ import { Toaster } from '@/components/ui/sonner';
 import { ClerkProviderWithRedirects } from '@/components/auth/ClerkProviderWithRedirects';
 import { AccessibilityProvider } from '@/contexts/AccessibilityContext';
 import { DEFAULT_PREFERENCES, FONT_SIZE_VALUES, getAccessibilityScript } from '@/lib/accessibilityPreferences';
+import { DesignVariantProvider } from '@/redesign/DesignVariantProvider';
+import { DESIGN_PREFERENCE, getDesignVariantScript } from '@/redesign/preferences';
 import './globals.css';
 
 const productionAppUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://portal.fiziyo.pl';
@@ -33,6 +35,7 @@ export const metadata: Metadata = {
 };
 
 const accessibilityScript = getAccessibilityScript();
+const designVariantScript = getDesignVariantScript();
 
 export default function RootLayout({
   children,
@@ -48,16 +51,20 @@ export default function RootLayout({
       <html
         lang="pl"
         suppressHydrationWarning
+        data-fiziyo-design={DESIGN_PREFERENCE.defaultVariant}
         className={`light-theme ${outfit.variable} ${jetbrainsMono.variable}`}
         style={{ fontSize: FONT_SIZE_VALUES[DEFAULT_PREFERENCES.fontSize].css }}
       >
         <head>
           <script dangerouslySetInnerHTML={{ __html: accessibilityScript }} />
+          {designVariantScript && <script dangerouslySetInnerHTML={{ __html: designVariantScript }} />}
         </head>
         <body className="font-sans antialiased text-foreground bg-background">
           <AccessibilityProvider>
-            <ApolloWrapper>{children}</ApolloWrapper>
-            <Toaster />
+            <DesignVariantProvider>
+              <ApolloWrapper>{children}</ApolloWrapper>
+              <Toaster />
+            </DesignVariantProvider>
           </AccessibilityProvider>
         </body>
       </html>

@@ -1,4 +1,7 @@
 @import "tailwindcss";
+@import "../redesign/styles/tokens.css";
+@import "../redesign/styles/shell.css";
+@import "../redesign/styles/dashboard.css";
 
 @custom-variant dark (&:where(.dark-theme, .dark-theme *));
 

@@ -1,0 +1,15 @@
+html[data-fiziyo-design='redesign'] [data-redesign-surface='shell-sidebar'] {
+  background: var(--background);
+}
+
+html[data-fiziyo-design='redesign'] [data-redesign-surface='shell-sidebar'] > div:first-child {
+  border-block-end-color: transparent;
+}
+
+html[data-fiziyo-design='redesign'] [data-redesign-surface='shell-header'] {
+  background: var(--surface);
+}
+
+html[data-fiziyo-design='redesign'] [data-redesign-surface='dashboard-host'] {
+  background: var(--surface);
+}

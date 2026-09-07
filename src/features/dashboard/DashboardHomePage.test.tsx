@@ -1,5 +1,5 @@
 import type { ComponentProps } from 'react';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -11,6 +11,8 @@ import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exercise
 import { GET_ORGANIZATION_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
 import { GET_THERAPIST_EXERCISE_ASSIGNMENTS_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import { DashboardHomePage } from './DashboardHomePage';
+import { DesignVariantProvider } from '@/redesign/DesignVariantProvider';
+import { DesignSwitcher } from '@/redesign/DesignSwitcher';
 
 interface PatientFixture {
   assignmentId: string;
@@ -46,6 +48,7 @@ const state = vi.hoisted(() => ({
   createSetRender: vi.fn(),
   patientRender: vi.fn(),
   thumbnailRender: vi.fn(),
+  queryRender: vi.fn(),
 }));
 
 vi.mock('@clerk/nextjs', () => ({ useUser: () => ({ user: { firstName: 'Anna' } }) }));
@@ -60,6 +63,7 @@ vi.mock('@/hooks/useRealtimePatients', () => ({ useRealtimePatients: vi.fn() }))
 vi.mock('@/hooks/useRealtimeExerciseSets', () => ({ useRealtimeExerciseSets: vi.fn() }));
 vi.mock('@apollo/client/react', () => ({
   useQuery: (query: unknown) => {
+    state.queryRender(query);
     if (query === GET_ORGANIZATION_EXERCISE_SETS_QUERY) {
       return { data: { exerciseSets: state.sets }, loading: state.setsLoading };
     }
@@ -73,9 +77,6 @@ vi.mock('@apollo/client/react', () => ({
   },
 }));
 vi.mock('@/components/onboarding/GettingStartedCard', () => ({ GettingStartedCard: () => null }));
-vi.mock('@/components/shared/DashboardSkeleton', () => ({
-  DashboardSkeleton: () => <div data-testid="test-dashboard-skeleton" />,
-}));
 vi.mock('@/components/billing', () => ({
   BillingStatusBar: ({ organizationId }: { organizationId: string }) => (
     <div data-testid="test-billing-status" data-organization-id={organizationId} />
@@ -170,9 +171,33 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
+  vi.unstubAllEnvs();
+  localStorage.removeItem('fiziyo-design-preview');
+  document.documentElement.removeAttribute('data-fiziyo-design');
 });
 
 describe('DashboardHomePage', () => {
+  it('keeps dashboard data hooks, action owners and DOM stable through preview changes', async () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    const user = userEvent.setup();
+    render(<DesignVariantProvider><DesignSwitcher /><DashboardHomePage /></DesignVariantProvider>);
+    await waitFor(() => expect(screen.getByRole('radio', { name: 'Nowy' })).toBeEnabled());
+    await user.click(screen.getByTestId('dashboard-hero-assign-set-btn'));
+    const dialog = screen.getByRole('dialog');
+    const section = screen.getByTestId('dashboard-activity-section');
+    const queries = state.queryRender.mock.calls.length;
+    const assignmentRenders = state.assignmentRender.mock.calls.length;
+    const assignmentProps = state.assignmentRender.mock.lastCall?.[0];
+    for (const name of ['Nowy', 'Obecny']) {
+      await user.click(screen.getByRole('radio', { name }));
+      expect(screen.getByRole('dialog')).toBe(dialog);
+      expect(screen.getByTestId('dashboard-activity-section')).toBe(section);
+      expect(state.queryRender).toHaveBeenCalledTimes(queries);
+      expect(state.assignmentRender).toHaveBeenCalledTimes(assignmentRenders);
+      expect(state.assignmentRender.mock.lastCall?.[0]).toBe(assignmentProps);
+    }
+  });
+
   it('keeps the header, section landmarks, navigation IDs and empty-state actions', async () => {
     const user = userEvent.setup();
     render(<DashboardHomePage />);
@@ -182,7 +207,7 @@ describe('DashboardHomePage', () => {
       'data-testid',
       'dashboard-activity-section'
     );
-    expect(screen.getByRole('region', { name: 'Szybki wybór' })).toHaveAttribute(
+    expect(screen.getByRole('region', { name: 'Zestawy ćwiczeń' })).toHaveAttribute(
       'data-testid',
       'dashboard-sets-section'
     );
@@ -191,7 +216,12 @@ describe('DashboardHomePage', () => {
     expect(screen.getByTestId('page-button-487')).toHaveTextContent('Wszyscy (0)');
     expect(screen.getByTestId('page-button-636')).toHaveTextContent('Wszystkie');
     expect(screen.getByText('Brak przypisanych pacjentów')).toBeInTheDocument();
-    expect(screen.getByText('Brak zestawów do szybkiego wyboru')).toBeInTheDocument();
+    expect(screen.getByText('Brak zapisanych szablonów')).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /Utwórz.*zestaw/ })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: /Dodaj.*pacjenta/ })).toHaveLength(1);
+    expect(screen.getByTestId('dashboard-add-patient-btn').closest('header')).toBeInTheDocument();
+    expect(screen.getByTestId('dashboard-create-set-btn').closest('header')).toBeInTheDocument();
+    expect(screen.queryByText('Utwórz niespersonalizowany zestaw')).not.toBeInTheDocument();
     expect(document.querySelector('a button')).toBeNull();
 
     await user.click(screen.getByTestId('common-dashboard-home-page-btn-606'));
@@ -320,11 +350,20 @@ describe('DashboardHomePage', () => {
 
     expect(screen.getByTestId('dashboard-hero-assign-set-btn')).toBeDisabled();
     expect(screen.getByTestId('dashboard-add-patient-btn')).toBeDisabled();
-    expect(screen.getByTestId('common-dashboard-home-page-btn-606')).toBeDisabled();
+    expect(screen.getByTestId('common-dashboard-home-page-btn-606').closest('button')).toBeDisabled();
     expect(screen.getByTestId('dashboard-quick-assign-template')).toBeDisabled();
     expect(screen.getByTestId('dashboard-create-set-btn')).toBeEnabled();
     expect(state.assignmentRender).not.toHaveBeenCalled();
     expect(state.patientRender).not.toHaveBeenCalled();
+  });
+
+  it('uses singular copy for one patient needing attention', () => {
+    state.patients = [patientFixture('new')];
+    render(<DashboardHomePage />);
+
+    expect(screen.getByText('Sprawdź, co u Twojego pacjenta')).toBeInTheDocument();
+    expect(screen.queryByText(/1 pacjentów/)).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Pacjenci do sprawdzenia 1' })).not.toHaveClass('flex-wrap');
   });
 
   it('keeps billing scoped to the organization and hidden without billing access', () => {
@@ -351,7 +390,9 @@ describe('DashboardHomePage', () => {
     state.organizationId = undefined;
     render(<DashboardHomePage />);
 
-    expect(screen.getByTestId('test-dashboard-skeleton')).toBeInTheDocument();
+    expect(screen.getByTestId('dashboard-skeleton')).toHaveAttribute('aria-busy', 'true');
+    expect(screen.getByRole('status', { name: 'Ładowanie pulpitu' })).toBeInTheDocument();
+    expect(document.querySelector('[class*="gradient"], [data-slot="card"]')).toBeNull();
     expect(screen.queryByTestId('dashboard-hero-assign-set-btn')).not.toBeInTheDocument();
     expect(screen.queryByTestId('test-billing-status')).not.toBeInTheDocument();
   });

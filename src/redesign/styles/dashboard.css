@@ -1,0 +1,72 @@
+html[data-fiziyo-design='redesign'] [data-redesign-surface='dashboard'] {
+  max-inline-size: var(--redesign-content-width);
+}
+
+html[data-fiziyo-design='redesign'] [data-redesign-surface='dashboard'] > [data-redesign-part='dashboard-heading'] {
+  padding-block: 1rem 2rem;
+  border-block-end: 1px solid var(--redesign-divider);
+}
+
+html[data-fiziyo-design='redesign'] [data-redesign-surface='dashboard'] > [data-redesign-part='dashboard-heading'] > p {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.75rem;
+}
+
+html[data-fiziyo-design='redesign'] [data-redesign-surface='dashboard'] .redesign-dashboard-title {
+  align-items: center;
+  justify-content: flex-start;
+  gap: 1.5rem;
+}
+
+html[data-fiziyo-design='redesign'] [data-redesign-surface='dashboard'] .redesign-dashboard-title > div:first-child {
+  flex: 0 1 auto;
+}
+
+html[data-fiziyo-design='redesign'] [data-redesign-surface='dashboard'] > [data-redesign-part='dashboard-columns'] {
+  margin-block-start: var(--redesign-section-gap);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+html[data-fiziyo-design='redesign'] [data-redesign-surface='dashboard'] [data-redesign-part='patient-list'],
+html[data-fiziyo-design='redesign'] [data-redesign-surface='dashboard'] [data-redesign-part='set-list'] {
+  display: grid;
+  gap: 0.5rem;
+}
+
+html[data-fiziyo-design='redesign'] [data-redesign-surface='dashboard'] [data-redesign-part='patient-row'],
+html[data-fiziyo-design='redesign'] [data-redesign-surface='dashboard'] [data-redesign-part='set-row'] {
+  min-block-size: 4.5rem;
+  padding: 1rem;
+  border: 1px solid var(--redesign-divider);
+  border-radius: 8px;
+  background: var(--redesign-row-surface);
+}
+
+html[data-fiziyo-design='redesign'] [data-redesign-surface='dashboard'] [data-redesign-part='patient-row']:hover,
+html[data-fiziyo-design='redesign'] [data-redesign-surface='dashboard'] [data-redesign-part='set-row']:hover {
+  background: var(--redesign-row-hover);
+}
+
+html[data-fiziyo-design='redesign'] [data-redesign-surface='dashboard'] [data-redesign-part='dashboard-library'] {
+  border-block-start: 1px solid var(--redesign-divider);
+  padding-block-start: var(--redesign-section-gap);
+}
+
+@container dashboard (min-width: 56rem) {
+  html[data-fiziyo-design='redesign'] [data-redesign-surface='dashboard'] > [data-redesign-part='dashboard-columns'] {
+    grid-template-columns: minmax(0, 1.35fr) minmax(20rem, 1fr);
+  }
+
+  html[data-fiziyo-design='redesign'] [data-redesign-surface='dashboard'] [data-redesign-part='dashboard-library'] {
+    border-block-start: 0;
+    padding-block-start: 0;
+    border-inline-start: 1px solid var(--redesign-divider);
+    padding-inline-start: var(--redesign-section-gap);
+  }
+}
+
+@media (max-width: 639px) {
+  html[data-fiziyo-design='redesign'] [data-redesign-surface='dashboard'] .redesign-dashboard-title {
+    align-items: stretch;
+  }
+}

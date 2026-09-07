@@ -32,10 +32,13 @@ interface DialogContentProps extends React.ComponentPropsWithoutRef<typeof Dialo
   hideCloseButton?: boolean;
 }
 
-const DialogContent = React.forwardRef<React.ElementRef<typeof DialogPrimitive.Content>, DialogContentProps>(
-  ({ className, children, hideCloseButton = false, ...props }, ref) => (
-    <DialogPortal>
-      <DialogOverlay />
+const DialogContentSurface = React.forwardRef<React.ElementRef<typeof DialogPrimitive.Content>, DialogContentProps>(
+  ({ className, children, hideCloseButton = false, onCloseAutoFocus, ...props }, ref) => {
+    const openerRef = React.useRef<HTMLElement | null>(
+      typeof document !== 'undefined' && document.activeElement instanceof HTMLElement ? document.activeElement : null
+    );
+
+    return (
       <DialogPrimitive.Content
         ref={ref}
         className={cn(
@@ -43,6 +46,16 @@ const DialogContent = React.forwardRef<React.ElementRef<typeof DialogPrimitive.C
           className
         )}
         {...props}
+        onCloseAutoFocus={(event) => {
+          onCloseAutoFocus?.(event);
+          if (event.defaultPrevented) return;
+
+          const opener = openerRef.current;
+          if (opener?.isConnected && opener !== document.body && !opener.matches(':disabled')) {
+            opener.focus({ preventScroll: true });
+            if (document.activeElement === opener) event.preventDefault();
+          }
+        }}
       >
         {children}
         {!hideCloseButton && (
@@ -55,6 +68,16 @@ const DialogContent = React.forwardRef<React.ElementRef<typeof DialogPrimitive.C
           </DialogPrimitive.Close>
         )}
       </DialogPrimitive.Content>
+    );
+  }
+);
+DialogContentSurface.displayName = 'DialogContentSurface';
+
+const DialogContent = React.forwardRef<React.ElementRef<typeof DialogPrimitive.Content>, DialogContentProps>(
+  (props, ref) => (
+    <DialogPortal>
+      <DialogOverlay />
+      <DialogContentSurface ref={ref} {...props} />
     </DialogPortal>
   )
 );

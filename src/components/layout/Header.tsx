@@ -8,6 +8,9 @@ import { MobileOrgIndicator } from '@/components/layout/MobileOrgIndicator';
 import { FeedbackButton } from '@/components/shared/FeedbackButton';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { getRouteLabel } from '@/components/layout/navigation.config';
+import { DesignSwitcher } from '@/redesign/DesignSwitcher';
+import { isDesignPreviewEnabled } from '@/redesign/preferences';
+import { cn } from '@/lib/utils';
 
 function Breadcrumbs() {
   const pathname = usePathname();
@@ -72,14 +75,16 @@ interface HeaderProps {
 }
 
 export function Header({ onMobileMenuToggle }: HeaderProps) {
+  const previewEnabled = isDesignPreviewEnabled();
   return (
     <TooltipProvider delayDuration={300}>
       <header
         data-testid="nav-header"
-        className="flex min-h-16 shrink-0 items-center justify-between gap-3 border-b border-border bg-surface px-4 py-2 lg:px-6"
+        data-redesign-surface="shell-header"
+        className={cn('flex min-h-16 shrink-0 items-center justify-between gap-3 border-b border-border bg-surface px-4 py-2 lg:px-6', previewEnabled && 'flex-wrap')}
       >
         {/* Left side - Mobile menu + Org indicator + Breadcrumbs */}
-        <div className="flex min-w-0 flex-1 items-center gap-3">
+        <div className={cn('flex min-w-0 flex-1 items-center gap-3', previewEnabled && 'basis-48')}>
           {/* Mobile menu button */}
           {onMobileMenuToggle && (
             <Button
@@ -106,7 +111,8 @@ export function Header({ onMobileMenuToggle }: HeaderProps) {
         </div>
 
         {/* Right side - Notifications & Feedback (kontekst "tu i teraz") */}
-        <div className="flex shrink-0 items-center gap-2">
+        <div className={cn('flex shrink-0 items-center gap-2', previewEnabled && 'ml-auto max-w-full flex-wrap')}>
+          <DesignSwitcher />
           <FeedbackButton variant="icon" />
         </div>
       </header>

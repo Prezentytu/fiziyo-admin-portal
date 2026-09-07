@@ -1,0 +1,8 @@
+html[data-fiziyo-design='redesign'] [data-redesign-surface='dashboard'] {
+  --redesign-accent: var(--primary);
+  --redesign-divider: var(--border);
+  --redesign-section-gap: 2rem;
+  --redesign-row-surface: var(--background);
+  --redesign-row-hover: var(--surface-light);
+  --redesign-content-width: 74rem;
+}

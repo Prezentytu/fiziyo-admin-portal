@@ -38,16 +38,18 @@ export function BillingStatusBar({ organizationId, className }: Readonly<Billing
   // Loading state
   if (loading) {
     return (
-      <div className={cn('rounded-xl border border-border/40 bg-surface/50 backdrop-blur-sm p-4', className)}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Skeleton className="h-9 w-9 rounded-lg" />
-            <Skeleton className="h-4 w-32" />
-          </div>
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-5 w-20" />
-          </div>
+      <div
+        role="status"
+        aria-label="Ładowanie rozliczenia"
+        className={cn('min-w-0 space-y-2 border-t border-border py-4', className)}
+      >
+        <div className="flex min-w-0 items-center gap-2">
+          <Skeleton className="h-4 w-4 shrink-0" />
+          <Skeleton className="h-4 w-36 max-w-full" />
+        </div>
+        <div className="flex flex-wrap items-center gap-4 pl-6">
+          <Skeleton className="h-6 w-20" />
+          <Skeleton className="h-4 w-24" />
         </div>
       </div>
     );
@@ -62,11 +64,6 @@ export function BillingStatusBar({ organizationId, className }: Readonly<Billing
   // Use currentlyActivePremium (teraz aktywni) zamiast activePatientsInMonth (w tym miesiącu)
   const activeCount = currentlyActivePremium ?? activePatientsInMonth;
   const hasActivity = activeCount > 0;
-  let amountClassName = 'text-muted-foreground group-hover:text-foreground';
-  if (!isPilotMode && hasActivity) {
-    amountClassName = 'text-emerald-500 group-hover:text-emerald-400';
-  }
-
   // W pilot mode zawsze 0 PLN
   const displayAmount = isPilotMode ? 0 : estimatedTotal;
   const formattedAmount = `${displayAmount.toLocaleString('pl-PL')} ${currency}`;
@@ -76,75 +73,40 @@ export function BillingStatusBar({ organizationId, className }: Readonly<Billing
       href="/finances"
       data-testid="dashboard-billing-status-bar"
       className={cn(
-        'group block rounded-xl border border-border/40 bg-surface/50 backdrop-blur-sm',
-        'p-4 transition-all duration-300',
-        'hover:border-primary/30 hover:bg-surface-light hover:shadow-md',
+        'group grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 border-t border-border py-4',
+        'transition-colors duration-150 hover:bg-muted/60',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         className
       )}
     >
-      <div className="flex items-center justify-between">
-        {/* Left side - Label */}
-        <div className="flex items-center gap-3">
-          <div
-            className={cn(
-              'flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-300',
-              hasActivity
-                ? 'bg-emerald-500/10 group-hover:bg-emerald-500/20'
-                : 'bg-muted-foreground/10 group-hover:bg-muted-foreground/15'
-            )}
-          >
-            <Wallet className={cn('h-4.5 w-4.5', hasActivity ? 'text-emerald-500' : 'text-muted-foreground')} />
-          </div>
-          <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-            Bieżące rozliczenie
+      <div className="flex min-w-0 items-center gap-2 text-muted-foreground group-hover:text-foreground">
+        <Wallet className="h-4 w-4 shrink-0" aria-hidden="true" />
+        <span className="text-sm wrap-anywhere">Bieżące rozliczenie</span>
+      </div>
+      <ChevronRight className="row-span-2 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+      <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2 pl-6">
+        <span className="text-base font-semibold tabular-nums whitespace-nowrap text-foreground">
+          {formattedAmount}
+        </span>
+        {hasActivity ? (
+          <span className="text-sm text-muted-foreground">
+            {activeCount} {activeCount === 1 ? 'aktywny' : 'aktywnych'}
           </span>
-        </div>
-
-        {/* Right side - Stats */}
-        <div className="flex items-center gap-4">
-          {/* Active patients count */}
-          {hasActivity ? (
-            <span className="text-sm text-muted-foreground">
-              {activeCount} {activeCount === 1 ? 'aktywny' : 'aktywnych'}
-            </span>
-          ) : (
-            <span className="text-sm text-muted-foreground flex items-center gap-1">
-              <Sparkles className="h-3.5 w-3.5" />
-              Aktywuj pierwszego
-            </span>
-          )}
-
-          {/* Pilot mode badge */}
-          {isPilotMode && hasActivity && (
-            <Badge
-              variant="outline"
-              className="gap-1 border-border/80 bg-muted px-2.5 py-1 text-xs font-medium text-foreground shadow-sm"
-            >
-              <Gift className="h-3 w-3 text-primary" />
-              Wczesny dostęp
-            </Badge>
-          )}
-
-          {/* Amount */}
-          <span
-            className={cn(
-              'text-base font-bold tabular-nums transition-colors',
-              amountClassName
-            )}
-          >
-            {formattedAmount}
+        ) : (
+          <span className="flex min-w-0 items-center gap-1 text-sm text-muted-foreground">
+            <Sparkles className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <span className="wrap-anywhere">Aktywuj pierwszego</span>
           </span>
-
-          {/* Arrow */}
-          <ChevronRight
-            className={cn(
-              'h-4 w-4 transition-all group-hover:translate-x-0.5',
-              hasActivity
-                ? 'text-emerald-500/40 group-hover:text-emerald-500'
-                : 'text-muted-foreground/40 group-hover:text-muted-foreground'
-            )}
-          />
-        </div>
+        )}
+        {isPilotMode && hasActivity && (
+          <Badge
+            variant="outline"
+            className="max-w-full gap-1 border-border bg-muted text-xs font-medium whitespace-normal text-foreground"
+          >
+            <Gift className="h-3 w-3 shrink-0 text-primary" aria-hidden="true" />
+            <span className="wrap-anywhere">Wczesny dostęp</span>
+          </Badge>
+        )}
       </div>
     </Link>
   );

@@ -25,6 +25,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { PageHeader } from '@/components/shared/page/PageHeader';
 import { PageHero } from '@/components/shared/page/PageHero';
+import { EmptyState } from '@/components/shared/EmptyState';
 import { SetThumbnail } from '@/features/exercise-sets/SetThumbnail';
 import { CreateSetWizard } from '@/features/exercise-sets/CreateSetWizard';
 import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
@@ -170,7 +171,9 @@ function getDashboardSubtitle(patientsCount: number, patientsNeedingAttentionCou
   }
 
   if (patientsNeedingAttentionCount > 0) {
-    return `Sprawdź, co u ${patientsNeedingAttentionCount} pacjentów`;
+    return patientsNeedingAttentionCount === 1
+      ? 'Sprawdź, co u Twojego pacjenta'
+      : `Sprawdź, co u ${patientsNeedingAttentionCount} pacjentów`;
   }
 
   return 'Wszyscy Twoi pacjenci są aktywni';
@@ -360,13 +363,28 @@ export function DashboardHomePage() {
   };
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-screen-2xl space-y-6 text-foreground">
-      <PageHeader
-        title={`${greeting}, ${userName}!`}
-        titleTestId="dashboard-greeting"
-        description={dashboardSubtitle}
-        actions={<p className="text-sm text-muted-foreground">{todayDate}</p>}
-      />
+    <div data-redesign-surface="dashboard" className="@container/dashboard mx-auto w-full min-w-0 max-w-screen-2xl space-y-6 text-foreground">
+      <div data-redesign-part="dashboard-heading" className="space-y-3">
+        <p className="text-sm text-muted-foreground">{todayDate}</p>
+        <PageHeader
+          className="redesign-dashboard-title"
+          title={`${greeting}, ${userName}!`}
+          titleTestId="dashboard-greeting"
+          description={dashboardSubtitle}
+          actions={
+            <PageHero
+              variant="toolbar"
+              title="Personalizuj i przypisz"
+              description="Personalizuj i przypisz zestaw ćwiczeń pacjentowi"
+              icon={<Send />}
+              onClick={() => setIsAssignWizardOpen(true)}
+              disabled={!organizationId || !therapistId}
+              testId="dashboard-hero-assign-set-btn"
+              className="h-auto min-h-11 max-w-full whitespace-normal"
+            />
+          }
+        />
+      </div>
 
       {/* Getting Started Card - Onboarding for new users */}
       <GettingStartedCard
@@ -375,80 +393,48 @@ export function DashboardHomePage() {
         assignmentsCount={therapistAssignmentsCount}
       />
 
-      <div className="flex min-w-0 flex-wrap items-center gap-2">
-        <PageHero
-          variant="toolbar"
-          title="Personalizuj i przypisz"
-          description="Personalizuj i przypisz zestaw ćwiczeń pacjentowi"
-          icon={<Send />}
-          onClick={() => setIsAssignWizardOpen(true)}
-          disabled={!organizationId || !therapistId}
-          testId="dashboard-hero-assign-set-btn"
-          className="h-auto min-h-11 max-w-full whitespace-normal"
-        />
-        <Button
-          data-testid="dashboard-add-patient-btn"
-          type="button"
-          variant="outline"
-          onClick={() => setIsPatientDialogOpen(true)}
-          disabled={!organizationId || !therapistId}
-          aria-label="Dodaj nowego pacjenta do bazy"
-          className="h-auto min-h-11 max-w-full whitespace-normal"
-        >
-          <UserPlus className="h-4 w-4" aria-hidden="true" />
-          <span className="min-w-0 wrap-anywhere">Nowy pacjent</span>
-        </Button>
-        <Button
-          data-testid="dashboard-create-set-btn"
-          type="button"
-          variant="outline"
-          onClick={() => setIsCreateSetWizardOpen(true)}
-          disabled={!organizationId}
-          aria-label="Utwórz nowy zestaw ćwiczeń"
-          className="h-auto min-h-11 max-w-full whitespace-normal"
-        >
-          <FolderPlus className="h-4 w-4" aria-hidden="true" />
-          <span className="min-w-0 wrap-anywhere">Utwórz zestaw</span>
-        </Button>
-      </div>
-
-      {/* Main Content - 8:4 Grid Layout */}
-      <div className="grid items-start gap-8 lg:grid-cols-12">
-        {/* Left Column (8 cols): Activity + Billing */}
-        <div className="min-w-0 lg:col-span-8 flex flex-col gap-6">
+      <div data-redesign-part="dashboard-columns" className="grid items-start gap-8 @4xl/dashboard:grid-cols-[minmax(0,3fr)_minmax(20rem,2fr)]">
+        <div className="min-w-0 flex flex-col gap-6">
           <section
             data-testid="dashboard-activity-section"
             aria-labelledby="dashboard-activity-title"
             className="min-w-0"
           >
             <header className="mb-2 border-b border-border pb-2">
-              <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+              <div className="flex min-h-11 flex-wrap items-center justify-between gap-x-4 gap-y-2">
                 <h2
                   id="dashboard-activity-title"
-                  className="flex flex-wrap items-center gap-2 text-sm font-semibold"
+                  className="flex min-w-0 items-center gap-2 text-base font-semibold"
                 >
                   <Users className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                  <span>Pacjenci do sprawdzenia</span>
+                  <span className="min-w-0 wrap-anywhere">Pacjenci do sprawdzenia</span>
                   {patientsNeedingAttention.length > 0 && (
                     <Badge
                       variant="secondary"
-                      className="bg-muted text-foreground border-transparent font-medium tabular-nums"
+                      className="shrink-0 bg-muted text-foreground border-transparent font-medium tabular-nums"
                     >
                       {patientsNeedingAttention.length}
                     </Badge>
                   )}
                 </h2>
                 <Button
-                  data-testid="dashboard-patients-view-all"
-                  variant="ghost"
-                  size="sm"
-                  asChild
-                  className="min-h-11 max-w-full text-xs gap-1 text-muted-foreground hover:text-foreground"
+                  data-testid="dashboard-add-patient-btn"
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsPatientDialogOpen(true)}
+                  disabled={!organizationId || !therapistId}
+                  aria-label="Dodaj nowego pacjenta do bazy"
+                  className="h-auto min-h-11 max-w-full whitespace-normal"
                 >
-                  <Link href="/patients">
-                    <span data-testid="page-button-487">Wszyscy ({patientsCount})</span>
-                    <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
-                  </Link>
+                  <UserPlus className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span
+                    data-testid={
+                      !patientsLoading && patients.length === 0 ? 'common-dashboard-home-page-btn-606' : undefined
+                    }
+                    className="min-w-0 wrap-anywhere"
+                  >
+                    Nowy pacjent
+                  </span>
                 </Button>
               </div>
             </header>
@@ -456,11 +442,7 @@ export function DashboardHomePage() {
               {patientsLoading ? (
                 <div className="space-y-2">
                   {[1, 2, 3, 4, 5].map((i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-3 py-3"
-                      style={{ animationDelay: `${i * 50}ms` }}
-                    >
+                    <div key={i} className="flex items-center gap-3 py-3" style={{ animationDelay: `${i * 50}ms` }}>
                       <Skeleton className="h-10 w-10 rounded-full shrink-0" />
                       <div className="min-w-0 flex-1 space-y-1.5">
                         <Skeleton className="h-4 w-32 max-w-full rounded-sm" />
@@ -471,7 +453,7 @@ export function DashboardHomePage() {
                   ))}
                 </div>
               ) : patients.length > 0 ? (
-                <div className="divide-y divide-border/60">
+                <div data-redesign-part="patient-list" className="divide-y divide-border/60">
                   {displayedPatients.map((assignment: PatientWithActivity) => {
                     const isShadow = assignment.patient?.isShadowUser;
                     return (
@@ -479,7 +461,8 @@ export function DashboardHomePage() {
                         key={assignment.id}
                         href={`/patients/${assignment.patient?.id}`}
                         data-testid={`dashboard-patient-item-${assignment.patient?.id}`}
-                        className="group flex min-h-16 items-center gap-3 rounded-sm px-2 py-3 transition-colors duration-150 hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                        data-redesign-part="patient-row"
+                        className="group flex min-h-20 items-center gap-3 rounded-sm py-4 transition-colors duration-150 hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                       >
                         <div className="relative shrink-0">
                           <Avatar className="h-10 w-10">
@@ -500,12 +483,10 @@ export function DashboardHomePage() {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm text-foreground wrap-anywhere">
+                          <p className="font-medium text-base text-foreground wrap-anywhere">
                             {assignment.patient?.fullname || 'Nieznany'}
                           </p>
-                          <p className="text-xs text-muted-foreground wrap-anywhere">
-                            {assignment.lastActivityText}
-                          </p>
+                          <p className="text-sm text-muted-foreground wrap-anywhere">{assignment.lastActivityText}</p>
                         </div>
                         <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                       </Link>
@@ -513,143 +494,149 @@ export function DashboardHomePage() {
                   })}
                 </div>
               ) : (
-                <div className="flex items-start gap-3 py-6">
-                  <UserPlus className="mt-1 h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
-                  <div className="min-w-0 space-y-2 wrap-anywhere">
-                    <p className="text-sm font-medium">Brak przypisanych pacjentów</p>
-                    <p className="text-xs text-muted-foreground">
-                      Dodaj pacjenta lub przejmij opiekę na liście pacjentów
-                    </p>
-                    <Button
-                      data-testid="common-dashboard-home-page-btn-606"
-                      size="sm"
-                      variant="outline"
-                      className="h-auto min-h-11 max-w-full whitespace-normal text-xs"
-                      onClick={() => setIsPatientDialogOpen(true)}
-                      disabled={!organizationId || !therapistId}
-                    >
-                      Dodaj pacjenta
-                    </Button>
-                  </div>
-                </div>
+                <EmptyState
+                  icon={Users}
+                  title="Brak przypisanych pacjentów"
+                  density="inline"
+                  className="flex min-h-20 items-center py-4"
+                />
               )}
             </div>
+            <Button
+              data-testid="dashboard-patients-view-all"
+              variant="ghost"
+              size="sm"
+              asChild
+              className="mt-2 h-auto min-h-11 max-w-full justify-start gap-1 px-0 text-sm text-muted-foreground whitespace-normal hover:text-foreground"
+            >
+              <Link href="/patients">
+                <span data-testid="page-button-487" className="wrap-anywhere">
+                  Wszyscy ({patientsCount})
+                </span>
+                <ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" />
+              </Link>
+            </Button>
           </section>
-
-          {canViewBilling && organizationId && <BillingStatusBar organizationId={organizationId} />}
         </div>
 
-        {/* Quick Sets - Right Column (4 cols) */}
-        <section
-          data-testid="dashboard-sets-section"
-          aria-labelledby="dashboard-sets-title"
-          className="min-w-0 lg:col-span-4"
-        >
-          <header className="mb-2 border-b border-border pb-2">
-            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
-              <h2 id="dashboard-sets-title" className="flex items-center gap-2 text-sm font-semibold">
-                <FolderKanban className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                <span>Szybki wybór</span>
-              </h2>
-              <Button
-                data-testid="dashboard-sets-view-all"
-                variant="ghost"
-                size="sm"
-                asChild
-                className="min-h-11 max-w-full text-xs gap-1 text-muted-foreground hover:text-foreground"
-              >
-                <Link href="/exercise-sets">
-                  <span data-testid="page-button-636">Wszystkie</span>
-                  <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
-                </Link>
-              </Button>
-            </div>
-          </header>
-          <div>
-            {setsLoading ? (
-              <div className="space-y-2">
-                {[1, 2, 3, 4].map((i) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-3 py-3"
-                    style={{ animationDelay: `${(i + 4) * 50}ms` }}
+        <div data-redesign-part="dashboard-library" className="min-w-0 space-y-6">
+          <section data-testid="dashboard-sets-section" aria-labelledby="dashboard-sets-title" className="min-w-0">
+            <header className="mb-2 border-b border-border pb-2">
+              <div className="flex min-h-11 flex-wrap items-center justify-between gap-x-4 gap-y-2">
+                <h2 id="dashboard-sets-title" className="flex min-w-0 items-center gap-2 text-base font-semibold">
+                  <FolderKanban className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                  <span className="wrap-anywhere">Zestawy ćwiczeń</span>
+                </h2>
+                <Button
+                  data-testid="dashboard-create-set-btn"
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsCreateSetWizardOpen(true)}
+                  disabled={!organizationId}
+                  aria-label="Utwórz nowy zestaw ćwiczeń"
+                  className="h-auto min-h-11 max-w-full whitespace-normal"
+                >
+                  <FolderPlus className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span
+                    data-testid={!setsLoading && quickSelectionSets.length === 0 ? 'page-button-712' : undefined}
+                    className="min-w-0 wrap-anywhere"
                   >
-                    <div className="h-10 w-10 rounded-lg overflow-hidden grid grid-cols-2 gap-0.5 shrink-0">
-                      <Skeleton className="rounded-none" />
-                      <Skeleton className="rounded-none" />
-                      <Skeleton className="rounded-none" />
-                      <Skeleton className="rounded-none" />
-                    </div>
-                    <div className="min-w-0 flex-1 space-y-1.5">
-                      <Skeleton className="h-4 w-24 max-w-full rounded-sm" />
-                      <Skeleton className="h-3 w-16 max-w-full rounded-sm" />
-                    </div>
-                    <Skeleton className="h-8 w-8 rounded-lg shrink-0" />
-                  </div>
-                ))}
+                    Utwórz zestaw
+                  </span>
+                </Button>
               </div>
-            ) : quickSelectionSets.length > 0 ? (
-              <TooltipProvider>
-                <div className="divide-y divide-border/60">
-                  {quickSelectionSets.slice(0, 5).map((set: ExerciseSetItem) => (
+            </header>
+            <div>
+              {setsLoading ? (
+                <div className="space-y-2">
+                  {[1, 2, 3, 4].map((i) => (
                     <div
-                      key={set.id}
-                      className="flex min-h-16 items-center gap-2 rounded-sm px-2 py-2 transition-colors duration-150 hover:bg-muted/60"
+                      key={i}
+                      className="flex items-center gap-3 py-3"
+                      style={{ animationDelay: `${(i + 4) * 50}ms` }}
                     >
-                      <Link
-                        href={`/exercise-sets/${set.id}`}
-                        data-testid={`dashboard-set-item-${set.id}`}
-                        className="flex min-h-11 items-center gap-3 flex-1 min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm"
-                      >
-                        <SetThumbnail exerciseMappings={set.exerciseMappings} size="sm" />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm text-foreground wrap-anywhere">{set.name}</p>
-                          <p className="text-xs text-muted-foreground">{set.exerciseMappings?.length || 0} ćw.</p>
-                        </div>
-                      </Link>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            data-testid={`dashboard-quick-assign-${set.id}`}
-                            variant="ghost"
-                            size="icon"
-                            className="h-11 w-11 shrink-0 text-muted-foreground hover:text-foreground"
-                            onClick={(event) => handleQuickAssign(set, event)}
-                            disabled={!organizationId || !therapistId}
-                            aria-label={`Personalizuj i przypisz ${set.name}`}
-                          >
-                            <Plus className="h-4 w-4" aria-hidden="true" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-64 wrap-anywhere">
-                          Personalizuj i przypisz {set.name}
-                        </TooltipContent>
-                      </Tooltip>
+                      <div className="h-10 w-10 rounded-lg overflow-hidden grid grid-cols-2 gap-0.5 shrink-0">
+                        <Skeleton className="rounded-none" />
+                        <Skeleton className="rounded-none" />
+                        <Skeleton className="rounded-none" />
+                        <Skeleton className="rounded-none" />
+                      </div>
+                      <div className="min-w-0 flex-1 space-y-1.5">
+                        <Skeleton className="h-4 w-24 max-w-full rounded-sm" />
+                        <Skeleton className="h-3 w-16 max-w-full rounded-sm" />
+                      </div>
+                      <Skeleton className="h-8 w-8 rounded-lg shrink-0" />
                     </div>
                   ))}
                 </div>
-              </TooltipProvider>
-            ) : (
-              <div className="flex items-start gap-3 py-6">
-                <FolderPlus className="mt-1 h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
-                <div className="min-w-0 space-y-2 wrap-anywhere">
-                  <p className="text-sm font-medium">Brak zestawów do szybkiego wyboru</p>
-                  <p className="text-xs text-muted-foreground">Utwórz niespersonalizowany zestaw</p>
-                  <Button
-                    data-testid="page-button-712"
-                    size="sm"
-                    variant="outline"
-                    className="h-auto min-h-11 max-w-full whitespace-normal text-xs"
-                    onClick={() => setIsCreateSetWizardOpen(true)}
-                    disabled={!organizationId}
-                  >
-                    Utwórz zestaw
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
+              ) : quickSelectionSets.length > 0 ? (
+                <TooltipProvider>
+                  <div data-redesign-part="set-list" className="divide-y divide-border/60">
+                    {quickSelectionSets.slice(0, 5).map((set: ExerciseSetItem) => (
+                      <div
+                        key={set.id}
+                        data-redesign-part="set-row"
+                        className="flex min-h-20 items-center gap-2 rounded-sm py-4 transition-colors duration-150 hover:bg-muted/60"
+                      >
+                        <Link
+                          href={`/exercise-sets/${set.id}`}
+                          data-testid={`dashboard-set-item-${set.id}`}
+                          className="flex min-h-11 items-center gap-3 flex-1 min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm"
+                        >
+                          <SetThumbnail exerciseMappings={set.exerciseMappings} size="sm" />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-base text-foreground wrap-anywhere">{set.name}</p>
+                            <p className="text-sm text-muted-foreground">{set.exerciseMappings?.length || 0} ćw.</p>
+                          </div>
+                        </Link>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              data-testid={`dashboard-quick-assign-${set.id}`}
+                              variant="ghost"
+                              size="icon"
+                              className="h-11 w-11 shrink-0 text-muted-foreground hover:text-foreground"
+                              onClick={(event) => handleQuickAssign(set, event)}
+                              disabled={!organizationId || !therapistId}
+                              aria-label={`Personalizuj i przypisz ${set.name}`}
+                            >
+                              <Plus className="h-4 w-4" aria-hidden="true" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-64 wrap-anywhere">
+                            Personalizuj i przypisz {set.name}
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                    ))}
+                  </div>
+                </TooltipProvider>
+              ) : (
+                <EmptyState
+                  icon={FolderKanban}
+                  title="Brak zapisanych szablonów"
+                  density="inline"
+                  className="flex min-h-20 items-center py-4"
+                />
+              )}
+            </div>
+            <Button
+              data-testid="dashboard-sets-view-all"
+              variant="ghost"
+              size="sm"
+              asChild
+              className="mt-2 h-auto min-h-11 max-w-full justify-start gap-1 px-0 text-sm text-muted-foreground whitespace-normal hover:text-foreground"
+            >
+              <Link href="/exercise-sets">
+                <span data-testid="page-button-636" className="wrap-anywhere">
+                  Wszystkie zestawy
+                </span>
+                <ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" />
+              </Link>
+            </Button>
+          </section>
+          {canViewBilling && organizationId && <BillingStatusBar organizationId={organizationId} />}
+        </div>
       </div>
 
       {/* Assignment Wizard */}

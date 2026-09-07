@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-09-07 - Pulpit: kontekst akcji i focus przed autoFocus formularza
+
+- **Kategoria**: `UI/UX` | `React`
+- **Problem**: Pulpit duplikowal akcje w toolbarze i pustych stanach; rozliczenie dominowalo pod lista pacjentow. Zamkniecie programowo otwartego dialogu pozostawialo fokus na body.
+- **Przyczyna**: Akcje projektowane oddzielnie dla empty/loaded, dawny skeleton, a Radix bez DialogTrigger nie znal elementu powrotu. Pole z React autoFocus przejmowalo fokus jeszcze przed onOpenAutoFocus.
+- **Rozwiązanie**: Akcje przy naglowkach sekcji, EmptyState inline, rozliczenie po zestawach i zgodny skeleton. Zapamietanie opener w zawartosci montowanej przez Portal przed montazem jej dzieci; zachowanie custom onCloseAutoFocus. Testy red/green i trzy natywne flow pulpitu.
+- **Reguła**: Empty korzysta z istniejacego CTA sekcji. Opener dialogu przechwytuj przed montazem pol autoFocus, nie dopiero w callbacku autofocus. Testuj kontrolowane i zagniezdzone dialogi, ponowne otwarcie i override konsumenta. Przy 320px/22px obejrzyj tez grupowanie ikon/licznikow; brak overflow nie dowodzi dobrego ukladu.
+
 ### 2026-09-07 - Wyrównanie wynika z geometrii, nie tylko rozmiaru fontu
 
 - **Kategoria**: `UI/UX`

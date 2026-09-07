@@ -83,6 +83,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
     <TooltipProvider delayDuration={300}>
       <aside
         data-testid="nav-sidebar"
+        data-redesign-surface="shell-sidebar"
         className={cn(
           'hidden xl:flex h-full shrink-0 flex-col border-r border-border bg-surface transition-[width] duration-150',
           isCollapsed ? 'w-[72px]' : 'w-64'

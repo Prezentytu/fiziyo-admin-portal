@@ -37,6 +37,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                   <Header onMobileMenuToggle={toggleMobile} />
                   <main
                     data-testid="nav-main-content"
+                    data-redesign-surface={pathname === '/' ? 'dashboard-host' : undefined}
                     className="min-h-0 min-w-0 flex-1 overflow-y-auto p-4 lg:p-6 2xl:p-8"
                     style={{ scrollbarGutter: 'stable' }}
                   >
