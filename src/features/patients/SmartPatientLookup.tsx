@@ -395,6 +395,7 @@ export function SmartPatientLookup({
                 </label>
                 <div className="relative">
                   <Input
+                    data-testid="patient-lookup-email-input"
                     ref={emailInputRef}
                     type="email"
                     placeholder="jan@example.com"
@@ -408,7 +409,6 @@ export function SmartPatientLookup({
                     )}
                     autoFocus
                     autoComplete="off"
-                    data-testid="patient-lookup-email-input"
                   />
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
                     {(state === 'searching' || isSearching) && (
@@ -561,12 +561,12 @@ export function SmartPatientLookup({
                 Notatka (opcjonalne)
               </label>
               <Input
+                data-testid="patient-lookup-context-input"
                 id="patient-lookup-context"
                 placeholder="np. Rehabilitacja kolana, Ból pleców..."
                 value={contextLabel}
                 onChange={(e) => setContextLabel(e.target.value)}
                 className="h-9 text-sm"
-                data-testid="patient-lookup-context-input"
               />
             </div>
           )}
@@ -575,12 +575,12 @@ export function SmartPatientLookup({
           <div className="mt-4 flex gap-2">
             {isAlreadyAssignedToTherapist ? (
               <Button
+                data-testid="patient-lookup-go-to-patient-btn"
                 variant="outline"
                 onClick={() => {
-                  globalThis.location.href = `/patients/${foundUser.id}`;
+                  globalThis.location.href = new URL(`/patients/${foundUser.id}`, globalThis.location.origin).href;
                 }}
                 className="flex-1 h-11"
-                data-testid="patient-lookup-go-to-patient-btn"
               >
                 <UserCheck className="h-4 w-4 mr-2" />
                 Przejdź do profilu pacjenta

@@ -14,6 +14,13 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+- 2026-09-09 - Jeśli token exchange tworzy organizację konta firmowego, zawsze usuń fallback GraphQL z tokenem Clerka; ponawiaj tylko przejściowe błędy, a wynik starego konta i nawigację po unmount odrzucaj.
+- 2026-09-09 - Jesli przesuniecie linii ujawnia braki data-testid, zawsze uzupelnij kontrolki w dotykanym pliku i przenies istniejace ID przed handlery; nie regeneruj baseline ani allowlisty, aby ukryc trafienia.
+- 2026-09-09 - Jeśli wycofujesz kontrakt planów, zawsze usuń również inline query z onboardingu i użyj wspólnej mutacji; samo oczyszczenie katalogu GraphQL nie obejmuje wszystkich konsumentów (fizjo-app SPEC-034).
+- 2026-09-09 - Jeśli backend rozdziela kolidujące resolvery kategorii, zawsze sprawdź rzeczywisty SDL i migruj obu klientów z aliasem odpowiedzi; nowe pole API musi wejść przed klientem (fizjo-app SPEC-034).
+- 2026-09-08 - Jeśli dispatch certyfikuje admina, zawsze porównaj build-bound SHA/deployment/API origin z działającą aplikacją; nigdy nie przypisuj generic Preview wyników shared DEV na podstawie nazwy brancha.
+- 2026-09-08 - Jeśli audit zgłasza podatność auth SDK, zawsze sprawdź advisory i faktyczny wzorzec guardu, aktualizuj w obecnym majorze i przetestuj realny matcher bez zmiany polityki dostępu.
+
 ### 2026-08-20 - Import katalogu JSON jest dla każdego fizjo, nie tylko ownera
 
 - **Kategoria**: `UI/UX`

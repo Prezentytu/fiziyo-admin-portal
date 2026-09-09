@@ -10,7 +10,6 @@ export const UPDATE_ORGANIZATION_NAME_MUTATION = gql`
       name
       isActive
       logoUrl
-      subscriptionPlan
       allowPersonalExercises
       sharedExercisesByDefault
     }
@@ -141,7 +140,6 @@ export const UPDATE_ORGANIZATION_LOGO_MUTATION = gql`
       name
       isActive
       logoUrl
-      subscriptionPlan
     }
   }
 `;
@@ -156,7 +154,6 @@ export const REMOVE_ORGANIZATION_LOGO_MUTATION = gql`
       name
       isActive
       logoUrl
-      subscriptionPlan
     }
   }
 `;
@@ -165,15 +162,13 @@ export const REMOVE_ORGANIZATION_LOGO_MUTATION = gql`
  * Mutacja do tworzenia nowej organizacji
  */
 export const CREATE_ORGANIZATION_MUTATION = gql`
-  mutation CreateOrganization($name: String!, $description: String, $plan: SubscriptionPlan! = FREE) {
-    createOrganization(name: $name, description: $description, plan: $plan) {
+  mutation CreateOrganization($name: String!, $description: String) {
+    createOrganization(name: $name, description: $description) {
       id
       name
       description
       isActive
       logoUrl
-      subscriptionPlan
-      subscriptionExpiresAt
       allowPersonalExercises
       sharedExercisesByDefault
       creationTime
@@ -210,36 +205,6 @@ export const ADD_OWNER_MUTATION = gql`
 export const REMOVE_OWNER_MUTATION = gql`
   mutation RemoveOwner($organizationId: String!, $userIdToRemove: String!) {
     removeOwner(organizationId: $organizationId, userIdToRemove: $userIdToRemove)
-  }
-`;
-
-/**
- * Mutacja do aktualizacji planu subskrypcji organizacji
- * Wymaga uprawnień OWNER lub SITE_ADMIN
- */
-export const UPDATE_SUBSCRIPTION_MUTATION = gql`
-  mutation UpdateSubscription($organizationId: String!, $newPlan: SubscriptionPlan!, $expiresAt: DateTime) {
-    updateSubscription(organizationId: $organizationId, newPlan: $newPlan, expiresAt: $expiresAt) {
-      id
-      name
-      subscriptionPlan
-      subscriptionExpiresAt
-    }
-  }
-`;
-
-/**
- * Mutacja do aktywacji planu kodem aktywacyjnym (Early Access)
- * Prosty mechanizm do zmiany planu bez Stripe
- */
-export const ACTIVATE_PLAN_WITH_CODE_MUTATION = gql`
-  mutation ActivatePlanWithCode($organizationId: String!, $newPlan: SubscriptionPlan!, $activationCode: String!) {
-    activatePlanWithCode(organizationId: $organizationId, newPlan: $newPlan, activationCode: $activationCode) {
-      id
-      name
-      subscriptionPlan
-      subscriptionExpiresAt
-    }
   }
 `;
 

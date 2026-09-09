@@ -212,12 +212,14 @@ export interface ExerciseSetBuilderProps {
 
 function ExercisePickerItem({
   exercise,
+  testIdPrefix,
   instanceCount,
   onAdd,
   onPreview,
   getExerciseTags,
 }: {
   exercise: BuilderExercise;
+  testIdPrefix: string;
   instanceCount: number;
   onAdd: () => void;
   onPreview: () => void;
@@ -243,6 +245,7 @@ function ExercisePickerItem({
 
   return (
     <div
+      data-testid={`${testIdPrefix}-picker-${exercise.id}`}
       role="button"
       tabIndex={0}
       onClick={onAdd}
@@ -258,6 +261,7 @@ function ExercisePickerItem({
       )}
     >
       <button
+        data-testid={`${testIdPrefix}-preview-${exercise.id}`}
         type="button"
         onClick={(event) => {
           event.stopPropagation();
@@ -300,6 +304,7 @@ function ExercisePickerItem({
           </span>
         )}
         <Button
+          data-testid={`${testIdPrefix}-add-${exercise.id}`}
           size="icon"
           variant="secondary"
           onClick={(event) => {
@@ -437,6 +442,7 @@ function SortableExerciseCard({
     </div>
   ) : (
     <button
+      data-testid={`${testIdPrefix ?? 'set-builder'}-drag-${instanceId}`}
       type="button"
       {...attributes}
       {...listeners}
@@ -676,17 +682,18 @@ export function ExerciseSetBuilder({
         <div className="px-4 py-2 border-b border-border space-y-2 min-h-0">
           <div className="group flex-1 flex items-center gap-2 rounded-md border border-transparent px-2 py-1.5 min-h-[36px] hover:bg-surface-light/80 hover:border-border focus-within:bg-surface focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-colors cursor-text">
             <input
+              data-testid={`${testIdPrefix}-name-input`}
               type="text"
               value={name}
               onChange={(e) => onNameChange(e.target.value)}
               placeholder={namePlaceholder}
               autoComplete="off"
-              data-testid={`${testIdPrefix}-name-input`}
               className="flex-1 min-w-0 bg-transparent text-base font-semibold text-foreground placeholder-muted-foreground/50 focus:outline-none border-none p-0 cursor-text"
             />
             <Pencil className="h-3.5 w-3.5 text-muted-foreground shrink-0" aria-hidden />
             {showAI && onAIClick && (
               <button
+                data-testid={`${testIdPrefix}-ai-btn`}
                 type="button"
                 onPointerDown={(event) => {
                   event.stopPropagation();
@@ -705,7 +712,6 @@ export function ExerciseSetBuilder({
                     ? 'text-muted-foreground cursor-not-allowed opacity-50'
                     : 'text-muted-foreground hover:text-secondary hover:bg-secondary/10'
                 )}
-                data-testid={`${testIdPrefix}-ai-btn`}
               >
                 {isAIGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
               </button>
@@ -713,11 +719,11 @@ export function ExerciseSetBuilder({
           </div>
           {onDescriptionChange != null && (
             <Textarea
+              data-testid={`${testIdPrefix}-description-input`}
               value={description ?? ''}
               onChange={(e) => onDescriptionChange(e.target.value)}
               placeholder={descriptionPlaceholder}
               className="min-h-[60px] resize-none text-sm bg-transparent border-border/50 focus:border-primary"
-              data-testid={`${testIdPrefix}-description-input`}
             />
           )}
         </div>
@@ -732,11 +738,11 @@ export function ExerciseSetBuilder({
             <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
+                data-testid={`${testIdPrefix}-search-input`}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Szukaj ćwiczeń..."
                 className="h-10 pl-10 bg-surface border-border placeholder:text-muted-foreground/50"
-                data-testid={`${testIdPrefix}-search-input`}
               />
             </div>
           </div>
@@ -745,6 +751,7 @@ export function ExerciseSetBuilder({
           <div className="px-6 py-3 border-b border-border bg-surface/30 shrink-0">
             <div className="flex flex-wrap gap-1.5">
               <button
+                data-testid={`${testIdPrefix}-filter-all`}
                 type="button"
                 onClick={() => setSourceFilter('all')}
                 className={cn(
@@ -753,13 +760,13 @@ export function ExerciseSetBuilder({
                     ? 'border-primary/40 bg-primary/10 ring-1 ring-primary/20 text-primary'
                     : 'border-border/40 bg-surface/50 text-muted-foreground hover:bg-surface-light hover:text-foreground hover:border-border'
                 )}
-                data-testid={`${testIdPrefix}-filter-all`}
               >
                 <Dumbbell className="h-3.5 w-3.5 shrink-0" />
                 <span>Wszystkie</span>
                 <span className="font-semibold">{totalCount}</span>
               </button>
               <button
+                data-testid={`${testIdPrefix}-filter-organization`}
                 type="button"
                 onClick={() => setSourceFilter('organization')}
                 className={cn(
@@ -768,13 +775,13 @@ export function ExerciseSetBuilder({
                     ? 'border-info/40 bg-info/10 ring-1 ring-info/20 text-info'
                     : 'border-border/40 bg-surface/50 text-muted-foreground hover:bg-surface-light hover:text-foreground hover:border-border'
                 )}
-                data-testid={`${testIdPrefix}-filter-organization`}
               >
                 <Dumbbell className="h-3.5 w-3.5 shrink-0" />
                 <span>Moje ćwiczenia</span>
                 <span className="font-semibold">{organizationCount}</span>
               </button>
               <button
+                data-testid={`${testIdPrefix}-filter-fiziyo`}
                 type="button"
                 onClick={() => setSourceFilter('fiziyo')}
                 className={cn(
@@ -783,7 +790,6 @@ export function ExerciseSetBuilder({
                     ? 'border-violet/40 bg-violet/10 ring-1 ring-violet/20 text-violet'
                     : 'border-border/40 bg-surface/50 text-muted-foreground hover:bg-surface-light hover:text-foreground hover:border-border'
                 )}
-                data-testid={`${testIdPrefix}-filter-fiziyo`}
               >
                 <Sparkles className="h-3.5 w-3.5 shrink-0" />
                 <span>FiziYo</span>
@@ -831,6 +837,7 @@ export function ExerciseSetBuilder({
                         {popularExercises.map((exercise) => (
                           <ExercisePickerItem
                             key={`popular-${exercise.id}`}
+                            testIdPrefix={testIdPrefix}
                             exercise={exercise}
                             instanceCount={selectedInstances.filter((si) => si.exerciseId === exercise.id).length}
                             onAdd={() => addExerciseToSet(exercise)}
@@ -861,6 +868,7 @@ export function ExerciseSetBuilder({
                         return exercisesToShow.map((exercise) => (
                           <ExercisePickerItem
                             key={exercise.id}
+                            testIdPrefix={testIdPrefix}
                             exercise={exercise}
                             instanceCount={selectedInstances.filter((si) => si.exerciseId === exercise.id).length}
                             onAdd={() => addExerciseToSet(exercise)}
@@ -900,6 +908,7 @@ export function ExerciseSetBuilder({
 
             <div className="flex items-center gap-2 shrink-0">
               <Button
+                data-testid={`${testIdPrefix}-clear-btn`}
                 variant="ghost"
                 size="sm"
                 className="h-7 text-[10px] text-muted-foreground hover:text-destructive"

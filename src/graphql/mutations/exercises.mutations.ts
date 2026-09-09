@@ -472,7 +472,7 @@ export const UPDATE_TAG_CATEGORY_MUTATION = gql`
     $description: String!
     $icon: String!
   ) {
-    updateTagCategory(categoryId: $categoryId, name: $name, color: $color, description: $description, icon: $icon) {
+    updateTagCategory: updateOrganizationTagCategory(categoryId: $categoryId, name: $name, color: $color, description: $description, icon: $icon) {
       id
       name
       color

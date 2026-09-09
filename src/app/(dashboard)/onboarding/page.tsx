@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useUser, useClerk, useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { Building2, RefreshCw, LogOut, Mail, Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
@@ -9,9 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { clearBackendToken } from '@/lib/tokenCache';
 import { tokenExchangeService } from '@/services/tokenExchangeService';
 
-type OnboardingStatus = 'checking' | 'creating' | 'success' | 'error' | 'waiting';
+type OnboardingStatus = 'checking' | 'success' | 'error' | 'waiting';
 
-const isDev = process.env.NODE_ENV === 'development';
 const GENERIC_ERROR_MESSAGE = 'Konfiguracja Twojego konta trwa dłużej niż zwykle. Spróbuj jeszcze raz za chwilę.';
 
 /**
@@ -26,7 +25,9 @@ export default function OnboardingPage() {
 
   const [status, setStatus] = useState<OnboardingStatus>('checking');
   const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const [retryCount, setRetryCount] = useState(0);
+  const userId = user?.id;
 
   const metadata = user?.unsafeMetadata as
     | {
@@ -39,161 +40,54 @@ export default function OnboardingPage() {
   const organizationName =
     metadata?.companyName || `${metadata?.firstName || ''} ${metadata?.lastName || ''} - Fizjoterapia`.trim();
 
-  /**
-   * Tworzy organizację w backendzie używając GraphQL mutation
-   * Używa bezpośredniego fetch z Clerk token
-   */
-  const createOrganization = useCallback(async (): Promise<boolean> => {
-    try {
-      const clerkToken = await getToken();
-      if (!clerkToken) {
-        throw new Error('Nie można pobrać tokenu autoryzacji');
-      }
-
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      if (!apiUrl) {
-        throw new Error('Brak konfiguracji API');
-      }
-
-      const response = await fetch(`${apiUrl}/graphql`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${clerkToken}`,
-        },
-        body: JSON.stringify({
-          query: `
-            mutation CreateOrganization($name: String!, $description: String, $plan: SubscriptionPlan! = FREE) {
-              createOrganization(name: $name, description: $description, plan: $plan) {
-                id
-                name
-              }
-            }
-          `,
-          variables: {
-            name: organizationName,
-            description: 'Organizacja utworzona automatycznie',
-            plan: 'FREE',
-          },
-        }),
-      });
-
-      const result = await response.json();
-
-      if (result.errors) {
-        // Sprawdź czy organizacja już istnieje (możliwe że webhook ją utworzył)
-        const errorMessage = result.errors[0]?.message || '';
-        if (errorMessage.includes('already exists') || errorMessage.includes('already has')) {
-          return true;
-        }
-        throw new Error(errorMessage);
-      }
-
-      if (result.data?.createOrganization?.id) {
-        return true;
-      }
-
-      return false;
-    } catch (err) {
-      if (isDev) {
-        console.warn('[Onboarding] Organization setup retry');
-      }
-      throw err;
-    }
-  }, [getToken, organizationName]);
-
-  /**
-   * Sprawdza czy token exchange już działa (organizacja istnieje)
-   */
-  const checkTokenExchange = useCallback(async (): Promise<boolean> => {
-    try {
-      const clerkToken = await getToken();
-      if (!clerkToken) return false;
-
-      // Używamy wspólnego serwisu (wysyła X-Client-Type: admin-portal), spójnie z resztą aplikacji.
-      await tokenExchangeService.exchangeClerkToken(clerkToken);
-      return true;
-    } catch {
-      return false;
-    }
-  }, [getToken]);
-
-  /**
-   * Główny flow onboardingu
-   */
-  const runOnboarding = useCallback(async () => {
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     setStatus('checking');
     setError(null);
 
-    try {
-      // 1. Sprawdź czy token exchange już działa
-      const tokenWorks = await checkTokenExchange();
-      if (tokenWorks) {
+    async function exchange() {
+      try {
+        const clerkToken = await getToken();
+        if (cancelled) return;
+        if (!clerkToken) throw Object.assign(new Error('Missing session'), { status: 401 });
+        const result = await tokenExchangeService.exchangeClerkToken(clerkToken);
+        if (cancelled) return;
+        if (!result.access_token) throw new Error('Missing backend token');
         setStatus('success');
         clearBackendToken();
-        setTimeout(() => {
-          globalThis.location.href = '/';
+        timer = setTimeout(() => {
+          globalThis.location.replace(new URL('/', globalThis.location.href).href);
         }, 1500);
-        return;
+      } catch (failure) {
+        if (cancelled) return;
+        const httpStatus = failure && typeof failure === 'object' && 'status' in failure ? failure.status : undefined;
+        if (httpStatus !== 401 && httpStatus !== 403 && attempt < 2) {
+          setStatus('waiting');
+          timer = setTimeout(() => setAttempt(attempt + 1), 2000);
+          return;
+        }
+        setStatus('error');
+        setError(GENERIC_ERROR_MESSAGE);
       }
-
-      // 2. Spróbuj utworzyć organizację
-      setStatus('creating');
-      await createOrganization();
-
-      // 3. Poczekaj chwilę i sprawdź ponownie
-      setStatus('waiting');
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      const tokenWorksNow = await checkTokenExchange();
-      if (tokenWorksNow) {
-        setStatus('success');
-        clearBackendToken();
-        setTimeout(() => {
-          globalThis.location.href = '/';
-        }, 1500);
-        return;
-      }
-
-      // 4. Jeśli nadal nie działa - czekaj dłużej (webhook może być wolny)
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-
-      const finalCheck = await checkTokenExchange();
-      if (finalCheck) {
-        setStatus('success');
-        clearBackendToken();
-        setTimeout(() => {
-          globalThis.location.href = '/';
-        }, 1500);
-        return;
-      }
-
-      // 5. Ostateczny błąd
-      setStatus('error');
-      setError(GENERIC_ERROR_MESSAGE);
-    } catch {
-      // Nigdy nie pokazujemy użytkownikowi surowych komunikatów technicznych.
-      setStatus('error');
-      setError(GENERIC_ERROR_MESSAGE);
     }
-  }, [checkTokenExchange, createOrganization]);
-
-  // Uruchom onboarding automatycznie przy pierwszym renderze
-  useEffect(() => {
-    if (user && retryCount === 0) {
-      runOnboarding();
-    }
-  }, [user, retryCount, runOnboarding]);
+    void exchange();
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [userId, getToken, attempt, retryCount]);
 
   const handleRetry = () => {
+    setAttempt(0);
     setRetryCount((prev) => prev + 1);
-    runOnboarding();
   };
 
   const handleSignOut = async () => {
     clearBackendToken();
     await signOut();
-    router.push('/login');
+    router.push('/sign-in');
   };
 
   // Status messages
@@ -202,11 +96,6 @@ export default function OnboardingPage() {
       icon: <Loader2 className="h-8 w-8 animate-spin text-primary" />,
       title: 'Sprawdzam konto...',
       description: 'Weryfikuję konfigurację Twojego konta',
-    },
-    creating: {
-      icon: <Loader2 className="h-8 w-8 animate-spin text-primary" />,
-      title: 'Tworzę organizację...',
-      description: 'Konfiguruję Twoją przestrzeń roboczą',
     },
     waiting: {
       icon: <Loader2 className="h-8 w-8 animate-spin text-primary" />,
@@ -254,12 +143,13 @@ export default function OnboardingPage() {
           {/* Actions - show only on error */}
           {status === 'error' && (
             <div className="space-y-3">
-              <Button onClick={handleRetry} className="w-full" size="lg">
+              <Button data-testid="onboarding-retry-btn" onClick={handleRetry} className="w-full" size="lg">
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Spróbuj ponownie
               </Button>
 
               <Button
+                data-testid="onboarding-support-btn"
                 variant="outline"
                 onClick={() => window.open('mailto:kontakt@fiziyo.pl', '_blank')}
                 className="w-full"
@@ -268,7 +158,7 @@ export default function OnboardingPage() {
                 Kontakt z pomocą
               </Button>
 
-              <Button variant="ghost" onClick={handleSignOut} className="w-full text-muted-foreground">
+              <Button data-testid="onboarding-sign-out-btn" variant="ghost" onClick={handleSignOut} className="w-full text-muted-foreground">
                 <LogOut className="mr-2 h-4 w-4" />
                 Wyloguj się
               </Button>
@@ -276,11 +166,10 @@ export default function OnboardingPage() {
           )}
 
           {/* Progress indicator for loading states */}
-          {(status === 'checking' || status === 'creating' || status === 'waiting') && (
+          {(status === 'checking' || status === 'waiting') && (
             <div className="flex justify-center">
               <div className="flex gap-1">
                 <div className={`h-2 w-2 rounded-full ${status === 'checking' ? 'bg-primary' : 'bg-border'}`} />
-                <div className={`h-2 w-2 rounded-full ${status === 'creating' ? 'bg-primary' : 'bg-border'}`} />
                 <div className={`h-2 w-2 rounded-full ${status === 'waiting' ? 'bg-primary' : 'bg-border'}`} />
               </div>
             </div>

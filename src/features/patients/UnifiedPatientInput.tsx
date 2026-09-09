@@ -513,7 +513,7 @@ export function UnifiedPatientInput({
       if (key === 'Enter' && viewState === 'found' && foundUser) {
         e.preventDefault();
         if (isAlreadyAssignedToTherapist) {
-          globalThis.location.href = `/patients/${foundUser.id}`;
+          globalThis.location.href = new URL(`/patients/${foundUser.id}`, globalThis.location.origin).href;
         } else {
           void handleAddExistingPatient();
         }
@@ -553,6 +553,7 @@ export function UnifiedPatientInput({
           <div className="space-y-2">
             <div className="relative">
               <Input
+                data-testid="patient-unified-input"
                 ref={contactInputRef}
                 type="text"
                 placeholder="Wpisz email lub telefon pacjenta..."
@@ -564,7 +565,6 @@ export function UnifiedPatientInput({
                 )}
                 autoFocus
                 autoComplete="off"
-                data-testid="patient-unified-input"
               />
               <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
                 {isSearching && <Loader2 className="h-6 w-6 text-primary animate-spin" />}
@@ -659,24 +659,24 @@ export function UnifiedPatientInput({
             <div className="mt-4 flex gap-2">
               {isAlreadyAssignedToTherapist ? (
                 <Button
+                  data-testid="patient-unified-go-to-profile-btn"
                   variant="outline"
                   onClick={() => {
-                    globalThis.location.href = `/patients/${foundUser.id}`;
+                    globalThis.location.href = new URL(`/patients/${foundUser.id}`, globalThis.location.origin).href;
                   }}
                   className="flex-1 h-11"
-                  data-testid="patient-unified-go-to-profile-btn"
                 >
                   <UserCheck className="h-4 w-4 mr-2" />
                   Przejdź do profilu
                 </Button>
               ) : (
                 <Button
+                  data-testid="patient-unified-add-existing-btn"
                   onClick={() => {
                     void handleAddExistingPatient();
                   }}
                   disabled={isLoading}
                   className="flex-1 h-11 bg-linear-to-r from-primary to-primary-dark shadow-lg shadow-primary/20"
-                  data-testid="patient-unified-add-existing-btn"
                 >
                   {isLoading ? (
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -690,6 +690,7 @@ export function UnifiedPatientInput({
 
             {/* Back link */}
             <button
+              data-testid="patient-unified-back-to-search-btn"
               type="button"
               onClick={handleBackToSearch}
               className="mt-3 text-sm text-muted-foreground hover:text-foreground transition-colors w-full text-center"
@@ -721,6 +722,7 @@ export function UnifiedPatientInput({
                 </div>
               </div>
               <Button
+                data-testid="patient-unified-edit-contact-btn"
                 type="button"
                 variant="ghost"
                 size="sm"
@@ -794,10 +796,10 @@ export function UnifiedPatientInput({
               <div>
                 {!isNoteExpanded ? (
                   <button
+                    data-testid="patient-unified-expand-note-btn"
                     type="button"
                     onClick={() => setIsNoteExpanded(true)}
                     className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    data-testid="patient-unified-expand-note-btn"
                   >
                     <ChevronDown className="h-4 w-4" />
                     Dodaj notatkę
@@ -805,6 +807,7 @@ export function UnifiedPatientInput({
                 ) : (
                   <div className="animate-in fade-in slide-in-from-top-2 duration-200 space-y-3">
                     <button
+                      data-testid="patient-unified-collapse-note-btn"
                       type="button"
                       onClick={() => setIsNoteExpanded(false)}
                       className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -838,6 +841,7 @@ export function UnifiedPatientInput({
                                     const isAdded = isTagAdded(tag, field.value || '');
                                     return (
                                       <button
+                                        data-testid={`patient-unified-note-tag-${tag}`}
                                         key={tag}
                                         type="button"
                                         onClick={() => {

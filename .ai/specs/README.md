@@ -50,6 +50,9 @@ Każda specyfikacja powinna mieć sekcję Changelog na końcu:
 
 ## Indeks specyfikacji
 
+Release tooling: [SPEC-026](SPEC-026-2026-09-08-release-identity.md), implemented (live unverified).
+Runtime dependency security: [SPEC-027](SPEC-027-2026-09-08-runtime-security-updates.md), implemented (full quality gate blocked).
+
 | Nr  | Tytuł                                                                                                 | Opis                                                         | Status  |
 | --- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | ------- |
 | 001 | [Assignment Wizard](SPEC-001-2026-02-04-assignment-wizard.md)                                         | Wizard przypisywania zestawów ćwiczeń pacjentom              | Aktywny |

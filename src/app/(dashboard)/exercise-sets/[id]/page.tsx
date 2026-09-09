@@ -489,7 +489,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
           <FolderKanban className="h-8 w-8 text-muted-foreground" />
         </div>
         <p className="text-destructive">{error ? `Błąd: ${error.message}` : 'Nie znaleziono zestawu'}</p>
-        <Button variant="outline" onClick={() => router.push(backToListHref)}>
+        <Button data-testid="set-detail-error-back-btn" variant="outline" onClick={() => router.push(backToListHref)}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Wróć do listy
         </Button>
@@ -506,10 +506,10 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
       {/* Compact Header */}
       <div className="flex items-center justify-between">
         <Button
+          data-testid="set-detail-back-btn"
           variant="ghost"
           onClick={() => router.push(backToListHref)}
           className="gap-2"
-          data-testid="set-detail-back-btn"
         >
           <ArrowLeft className="h-4 w-4" />
           Powrót do zestawów
@@ -557,9 +557,9 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
       <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12">
         {/* Hero Action - Personalizacja i przypisanie */}
         <button
+          data-testid="set-detail-assign-btn"
           onClick={() => setIsAssignDialogOpen(true)}
           className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer sm:col-span-1 lg:col-span-4"
-          data-testid="set-detail-assign-btn"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary-foreground/10 rounded-full blur-3xl group-hover:bg-primary-foreground/20 transition-all duration-500" />
@@ -676,7 +676,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
               {`Przypisani pacjenci (${assignments.length})`}
             </h2>
             {!isTemplateSet && (
-              <Button size="sm" onClick={() => setIsAssignDialogOpen(true)}>
+              <Button data-testid="set-detail-assign-patient-btn" size="sm" onClick={() => setIsAssignDialogOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />
                 Personalizuj i przypisz
               </Button>
@@ -746,6 +746,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
+                          data-testid={`set-detail-assignment-menu-${assignment.id}`}
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -755,19 +756,20 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-48">
                         <DropdownMenuItem asChild>
-                          <Link href={`/patients/${assignment.user?.id}`}>
+                          <Link data-testid={`set-detail-assignment-profile-${assignment.id}`} href={`/patients/${assignment.user?.id}`}>
                             <ExternalLink className="mr-2 h-4 w-4" />
                             Przejdź do pacjenta
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                          <Link href={`/patients/${assignment.user?.id}?tab=exercises`}>
+                          <Link data-testid={`set-detail-assignment-manage-${assignment.id}`} href={`/patients/${assignment.user?.id}?tab=exercises`}>
                             <Settings2 className="mr-2 h-4 w-4" />
                             Zarządzaj zestawem
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
+                          data-testid={`set-detail-assignment-toggle-status-${assignment.id}`}
                           onClick={() => handleToggleAssignmentStatus(assignment)}
                           disabled={updatingAssignment}
                         >
@@ -785,6 +787,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
+                          data-testid={`set-detail-assignment-remove-${assignment.id}`}
                           onClick={() => setRemovingAssignment(assignment)}
                           className="text-destructive focus:text-destructive"
                         >

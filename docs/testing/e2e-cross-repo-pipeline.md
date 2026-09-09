@@ -1,5 +1,25 @@
 # E2E Cross-Repo Pipeline (fiziyo-admin + fiziyo-tests)
 
+## Aktualizacja 2026-09-08
+
+SPEC-026/027 zmienia ponizszy historyczny routing: generic Preview NIE jest
+przekierowywane na shared DEV i nie daje certyfikatu. Dedicated DEV URL albo
+Development wymaga zgodnego live SHA z build headers; DEV dispatch zawiera
+obserwowane API SHA i admin SHA. Production zawsze `prod-safe`, nie smoke-tests.
+Branch `dev` sam nie dowodzi tozsamosci deploymentu. Dla technicznego Preview URL
+bez jawnego Development uruchom manualny DEV evidence po sprawdzeniu aliasu.
+
+Naglowki `/sign-in` powstaja w buildzie z Vercel system vars: SHA, deployment ID
+i docelowy API origin. Operator musi potwierdzic dostepnosc system vars/headers;
+ta implementacja nie zmienia cloud settings. Najpierw publikacja admina z headers,
+potem producer v2. Brak headers blokuje dowod. Nie otwarto nowej trasy auth.
+
+E2E guard dopuszcza tylko main i tests_ref pusty lub zgodny z workflow SHA;
+sekrety kont tylko w suites, status PAT na osobnym runnerze. Kolejki E2E maja
+stale grupy per DEV/PROD, bez cancel-in-progress. Pending moze byc zastapiony,
+nie jest to FIFO ani lock deploymentu cross-repo. Ponizsze starsze opisy
+Preview gate, branch routing i per-SHA concurrency nie sa aktualnym kontraktem.
+
 Ten runbook opisuje docelowy model dla `dev`, `preview` i `prod`, tak aby:
 
 - PR byl blokowany przez smoke E2E,

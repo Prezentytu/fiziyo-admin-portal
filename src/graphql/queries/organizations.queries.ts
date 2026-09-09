@@ -20,8 +20,6 @@ export const ORGANIZATION_FULL_FRAGMENT = gql`
     updatedAt
     isActive
     logoUrl
-    subscriptionPlan
-    subscriptionExpiresAt
     allowPersonalExercises
     sharedExercisesByDefault
     requireOrganizationVerification

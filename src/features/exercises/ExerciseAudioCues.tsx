@@ -75,6 +75,7 @@ export function ExerciseAudioCues({
           </p>
           {editable ? (
             <Input
+              data-testid="exercise-audio-cue-input"
               defaultValue={audioCue ?? ''}
               placeholder="Np. „Wykonaj przysiad, utrzymując prosty kręgosłup”"
               className="h-9 text-sm"
@@ -90,7 +91,6 @@ export function ExerciseAudioCues({
                   event.currentTarget.blur();
                 }
               }}
-              data-testid="exercise-audio-cue-input"
             />
           ) : (
             <p className="text-sm text-foreground">{audioCue}</p>

@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import bundleAnalyzer from "@next/bundle-analyzer";
+import { buildReleaseHeaders } from "./src/lib/release/build-identity";
 
 const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === "true",
@@ -25,6 +26,7 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
+      ...buildReleaseHeaders(process.env),
       {
         source: "/(.*)",
         headers: [

@@ -675,7 +675,7 @@ function EditExerciseOverrideDialogContent({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Parametry ćwiczenia</p>
-              <Button type="button" variant="ghost" size="sm" onClick={handleReset} className="h-7 text-xs">
+              <Button data-testid="patient-exercise-override-reset-btn" type="button" variant="ghost" size="sm" onClick={handleReset} className="h-7 text-xs">
                 Przywróć domyślne
               </Button>
             </div>
@@ -735,6 +735,7 @@ function EditExerciseOverrideDialogContent({
                     >
                       <Image src={img} alt={`Zdjęcie ${index + 1}`} fill className="object-cover" sizes="(max-width: 768px) 33vw, 200px" />
                       <button
+                        data-testid={`patient-exercise-override-remove-image-${index}`}
                         type="button"
                         onClick={() => setCustomImages((prev) => prev.filter((_, i) => i !== index))}
                         className="absolute top-1 right-1 p-1.5 rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110"
@@ -749,12 +750,12 @@ function EditExerciseOverrideDialogContent({
 
               <div className="flex gap-2">
                 <Button
+                  data-testid="patient-exercise-override-upload-btn"
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => fileInputRef.current?.click()}
                   className="flex-1 gap-2"
-                  data-testid="patient-exercise-override-upload-btn"
                 >
                   <Upload className="h-4 w-4" />
                   Wgraj z dysku
@@ -779,7 +780,7 @@ function EditExerciseOverrideDialogContent({
                   {isGeneratingImage ? 'Generowanie…' : 'Generuj AI'}
                 </Button>
               </div>
-              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+              <input data-testid="patient-exercise-override-file-input" ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
               <p className="text-xs text-muted-foreground">Te zdjęcia będą widoczne tylko dla tego pacjenta</p>
             </div>
           </div>

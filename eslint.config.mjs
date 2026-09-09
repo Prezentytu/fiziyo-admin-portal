@@ -8,6 +8,7 @@ const ignores = [
   "dist/**",
   "out/**",
   "build/**",
+  "coverage/**",
   "next-env.d.ts",
 ];
 

@@ -101,6 +101,50 @@ describe('ExerciseSetBuilder description field', () => {
 });
 
 describe('ExerciseSetBuilder preview semantics', () => {
+  it('keeps picker and repeated-instance controls unique under a custom prefix', async () => {
+    const user = userEvent.setup();
+    const exercise = { id: 'exercise-1', name: 'Mostek', defaultSets: 3, defaultReps: 10 };
+    const onPreviewExercise = vi.fn();
+    const onSelectedInstancesChange = vi.fn();
+
+    render(
+      <ExerciseSetBuilder
+        {...createProps({
+          testIdPrefix: 'custom-builder',
+          availableExercises: [exercise],
+          exercisePopularity: { 'exercise-1': 5 },
+          selectedInstances: [
+            { instanceId: 'first-instance', exerciseId: exercise.id },
+            { instanceId: 'second-instance', exerciseId: exercise.id },
+          ],
+          onPreviewExercise,
+          onSelectedInstancesChange,
+          onCreateExercise: vi.fn(),
+        })}
+      />
+    );
+
+    for (const identifier of [
+      'custom-builder-picker-exercise-1',
+      'custom-builder-preview-exercise-1',
+      'custom-builder-add-exercise-1',
+      'custom-builder-drag-first-instance',
+      'custom-builder-drag-second-instance',
+      'custom-builder-clear-btn',
+      'assignment-create-exercise-tile-btn',
+    ]) {
+      expect(screen.getAllByTestId(identifier)).toHaveLength(1);
+    }
+
+    await user.click(screen.getByTestId('custom-builder-preview-exercise-1'));
+    expect(onPreviewExercise).toHaveBeenCalledWith(exercise);
+    expect(onSelectedInstancesChange).not.toHaveBeenCalled();
+
+    await user.click(screen.getByTestId('custom-builder-add-exercise-1'));
+    expect(onSelectedInstancesChange).toHaveBeenCalledTimes(1);
+    expect(onSelectedInstancesChange.mock.calls[0][0]).toHaveLength(3);
+  });
+
   it('triggers exercise preview from thumbnails', async () => {
     const user = userEvent.setup();
     const onPreviewExercise = vi.fn();

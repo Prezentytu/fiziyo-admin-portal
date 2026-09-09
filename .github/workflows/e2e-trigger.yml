@@ -3,85 +3,16 @@ name: Trigger E2E Tests
 on:
   deployment_status:
 
+permissions:
+  contents: read
+
 jobs:
   trigger-e2e:
     if: github.event.deployment_status.state == 'success'
     runs-on: ubuntu-latest
+    timeout-minutes: 3
     steps:
-      - name: Determine scope and payload
-        id: scope
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ github.token }}
-          script: |
-            const environmentName = context.payload.deployment_status?.environment ?? "";
-            const targetUrl = context.payload.deployment_status?.target_url ?? "";
-            const deploymentRef = context.payload.deployment?.ref ?? "";
-            const deploymentSha = context.payload.deployment?.sha ?? "";
-
-            let selectedProject = "all";
-            let selectedEventType = "e2e-dev-run";
-            let matchedReason = "fallback-non-preview";
-            let branchesForSha = [];
-
-            const isProductionUrl = /^https:\/\/portal\.fiziyo\.pl(\/.*)?$/.test(targetUrl);
-            const isDedicatedDevUrl =
-              /^https:\/\/devportal\.fiziyo\.pl(\/.*)?$/.test(targetUrl) ||
-              /^https:\/\/dev\.portal\.fiziyo\.pl(\/.*)?$/.test(targetUrl);
-
-            let isDevBranch = deploymentRef === "dev" || deploymentRef === "refs/heads/dev";
-
-            if (deploymentSha) {
-              try {
-                const response = await github.rest.repos.listBranchesForHeadCommit({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  commit_sha: deploymentSha,
-                });
-
-                branchesForSha = response.data.map((branch) => branch.name);
-                isDevBranch = isDevBranch || branchesForSha.includes("dev");
-              } catch (error) {
-                core.warning(`Could not resolve branches for SHA ${deploymentSha}: ${error instanceof Error ? error.message : String(error)}`);
-              }
-            }
-
-            if (environmentName === "Production" || isProductionUrl) {
-              selectedProject = "smoke-tests";
-              selectedEventType = "e2e-prod-run";
-              matchedReason = "production";
-            } else if (isDedicatedDevUrl) {
-              selectedProject = "all";
-              selectedEventType = "e2e-dev-run";
-              matchedReason = "dedicated-dev-domain";
-            } else if (environmentName === "Development") {
-              selectedProject = "all";
-              selectedEventType = "e2e-dev-run";
-              matchedReason = "development-environment";
-            } else if (isDevBranch) {
-              selectedProject = "all";
-              selectedEventType = "e2e-dev-run";
-              matchedReason = "commit-on-dev-branch";
-            } else if (environmentName === "Preview") {
-              selectedProject = "smoke-tests";
-              selectedEventType = "e2e-dev-run";
-              matchedReason = "generic-preview";
-            }
-
-            core.setOutput("project", selectedProject);
-            core.setOutput("event_type", selectedEventType);
-            core.setOutput(
-              "canonical_base_url",
-              selectedEventType === "e2e-prod-run"
-                ? "https://portal.fiziyo.pl"
-                : "https://devportal.fiziyo.pl",
-            );
-
-            core.info(
-              `Resolved E2E scope: env=${environmentName || "<empty>"} url=${targetUrl || "<empty>"} branches=${branchesForSha.length > 0 ? branchesForSha.join(",") : "<none>"} reason=${matchedReason} project=${selectedProject} event=${selectedEventType} baseUrl=${selectedEventType === "e2e-prod-run" ? "https://portal.fiziyo.pl" : "https://devportal.fiziyo.pl"}`,
-            );
-
-      - name: Trigger fiziyo-tests repository
+      - name: Verify deployment and dispatch scoped E2E
         uses: actions/github-script@v7
         env:
           TESTS_REPO_OWNER: ${{ vars.E2E_TESTS_REPO_OWNER }}
@@ -89,30 +20,37 @@ jobs:
         with:
           github-token: ${{ secrets.E2E_DISPATCH_PAT }}
           script: |
-            const targetUrl = context.payload.deployment_status?.target_url;
-            const environmentName = context.payload.deployment_status?.environment;
-            const deploymentSha = context.payload.deployment?.sha;
-            const canonicalBaseUrl = "${{ steps.scope.outputs.canonical_base_url }}";
-            const testsOwner = process.env.TESTS_REPO_OWNER || context.repo.owner;
-            const testsRepo = process.env.TESTS_REPO_NAME || "fiziyo-tests";
-
-            if (!deploymentSha || !environmentName) {
-              core.setFailed("Missing deployment payload fields required for dispatch.");
-              return;
+            try {
+              const owner = process.env.TESTS_REPO_OWNER || 'Prezentytu';
+              const repo = process.env.TESTS_REPO_NAME || 'fiziyo-tests';
+              if (owner !== 'Prezentytu' || repo !== 'fiziyo-tests' || context.repo.owner !== 'Prezentytu' || context.repo.repo !== 'fiziyo-admin-portal') {
+                throw new Error();
+              }
+              const status = context.payload.deployment_status;
+              const sha = context.payload.deployment?.sha;
+              if (status?.state !== 'success' || !/^[0-9a-f]{40}$/.test(sha || '')) throw new Error();
+              const target = status.environment_url || status.target_url || '';
+              const devUrls = ['https://devportal.fiziyo.pl', 'https://dev.portal.fiziyo.pl'];
+              const prod = target === 'https://portal.fiziyo.pl' || status.environment === 'Production';
+              const dev = devUrls.includes(target) || status.environment === 'Development';
+              if (!prod && !dev) {
+                core.notice('Preview is not certified against shared DEV. Run dedicated DEV evidence explicitly.');
+                return;
+              }
+              if ((prod && devUrls.includes(target)) || (dev && target === 'https://portal.fiziyo.pl')) throw new Error();
+              const baseUrl = prod ? 'https://portal.fiziyo.pl' : devUrls.includes(target) ? target : devUrls[0];
+              const apiUrl = prod ? 'https://fiziyo-prod.azurewebsites.net' : 'https://fizjo-app-api.azurewebsites.net';
+              const response = await fetch(`${baseUrl}/sign-in`, { method: 'HEAD', redirect: 'error', cache: 'no-store', signal: AbortSignal.timeout(20000) });
+              if (!response.ok || response.headers.get('x-fiziyo-release-schema') !== '1' || response.headers.get('x-fiziyo-admin-sha') !== sha || response.headers.get('x-fiziyo-api-origin') !== apiUrl || !/^dpl_[A-Za-z0-9]{8,80}$/.test(response.headers.get('x-fiziyo-deployment-id') || '')) throw new Error();
+              const payload = { base_url: baseUrl, sha, project: prod ? 'prod-safe' : 'all', admin_owner: 'Prezentytu', admin_repo: 'fiziyo-admin-portal' };
+              if (!prod) {
+                const health = await fetch(`${apiUrl}/health/live`, { redirect: 'error', cache: 'no-store', signal: AbortSignal.timeout(20000) });
+                if (!health.ok) throw new Error();
+                const body = await health.json();
+                if (!/^[0-9a-f]{40}$/.test(body.version || '')) throw new Error();
+                payload.api_sha = body.version;
+              }
+              await github.rest.repos.createDispatchEvent({ owner, repo, event_type: prod ? 'e2e-prod-run' : 'e2e-dev-run', client_payload: payload });
+            } catch {
+              core.setFailed('Deployment identity or E2E dispatch failed. No release evidence was certified.');
             }
-
-            await github.rest.repos.createDispatchEvent({
-              owner: testsOwner,
-              repo: testsRepo,
-              event_type: "${{ steps.scope.outputs.event_type }}",
-              client_payload: {
-                base_url: canonicalBaseUrl,
-                deployment_url: targetUrl || "",
-                environment: environmentName,
-                sha: deploymentSha,
-                project: "${{ steps.scope.outputs.project }}",
-                admin_owner: context.repo.owner,
-                admin_repo: context.repo.repo,
-                run_id: String(context.runId),
-              },
-            });

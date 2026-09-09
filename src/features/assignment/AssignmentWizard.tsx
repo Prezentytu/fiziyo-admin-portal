@@ -1728,12 +1728,12 @@ function AssignmentWizardContent({
               {(currentStep !== 'select-set' || selectedSet || isCreatingNewSet) ? (
                 <label className="flex-1 flex h-9 items-center min-w-0 rounded-md border border-transparent px-1.5 focus-within:bg-surface focus-within:border-border focus-within:ring-1 focus-within:ring-primary/20 transition-colors cursor-text hover:bg-surface-light/50">
                   <input
+                    data-testid="wizard-plan-name-input"
                     type="text"
                     value={planName}
                     onChange={(e) => setPlanName(e.target.value)}
                     placeholder="Nazwa planu pacjenta"
                     autoComplete="off"
-                    data-testid="wizard-plan-name-input"
                     className="peer flex-1 min-w-0 bg-transparent text-base font-semibold text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-0 border-none p-0 cursor-text"
                   />
                   <Pencil className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0 ml-2 peer-focus:hidden transition-opacity pointer-events-none" aria-hidden />

@@ -190,9 +190,9 @@ export function SummaryStep({
             {/* Edytuj - powrót do kroku 1 */}
             {onGoToStep && (
               <button
+                data-testid="summary-edit-exercises-btn"
                 onClick={() => onGoToStep(editMode ? 'customize-set' : 'select-set')}
                 className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1.5 transition-colors"
-                data-testid="summary-edit-exercises-btn"
               >
                 <Pencil className="h-3 w-3" />
                 Edytuj
@@ -261,9 +261,9 @@ export function SummaryStep({
                 </div>
               </div>
               <button
+                data-testid="summary-concierge-open-btn"
                 onClick={() => setShowConcierge(true)}
                 className="text-xs bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 px-2.5 sm:px-3 py-1.5 rounded-lg font-medium transition-colors shrink-0"
-                data-testid="summary-concierge-open-btn"
               >
                 Zgłoś
               </button>
@@ -276,19 +276,19 @@ export function SummaryStep({
                   Twoje uwagi dla zespołu FiziYo
                 </label>
                 <button
+                  data-testid="summary-concierge-close-btn"
                   onClick={() => setShowConcierge(false)}
                   className="text-muted-foreground hover:text-foreground transition-colors shrink-0 p-1 -m-1"
-                  data-testid="summary-concierge-close-btn"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
               <textarea
+                data-testid="summary-concierge-textarea"
                 className="w-full bg-black/40 border border-amber-900/30 rounded-lg p-2.5 sm:p-3 text-sm text-amber-100 placeholder-amber-500/30 focus:border-amber-500 outline-none resize-none min-h-[80px] max-h-[120px]"
                 placeholder="Np. 'W ćwiczeniu Bird Dog zdjęcie jest niewyraźne, proszę o poprawę'..."
                 value={feedback}
                 onChange={(e) => setFeedback(e.target.value)}
-                data-testid="summary-concierge-textarea"
               />
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4">
                 <p className="text-[10px] text-muted-foreground order-2 sm:order-1">
@@ -296,9 +296,9 @@ export function SummaryStep({
                 </p>
                 <div className="flex gap-2 w-full sm:w-auto order-1 sm:order-2">
                   <button
+                    data-testid="summary-concierge-cancel-btn"
                     onClick={() => setShowConcierge(false)}
                     className="text-xs text-amber-500 hover:text-amber-400 px-3 py-1.5 transition-colors flex-1 sm:flex-none"
-                    data-testid="summary-concierge-cancel-btn"
                   >
                     Anuluj
                   </button>
@@ -338,9 +338,9 @@ export function SummaryStep({
             </h3>
             {onGoToStep && (
               <button
+                data-testid="summary-edit-patients-btn"
                 onClick={() => onGoToStep('select-patients')}
                 className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-                data-testid="summary-edit-patients-btn"
               >
                 Zmień
               </button>
@@ -409,9 +409,9 @@ export function SummaryStep({
             </h3>
             {onGoToStep && (
               <button
+                data-testid="summary-edit-schedule-btn"
                 onClick={() => onGoToStep('schedule')}
                 className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-                data-testid="summary-edit-schedule-btn"
               >
                 Zmień
               </button>

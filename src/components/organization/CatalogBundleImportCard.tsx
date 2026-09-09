@@ -123,11 +123,11 @@ export function CatalogBundleImportCard({ organizationId }: CatalogBundleImportC
         />
 
         <Button
+          data-testid="settings-catalog-import-pick"
           type="button"
           disabled={loading}
           onClick={() => inputRef.current?.click()}
           className="h-11 gap-2 rounded-xl px-8 font-bold shadow-lg shadow-primary/20"
-          data-testid="settings-catalog-import-pick"
         >
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
           {loading ? 'Wgrywanie…' : 'Wybierz plik JSON'}

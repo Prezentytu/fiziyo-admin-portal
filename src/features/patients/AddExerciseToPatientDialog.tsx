@@ -480,11 +480,11 @@ function AddExerciseToPatientDialogContent({
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
+              data-testid="add-exercise-search-input"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Szukaj ćwiczeń..."
               className="pl-9"
-              data-testid="add-exercise-search-input"
             />
           </div>
         </div>
@@ -517,6 +517,7 @@ function AddExerciseToPatientDialogContent({
                   )}
                 </div>
                 <Button
+                  data-testid="add-exercise-clear-selection-btn"
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 shrink-0"
@@ -568,6 +569,7 @@ function AddExerciseToPatientDialogContent({
                     const imageUrl = getMediaUrl(exercise.imageUrl || exercise.images?.[0]);
                     return (
                       <button
+                        data-testid={`add-exercise-item-${exercise.id}`}
                         key={exercise.id}
                         type="button"
                         onClick={() => handleSelectExercise(exercise)}
@@ -575,7 +577,6 @@ function AddExerciseToPatientDialogContent({
                           'flex items-start gap-3 p-3 rounded-xl border text-left transition-all',
                           'border-border/40 bg-surface/30 hover:bg-surface-light hover:border-primary/30'
                         )}
-                        data-testid={`add-exercise-item-${exercise.id}`}
                       >
                         <div className="relative h-14 w-14 rounded-lg overflow-hidden shrink-0 bg-surface-light">
                           {imageUrl ? (

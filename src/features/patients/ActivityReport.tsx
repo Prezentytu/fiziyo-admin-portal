@@ -140,6 +140,7 @@ interface PatientWeeklyAdherenceQueryResponse {
 }
 
 const PROGRESS_POLL_MS = 60_000;
+const EMPTY_WORKOUT_SESSIONS: NonNullable<PatientWorkoutSessionsQueryResponse['patientWorkoutSessions']> = [];
 
 export function ActivityReport({
   patientId,
@@ -278,7 +279,7 @@ export function ActivityReport({
   const activityReportSummary = (activityReportData as PatientActivityReportQueryResponse | undefined)
     ?.patientActivityReport?.summary;
   const workoutSessions =
-    (sessionsData as PatientWorkoutSessionsQueryResponse | undefined)?.patientWorkoutSessions || [];
+    (sessionsData as PatientWorkoutSessionsQueryResponse | undefined)?.patientWorkoutSessions || EMPTY_WORKOUT_SESSIONS;
   const weeklyAdherence =
     (adherenceData as PatientWeeklyAdherenceQueryResponse | undefined)?.patientWeeklyAdherence || [];
 
@@ -326,7 +327,7 @@ export function ActivityReport({
           description="Sprawdź połączenie i spróbuj ponownie."
         />
         <div className="mt-4 flex justify-center">
-          <Button type="button" variant="outline" onClick={() => void handleRefresh()}>
+          <Button data-testid="patient-activity-retry-btn" type="button" variant="outline" onClick={() => void handleRefresh()}>
             <RefreshCw className="mr-2 h-4 w-4" />
             Odśwież
           </Button>
@@ -355,7 +356,7 @@ export function ActivityReport({
           {lastRefreshedAt.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}
           {(sessionsError || adherenceError) && ' · część danych sesji niedostępna'}
         </p>
-        <Button type="button" size="sm" variant="outline" onClick={() => void handleRefresh()}>
+        <Button data-testid="patient-activity-refresh-btn" type="button" size="sm" variant="outline" onClick={() => void handleRefresh()}>
           <RefreshCw className="mr-2 h-3.5 w-3.5" />
           Odśwież
         </Button>
