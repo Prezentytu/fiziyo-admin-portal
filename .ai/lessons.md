@@ -14,6 +14,7 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+- 2026-09-09 - Każdy własny flow Clerk wywołujący operację chronioną przed botami musi renderować `#clerk-captcha` w aplikacji przed żądaniem; E2E używa oficjalnego krótkotrwałego Testing Token, ale nie może dopisywać brakującego mountu do DOM, bo maskuje regresję produkcyjną.
 - 2026-09-09 - Jeśli token exchange tworzy organizację konta firmowego, zawsze usuń fallback GraphQL z tokenem Clerka; ponawiaj tylko przejściowe błędy, a wynik starego konta i nawigację po unmount odrzucaj.
 - 2026-09-09 - Jesli przesuniecie linii ujawnia braki data-testid, zawsze uzupelnij kontrolki w dotykanym pliku i przenies istniejace ID przed handlery; nie regeneruj baseline ani allowlisty, aby ukryc trafienia.
 - 2026-09-09 - Jeśli wycofujesz kontrakt planów, zawsze usuń również inline query z onboardingu i użyj wspólnej mutacji; samo oczyszczenie katalogu GraphQL nie obejmuje wszystkich konsumentów (fizjo-app SPEC-034).

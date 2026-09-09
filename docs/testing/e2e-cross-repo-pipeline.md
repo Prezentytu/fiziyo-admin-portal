@@ -88,7 +88,20 @@ Secrets:
 - `USER_EMAIL_PROD`
 - `USER_PASSWORD_PROD`
 - `USER_DISPLAY_NAME_PROD`
+- `CLERK_PUBLISHABLE_KEY_DEV`
+- `CLERK_SECRET_KEY_DEV`
+- `CLERK_PUBLISHABLE_KEY_PROD`
+- `CLERK_SECRET_KEY_PROD`
 - `ADMIN_STATUS_PAT` - token do ustawiania commit statusu w `fiziyo-admin-portal`
+
+Sekrety `_DEV` są przechowywane w GitHub Environment `development`, a `_PROD`
+w `production`. Reusable workflow wiąże environment z docelowym URL i odrzuca
+niezgodne pary przed checkoutem. `ADMIN_STATUS_PAT` pozostaje sekretem repo.
+
+Pary kluczy Clerk muszą wskazywać tę samą instancję co odpowiadające środowisko
+portalu. Reusable E2E mintuje krótkotrwały Testing Token w project-based setup;
+sekret jest dostępny wyłącznie w krokach browser suites, nie w `api-contract`,
+raportowaniu ani artefaktach.
 
 ## Release checks (manual gate)
 

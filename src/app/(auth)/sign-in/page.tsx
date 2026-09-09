@@ -139,6 +139,7 @@ export default function SignInPage() {
       {/* Back link */}
       <Link
         href="/login"
+        data-testid="auth-signin-back-link"
         className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="mr-2 h-4 w-4" />
@@ -160,6 +161,7 @@ export default function SignInPage() {
             <Input
               id="email"
               type="email"
+              data-testid="auth-signin-email-input"
               placeholder="jan@example.com"
               value={formData.email}
               onChange={(e) => handleInputChange('email', e.target.value)}
@@ -177,6 +179,7 @@ export default function SignInPage() {
               type="button"
               onClick={handleForgotPassword}
               disabled={resetPasswordLoading}
+              data-testid="auth-signin-forgot-password-btn"
               className="text-sm text-primary hover:text-primary-light disabled:opacity-50"
             >
               {resetPasswordLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Zapomniałeś hasła?'}
@@ -188,6 +191,7 @@ export default function SignInPage() {
               ref={passwordRef}
               id="password"
               type="password"
+              data-testid="auth-signin-password-input"
               placeholder="••••••••"
               value={formData.password}
               onChange={(e) => handleInputChange('password', e.target.value)}
@@ -197,9 +201,24 @@ export default function SignInPage() {
           </div>
         </div>
 
-        {error && <div className="rounded-lg bg-error/10 p-3 text-sm text-error">{error}</div>}
+        <div id="clerk-captcha" data-testid="auth-signin-captcha" />
 
-        <Button type="submit" disabled={loading} className="h-11 w-full rounded-xl text-base font-semibold">
+        {error && (
+          <div
+            role="alert"
+            data-testid="auth-signin-error"
+            className="rounded-lg bg-error/10 p-3 text-sm text-error"
+          >
+            {error}
+          </div>
+        )}
+
+        <Button
+          type="submit"
+          disabled={loading}
+          data-testid="auth-signin-submit-btn"
+          className="h-11 w-full rounded-xl text-base font-semibold"
+        >
           {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Zaloguj się'}
         </Button>
       </form>
@@ -207,7 +226,11 @@ export default function SignInPage() {
       {/* Register link */}
       <p className="text-center text-sm text-muted-foreground">
         Nie masz jeszcze konta?{' '}
-        <Link href="/register" className="font-semibold text-primary hover:text-primary-light">
+        <Link
+          href="/register"
+          data-testid="auth-signin-register-link"
+          className="font-semibold text-primary hover:text-primary-light"
+        >
           Zarejestruj się
         </Link>
       </p>
