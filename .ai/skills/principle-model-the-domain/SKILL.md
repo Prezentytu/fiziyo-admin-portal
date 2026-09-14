@@ -5,7 +5,7 @@ description: 'Stosuj, gdy logika stanowa rozjeżdża się na ify albo to samo za
 
 # Model the domain
 
-> **Synchronizacja:** źródło w `fizjo-app/.agents/skills/principle-model-the-domain/SKILL.md`. Przy zmianie zaktualizuj oba repozytoria.
+> **Synchronizacja:** źródło w `fizjo-app/.ai/skills/principle-model-the-domain/SKILL.md`. Przy zmianie zaktualizuj oba repozytoria.
 
 Zanim napiszesz logikę, nazwij kształt danych. Potem dobierz strukturę: maszyna stanów, typ, tabela, reducer, kolekcja. Rozproszone `if` powielają to samo założenie i rozjeżdżają się przy pierwszej nowej kombinacji.
 

@@ -5,7 +5,7 @@ description: 'Stosuj, gdy tę samą instrukcję piszesz drugi raz. Zamknij ją w
 
 # Encode lessons in structure
 
-> **Synchronizacja:** źródło w `fizjo-app/.agents/skills/principle-encode-lessons-in-structure/SKILL.md`. Przy zmianie zaktualizuj oba repozytoria.
+> **Synchronizacja:** źródło w `fizjo-app/.ai/skills/principle-encode-lessons-in-structure/SKILL.md`. Przy zmianie zaktualizuj oba repozytoria.
 
 Tekst łatwo przegapić. Mechanizm nie wymaga współpracy.
 

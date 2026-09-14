@@ -5,7 +5,7 @@ description: 'Stosuj przy wielkroku, migracji, sweepie i układaniu commitów al
 
 # Sequence verifiable units
 
-> **Synchronizacja:** źródło w `fizjo-app/.agents/skills/principle-sequence-verifiable-units/SKILL.md`. Przy zmianie zaktualizuj oba repozytoria.
+> **Synchronizacja:** źródło w `fizjo-app/.ai/skills/principle-sequence-verifiable-units/SKILL.md`. Przy zmianie zaktualizuj oba repozytoria.
 
 Praca wielokrokowa idzie małymi jednostkami. Każda kończy się stanem, który da się sprawdzić. Kolejność dostawy ma sama się tłumaczyć recenzentowi.
 

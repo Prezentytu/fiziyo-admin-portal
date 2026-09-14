@@ -40,7 +40,7 @@ Szczegóły: `.ai/docs/agent-rules.md` i `docs/architecture/agent-workflow.md`.
 
 ## Task Router
 
-Przed rozpoczęciem pracy dopasuj zadanie do tabeli i przeczytaj WSZYSTKIE pasujące guide'y:
+Przed rozpoczęciem pracy dopasuj zadanie do tabeli i przeczytaj WSZYSTKIE pasujące guide'y. Jeśli wpis prowadzi do routera lub indeksu, otwórz z niego wszystkie wskazane dokumenty:
 
 | Zadanie                                          | Guide                                                                                               |
 | ------------------------------------------------ | --------------------------------------------------------------------------------------------------- |

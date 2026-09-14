@@ -5,7 +5,7 @@ description: 'Stosuj przy dodawaniu, wycofaniu albo refaktorze. Najpierw zdejmij
 
 # Subtract before you add
 
-> **Synchronizacja:** źródło w `fizjo-app/.agents/skills/principle-subtract-before-you-add/SKILL.md`. Przy zmianie zaktualizuj oba repozytoria.
+> **Synchronizacja:** źródło w `fizjo-app/.ai/skills/principle-subtract-before-you-add/SKILL.md`. Przy zmianie zaktualizuj oba repozytoria.
 
 Najpierw usuń martwy kod, zbędne walidatory i puste referencje. Potem buduj na tym, co zostało.
 

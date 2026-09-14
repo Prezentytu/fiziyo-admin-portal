@@ -32,7 +32,7 @@ Umiejętności (skills) to specjalistyczne przewodniki dla AI agentów pracując
 | [principle-sequence-verifiable-units](principle-sequence-verifiable-units/SKILL.md)     | Jednostka kończy się sprawdzeniem                      | Wielokrok, commity, check                            |
 | [principle-never-block-on-the-human](principle-never-block-on-the-human/SKILL.md)       | Fakt obserwowalny sprawdzasz, nie pytasz               | Ask First i akcje nieodwracalne bez zmian            |
 
-Źródło zasad: `fizjo-app/.agents/skills/principle-*/SKILL.md`. Przy zmianie zaktualizuj oba repo.
+Źródło zasad: `fizjo-app/.ai/skills/principle-*/SKILL.md`. Przy zmianie zaktualizuj oba repo.
 
 ## Dokumentacja ekosystemowa (.ai/)
 

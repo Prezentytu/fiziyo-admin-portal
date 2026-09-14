@@ -3,7 +3,7 @@
 Użyj tego indeksu, gdy Task Router wskazuje zasady inżynierskie. Najpierw dopasuj problem, potem otwórz wszystkie pasujące `SKILL.md`.
 
 Lokalne źródło prawdy dla tego repo: `.ai/skills/`.
-Upstream reference: `fizjo-app/.agents/skills/`.
+Upstream reference: `fizjo-app/.ai/skills/`.
 
 | Zasada | Otwórz |
 | --- | --- |

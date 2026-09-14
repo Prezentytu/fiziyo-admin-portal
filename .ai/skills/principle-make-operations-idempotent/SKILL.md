@@ -5,7 +5,7 @@ description: 'Stosuj przy mutacji, imporcie, retry i pętli, która może paść
 
 # Make operations idempotent
 
-> **Synchronizacja:** źródło w `fizjo-app/.agents/skills/principle-make-operations-idempotent/SKILL.md`. Przy zmianie zaktualizuj oba repozytoria.
+> **Synchronizacja:** źródło w `fizjo-app/.ai/skills/principle-make-operations-idempotent/SKILL.md`. Przy zmianie zaktualizuj oba repozytoria.
 
 Komenda, import i retry zbiegają do tego samego stanu, nawet gdy poprzedni przebieg urwał się w środku.
 
