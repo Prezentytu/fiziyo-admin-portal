@@ -64,7 +64,7 @@ Przed rozpoczęciem pracy dopasuj zadanie do tabeli i przeczytaj WSZYSTKIE pasuj
 | Wznowienie runu                                  | `.ai/skills/continue-run/`                                                                          |
 | Nawigator skilli ("co dalej?")                   | `.ai/skills/help/`                                                                                  |
 | Tworzenie nowego skilla                          | `.ai/skills/skill-creator/`                                                                         |
-| Zasady inżynierskie                               | `.ai/skills/principles-router.md`                                                                  |
+| Zasady inżynierskie (router/index)                | `.ai/skills/principles-router.md`                                                                  |
 | Pipeline E2E / cross-repo CI                     | `docs/testing/e2e-cross-repo-pipeline.md`                                                           |
 | Code review                                      | `.ai/skills/code-review/`                                                                           |
 | UI/UX / design / accessibility                   | `.ai/skills/product-designer/SKILL.md` + `.ai/skills/product-designer/references/cro-psychology.md` |
