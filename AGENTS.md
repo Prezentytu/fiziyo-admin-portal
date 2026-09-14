@@ -11,7 +11,8 @@ WAŻNE: Preferuj wnioskowanie oparte na dokumentacji (retrieval-led) zamiast wni
 - Workflow zadania i cross-repo: `docs/architecture/agent-workflow.md`. Źródło skilli: `.ai/skills/`; `.agents/skills/` i `.cursor/skills/` są generowanymi kopiami.
 - Nie commituj, nie pushuj, nie twórz PR ani nie wdrażaj bez upoważnienia; run nie daje zgody.
 - Trzymaj zmiany additive-first dla kontraktów i uruchamiaj walidację proporcjonalną do ryzyka.
-- Po istotnych poprawkach dopisz regułę do `.ai/lessons.md`.
+- Po istotnych poprawkach dopisz regułę do `.ai/lessons.md`. Drugi raz ten sam wzorzec: skill `principle-encode-lessons-in-structure`.
+- Zasady inżynierskie: cytujesz tylko tę, której `SKILL.md` przeczytałeś w tej sesji (`.ai/skills/principle-*/`; źródło w `fizjo-app`).
 
 ## Ask First
 
@@ -41,42 +42,43 @@ Szczegóły: `.ai/docs/agent-rules.md` i `docs/architecture/agent-workflow.md`.
 
 Przed rozpoczęciem pracy dopasuj zadanie do tabeli i przeczytaj WSZYSTKIE pasujące guide'y:
 
-| Zadanie                          | Guide                                                                                               |
-| -------------------------------- | --------------------------------------------------------------------------------------------------- |
-| Tworzenie/edycja ćwiczeń         | `src/features/exercises/AGENTS.md`                                                                  |
-| Assignment Wizard                | `src/features/assignment/AGENTS.md`                                                                 |
-| Praca z pacjentami               | `src/features/patients/AGENTS.md`                                                                   |
-| Weryfikacja treści               | `src/features/verification/AGENTS.md`                                                               |
-| Import dokumentów                | `src/features/import/AGENTS.md`                                                                     |
-| Zapytania/mutacje GraphQL        | `src/graphql/AGENTS.md`                                                                             |
-| Komponenty współdzielone         | `src/components/shared/AGENTS.md`                                                                   |
-| Zestawy ćwiczeń                  | `src/features/exercise-sets/AGENTS.md`                                                              |
-| Nowa specyfikacja                | `.ai/specs/AGENTS.md`, `.ai/skills/spec-writing/`                                                   |
-| Analiza spec przed implementacją | `.ai/skills/pre-implement-spec/`                                                                    |
-| Implementacja ze specyfikacji    | `.ai/skills/implement-spec/`                                                                        |
-| Testy regresyjne / integracyjne  | `.ai/skills/integration-tests/`                                                                     |
-| Guardian UI / migracja tokenów   | `.ai/skills/ui-guardian/`                                                                           |
-| Audyt bezpieczeństwa auth/tenant | `.ai/skills/sec-report/`                                                                            |
-| Scenariusze QA przed release     | `.ai/skills/qa-scenarios/`                                                                          |
-| Zadanie / handoff cross-repo     | `docs/architecture/agent-workflow.md`                                                               |
-| Run autonomiczny                 | `.ai/skills/auto-implement/`                                                                        |
-| Wznowienie runu                  | `.ai/skills/continue-run/`                                                                          |
-| Nawigator skilli ("co dalej?")   | `.ai/skills/help/`                                                                                  |
-| Tworzenie nowego skilla          | `.ai/skills/skill-creator/`                                                                         |
-| Pipeline E2E / cross-repo CI     | `docs/testing/e2e-cross-repo-pipeline.md`                                                           |
-| Code review                      | `.ai/skills/code-review/`                                                                           |
-| UI/UX / design / accessibility   | `.ai/skills/product-designer/SKILL.md` + `.ai/skills/product-designer/references/cro-psychology.md` |
-| Ustawienia użytkownika           | `src/components/settings/AGENTS.md`                                                                 |
-| Organizacja i gabinety           | `src/components/organization/AGENTS.md`                                                             |
-| Finanse i billing                | `src/components/finances/AGENTS.md`                                                                 |
-| Quality gate przed commitem      | `.ai/skills/check-and-commit/`                                                                      |
-| Dobór testów do diffa            | `.ai/skills/smart-test/`                                                                            |
-| Analiza przyczyny źródłowej      | `.ai/skills/root-cause/`                                                                            |
-| Nowy AGENTS.md modułu            | `.ai/skills/create-agents-md/`                                                                      |
-| Kontekst cross-repo / backend    | `.ai/ECOSYSTEM.md`                                                                                  |
-| Encje / enumy / relacje          | `.ai/DOMAIN_MODEL.md`                                                                               |
-| Flow biznesowe / auth / AI       | `.ai/DATA_FLOWS.md`                                                                                 |
-| Struktura modułów (utils, testy) | `.ai/STRUCTURE.md`                                                                                  |
+| Zadanie                                          | Guide                                                                                               |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| Tworzenie/edycja ćwiczeń                         | `src/features/exercises/AGENTS.md`                                                                  |
+| Assignment Wizard                                | `src/features/assignment/AGENTS.md`                                                                 |
+| Praca z pacjentami                               | `src/features/patients/AGENTS.md`                                                                   |
+| Weryfikacja treści                               | `src/features/verification/AGENTS.md`                                                               |
+| Import dokumentów                                | `src/features/import/AGENTS.md`                                                                     |
+| Zapytania/mutacje GraphQL                        | `src/graphql/AGENTS.md`                                                                             |
+| Komponenty współdzielone                         | `src/components/shared/AGENTS.md`                                                                   |
+| Zestawy ćwiczeń                                  | `src/features/exercise-sets/AGENTS.md`                                                              |
+| Nowa specyfikacja                                | `.ai/specs/AGENTS.md`, `.ai/skills/spec-writing/`                                                   |
+| Analiza spec przed implementacją                 | `.ai/skills/pre-implement-spec/`                                                                    |
+| Implementacja ze specyfikacji                    | `.ai/skills/implement-spec/`                                                                        |
+| Testy regresyjne / integracyjne                  | `.ai/skills/integration-tests/`                                                                     |
+| Guardian UI / migracja tokenów                   | `.ai/skills/ui-guardian/`                                                                           |
+| Audyt bezpieczeństwa auth/tenant                 | `.ai/skills/sec-report/`                                                                            |
+| Scenariusze QA przed release                     | `.ai/skills/qa-scenarios/`                                                                          |
+| Zadanie / handoff cross-repo                     | `docs/architecture/agent-workflow.md`                                                               |
+| Run autonomiczny                                 | `.ai/skills/auto-implement/`                                                                        |
+| Wznowienie runu                                  | `.ai/skills/continue-run/`                                                                          |
+| Nawigator skilli ("co dalej?")                   | `.ai/skills/help/`                                                                                  |
+| Tworzenie nowego skilla                          | `.ai/skills/skill-creator/`                                                                         |
+| Zasada inżynierska (diff, granica, idempotencja) | `.ai/skills/principle-*/` (źródło: `fizjo-app/.agents/skills/principle-*/`)                         |
+| Pipeline E2E / cross-repo CI                     | `docs/testing/e2e-cross-repo-pipeline.md`                                                           |
+| Code review                                      | `.ai/skills/code-review/`                                                                           |
+| UI/UX / design / accessibility                   | `.ai/skills/product-designer/SKILL.md` + `.ai/skills/product-designer/references/cro-psychology.md` |
+| Ustawienia użytkownika                           | `src/components/settings/AGENTS.md`                                                                 |
+| Organizacja i gabinety                           | `src/components/organization/AGENTS.md`                                                             |
+| Finanse i billing                                | `src/components/finances/AGENTS.md`                                                                 |
+| Quality gate przed commitem                      | `.ai/skills/check-and-commit/`                                                                      |
+| Dobór testów do diffa                            | `.ai/skills/smart-test/`                                                                            |
+| Analiza przyczyny źródłowej                      | `.ai/skills/root-cause/`                                                                            |
+| Nowy AGENTS.md modułu                            | `.ai/skills/create-agents-md/`                                                                      |
+| Kontekst cross-repo / backend                    | `.ai/ECOSYSTEM.md`                                                                                  |
+| Encje / enumy / relacje                          | `.ai/DOMAIN_MODEL.md`                                                                               |
+| Flow biznesowe / auth / AI                       | `.ai/DATA_FLOWS.md`                                                                                 |
+| Struktura modułów (utils, testy)                 | `.ai/STRUCTURE.md`                                                                                  |
 
 ## Workflow Orchestration
 
