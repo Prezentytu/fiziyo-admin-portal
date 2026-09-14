@@ -175,13 +175,13 @@ export function MediaGallery({
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
+                  data-testid={`${testIdPrefix}-fullscreen-btn`}
                   type="button"
                   onClick={() => setLightboxOpen(true)}
                   className={cn(
                     'rounded-lg border border-border/70 bg-background/85 p-2 text-foreground backdrop-blur-sm transition-colors hover:bg-background',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50'
                   )}
-                  data-testid={`${testIdPrefix}-fullscreen-btn`}
                   aria-label="Pełny ekran"
                 >
                   <Maximize2 className="h-4 w-4" />
@@ -219,6 +219,7 @@ export function MediaGallery({
               <div className="flex max-w-[min(100vw-6rem,30rem)] gap-2 overflow-x-auto px-0.5">
                 {items.map((item, index) => (
                   <button
+                    data-testid={`${testIdPrefix}-thumb-${index}`}
                     type="button"
                     key={`${item.kind}-${item.src}-${index}`}
                     onClick={() => setSelectedIndex(index)}
@@ -227,7 +228,6 @@ export function MediaGallery({
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
                       index === safeIndex ? 'border-primary ring-1 ring-primary/50' : 'border-transparent hover:border-border'
                     )}
-                    data-testid={`${testIdPrefix}-thumb-${index}`}
                   >
                     {item.kind === 'image' || item.kind === 'gif' ? (
                       <Image src={item.src} alt="" fill className="object-cover" sizes="56px" />

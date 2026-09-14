@@ -204,12 +204,12 @@ export function JoinOrganizationDialog({ open, onOpenChange, onSuccess }: JoinOr
             <div className="relative">
               <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
+                data-testid="settings-join-org-token-input"
                 placeholder="https://app.fiziyo.pl/invite?token=..."
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 className="pl-9 pr-10"
                 autoFocus
-                data-testid="settings-join-org-token-input"
               />
               {validationState === 'validating' && (
                 <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin" />
@@ -345,10 +345,10 @@ export function JoinOrganizationDialog({ open, onOpenChange, onSuccess }: JoinOr
           {/* Actions */}
           <div className="flex justify-end gap-3 pt-2">
             <Button
+              data-testid="settings-join-org-cancel-btn"
               variant="outline"
               onClick={() => onOpenChange(false)}
               disabled={isAccepting}
-              data-testid="settings-join-org-cancel-btn"
             >
               Anuluj
             </Button>
