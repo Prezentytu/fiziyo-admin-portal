@@ -29,6 +29,7 @@ import { DELETE_EXERCISE_SET_MUTATION, DUPLICATE_EXERCISE_SET_MUTATION } from '@
 import { matchesSearchQuery } from '@/utils/textUtils';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import type { OrganizationExerciseSetsResponse, ExerciseTag, UserByClerkIdResponse } from '@/types/apollo';
+import type { DuplicateExerciseSetMutationData } from '@/graphql/types/operation-responses';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -111,7 +112,7 @@ export default function ExerciseSetsPage() {
     refetchQueries: [{ query: GET_ORGANIZATION_EXERCISE_SETS_QUERY, variables: { organizationId } }],
   });
 
-  const [duplicateSet] = useMutation(DUPLICATE_EXERCISE_SET_MUTATION, {
+  const [duplicateSet] = useMutation<DuplicateExerciseSetMutationData>(DUPLICATE_EXERCISE_SET_MUTATION, {
     refetchQueries: [{ query: GET_ORGANIZATION_EXERCISE_SETS_QUERY, variables: { organizationId } }],
   });
 
@@ -240,8 +241,7 @@ export default function ExerciseSetsPage() {
       const result = await duplicateSet({
         variables: { exerciseSetId: set.id },
       });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const newSetId = (result.data as any)?.duplicateExerciseSet?.id;
+      const newSetId = result.data?.duplicateExerciseSet?.id;
       toast.success('Zestaw został zduplikowany');
 
       // Smart Duplicate: redirect to the new set's detail page for editing

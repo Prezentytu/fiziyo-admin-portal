@@ -19,6 +19,7 @@ import {
   ADD_EXERCISE_TO_EXERCISE_SET_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
 import type { ParsedExercise } from '@/types/chat.types';
+import type { CreateExerciseSetMutationData } from '@/graphql/types/operation-responses';
 
 interface ExerciseFromDB {
   id: string;
@@ -78,7 +79,9 @@ export function AddToSetFromChatDialog({ open, onOpenChange, exercise }: AddToSe
   });
 
   // Mutations
-  const [createSet, { loading: creatingSet }] = useMutation(CREATE_EXERCISE_SET_MUTATION);
+  const [createSet, { loading: creatingSet }] = useMutation<CreateExerciseSetMutationData>(
+    CREATE_EXERCISE_SET_MUTATION
+  );
   const [addExerciseToSet, { loading: addingExercise }] = useMutation(ADD_EXERCISE_TO_EXERCISE_SET_MUTATION);
 
   // Find matching exercise in DB by name (searches both organization and global exercises)
@@ -191,8 +194,7 @@ export function AddToSetFromChatDialog({ open, onOpenChange, exercise }: AddToSe
         },
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const newSetId = (result.data as any)?.createExerciseSet?.id;
+      const newSetId = result.data?.createExerciseSet?.id;
       if (!newSetId) throw new Error('Failed to create set');
 
       await addExerciseToSet({

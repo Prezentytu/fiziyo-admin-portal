@@ -28,11 +28,11 @@
 - [x] F2 — agent:check/test w CI
 - [x] F3 — untrack kopii `.cursor/skills`
 - [x] F4 — BUGBOT i jeden głos review
-- [ ] F5 — jeden format runu
-- [ ] F6 — frontmatter i indeks speców
-- [ ] F7 — lessons, AGENTS, README, STRUCTURE
-- [ ] F8 — guide'y organization/finances/graphql
-- [ ] F9 — useLazyQuery i otypowanie `any`
+- [x] F5 — jeden format runu
+- [x] F6 — frontmatter i indeks speców
+- [x] F7 — lessons, AGENTS, README, STRUCTURE
+- [x] F8 — guide'y organization/finances/graphql
+- [x] F9 — useLazyQuery i otypowanie `any`
 - [ ] Walidacja, reviewer, push
 
 ## Decyzje

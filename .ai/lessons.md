@@ -22,6 +22,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-09-14 - Polityka cytuje tylko to, co `agent:check` weryfikuje
+
+- **Kategoria**: `Build/Tooling` | `Git`
+- **Problem**: Cloud Agent i Bugbot szły w ścianę: polityka wskazywała pliki i komendy, których nie było w repo.
+- **Przyczyna**: Kontrakt nawigacyjny rósł szybciej niż kotwice i skrypty.
+- **Rozwiązanie**: Martwe odwołania domknięto albo usunięto; `agent:check` pilnuje adaptera i indeksu SPEC.
+- **Reguła**: Jeśli polityka cytuje plik albo komendę, `agent:check` musi ją weryfikować.
+
 ### 2026-09-10 - Wznowienie runu porównuje Git, nie checkbox
 
 - **Kategoria**: `Git` | `Build/Tooling`

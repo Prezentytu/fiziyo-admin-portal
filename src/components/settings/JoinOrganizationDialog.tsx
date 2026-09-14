@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useLazyQuery, useMutation } from '@apollo/client/react';
+import { useQuery, useMutation } from '@apollo/client/react';
 import {
   Building2,
   Loader2,
@@ -82,13 +82,15 @@ function getRoleLabel(role: string): string {
 
 export function JoinOrganizationDialog({ open, onOpenChange, onSuccess }: JoinOrganizationDialogProps) {
   const [inputValue, setInputValue] = useState('');
+  const [submittedToken, setSubmittedToken] = useState('');
   const [validationState, setValidationState] = useState<ValidationState>('idle');
   const [isAccepting, setIsAccepting] = useState(false);
 
-  // Query for validating token
-  const [validateToken, { data: inviteData, loading: validating }] = useLazyQuery<GetInvitationByTokenResponse>(
+  const { data: inviteData, loading: validating } = useQuery<GetInvitationByTokenResponse>(
     GET_INVITATION_BY_TOKEN_QUERY,
     {
+      variables: { token: submittedToken },
+      skip: !submittedToken,
       fetchPolicy: 'network-only',
     }
   );
@@ -106,6 +108,7 @@ export function JoinOrganizationDialog({ open, onOpenChange, onSuccess }: JoinOr
     const token = extractToken(inputValue);
 
     if (!token) {
+      setSubmittedToken('');
       setValidationState('idle');
       return;
     }
@@ -113,22 +116,22 @@ export function JoinOrganizationDialog({ open, onOpenChange, onSuccess }: JoinOr
     setValidationState('validating');
 
     const timeoutId = setTimeout(() => {
-      validateToken({ variables: { token } });
+      setSubmittedToken(token);
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [inputValue, validateToken]);
+  }, [inputValue]);
 
   // Update validation state based on query result
   useEffect(() => {
-    if (validating) {
-      setValidationState('validating');
-      return;
-    }
-
     const token = extractToken(inputValue);
     if (!token) {
       setValidationState('idle');
+      return;
+    }
+
+    if (submittedToken !== token || validating) {
+      setValidationState('validating');
       return;
     }
 
@@ -150,12 +153,13 @@ export function JoinOrganizationDialog({ open, onOpenChange, onSuccess }: JoinOr
     } else {
       setValidationState('not_found');
     }
-  }, [invitation, validating, inputValue]);
+  }, [invitation, validating, inputValue, submittedToken]);
 
   // Reset state when dialog closes
   useEffect(() => {
     if (!open) {
       setInputValue('');
+      setSubmittedToken('');
       setValidationState('idle');
       setIsAccepting(false);
     }

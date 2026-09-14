@@ -33,7 +33,7 @@ import {
   remapOverrideDeltasToMappingIds,
   stringifyAssignmentOverrides,
 } from './utils/buildAssignmentOverrideDeltas';
-import { buildStructuredLoad, mapAvailableExercises } from './utils/availableExercisesMapper';
+import { buildStructuredLoad, mapAvailableExercises, type RawAvailableExercise } from './utils/availableExercisesMapper';
 import { appendPatientIfMissing } from './utils/patientSelectionUtils';
 import { computeExerciseDiff, type ExerciseMappingSnapshot } from './utils/exerciseDiff';
 import { buildExerciseSetFromBuilder } from './utils/buildExerciseSetFromBuilder';
@@ -84,7 +84,14 @@ import {
 import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import { GET_CURRENT_BILLING_STATUS_QUERY } from '@/graphql/queries/billing.queries';
-import type { OrganizationPatientsResponse } from '@/types/apollo';
+import type { OrganizationExerciseSetsResponse, OrganizationPatientsResponse } from '@/types/apollo';
+import type {
+  AddExerciseToExerciseSetMutationData,
+  AssignExerciseSetToPatientMutationData,
+  CreateExerciseSetMutationData,
+  ExerciseSetWithAssignmentsQueryData,
+  PatientAssignmentsByUserQueryData,
+} from '@/graphql/types/operation-responses';
 
 // Success dialog data type
 interface SuccessDialogData {
@@ -402,21 +409,25 @@ function AssignmentWizardContent({
 
   // Queries - load sets if needed (from-patient mode, no preselected set, or user navigates to select-set step)
   const needsSets = !isEditMode && (mode === 'from-patient' || !preselectedSet || currentStep === 'select-set');
-  const { data: setsData, loading: loadingSets } = useQuery(GET_ORGANIZATION_EXERCISE_SETS_QUERY, {
+  const { data: setsData, loading: loadingSets } = useQuery<OrganizationExerciseSetsResponse>(
+    GET_ORGANIZATION_EXERCISE_SETS_QUERY,
+    {
     variables: { organizationId },
     skip: !organizationId || !open || !needsSets,
-  });
+    }
+  );
 
   // Load patients if needed (from-set mode or no preselected patient)
   const needsPatients = !isEditMode && !preselectedPatient;
-  const { data: patientsData, loading: loadingPatients, refetch: refetchPatientsList } = useQuery(GET_ORGANIZATION_PATIENTS_QUERY, {
+  const { data: patientsData, loading: loadingPatients, refetch: refetchPatientsList } =
+    useQuery<OrganizationPatientsResponse>(GET_ORGANIZATION_PATIENTS_QUERY, {
     variables: { organizationId, filter: 'all' },
     skip: !organizationId || !open || !needsPatients,
-  });
+    });
   const isLoadingPatientsInitially = loadingPatients && !patientsData;
 
   // Load patient's existing assignments (for from-patient mode - to show which sets are already assigned)
-  const { data: patientAssignmentsData, refetch: refetchPatientAssignments } = useQuery(
+  const { data: patientAssignmentsData, refetch: refetchPatientAssignments } = useQuery<PatientAssignmentsByUserQueryData>(
     GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY,
     {
       variables: { userId: preselectedPatient?.id || '' },
@@ -427,7 +438,7 @@ function AssignmentWizardContent({
   // Load exercise set's existing assignments (for from-set mode OR when a set is selected in from-patient mode)
   // This allows showing which patients already have the selected set
   const effectiveSetId = preselectedSet?.id || selectedSet?.id;
-  const { data: setAssignmentsData, refetch: refetchSetAssignments } = useQuery(
+  const { data: setAssignmentsData, refetch: refetchSetAssignments } = useQuery<ExerciseSetWithAssignmentsQueryData>(
     GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY,
     {
       variables: { exerciseSetId: effectiveSetId || '' },
@@ -436,7 +447,9 @@ function AssignmentWizardContent({
   );
 
   // Load available exercises for Rapid Builder (includes global FiziYo exercises)
-  const { data: exercisesData, refetch: refetchAvailableExercises } = useQuery(GET_AVAILABLE_EXERCISES_QUERY, {
+  const { data: exercisesData, refetch: refetchAvailableExercises } = useQuery<{
+    availableExercises?: RawAvailableExercise[];
+  }>(GET_AVAILABLE_EXERCISES_QUERY, {
     variables: { organizationId },
     skip: !organizationId || !open,
   });
@@ -447,15 +460,20 @@ function AssignmentWizardContent({
   const apolloClient = useApolloClient();
 
   // Mutations
-  const [assignSet, { loading: assigning }] = useMutation(ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION);
+  const [assignSet, { loading: assigning }] = useMutation<AssignExerciseSetToPatientMutationData>(
+    ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION
+  );
   const [removeAssignment, { loading: removing }] = useMutation(REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION);
-  const [createExerciseSet] = useMutation(CREATE_EXERCISE_SET_MUTATION, {
+  const [createExerciseSet] = useMutation<CreateExerciseSetMutationData>(CREATE_EXERCISE_SET_MUTATION, {
     refetchQueries: [{ query: GET_ORGANIZATION_EXERCISE_SETS_QUERY, variables: { organizationId } }],
     awaitRefetchQueries: true,
   });
-  const [addExerciseToSet] = useMutation(ADD_EXERCISE_TO_EXERCISE_SET_MUTATION, {
+  const [addExerciseToSet] = useMutation<AddExerciseToExerciseSetMutationData>(
+    ADD_EXERCISE_TO_EXERCISE_SET_MUTATION,
+    {
     refetchQueries: [{ query: GET_ORGANIZATION_EXERCISE_SETS_QUERY, variables: { organizationId } }],
-  });
+    }
+  );
   const [updateExerciseSet] = useMutation(UPDATE_EXERCISE_SET_MUTATION);
   const [updateExerciseInSet] = useMutation(UPDATE_EXERCISE_IN_SET_MUTATION);
   const [removeExerciseFromSet] = useMutation(REMOVE_EXERCISE_FROM_SET_MUTATION);
@@ -472,9 +490,7 @@ function AssignmentWizardContent({
 
   // Process data - map all fields including sets, reps, duration from both mapping and exercise
   const exerciseSets: ExerciseSet[] = useMemo(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const data = setsData as { exerciseSets?: any[] } | undefined;
-    return (data?.exerciseSets || []).map((set) => ({
+    return (setsData?.exerciseSets || []).map((set) => ({
       id: set.id,
       name: set.name,
       description: set.description,
@@ -484,9 +500,8 @@ function AssignmentWizardContent({
       templateSource: set.templateSource,
       reviewStatus: set.reviewStatus,
       sourceExerciseSetId: set.sourceExerciseSetId,
-      frequency: set.frequency,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      exerciseMappings: set.exerciseMappings?.map((m: any) => {
+      frequency: set.frequency as Frequency | undefined,
+      exerciseMappings: set.exerciseMappings?.map((m) => {
         const mappingLoad =
           buildStructuredLoad(m.load) ??
           buildStructuredLoad({
@@ -591,8 +606,7 @@ function AssignmentWizardContent({
   );
 
   const patients: Patient[] = useMemo(() => {
-    const data = patientsData as OrganizationPatientsResponse | undefined;
-    return (data?.organizationPatients || [])
+    return (patientsData?.organizationPatients || [])
       .filter((entry) => !!entry.patient?.id)
       .map((entry) => ({
         id: entry.patient.id,
@@ -606,21 +620,16 @@ function AssignmentWizardContent({
   // Process patient's assigned sets (for from-patient mode)
   const assignedSets: AssignedSetInfo[] = useMemo(() => {
     if (mode !== 'from-patient' || !patientAssignmentsData) return [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const assignments = (patientAssignmentsData as any)?.patientAssignments || [];
+    const assignments = patientAssignmentsData?.patientAssignments || [];
 
-    return (
-      assignments
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .filter((a: any) => a.exerciseSetId) // Only exercise set assignments
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .map((a: any) => ({
-          exerciseSetId: a.exerciseSetId,
-          assignmentId: a.id,
-          assignedAt: a.assignedAt,
-          status: a.status,
-        }))
-    );
+    return assignments
+      .filter((assignment) => Boolean(assignment.exerciseSetId))
+      .map((assignment) => ({
+          exerciseSetId: assignment.exerciseSetId as string,
+          assignmentId: assignment.id,
+          assignedAt: assignment.assignedAt ?? '',
+          status: assignment.status ?? '',
+        }));
   }, [mode, patientAssignmentsData]);
 
   // Process exercise set's assigned patients (for from-set mode OR when a set is selected)
@@ -629,23 +638,19 @@ function AssignmentWizardContent({
   // 2. from-patient mode without preselectedPatient (dashboard) - when user selects a set
   const assignedPatients: AssignedPatientInfo[] = useMemo(() => {
     if (!setAssignmentsData) return [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const setData = (setAssignmentsData as any)?.exerciseSetById;
+    const setData = setAssignmentsData?.exerciseSetById;
     const assignments = setData?.patientAssignments || [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return assignments.map((a: any) => ({
-      patientId: a.userId,
-      assignmentId: a.id,
-      assignedAt: a.assignedAt,
-      status: a.status,
+    return assignments.map((assignment) => ({
+      patientId: assignment.userId ?? '',
+      assignmentId: assignment.id,
+      assignedAt: assignment.assignedAt ?? '',
+      status: assignment.status ?? '',
     }));
   }, [setAssignmentsData]);
 
   // Process available exercises for Rapid Builder (includes global FiziYo exercises)
   const availableExercises: Exercise[] = useMemo(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const data = exercisesData as { availableExercises?: any[] } | undefined;
-    return mapAvailableExercises(data?.availableExercises);
+    return mapAvailableExercises(exercisesData?.availableExercises);
   }, [exercisesData]);
 
   // Handle create new set - sets mode to creating new and navigates to customize step
@@ -691,9 +696,7 @@ function AssignmentWizardContent({
       }
 
       const refetchResult = await refetchAvailableExercises();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const refreshedData = refetchResult.data as { availableExercises?: any[] } | undefined;
-      const refreshedExercises = mapAvailableExercises(refreshedData?.availableExercises);
+      const refreshedExercises = mapAvailableExercises(refetchResult.data?.availableExercises);
       const createdExercise = refreshedExercises.find((exercise) => exercise.id === event.exerciseId);
 
       if (!createdExercise) {
@@ -1200,8 +1203,7 @@ function AssignmentWizardContent({
           variables: buildAddExerciseVariables(addedItem.instance, selectedSet.id, addedItem.order),
           awaitRefetchQueries: true,
         });
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const mappingId = (addResult.data as any)?.addExerciseToExerciseSet?.id as string | undefined;
+        const mappingId = addResult.data?.addExerciseToExerciseSet?.id;
         if (mappingId) {
           instanceIdToMappingId.set(addedItem.instance.instanceId, mappingId);
         }
@@ -1343,8 +1345,7 @@ function AssignmentWizardContent({
           },
         });
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const newSet = (createResult.data as any)?.createExerciseSet;
+        const newSet = createResult.data?.createExerciseSet;
         if (!newSet?.id) {
           throw new Error('Nie udało się utworzyć planu pacjenta');
         }
@@ -1357,8 +1358,7 @@ function AssignmentWizardContent({
             const addResult = await addExerciseToSet({
               variables: buildAddExerciseVariables(instance, newSet.id, i + 1),
             });
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const mappingId = (addResult.data as any)?.addExerciseToExerciseSet?.id as string | undefined;
+            const mappingId = addResult.data?.addExerciseToExerciseSet?.id;
             if (mappingId) {
               instanceIdToMappingId.set(instance.instanceId, mappingId);
             }
@@ -1409,8 +1409,7 @@ function AssignmentWizardContent({
             },
           });
 
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const organizationSet = (organizationSetResult.data as any)?.createExerciseSet;
+          const organizationSet = organizationSetResult.data?.createExerciseSet;
           if (organizationSet?.id) {
             for (let i = 0; i < builderInstances.length; i++) {
               const instance = builderInstances[i];
@@ -1473,13 +1472,12 @@ function AssignmentWizardContent({
         });
 
         // Pobierz premiumValidUntil z odpowiedzi (Beta Pilot Flow)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const responseData = (assignResult.data as any)?.assignExerciseSetToPatient;
+        const responseData = assignResult.data?.assignExerciseSetToPatient;
         if (responseData?.premiumValidUntil) {
           lastPremiumValidUntil = responseData.premiumValidUntil;
         }
 
-        const assignmentId = responseData?.id as string | undefined;
+        const assignmentId = responseData?.id;
         if (assignmentId && exerciseOverridesJson) {
           try {
             await updatePatientExerciseOverrides({

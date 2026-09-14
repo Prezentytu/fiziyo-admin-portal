@@ -26,6 +26,7 @@ import { GET_ORGANIZATION_BY_ID_QUERY } from '@/graphql/queries/organizations.qu
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import type { OrganizationByIdResponse, UserByClerkIdResponse } from '@/types/apollo';
+import type { PatientAssignmentsByUserQueryData } from '@/graphql/types/operation-responses';
 
 // ==================== TYPY ====================
 
@@ -220,7 +221,9 @@ export function PatientQRCodeDialog({
   });
 
   // ==================== KLUCZOWE: Pobierz przypisania pacjenta ====================
-  const { data: assignmentsData, loading: loadingAssignments } = useQuery(GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY, {
+  const { data: assignmentsData, loading: loadingAssignments } = useQuery<PatientAssignmentsByUserQueryData>(
+    GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY,
+    {
     variables: { userId: patient?.id },
     skip: !patient?.id || !open,
   });
@@ -229,10 +232,10 @@ export function PatientQRCodeDialog({
   const therapistUser = (userData as UserByClerkIdResponse)?.userByClerkId;
 
   // Wyciągnij przypisania z danych GraphQL
-  const fetchedAssignments = useMemo(() => {
-    const data = assignmentsData as { patientAssignments?: unknown[] } | undefined;
-    return data?.patientAssignments || [];
-  }, [assignmentsData]);
+  const fetchedAssignments = useMemo(
+    () => assignmentsData?.patientAssignments || [],
+    [assignmentsData]
+  );
 
   // ==================== AUTO-DISCOVERY PLANÓW ====================
   // Szukamy planów w różnych miejscach obiektu pacjenta
@@ -244,24 +247,28 @@ export function PatientQRCodeDialog({
 
     // 2. KLUCZOWE: Użyj danych z GraphQL (fetchedAssignments)
     if (fetchedAssignments && fetchedAssignments.length > 0) {
-      return (
-        fetchedAssignments
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          .filter((a: any) => a.exerciseSet)
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          .map((a: any) => ({
-            id: a.exerciseSet.id,
-            name: a.exerciseSet.name,
-            description: a.exerciseSet.description,
-            exerciseMappings: a.exerciseSet.exerciseMappings,
-            startDate: a.startDate,
-            endDate: a.endDate,
-            createdAt: a.assignedAt || a.exerciseSet.creationTime,
-            validUntil: a.endDate,
-            status: a.status === 'active' ? 'active' : undefined,
-            frequency: a.frequency,
-          }))
-      );
+      return fetchedAssignments.flatMap((assignment) => {
+        const exerciseSet = assignment.exerciseSet;
+        if (!exerciseSet) {
+          return [];
+        }
+
+        const plan: PatientPlan = {
+          id: exerciseSet.id,
+          name: exerciseSet.name ?? '',
+          description: exerciseSet.description ?? undefined,
+          exerciseMappings: Array.isArray(exerciseSet.exerciseMappings)
+            ? (exerciseSet.exerciseMappings as PatientPlan['exerciseMappings'])
+            : undefined,
+          startDate: assignment.startDate ?? undefined,
+          endDate: assignment.endDate ?? undefined,
+          createdAt: assignment.assignedAt ?? exerciseSet.creationTime ?? undefined,
+          validUntil: assignment.endDate ?? undefined,
+          status: assignment.status === 'active' ? 'active' : undefined,
+          frequency: assignment.frequency,
+        };
+        return [plan];
+      });
     }
 
     if (!patient) return [];

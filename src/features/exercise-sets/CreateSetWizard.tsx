@@ -37,8 +37,9 @@ import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exercise
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
 import { GET_PATIENT_CLINICAL_NOTES_QUERY } from '@/graphql/queries/clinicalNotes.queries';
-import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
+import { createTagsMap, mapExercisesWithTags, type ExerciseWithTags } from '@/utils/tagUtils';
 import type { ExerciseTagsResponse, TagCategoriesResponse, OrganizationExerciseSetsResponse } from '@/types/apollo';
+import type { PatientClinicalNotesQueryData } from '@/graphql/types/operation-responses';
 import { getExerciseDefaultParams } from '@/features/exercise-sets/utils/exerciseDefaults';
 import { submitCreateTemplateSet } from '@/features/exercise-sets/utils/createSetSubmit';
 import { buildMappingOverridesFromParams } from '@/features/exercise-sets/utils/buildMappingOverridesFromParams';
@@ -113,7 +114,9 @@ export function CreateSetWizard({
     }
   }, [open, patientName]);
 
-  const { data: exercisesData, loading: loadingExercises } = useQuery(GET_AVAILABLE_EXERCISES_QUERY, {
+  const { data: exercisesData, loading: loadingExercises } = useQuery<{
+    availableExercises?: ExerciseWithTags[];
+  }>(GET_AVAILABLE_EXERCISES_QUERY, {
     variables: { organizationId },
     skip: !organizationId || !open,
   });
@@ -133,7 +136,7 @@ export function CreateSetWizard({
     skip: !organizationId || !open,
   });
 
-  const { data: clinicalNotesData } = useQuery(GET_PATIENT_CLINICAL_NOTES_QUERY, {
+  const { data: clinicalNotesData } = useQuery<PatientClinicalNotesQueryData>(GET_PATIENT_CLINICAL_NOTES_QUERY, {
     variables: { patientId: patientId || '', organizationId },
     skip: !patientId || !organizationId || !open,
   });
@@ -141,8 +144,7 @@ export function CreateSetWizard({
   const patientContext: PatientContext | undefined = useMemo(() => {
     if (!patientId) return undefined;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const notes = (clinicalNotesData as any)?.patientClinicalNotes || [];
+    const notes = clinicalNotesData?.patientClinicalNotes || [];
     const latestNote = notes[0];
 
     let diagnosis: string[] = [];
@@ -150,13 +152,12 @@ export function CreateSetWizard({
 
     if (latestNote?.sections?.diagnosis?.icd10Codes) {
       diagnosis = latestNote.sections.diagnosis.icd10Codes.map(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (code: any) => `${code.code}: ${code.description}`
+        (code) => `${code.code}: ${code.description}`
       );
     }
 
     if (latestNote?.sections?.interview?.painLocation) {
-      painLocation = latestNote.sections.interview.painLocation;
+      painLocation = latestNote.sections.interview.painLocation.join(', ');
     }
 
     return {
@@ -183,8 +184,7 @@ export function CreateSetWizard({
   );
 
   const exercises: BuilderExercise[] = useMemo(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rawExercises = (exercisesData as { availableExercises?: any[] })?.availableExercises || [];
+    const rawExercises = exercisesData?.availableExercises || [];
     return mapExercisesWithTags(rawExercises, tagsMap) as BuilderExercise[];
   }, [exercisesData, tagsMap]);
 
