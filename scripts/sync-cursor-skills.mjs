@@ -3,34 +3,59 @@ import path from 'node:path';
 
 const ROOT_DIR = process.cwd();
 const SOURCE_ROOT = path.join(ROOT_DIR, '.ai/skills');
-const TARGET_ROOT = path.join(ROOT_DIR, '.cursor/skills');
+const TARGET_ROOTS = ['.cursor/skills', '.agents/skills'].map((dir) => path.join(ROOT_DIR, dir));
 const MANIFEST_PATH = path.join(SOURCE_ROOT, 'manifest.json');
 const LINT_MODE = process.argv.includes('--lint');
+const CHECK_MODE = process.argv.includes('--check');
 
-async function pathExists(targetPath) {
+async function statOrMissing(targetPath) {
   try {
-    await fs.access(targetPath);
-    return true;
-  } catch {
-    return false;
+    return await fs.lstat(targetPath);
+  } catch (error) {
+    if (error.code === 'ENOENT') return null;
+    throw error;
   }
 }
 
-async function copyDirectory(sourcePath, targetPath) {
-  await fs.mkdir(targetPath, { recursive: true });
-  const entries = await fs.readdir(sourcePath, { withFileTypes: true });
+async function assertDirectory(targetPath) {
+  const stat = await statOrMissing(targetPath);
+  if (stat && (!stat.isDirectory() || stat.isSymbolicLink())) {
+    throw new Error(`Expected a real directory: ${targetPath}`);
+  }
+  return stat;
+}
 
-  for (const entry of entries) {
-    const sourceEntryPath = path.join(sourcePath, entry.name);
-    const targetEntryPath = path.join(targetPath, entry.name);
-
-    if (entry.isDirectory()) {
-      await copyDirectory(sourceEntryPath, targetEntryPath);
-      continue;
+// Inventory first: no destination is changed until all mirrors pass preflight.
+async function inventory(root, relative = '', entries = new Map()) {
+  for (const entry of await fs.readdir(path.join(root, relative), { withFileTypes: true })) {
+    const name = path.join(relative, entry.name);
+    if (entry.isSymbolicLink() || (!entry.isDirectory() && !entry.isFile())) {
+      throw new Error(`Unsupported file or symlink: ${path.join(root, name)}`);
     }
+    entries.set(name, entry.isDirectory() ? null : await fs.readFile(path.join(root, name)));
+    if (entry.isDirectory()) await inventory(root, name, entries);
+  }
+  return entries;
+}
 
-    if (entry.isFile()) {
-      await fs.copyFile(sourceEntryPath, targetEntryPath);
+async function preflight(targetRoot, sourceEntries) {
+  await assertDirectory(path.dirname(targetRoot));
+  const exists = await assertDirectory(targetRoot);
+  if (!exists && CHECK_MODE) throw new Error(`Missing mirror: ${targetRoot}`);
+  const targetEntries = exists ? await inventory(targetRoot) : new Map();
+  for (const [name, content] of targetEntries) {
+    if (!sourceEntries.has(name)) {
+      throw new Error(`Extra mirror entry; left intact: ${path.join(targetRoot, name)}`);
+    }
+    if ((content === null) !== (sourceEntries.get(name) === null)) {
+      throw new Error(`File/directory conflict: ${path.join(targetRoot, name)}`);
+    }
+  }
+  if (CHECK_MODE) {
+    for (const [name, content] of sourceEntries) {
+      if (!targetEntries.has(name) || (content !== null && !content.equals(targetEntries.get(name)))) {
+        throw new Error(`Mirror drift: ${path.join(targetRoot, name)}`);
+      }
     }
   }
 }
@@ -85,7 +110,7 @@ async function readManifest() {
     }
 
     for (const skillName of tierSkills) {
-      if (typeof skillName !== 'string' || !skillName.trim()) {
+      if (typeof skillName !== 'string' || !/^[a-zA-Z0-9][a-zA-Z0-9_-]*$/.test(skillName)) {
         throw new Error(`Tier "${tierName}" contains invalid skill entry.`);
       }
       if (declaredSkills.has(skillName)) {
@@ -100,6 +125,9 @@ async function readManifest() {
 
 async function loadSkillDirectories() {
   const sourceEntries = await fs.readdir(SOURCE_ROOT, { withFileTypes: true });
+  if (sourceEntries.some((entry) => entry.isSymbolicLink())) {
+    throw new Error('Source skills root contains a symlink.');
+  }
   return sourceEntries.filter((entry) => entry.isDirectory()).map((entry) => entry.name);
 }
 
@@ -129,7 +157,7 @@ async function validateSkills(declaredSkills) {
   for (const [skillName, tierName] of declaredSkills.entries()) {
     const sourceSkillPath = path.join(SOURCE_ROOT, skillName);
     const skillFilePath = path.join(sourceSkillPath, 'SKILL.md');
-    if (!(await pathExists(skillFilePath))) {
+    if (!(await statOrMissing(skillFilePath))?.isFile()) {
       throw new Error(`Missing SKILL.md for "${skillName}".`);
     }
 
@@ -146,9 +174,19 @@ async function validateSkills(declaredSkills) {
 }
 
 async function main() {
+  if (LINT_MODE && CHECK_MODE) throw new Error('Use --lint or --check, not both.');
+  await assertDirectory(path.dirname(SOURCE_ROOT));
+  await assertDirectory(SOURCE_ROOT);
+  const manifestStat = await statOrMissing(MANIFEST_PATH);
+  if (!manifestStat?.isFile()) throw new Error('Manifest must be a real file.');
   const { manifest, declaredSkills } = await readManifest();
   const skillDirectories = await loadSkillDirectories();
   ensureManifestMatchesDirectories(declaredSkills, skillDirectories);
+  const sourceEntries = new Map();
+  for (const skillName of declaredSkills.keys()) {
+    sourceEntries.set(skillName, null);
+    await inventory(SOURCE_ROOT, skillName, sourceEntries);
+  }
   const validationSummary = await validateSkills(declaredSkills);
 
   if (LINT_MODE) {
@@ -156,27 +194,22 @@ async function main() {
     return;
   }
 
-  await fs.rm(TARGET_ROOT, { recursive: true, force: true });
-  await fs.mkdir(TARGET_ROOT, { recursive: true });
-
-  let syncedSkills = 0;
-
-  for (const skillDirectory of declaredSkills.keys()) {
-    const sourceSkillPath = path.join(SOURCE_ROOT, skillDirectory);
-    const skillFilePath = path.join(sourceSkillPath, 'SKILL.md');
-
-    if (!(await pathExists(skillFilePath))) {
-      continue;
-    }
-
-    const targetSkillPath = path.join(TARGET_ROOT, skillDirectory);
-    await copyDirectory(sourceSkillPath, targetSkillPath);
-    syncedSkills += 1;
+  for (const targetRoot of TARGET_ROOTS) await preflight(targetRoot, sourceEntries);
+  if (CHECK_MODE) {
+    console.log(`skills:check OK (${validationSummary.length} skills, both mirrors match).`);
+    return;
   }
 
-  console.log(
-    `Synced ${syncedSkills} skills to .cursor/skills (manifest version ${manifest.version ?? 'n/a'}).`
-  );
+  // OS errors or concurrent edits can still interrupt this copy; it is not atomic.
+  for (const targetRoot of TARGET_ROOTS) {
+    await fs.mkdir(targetRoot, { recursive: true });
+    for (const [name, content] of sourceEntries) {
+      const targetPath = path.join(targetRoot, name);
+      if (content === null) await fs.mkdir(targetPath, { recursive: true });
+      else await fs.writeFile(targetPath, content);
+    }
+  }
+  console.log(`Synced ${validationSummary.length} skills to .cursor/skills and .agents/skills (manifest version ${manifest.version ?? 'n/a'}).`);
 }
 
 main().catch((error) => {

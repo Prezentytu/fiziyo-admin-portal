@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "skills:sync": "node scripts/sync-cursor-skills.mjs",
+    "skills:check": "node scripts/sync-cursor-skills.mjs --check",
+    "skills:test": "node --test scripts/sync-cursor-skills.test.mjs",
     "skills:lint": "node scripts/sync-cursor-skills.mjs --lint",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
