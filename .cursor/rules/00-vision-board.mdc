@@ -1,0 +1,10 @@
+---
+description: Kierunek produktu i priorytety — czytaj przed zadaniem; BOARD ekosystemu żyje w fizjo-app
+alwaysApply: true
+---
+
+- Przed zadaniem przeczytaj `.ai/VISION.md` (wyciąg dla tego repo). Tablica priorytetów ekosystemu: `fizjo-app/.ai/BOARD.md` — lokalnie masz ją obok (`../fizjo-app/.ai/BOARD.md`); Cloud Agent jej nie widzi i dostaje pozycję BOARD w treści zadania.
+- Zadanie poza kierunkiem z VISION wymaga potwierdzenia użytkownika przed implementacją.
+- `VISION.md` nie edytujesz; propozycja zmiany = komentarz w PR.
+- Po zakończonym etapie: lokalnie zaktualizuj linię w `fizjo-app/.ai/BOARD.md`; w chmurze dopisz proponowaną linię BOARD (ID, repo, wskaźnik) do opisu PR.
+- Kolejność źródeł prawdy: VISION → BOARD → GitHub Issue → `SPEC-0xx` → PR / `.ai/runs/` / `.ai/lessons.md`. Linkuj, nie kopiuj.
