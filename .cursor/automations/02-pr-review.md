@@ -21,6 +21,6 @@ Zanim zaczniesz, przeczytaj `.cursor/BUGBOT.md` w katalogu głównym oraz w każ
 
 Uruchom sprawdzenia **różnicujące**, czyli te, które najpewniej złapią tryb awarii tego diffu — nie cały pas. Wynik uzyskany na brudnym drzewie albo pod innym commitem jest `unverified` i nie może być raportowany jako przejście.
 
-Zostaw **jeden** komentarz. Pierwsza linia to `PASS <sha>` albo `FAIL <sha>`. Dalej znaleziska oznaczone jako udowodnione, prawdopodobne albo niezweryfikowane, każde ze ścieżką. Udowodnione naruszenia blokują odbiór. Prawdopodobne ryzyko bezpieczeństwa wymaga rozstrzygnięcia i nie może być automatycznie uznane za PASS. Na końcu wymień sprawdzenia, które faktycznie uruchomiłeś, z prawdziwym wynikiem.
+Zostaw **jeden** komentarz. Pierwsza linia to `PASS <sha>` albo `FAIL <sha>`. Dalej znaleziska oznaczone jako udowodnione, prawdopodobne albo niezweryfikowane, każde ze ścieżką. Tylko udowodnione naruszenie akceptacji, bezpieczeństwa albo kontraktu blokuje odbiór. Prawdopodobne jest notatką i nie zmienia `PASS` w `FAIL`. Na końcu wymień sprawdzenia, które faktycznie uruchomiłeś, z prawdziwym wynikiem.
 
 Nie zatwierdzasz PR-a, nie żądasz zmian formalnie, nie mergujesz i nie pushujesz. Merge należy do Adama.
