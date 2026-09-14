@@ -2,7 +2,7 @@
 
 - Issue / spec: `.ai/specs/SPEC-019-2026-06-12-second-gen-skills-open-mercato.md`
 - Owning repo: fiziyo-admin-portal
-- Status runu: working
+- Status runu: done
 - Upoważnienie: polecenie Adama z 2026-09-14 — wdrożyć plan `chore/agent-navigability`,
   w tym commity i push brancha; bez tworzenia PR.
 - Writer: koordynator bieżącego zadania.
@@ -33,7 +33,7 @@
 - [x] F7 — lessons, AGENTS, README, STRUCTURE
 - [x] F8 — guide'y organization/finances/graphql
 - [x] F9 — useLazyQuery i otypowanie `any`
-- [ ] Walidacja, reviewer, push
+- [x] Walidacja, reviewer, push
 
 ## Decyzje
 
@@ -42,13 +42,16 @@
 
 ## Dowody
 
-- Kandydat: uzupełniane po ostatniej kontroli.
-- Kontrola: po F9 `npm run agent:check`, `npm run agent:test`, `npm run validate`.
-- Reviewer: subagent przed pushem.
+- Kandydat: `e8a8816` + follow-up testid QR na `SelectTrigger`.
+- Kontrola: `skills:lint/sync/check` OK; `agent:check` OK; `agent:test` 47 pass;
+  `eslint scripts --max-warnings 0` OK; `npm run validate` OK (lint, testids,
+  tsc, 582 testy, build).
+- Reviewer: PASS `e8a8816a6cac0afaac9d2dce20e441b318c2cac5` (subagent
+  `98971e9a-20a0-4607-ba71-7d419be8f0d3`).
 
 ## Handoff
 
-- Następny krok: dokończyć F5–F9 i wypchnąć branch.
+- Następny krok: człowiek otwiera draft PR; agent nie tworzy PR.
 - Blokady: brak.
-- Transfer kodu: ten sam checkout.
+- Transfer kodu: branch `chore/agent-navigability`.
 - BOARD: SPEC-001 | fiziyo-admin-portal | `.ai/runs/2026-09-14-agent-navigability.md`

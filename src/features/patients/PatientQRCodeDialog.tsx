@@ -637,8 +637,15 @@ export function PatientQRCodeDialog({
                   {/* 1. SELECTOR - subtelny na górze (bez linii!) */}
                   {hasMultiplePlans && (
                     <div className="mb-2">
-                      <Select data-testid="patient-qr-plan-select" value={selectedPlanId} onValueChange={setSelectedPlanId}>
-                        <SelectTrigger className="w-full bg-muted/30 border-border/50 text-xs">
+                      <Select
+                        data-testid="patient-qr-plan-select-root"
+                        value={selectedPlanId}
+                        onValueChange={setSelectedPlanId}
+                      >
+                        <SelectTrigger
+                          data-testid="patient-qr-plan-select"
+                          className="w-full bg-muted/30 border-border/50 text-xs"
+                        >
                           <SelectValue placeholder="Wybierz plan" />
                         </SelectTrigger>
                         <SelectContent>
