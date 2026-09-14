@@ -1,3 +1,11 @@
+---
+spec: SPEC-001
+repo: fiziyo-admin-portal
+issues: []
+prs: []
+board:
+---
+
 # Assignment Wizard - Personalizacja i przypisanie planu pacjenta
 
 ## Cel biznesowy

@@ -1,3 +1,11 @@
+---
+spec: SPEC-027
+repo: fiziyo-admin-portal
+issues: []
+prs: []
+board:
+---
+
 # Runtime security dependency updates
 
 ## Cel biznesowy

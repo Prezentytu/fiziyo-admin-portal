@@ -1,3 +1,11 @@
+---
+spec: SPEC-005
+repo: fiziyo-admin-portal
+issues: []
+prs: []
+board:
+---
+
 # SPEC-005: Patients Module
 
 ## Cel biznesowy

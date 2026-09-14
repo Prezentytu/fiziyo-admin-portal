@@ -1,3 +1,11 @@
+---
+spec: SPEC-021
+repo: fiziyo-admin-portal
+issues: []
+prs: []
+board:
+---
+
 # SPEC-021 — Full Patient Personalization
 
 ## Cel biznesowy

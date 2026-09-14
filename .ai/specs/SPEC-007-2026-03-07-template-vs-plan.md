@@ -1,3 +1,11 @@
+---
+spec: SPEC-007
+repo: fiziyo-admin-portal
+issues: []
+prs: []
+board:
+---
+
 # Template vs Plan - Rozdzielenie szablonow i planow pacjenta
 
 ## Cel biznesowy

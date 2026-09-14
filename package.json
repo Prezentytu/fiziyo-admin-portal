@@ -10,7 +10,7 @@
     "skills:check": "node scripts/sync-cursor-skills.mjs --check",
     "skills:test": "node --test scripts/sync-cursor-skills.test.mjs",
     "skills:lint": "node scripts/sync-cursor-skills.mjs --lint",
-    "agent:check": "node scripts/check-agent-adapter.mjs",
+    "agent:check": "node scripts/check-agent-adapter.mjs && node scripts/check-specs-index.mjs",
     "agent:test": "node --test scripts/*.test.mjs",
     "lint": "eslint",
     "lint:fix": "eslint --fix",

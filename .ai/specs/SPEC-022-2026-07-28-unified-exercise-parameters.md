@@ -1,3 +1,11 @@
+---
+spec: SPEC-022
+repo: fiziyo-admin-portal
+issues: []
+prs: []
+board:
+---
+
 # SPEC-022 — Unified Exercise Parameters Presentation
 
 ## Cel biznesowy

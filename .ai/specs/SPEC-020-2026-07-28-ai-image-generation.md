@@ -1,3 +1,11 @@
+---
+spec: SPEC-020
+repo: fiziyo-admin-portal
+issues: []
+prs: []
+board:
+---
+
 # SPEC-020 — AI Image Generation (OpenRouter Image API)
 
 ## Cel biznesowy

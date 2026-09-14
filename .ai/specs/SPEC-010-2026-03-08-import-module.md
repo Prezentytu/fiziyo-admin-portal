@@ -1,3 +1,11 @@
+---
+spec: SPEC-010
+repo: fiziyo-admin-portal
+issues: []
+prs: []
+board:
+---
+
 # Import Module
 
 ## Cel biznesowy

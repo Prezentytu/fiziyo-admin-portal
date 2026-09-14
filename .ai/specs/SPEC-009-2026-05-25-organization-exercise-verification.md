@@ -1,3 +1,11 @@
+---
+spec: SPEC-009
+repo: fiziyo-admin-portal
+issues: []
+prs: []
+board:
+---
+
 # SPEC-009: Organization Exercise Verification
 
 ## Cel biznesowy

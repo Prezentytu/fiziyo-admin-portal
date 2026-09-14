@@ -1,3 +1,11 @@
+---
+spec: SPEC-024
+repo: fiziyo-admin-portal
+issues: []
+prs: []
+board:
+---
+
 # SPEC-024 — Personalizacja enrichment (kroki / cues / safety)
 
 ## Cel biznesowy

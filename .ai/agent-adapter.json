@@ -25,6 +25,8 @@
     "docs/testing/agent-access.md",
     "scripts/agent-guard.mjs",
     "scripts/agent-guard.test.mjs",
+    "scripts/check-specs-index.mjs",
+    "scripts/check-specs-index.test.mjs",
     ".cursor/agents/reviewer.md",
     ".cursor/agents/sec-auditor.md",
     ".cursor/BUGBOT.md"

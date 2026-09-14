@@ -1,3 +1,11 @@
+---
+spec: SPEC-011
+repo: fiziyo-admin-portal
+issues: []
+prs: []
+board:
+---
+
 # Invite Flow Without Legacy Plan Limits
 
 ## Cel biznesowy

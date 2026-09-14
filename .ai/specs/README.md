@@ -33,7 +33,7 @@ Każda specyfikacja powinna zawierać:
 
 ### Statusy (wspólny słownik z `fizjo-app`, od 2026-09-10)
 
-`draft` → `approved` → `in-progress` → `implemented` → `verified`; `deprecated` dla wycofanych. Status jest **tylko** w tym indeksie. Wpisy `Aktywny` w tabeli to stare oznaczenie — przy najbliższej edycji danego specu agent zamienia je na właściwy status; nie robimy masowej migracji.
+`draft` → `approved` → `in-progress` → `implemented` → `verified`; `deprecated` dla wycofanych. Status jest **tylko** w tym indeksie. `Aktywny` = legacy `approved`/`in-progress`; przy najbliższej edycji danego specu zamień na słownik, bez masowej migracji. `npm run agent:check` weryfikuje, że każdy plik `SPEC-*.md` ma wiersz w tabeli i frontmatter.
 
 ### Metadane i dowody (od 2026-09-10)
 
@@ -74,9 +74,6 @@ Każda specyfikacja powinna mieć sekcję Changelog na końcu:
 
 ## Indeks specyfikacji
 
-Release tooling: [SPEC-026](SPEC-026-2026-09-08-release-identity.md), implemented (live unverified).
-Runtime dependency security: [SPEC-027](SPEC-027-2026-09-08-runtime-security-updates.md), implemented (full quality gate blocked).
-
 | Nr  | Tytuł                                                                                                 | Opis                                                           | Status      |
 | --- | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- | ----------- |
 | 001 | [Assignment Wizard](SPEC-001-2026-02-04-assignment-wizard.md)                                         | Wizard przypisywania zestawów ćwiczeń pacjentom                | Aktywny     |
@@ -103,6 +100,8 @@ Runtime dependency security: [SPEC-027](SPEC-027-2026-09-08-runtime-security-upd
 | 023 | [Mapping overridesJson + duration](SPEC-023-2026-07-28-mapping-overrides-and-duration-deprecation.md) | overridesJson na mappingu + wycofanie edycji duration          | Aktywny     |
 | 024 | [Enrichment personalization](SPEC-024-2026-07-28-enrichment-personalization.md)                       | Personalizacja kroków/cues/safety per pacjent i zestaw         | Aktywny     |
 | 025 | [Catalog bundle import](SPEC-025-2026-08-20-catalog-bundle-import.md)                                 | Import JSON katalogu w Ustawienia → Zaawansowane (każdy fizjo) | implemented |
+| 026 | [Release identity](SPEC-026-2026-09-08-release-identity.md)                                           | Tożsamość release w panelu                                     | implemented |
+| 027 | [Runtime security updates](SPEC-027-2026-09-08-runtime-security-updates.md)                           | Aktualizacje zależności runtime                                | implemented |
 
 ## Planowane specyfikacje
 
