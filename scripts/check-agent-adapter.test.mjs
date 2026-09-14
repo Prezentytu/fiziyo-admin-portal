@@ -21,5 +21,9 @@ test("adapter checks command and instruction availability without execution", ()
     const parser = path.resolve("scripts/task-card.mjs");
     const result = spawnSync(process.execPath, [parser, "check"], { cwd: root, encoding: "utf8", input: "```task-card\nCel: Test\nTryb: advise\nRepo: owner/repo\nZlecił: example\n```" });
     assert.equal(result.status, 0, result.stderr);
+    fs.rmSync(path.join(root, ".ai/agent-adapter.json"));
+    const missing = spawnSync(process.execPath, [parser, "check"], { cwd: root, encoding: "utf8", input: "```task-card\nCel: Test\nTryb: advise\nRepo: owner/repo\nZlecił: example\n```" });
+    assert.notEqual(missing.status, 0);
+    assert.match(String(missing.stderr), /agent-adapter/);
   } finally { fs.rmSync(root, { recursive: true, force: true }); }
 });

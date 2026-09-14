@@ -3,7 +3,7 @@
 `.ai/agent-adapter.json` wskazuje lokalne instrukcje, źródło skilli i rzeczywiste
 komendy kontroli. `node scripts/check-agent-adapter.mjs` sprawdza ich dostępność;
 nie wykonuje poleceń i nie potwierdza uprawnień SaaS. Parser task-card korzysta
-z tego manifestu, a bez niego z istniejącego `.ai/agent-workflow.json`.
+z tego manifestu. Brak adaptera jest błędem; nie ma fallbacku do `.ai/agent-workflow.json`.
 
 Wspólne pliki są kopiowane z fizjo-app. Skille i ich synchronizacja pozostają
 zgodne z konwencją właściciela repo. Nie zakładaj dostępności mobilnego runnera

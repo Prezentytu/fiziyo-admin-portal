@@ -149,7 +149,8 @@ export function parseTaskCard(body, { repositories = [] } = {}) {
 
 function repositoriesFromConfig(root) {
   const adapter = path.join(root, ".ai/agent-adapter.json");
-  const config = JSON.parse(fs.readFileSync(fs.existsSync(adapter) ? adapter : path.join(root, ".ai/agent-workflow.json"), "utf8"));
+  if (!fs.existsSync(adapter)) throw new Error("Brak .ai/agent-adapter.json — nie zgaduj listy repozytoriów");
+  const config = JSON.parse(fs.readFileSync(adapter, "utf8"));
   return [config.repository, ...config.externalRepositories];
 }
 

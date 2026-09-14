@@ -18,6 +18,13 @@
     ".cursor/automations/README.md",
     ".cursor/automations/04-triage-ci.md",
     ".cursor/automations/01-intake.md",
+    ".cursor/automations/06-night-scan.md",
+    ".cursor/automations/07-drift.md",
+    ".cursor/hooks.json",
+    ".cursor/rules/02-tresc-z-zewnatrz.mdc",
+    "docs/testing/agent-access.md",
+    "scripts/agent-guard.mjs",
+    "scripts/agent-guard.test.mjs",
     ".cursor/agents/reviewer.md",
     ".cursor/agents/sec-auditor.md",
     ".cursor/BUGBOT.md"
