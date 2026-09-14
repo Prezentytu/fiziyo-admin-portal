@@ -14,6 +14,6 @@ Praca wielokrokowa idzie małymi jednostkami. Każda kończy się stanem, który
 - Checkpoint nie odświeża starych wyników. Zmiana HEAD albo dirty diff unieważnia dowód.
 - Nie zbieraj wszystkich sprawdzeń na koniec fali.
 
-Pasuje do `npm run agent -- check` i do `verify:fast` w trakcie, `validate` na końcu.
+Pasuje do `npm run agent:check` i do `verify:fast` w trakcie, `validate` na końcu.
 
 Przykład z `lessons.md`: przy wznowieniu zadania porównujesz repo, branch, HEAD i dirty diff. Checkpoint nie zamienia starych testów w aktualne.
