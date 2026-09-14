@@ -38,7 +38,7 @@ Oprócz skills, folder `.ai/` zawiera dokumentację kontekstową:
 
 ## Integracja z klientami agentów
 
-Skille projektowe mają lokalne punkty wykrywania w `.cursor/skills/` i `.agents/skills/`. Oba katalogi są ignorowane przez Git; nowy checkout wymaga synchronizacji.
+Skille projektowe mają lokalne punkty wykrywania w `.cursor/skills/` i `.agents/skills/`. Oba katalogi są ignorowane przez Git od 2026-09-14; nowy checkout wymaga `npm run skills:sync`.
 Canonical source pozostaje w `.ai/skills/`, a workflow agentow jest spinany przez `AGENTS.md` oraz `.cursor/rules/*.mdc`.
 
 ### Source of truth

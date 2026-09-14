@@ -79,6 +79,11 @@ Brak nowych elementów UI.
 
 ## Changelog
 
+### 2026-09-14
+
+- Kopie `.cursor/skills/` usunięte z indeksu Gita. Źródłem pozostaje `.ai/skills/`;
+  lustra są generowane przez `skills:sync` i ignorowane.
+
 ### 2026-06-12
 
 - Utworzenie specyfikacji drugiej generacji skilli.
