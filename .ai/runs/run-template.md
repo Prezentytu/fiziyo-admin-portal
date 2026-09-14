@@ -1,36 +1,39 @@
-# <Run title>
+# <cel>
 
-## Context
+- Issue / spec: <wskaźnik; status specu tylko w indeksie>
+- Owning repo: fiziyo-admin-portal
+- Status runu: working
+- Upoważnienie: <źródło i zakres; commit/push/PR/deploy tylko za osobną zgodą>
+- Writer: <koordynator>
+- Dozwolone pliki: <konkretne ścieżki>
+- Wykluczenia: <poza zakresem>
+- Acceptance: <obserwowalny wynik>
 
-- Zakres:
-- Powód:
-- Wejście (spec/issue/plan):
+## Repo i baseline
 
-## Goal
-
-- Docelowy rezultat:
-
-## Plan
-
-1. Faza 1:
-2. Faza 2:
-3. Faza 3:
+- Repo / checkout / branch / HEAD:
+- Instrukcje:
+- Zastane zmiany i ich tożsamość:
+- Wymagany zakres i kontrole:
+- Dostępność: available / blocked (powód)
 
 ## Progress
 
-- [ ] 1.1
-- [ ] 1.2
-- [ ] 2.1
-- [ ] 3.1
+- [ ] <krok i kryterium ukończenia>
 
-## Validation
+## Decyzje
 
-- [ ] `npm run lint`
-- [ ] `npm run test:run`
-- [ ] `npm run validate` (gdy wysoki risk)
+- <wybór, przyczyna, źródło zgody jeśli wymagane>
 
-## Notes
+## Dowody
 
-- Decyzje:
-- Ryzyka:
-- Następne kroki:
+- Kandydat: <repo, HEAD, fingerprint dirty diffa i nowych plików>
+- Kontrola: <czas, dokładna komenda, exit code, wynik i ograniczenia>
+- Reviewer: <raport/werdykt, kandydat; unverified jeśli brak>
+
+## Handoff
+
+- Następny krok: <jedna konkretna akcja>
+- Blokady: <powód, co odblokuje>
+- Transfer kodu: <ten sam checkout / zatwierdzony commit / patch + nowe pliki>
+- BOARD: <istniejąca pozycja lub proponowana linia do fizjo-app/.ai/BOARD.md>

@@ -2,7 +2,7 @@
 
 - Issue / spec: `.ai/specs/SPEC-019-2026-06-12-second-gen-skills-open-mercato.md`
 - Owning repo: fiziyo-admin-portal
-- Status runu: working
+- Status runu: done
 - Upoważnienie: polecenie Adama z 2026-09-10 — analiza Limen i ogólne poprawki cross-repo w repo adminów, bez commitowania.
 - Writer: koordynator bieżącego zadania.
 - Zakres: AGENTS, `.ai/docs/agent-rules.md`, `.ai/AI_ENGINEERING.md`, indeks skilli i `.cursor/rules/agentic-engineering.mdc`, workflow i szablon w `docs/architecture`, skille auto-implement/continue-run/implement-spec/code-review/check-and-commit, synchronizator i jego testy, komendy skills w package.json, SPEC-019/indeks, lessons, ten run i generowane kopie skilli.
@@ -24,7 +24,7 @@
 - [x] Spec zakresu w istniejącym SPEC-019 i przygotowanie zmian w kopii roboczej.
 - [x] Implementacja synchronizacji i 17 testów regresji przez osobnego agenta.
 - [x] Niezależny review końcowego zakresu.
-- [ ] Zapis w repo i kontrole końcowe.
+- [x] Zapis w repo i kontrole końcowe — kontynuacja: `.ai/runs/2026-09-14-agent-navigability.md`.
 
 ## Decyzje
 
@@ -42,7 +42,7 @@
 
 ## Handoff
 
-- Następny krok: zapis sprawdzonego kandydata i walidacja w repo portalu.
+- Następny krok: zamknięte tu; dalsza nawigowalność w runie 2026-09-14.
 - Transfer kodu: lokalny niezacommitowany checkout; sam branch main nie przenosi zmian.
 - BOARD: istniejąca pozycja SPEC-001 w fizjo-app; dopisać wskaźnik do portalowego SPEC-019 po weryfikacji.
 

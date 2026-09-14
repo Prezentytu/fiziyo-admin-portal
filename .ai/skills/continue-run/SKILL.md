@@ -16,6 +16,8 @@ description: Wznowienie przerwanej pracy z .ai/runs po porównaniu zakresu i sta
    tego zakresu; kontynuuj tylko niezależny, upoważniony wycinek lokalny.
 5. Wykonaj następny krok, uruchom adekwatne kontrole i zapisz dowód dla aktualnego
    kandydata, decyzje oraz następną akcję. Nie przepisuj dawnych wyników jako nowych.
+   Format runu: [agent-run-template.md](../../../docs/architecture/agent-run-template.md).
+   Nie wznawiaj od pierwszego `- [ ]` bez porównania Gita.
 
 Handoff przekazuje wskaźniki i sposób dostarczenia dirty kodu, nie historię czatu.
 Nie commituj, nie pushuj, nie twórz PR ani nie wdrażaj bez upoważnienia.

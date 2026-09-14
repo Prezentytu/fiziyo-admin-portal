@@ -1,27 +1,23 @@
-# Resumowalne runy (.ai/runs)
+# Resumowalne runy (`.ai/runs`)
 
-Ten katalog trzyma plany runów, które można wznowić po przerwaniu pracy.
+Ten katalog trzyma jeden plik stanu na zadanie. Nie duplikuj specu ani historii czatu.
 
 ## Konwencja nazw
 
 - `YYYY-MM-DD-<slug>.md`
 
-## Wymagany format
+## Format
 
-Każdy run MUSI zawierać:
+Użyj [docs/architecture/agent-run-template.md](../../docs/architecture/agent-run-template.md).
+Wymagane bloki: status runu, upoważnienie, baseline, Progress, Decyzje, Dowody, Handoff.
 
-1. `## Context`
-2. `## Goal`
-3. `## Plan`
-4. `## Progress` (parsowalna checklista)
-5. `## Validation`
-6. `## Notes`
+Nie migruj automatycznie starszych runów. Przy wznowieniu uzupełnij brakujący
+baseline po odczycie Gita.
 
-## Format sekcji Progress
+## Wznowienie
 
-Używaj dokładnie:
+Skill `continue-run` najpierw porównuje repo, branch, HEAD i dirty diff z zapisem.
+Nie wznawia od pierwszego niezaznaczonego checkboxa, dopóki kandydat się zgadza.
 
-- `- [ ] 1.1 opis kroku`
-- `- [x] 1.1 opis kroku (commit: <sha>)`
-
-`continue-run` wznawia od pierwszego niezaznaczonego punktu.
+Status runu: `working` | `blocked` | `ready-for-review` | `done`.
+`done` nie oznacza commita, merge ani wdrożenia.
