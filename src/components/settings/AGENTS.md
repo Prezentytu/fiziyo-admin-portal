@@ -1,28 +1,23 @@
-# AGENTS.md — Ustawienia / Organizacja
+# AGENTS.md — Ustawienia użytkownika
 
 ## Zakres
 
-Ustawienia użytkownika, zarządzanie organizacją, listy organizacji, role.
+Użyj tego katalogu do ustawień konta i dołączenia do organizacji.
+Zarządzanie gabinetem, członkami i katalogiem pisz w
+`src/components/organization/AGENTS.md`. Finanse — `src/components/finances/AGENTS.md`.
 
-## Komponenty
+## MUST
 
-- `OrganizationsList.tsx` — lista organizacji użytkownika
-- Strona: `app/(dashboard)/settings/`
-- Organizacja: `app/(dashboard)/organization/`
-
-## Wzorce
-
-- Organizacja ma `organizationId` — filtrowanie po organizacji
-- Role: Owner, Admin, Member — sprawdzaj przez `useRoleAccess` lub `AccessGuard`
-- Billing Widget: tylko Owner/Admin (SPEC-002)
+- Renderuj dialogi nawet gdy dane są `null`.
+- `JoinOrganizationDialog`: `useQuery` + `skip`, nigdy `useLazyQuery`.
+- Prefiks testid: `settings-`.
+- Nie wieszaj narzędzi „dla każdego fizjo” na `canManageOrganization`.
 
 ## Referencje
 
-- Billing: `docs/billing-widget-readme.md`
 - Access: `src/components/shared/AccessGuard.tsx`
-- Hooks: `useRoleAccess.ts`, `useSystemRole.ts`
+- Invite: SPEC-011
 
-## Konwencje data-testid
+## data-testid
 
-Prefiks: `settings-`, `org-`
-Przykłady: `settings-org-list`, `org-form-name-input`
+`settings-join-org-dialog`, `settings-join-org-token-input`
