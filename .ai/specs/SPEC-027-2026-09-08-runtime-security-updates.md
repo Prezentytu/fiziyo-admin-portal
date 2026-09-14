@@ -43,3 +43,4 @@ Brak GraphQL/DTO/UI/data-testid changes.
 ## Changelog
 
 - 2026-09-08: zgoda na scoped runtime updates po wykryciu advisory podczas CI pracy.
+- 2026-09-14: zbiorczy bump z aktualnego `main` — Next `16.3.4` → `16.3.5`, GraphQL `16.14.2`, bez Clerk 7 / GraphQL 17 / TypeScript 6. Stare PR-y Dependabota (#22, #40, #50, #51, #52) zastąpione jednym PR-em; #52 obniżyłby Next do `16.2.9`.

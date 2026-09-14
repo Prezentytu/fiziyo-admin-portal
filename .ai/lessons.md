@@ -22,6 +22,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-09-14 - Starych PR-ów Dependabota nie merguj bez porównania z main
+
+- **Kategoria**: `Build/Tooling` | `Git`
+- **Problem**: Otwarte PR-y Dependabota z czerwca były nieaktualne; #52 obniżyłby Next `16.3.4` → `16.2.9`.
+- **Przyczyna**: Grupowe bumpy leżały miesiące, a `main` dostał nowsze wersje w osobnym commicie.
+- **Rozwiązanie**: Jeden zbiorczy PR z aktualnego `main`; majory (Clerk 7, GraphQL 17, TS 6, ESLint 10) poza SPEC-027.
+- **Reguła**: Przed merge Dependabota porównaj wersje z `main`. `@testing-library/jest-dom@6.10.0` to zepsuty minor; Vitest `^4.1.11` psuje `npm install` (arborist `edgesOut`).
+
 ### 2026-09-14 - Hook klasyfikuje każdy segment `&&` osobno
 
 - **Kategoria**: `Build/Tooling`
