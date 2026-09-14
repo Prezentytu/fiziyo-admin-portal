@@ -21,6 +21,10 @@ Pelna lista kontroli znajduje sie w pliku referencyjnym:
 - Audyt istniejącego kodu
 - Użytkownik prosi o "code review"
 
+Reviewer ≠ autor: jeśli ten wątek pisał recenzowany kod, nie recenzuj go — zleć przegląd subagentowi ze świeżym kontekstem (gałąź + zakres z issue/specu, bez historii rozmowy). Review jest read-only; werdykt `accept` / `send back (lista)` / `needs-adam (dlaczego)`; nie oznaczasz merge ani zgody człowieka. Kontrakt dla chmury: `docs/architecture/cloud-agent-policy.md`.
+
+Kandydata identyfikuj przez repo, HEAD i fingerprint staged/unstaged oraz nowych plików, jeśli checkout jest dirty. Przeczytaj baseline cudzych zmian i ogranicz uwagi do zakresu. Zapisz uwagi przed poprawkami; ponowny review odnosi się do nowego kandydata. Szczegóły: [workflow](../../../docs/architecture/agent-workflow.md).
+
 ## Severity levels
 
 Klasyfikuj uwagi według severity:

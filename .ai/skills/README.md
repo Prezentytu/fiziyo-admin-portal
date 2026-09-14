@@ -19,7 +19,7 @@ Umiejętności (skills) to specjalistyczne przewodniki dla AI agentów pracując
 | [sec-report](sec-report/SKILL.md)                 | Audyt bezpieczeństwa (OWASP + RODO + tenant isolation) | Zmiany auth/token/permission, review PR              |
 | [qa-scenarios](qa-scenarios/SKILL.md)             | Raport QA P0/P1/P2                                     | Okno zmian przed release                             |
 | [auto-implement](auto-implement/SKILL.md)         | Autonomiczna implementacja runu                        | Realizacja planu krok po kroku                       |
-| [continue-run](continue-run/SKILL.md)             | Wznowienie przerwanego runu                            | Kontynuacja checklisty `.ai/runs/`                   |
+| [continue-run](continue-run/SKILL.md)             | Wznowienie przerwanego runu                            | Wznowienie po porównaniu Git i dowodów               |
 | [help](help/SKILL.md)                             | Nawigator "jaki skill teraz?"                          | Gdy potrzebna decyzja o następnym kroku              |
 | [skill-creator](skill-creator/SKILL.md)           | Scaffold nowego skilla                                 | Dodawanie nowych skilli zgodnych z konwencją FiziYo  |
 | [create-agents-md](create-agents-md/SKILL.md)     | Tworzenie AGENTS.md modułu                             | Standaryzacja instrukcji agentowych i Task Routera   |
@@ -36,9 +36,9 @@ Oprócz skills, folder `.ai/` zawiera dokumentację kontekstową:
 | [lessons.md](../lessons.md)           | Dziennik wniosków z pracy AI                                |
 | [specs/](../specs/README.md)          | Specyfikacje modułów (aktualny indeks w README)             |
 
-## Integracja z Cursor
+## Integracja z klientami agentów
 
-Skille projektowe sa udostepnione Cursorowi przez `.cursor/skills/` jako projektowy punkt odkrywania.
+Skille projektowe mają lokalne punkty wykrywania w `.cursor/skills/` i `.agents/skills/`. Oba katalogi są ignorowane przez Git; nowy checkout wymaga synchronizacji.
 Canonical source pozostaje w `.ai/skills/`, a workflow agentow jest spinany przez `AGENTS.md` oraz `.cursor/rules/*.mdc`.
 
 ### Source of truth
@@ -47,8 +47,8 @@ Canonical source pozostaje w `.ai/skills/`, a workflow agentow jest spinany prze
 - Trzymaj listę skilli w `.ai/skills/manifest.json` (tier `core` i `process`).
 - Frontmatter każdego `SKILL.md` musi mieć `name` i auto-trigger `description` (PL+EN).
 - Uruchamiaj `npm run skills:lint` aby wykryć dryf manifestu i brakujące frontmatter.
-- Synchronizuj warstwe Cursor poleceniem: `npm run skills:sync`.
-- Nie utrzymuj recznie plikow w `.cursor/skills/` (to katalog generowany).
+- Synchronizuj obie kopie: `npm run skills:sync`, potem sprawdź `npm run skills:check`.
+- Nie edytuj ręcznie kopii `.cursor/skills/` i `.agents/skills/`. Sync nie usuwa obcych plików; konflikt wymaga przeglądu.
 
 ## Struktura skilla
 
