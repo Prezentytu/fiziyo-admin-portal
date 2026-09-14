@@ -22,6 +22,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-09-14 - Nieużywany dokument GraphQL z wycofanym polem to nie alias
+
+- **Kategoria**: `GraphQL`
+- **Problem**: Panel eksportował `GET_EXERCISES_QUERY` z polem `Exercise.sets`, którego nie ma w SDL; ECOSYSTEM nazywał je operacją współdzieloną.
+- **Przyczyna**: Sonda schematu została w `exercises.queries.ts` po tym, jak lista panelu przeszła na `availableExercises` / `organizationExercises`.
+- **Rozwiązanie**: Usunięto martwe dokumenty; lista współdzielona w ECOSYSTEM nie wskazuje już `GET_EXERCISES_QUERY`.
+- **Reguła**: Jeśli ECOSYSTEM mówi, że query jest współdzielone, sprawdź importy w obu klientach — nieużywana kopia z polem spoza SDL to ścieżka do crasha, nie alias.
+
 ### 2026-09-14 - Starych PR-ów Dependabota nie merguj bez porównania z main
 
 - **Kategoria**: `Build/Tooling` | `Git`

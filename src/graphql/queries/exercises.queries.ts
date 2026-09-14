@@ -81,32 +81,6 @@ export const EXERCISE_FULL_FRAGMENT = gql`
   }
 `;
 
-// Query do pobierania listy ćwiczeń - najpierw podstawowe pola
-export const GET_EXERCISES_QUERY = gql`
-  query GetExercises {
-    exercises {
-      id
-      name
-      type
-      isActive
-      sets
-    }
-  }
-`;
-
-// Query z filtrowaniem - może być wymagane
-export const GET_EXERCISES_WITH_FILTER_QUERY = gql`
-  query GetExercisesWithFilter {
-    exercises {
-      id
-      name
-      type
-      isActive
-      sets
-    }
-  }
-`;
-
 // Query z minimum field - test czy jakieś pole powoduje błąd
 export const GET_EXERCISES_MINIMAL_QUERY = gql`
   query GetExercisesMinimal {

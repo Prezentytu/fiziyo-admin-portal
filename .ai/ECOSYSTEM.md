@@ -35,7 +35,7 @@ Backend eksponuje jeden schemat GraphQL. Oba frontendy definiują **własne** za
 
 Zapytania używane w obu frontendach (wspólne resolwery):
 
-- Exercises: `GET_EXERCISES_QUERY`, `GET_EXERCISE_BY_ID_QUERY`, `GET_AVAILABLE_EXERCISES_QUERY`
+- Exercises: `GET_EXERCISE_BY_ID_QUERY`, `GET_AVAILABLE_EXERCISES_QUERY` (lista w panelu: `GET_AVAILABLE_EXERCISES_QUERY` / `GET_ORGANIZATION_EXERCISES_QUERY`; `GET_EXERCISES_QUERY` jest tylko w mobile i nie jest listą panelu)
 - Exercise Sets: `GET_EXERCISE_SETS_QUERY`, `GET_EXERCISE_SET_MAPPINGS_QUERY`
 - Patients: `GET_THERAPIST_PATIENTS_QUERY`, `GET_PATIENT_ASSIGNMENTS_QUERY`
 - Organizations: `GET_ORGANIZATIONS_QUERY`, `GET_CLINICS_QUERY`
@@ -57,6 +57,7 @@ Zapytania używane w obu frontendach (wspólne resolwery):
 - Patient Report: `GET_PATIENT_REPORT_QUERY`
 - Exercise Progress: `MARK_EXERCISE_COMPLETED_MUTATION`
 - Organization verification submit: `SUBMIT_FOR_ORGANIZATION_REVIEW_MUTATION`
+- Unscoped exercise list: `GET_EXERCISES_QUERY` (nie używać w panelu — tam `availableExercises` / `organizationExercises`)
 - Hooks layer: 28 custom hooks (`useExercises`, `usePatientAssignments` itd.)
 
 ### Typy — duplikacja, nie współdzielenie
