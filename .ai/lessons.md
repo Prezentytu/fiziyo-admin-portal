@@ -22,6 +22,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-09-14 - Hook klasyfikuje każdy segment `&&` osobno
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: `git push && git log origin/main..HEAD` padało jako „push to main”.
+- **Przyczyna**: Jeden regex na całym łańcuchu poleceń.
+- **Rozwiązanie**: `agent-guard` dzieli po `&&` / `||` / `;` i ocenia segmenty.
+- **Reguła**: Jeśli hook szuka `git push` + `main`, klasyfikuj segment, nie cały string.
+
 ### 2026-09-14 - Polityka cytuje tylko to, co `agent:check` weryfikuje
 
 - **Kategoria**: `Build/Tooling` | `Git`

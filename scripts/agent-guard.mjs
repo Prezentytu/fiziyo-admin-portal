@@ -7,14 +7,22 @@ const GH_MERGE = /\bgh\b[\s\S]*\bpr\b[\s\S]*\bmerge\b/;
 const VERCEL_PROD = /\bvercel\b[\s\S]*--prod\b/;
 const PROMOTE = /\b(?:npm|pnpm|yarn|npx|gh)\b[\s\S]*\bpromote\b|\bworkflow[\s\S]*promote|\bpromote(?:\.yml|\.yaml)\b/;
 
+function commandSegments(command) {
+  return String(command ?? "")
+    .split(/\s*(?:&&|\|\||;)\s*/)
+    .map((segment) => segment.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+}
+
 export function classifyShellCommand(command) {
-  const text = String(command ?? "").replace(/\s+/g, " ").trim();
   const reasons = [];
-  if (PUSH_MAIN.test(text)) reasons.push("push to main");
-  if (GH_MERGE.test(text)) reasons.push("pull request merge");
-  if (VERCEL_PROD.test(text)) reasons.push("production deploy");
-  if (PROMOTE.test(text)) reasons.push("promote workflow");
-  return reasons.length ? { permission: "deny", reasons } : { permission: "allow", reasons: [] };
+  for (const segment of commandSegments(command)) {
+    if (PUSH_MAIN.test(segment)) reasons.push("push to main");
+    if (GH_MERGE.test(segment)) reasons.push("pull request merge");
+    if (VERCEL_PROD.test(segment)) reasons.push("production deploy");
+    if (PROMOTE.test(segment)) reasons.push("promote workflow");
+  }
+  return reasons.length ? { permission: "deny", reasons: [...new Set(reasons)] } : { permission: "allow", reasons: [] };
 }
 
 export function hookResponse(command) {

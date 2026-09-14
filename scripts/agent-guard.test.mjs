@@ -15,6 +15,10 @@ describe("agent-guard", () => {
 
   it("allows ordinary portal work", () => {
     assert.equal(classifyShellCommand("git push -u origin HEAD").permission, "allow");
+    assert.equal(
+      classifyShellCommand("git push -u origin HEAD && git log --oneline origin/main..HEAD").permission,
+      "allow"
+    );
     assert.equal(classifyShellCommand("npm run validate").permission, "allow");
     assert.equal(classifyShellCommand("gh pr create --draft").permission, "allow");
   });
