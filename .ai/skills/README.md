@@ -4,25 +4,35 @@ Umiejętności (skills) to specjalistyczne przewodniki dla AI agentów pracując
 
 ## Dostępne skills
 
-| Skill                                             | Opis                                                   | Kiedy używać                                         |
-| ------------------------------------------------- | ------------------------------------------------------ | ---------------------------------------------------- |
-| [spec-writing](spec-writing/SKILL.md)             | Tworzenie/aktualizacja specyfikacji                    | Gdy potrzebna dokumentacja architektury i kontraktów |
-| [pre-implement-spec](pre-implement-spec/SKILL.md) | Audyt gotowości specyfikacji                           | Przed kodowaniem dużych zmian                        |
-| [implement-spec](implement-spec/SKILL.md)         | Wdrażanie spec fazami                                  | Implementacja wieloetapowa                           |
-| [code-review](code-review/SKILL.md)               | Review jakości i ryzyk                                 | Audyt PR/diffa                                       |
-| [integration-tests](integration-tests/SKILL.md)   | Testy regresyjne i integracyjne                        | Po zmianach funkcjonalnych                           |
-| [smart-test](smart-test/SKILL.md)                 | Minimalny zestaw testów pod diff                       | Szybki feedback loop                                 |
-| [check-and-commit](check-and-commit/SKILL.md)     | Quality gate przed commitem                            | Domknięcie zadania                                   |
-| [root-cause](root-cause/SKILL.md)                 | Analiza przyczyny źródłowej                            | Debug regresji/incydentu                             |
-| [product-designer](product-designer/SKILL.md)     | Premium UI/UX + accessibility                          | Redesign, audit UI, theme-safe                       |
-| [ui-guardian](ui-guardian/SKILL.md)               | Wykonywalny guardian UI + metryki                      | Skan tokenów, migracja theme-safe, raport delta      |
-| [sec-report](sec-report/SKILL.md)                 | Audyt bezpieczeństwa (OWASP + RODO + tenant isolation) | Zmiany auth/token/permission, review PR              |
-| [qa-scenarios](qa-scenarios/SKILL.md)             | Raport QA P0/P1/P2                                     | Okno zmian przed release                             |
-| [auto-implement](auto-implement/SKILL.md)         | Autonomiczna implementacja runu                        | Realizacja planu krok po kroku                       |
-| [continue-run](continue-run/SKILL.md)             | Wznowienie przerwanego runu                            | Kontynuacja checklisty `.ai/runs/`                   |
-| [help](help/SKILL.md)                             | Nawigator "jaki skill teraz?"                          | Gdy potrzebna decyzja o następnym kroku              |
-| [skill-creator](skill-creator/SKILL.md)           | Scaffold nowego skilla                                 | Dodawanie nowych skilli zgodnych z konwencją FiziYo  |
-| [create-agents-md](create-agents-md/SKILL.md)     | Tworzenie AGENTS.md modułu                             | Standaryzacja instrukcji agentowych i Task Routera   |
+| Skill                                                                                   | Opis                                                   | Kiedy używać                                         |
+| --------------------------------------------------------------------------------------- | ------------------------------------------------------ | ---------------------------------------------------- |
+| [spec-writing](spec-writing/SKILL.md)                                                   | Tworzenie/aktualizacja specyfikacji                    | Gdy potrzebna dokumentacja architektury i kontraktów |
+| [pre-implement-spec](pre-implement-spec/SKILL.md)                                       | Audyt gotowości specyfikacji                           | Przed kodowaniem dużych zmian                        |
+| [implement-spec](implement-spec/SKILL.md)                                               | Wdrażanie spec fazami                                  | Implementacja wieloetapowa                           |
+| [code-review](code-review/SKILL.md)                                                     | Review jakości i ryzyk                                 | Audyt PR/diffa                                       |
+| [integration-tests](integration-tests/SKILL.md)                                         | Testy regresyjne i integracyjne                        | Po zmianach funkcjonalnych                           |
+| [smart-test](smart-test/SKILL.md)                                                       | Minimalny zestaw testów pod diff                       | Szybki feedback loop                                 |
+| [check-and-commit](check-and-commit/SKILL.md)                                           | Quality gate przed commitem                            | Domknięcie zadania                                   |
+| [root-cause](root-cause/SKILL.md)                                                       | Analiza przyczyny źródłowej                            | Debug regresji/incydentu                             |
+| [product-designer](product-designer/SKILL.md)                                           | Premium UI/UX + accessibility                          | Redesign, audit UI, theme-safe                       |
+| [ui-guardian](ui-guardian/SKILL.md)                                                     | Wykonywalny guardian UI + metryki                      | Skan tokenów, migracja theme-safe, raport delta      |
+| [sec-report](sec-report/SKILL.md)                                                       | Audyt bezpieczeństwa (OWASP + RODO + tenant isolation) | Zmiany auth/token/permission, review PR              |
+| [qa-scenarios](qa-scenarios/SKILL.md)                                                   | Raport QA P0/P1/P2                                     | Okno zmian przed release                             |
+| [auto-implement](auto-implement/SKILL.md)                                               | Autonomiczna implementacja runu                        | Realizacja planu krok po kroku                       |
+| [continue-run](continue-run/SKILL.md)                                                   | Wznowienie przerwanego runu                            | Kontynuacja checklisty `.ai/runs/`                   |
+| [help](help/SKILL.md)                                                                   | Nawigator "jaki skill teraz?"                          | Gdy potrzebna decyzja o następnym kroku              |
+| [skill-creator](skill-creator/SKILL.md)                                                 | Scaffold nowego skilla                                 | Dodawanie nowych skilli zgodnych z konwencją FiziYo  |
+| [create-agents-md](create-agents-md/SKILL.md)                                           | Tworzenie AGENTS.md modułu                             | Standaryzacja instrukcji agentowych i Task Routera   |
+| [principle-laziness-protocol](principle-laziness-protocol/SKILL.md)                     | Najmniejszy diff, kasowanie przed dodawaniem           | Sizing zmiany, pokusa warstwy                        |
+| [principle-encode-lessons-in-structure](principle-encode-lessons-in-structure/SKILL.md) | Lekcja → lint/test/hook, nie kolejny tekst             | Ta sama instrukcja drugi raz                         |
+| [principle-boundary-discipline](principle-boundary-discipline/SKILL.md)                 | Guard i parse na granicy, typy w środku                | Walidacja, `any`/`as`, enum                          |
+| [principle-model-the-domain](principle-model-the-domain/SKILL.md)                       | Kształt danych zanim kod                               | Stan rozproszony w ifach                             |
+| [principle-make-operations-idempotent](principle-make-operations-idempotent/SKILL.md)   | Ten sam stan po retry                                  | Mutacja, import, pętla                               |
+| [principle-subtract-before-you-add](principle-subtract-before-you-add/SKILL.md)         | Najpierw zdejmij martwy kod                            | Wycofanie funkcji; GraphQL additive-first            |
+| [principle-sequence-verifiable-units](principle-sequence-verifiable-units/SKILL.md)     | Jednostka kończy się sprawdzeniem                      | Wielokrok, commity, check                            |
+| [principle-never-block-on-the-human](principle-never-block-on-the-human/SKILL.md)       | Fakt obserwowalny sprawdzasz, nie pytasz               | Ask First i akcje nieodwracalne bez zmian            |
+
+Źródło zasad: `fizjo-app/.agents/skills/principle-*/SKILL.md`. Przy zmianie zaktualizuj oba repo.
 
 ## Dokumentacja ekosystemowa (.ai/)
 

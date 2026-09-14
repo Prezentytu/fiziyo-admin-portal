@@ -21,6 +21,16 @@
       "root-cause",
       "sec-report",
       "skill-creator"
+    ],
+    "principles": [
+      "principle-boundary-discipline",
+      "principle-encode-lessons-in-structure",
+      "principle-laziness-protocol",
+      "principle-make-operations-idempotent",
+      "principle-model-the-domain",
+      "principle-never-block-on-the-human",
+      "principle-sequence-verifiable-units",
+      "principle-subtract-before-you-add"
     ]
   }
 }
