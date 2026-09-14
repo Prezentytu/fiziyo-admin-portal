@@ -31,7 +31,7 @@ Dokument dla zespołu i agentów: kiedy i jak pisać testy, żeby wiedzieć, kie
 - `npm run test` — watch mode.
 - `npm run test:run` — jednorazowe uruchomienie.
 - `npm run test:coverage` — raport pokrycia.
-- `npm run validate` — lint + type-check + test:run + build.
+- `npm run validate` — lint + check:testids + type-check + test:run + build.
 
 ## Dla agentów
 

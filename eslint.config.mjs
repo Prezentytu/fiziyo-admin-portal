@@ -38,6 +38,21 @@ const config = [
       "@next/next/no-img-element": "off",
     },
   },
+  {
+    name: "project/scripts",
+    files: ["scripts/**/*.mjs"],
+    languageOptions: {
+      globals: {
+        process: "readonly",
+        Buffer: "readonly",
+        console: "readonly",
+        URL: "readonly",
+      },
+    },
+    rules: {
+      "@next/next/no-html-link-for-pages": "off",
+    },
+  },
   eslintConfigPrettier,
 ];
 

@@ -46,8 +46,13 @@
       "cwd": "."
     },
     {
-      "command": "node",
-      "args": ["--test", "scripts/task-card.test.mjs", "scripts/check-agent-adapter.test.mjs"],
+      "command": "npm",
+      "args": ["run", "agent:check"],
+      "cwd": "."
+    },
+    {
+      "command": "npm",
+      "args": ["run", "agent:test"],
       "cwd": "."
     }
   ],
