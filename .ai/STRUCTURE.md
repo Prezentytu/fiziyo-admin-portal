@@ -6,12 +6,12 @@ Dokument opisuje, jak układać pliki w modułach funkcyjnych (np. Assignment Wi
 
 - **Jeden folder = jeden obszar funkcjonalny** (np. `src/features/assignment/`, `src/features/exercise-sets/`).
 - **Logika biznesowa** (filtry, walidacja, sortowanie) trafia do **utils**; komponenty tylko orkiestrują i renderują.
-- **Testy jednostkowe** do logiki: w `utils/__tests__/` (obok kodu) lub `*.test.ts` obok pliku źródłowego — zgodnie z konwencją modułu.
+- **Testy jednostkowe** do logiki: docelowo `utils/__tests__/`. `patients` i `exercise-sets` mają dziś testy utils obok pliku — nowe testy utils pisz w `utils/__tests__/`. Testy komponentów zostają obok pliku albo w `__tests__/` tego folderu, byle konsekwentnie w jednym module.
 - **Typy i stałe domenowe** (np. `WizardStep`, `getWizardSteps`) mogą zostać w pliku `types.ts` w korzeniu modułu, jeśli używane są wszędzie.
 
 ## Struktura src/ (po restrukturyzacji)
 
-- **src/features/** — moduły domenowe: assignment, exercises, exercise-sets, patients, verification, import. Każdy ma utils/, index.ts, AGENTS.md; komponenty i typy w korzeniu lub podkatalogach.
+- **src/features/** — assignment, exercises, exercise-sets, patients, verification, import, auth. Wzorzec: `utils/`, `index.ts`, `AGENTS.md`. `auth` jest mały i nie ma własnego guide'a.
 - **src/components/** — komponenty współdzielone: shared, ui, layout oraz auth, organization, settings, finances, clinical, chat, pdf, exercise-builder.
 - **src/graphql/**, **src/lib/**, **src/hooks/**, **src/services/**, **src/types/**, **src/contexts/**, **src/utils/** — bez zmian.
 

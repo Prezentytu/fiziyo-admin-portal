@@ -31,8 +31,9 @@ WAŻNE: Preferuj wnioskowanie oparte na dokumentacji (retrieval-led) zamiast wni
 Najpierw test dotkniętego zachowania. Dla zmian produktu: `npm run validate`
 (lint + test IDs + type-check + testy + build), raz, bez powtarzania całego zestawu osobno.
 Tylko workflow agentów/dokumentacja: `npm run skills:lint`, `npm run skills:test`,
-`npm run skills:sync`, `npm run skills:check`; zmienione skrypty również ESLint
-z `--max-warnings 0`. Wymagane kontrole CI pozostają obowiązkowe.
+`npm run skills:sync`, `npm run skills:check`, `npm run agent:check`,
+`npm run agent:test`; zmienione skrypty również ESLint z `--max-warnings 0`.
+Wymagane kontrole CI pozostają obowiązkowe.
 
 Szczegóły: `.ai/docs/agent-rules.md` i `docs/architecture/agent-workflow.md`.
 
@@ -65,7 +66,13 @@ Przed rozpoczęciem pracy dopasuj zadanie do tabeli i przeczytaj WSZYSTKIE pasuj
 | Pipeline E2E / cross-repo CI     | `docs/testing/e2e-cross-repo-pipeline.md`                                                           |
 | Code review                      | `.ai/skills/code-review/`                                                                           |
 | UI/UX / design / accessibility   | `.ai/skills/product-designer/SKILL.md` + `.ai/skills/product-designer/references/cro-psychology.md` |
-| Ustawienia/organizacja           | `src/components/settings/AGENTS.md`                                                                 |
+| Ustawienia użytkownika           | `src/components/settings/AGENTS.md`                                                                 |
+| Organizacja i gabinety           | `src/components/organization/AGENTS.md`                                                             |
+| Finanse i billing                | `src/components/finances/AGENTS.md`                                                                 |
+| Quality gate przed commitem      | `.ai/skills/check-and-commit/`                                                                      |
+| Dobór testów do diffa            | `.ai/skills/smart-test/`                                                                            |
+| Analiza przyczyny źródłowej      | `.ai/skills/root-cause/`                                                                            |
+| Nowy AGENTS.md modułu            | `.ai/skills/create-agents-md/`                                                                      |
 | Kontekst cross-repo / backend    | `.ai/ECOSYSTEM.md`                                                                                  |
 | Encje / enumy / relacje          | `.ai/DOMAIN_MODEL.md`                                                                               |
 | Flow biznesowe / auth / AI       | `.ai/DATA_FLOWS.md`                                                                                 |
@@ -102,6 +109,7 @@ Przed rozpoczęciem pracy dopasuj zadanie do tabeli i przeczytaj WSZYSTKIE pasuj
 - Type-check: `npm run type-check`
 - Formatowanie: `npm run format`, `npm run format:check`
 - Walidacja pełna: `npm run validate` (lint + test IDs + type-check + testy + build)
+- Kontrakt agentów: `npm run agent:check`, `npm run agent:test`
 - Testy: `npm run test`, `npm run test:run`, `npm run test:coverage`
 
 ## Testowanie
@@ -134,35 +142,46 @@ Integracja z fizjo-app (React Native) przez wspólny backend GraphQL (.NET Core)
 ```
 src/
 ├── app/                      # Next.js App Router
-│   ├── (auth)/               # Logowanie, rejestracja
-│   ├── (dashboard)/          # Główne strony aplikacji
-│   │   ├── exercises/        # Ćwiczenia
-│   │   ├── exercise-sets/    # Zestawy ćwiczeń
-│   │   ├── patients/         # Pacjenci
-│   │   ├── organization/     # Zarządzanie organizacją
-│   │   ├── billing/          # Rozliczenia
-│   │   ├── settings/         # Ustawienia
-├── features/                 # Moduły domenowe (zobacz .ai/STRUCTURE.md)
-│   ├── assignment/           # Wizard przypisań (utils/, utils/__tests__/)
-│   ├── exercises/            # Ćwiczenia
-│   ├── exercise-sets/        # Zestawy ćwiczeń
-│   ├── patients/             # Pacjenci
-│   ├── verification/         # Weryfikacja treści
-│   └── import/               # Import dokumentów
-├── components/               # Komponenty współdzielone
-│   ├── shared/               # DataTable, EmptyState, etc.
+│   ├── (auth)/               # Logowanie, rejestracja, invite
+│   ├── (blocked)/            # Redirect pacjenta poza panelem
+│   ├── (dashboard)/          # Główne strony
+│   │   ├── exercises/
+│   │   ├── exercise-sets/
+│   │   ├── patients/
+│   │   ├── organization/
+│   │   ├── finances/         # Strony rozliczeń (nie billing/)
+│   │   ├── verification/
+│   │   ├── import/
+│   │   ├── appointments/     # Placeholder
+│   │   ├── onboarding/
+│   │   └── settings/
+│   └── api/                  # Route handlers (pdf, feedback, reports)
+├── features/                 # Moduły domenowe (.ai/STRUCTURE.md)
+│   ├── assignment/
+│   ├── exercises/
+│   ├── exercise-sets/
+│   ├── patients/
+│   ├── verification/
+│   ├── import/
+│   └── auth/                 # helpers (np. siła hasła)
+├── components/
+│   ├── shared/               # DataTable, ExerciseExecutionCard
 │   ├── ui/                   # shadcn/ui
-│   ├── layout/               # Sidebar, Header, etc.
-│   └── ...                   # auth, organization, settings, finances, ...
-├── graphql/
-│   ├── queries/              # Zapytania GraphQL
-│   ├── mutations/            # Mutacje GraphQL
-│   ├── subscriptions/        # Subskrypcje real-time
-│   └── types/                # Typy GraphQL
-├── hooks/                    # Custom React hooks
-├── services/                 # Serwisy AI, chat, import
-├── lib/                      # Apollo provider, utils
-└── types/                    # Typy TypeScript
+│   ├── layout/
+│   ├── organization/
+│   ├── finances/             # Strony (dashboard)/finances
+│   ├── billing/              # Widget planu (SPEC-002)
+│   ├── settings/
+│   ├── exercise-builder/
+│   └── ...
+├── graphql/                  # queries, mutations, subscriptions, types (ręczne)
+├── data/                     # ICF, słowniki
+├── hooks/
+├── services/
+├── lib/
+├── contexts/
+├── utils/
+└── types/                    # Typy UI/domenowe (nie GraphQL)
 ```
 
 ## Styl kodu
