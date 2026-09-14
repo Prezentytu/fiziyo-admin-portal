@@ -117,7 +117,11 @@ export function MediaGallery({
 
         <div className="relative flex h-full w-full items-center justify-center">
           {!selectedItem ? (
-            <ImagePlaceholder type="exercise" className="h-24 w-24 opacity-35" iconClassName="h-16 w-16" />
+            <div className="flex flex-col items-center gap-2 px-4 text-center" data-testid={`${testIdPrefix}-empty-cta`}>
+              <ImagePlaceholder type="exercise" className="h-24 w-24 opacity-35" iconClassName="h-16 w-16" />
+              <p className="text-sm font-medium text-foreground">Brak zdjęcia</p>
+              <p className="text-xs text-muted-foreground">Dodaj zdjęcie albo wygeneruj z AI — nie oceniaj pustego miejsca.</p>
+            </div>
           ) : selectedItem.kind === 'image' || selectedItem.kind === 'gif' ? (
             <Image
               src={selectedItem.src}
