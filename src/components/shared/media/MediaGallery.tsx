@@ -117,7 +117,11 @@ export function MediaGallery({
 
         <div className="relative flex h-full w-full items-center justify-center">
           {!selectedItem ? (
-            <ImagePlaceholder type="exercise" className="h-24 w-24 opacity-35" iconClassName="h-16 w-16" />
+            <div className="flex flex-col items-center gap-2 px-4 text-center" data-testid={`${testIdPrefix}-empty-cta`}>
+              <ImagePlaceholder type="exercise" className="h-24 w-24 opacity-35" iconClassName="h-16 w-16" />
+              <p className="text-sm font-medium text-foreground">Brak zdjęcia</p>
+              <p className="text-xs text-muted-foreground">Dodaj zdjęcie albo wygeneruj z AI — nie oceniaj pustego miejsca.</p>
+            </div>
           ) : selectedItem.kind === 'image' || selectedItem.kind === 'gif' ? (
             <Image
               src={selectedItem.src}
@@ -171,13 +175,13 @@ export function MediaGallery({
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
+                  data-testid={`${testIdPrefix}-fullscreen-btn`}
                   type="button"
                   onClick={() => setLightboxOpen(true)}
                   className={cn(
                     'rounded-lg border border-border/70 bg-background/85 p-2 text-foreground backdrop-blur-sm transition-colors hover:bg-background',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50'
                   )}
-                  data-testid={`${testIdPrefix}-fullscreen-btn`}
                   aria-label="Pełny ekran"
                 >
                   <Maximize2 className="h-4 w-4" />
@@ -215,6 +219,7 @@ export function MediaGallery({
               <div className="flex max-w-[min(100vw-6rem,30rem)] gap-2 overflow-x-auto px-0.5">
                 {items.map((item, index) => (
                   <button
+                    data-testid={`${testIdPrefix}-thumb-${index}`}
                     type="button"
                     key={`${item.kind}-${item.src}-${index}`}
                     onClick={() => setSelectedIndex(index)}
@@ -223,7 +228,6 @@ export function MediaGallery({
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
                       index === safeIndex ? 'border-primary ring-1 ring-primary/50' : 'border-transparent hover:border-border'
                     )}
-                    data-testid={`${testIdPrefix}-thumb-${index}`}
                   >
                     {item.kind === 'image' || item.kind === 'gif' ? (
                       <Image src={item.src} alt="" fill className="object-cover" sizes="56px" />

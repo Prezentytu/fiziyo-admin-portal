@@ -4,7 +4,7 @@ Panel administracyjny dla platformy FiziYo - aplikacji dla fizjoterapeutów.
 
 ## Tech Stack
 
-- **Framework**: Next.js 15
+- **Framework**: Next.js 16 (App Router)
 - **Styling**: Tailwind CSS v4 + shadcn/ui components
 - **Auth**: Clerk
 - **API**: Apollo Client + GraphQL
@@ -15,8 +15,8 @@ Panel administracyjny dla platformy FiziYo - aplikacji dla fizjoterapeutów.
 1. Sklonuj repo:
 
 ```bash
-git clone https://github.com/Prezentytu/fiziyo-admin.git
-cd fiziyo-admin
+git clone https://github.com/Prezentytu/fiziyo-admin-portal.git
+cd fiziyo-admin-portal
 ```
 
 2. Zainstaluj zależności:

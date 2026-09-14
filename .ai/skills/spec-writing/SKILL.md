@@ -32,7 +32,11 @@ Najwyższy numer w README + 1. Format: `SPEC-{003}-{YYYY-MM-DD}-{tytul-kebab-cas
 
 ### 3. Utwórz plik specyfikacji
 
-Użyj szablonu poniżej. Wypełnij wszystkie sekcje.
+Użyj szablonu poniżej. Wypełnij wszystkie sekcje. Zacznij od frontmattera (`spec`, `repo`, `issues`, `prs: []`, `board`) — patrz `.ai/specs/README.md` „Metadane i dowody”. Jeśli spec wynika z issue (`from-przemek`, `from-sync`), wpisz numer w `issues` i cytat zgłoszenia ≤25 słów w celu biznesowym. Nie wklejaj kodu poza SDL kontraktu; załączniki jako snapshot w `.ai/specs/assets/SPEC-0xx/`.
+
+### 3a. Spec z issue `from-przemek` / `from-sync` / `feature`
+
+Przeczytaj issue i tylko wskazany fragment notatki (w chmurze masz wyłącznie treść issue — nie proś o transkrypt). Wynik to `draft` z sekcją **Pytania otwarte** i sekcją **Wpływ** (ile minut/kliknięć oszczędza fizjoterapeucie; czy podnosi regularność ćwiczeń pacjenta — miary z `.ai/VISION.md`). Budowa jest decyzją Adama — nie przechodź do implementacji w tym samym zleceniu.
 
 ### 4. Zaktualizuj indeks
 
@@ -57,11 +61,19 @@ Dodaj wiersz do tabeli w `.ai/specs/README.md`.
 ## Szablon specyfikacji
 
 ```markdown
+---
+spec: SPEC-0xx
+repo: fiziyo-admin-portal
+issues: []
+prs: []
+board:
+---
+
 # {Tytuł}
 
 ## Cel biznesowy
 
-{Dlaczego ta funkcjonalność istnieje — problem użytkownika, wartość biznesowa}
+{Dlaczego ta funkcjonalność istnieje — problem użytkownika, wartość biznesowa; cytat issue ≤25 słów, jeśli jest}
 
 ## Architektura
 

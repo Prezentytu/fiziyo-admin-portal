@@ -1,64 +1,43 @@
 name: Intake zgłoszeń do agenta
 
-# Cursor nie odsłania triggera "Issue label changed" w UI automacji (tylko PR-y),
-# więc etykieta na issue budzi automację przez jej webhook.
-#
-# Celowo NIE wysyłamy treści issue: jest niezaufana, a agent i tak musi pobrać ją sam
-# i zweryfikować przez `node scripts/task-card.mjs check`. Webhook niesie wyłącznie adres.
-
+# An optional hint to read-only intake, never an authorization or worker launch.
 on:
   issues:
     types: [opened, labeled]
-
 permissions:
   contents: read
-
 concurrency:
   group: intake-${{ github.event.issue.number }}
   cancel-in-progress: false
-
 jobs:
-  wake-agent:
-    # `labeled` nie zawsze przychodzi, gdy etykieta jest nadana juz przy tworzeniu issue,
-    # wiec `opened` sprawdzamy po liscie etykiet zamiast po pojedynczym zdarzeniu.
+  wake-intake:
     if: >-
-      (github.event.action == 'labeled' &&
+      vars.AGENT_INTAKE_ENABLED == 'true' &&
+      ((github.event.action == 'labeled' &&
         contains(fromJSON('["bot-finding", "from-przemek"]'), github.event.label.name)) ||
-      (github.event.action == 'opened' &&
+       (github.event.action == 'opened' &&
         (contains(github.event.issue.labels.*.name, 'bot-finding') ||
-         contains(github.event.issue.labels.*.name, 'from-przemek')))
+         contains(github.event.issue.labels.*.name, 'from-przemek'))))
     runs-on: ubuntu-latest
+    timeout-minutes: 2
     steps:
-      - name: Obudź automację Cursora
+      - name: Przekaż wskaźnik do kwalifikacji
         env:
           WEBHOOK_URL: ${{ secrets.CURSOR_INTAKE_WEBHOOK_URL }}
           WEBHOOK_KEY: ${{ secrets.CURSOR_INTAKE_WEBHOOK_KEY }}
           REPOSITORY: ${{ github.repository }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
-          ISSUE_URL: ${{ github.event.issue.html_url }}
-          LABEL: ${{ github.event.label.name || 'opened-with-label' }}
         run: |
           set -euo pipefail
-
           if [ -z "${WEBHOOK_URL}" ] || [ -z "${WEBHOOK_KEY}" ]; then
-            echo "::error::Brak sekretow CURSOR_INTAKE_WEBHOOK_URL / CURSOR_INTAKE_WEBHOOK_KEY."
+            echo '::error::Brak konfiguracji intake.'
             exit 1
           fi
-
-          payload=$(jq -n \
-            --arg repository "${REPOSITORY}" \
-            --arg issue "${ISSUE_NUMBER}" \
-            --arg url "${ISSUE_URL}" \
-            --arg label "${LABEL}" \
-            '{repository: $repository, issue_number: ($issue|tonumber), issue_url: $url, label: $label}')
-
-          # Naglowek musi odpowiadac przykladowi curl, ktory Cursor pokazuje przy webhooku.
-          status=$(curl --silent --show-error --fail-with-body \
-            --output /tmp/response.json --write-out '%{http_code}' \
-            --request POST "${WEBHOOK_URL}" \
+          case "$WEBHOOK_URL" in https://*) ;; *) exit 1 ;; esac
+          payload=$(jq -n --arg repository "$REPOSITORY" --argjson issue "$ISSUE_NUMBER" \
+            '{repository: $repository, issue: $issue}')
+          # Never log response bodies, follow redirects, or retry ambiguous delivery.
+          curl --silent --show-error --fail --max-time 30 --proto '=https' \
+            --output /dev/null --request POST "$WEBHOOK_URL" \
             --header "Authorization: Bearer ${WEBHOOK_KEY}" \
-            --header 'Content-Type: application/json' \
-            --data "${payload}")
-
-          echo "Automacja odpowiedziala HTTP ${status} dla issue #${ISSUE_NUMBER}."
-          cat /tmp/response.json
+            --header 'Content-Type: application/json' --data "$payload"

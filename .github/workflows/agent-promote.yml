@@ -1,0 +1,22 @@
+name: Kwalifikacja zgłoszenia do naprawy
+
+# Labels are queue metadata. They do not authenticate a person or grant code access.
+# Implementation starts only in protected agent-ops workflow_dispatch.
+on:
+  issues:
+    types: [labeled]
+permissions:
+  contents: read
+concurrency:
+  group: qualify-${{ github.event.issue.number }}
+  cancel-in-progress: false
+jobs:
+  qualify:
+    if: github.event.label.name == 'agent-fix'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wskaż zaufany kanał uruchomienia
+        run: |
+          echo 'Etykieta agent-fix oznacza prośbę o kwalifikację, nie zgodę na implementację.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Uruchomienie wymaga zatwierdzonego snapshotu zakresu w agent-ops i jego chronionego workflow_dispatch.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Ten workflow nie przepisuje karty, nie uruchamia Cursora i nie potwierdza tożsamości człowieka.' >> "$GITHUB_STEP_SUMMARY"

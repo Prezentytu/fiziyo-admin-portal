@@ -50,6 +50,13 @@ Pole wyszukiwania z debounce.
 
 Wspólny komponent read-only harmonogramu (`compact` / `card` / `inline-highlight`) dla Assignment Wizard, kart pacjenta i detali zestawów.
 
+### exercise-builder i enrichment
+
+- `src/components/exercise-builder/` — FAB i kreator spoza katalogu. Nie klonuj
+  `ExerciseExecutionCard`. Brak własnego `index.ts` — importuj plik wprost.
+- `src/components/shared/enrichment/` — UI enrichment współdzielone.
+  Feature `verification/enrichment/` zostaw do kolejki weryfikacji.
+
 ### Inne
 
 - `AccessGuard` — ochrona dostępu (rola/organizacja)

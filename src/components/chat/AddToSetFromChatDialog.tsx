@@ -19,6 +19,7 @@ import {
   ADD_EXERCISE_TO_EXERCISE_SET_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
 import type { ParsedExercise } from '@/types/chat.types';
+import type { CreateExerciseSetMutationData } from '@/graphql/types/operation-responses';
 
 interface ExerciseFromDB {
   id: string;
@@ -78,7 +79,9 @@ export function AddToSetFromChatDialog({ open, onOpenChange, exercise }: AddToSe
   });
 
   // Mutations
-  const [createSet, { loading: creatingSet }] = useMutation(CREATE_EXERCISE_SET_MUTATION);
+  const [createSet, { loading: creatingSet }] = useMutation<CreateExerciseSetMutationData>(
+    CREATE_EXERCISE_SET_MUTATION
+  );
   const [addExerciseToSet, { loading: addingExercise }] = useMutation(ADD_EXERCISE_TO_EXERCISE_SET_MUTATION);
 
   // Find matching exercise in DB by name (searches both organization and global exercises)
@@ -191,8 +194,7 @@ export function AddToSetFromChatDialog({ open, onOpenChange, exercise }: AddToSe
         },
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const newSetId = (result.data as any)?.createExerciseSet?.id;
+      const newSetId = result.data?.createExerciseSet?.id;
       if (!newSetId) throw new Error('Failed to create set');
 
       await addExerciseToSet({
@@ -241,7 +243,11 @@ export function AddToSetFromChatDialog({ open, onOpenChange, exercise }: AddToSe
           </div>
 
           <div className="flex justify-end">
-            <Button variant="outline" onClick={() => handleOpenChange(false)}>
+            <Button
+              data-testid="ai-chat-add-to-set-not-found-close-btn"
+              variant="outline"
+              onClick={() => handleOpenChange(false)}
+            >
               Zamknij
             </Button>
           </div>
@@ -287,6 +293,7 @@ export function AddToSetFromChatDialog({ open, onOpenChange, exercise }: AddToSe
           <div className="flex-1 flex flex-col min-h-0 space-y-4">
             {/* Create new button */}
             <Button
+              data-testid="ai-chat-add-to-set-create-new-btn"
               variant="outline"
               className="w-full justify-start gap-3 h-14 border-dashed border-primary/50 hover:bg-primary/5 hover:border-primary"
               onClick={() => setStep('create-set')}
@@ -305,11 +312,11 @@ export function AddToSetFromChatDialog({ open, onOpenChange, exercise }: AddToSe
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
+                data-testid="ai-chat-add-to-set-search"
                 placeholder="Szukaj zestawów..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="h-10 pl-10"
-                data-testid="ai-chat-add-to-set-search"
               />
             </div>
 
@@ -329,6 +336,7 @@ export function AddToSetFromChatDialog({ open, onOpenChange, exercise }: AddToSe
 
                     return (
                       <button
+                        data-testid={`ai-chat-add-to-set-item-${set.id}`}
                         key={set.id}
                         onClick={() => !alreadyInSet && handleAddToSet(set.id)}
                         disabled={alreadyInSet || isSaving}
@@ -373,16 +381,16 @@ export function AddToSetFromChatDialog({ open, onOpenChange, exercise }: AddToSe
             <div className="space-y-2">
               <label className="text-sm font-medium">Nazwa zestawu</label>
               <Input
+                data-testid="ai-chat-new-set-name-input"
                 placeholder="np. Ćwiczenia na kręgosłup"
                 value={newSetName}
                 onChange={(e) => setNewSetName(e.target.value)}
                 autoFocus
-                data-testid="ai-chat-new-set-name-input"
               />
             </div>
 
             <div className="flex justify-end gap-3 pt-4">
-              <Button variant="outline" onClick={() => setStep('select-set')}>
+              <Button data-testid="ai-chat-add-to-set-back-btn" variant="outline" onClick={() => setStep('select-set')}>
                 Wstecz
               </Button>
               <Button

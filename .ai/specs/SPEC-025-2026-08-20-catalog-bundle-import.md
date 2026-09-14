@@ -1,3 +1,11 @@
+---
+spec: SPEC-025
+repo: fiziyo-admin-portal
+issues: []
+prs: []
+board:
+---
+
 # SPEC-025 — Import katalogu JSON w ustawieniach zaawansowanych
 
 ## Cel biznesowy
@@ -26,11 +34,11 @@ Uprawnienia: Owner / Admin / Therapist. Bez osobnego permission.
 
 ## Komponenty
 
-| Element | Lokalizacja |
-| ------- | ----------- |
-| Zakładka | `app/(dashboard)/settings/page.tsx` |
-| Karta | `components/organization/CatalogBundleImportCard.tsx` |
-| Gate | `lib/organization/catalogImportAccess.ts` |
+| Element  | Lokalizacja                                           |
+| -------- | ----------------------------------------------------- |
+| Zakładka | `app/(dashboard)/settings/page.tsx`                   |
+| Karta    | `components/organization/CatalogBundleImportCard.tsx` |
+| Gate     | `lib/organization/catalogImportAccess.ts`             |
 
 ## Data-testid
 

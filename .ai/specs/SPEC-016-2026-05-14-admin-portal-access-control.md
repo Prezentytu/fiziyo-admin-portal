@@ -1,3 +1,11 @@
+---
+spec: SPEC-016
+repo: fiziyo-admin-portal
+issues: []
+prs: []
+board:
+---
+
 # SPEC-016 — Admin Portal Access Control (Patient Block)
 
 ## Cel biznesowy

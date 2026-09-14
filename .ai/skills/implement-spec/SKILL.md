@@ -11,9 +11,10 @@ Ten skill prowadzi implementacje odczytanej specyfikacji krok po kroku i wymusza
 
 1. Przeczytaj pelna specyfikacje z `.ai/specs/`.
 2. Przeczytaj root `AGENTS.md` oraz wszystkie pasujace AGENTS.md z Task Routera.
-3. Przeczytaj `.ai/lessons.md` i zanotuj ryzyka regresji.
-4. Zmapuj fazy z dokumentu na konkretne pliki do modyfikacji.
-5. Potwierdz zakres z uzytkownikiem, jesli spec ma kilka wariantow implementacji.
+3. Wyszukaj lessons przez `rg` w `.ai/lessons.md` i zanotuj ryzyka regresji.
+4. Dla runów i cross-repo stosuj [workflow](../../../docs/architecture/agent-workflow.md): baseline, jeden writer, dowody per repo i handoff.
+5. Zmapuj fazy z dokumentu na konkretne pliki do modyfikacji.
+6. Potwierdz zakres z uzytkownikiem, jesli spec ma kilka wariantow implementacji.
 
 ## Workflow fazowy
 
@@ -62,7 +63,7 @@ Dla kazdej fazy wykonaj sekwencje:
 
 Po zamknieciu wszystkich faz:
 
-1. Uruchom minimalny pakiet weryfikacji (`lint` + `test:run`).
+1. Uruchom jeden pakiet końcowy z `AGENTS.md` (Validation Commands); nie powtarzaj składników przez `validate`. Commit/push/PR/deploy tylko po upoważnieniu.
 2. Przekaz uzytkownikowi:
    - co zostalo wdrozone,
    - jakie testy uruchomiono,

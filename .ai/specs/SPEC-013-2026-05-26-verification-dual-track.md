@@ -1,3 +1,11 @@
+---
+spec: SPEC-013
+repo: fiziyo-admin-portal
+issues: []
+prs: []
+board:
+---
+
 # Verification Dual-Track (Global + Organization)
 
 ## Cel biznesowy

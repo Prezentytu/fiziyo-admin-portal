@@ -1,3 +1,11 @@
+---
+spec: SPEC-003
+repo: fiziyo-admin-portal
+issues: []
+prs: []
+board:
+---
+
 # SPEC-003: Exercises Module
 
 ## Cel biznesowy

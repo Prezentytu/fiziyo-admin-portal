@@ -12,10 +12,8 @@ description: Quality gate przed commitem z walidacją proporcjonalną do zakresu
 
 ## Kroki
 
-1. Oceń obszar zmian (`git diff --name-only`) i dobierz walidację:
-   - lekki zakres: `npm run lint` + testy modułowe,
-   - średni zakres: `npm run lint && npm run type-check && npm run test:run`,
-   - duży zakres: `npm run validate`.
+1. Oceń staged, unstaged i nowe pliki względem baseline; dobierz jeden pakiet z `AGENTS.md` (Validation Commands). Dla samego workflow użyj kontroli skilli i skryptów. Nie powtarzaj pełnych kontroli przez `validate`.
 2. Potwierdź brak nowych regresji i linter errors w zmienionych plikach.
-3. Przygotuj commit message zgodny z conventional commits i zakresem domenowym.
+3. Commit przygotuj wyłącznie na polecenie użytkownika; samo domknięcie quality gate nie upoważnia do stagingu, commita, push, PR ani deploy. Jeśli upoważniony, użyj conventional commits.
 4. Przed commitem sprawdź, czy nie dodano sekretów oraz czy `data-testid`/kontrakty nie zostały przypadkowo naruszone.
+5. Dowody w specu: do dotkniętego `SPEC-0xx` dopisz changelog `### YYYY-MM-DD — #PR|hash`; po merge numer PR do frontmattera `prs`. Issue zamykaj przez `Closes #N` w opisie PR. Zaproponuj linię do `fizjo-app/.ai/BOARD.md` (ID, repo, wskaźnik).

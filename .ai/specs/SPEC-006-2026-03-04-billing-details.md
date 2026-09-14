@@ -1,3 +1,11 @@
+---
+spec: SPEC-006
+repo: fiziyo-admin-portal
+issues: []
+prs: []
+board:
+---
+
 # Billing Details Module
 
 ## Cel biznesowy

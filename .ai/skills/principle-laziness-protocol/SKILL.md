@@ -5,7 +5,7 @@ description: 'Stosuj przy sizingu diffa, refaktorze albo pokusie nowej warstwy. 
 
 # Laziness protocol
 
-> **Synchronizacja:** źródło w `fizjo-app/.agents/skills/principle-laziness-protocol/SKILL.md`. Przy zmianie zaktualizuj oba repozytoria.
+> **Synchronizacja:** źródło w `fizjo-app/.ai/skills/principle-laziness-protocol/SKILL.md`. Przy zmianie zaktualizuj oba repozytoria.
 
 Cel to ten sam skutek przy mniejszej ilości kodu.
 

@@ -10,7 +10,7 @@ Ten plik jest szczegółowym uzupełnieniem root `AGENTS.md`.
 ## Workflow operacyjny
 
 1. **Task Router first**: znajdź wszystkie pasujące guide'y i przeczytaj je przed kodowaniem.
-2. **Lessons-first**: przed implementacją sprawdź `.ai/lessons.md`.
+2. **Lessons-first**: wyszukaj słowa zadania przez `rg` w `.ai/lessons.md`.
 3. **Spec-first**: dla zmian 3+ kroki lub architektonicznych sprawdź `.ai/specs/` i aktualizuj spec.
 4. **Compatibility gate**: przy kontraktach czytaj `BACKWARD_COMPATIBILITY.md`.
 5. **Verification**: uruchom odpowiednie komendy jakości.
@@ -23,12 +23,8 @@ Ten plik jest szczegółowym uzupełnieniem root `AGENTS.md`.
 - Dialogi: `Cmd/Ctrl + Enter` dla głównego CTA, `Escape` do zamykania.
 - Theme-safe: semantyczne tokeny, bez hardcoded baz kolorów.
 
-## Recommended command bundles
+## Weryfikacja i wznowienia
 
-```bash
-# szybka walidacja po zmianach feature
-npm run lint && npm run type-check && npm run test:run
-
-# pełna walidacja przed domknięciem większego zakresu
-npm run validate
-```
+Pakiety kontroli wybieraj według root `AGENTS.md` (Validation Commands).
+Źródło zasad runu, baseline, review i dowodów cross-repo:
+[workflow agentów](../../docs/architecture/agent-workflow.md).

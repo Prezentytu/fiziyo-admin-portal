@@ -47,8 +47,11 @@ const { data, loading } = useQuery(GET_EXERCISES_QUERY, {
 
 ## Typy
 
-- Centralizuj w `graphql/types/`
-- Importuj z `@/graphql/types`
+- Nie ma codegen ani `schema.graphql`. Typy operacji pisz ręcznie w
+  `src/graphql/types/` i podawaj je do `useQuery<T>` / `useMutation<T>`.
+- `src/types/` to typy UI i domeny panelu, nie odpowiedzi GraphQL.
+- Fragmenty trzymaj w pliku query, nie w osobnym `fragments/`.
+- Importuj z `@/graphql/types`. Zakaz `any` na `result.data`.
 
 ## Referencje
 

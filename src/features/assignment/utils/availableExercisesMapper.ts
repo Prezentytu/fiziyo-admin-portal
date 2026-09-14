@@ -9,7 +9,7 @@ interface RawLoadShape {
   text?: string | null;
 }
 
-interface RawAvailableExercise {
+export interface RawAvailableExercise {
   id: string;
   name: string;
   type?: string;

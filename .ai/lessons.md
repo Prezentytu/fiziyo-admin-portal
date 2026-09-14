@@ -1,12 +1,20 @@
 # Lessons Learned
 
-Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
+Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis
+**na górze sekcji Wpisy**, w formacie `###` + `Kategoria`. Nie dopisuj one-linerów
+pod komentarzem na dole pliku.
+
+## Jak szukać
+
+Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
+`executionTime`, `Clerk`, `additive`, `overridesJson`, `canManageOrganization`,
+`useLazyQuery`, `agent:check`, `skills:sync`.
 
 ## Format wpisu
 
 ### YYYY-MM-DD - Krótki tytuł
 
-- **Kategoria**: `UI/UX` | `React` | `GraphQL` | `Git` | `Build/Tooling` | `Billing`
+- **Kategoria**: `UI/UX` | `React` | `GraphQL` | `Git` | `Build/Tooling` | `Billing` | `Auth` | `Testing`
 - **Problem**: Co poszło nie tak
 - **Przyczyna**: Dlaczego
 - **Rozwiązanie**: Co naprawiono
@@ -14,13 +22,93 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
-- 2026-09-09 - Każdy własny flow Clerk wywołujący operację chronioną przed botami musi renderować `#clerk-captcha` w aplikacji przed żądaniem; E2E używa oficjalnego krótkotrwałego Testing Token, ale nie może dopisywać brakującego mountu do DOM, bo maskuje regresję produkcyjną.
-- 2026-09-09 - Jeśli token exchange tworzy organizację konta firmowego, zawsze usuń fallback GraphQL z tokenem Clerka; ponawiaj tylko przejściowe błędy, a wynik starego konta i nawigację po unmount odrzucaj.
-- 2026-09-09 - Jesli przesuniecie linii ujawnia braki data-testid, zawsze uzupelnij kontrolki w dotykanym pliku i przenies istniejace ID przed handlery; nie regeneruj baseline ani allowlisty, aby ukryc trafienia.
-- 2026-09-09 - Jeśli wycofujesz kontrakt planów, zawsze usuń również inline query z onboardingu i użyj wspólnej mutacji; samo oczyszczenie katalogu GraphQL nie obejmuje wszystkich konsumentów (fizjo-app SPEC-034).
-- 2026-09-09 - Jeśli backend rozdziela kolidujące resolvery kategorii, zawsze sprawdź rzeczywisty SDL i migruj obu klientów z aliasem odpowiedzi; nowe pole API musi wejść przed klientem (fizjo-app SPEC-034).
-- 2026-09-08 - Jeśli dispatch certyfikuje admina, zawsze porównaj build-bound SHA/deployment/API origin z działającą aplikacją; nigdy nie przypisuj generic Preview wyników shared DEV na podstawie nazwy brancha.
-- 2026-09-08 - Jeśli audit zgłasza podatność auth SDK, zawsze sprawdź advisory i faktyczny wzorzec guardu, aktualizuj w obecnym majorze i przetestuj realny matcher bez zmiany polityki dostępu.
+### 2026-09-14 - Hook klasyfikuje każdy segment `&&` osobno
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: `git push && git log origin/main..HEAD` padało jako „push to main”.
+- **Przyczyna**: Jeden regex na całym łańcuchu poleceń.
+- **Rozwiązanie**: `agent-guard` dzieli po `&&` / `||` / `;` i ocenia segmenty.
+- **Reguła**: Jeśli hook szuka `git push` + `main`, klasyfikuj segment, nie cały string.
+
+### 2026-09-14 - Polityka cytuje tylko to, co `agent:check` weryfikuje
+
+- **Kategoria**: `Build/Tooling` | `Git`
+- **Problem**: Cloud Agent i Bugbot szły w ścianę: polityka wskazywała pliki i komendy, których nie było w repo.
+- **Przyczyna**: Kontrakt nawigacyjny rósł szybciej niż kotwice i skrypty.
+- **Rozwiązanie**: Martwe odwołania domknięto albo usunięto; `agent:check` pilnuje adaptera i indeksu SPEC.
+- **Reguła**: Jeśli polityka cytuje plik albo komendę, `agent:check` musi ją weryfikować.
+
+### 2026-09-10 - Wznowienie runu porównuje Git, nie checkbox
+
+- **Kategoria**: `Git` | `Build/Tooling`
+- **Problem**: Agent wznawiał od pierwszego `- [ ]` na starym kandydacie.
+- **Przyczyna**: README runów kazał iść od checkboxa.
+- **Rozwiązanie**: `continue-run` porównuje branch, HEAD i dirty diff.
+- **Reguła**: Jeśli wznawiasz run, zawsze porównaj Git i treść dirty zmian; checkbox ani exit 0 nie potwierdzają całości.
+
+### 2026-09-10 - Sync skilli nie kasuje obcych plików
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: Konflikt luster kończył się usunięciem katalogu.
+- **Przyczyna**: Sync traktował obce pliki jako śmieci.
+- **Rozwiązanie**: Preflight blokuje zapis; człowiek przegląda konflikt.
+- **Reguła**: Jeśli synchronizujesz skille, sprawdź obie kopie względem źródła i zachowaj obce pliki.
+
+### 2026-09-09 - Clerk captcha musi być w DOM przed żądaniem
+
+- **Kategoria**: `Auth` | `Testing`
+- **Problem**: Własny flow Clerk bez `#clerk-captcha` padał na operacjach chronionych.
+- **Przyczyna**: E2E token nie montuje brakującego elementu.
+- **Rozwiązanie**: Render `#clerk-captcha` w aplikacji przed requestem.
+- **Reguła**: Każdy własny flow Clerk z operacją chronioną musi mieć captcha w DOM; E2E nie maskuje tego tokenem.
+
+### 2026-09-09 - Token exchange bez fallbacku Clerk JWT
+
+- **Kategoria**: `Auth` | `GraphQL`
+- **Problem**: Fallback GraphQL z tokenem Clerka zostawiał stare konto.
+- **Przyczyna**: Ponawianie po unmount i stary token.
+- **Rozwiązanie**: Usunięto fallback; ponawiaj tylko błędy przejściowe.
+- **Reguła**: Jeśli token exchange tworzy organizację, usuń fallback GraphQL z tokenem Clerka.
+
+### 2026-09-09 - Nie regeneruj allowlisty testid, żeby ukryć braki
+
+- **Kategoria**: `Testing` | `UI/UX`
+- **Problem**: Przesunięcie linii ujawniało braki `data-testid`.
+- **Przyczyna**: Regeneracja baseline ukrywała trafienia.
+- **Rozwiązanie**: Uzupełnij kontrolki w dotkniętym pliku.
+- **Reguła**: Jeśli lint testid łapie braki, napraw UI; nie regeneruj allowlisty.
+
+### 2026-09-09 - Wycofanie kontraktu planów obejmuje onboarding
+
+- **Kategoria**: `GraphQL`
+- **Problem**: Inline query w onboardingu przeżyło czyszczenie katalogu.
+- **Przyczyna**: Nie wszyscy konsumenci byli w jednym miejscu.
+- **Rozwiązanie**: Wspólna mutacja; usunięto inline query.
+- **Reguła**: Jeśli wycofujesz kontrakt, sprawdź wszystkich konsumentów, nie tylko katalog GraphQL.
+
+### 2026-09-09 - Kolidujące resolvery wymagają SDL i aliasu
+
+- **Kategoria**: `GraphQL`
+- **Problem**: Klienci czytali złe pole po rozdzieleniu resolverów kategorii.
+- **Przyczyna**: Założono stary kształt odpowiedzi.
+- **Rozwiązanie**: Alias + migracja obu klientów po SDL.
+- **Reguła**: Nowe pole API musi wejść przed klientem; czytaj rzeczywisty SDL.
+
+### 2026-09-08 - Certyfikacja dispatcha porównuje SHA i origin
+
+- **Kategoria**: `Testing` | `Build/Tooling`
+- **Problem**: Wyniki shared DEV przypisano do Preview po nazwie brancha.
+- **Przyczyna**: Brak porównania SHA/deployment/API origin.
+- **Rozwiązanie**: Porównaj build-bound tożsamość z działającą aplikacją.
+- **Reguła**: Nigdy nie przypisuj generic Preview do shared DEV po nazwie brancha.
+
+### 2026-09-08 - Audit SDK auth sprawdza advisory i matcher
+
+- **Kategoria**: `Auth`
+- **Problem**: Raport podatności nie rozróżniał wersji i wzorca guardu.
+- **Przyczyna**: Aktualizacja bez testu realnego matchera.
+- **Rozwiązanie**: Advisory + update w obecnym majorze + test matchera.
+- **Reguła**: Jeśli audit zgłasza auth SDK, sprawdź advisory i faktyczny guard; nie zmieniaj polityki dostępu przy okazji.
 
 ### 2026-08-20 - Import katalogu JSON jest dla każdego fizjo, nie tylko ownera
 
@@ -894,4 +982,4 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 - **Rozwiązanie**: `duration` → `DEPRECATED_FIELD_KEYS` + legacy clear row; addytywne `ExerciseSetMapping.overridesJson` zawsze w kontrakcie admina (deploy razem z backendem). Precedencja resolvera: assignment > mapping JSON > columns > template.
 - **Reguła**: Czas serii pokazuj jako wyliczenie; edytuj `executionTime`. Personalizacja szablonu zestawu ≠ personalizacja pacjenta — osobne warstwy JSON, ten sam kształt kluczy. Addytywne pola GraphQL wdrażaj razem z backendem.
 
-<!-- Dodawaj nowe wpisy powyżej tej linii -->
+<!-- Nowe wpisy dodawaj na górze sekcji Wpisy, nie tutaj. -->

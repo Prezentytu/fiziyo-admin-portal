@@ -4,8 +4,12 @@ WAŻNE: Preferuj wnioskowanie oparte na dokumentacji (retrieval-led) zamiast wni
 
 ## Always
 
+- Kierunek: `.ai/VISION.md` (wyciąg; źródło w `fizjo-app/.ai/VISION.md`); priorytety ekosystemu: `fizjo-app/.ai/BOARD.md`. Po zweryfikowanym etapie zaktualizuj linię w BOARD (lokalnie) albo zaproponuj ją w opisie PR (chmura).
+- Agent w chmurze działa wg `docs/architecture/cloud-agent-policy.md`.
 - Przed implementacją dopasuj zadanie do Task Routera i przeczytaj wszystkie pasujące guide'y.
-- Dla zmian nietrywialnych pracuj spec-first (`.ai/specs/`) i lessons-first (`.ai/lessons.md`).
+- Dla zmian nietrywialnych pracuj spec-first (`.ai/specs/`); lessons wyszukuj przez `rg` w `.ai/lessons.md`, bez czytania całego dziennika.
+- Workflow zadania i cross-repo: `docs/architecture/agent-workflow.md`. Źródło skilli: `.ai/skills/`; `.agents/skills/` i `.cursor/skills/` są generowanymi kopiami.
+- Nie commituj, nie pushuj, nie twórz PR ani nie wdrażaj bez upoważnienia; run nie daje zgody.
 - Trzymaj zmiany additive-first dla kontraktów i uruchamiaj walidację proporcjonalną do ryzyka.
 - Po istotnych poprawkach dopisz regułę do `.ai/lessons.md`. Drugi raz ten sam wzorzec: skill `principle-encode-lessons-in-structure`.
 - Zasady inżynierskie: cytujesz tylko tę, której `SKILL.md` przeczytałeś w tej sesji (`.ai/skills/principle-*/`; źródło w `fizjo-app`).
@@ -25,18 +29,18 @@ WAŻNE: Preferuj wnioskowanie oparte na dokumentacji (retrieval-led) zamiast wni
 
 ## Validation Commands
 
-```bash
-npm run lint
-npm run type-check
-npm run test:run
-npm run validate
-```
+Najpierw test dotkniętego zachowania. Dla zmian produktu: `npm run validate`
+(lint + test IDs + type-check + testy + build), raz, bez powtarzania całego zestawu osobno.
+Tylko workflow agentów/dokumentacja: `npm run skills:lint`, `npm run skills:test`,
+`npm run skills:sync`, `npm run skills:check`, `npm run agent:check`,
+`npm run agent:test`; zmienione skrypty również ESLint z `--max-warnings 0`.
+Wymagane kontrole CI pozostają obowiązkowe.
 
-Szczegółowe konwencje i checklisty operacyjne: `.ai/docs/agent-rules.md`.
+Szczegóły: `.ai/docs/agent-rules.md` i `docs/architecture/agent-workflow.md`.
 
 ## Task Router
 
-Przed rozpoczęciem pracy dopasuj zadanie do tabeli i przeczytaj WSZYSTKIE pasujące guide'y:
+Przed rozpoczęciem pracy dopasuj zadanie do tabeli i przeczytaj WSZYSTKIE pasujące guide'y. Jeśli wpis prowadzi do routera lub indeksu, otwórz z niego wszystkie wskazane dokumenty:
 
 | Zadanie                                          | Guide                                                                                               |
 | ------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
@@ -55,15 +59,22 @@ Przed rozpoczęciem pracy dopasuj zadanie do tabeli i przeczytaj WSZYSTKIE pasuj
 | Guardian UI / migracja tokenów                   | `.ai/skills/ui-guardian/`                                                                           |
 | Audyt bezpieczeństwa auth/tenant                 | `.ai/skills/sec-report/`                                                                            |
 | Scenariusze QA przed release                     | `.ai/skills/qa-scenarios/`                                                                          |
+| Zadanie / handoff cross-repo                     | `docs/architecture/agent-workflow.md`                                                               |
 | Run autonomiczny                                 | `.ai/skills/auto-implement/`                                                                        |
 | Wznowienie runu                                  | `.ai/skills/continue-run/`                                                                          |
 | Nawigator skilli ("co dalej?")                   | `.ai/skills/help/`                                                                                  |
 | Tworzenie nowego skilla                          | `.ai/skills/skill-creator/`                                                                         |
-| Zasada inżynierska (diff, granica, idempotencja) | `.ai/skills/principle-*/` (źródło: `fizjo-app/.agents/skills/principle-*/`)                         |
+| Zasady inżynierskie (router/index)                | `.ai/skills/principles-router.md`                                                                  |
 | Pipeline E2E / cross-repo CI                     | `docs/testing/e2e-cross-repo-pipeline.md`                                                           |
 | Code review                                      | `.ai/skills/code-review/`                                                                           |
 | UI/UX / design / accessibility                   | `.ai/skills/product-designer/SKILL.md` + `.ai/skills/product-designer/references/cro-psychology.md` |
-| Ustawienia/organizacja                           | `src/components/settings/AGENTS.md`                                                                 |
+| Ustawienia użytkownika                           | `src/components/settings/AGENTS.md`                                                                 |
+| Organizacja i gabinety                           | `src/components/organization/AGENTS.md`                                                             |
+| Finanse i billing                                | `src/components/finances/AGENTS.md`                                                                 |
+| Quality gate przed commitem                      | `.ai/skills/check-and-commit/`                                                                      |
+| Dobór testów do diffa                            | `.ai/skills/smart-test/`                                                                            |
+| Analiza przyczyny źródłowej                      | `.ai/skills/root-cause/`                                                                            |
+| Nowy AGENTS.md modułu                            | `.ai/skills/create-agents-md/`                                                                      |
 | Kontekst cross-repo / backend                    | `.ai/ECOSYSTEM.md`                                                                                  |
 | Encje / enumy / relacje                          | `.ai/DOMAIN_MODEL.md`                                                                               |
 | Flow biznesowe / auth / AI                       | `.ai/DATA_FLOWS.md`                                                                                 |
@@ -71,13 +82,14 @@ Przed rozpoczęciem pracy dopasuj zadanie do tabeli i przeczytaj WSZYSTKIE pasuj
 
 ## Workflow Orchestration
 
-1. **Spec-first**: Wejdź w plan mode dla nietrywialnych zadań (3+ kroki). Sprawdź `.ai/specs/` przed kodowaniem; utwórz SPEC jeśli nie istnieje.
-2. **Task Router**: Dopasuj zadanie do tabeli i przeczytaj odpowiednie guide'y.
-   - Jeśli zadanie dotyczy UI/UX/designu (np. redesign, layout, komponenty wizualne, dostępność, audit UI), zawsze przeczytaj `.ai/skills/product-designer/SKILL.md` ORAZ `.ai/skills/product-designer/references/cro-psychology.md` (CRO + Senior Excellence Checklist).
-3. **Lessons-first**: Przed implementacją przeczytaj `.ai/lessons.md` i sprawdź, czy zadanie nie powtarza znanego błędu.
-4. **Self-improvement**: Po korekcie zaktualizuj `.ai/lessons.md`.
-5. **Verification**: Uruchom build, sprawdź lint. Zapytaj: "Czy senior developer zaakceptowałby ten kod?"
-6. **Elegance**: Dla nietrywialnych zmian, zatrzymaj się i zapytaj "czy istnieje bardziej eleganckie rozwiązanie?"
+1. Dopasuj Task Router, odczytaj istniejący spec i wyszukaj właściwe lessons.
+2. Dla nietrywialnej pracy zapisuj zakres, baseline Git, dowody i następny krok
+   w jednym runie według `docs/architecture/agent-workflow.md`.
+3. Wznawiaj dopiero po porównaniu repo, brancha, HEAD i treści dirty zmian.
+   Testy portalu nie potwierdzają backendu ani mobile.
+4. Reviewer jest niezależny od autora i ocenia wskazanego kandydata read-only.
+   Koordynator sprawdza acceptance; zakończenie procesu nie zamyka zadania.
+5. Po zweryfikowanym etapie aktualizuj run oraz wskaźnik w źródłowym BOARD.
 
 ### Backward compatibility
 
@@ -98,13 +110,14 @@ Przed rozpoczęciem pracy dopasuj zadanie do tabeli i przeczytaj WSZYSTKIE pasuj
 - Lint: `npm run lint`, `npm run lint:fix`
 - Type-check: `npm run type-check`
 - Formatowanie: `npm run format`, `npm run format:check`
-- Walidacja pełna: `npm run validate` (lint + type-check + build)
+- Walidacja pełna: `npm run validate` (lint + test IDs + type-check + testy + build)
+- Kontrakt agentów: `npm run agent:check`, `npm run agent:test`
 - Testy: `npm run test`, `npm run test:run`, `npm run test:coverage`
 
 ## Testowanie
 
 - **Logika biznesowa** (filtry, reguły widoczności, walidacja): testy jednostkowe obowiązkowe. Wyciągaj czyste funkcje do helperów i testuj je (Vitest). Zobacz `docs/testing/testing-guidelines.md`.
-- Przed zakończeniem zadania uruchom `npm run test:run` i `npm run lint`; w razie potrzeby `npm run validate`.
+- Przed zakończeniem dobierz pakiet z sekcji Validation Commands; nie powtarzaj tych samych kontroli bez nowej zmiany lub nieaktualnego wyniku.
 - Przy zmianie warunków lub filtrów: dodać/aktualizować testy dla tej logiki, żeby regresje były wykrywane.
 - Dla zmian UI i flow auth na PR-ach traktuj E2E z `fiziyo-tests` jako gate jakości. Szczegóły triggerów i sekretów: `docs/testing/e2e-cross-repo-pipeline.md`.
 
@@ -131,35 +144,46 @@ Integracja z fizjo-app (React Native) przez wspólny backend GraphQL (.NET Core)
 ```
 src/
 ├── app/                      # Next.js App Router
-│   ├── (auth)/               # Logowanie, rejestracja
-│   ├── (dashboard)/          # Główne strony aplikacji
-│   │   ├── exercises/        # Ćwiczenia
-│   │   ├── exercise-sets/    # Zestawy ćwiczeń
-│   │   ├── patients/         # Pacjenci
-│   │   ├── organization/     # Zarządzanie organizacją
-│   │   ├── billing/          # Rozliczenia
-│   │   ├── settings/         # Ustawienia
-├── features/                 # Moduły domenowe (zobacz .ai/STRUCTURE.md)
-│   ├── assignment/           # Wizard przypisań (utils/, utils/__tests__/)
-│   ├── exercises/            # Ćwiczenia
-│   ├── exercise-sets/        # Zestawy ćwiczeń
-│   ├── patients/             # Pacjenci
-│   ├── verification/         # Weryfikacja treści
-│   └── import/               # Import dokumentów
-├── components/               # Komponenty współdzielone
-│   ├── shared/               # DataTable, EmptyState, etc.
+│   ├── (auth)/               # Logowanie, rejestracja, invite
+│   ├── (blocked)/            # Redirect pacjenta poza panelem
+│   ├── (dashboard)/          # Główne strony
+│   │   ├── exercises/
+│   │   ├── exercise-sets/
+│   │   ├── patients/
+│   │   ├── organization/
+│   │   ├── finances/         # Strony rozliczeń (nie billing/)
+│   │   ├── verification/
+│   │   ├── import/
+│   │   ├── appointments/     # Placeholder
+│   │   ├── onboarding/
+│   │   └── settings/
+│   └── api/                  # Route handlers (pdf, feedback, reports)
+├── features/                 # Moduły domenowe (.ai/STRUCTURE.md)
+│   ├── assignment/
+│   ├── exercises/
+│   ├── exercise-sets/
+│   ├── patients/
+│   ├── verification/
+│   ├── import/
+│   └── auth/                 # helpers (np. siła hasła)
+├── components/
+│   ├── shared/               # DataTable, ExerciseExecutionCard
 │   ├── ui/                   # shadcn/ui
-│   ├── layout/               # Sidebar, Header, etc.
-│   └── ...                   # auth, organization, settings, finances, ...
-├── graphql/
-│   ├── queries/              # Zapytania GraphQL
-│   ├── mutations/            # Mutacje GraphQL
-│   ├── subscriptions/        # Subskrypcje real-time
-│   └── types/                # Typy GraphQL
-├── hooks/                    # Custom React hooks
-├── services/                 # Serwisy AI, chat, import
-├── lib/                      # Apollo provider, utils
-└── types/                    # Typy TypeScript
+│   ├── layout/
+│   ├── organization/
+│   ├── finances/             # Strony (dashboard)/finances
+│   ├── billing/              # Widget planu (SPEC-002)
+│   ├── settings/
+│   ├── exercise-builder/
+│   └── ...
+├── graphql/                  # queries, mutations, subscriptions, types (ręczne)
+├── data/                     # ICF, słowniki
+├── hooks/
+├── services/
+├── lib/
+├── contexts/
+├── utils/
+└── types/                    # Typy UI/domenowe (nie GraphQL)
 ```
 
 ## Styl kodu
@@ -171,7 +195,7 @@ src/
 - Minimalna liczba eksportów, wszystkie typowane
 - Preferuj programowanie funkcyjne (czyste funkcje) nad klasy
 - Komentarze w kodzie pisz po angielsku
-- ZAWSZE sprawdź czy projekt się buduje po zmianach
+- Po zmianach produktu sprawdź build w ramach `npm run validate`; dla samego workflow stosuj Validation Commands.
 
 ### TypeScript - STRICT (zakaz `any`)
 

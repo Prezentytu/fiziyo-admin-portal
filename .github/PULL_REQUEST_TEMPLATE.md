@@ -26,7 +26,7 @@ Jak przetestowano zmianę.
 
 ## Checklist
 
-- [ ] PR targetuje branch `dev`
+- [ ] PR targetuje `dev` (ludzie) albo draft do `main` z brancha `agent/…` (Cloud Agent)
 - [ ] Lint przechodzi (`npm run lint`)
 - [ ] Build przechodzi (`npm run build`)
 - [ ] data-testid dodane do nowych elementów interaktywnych

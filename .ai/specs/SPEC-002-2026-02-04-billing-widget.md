@@ -1,3 +1,11 @@
+---
+spec: SPEC-002
+repo: fiziyo-admin-portal
+issues: []
+prs: []
+board:
+---
+
 # Billing Widget - Pay-as-you-go
 
 ## Cel biznesowy

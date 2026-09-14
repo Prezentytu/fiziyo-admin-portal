@@ -25,6 +25,12 @@ jobs:
       - name: Skills lint
         run: npm run skills:lint
 
+      - name: Agent adapter
+        run: npm run agent:check
+
+      - name: Agent script tests
+        run: npm run agent:test
+
       - name: Lint
         run: npm run lint
 

@@ -1,24 +1,23 @@
 ---
 name: continue-run
-description: Wznowienie przerwanego runu implementacyjnego z .ai/runs. Użyj gdy użytkownik prosi - wznów run, kontynuuj przerwaną pracę, dokończ plan, wróć do checklisty, kontynuuj implementację z poprzedniej sesji, dokończ co zostało. EN triggers - continue previous run, resume interrupted plan, finish unfinished checklist. Wynik to wykonanie kolejnych krokow od pierwszego niezaznaczonego punktu sekcji Progress z aktualizacja statusu.
+description: Wznowienie przerwanej pracy z .ai/runs po porównaniu zakresu i stanu Git. Użyj przy wznów run, kontynuuj implementację, dokończ poprzednią sesję; EN resume interrupted run. Wynik to kolejny zweryfikowany krok lub konkretna blokada.
 ---
 
-# Skill: Continue Run
+# Continue Run
 
-Wznawia przerwany run implementacyjny.
+1. Odczytaj run i wskazany spec, potem [workflow](../../../docs/architecture/agent-workflow.md).
+   Starszy run bez baseline uzupełnij po sprawdzeniu diffa; jego testy pozostają
+   `unverified`, dopóki nie potwierdzisz, do jakiej wersji kodu się odnoszą.
+2. Porównaj repo, branch, HEAD, staged/unstaged diff oraz treść nowych plików
+   z zapisanym kandydatem. Sam SHA lub lista `git status` nie wystarczają dla dirty.
+3. Wyjaśnij różnice przez diff i zachowaj cudze zmiany. Zmiana kodu/specu unieważnia
+   dotyczące jej testy i review. Nowy scope wymaga oceny upoważnienia, nie checkboxa.
+4. Dla cross-repo sprawdź każde wymagane repo. Jeśli go brak, zapisz blokadę
+   tego zakresu; kontynuuj tylko niezależny, upoważniony wycinek lokalny.
+5. Wykonaj następny krok, uruchom adekwatne kontrole i zapisz dowód dla aktualnego
+   kandydata, decyzje oraz następną akcję. Nie przepisuj dawnych wyników jako nowych.
+   Format runu: [agent-run-template.md](../../../docs/architecture/agent-run-template.md).
+   Nie wznawiaj od pierwszego `- [ ]` bez porównania Gita.
 
-## Workflow
-
-1. Otwórz plan runu z `.ai/runs/`.
-2. Znajdź pierwszy niezaznaczony punkt w `## Progress`.
-3. Wykonaj tylko bieżący krok.
-4. Po zakończeniu:
-   - oznacz krok jako wykonany,
-   - dopisz SHA commita (jeśli commit był częścią kroku).
-5. Powtarzaj aż checklista będzie kompletna.
-
-## Output
-
-- Aktualny status runu: `% completed`.
-- Lista następnych kroków.
-- Informacja o blockerach, jeśli występują.
+Handoff przekazuje wskaźniki i sposób dostarczenia dirty kodu, nie historię czatu.
+Nie commituj, nie pushuj, nie twórz PR ani nie wdrażaj bez upoważnienia.

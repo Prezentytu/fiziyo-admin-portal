@@ -1,3 +1,11 @@
+---
+spec: SPEC-014
+repo: fiziyo-admin-portal
+issues: []
+prs: []
+board:
+---
+
 # Real-time Patient Assignment Sync (admin -> mobile)
 
 ## Cel biznesowy

@@ -1,3 +1,11 @@
+---
+spec: SPEC-004
+repo: fiziyo-admin-portal
+issues: []
+prs: []
+board:
+---
+
 # SPEC-004: Exercise Sets Module
 
 ## Cel biznesowy

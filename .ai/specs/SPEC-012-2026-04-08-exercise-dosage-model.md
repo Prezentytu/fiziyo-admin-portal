@@ -1,3 +1,11 @@
+---
+spec: SPEC-012
+repo: fiziyo-admin-portal
+issues: []
+prs: []
+board:
+---
+
 # Exercise Dosage Model (Single Source of Truth)
 
 ## Cel biznesowy

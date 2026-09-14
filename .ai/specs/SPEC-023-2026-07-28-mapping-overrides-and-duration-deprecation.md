@@ -1,3 +1,11 @@
+---
+spec: SPEC-023
+repo: fiziyo-admin-portal
+issues: []
+prs: []
+board:
+---
+
 # SPEC-023 — Mapping overridesJson + deprecacja `duration`
 
 ## Cel biznesowy

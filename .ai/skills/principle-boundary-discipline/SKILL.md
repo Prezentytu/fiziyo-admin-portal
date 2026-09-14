@@ -5,7 +5,7 @@ description: 'Stosuj przy walidacji, adapterze, typie albo sygnaturze. Guard na 
 
 # Boundary discipline
 
-> **Synchronizacja:** źródło w `fizjo-app/.agents/skills/principle-boundary-discipline/SKILL.md`. Przy zmianie zaktualizuj oba repozytoria.
+> **Synchronizacja:** źródło w `fizjo-app/.ai/skills/principle-boundary-discipline/SKILL.md`. Przy zmianie zaktualizuj oba repozytoria.
 
 Walidacja, zwężenie typu i obsługa błędu stoją na granicy systemu (sieć, GraphQL, config, CLI). Wewnątrz ufasz typom. Logika biznesowa zostaje czystą funkcją.
 

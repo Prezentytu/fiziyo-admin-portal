@@ -1,3 +1,11 @@
+---
+spec: SPEC-026
+repo: fiziyo-admin-portal
+issues: []
+prs: []
+board:
+---
+
 # Build-bound release identity
 
 ## Cel biznesowy
@@ -9,7 +17,7 @@ w trzech repo, bez deploy, sekretow i zmian polityki auth.
 ## Architektura
 
 Next headers() zapisuje podczas builda naglowki dla istniejacej publicznej
-strony /sign-in/:path*. Pure helper wybiera tylko SHA, deployment ID i API origin.
+strony /sign-in/:path\*. Pure helper wybiera tylko SHA, deployment ID i API origin.
 Nie korzysta z runtime env do oznaczania juz zbudowanego artefaktu.
 Zrodla: systemowe VERCEL_GIT_COMMIT_SHA, VERCEL_DEPLOYMENT_ID, repo owner/slug
 oraz istniejace NEXT_PUBLIC_API_URL. Bez nowych zmiennych lub ich wartosci.
@@ -21,7 +29,7 @@ w Vercel; ustawienia cloud pozostaja unverified i nie sa zmieniane.
 
 - x-fiziyo-release-schema: 1
 - x-fiziyo-admin-sha: pelny lowercase SHA
-- x-fiziyo-deployment-id: dpl_ + identyfikator alfanumeryczny
+- x-fiziyo-deployment-id: dpl\_ + identyfikator alfanumeryczny
 - x-fiziyo-api-origin: allowlistowany origin DEV lub PROD API
 - Cache-Control: private, no-store dla tozsamosci strony logowania
 

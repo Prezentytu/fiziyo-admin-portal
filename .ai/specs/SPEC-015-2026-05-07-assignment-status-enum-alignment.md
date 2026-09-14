@@ -1,3 +1,11 @@
+---
+spec: SPEC-015
+repo: fiziyo-admin-portal
+issues: []
+prs: []
+board:
+---
+
 # Assignment Status Enum Alignment
 
 ## Cel biznesowy

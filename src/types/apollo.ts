@@ -1,6 +1,7 @@
 // Apollo GraphQL Response Types
 // Types for GraphQL query responses based on actual schema
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
+import type { ExerciseLoad } from '@/graphql/types/exercise.types';
 
 // ========================================
 // User Types
@@ -253,10 +254,19 @@ export interface ExerciseSetMapping {
   restSets?: number;
   restReps?: number;
   executionTime?: number;
+  preparationTime?: number;
   tempo?: string;
   notes?: string;
   customName?: string;
   customDescription?: string;
+  videoUrl?: string;
+  imageUrl?: string;
+  images?: string[];
+  load?: ExerciseLoad | null;
+  loadType?: string;
+  loadValue?: number;
+  loadUnit?: string;
+  loadText?: string;
   exercise?: {
     id: string;
     name: string;
@@ -266,8 +276,13 @@ export interface ExerciseSetMapping {
     type?: string;
     side?: string;
     patientDescription?: string;
+    clinicalDescription?: string;
+    audioCue?: string;
+    rangeOfMotion?: string;
     notes?: string;
     videoUrl?: string;
+    gifUrl?: string;
+    tempo?: string;
     preparationTime?: number;
     defaultExecutionTime?: number;
     defaultSets?: number;
@@ -275,10 +290,16 @@ export interface ExerciseSetMapping {
     defaultDuration?: number;
     defaultRestBetweenSets?: number;
     defaultRestBetweenReps?: number;
+    defaultLoad?: ExerciseLoad | null;
+    loadType?: string;
+    loadValue?: number;
+    loadUnit?: string;
+    loadText?: string;
+    mainTags?: string[];
+    additionalTags?: string[];
     scope?: string;
     status?: string;
     difficultyLevel?: string;
-    // Legacy aliasy
     exerciseSide?: string;
     description?: string;
     executionTime?: number;

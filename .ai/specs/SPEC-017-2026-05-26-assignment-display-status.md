@@ -1,3 +1,11 @@
+---
+spec: SPEC-017
+repo: fiziyo-admin-portal
+issues: []
+prs: []
+board:
+---
+
 # Assignment Display Status
 
 ## Cel biznesowy
