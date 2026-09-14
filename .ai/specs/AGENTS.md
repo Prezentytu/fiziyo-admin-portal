@@ -39,19 +39,28 @@ Specyfikacje są źródłem prawdy dla architektury i decyzji projektowych.
    - {opis zmian}
    ```
 
-2. **Zaktualizuj status** w README.md jeśli się zmienił
-3. **Po zamknięciu specyfikacji** przenieś ją do `.ai/specs/implemented/` (zachowując link w README)
+2. **Dopisz PR do frontmattera** `prs: [#N]` po merge; issue zamykaj przez `Closes #N` w PR
+3. **Zaktualizuj status** w README.md jeśli się zmienił (słownik: `draft/approved/in-progress/implemented/verified/deprecated`)
+4. **Po zamknięciu specyfikacji** przenieś ją do `.ai/specs/implemented/` (zachowując link w README)
 
 ### Tworzenie nowej specyfikacji
 
 Szablon:
 
 ```markdown
+---
+spec: SPEC-0xx
+repo: fiziyo-admin-portal
+issues: []
+prs: []
+board:
+---
+
 # {Tytuł}
 
 ## Cel biznesowy
 
-{Dlaczego ta funkcjonalność istnieje}
+{Dlaczego ta funkcjonalność istnieje; jeśli spec wynika z issue — cytat zgłoszenia ≤25 słów + numer}
 
 ## Architektura
 
@@ -85,7 +94,8 @@ Szablon:
 1. **Spec-first development** - najpierw specyfikacja, potem kod
 2. **Dokumentuj decyzje** - dlaczego, nie tylko co
 3. **Aktualizuj changelog** - historia jest ważna
-4. **Linkuj do kodu** - referencje do plików źródłowych
+4. **Linkuj do kodu** - referencje do plików źródłowych i PR-ów; nie wklejaj kodu poza SDL kontraktu
+5. **Załączniki jako snapshot** - `.ai/specs/assets/SPEC-0xx/`, nie linki do Google Doc / Loom
 
 ## Czego NIE robić
 

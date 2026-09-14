@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "repository": "Prezentytu/fiziyo-admin-portal",
+  "externalRepositories": ["Prezentytu/fizjo-app", "Prezentytu/fiziyo-tests"],
+  "skillRoot": ".ai/skills",
+  "instructions": ["AGENTS.md"],
+  "surfaces": [
+    "scripts/task-card.mjs",
+    "scripts/task-card.test.mjs",
+    "scripts/check-agent-adapter.mjs",
+    "scripts/check-agent-adapter.test.mjs",
+    ".github/workflows/agent-intake.yml",
+    ".github/workflows/agent-promote.yml",
+    "docs/architecture/cloud-agent-policy.md",
+    ".cursor/automations/02-pr-review.md",
+    ".cursor/automations/03-po-merge.md",
+    ".cursor/automations/05-fix.md",
+    ".cursor/automations/README.md",
+    ".cursor/automations/04-triage-ci.md",
+    ".cursor/automations/01-intake.md",
+    ".cursor/agents/reviewer.md",
+    ".cursor/agents/sec-auditor.md",
+    ".cursor/BUGBOT.md"
+  ],
+  "checks": [
+    {
+      "command": "npm",
+      "args": ["run", "skills:lint"],
+      "cwd": "."
+    },
+    {
+      "command": "npm",
+      "args": ["run", "skills:check"],
+      "cwd": "."
+    },
+    {
+      "command": "npm",
+      "args": ["run", "skills:test"],
+      "cwd": "."
+    },
+    {
+      "command": "node",
+      "args": ["--test", "scripts/task-card.test.mjs", "scripts/check-agent-adapter.test.mjs"],
+      "cwd": "."
+    }
+  ],
+  "protectedPaths": [".github", ".cursor", ".agents", ".codex", ".env", "AGENTS.md"],
+  "activation": "unverified"
+}

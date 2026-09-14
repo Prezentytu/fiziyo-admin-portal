@@ -895,3 +895,6 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 - **Reguła**: Czas serii pokazuj jako wyliczenie; edytuj `executionTime`. Personalizacja szablonu zestawu ≠ personalizacja pacjenta — osobne warstwy JSON, ten sam kształt kluczy. Addytywne pola GraphQL wdrażaj razem z backendem.
 
 <!-- Dodawaj nowe wpisy powyżej tej linii -->
+
+- 2026-09-10 — Jeśli wznawiasz run cross-repo, zawsze porównaj Git i treść dirty zmian każdego wymaganego repo, a dowody przypisz do konkretnego kandydata; checkbox ani exit 0 agenta nie potwierdzają całości.
+- 2026-09-10 — Jeśli synchronizujesz skille, zawsze sprawdź obie kopie względem źródła i zachowaj obce pliki zamiast usuwać katalog docelowy.
