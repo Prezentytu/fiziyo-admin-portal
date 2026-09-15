@@ -28,7 +28,7 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Problem**: Po generacji AI foty na detalu ćwiczenia przycisk Zapisz zostawał wyszarzony; odblokowywał się dopiero po zmianie innego pola.
 - **Przyczyna**: Upload zdjęcia od razu mutuje API i refetchuje `exerciseById`. Hook formularza w trybie bez autosave nadpisywał draft przy każdej nowej referencji `source`, zeroując `isDirty`. Użytkownik myślał, że wygenerowane zdjęcie czeka na Zapisz.
 - **Rozwiązanie**: Hydracja tylko gdy draft nie jest brudny (albo zmieniło się id ćwiczenia). Po zapisie mediów toast i pasek: „Zdjęcie zapisane od razu — nie wymaga przycisku Zapisz”.
-- **Reguła**: Jeśli media idą osobną mutacją + refetch, dirty tracking pól tekstowych musi przetrwać zmianę referencji `source`; UI ma powiedzieć, że media już są zapisane.
+- **Reguła**: Jeśli media idą osobną mutacją + refetch, dirty tracking pól tekstowych musi przetrwać zmianę referencji `source`; UI ma powiedzieć, że media już są zapisane. `data-testid` dawaj jako pierwszy atrybut tagu — skaner kończy opening tag na pierwszym `>` (w tym `=>` i `>=`), więc testid po `onClick={() =>` wypada z detekcji i psuje allowlistę po przesunięciu linii.
 
 ### 2026-09-14 - Nieużywany dokument GraphQL z wycofanym polem to nie alias
 

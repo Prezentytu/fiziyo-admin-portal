@@ -576,10 +576,10 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
       {/* Compact Header */}
       <div className="flex items-center justify-between">
         <Button
+          data-testid="exercise-detail-back-btn"
           variant="ghost"
           onClick={() => router.push('/exercises')}
           className="gap-2"
-          data-testid="exercise-detail-back-btn"
         >
           <ArrowLeft className="h-4 w-4" />
           Powrót do ćwiczeń
@@ -714,10 +714,10 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         </div>
         {isEditing ? (
           <Input
+            data-testid="exercise-detail-name-input"
             value={core.name}
             className="h-auto border-0 border-b border-border/60 bg-transparent px-0 text-2xl font-bold text-foreground shadow-none focus-visible:ring-0 focus-visible:border-primary rounded-none"
             onChange={(event) => setCoreField('name', event.target.value)}
-            data-testid="exercise-detail-name-input"
           />
         ) : (
           <h1 className="text-2xl font-bold text-foreground" data-testid="exercise-detail-name">
@@ -756,12 +756,12 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         </button>
 
         <button
+          data-testid="exercise-detail-report-hero-btn"
           onClick={() => setIsReportDialogOpen(true)}
           className={cn(
             'group relative overflow-hidden rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5 text-left transition-all duration-300 hover:shadow-lg hover:shadow-amber-500/20 hover:scale-[1.01] cursor-pointer sm:col-span-1',
             isLocked ? 'lg:col-span-6' : 'lg:col-span-4'
           )}
-          data-testid="exercise-detail-report-hero-btn"
         >
           <div className="relative flex items-center gap-4">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/20 text-amber-600 shrink-0 group-hover:scale-110 transition-transform duration-300">
@@ -851,12 +851,12 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                     >
                       <Image src={imageUrl} alt="" fill className="object-cover" sizes="80px" />
                       <button
+                        data-testid="exercise-detail-delete-image-btn"
                         type="button"
                         onClick={() => handleDeleteImage(imageUrl)}
                         disabled={uploadingImage}
                         className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/50 transition-colors"
                         aria-label="Usuń zdjęcie"
-                        data-testid="exercise-detail-delete-image-btn"
                       >
                         <Trash2 className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                       </button>
@@ -875,11 +875,11 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
 
               <div className="flex flex-wrap items-center gap-2">
                 <Button
+                  data-testid="exercise-detail-upload-image-btn"
                   size="sm"
                   variant="outline"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploadingImage || isGeneratingAiImage || (exercise.images?.length ?? 0) >= 5}
-                  data-testid="exercise-detail-upload-image-btn"
                 >
                   {uploadingImage ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -895,12 +895,12 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                   testIdPrefix="exercise-detail-ai-style"
                 />
                 <Button
+                  data-testid="exercise-detail-ai-image-btn"
                   size="sm"
                   variant="outline"
                   onClick={handleAIGenerateImage}
                   disabled={uploadingImage || isGeneratingAiImage || !exercise.name || (exercise.images?.length ?? 0) >= 5}
                   aria-busy={isGeneratingAiImage}
-                  data-testid="exercise-detail-ai-image-btn"
                 >
                   {isGeneratingAiImage ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -1036,9 +1036,9 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                 Anuluj
               </Button>
               <Button
+                data-testid="exercise-detail-save-btn"
                 onClick={() => void save()}
                 disabled={!isDirty || saveStatus === 'saving'}
-                data-testid="exercise-detail-save-btn"
               >
                 {saveStatus === 'saving' ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
