@@ -17,6 +17,7 @@ jobs:
         env:
           TESTS_REPO_OWNER: ${{ vars.E2E_TESTS_REPO_OWNER }}
           TESTS_REPO_NAME: ${{ vars.E2E_TESTS_REPO_NAME }}
+          REPO_READ_TOKEN: ${{ github.token }}
         with:
           github-token: ${{ secrets.E2E_DISPATCH_PAT }}
           script: |
@@ -28,17 +29,37 @@ jobs:
               }
               const status = context.payload.deployment_status;
               const sha = context.payload.deployment?.sha;
+              const ref = context.payload.deployment?.ref;
               if (status?.state !== 'success' || !/^[0-9a-f]{40}$/.test(sha || '')) throw new Error();
+              if (ref === 'dev') {
+                core.notice('Git branch dev is not in the release train. Shared DEV follows main.');
+                return;
+              }
               const target = status.environment_url || status.target_url || '';
               const devUrls = ['https://devportal.fiziyo.pl', 'https://dev.portal.fiziyo.pl'];
-              const prod = target === 'https://portal.fiziyo.pl' || status.environment === 'Production';
-              const dev = devUrls.includes(target) || status.environment === 'Development';
-              if (!prod && !dev) {
+              const prodUrl = 'https://portal.fiziyo.pl';
+              const prod = target === prodUrl || status.environment === 'Production';
+              const dedicatedDev = devUrls.includes(target);
+              if ((prod && dedicatedDev) || (dedicatedDev && target === prodUrl)) throw new Error();
+              if (!prod && !dedicatedDev) {
                 core.notice('Preview is not certified against shared DEV. Run dedicated DEV evidence explicitly.');
                 return;
               }
-              if ((prod && devUrls.includes(target)) || (dev && target === 'https://portal.fiziyo.pl')) throw new Error();
-              const baseUrl = prod ? 'https://portal.fiziyo.pl' : devUrls.includes(target) ? target : devUrls[0];
+              if (!process.env.REPO_READ_TOKEN) throw new Error();
+              const compare = await fetch(`https://api.github.com/repos/${context.repo.owner}/${context.repo.repo}/compare/${sha}...main`, {
+                headers: {
+                  Authorization: `Bearer ${process.env.REPO_READ_TOKEN}`,
+                  Accept: 'application/vnd.github+json',
+                  'X-GitHub-Api-Version': '2022-11-28',
+                },
+                redirect: 'error',
+                cache: 'no-store',
+                signal: AbortSignal.timeout(20000),
+              });
+              if (!compare.ok) throw new Error();
+              const compared = await compare.json();
+              if (compared.status !== 'ahead' && compared.status !== 'identical') throw new Error();
+              const baseUrl = prod ? prodUrl : target;
               const apiUrl = prod ? 'https://fiziyo-prod.azurewebsites.net' : 'https://fizjo-app-api.azurewebsites.net';
               const response = await fetch(`${baseUrl}/sign-in`, { method: 'HEAD', redirect: 'error', cache: 'no-store', signal: AbortSignal.timeout(20000) });
               if (!response.ok || response.headers.get('x-fiziyo-release-schema') !== '1' || response.headers.get('x-fiziyo-admin-sha') !== sha || response.headers.get('x-fiziyo-api-origin') !== apiUrl || !/^dpl_[A-Za-z0-9]{8,80}$/.test(response.headers.get('x-fiziyo-deployment-id') || '')) throw new Error();

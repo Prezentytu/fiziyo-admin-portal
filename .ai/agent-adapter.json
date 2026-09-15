@@ -32,6 +32,12 @@
     "scripts/agent-guard.test.mjs",
     "scripts/check-specs-index.mjs",
     "scripts/check-specs-index.test.mjs",
+    "scripts/check-trunk-main.mjs",
+    "scripts/check-trunk-main.test.mjs",
+    "scripts/pin-devportal-domain.mjs",
+    "scripts/pin-devportal-domain.test.mjs",
+    ".github/workflows/pin-devportal.yml",
+    "vercel.json",
     ".cursor/agents/reviewer.md",
     ".cursor/agents/sec-auditor.md",
     ".cursor/BUGBOT.md"

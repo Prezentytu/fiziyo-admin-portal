@@ -20,12 +20,14 @@ npm run dev                   # starts dev server with HTTPS
 ## Branching Model
 
 ```
-main          production-ready, protected
-  └── dev     integration branch
-       └── feat/<name>     new features
-       └── fix/<name>      bug fixes
-       └── chore/<name>    maintenance tasks
+main          trunk: merge deploys DEV (devportal.fiziyo.pl)
+  └── feat/<name>     new features
+  └── fix/<name>      bug fixes
+  └── chore/<name>    maintenance tasks
 ```
+
+PROD (`portal.fiziyo.pl`) is a manual Promote from `main`, not a second git branch.
+The leftover `dev` branch is not part of CI, review, or deploy.
 
 ### Branch naming
 
@@ -35,11 +37,11 @@ main          production-ready, protected
 
 ### Workflow
 
-1. Create a branch from `dev`
+1. Create a branch from `main`
 2. Make your changes (follow the code style in `AGENTS.md`)
 3. Run `npm run validate` to check lint, types, and build
 4. Commit using [Conventional Commits](#commit-messages)
-5. Open a PR against `dev`
+5. Open a PR against `main`
 
 ## Commit Messages
 

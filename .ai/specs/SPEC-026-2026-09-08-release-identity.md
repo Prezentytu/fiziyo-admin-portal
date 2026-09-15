@@ -39,10 +39,10 @@ oraz oczekiwanego API origin. Manifest v2; v1 pozostaje dowodem bez tej obserwac
 
 ## Risk Assessment
 
-- Dispatch: dokladny DEV URL lub Development wymaga zgodnych live headers i API SHA;
-  Production uruchamia tylko prod-safe po kontroli admin SHA. Generic Preview
-  nie jest przekierowywane na shared DEV i nie tworzy statusu sukcesu. Nazwa/ref
-  galezi nie sluzy do certyfikowania tozsamosci deploymentu.
+- Dispatch: dedykowany DEV URL wymaga SHA na `main` oraz zgodnych live headers i API SHA;
+  Production uruchamia tylko prod-safe po kontroli admin SHA na `main`. Generic Preview
+  i leftover environment `Development` nie sa przekierowywane na shared DEV i nie
+  tworza statusu sukcesu. Nazwa/ref galezi `dev` nie sluzy do certyfikowania.
 - High: sam SHA nie oznacza deploymentu/env. Wymagamy rowniez ID i API origin.
 - High: build code moze klamac. Obserwacja nie jest podpisanym provider attestation;
   nadal potrzebna walidacja przez Vercel API, image/SDL i cross-repo lock.
@@ -58,4 +58,5 @@ missing/mismatched headers. Live DEV response i Vercel settings pozostaja unveri
 
 ## Changelog
 
+- 2026-09-15: DEV tylko z `main` + dedykowany URL; `dev` poza pociagiem (D-09-06-b).
 - 2026-09-08: dodano build-bound identity; bez zmian autoryzacji i deployow.

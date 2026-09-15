@@ -157,7 +157,7 @@ graph TB
 - **Ustawienia** -- profil użytkownika, kredyty AI, organizacje.
 - **Onboarding** -- flow pierwszego logowania.
 
-**Jakość i CI/CD:** ESLint, type-check, Vitest (testy jednostkowe), `npm run validate` (lint + type-check + build). GitHub Actions: lint, type-check, test, build na PR do `dev`/`main`.
+**Jakość i CI/CD:** ESLint, type-check, Vitest (testy jednostkowe), `npm run validate` (lint + type-check + build). GitHub Actions: lint, type-check, test, build na PR do `main`.
 
 **Dokumentacja wewnętrzna:** `AGENTS.md` (główne wytyczne), modułowe AGENTS.md (exercises, assignment, patients, graphql, shared, exercise-sets, settings), `.ai/specs/` (SPEC-001...005), `.ai/ECOSYSTEM.md`, `.ai/DOMAIN_MODEL.md`, `.ai/DATA_FLOWS.md`.
 

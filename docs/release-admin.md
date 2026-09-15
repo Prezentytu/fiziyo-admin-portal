@@ -13,6 +13,12 @@ Preview nie jest shared DEV. `NEXT_PUBLIC_*` są utrwalone w buildzie — Promot
 **nigdy** nie aliasuje deploymentu Preview (Clerk/API DEV) na domenę produkcji.
 Preview zawsze dostaje nowy build `target: production`.
 
+Gałąź `dev` nie jest w pociągu (D-09-06-b). `vercel.json` wyłącza jej deploye.
+Workflow `pin-devportal.yml` przy `deployment_status` przestawia alias
+`devportal.fiziyo.pl` na Preview z `main` i nie aliasuje leftover `dev`.
+`e2e-trigger` odmawia certyfikatu, gdy live SHA nie należy do `main`.
+Wymaga tych samych sekretów Vercel co Promote (`VERCEL_TOKEN`, `VERCEL_PROJECT_ID`).
+
 ## DEV
 
 1. Zmerguj PR do `main`.

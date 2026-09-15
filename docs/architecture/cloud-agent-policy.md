@@ -8,7 +8,7 @@ Decyzja 2026-09-10 (D-09-10-a): kod FiziYo w chmurze wyłącznie przez Cursor Cl
 
 - Czytać całe repo, `AGENTS.md`, `.ai/` (VISION, specs, lessons, runs), `docs/`.
 - Uruchamiać `npm run validate`, `npm run agent:check`, `npm run agent:test`, `npm run skills:lint`, `npm run skills:check`, `npm run skills:test`. Brak narzędzia = `blocked` / `unverified`, nigdy „zielone”. Ten portal nie ma `dotnet` ani `graphql:validate`.
-- Tworzyć branch `agent/<typ>-<issue|YYYY-MM-DD>` (typy: `fix`, `spec`, `docs`, `health`, `drift`, `triage`) i **draft PR** do `main` z opisem wg sekcji 4. Ludzkie PR-y nadal targetują `dev`.
+- Tworzyć branch `agent/<typ>-<issue|YYYY-MM-DD>` (typy: `fix`, `spec`, `docs`, `health`, `drift`, `triage`) i **draft PR** do `main` z opisem wg sekcji 4. Ludzkie PR-y też targetują `main`. Gałąź `dev` nie jest w pociągu.
 - Komentować PR-y (review), tworzyć / komentować issues (`gh`), aktualizować `.ai/specs/*`, `lessons.md`, `docs/` w ramach swojego brancha. BOARD żyje w `fizjo-app/.ai/BOARD.md`; w portalu tylko proponujesz linię w opisie PR.
 - Wołać DEV: `https://devportal.fiziyo.pl` — tylko kontami testowymi z `docs/testing/agent-access.md` (wskaźnik do dokumentu w `fizjo-app`).
 

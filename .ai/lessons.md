@@ -8,7 +8,7 @@ pod komentarzem na dole pliku.
 
 Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 `executionTime`, `Clerk`, `additive`, `overridesJson`, `canManageOrganization`,
-`useLazyQuery`, `agent:check`, `skills:sync`.
+`useLazyQuery`, `agent:check`, `skills:sync`, `trunk`, `branch dev`.
 
 ## Format wpisu
 
@@ -21,6 +21,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Reguła**: Zasada do zapamiętania na przyszłość
 
 ## Wpisy
+
+### 2026-09-15 - Leftover branch `dev` nie może trzymać DEV
+
+- **Kategoria**: `Build/Tooling` | `Git`
+- **Problem**: Po wycięciu `dev` z procesu `devportal.fiziyo.pl` dalej serwował stary badge `BEZ TIMERA`, bo alias i dokumentacja nadal traktowały gałąź `dev` jako integrację.
+- **Przyczyna**: Trunk (`main`) był w VISION i D-09-06-b, ale CI, PR template, E2E routing i Vercel git deploy zostawily `dev` jako żywe źródło DEV.
+- **Rozwiązanie**: `vercel.json` wyłącza deploye z `dev`; `pin-devportal.yml` przestawia alias na Preview z `main`; `e2e-trigger` certyfikuje tylko dedykowany URL i SHA na `main`; `agent:check` blokuje powrót modelu `dev`.
+- **Reguła**: Środowisko DEV = domena + czubek `main`. Gałąź o nazwie `dev` nie jest źródłem prawdy; lock ma być w workflow i `agent:check`, nie w memory.
 
 ### 2026-09-15 - Promote admin nie może aliasować Preview DEV
 

@@ -3,11 +3,11 @@
 ## Aktualizacja 2026-09-08
 
 SPEC-026/027 zmienia ponizszy historyczny routing: generic Preview NIE jest
-przekierowywane na shared DEV i nie daje certyfikatu. Dedicated DEV URL albo
-Development wymaga zgodnego live SHA z build headers; DEV dispatch zawiera
+przekierowywane na shared DEV i nie daje certyfikatu. Dedicated DEV URL wymaga
+SHA na `main` oraz zgodnego live SHA z build headers; DEV dispatch zawiera
 obserwowane API SHA i admin SHA. Production zawsze `prod-safe`, nie smoke-tests.
-Branch `dev` sam nie dowodzi tozsamosci deploymentu. Dla technicznego Preview URL
-bez jawnego Development uruchom manualny DEV evidence po sprawdzeniu aliasu.
+Gałąź `dev` nie jest w pociągu i nie certyfikuje deploymentu. Dla technicznego
+Preview URL uruchom manualny DEV evidence po sprawdzeniu aliasu.
 
 Naglowki `/sign-in` powstaja w buildzie z Vercel system vars: SHA, deployment ID
 i docelowy API origin. Operator musi potwierdzic dostepnosc system vars/headers;
@@ -20,10 +20,10 @@ stale grupy per DEV/PROD, bez cancel-in-progress. Pending moze byc zastapiony,
 nie jest to FIFO ani lock deploymentu cross-repo. Ponizsze starsze opisy
 Preview gate, branch routing i per-SHA concurrency nie sa aktualnym kontraktem.
 
-Ten runbook opisuje docelowy model dla `dev`, `preview` i `prod`, tak aby:
+Ten runbook opisuje docelowy model dla DEV, preview i `prod`, tak aby:
 
 - PR byl blokowany przez smoke E2E,
-- release na `prod` przechodzil tylko po zielonym full E2E na `dev`,
+- release na `prod` przechodzil tylko po zielonym full E2E na `devportal.fiziyo.pl`,
 - preview auth dzialal stabilnie bez oslabiania security produkcji.
 
 ## Architektura
@@ -46,7 +46,7 @@ Ten runbook opisuje docelowy model dla `dev`, `preview` i `prod`, tak aby:
 - `preview` (`https://*.vercel.app`) -> `dev Clerk`
 
 Preview nie powinien korzystac z `prod Clerk`.
-W aktualnym setupie Vercel dedykowany `dev` jest nadal srodowiskiem typu `Preview`, ale z osobna domena `devportal.fiziyo.pl`.
+Dedykowany DEV (`devportal.fiziyo.pl`) moze byc w Vercel typem `Preview`, ale alias i git branch musza wskazac `main`. `vercel.json` wylacza deploye z galezi `dev`.
 
 ## Clerk preview redirects - konfiguracja w kodzie
 
@@ -107,17 +107,17 @@ raportowaniu ani artefaktach.
 
 W repo prywatnym bez platnego branch protection traktuj statusy jako manualny gate release:
 
-- candidate SHA do promocji `dev -> main` musi miec zielone:
+- candidate SHA do Promote admin musi miec zielone:
   - `CI`
   - `E2E Dev Full`
-- po deployu `main` sprawdz status:
+- po Promote na `portal.fiziyo.pl` sprawdz status:
   - `E2E Prod Smoke`
 
 ## Release policy (super-startup mode)
 
 1. PR -> `CI` + Vercel Preview + `E2E Preview Smoke` musza byc zielone.
-2. Merge.
-3. Deploy na `dev`.
+2. Merge do `main`.
+3. Vercel wdraza DEV na `devportal.fiziyo.pl`.
 4. `E2E Dev Full` na `devportal.fiziyo.pl` musi byc zielone.
 5. Dopiero wtedy Actions → **Promote admin** na `main` (`docs/release-admin.md`), nie klik w Vercel.
 6. Po deployu na `prod` `e2e-trigger` odpalą `prod-safe` / sprawdź `E2E Prod Smoke`.
@@ -126,12 +126,11 @@ W repo prywatnym bez platnego branch protection traktuj statusy jako manualny ga
 
 ## Dispatch routing
 
-- `Production` -> `event_type=e2e-prod-run`, `project=smoke-tests`
-- `Preview` -> `event_type=e2e-dev-run`, `project=smoke-tests`
-- `devportal.fiziyo.pl` / `dev.portal.fiziyo.pl` / `Development` / `SHA nalezy do brancha dev` -> `event_type=e2e-dev-run`, `project=all`
-- pozostale -> `event_type=e2e-dev-run`, `project=all`
+- `portal.fiziyo.pl` albo environment `Production` -> `event_type=e2e-prod-run`, `project=prod-safe`, SHA musi byc na `main`
+- `devportal.fiziyo.pl` / `dev.portal.fiziyo.pl` -> `event_type=e2e-dev-run`, `project=all`, SHA musi byc na `main`
+- pozostale (`*.vercel.app`, stara nazwa environment `Development`) -> brak dispatchu, brak certyfikatu
 
-W praktyce Vercel dla `deployment_status` czesto przekazuje `target_url` jako techniczny preview URL `*.vercel.app`, a `deployment.ref` jako SHA zamiast nazwy brancha. Dlatego rozpoznanie `dev full` nie moze opierac sie tylko na nazwie environment lub `target_url`; trigger dodatkowo sprawdza, czy deployowany commit nalezy do brancha `dev`.
+Vercel czesto podaje `target_url` jako `*.vercel.app`. Samo environment `Development` albo leftover branch `dev` nie robi z tego shared DEV. Trigger porownuje SHA z `main` przez GitHub Compare i wymaga zgodnych naglowkow na dedykowanym URL.
 
 ## Concurrency strategy (`fiziyo-tests`)
 
@@ -164,4 +163,4 @@ W praktyce Vercel dla `deployment_status` czesto przekazuje `target_url` jako te
 - [ ] Ustaw env vars Vercel dla Preview/Production zgodnie z tym dokumentem
 - [ ] Dodaj sekrety w `fiziyo-admin-portal` i `fiziyo-tests`
 - [ ] Zweryfikuj pierwszy przeplyw: `PR -> Preview -> E2E Preview Smoke -> Merge -> Dev full E2E -> E2E Prod Smoke`
-- [ ] Przed promocja `dev -> main` sprawdz zielone `CI` + `E2E Dev Full` na tym samym SHA
+- [ ] Przed Promote admin sprawdz zielone `CI` + `E2E Dev Full` na tym samym SHA `main`

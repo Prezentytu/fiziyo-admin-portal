@@ -1,0 +1,35 @@
+name: Pin DEV portal to main
+
+on:
+  deployment_status:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pin-devportal
+  cancel-in-progress: false
+
+jobs:
+  pin:
+    if: github.event_name == 'workflow_dispatch' || github.event.deployment_status.state == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+
+      - name: Point devportal.fiziyo.pl at main Preview
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}
+          VERCEL_PROJECT_NAME: ${{ vars.VERCEL_PROJECT_NAME }}
+          DEPLOYMENT_REF: ${{ github.event.deployment.ref || 'main' }}
+          DEPLOYMENT_SHA: ${{ github.event.deployment.sha || github.sha }}
+          DEPLOYMENT_ENV: ${{ github.event.deployment_status.environment || '' }}
+        run: node scripts/pin-devportal-domain.mjs
