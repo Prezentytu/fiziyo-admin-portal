@@ -4,6 +4,11 @@ import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ListEditor } from '@/components/shared/enrichment/ListEditor';
+import {
+  canRemovePlaceholderRow,
+  isMistakeRowEmpty,
+} from '@/components/shared/enrichment/canRemovePlaceholderRow';
+import { cn } from '@/lib/utils';
 import type { EnrichmentPatientMistakeV3, ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 
 interface MistakesCuesSectionProps {
@@ -41,20 +46,23 @@ export function MistakesCuesSection({
         <div className="flex items-center justify-between">
           <p className="text-xs font-medium text-muted-foreground">Typowe błędy</p>
           <Button
+            data-testid="enrichment-mistakes-add-btn"
             type="button"
             size="sm"
             variant="outline"
             disabled={disabled}
             onClick={() => setMistakes([...safeMistakes, { mistake: '', fix: '' }])}
-            data-testid="enrichment-mistakes-add-btn"
           >
             <Plus className="mr-1 h-3.5 w-3.5" />
             Dodaj błąd
           </Button>
         </div>
-        {safeMistakes.map((item, index) => (
+        {safeMistakes.map((item, index) => {
+          const canRemove = canRemovePlaceholderRow(safeMistakes, index, isMistakeRowEmpty);
+          return (
           <div key={`mistake-${index}`} className="space-y-2 rounded-md border border-border/50 p-2">
             <Input
+              data-testid={`enrichment-mistake-text-${index}`}
               value={item.mistake ?? ''}
               disabled={disabled}
               placeholder="Błąd"
@@ -64,10 +72,10 @@ export function MistakesCuesSection({
                 setMistakes(next);
               }}
               onBlur={() => void persist()}
-              data-testid={`enrichment-mistake-text-${index}`}
             />
             <div className="flex gap-2">
               <Input
+                data-testid={`enrichment-mistake-fix-${index}`}
                 value={item.fix ?? ''}
                 disabled={disabled}
                 placeholder="Jak poprawić"
@@ -77,24 +85,25 @@ export function MistakesCuesSection({
                   setMistakes(next);
                 }}
                 onBlur={() => void persist()}
-                data-testid={`enrichment-mistake-fix-${index}`}
               />
               <Button
+                data-testid={`enrichment-mistake-remove-${index}`}
                 type="button"
                 variant="ghost"
                 size="icon"
-                disabled={disabled}
+                disabled={disabled || !canRemove}
+                aria-label={canRemove ? 'Usuń błąd' : 'Brak treści do usunięcia'}
                 onClick={() => {
                   setMistakes(safeMistakes.filter((_, itemIndex) => itemIndex !== index));
                   void persist();
                 }}
-                data-testid={`enrichment-mistake-remove-${index}`}
               >
-                <Trash2 className="h-4 w-4 text-destructive" />
+                <Trash2 className={cn('h-4 w-4', canRemove ? 'text-destructive' : 'text-muted-foreground')} />
               </Button>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       <ListEditor

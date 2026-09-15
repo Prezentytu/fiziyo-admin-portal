@@ -49,6 +49,7 @@ export interface ParsedExercise {
   restBetweenReps?: string;
   restBetweenSets?: string;
   sets?: string;
+  duration?: string;
 }
 
 // Quick action preset
