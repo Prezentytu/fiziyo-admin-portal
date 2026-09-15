@@ -44,19 +44,21 @@
     ".cursor/BUGBOT.md"
   ],
   "portableSurfaceOverrides": [
-    "scripts/task-card.mjs",
-    "scripts/task-card.test.mjs",
-    "scripts/check-agent-adapter.mjs",
-    "scripts/check-agent-adapter.test.mjs",
-    ".cursor/automations/README.md",
     ".cursor/BUGBOT.md",
+    ".cursor/automations/06-night-scan.md",
+    ".cursor/automations/07-drift.md",
+    ".cursor/automations/README.md",
     ".cursor/hooks.json",
     ".github/ISSUE_TEMPLATE/bot-finding.md",
-    ".github/ISSUE_TEMPLATE/zgloszenie-agent.md",
-    ".github/ISSUE_TEMPLATE/idea.md",
-    ".github/ISSUE_TEMPLATE/flaky.md",
     ".github/ISSUE_TEMPLATE/design.md",
-    "docs/architecture/cloud-agent-policy.md"
+    ".github/ISSUE_TEMPLATE/flaky.md",
+    ".github/ISSUE_TEMPLATE/idea.md",
+    ".github/ISSUE_TEMPLATE/zgloszenie-agent.md",
+    "docs/architecture/cloud-agent-policy.md",
+    "scripts/check-agent-adapter.mjs",
+    "scripts/check-agent-adapter.test.mjs",
+    "scripts/task-card.mjs",
+    "scripts/task-card.test.mjs"
   ],
   "portableSurfaceExcluded": [
     "backend/.cursor/BUGBOT.md",
