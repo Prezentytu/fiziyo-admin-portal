@@ -22,6 +22,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-09-15 - Czat AI nie może etykietować sekund jako minut
+
+- **Kategoria**: `UI/UX`
+- **Problem**: Karty ćwiczeń z HTML czatu pokazywały `preparationTime` i rest jako minuty, a hold (`Długość ćwiczenia`) był wycinany razem z blokiem HTML.
+- **Przyczyna**: Szablon `ChatController` i `ChatExercise` mówiły „minuty”, mimo że `Exercise.PreparationTime` / `ExerciseSetMapping.Duration` są w sekundach; parser panelu nie czytał długości ćwiczenia.
+- **Rozwiązanie**: Formatter `formatChatExerciseDuration` traktuje wartość z `<b>` jako sekundy; parser wyciąga `Długość ćwiczenia`.
+- **Reguła**: Jeśli czat renderuje czas z HTML asystenta, zawsze formatuj go jako sekundy (ten sam kontrakt co `Exercise.PreparationTime`), nigdy jako minuty.
+
 ### 2026-09-14 - Nieużywany dokument GraphQL z wycofanym polem to nie alias
 
 - **Kategoria**: `GraphQL`

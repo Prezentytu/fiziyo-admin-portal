@@ -7,6 +7,7 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/comp
 import { cn } from '@/lib/utils';
 import type { ParsedExercise } from '@/types/chat.types';
 import { HIDE_EXERCISE_TAGS } from '@/components/shared/exercise';
+import { formatChatExerciseDuration } from './formatChatExerciseDuration';
 
 interface ExerciseCardProps {
   exercise: ParsedExercise;
@@ -18,7 +19,8 @@ interface ExerciseCardProps {
  * Karta ćwiczenia wyświetlana w odpowiedzi AI
  */
 export function ExerciseCard({ exercise, onAddToSet, className }: ExerciseCardProps) {
-  const hasParams = exercise.sets || exercise.reps || exercise.preparationTime || exercise.restBetweenSets;
+  const hasParams =
+    exercise.sets || exercise.reps || exercise.preparationTime || exercise.restBetweenSets || exercise.duration;
 
   return (
     <div
@@ -100,13 +102,27 @@ export function ExerciseCard({ exercise, onAddToSet, className }: ExerciseCardPr
             {exercise.preparationTime && (
               <span className="flex items-center gap-1.5">
                 <Timer className="h-3.5 w-3.5 text-info" />
-                <span className="font-medium text-foreground">{exercise.preparationTime}</span> min przyg.
+                <span className="font-medium text-foreground">
+                  {formatChatExerciseDuration(exercise.preparationTime)}
+                </span>{' '}
+                przyg.
+              </span>
+            )}
+            {exercise.duration && (
+              <span className="flex items-center gap-1.5">
+                <Timer className="h-3.5 w-3.5 text-info" />
+                <span className="font-medium text-foreground">
+                  {formatChatExerciseDuration(exercise.duration)}
+                </span>
               </span>
             )}
             {exercise.restBetweenSets && (
               <span className="flex items-center gap-1.5">
                 <Clock className="h-3.5 w-3.5 text-secondary" />
-                <span className="font-medium text-foreground">{exercise.restBetweenSets}</span> min odp.
+                <span className="font-medium text-foreground">
+                  {formatChatExerciseDuration(exercise.restBetweenSets)}
+                </span>{' '}
+                odp.
               </span>
             )}
           </div>
