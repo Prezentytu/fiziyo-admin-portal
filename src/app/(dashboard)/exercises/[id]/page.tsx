@@ -74,6 +74,10 @@ import {
   CREATE_EXERCISE_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
 import { useExerciseEditorForm } from '@/features/exercises/useExerciseEditorForm';
+import {
+  MEDIA_PERSISTED_SAVE_HINT,
+  resolveExerciseDetailSaveBarKind,
+} from '@/features/exercises/utils/exerciseDetailSaveBar';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import { createTagsMap, mapExerciseTagsToObjects } from '@/utils/tagUtils';
 import { useExerciseImageGeneration } from '@/features/exercises/useExerciseImageGeneration';
@@ -124,6 +128,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const [isSubmitToGlobalDialogOpen, setIsSubmitToGlobalDialogOpen] = useState(false);
   const [isSubmitToOrganizationDialogOpen, setIsSubmitToOrganizationDialogOpen] = useState(false);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
+  const [mediaPersistNotice, setMediaPersistNotice] = useState<string | null>(null);
 
   const organizationId = currentOrganization?.organizationId;
 
@@ -215,6 +220,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const handleSaved = useCallback(() => {
     toast.success('Zmiany zostały zapisane');
     setIsEditMode(false);
+    setMediaPersistNotice(null);
     void apolloClient.refetchQueries({ include: [GET_EXERCISE_BY_ID_QUERY] });
   }, [apolloClient]);
 
@@ -391,7 +397,8 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         const base64Image = await fileToBase64(file);
         await uploadExerciseImage({ variables: { exerciseId: id, base64Image, contentType: file.type } });
         await apolloClient.refetchQueries({ include: [GET_EXERCISE_BY_ID_QUERY] });
-        toast.success('Zdjęcie zostało dodane');
+        toast.success('Zdjęcie zapisane od razu. Przycisk Zapisz dotyczy pozostałych pól.');
+        setMediaPersistNotice(MEDIA_PERSISTED_SAVE_HINT);
       } catch (err) {
         console.error('[ExerciseDetail] Image upload failed:', err);
         toast.error('Nie udało się dodać zdjęcia');
@@ -410,6 +417,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         await deleteExerciseImage({ variables: { exerciseId: id, imageUrl } });
         await apolloClient.refetchQueries({ include: [GET_EXERCISE_BY_ID_QUERY] });
         toast.success('Zdjęcie zostało usunięte');
+        setMediaPersistNotice('Zmiana zdjęć zapisana od razu — nie wymaga przycisku Zapisz');
       } catch (err) {
         console.error('[ExerciseDetail] Image delete failed:', err);
         toast.error('Nie udało się usunąć zdjęcia');
@@ -451,7 +459,8 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         variables: { exerciseId: id, base64Image, contentType: generatedFile.type || 'image/png' },
       });
       await apolloClient.refetchQueries({ include: [GET_EXERCISE_BY_ID_QUERY] });
-      toast.success('Zdjęcie AI zostało wygenerowane');
+      toast.success('Zdjęcie AI zapisane od razu. Przycisk Zapisz dotyczy pozostałych pól.');
+      setMediaPersistNotice(MEDIA_PERSISTED_SAVE_HINT);
     } catch (err) {
       console.error('[ExerciseDetail] AI image upload failed:', err);
       toast.error('Nie udało się zapisać wygenerowanego zdjęcia');
@@ -543,6 +552,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const handleToggleEdit = () => {
     if (isEditing) {
       reset();
+      setMediaPersistNotice(null);
       setIsEditMode(false);
     } else {
       setIsEditMode(true);
@@ -551,8 +561,15 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
 
   const handleCancelEdit = () => {
     reset();
+    setMediaPersistNotice(null);
     setIsEditMode(false);
   };
+
+  const saveBarKind = resolveExerciseDetailSaveBarKind({
+    saveStatus,
+    isDirty,
+    hasMediaPersistNotice: Boolean(mediaPersistNotice),
+  });
 
   return (
     <div className={cn('space-y-6', isEditing && 'pb-24')}>
@@ -991,15 +1008,20 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         >
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              {saveStatus === 'error' ? (
+              {saveBarKind === 'error' ? (
                 <span className="flex items-center gap-1.5 text-destructive">
                   <AlertCircle className="h-4 w-4" />
                   Nie udało się zapisać — spróbuj ponownie
                 </span>
-              ) : isDirty ? (
+              ) : saveBarKind === 'dirty' ? (
                 <span className="flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-amber-500" />
                   Masz niezapisane zmiany
+                </span>
+              ) : saveBarKind === 'media-persisted' ? (
+                <span className="flex items-center gap-1.5" data-testid="exercise-detail-save-media-notice">
+                  <Check className="h-4 w-4 text-emerald-600" />
+                  {mediaPersistNotice}
                 </span>
               ) : (
                 <span className="flex items-center gap-1.5">

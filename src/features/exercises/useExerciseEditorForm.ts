@@ -9,6 +9,7 @@ import {
   deepCloneEnrichment,
   setEnrichmentAtPath,
 } from './useEnrichmentDraft';
+import { shouldRehydrateExerciseEditorDraft } from './utils/shouldRehydrateExerciseEditorDraft';
 
 /**
  * Pojedynczy model formularza edytora ćwiczenia (v3).
@@ -66,6 +67,7 @@ function normalizeTagIds(tags: unknown): string[] {
 }
 
 export interface ExerciseEditorSource {
+  id?: string | null;
   name?: string | null;
   patientDescription?: string | null;
   description?: string | null;
@@ -249,9 +251,8 @@ export function useExerciseEditorForm({
   const derivedCore = useMemo(() => deriveCoreDraft(source), [source]);
   const derivedEnrichment = useMemo(() => toV3(source?.enrichmentData), [source?.enrichmentData]);
 
-  // Baseline (dirty-tracking) state. W trybie non-autosave zachowuje się jak dawny `useMemo`
-  // (zawsze zsynchronizowany ze `źródłem`). W trybie autosave jest inicjalizowany raz przy
-  // pierwszym załadowaniu danych i odtąd aktualizowany wyłącznie przez `markSaved()`.
+  // Baseline (dirty-tracking) state. Hydration runs once per exercise identity.
+  // Refetch (np. po uploadzie zdjęcia AI) nie nadpisuje brudnego draftu.
   const [initialCore, setInitialCore] = useState<ExerciseCoreDraft>(derivedCore);
   const [initialEnrichment, setInitialEnrichment] = useState<ExerciseEnrichmentData>(derivedEnrichment);
   const [core, setCore] = useState<ExerciseCoreDraft>(derivedCore);
@@ -259,22 +260,50 @@ export function useExerciseEditorForm({
   const [saveStatus, setSaveStatus] = useState<ExerciseSaveStatus>('idle');
 
   const hasHydratedRef = useRef(false);
+  const hydratedIdentityRef = useRef<string | null>(null);
+  const isDirtyRef = useRef(false);
+
+  const coreDirty = useMemo(
+    () => Object.keys(buildChangedCoreVariables(initialCore, core)).length > 0,
+    [initialCore, core]
+  );
+
+  const initialEnrichmentPayload = useMemo(
+    () => JSON.stringify(composeEnrichmentPayload(initialEnrichment)),
+    [initialEnrichment]
+  );
+
+  const enrichmentPayload = useMemo(() => composeEnrichmentPayload(enrichment), [enrichment]);
+  const enrichmentDirty = useMemo(
+    () => JSON.stringify(enrichmentPayload) !== initialEnrichmentPayload,
+    [enrichmentPayload, initialEnrichmentPayload]
+  );
+
+  const isDirty = coreDirty || enrichmentDirty;
+  isDirtyRef.current = isDirty;
 
   useEffect(() => {
-    if (!source) return;
-    if (isAutosave && hasHydratedRef.current) return;
+    const sourceIdentity = source?.id ?? null;
+    if (
+      !shouldRehydrateExerciseEditorDraft({
+        hasSource: Boolean(source),
+        hasHydrated: hasHydratedRef.current,
+        isDirty: isDirtyRef.current,
+        isAutosave,
+        sourceIdentity,
+        hydratedIdentity: hydratedIdentityRef.current,
+      })
+    ) {
+      return;
+    }
     hasHydratedRef.current = true;
+    hydratedIdentityRef.current = sourceIdentity;
     setInitialCore(derivedCore);
     setInitialEnrichment(derivedEnrichment);
     setCore(derivedCore);
     setEnrichment(derivedEnrichment);
     setSaveStatus('idle');
   }, [derivedCore, derivedEnrichment, isAutosave, source]);
-
-  const initialEnrichmentPayload = useMemo(
-    () => JSON.stringify(composeEnrichmentPayload(initialEnrichment)),
-    [initialEnrichment]
-  );
 
   const setCoreField = useCallback(<K extends keyof ExerciseCoreDraft>(field: K, value: ExerciseCoreDraft[K]) => {
     setCore((previous) => ({ ...previous, [field]: value }));
@@ -294,19 +323,6 @@ export function useExerciseEditorForm({
     setEnrichment(next);
     setSaveStatus('idle');
   }, []);
-
-  const coreDirty = useMemo(
-    () => (Object.keys(buildChangedCoreVariables(initialCore, core)).length > 0),
-    [initialCore, core]
-  );
-
-  const enrichmentPayload = useMemo(() => composeEnrichmentPayload(enrichment), [enrichment]);
-  const enrichmentDirty = useMemo(
-    () => JSON.stringify(enrichmentPayload) !== initialEnrichmentPayload,
-    [enrichmentPayload, initialEnrichmentPayload]
-  );
-
-  const isDirty = coreDirty || enrichmentDirty;
 
   const isCoreFieldDirty = useCallback(
     (field: keyof ExerciseCoreDraft) => {
