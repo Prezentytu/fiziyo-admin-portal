@@ -29,6 +29,7 @@ import {
   type MappingOnlyFieldKey,
   type ResolvedParameterField,
 } from './fieldContract';
+import { getTimerModeDescription, getTimerModeLabel } from './timerModeCopy';
 
 /** Normalized values for the shared parameter presentation layer. */
 export interface ExerciseParameterValues {
@@ -754,15 +755,24 @@ export function ExerciseParametersFields({
           >
             <div className="mb-3 flex items-center justify-between">
               <p className="text-xs font-bold uppercase tracking-widest text-primary">{basicSection.title}</p>
-              <span
-                className={cn(
-                  'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide transition-colors',
-                  isTimeBased ? 'bg-primary/15 text-primary' : 'bg-surface-light/60 text-muted-foreground'
-                )}
-                data-testid={structuralId('mode-indicator')}
-              >
-                {isTimeBased ? 'Z timerem' : 'Bez timera'}
-              </span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      'rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-wide transition-colors',
+                      isTimeBased ? 'bg-primary/15 text-primary' : 'bg-surface-light/60 text-muted-foreground'
+                    )}
+                    data-testid={structuralId('mode-indicator')}
+                    aria-label={getTimerModeDescription(isTimeBased)}
+                  >
+                    {getTimerModeLabel(isTimeBased)}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs text-xs">
+                  {getTimerModeDescription(isTimeBased)}
+                </TooltipContent>
+              </Tooltip>
             </div>
             <div className="grid grid-cols-1 gap-3 @[460px]:grid-cols-2">
               {basicSection.fields.map((field) => renderEditableField(field))}
