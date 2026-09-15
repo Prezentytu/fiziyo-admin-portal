@@ -32,10 +32,12 @@ function hasListValue(values: string[] | undefined): boolean {
 
 function MistakesEditor({
   items,
+  disabled = false,
   onChange,
   onBlur,
 }: Readonly<{
   items: EnrichmentPatientMistakeV3[];
+  disabled?: boolean;
   onChange: (items: EnrichmentPatientMistakeV3[]) => void;
   onBlur: () => void;
 }>) {
@@ -49,6 +51,7 @@ function MistakesEditor({
           type="button"
           size="sm"
           variant="outline"
+          disabled={disabled}
           onClick={() => onChange([...items, { mistake: '', fix: '' }])}
         >
           <Plus className="mr-1 h-3.5 w-3.5" />
@@ -63,6 +66,7 @@ function MistakesEditor({
             <Input
               data-testid={`exercise-enrichment-mistake-text-${index}`}
               value={item.mistake ?? ''}
+              disabled={disabled}
               placeholder="Błąd"
               className="min-w-0 w-full"
               onChange={(event) => {
@@ -78,7 +82,7 @@ function MistakesEditor({
               variant="ghost"
               size="icon"
               aria-label={canRemove ? 'Usuń błąd' : 'Brak treści do usunięcia'}
-              disabled={!canRemove}
+              disabled={disabled || !canRemove}
               onClick={() => {
                 onChange(safeItems.filter((_, entryIndex) => entryIndex !== index));
                 onBlur();
@@ -90,6 +94,7 @@ function MistakesEditor({
           <Input
             data-testid={`exercise-enrichment-mistake-fix-${index}`}
             value={item.fix ?? ''}
+            disabled={disabled}
             placeholder="Jak poprawić"
             onChange={(event) => {
               const next = [...safeItems];
@@ -120,6 +125,7 @@ export function EnrichmentDisplay({
   const data = enrichmentData ?? {};
   const safeSetPath = setPath ?? (() => {});
   const safePersist = persist ?? (async () => {});
+  const isEditorDisabled = editable && (!setPath || !persist);
 
   const mistakes = data.patient?.mistakes ?? [];
   const equipment = data.equipment ?? [];
@@ -161,6 +167,7 @@ export function EnrichmentDisplay({
           {editable ? (
             <MistakesEditor
               items={mistakes}
+              disabled={isEditorDisabled}
               onChange={(items) => safeSetPath('patient.mistakes', items)}
               onBlur={() => void safePersist()}
             />
@@ -192,7 +199,7 @@ export function EnrichmentDisplay({
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
             Odczucia, bezpieczeństwo i notatki dla pacjenta
           </p>
-          <FeelSafetySection draft={data} setPath={safeSetPath} persist={safePersist} />
+          <FeelSafetySection draft={data} disabled={isEditorDisabled} setPath={safeSetPath} persist={safePersist} />
         </section>
       ) : (
         <>
@@ -253,7 +260,12 @@ export function EnrichmentDisplay({
             Notatki terapeutyczne
           </p>
           {editable ? (
-            <TherapistNotesSection draft={data} setPath={safeSetPath} persist={safePersist} />
+            <TherapistNotesSection
+              draft={data}
+              disabled={isEditorDisabled}
+              setPath={safeSetPath}
+              persist={safePersist}
+            />
           ) : (
             <>
               {hasValue(data.therapist?.clinical_notes) && (
@@ -315,6 +327,7 @@ export function EnrichmentDisplay({
                       items={equipment}
                       placeholder="np. Mata do ćwiczeń"
                       addLabel="Dodaj sprzęt"
+                      disabled={isEditorDisabled}
                       onChange={(items) => safeSetPath('equipment', items)}
                       onBlur={() => void safePersist()}
                       testIdPrefix="exercise-enrichment-equipment"
@@ -327,6 +340,7 @@ export function EnrichmentDisplay({
                       items={aiKeywords}
                       placeholder="np. stabilizacja centralna"
                       addLabel="Dodaj słowo kluczowe"
+                      disabled={isEditorDisabled}
                       onChange={(items) => safeSetPath('ai.keywords', items)}
                       onBlur={() => void safePersist()}
                       testIdPrefix="exercise-enrichment-ai-keywords"
