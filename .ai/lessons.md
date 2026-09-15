@@ -22,6 +22,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-09-15 - Import nie może przesuwać fałszywego braku testid
+
+- **Kategoria**: `Testing` | `Build/Tooling`
+- **Problem**: PR z importem i formatowaniem `hasParams` wywalił `check:testids` na `chat/ExerciseCard` Button, który już miał `data-testid`.
+- **Przyczyna**: Guard kończył opening tag na pierwszym `>` (`onClick={() =>}`), więc testid w kolejnej linii był niewidoczny; allowlista trzyma numer linii, więc +2 linie dały „nowy” wpis.
+- **Rozwiązanie**: `data-testid` jako pierwszy atrybut; parser pomija `>` wewnątrz `{...}`; regresja w `scripts/check-testid-coverage.test.mjs`.
+- **Reguła**: Nie regeneruj allowlisty po samym przesunięciu linii. Guard ma widzieć testid mimo `=>`; trzymaj `data-testid` przed handlerami z `=>`.
+
 ### 2026-09-15 - Czat AI nie może etykietować sekund jako minut
 
 - **Kategoria**: `UI/UX`
