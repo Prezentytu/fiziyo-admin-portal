@@ -63,6 +63,7 @@ export function parseExercisesFromHtml(html: string): ParsedExercise[] {
     const restRepsMatch = /odpoczynku między powtórzeniami:.*?<b>(.*?)<\/b>/i.exec(block);
     const restSetsMatch = /odpoczynku między seriami:.*?<b>(.*?)<\/b>/i.exec(block);
     const setsMatch = /Liczba serii:.*?<b>(.*?)<\/b>/i.exec(block);
+    const durationMatch = /Długość ćwiczenia:.*?<b>(.*?)<\/b>/i.exec(block);
 
     if (name) {
       exercises.push({
@@ -74,6 +75,7 @@ export function parseExercisesFromHtml(html: string): ParsedExercise[] {
         restBetweenReps: restRepsMatch?.[1],
         restBetweenSets: restSetsMatch?.[1],
         sets: setsMatch?.[1],
+        duration: durationMatch?.[1],
       });
     }
   }

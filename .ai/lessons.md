@@ -22,6 +22,22 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-09-15 - Import nie może przesuwać fałszywego braku testid
+
+- **Kategoria**: `Testing` | `Build/Tooling`
+- **Problem**: PR z importem i formatowaniem `hasParams` wywalił `check:testids` na `chat/ExerciseCard` Button, który już miał `data-testid`.
+- **Przyczyna**: Guard kończył opening tag na pierwszym `>` (`onClick={() =>}`), więc testid w kolejnej linii był niewidoczny; allowlista trzyma numer linii, więc +2 linie dały „nowy” wpis.
+- **Rozwiązanie**: `data-testid` jako pierwszy atrybut; parser pomija `>` wewnątrz `{...}`; regresja w `scripts/check-testid-coverage.test.mjs`.
+- **Reguła**: Nie regeneruj allowlisty po samym przesunięciu linii. Guard ma widzieć testid mimo `=>`; trzymaj `data-testid` przed handlerami z `=>`.
+
+### 2026-09-15 - Czat AI nie może etykietować sekund jako minut
+
+- **Kategoria**: `UI/UX`
+- **Problem**: Karty ćwiczeń z HTML czatu pokazywały `preparationTime` i rest jako minuty, a hold (`Długość ćwiczenia`) był wycinany razem z blokiem HTML.
+- **Przyczyna**: Szablon `ChatController` i `ChatExercise` mówiły „minuty”, mimo że `Exercise.PreparationTime` / `ExerciseSetMapping.Duration` są w sekundach; parser panelu nie czytał długości ćwiczenia.
+- **Rozwiązanie**: Formatter `formatChatExerciseDuration` traktuje wartość z `<b>` jako sekundy; parser wyciąga `Długość ćwiczenia`.
+- **Reguła**: Jeśli czat renderuje czas z HTML asystenta, zawsze formatuj go jako sekundy (ten sam kontrakt co `Exercise.PreparationTime`), nigdy jako minuty.
+
 ### 2026-09-14 - Nieużywany dokument GraphQL z wycofanym polem to nie alias
 
 - **Kategoria**: `GraphQL`
