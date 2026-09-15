@@ -28,7 +28,7 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Problem**: W edycji ćwiczenia kosz przy pustych polach „Błąd” / „Jak poprawić” i wskazówkach wyglądał na aktywny, choć nie było treści do usunięcia.
 - **Przyczyna**: Listy enrichment zawsze renderują starterowy pusty wiersz (`items.length ? items : ['']`). Kosz był `disabled` tylko przy locku edycji, więc klik kasował `[]` i ten sam placeholder wracał.
 - **Rozwiązanie**: Wspólne `canRemovePlaceholderRow` — kosz aktywny, gdy wiersz ma treść albo jest więcej niż jeden. Pusty jedyny wiersz: `disabled` + stonowana ikona + `aria-label` „Brak treści do usunięcia”.
-- **Reguła**: Jeśli UI dokłada pusty wiersz-placeholder, przycisk usuwania musi zależeć od treści, nie od samego istnienia wiersza.
+- **Reguła**: Jeśli UI dokłada pusty wiersz-placeholder, przycisk usuwania musi zależeć od treści, nie od samego istnienia wiersza. `data-testid` dawaj jako pierwszy atrybut — skaner testid kończy tag na `=>` w `onClick`.
 
 ### 2026-09-14 - Nieużywany dokument GraphQL z wycofanym polem to nie alias
 

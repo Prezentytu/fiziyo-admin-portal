@@ -52,12 +52,12 @@ export function ListEditor({
           </p>
         )}
         <Button
+          data-testid={`${prefix}-add-btn`}
           type="button"
           size="sm"
           variant="outline"
           disabled={disabled}
           onClick={() => onChange([...items, ''])}
-          data-testid={`${prefix}-add-btn`}
         >
           <Plus className="mr-1 h-3.5 w-3.5" />
           {addLabel}
@@ -68,6 +68,7 @@ export function ListEditor({
         return (
         <div key={`${title}-${index}`} className="flex min-w-0 gap-2">
           <Input
+            data-testid={`${prefix}-item-${index}`}
             value={item}
             disabled={disabled}
             placeholder={placeholder}
@@ -78,9 +79,9 @@ export function ListEditor({
               onChange(next);
             }}
             onBlur={onBlur}
-            data-testid={`${prefix}-item-${index}`}
           />
           <Button
+            data-testid={`${prefix}-remove-${index}`}
             type="button"
             variant="ghost"
             size="icon"
@@ -91,7 +92,6 @@ export function ListEditor({
               onChange(next);
               onBlur?.();
             }}
-            data-testid={`${prefix}-remove-${index}`}
           >
             <Trash2 className={cn('h-4 w-4', canRemove ? 'text-destructive' : 'text-muted-foreground')} />
           </Button>
