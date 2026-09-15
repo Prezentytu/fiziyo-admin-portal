@@ -123,6 +123,10 @@ Failure `502`:
 
 ## Changelog
 
+### 2026-09-15
+
+- Detal ćwiczenia: upload/generacja zdjęcia zapisuje media od razu; pasek Zapisz mówi o tym wprost i nie resetuje brudnego draftu po refetchu (`#66`)
+
 ### 2026-07-28
 
 - Utworzenie specyfikacji

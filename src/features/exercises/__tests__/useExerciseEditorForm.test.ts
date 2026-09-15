@@ -1,5 +1,11 @@
+import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { buildChangedCoreVariables, type ExerciseCoreDraft } from '../useExerciseEditorForm';
+import {
+  buildChangedCoreVariables,
+  useExerciseEditorForm,
+  type ExerciseCoreDraft,
+  type ExerciseEditorSource,
+} from '../useExerciseEditorForm';
 
 function makeDraft(overrides: Partial<ExerciseCoreDraft> = {}): ExerciseCoreDraft {
   return {
@@ -59,5 +65,54 @@ describe('buildChangedCoreVariables', () => {
     const current = makeDraft({ difficultyLevel: 'UNKNOWN' });
     const variables = buildChangedCoreVariables(initial, current);
     expect(variables.difficultyLevel).toBeNull();
+  });
+});
+
+describe('useExerciseEditorForm hydration', () => {
+  const source: ExerciseEditorSource = {
+    id: 'ex-1',
+    name: 'Przysiad',
+    defaultSets: 3,
+    defaultReps: 10,
+    defaultRestBetweenSets: 60,
+  };
+
+  it('zachowuje brudny draft po zmianie referencji source (refetch zdjęcia)', () => {
+    const { result, rerender } = renderHook(
+      ({ formSource }) =>
+        useExerciseEditorForm({
+          source: formSource,
+          updateCore: async () => undefined,
+          updateEnrichment: async () => undefined,
+        }),
+      { initialProps: { formSource: source } }
+    );
+
+    act(() => {
+      result.current.setCoreField('restSets', 90);
+    });
+    expect(result.current.isDirty).toBe(true);
+
+    rerender({ formSource: { ...source } });
+
+    expect(result.current.core.restSets).toBe(90);
+    expect(result.current.isDirty).toBe(true);
+  });
+
+  it('wczytuje nowe wartości source gdy formularz nie jest brudny', () => {
+    const { result, rerender } = renderHook(
+      ({ formSource }) =>
+        useExerciseEditorForm({
+          source: formSource,
+          updateCore: async () => undefined,
+          updateEnrichment: async () => undefined,
+        }),
+      { initialProps: { formSource: source } }
+    );
+
+    rerender({ formSource: { ...source, defaultRestBetweenSets: 45 } });
+
+    expect(result.current.core.restSets).toBe(45);
+    expect(result.current.isDirty).toBe(false);
   });
 });

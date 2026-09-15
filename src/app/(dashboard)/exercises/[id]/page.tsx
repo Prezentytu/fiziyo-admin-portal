@@ -74,6 +74,10 @@ import {
   CREATE_EXERCISE_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
 import { useExerciseEditorForm } from '@/features/exercises/useExerciseEditorForm';
+import {
+  MEDIA_PERSISTED_SAVE_HINT,
+  resolveExerciseDetailSaveBarKind,
+} from '@/features/exercises/utils/exerciseDetailSaveBar';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import { createTagsMap, mapExerciseTagsToObjects } from '@/utils/tagUtils';
 import { useExerciseImageGeneration } from '@/features/exercises/useExerciseImageGeneration';
@@ -124,6 +128,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const [isSubmitToGlobalDialogOpen, setIsSubmitToGlobalDialogOpen] = useState(false);
   const [isSubmitToOrganizationDialogOpen, setIsSubmitToOrganizationDialogOpen] = useState(false);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
+  const [mediaPersistNotice, setMediaPersistNotice] = useState<string | null>(null);
 
   const organizationId = currentOrganization?.organizationId;
 
@@ -215,6 +220,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const handleSaved = useCallback(() => {
     toast.success('Zmiany zostały zapisane');
     setIsEditMode(false);
+    setMediaPersistNotice(null);
     void apolloClient.refetchQueries({ include: [GET_EXERCISE_BY_ID_QUERY] });
   }, [apolloClient]);
 
@@ -391,7 +397,8 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         const base64Image = await fileToBase64(file);
         await uploadExerciseImage({ variables: { exerciseId: id, base64Image, contentType: file.type } });
         await apolloClient.refetchQueries({ include: [GET_EXERCISE_BY_ID_QUERY] });
-        toast.success('Zdjęcie zostało dodane');
+        toast.success('Zdjęcie zapisane od razu. Przycisk Zapisz dotyczy pozostałych pól.');
+        setMediaPersistNotice(MEDIA_PERSISTED_SAVE_HINT);
       } catch (err) {
         console.error('[ExerciseDetail] Image upload failed:', err);
         toast.error('Nie udało się dodać zdjęcia');
@@ -410,6 +417,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         await deleteExerciseImage({ variables: { exerciseId: id, imageUrl } });
         await apolloClient.refetchQueries({ include: [GET_EXERCISE_BY_ID_QUERY] });
         toast.success('Zdjęcie zostało usunięte');
+        setMediaPersistNotice('Zmiana zdjęć zapisana od razu — nie wymaga przycisku Zapisz');
       } catch (err) {
         console.error('[ExerciseDetail] Image delete failed:', err);
         toast.error('Nie udało się usunąć zdjęcia');
@@ -451,7 +459,8 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         variables: { exerciseId: id, base64Image, contentType: generatedFile.type || 'image/png' },
       });
       await apolloClient.refetchQueries({ include: [GET_EXERCISE_BY_ID_QUERY] });
-      toast.success('Zdjęcie AI zostało wygenerowane');
+      toast.success('Zdjęcie AI zapisane od razu. Przycisk Zapisz dotyczy pozostałych pól.');
+      setMediaPersistNotice(MEDIA_PERSISTED_SAVE_HINT);
     } catch (err) {
       console.error('[ExerciseDetail] AI image upload failed:', err);
       toast.error('Nie udało się zapisać wygenerowanego zdjęcia');
@@ -543,6 +552,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const handleToggleEdit = () => {
     if (isEditing) {
       reset();
+      setMediaPersistNotice(null);
       setIsEditMode(false);
     } else {
       setIsEditMode(true);
@@ -551,18 +561,25 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
 
   const handleCancelEdit = () => {
     reset();
+    setMediaPersistNotice(null);
     setIsEditMode(false);
   };
+
+  const saveBarKind = resolveExerciseDetailSaveBarKind({
+    saveStatus,
+    isDirty,
+    hasMediaPersistNotice: Boolean(mediaPersistNotice),
+  });
 
   return (
     <div className={cn('space-y-6', isEditing && 'pb-24')}>
       {/* Compact Header */}
       <div className="flex items-center justify-between">
         <Button
+          data-testid="exercise-detail-back-btn"
           variant="ghost"
           onClick={() => router.push('/exercises')}
           className="gap-2"
-          data-testid="exercise-detail-back-btn"
         >
           <ArrowLeft className="h-4 w-4" />
           Powrót do ćwiczeń
@@ -697,10 +714,10 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         </div>
         {isEditing ? (
           <Input
+            data-testid="exercise-detail-name-input"
             value={core.name}
             className="h-auto border-0 border-b border-border/60 bg-transparent px-0 text-2xl font-bold text-foreground shadow-none focus-visible:ring-0 focus-visible:border-primary rounded-none"
             onChange={(event) => setCoreField('name', event.target.value)}
-            data-testid="exercise-detail-name-input"
           />
         ) : (
           <h1 className="text-2xl font-bold text-foreground" data-testid="exercise-detail-name">
@@ -739,12 +756,12 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         </button>
 
         <button
+          data-testid="exercise-detail-report-hero-btn"
           onClick={() => setIsReportDialogOpen(true)}
           className={cn(
             'group relative overflow-hidden rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5 text-left transition-all duration-300 hover:shadow-lg hover:shadow-amber-500/20 hover:scale-[1.01] cursor-pointer sm:col-span-1',
             isLocked ? 'lg:col-span-6' : 'lg:col-span-4'
           )}
-          data-testid="exercise-detail-report-hero-btn"
         >
           <div className="relative flex items-center gap-4">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/20 text-amber-600 shrink-0 group-hover:scale-110 transition-transform duration-300">
@@ -834,12 +851,12 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                     >
                       <Image src={imageUrl} alt="" fill className="object-cover" sizes="80px" />
                       <button
+                        data-testid="exercise-detail-delete-image-btn"
                         type="button"
                         onClick={() => handleDeleteImage(imageUrl)}
                         disabled={uploadingImage}
                         className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/50 transition-colors"
                         aria-label="Usuń zdjęcie"
-                        data-testid="exercise-detail-delete-image-btn"
                       >
                         <Trash2 className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                       </button>
@@ -858,11 +875,11 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
 
               <div className="flex flex-wrap items-center gap-2">
                 <Button
+                  data-testid="exercise-detail-upload-image-btn"
                   size="sm"
                   variant="outline"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploadingImage || isGeneratingAiImage || (exercise.images?.length ?? 0) >= 5}
-                  data-testid="exercise-detail-upload-image-btn"
                 >
                   {uploadingImage ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -878,12 +895,12 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                   testIdPrefix="exercise-detail-ai-style"
                 />
                 <Button
+                  data-testid="exercise-detail-ai-image-btn"
                   size="sm"
                   variant="outline"
                   onClick={handleAIGenerateImage}
                   disabled={uploadingImage || isGeneratingAiImage || !exercise.name || (exercise.images?.length ?? 0) >= 5}
                   aria-busy={isGeneratingAiImage}
-                  data-testid="exercise-detail-ai-image-btn"
                 >
                   {isGeneratingAiImage ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -991,15 +1008,20 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         >
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              {saveStatus === 'error' ? (
+              {saveBarKind === 'error' ? (
                 <span className="flex items-center gap-1.5 text-destructive">
                   <AlertCircle className="h-4 w-4" />
                   Nie udało się zapisać — spróbuj ponownie
                 </span>
-              ) : isDirty ? (
+              ) : saveBarKind === 'dirty' ? (
                 <span className="flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-amber-500" />
                   Masz niezapisane zmiany
+                </span>
+              ) : saveBarKind === 'media-persisted' ? (
+                <span className="flex items-center gap-1.5" data-testid="exercise-detail-save-media-notice">
+                  <Check className="h-4 w-4 text-emerald-600" />
+                  {mediaPersistNotice}
                 </span>
               ) : (
                 <span className="flex items-center gap-1.5">
@@ -1014,9 +1036,9 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                 Anuluj
               </Button>
               <Button
+                data-testid="exercise-detail-save-btn"
                 onClick={() => void save()}
                 disabled={!isDirty || saveStatus === 'saving'}
-                data-testid="exercise-detail-save-btn"
               >
                 {saveStatus === 'saving' ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
