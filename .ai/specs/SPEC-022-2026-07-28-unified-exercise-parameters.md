@@ -61,6 +61,10 @@ Bez zmian schematu GraphQL. Follow-up: dodać `enrichmentDataJson` do `CREATE_EX
 
 ## Changelog
 
+### 2026-09-15
+
+- Podpowiedź timera siedzi pod polem „Czas powtórzenia”, nie między przerwą a kafelkami wyliczanymi — `#64`
+
 ### 2026-07-28
 
 - Wprowadzenie `PARAMETER_SECTIONS` + `ExerciseParametersFields`
