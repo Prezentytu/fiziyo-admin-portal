@@ -29,6 +29,7 @@ import {
   type MappingOnlyFieldKey,
   type ResolvedParameterField,
 } from './fieldContract';
+import { getExecutionTimeFieldHint } from './executionTimeFieldHint';
 import { getTimerModeDescription, getTimerModeLabel } from './timerModeCopy';
 
 /** Normalized values for the shared parameter presentation layer. */
@@ -158,6 +159,8 @@ function NumberField({
   inherited,
   testId,
   infoTestId,
+  hint,
+  hintTestId,
   onCommit,
 }: Readonly<{
   config: ExerciseFieldEditConfig;
@@ -168,6 +171,8 @@ function NumberField({
   inherited?: boolean;
   testId: string;
   infoTestId: string;
+  hint?: string;
+  hintTestId?: string;
   onCommit: (value: number | null) => void;
 }>) {
   const [raw, setRaw] = useState(value != null ? String(value) : '');
@@ -227,6 +232,11 @@ function NumberField({
           </span>
         ) : null}
       </div>
+      {hint ? (
+        <p className="text-[11px] leading-snug text-muted-foreground" data-testid={hintTestId}>
+          {hint}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -560,6 +570,8 @@ export function ExerciseParametersFields({
           inherited={showInheritedBadge}
           testId={inputTestId}
           infoTestId={infoTestId}
+          hint={key === 'executionTime' ? getExecutionTimeFieldHint(isTimeBased) : undefined}
+          hintTestId={key === 'executionTime' ? structuralId('execution-time-hint') : undefined}
           onCommit={(next) => commitNumber(key, next)}
         />
       );
@@ -757,17 +769,16 @@ export function ExerciseParametersFields({
               <p className="text-xs font-bold uppercase tracking-widest text-primary">{basicSection.title}</p>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <button
-                    type="button"
+                  <span
                     className={cn(
-                      'rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-wide transition-colors',
+                      'inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-wide transition-colors',
                       isTimeBased ? 'bg-primary/15 text-primary' : 'bg-surface-light/60 text-muted-foreground'
                     )}
                     data-testid={structuralId('mode-indicator')}
                     aria-label={getTimerModeDescription(isTimeBased)}
                   >
                     {getTimerModeLabel(isTimeBased)}
-                  </button>
+                  </span>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-xs text-xs">
                   {getTimerModeDescription(isTimeBased)}
@@ -777,13 +788,6 @@ export function ExerciseParametersFields({
             <div className="grid grid-cols-1 gap-3 @[460px]:grid-cols-2">
               {basicSection.fields.map((field) => renderEditableField(field))}
             </div>
-
-            <p className="mt-2.5 flex items-center gap-1.5 text-[11px] leading-snug text-muted-foreground">
-              <Info className="h-3 w-3 shrink-0" />
-              {isTimeBased
-                ? 'Timer w aplikacji pacjenta jest aktywny, bo podano czas powtórzenia. Wyczyść to pole, aby wyłączyć timer.'
-                : 'Podaj „Czas powtórzenia”, aby uruchomić timer w aplikacji pacjenta.'}
-            </p>
 
             <div className="mt-3 grid grid-cols-2 gap-2">
               <ComputedChip
