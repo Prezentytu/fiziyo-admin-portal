@@ -3,7 +3,9 @@
 import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 import { DirtyDot } from './DirtyDot';
+import { canRemovePlaceholderRow, isBlankText } from './canRemovePlaceholderRow';
 
 interface ListEditorProps {
   title: string;
@@ -50,20 +52,23 @@ export function ListEditor({
           </p>
         )}
         <Button
+          data-testid={`${prefix}-add-btn`}
           type="button"
           size="sm"
           variant="outline"
           disabled={disabled}
           onClick={() => onChange([...items, ''])}
-          data-testid={`${prefix}-add-btn`}
         >
           <Plus className="mr-1 h-3.5 w-3.5" />
           {addLabel}
         </Button>
       </div>
-      {safeItems.map((item, index) => (
+      {safeItems.map((item, index) => {
+        const canRemove = canRemovePlaceholderRow(safeItems, index, isBlankText);
+        return (
         <div key={`${title}-${index}`} className="flex min-w-0 gap-2">
           <Input
+            data-testid={`${prefix}-item-${index}`}
             value={item}
             disabled={disabled}
             placeholder={placeholder}
@@ -74,25 +79,25 @@ export function ListEditor({
               onChange(next);
             }}
             onBlur={onBlur}
-            data-testid={`${prefix}-item-${index}`}
           />
           <Button
+            data-testid={`${prefix}-remove-${index}`}
             type="button"
             variant="ghost"
             size="icon"
-            disabled={disabled}
-            aria-label="Usuń"
+            disabled={disabled || !canRemove}
+            aria-label={canRemove ? 'Usuń' : 'Brak treści do usunięcia'}
             onClick={() => {
               const next = safeItems.filter((_, entryIndex) => entryIndex !== index);
               onChange(next);
               onBlur?.();
             }}
-            data-testid={`${prefix}-remove-${index}`}
           >
-            <Trash2 className="h-4 w-4 text-destructive" />
+            <Trash2 className={cn('h-4 w-4', canRemove ? 'text-destructive' : 'text-muted-foreground')} />
           </Button>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
