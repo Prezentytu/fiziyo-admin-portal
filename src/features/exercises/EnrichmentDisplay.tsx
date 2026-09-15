@@ -9,6 +9,10 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { ListEditor } from '@/components/shared/enrichment/ListEditor';
 import { FeelSafetySection } from '@/components/shared/enrichment/FeelSafetySection';
 import { TherapistNotesSection } from '@/components/shared/enrichment/TherapistNotesSection';
+import {
+  canRemovePlaceholderRow,
+  isMistakeRowEmpty,
+} from '@/components/shared/enrichment/canRemovePlaceholderRow';
 import type { EnrichmentPatientMistakeV3, ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 
 interface EnrichmentDisplayProps {
@@ -51,7 +55,9 @@ function MistakesEditor({
           Dodaj błąd
         </Button>
       </div>
-      {safeItems.map((item, index) => (
+      {safeItems.map((item, index) => {
+        const canRemove = canRemovePlaceholderRow(safeItems, index, isMistakeRowEmpty);
+        return (
         <div key={`mistake-${index}`} className="space-y-1.5 rounded-lg border border-border/40 p-2.5">
           <div className="flex min-w-0 gap-2">
             <Input
@@ -70,14 +76,15 @@ function MistakesEditor({
               type="button"
               variant="ghost"
               size="icon"
-              aria-label="Usuń błąd"
+              aria-label={canRemove ? 'Usuń błąd' : 'Brak treści do usunięcia'}
+              disabled={!canRemove}
               onClick={() => {
                 onChange(safeItems.filter((_, entryIndex) => entryIndex !== index));
                 onBlur();
               }}
               data-testid={`exercise-enrichment-mistake-remove-${index}`}
             >
-              <Trash2 className="h-4 w-4 text-destructive" />
+              <Trash2 className={cn('h-4 w-4', canRemove ? 'text-destructive' : 'text-muted-foreground')} />
             </Button>
           </div>
           <Input
@@ -92,7 +99,8 @@ function MistakesEditor({
             data-testid={`exercise-enrichment-mistake-fix-${index}`}
           />
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

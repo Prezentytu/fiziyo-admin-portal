@@ -3,7 +3,9 @@
 import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 import { DirtyDot } from './DirtyDot';
+import { canRemovePlaceholderRow, isBlankText } from './canRemovePlaceholderRow';
 
 interface ListEditorProps {
   title: string;
@@ -61,7 +63,9 @@ export function ListEditor({
           {addLabel}
         </Button>
       </div>
-      {safeItems.map((item, index) => (
+      {safeItems.map((item, index) => {
+        const canRemove = canRemovePlaceholderRow(safeItems, index, isBlankText);
+        return (
         <div key={`${title}-${index}`} className="flex min-w-0 gap-2">
           <Input
             value={item}
@@ -80,8 +84,8 @@ export function ListEditor({
             type="button"
             variant="ghost"
             size="icon"
-            disabled={disabled}
-            aria-label="Usuń"
+            disabled={disabled || !canRemove}
+            aria-label={canRemove ? 'Usuń' : 'Brak treści do usunięcia'}
             onClick={() => {
               const next = safeItems.filter((_, entryIndex) => entryIndex !== index);
               onChange(next);
@@ -89,10 +93,11 @@ export function ListEditor({
             }}
             data-testid={`${prefix}-remove-${index}`}
           >
-            <Trash2 className="h-4 w-4 text-destructive" />
+            <Trash2 className={cn('h-4 w-4', canRemove ? 'text-destructive' : 'text-muted-foreground')} />
           </Button>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

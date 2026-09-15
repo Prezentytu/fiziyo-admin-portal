@@ -9,6 +9,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { ListEditor } from '@/components/shared/enrichment/ListEditor';
 import { TherapistNotesSection } from '@/components/shared/enrichment/TherapistNotesSection';
 import { DirtyDot } from '@/components/shared/enrichment/DirtyDot';
+import {
+  canRemovePlaceholderRow,
+  isMistakeRowEmpty,
+} from '@/components/shared/enrichment/canRemovePlaceholderRow';
 import { cn } from '@/lib/utils';
 import type { EnrichmentPatientMistakeV3, ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 
@@ -198,7 +202,9 @@ function MistakesEditor({
           Dodaj błąd
         </Button>
       </div>
-      {safeItems.map((item, index) => (
+      {safeItems.map((item, index) => {
+        const canRemove = canRemovePlaceholderRow(safeItems, index, isMistakeRowEmpty);
+        return (
         <div key={`mistake-${index}`} className="space-y-1.5 rounded-lg border border-border/40 p-2.5">
           <div className="flex min-w-0 gap-2">
             <Input
@@ -218,11 +224,11 @@ function MistakesEditor({
               type="button"
               variant="ghost"
               size="icon"
-              aria-label="Usuń błąd"
-              disabled={disabled}
+              aria-label={canRemove ? 'Usuń błąd' : 'Brak treści do usunięcia'}
+              disabled={disabled || !canRemove}
               onClick={() => onChange(safeItems.filter((_, entryIndex) => entryIndex !== index))}
             >
-              <Trash2 className="h-4 w-4 text-destructive" />
+              <Trash2 className={cn('h-4 w-4', canRemove ? 'text-destructive' : 'text-muted-foreground')} />
             </Button>
           </div>
           <Input
@@ -237,7 +243,8 @@ function MistakesEditor({
             }}
           />
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
