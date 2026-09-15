@@ -61,6 +61,10 @@ Bez zmian schematu GraphQL. Follow-up: dodać `enrichmentDataJson` do `CREATE_EX
 
 ## Changelog
 
+### 2026-09-15
+
+- Badge timera: „Timer wyłączony” / „Timer w aplikacji” + tooltip (zamiast żargonu „BEZ TIMERA”) — `#65`
+
 ### 2026-07-28
 
 - Wprowadzenie `PARAMETER_SECTIONS` + `ExerciseParametersFields`
