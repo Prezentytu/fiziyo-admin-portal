@@ -102,6 +102,7 @@ Każda specyfikacja powinna mieć sekcję Changelog na końcu:
 | 025 | [Catalog bundle import](SPEC-025-2026-08-20-catalog-bundle-import.md)                                 | Import JSON katalogu w Ustawienia → Zaawansowane (każdy fizjo) | implemented |
 | 026 | [Release identity](SPEC-026-2026-09-08-release-identity.md)                                           | Tożsamość release w panelu                                     | implemented |
 | 027 | [Runtime security updates](SPEC-027-2026-09-08-runtime-security-updates.md)                           | Aktualizacje zależności runtime                                | implemented |
+| 028 | [Promote admin](SPEC-028-2026-09-15-promote-admin.md)                                                 | Ręczny Promote PROD z GitHub Actions, nie z UI Vercel          | in-progress |
 
 ## Planowane specyfikacje
 

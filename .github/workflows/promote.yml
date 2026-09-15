@@ -1,0 +1,93 @@
+name: Promote admin
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "Pełny SHA już widoczny na DEV (puste = czubek main)"
+        required: false
+        type: string
+      deployment_id:
+        description: "Opcjonalny dpl_... produkcji tego SHA (bez przebudowy)"
+        required: false
+        type: string
+      override_reason:
+        description: "Break-glass (≥8 znaków) pomija tylko kontrolę live DEV"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-prod-admin
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    name: Promote portal.fiziyo.pl
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: production
+      url: https://portal.fiziyo.pl
+    steps:
+      - name: Require main
+        run: |
+          if [[ "${GITHUB_REF}" != "refs/heads/main" ]]; then
+            echo "::error::Promote admin odpalaj z gałęzi main (Run workflow → Branch: main)."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Resolve SHA and ancestry
+        id: meta
+        env:
+          INPUT_SHA: ${{ inputs.sha }}
+        run: |
+          set -euo pipefail
+          sha="${INPUT_SHA//[$'\t\r\n ']}"
+          if [[ -z "$sha" ]]; then
+            sha="${GITHUB_SHA}"
+          fi
+          if [[ ! "$sha" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::Podaj pełny SHA (40 znaków hex) albo zostaw puste — wtedy jedzie czubek main."
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$sha" "$GITHUB_SHA"; then
+            echo "::error::SHA nie jest na main w rewizji workflow."
+            exit 1
+          fi
+          {
+            echo "sha=$sha"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Promote
+        env:
+          GITHUB_REF: ${{ github.ref }}
+          ADMIN_SHA: ${{ steps.meta.outputs.sha }}
+          MAIN_SHA: ${{ github.sha }}
+          IS_ANCESTOR: "true"
+          DEPLOYMENT_ID: ${{ inputs.deployment_id }}
+          OVERRIDE_REASON: ${{ inputs.override_reason }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}
+          VERCEL_PROJECT_NAME: ${{ vars.VERCEL_PROJECT_NAME }}
+        run: node scripts/promote-admin.mjs
+
+      - name: Preserve evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: promote-admin-${{ github.run_id }}-${{ github.run_attempt }}
+          path: promote-admin-result.json
+          if-no-files-found: warn
+          retention-days: 30

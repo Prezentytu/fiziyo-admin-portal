@@ -22,6 +22,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-09-15 - Promote admin nie może aliasować Preview DEV
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: Klik Promote w Vercel na deployment Preview wiesza na `portal.fiziyo.pl` build z `NEXT_PUBLIC_*` DEV (Clerk + API).
+- **Przyczyna**: `POST /v10/projects/.../promote/{id}` nie przebudowuje; `NEXT_PUBLIC_*` są utrwalone w artefakcie.
+- **Rozwiązanie**: Workflow `Promote admin` aliasuje tylko `target=production`; Preview idzie przez `POST /v13/deployments` z `target: production`.
+- **Reguła**: Panel na PROD tylko z builda Production. Preview/DEV nigdy nie aliasuj na domenę prod.
+
 ### 2026-09-15 - Refetch zdjęcia nie może kasować brudnego formularza
 
 - **Kategoria**: `React` | `UI/UX`

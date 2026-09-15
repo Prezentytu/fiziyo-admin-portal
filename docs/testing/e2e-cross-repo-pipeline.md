@@ -119,8 +119,8 @@ W repo prywatnym bez platnego branch protection traktuj statusy jako manualny ga
 2. Merge.
 3. Deploy na `dev`.
 4. `E2E Dev Full` na `devportal.fiziyo.pl` musi byc zielone.
-5. Dopiero wtedy promo na `prod`.
-6. Po deployu na `prod` odpal `E2E Prod Smoke` sanity check.
+5. Dopiero wtedy Actions → **Promote admin** na `main` (`docs/release-admin.md`), nie klik w Vercel.
+6. Po deployu na `prod` `e2e-trigger` odpalą `prod-safe` / sprawdź `E2E Prod Smoke`.
 
 `prod smoke` jest sanity checkiem po wdrozeniu, a nie glownym gate'em.
 

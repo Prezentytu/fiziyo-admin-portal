@@ -68,11 +68,9 @@ src/
 
 ## Deploy
 
-Deploy na Vercel:
-
-1. Połącz repo z Vercel
-2. Dodaj environment variables
-3. Deploy
+- Merge do `main` → DEV: `https://devportal.fiziyo.pl`
+- PROD `https://portal.fiziyo.pl` → Actions → **Promote admin** (branch `main`)
+- Szczegóły i sekrety: `docs/release-admin.md`
 
 ## E2E Tests (cross-repo)
 
