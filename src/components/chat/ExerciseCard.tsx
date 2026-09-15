@@ -41,10 +41,10 @@ export function ExerciseCard({ exercise, onAddToSet, className }: ExerciseCardPr
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
+                data-testid="ai-chat-exercise-add-to-set-btn"
                 variant="ghost"
                 size="icon"
                 onClick={() => onAddToSet(exercise)}
-                data-testid="ai-chat-exercise-add-to-set-btn"
                 className={cn(
                   'absolute right-2 top-3 h-7 w-7 rounded-lg',
                   'opacity-0 group-hover:opacity-100',

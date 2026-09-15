@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const ROOT_DIR = process.cwd();
 const SOURCE_DIR = path.join(ROOT_DIR, 'src');
@@ -48,16 +49,90 @@ async function walkDirectory(directoryPath) {
   return filePaths;
 }
 
+function findOpeningTagCloserIndex(chunk) {
+  let braceDepth = 0;
+  let quote = null;
+
+  for (let index = 0; index < chunk.length; index += 1) {
+    const char = chunk[index];
+    const previous = index > 0 ? chunk[index - 1] : '';
+
+    if (quote !== null) {
+      if (char === quote && previous !== '\\') {
+        quote = null;
+      }
+      continue;
+    }
+
+    if (char === '"' || char === "'" || char === '`') {
+      quote = char;
+      continue;
+    }
+
+    if (char === '{') {
+      braceDepth += 1;
+      continue;
+    }
+
+    if (char === '}') {
+      if (braceDepth > 0) {
+        braceDepth -= 1;
+      }
+      continue;
+    }
+
+    if (char === '>' && braceDepth === 0) {
+      return index;
+    }
+  }
+
+  return -1;
+}
+
 function readOpeningTag(lines, startIndex) {
   let chunk = lines[startIndex];
   let cursor = startIndex;
 
-  while (!chunk.includes('>') && cursor + 1 < lines.length && cursor - startIndex < 12) {
+  while (findOpeningTagCloserIndex(chunk) === -1 && cursor + 1 < lines.length && cursor - startIndex < 12) {
     cursor += 1;
     chunk += `\n${lines[cursor]}`;
   }
 
   return { chunk, endIndex: cursor };
+}
+
+export function collectViolationsFromContent(content, relativePath) {
+  const violations = [];
+  const lines = content.split('\n');
+
+  for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
+    const line = lines[lineIndex];
+    const match = line.match(OPENING_TAG_PATTERN);
+    if (!match) {
+      continue;
+    }
+
+    const tagName = match[1];
+    if (!INTERACTIVE_TAGS.has(tagName)) {
+      continue;
+    }
+
+    const { chunk } = readOpeningTag(lines, lineIndex);
+    const hasTestId = /\bdata-testid\s*=/.test(chunk);
+
+    if (hasTestId) {
+      continue;
+    }
+
+    violations.push({
+      id: `${relativePath}:${lineIndex + 1}:${tagName}`,
+      file: relativePath,
+      line: lineIndex + 1,
+      tagName,
+    });
+  }
+
+  return violations;
 }
 
 async function collectViolations() {
@@ -67,34 +142,7 @@ async function collectViolations() {
   for (const filePath of files) {
     const relativePath = path.relative(ROOT_DIR, filePath).replaceAll(path.sep, '/');
     const content = await fs.readFile(filePath, 'utf8');
-    const lines = content.split('\n');
-
-    for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
-      const line = lines[lineIndex];
-      const match = line.match(OPENING_TAG_PATTERN);
-      if (!match) {
-        continue;
-      }
-
-      const tagName = match[1];
-      if (!INTERACTIVE_TAGS.has(tagName)) {
-        continue;
-      }
-
-      const { chunk } = readOpeningTag(lines, lineIndex);
-      const hasTestId = /\bdata-testid\s*=/.test(chunk);
-
-      if (hasTestId) {
-        continue;
-      }
-
-      violations.push({
-        id: `${relativePath}:${lineIndex + 1}:${tagName}`,
-        file: relativePath,
-        line: lineIndex + 1,
-        tagName,
-      });
-    }
+    violations.push(...collectViolationsFromContent(content, relativePath));
   }
 
   return violations;
@@ -146,7 +194,9 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error('Failed to evaluate data-testid guard.', error);
-  process.exit(1);
-});
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch((error) => {
+    console.error('Failed to evaluate data-testid guard.', error);
+    process.exit(1);
+  });
+}
