@@ -769,17 +769,16 @@ export function ExerciseParametersFields({
               <p className="text-xs font-bold uppercase tracking-widest text-primary">{basicSection.title}</p>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <button
-                    type="button"
+                  <span
                     className={cn(
-                      'rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-wide transition-colors',
+                      'inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-wide transition-colors',
                       isTimeBased ? 'bg-primary/15 text-primary' : 'bg-surface-light/60 text-muted-foreground'
                     )}
                     data-testid={structuralId('mode-indicator')}
                     aria-label={getTimerModeDescription(isTimeBased)}
                   >
                     {getTimerModeLabel(isTimeBased)}
-                  </button>
+                  </span>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-xs text-xs">
                   {getTimerModeDescription(isTimeBased)}
