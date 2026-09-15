@@ -32,6 +32,36 @@ labels: bot-finding
 
 <!-- repo, moduł, plik — tylko jeśli oczywiste; inaczej puste. Nie proponuj fixu. -->
 
+## Karta zadania
+
+```task-card
+Cel:
+Tryb: advise
+Kształt: slice
+Repo: Prezentytu/fiziyo-admin-portal
+Pierwszy artefakt:
+Zakres:
+Stop: gdy validate czerwone po 2 próbach | gdy potrzebny Ask First | po 1 PR
+Zlecił:
+Źródło:
+```
+
+<!--
+Kolejność dla bota, inaczej intake zobaczy kartę w połowie wypełnioną:
+  1. utwórz issue BEZ etykiety,
+  2. uzupełnij kartę (`gh issue edit`),
+  3. dopiero teraz nadaj `bot-finding` albo `from-przemek`.
+
+Źródło: 12 hex — sha256 z treści po NFKC, lowercase, zwinięciu białych znaków i trim.
+        W repo: node scripts/task-card.mjs source-id "linia źródłowa"
+        Bez repo: printf '%s' "$(echo "$linia" | tr 'A-Z' 'a-z' | tr -s '[:space:]' ' ')" | shasum -a 256 | cut -c1-12
+
+Tryb: advise na wejściu — zgłoszenie jest przyjmowane, nie naprawiane.
+      Promocja do naprawy (robi Szef Sztabu / Adam): etykieta `agent-fix` tylko kwalifikuje.
+      `agent-promote.yml` nie przepisuje karty i nie uruchamia workera.
+      Start naprawy: chroniony dispatch w agent-ops, nie ręczna edycja karty.
+-->
+
 ## Dla triage (wypełnia Szef Sztabu / Adam)
 
 - [ ] `agent-fix` — wąski, w kodzie produktu → karta zadania dla Cloud Agenta
