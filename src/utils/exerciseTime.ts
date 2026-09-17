@@ -1,41 +1,27 @@
-/**
- * Oblicza szacowany czas wykonania ćwiczenia w sekundach.
- *
- * Priorytet:
- * 1) executionTime > 0: seria = reps * executionTime + mikroprzerwy
- * 2) duration > 0: duration traktujemy jako override czasu jednej serii
- * 3) fallback: 3 sekundy na powtórzenie
- */
-export function calculateEstimatedTime(params: {
+export interface ExerciseDurationParams {
   sets: number;
   reps?: number;
   duration?: number;
   executionTime?: number;
-  rest?: number;
+  restSets?: number;
   restReps?: number;
-}): number {
-  const { sets, reps, duration, executionTime, rest = 60, restReps = 0 } = params;
+  preparationTime?: number;
+  tempo?: string;
+  side?: string;
+  type?: string | number;
+}
 
-  const repsPerSet = reps || 10;
-  const normalizedExecutionTime = executionTime && executionTime > 0 ? executionTime : 0;
-  const durationOverride = duration && duration > 0 ? duration : 0;
-
-  let exerciseTime = 0;
-  let microBreakTime = 0;
-
-  if (normalizedExecutionTime > 0) {
-    exerciseTime = sets * repsPerSet * normalizedExecutionTime;
-    microBreakTime = sets * Math.max(0, repsPerSet - 1) * Math.max(0, restReps);
-  } else if (durationOverride > 0) {
-    exerciseTime = sets * durationOverride;
-  } else {
-    exerciseTime = sets * repsPerSet * 3;
-    microBreakTime = sets * Math.max(0, repsPerSet - 1) * Math.max(0, restReps);
-  }
-
-  const restTime = Math.max(0, sets - 1) * rest;
-
-  return exerciseTime + microBreakTime + restTime;
+/**
+ * Szacowany czas ćwiczenia — ten sam wzór co player (`computePlannedDurationSec`).
+ * `rest` to alias `restSets` dla starych wywołań.
+ */
+export function calculateEstimatedTime(
+  params: ExerciseDurationParams & { rest?: number },
+): number {
+  return calculateExerciseTotalSeconds({
+    ...params,
+    restSets: params.restSets ?? params.rest,
+  }).seconds;
 }
 
 function normalizePositiveNumber(value: number | undefined): number {
@@ -79,26 +65,47 @@ export function parseTempo(tempo: string | undefined): number | null {
   return totalSeconds > 0 ? totalSeconds : null;
 }
 
-export function calculateExerciseTotalSeconds(params: {
-  sets: number;
-  reps?: number;
-  duration?: number;
-  executionTime?: number;
-  restSets?: number;
-  restReps?: number;
-  preparationTime?: number;
-  tempo?: string;
-  side?: string;
-}): { seconds: number; isEstimate: boolean } {
+function isTimeExerciseType(type: string | number | undefined): boolean | null {
+  if (type == null) {
+    return null;
+  }
+
+  if (typeof type === 'number') {
+    return type === 1;
+  }
+
+  const normalized = type.trim().toLowerCase();
+  if (normalized === 'time') {
+    return true;
+  }
+  if (normalized === 'reps') {
+    return false;
+  }
+
+  return null;
+}
+
+/**
+ * Łączny czas ćwiczenia zgodny z playerem:
+ * executionTime → timer na powtórzenie;
+ * TIME + duration → duration × powtórzenia (nie override całej serii);
+ * REPS + duration → duration ignorowane, 3 s albo tempo;
+ * BOTH podwaja cały blok pracy wraz z przerwami między seriami, bez przygotowania.
+ */
+export function calculateExerciseTotalSeconds(
+  params: ExerciseDurationParams,
+): { seconds: number; isEstimate: boolean } {
   const sets = Math.max(0, Math.floor(params.sets));
   if (sets <= 0) {
     return { seconds: 0, isEstimate: false };
   }
 
-  const reps = Math.max(1, Math.floor(params.reps ?? 10));
+  const reps =
+    params.reps != null && Number.isFinite(params.reps) && params.reps > 0
+      ? Math.floor(params.reps)
+      : 1;
   const side = params.side?.toLowerCase();
   const sideMultiplier = side === 'both' ? 2 : 1;
-  const effectiveReps = reps * sideMultiplier;
 
   const preparationTime = normalizePositiveNumber(params.preparationTime);
   const restSets = normalizePositiveNumber(params.restSets);
@@ -107,22 +114,39 @@ export function calculateExerciseTotalSeconds(params: {
   const executionTime = normalizePositiveNumber(params.executionTime);
   const tempoExecutionTime = parseTempo(params.tempo);
 
-  const repetitionTime = executionTime > 0 ? executionTime : (tempoExecutionTime ?? 3);
-  const isEstimate = executionTime <= 0 && tempoExecutionTime == null && durationOverride <= 0;
+  const typedTime = isTimeExerciseType(params.type);
+  const isTimeMode =
+    executionTime > 0 || typedTime === true || (typedTime !== false && durationOverride > 0);
 
-  // executionTime is the primary source for timer behavior; duration acts as fallback only.
-  const timePerSet =
-    executionTime > 0
-      ? effectiveReps * executionTime + Math.max(0, effectiveReps - 1) * restReps
-      : durationOverride > 0
-        ? durationOverride
-        : effectiveReps * repetitionTime + Math.max(0, effectiveReps - 1) * restReps;
+  let perRepTime = 0;
+  let isEstimate = false;
 
-  const setsTime = sets * timePerSet;
-  const interSetRestTime = Math.max(0, sets - 1) * restSets;
+  if (executionTime > 0) {
+    perRepTime = executionTime;
+  } else if (isTimeMode) {
+    if (durationOverride > 0) {
+      perRepTime = durationOverride;
+    } else if (tempoExecutionTime != null) {
+      perRepTime = tempoExecutionTime;
+    } else {
+      return { seconds: 0, isEstimate: false };
+    }
+  } else if (tempoExecutionTime != null) {
+    perRepTime = tempoExecutionTime;
+  } else {
+    perRepTime = 3;
+    isEstimate = true;
+  }
+
+  if (perRepTime <= 0) {
+    return { seconds: 0, isEstimate: false };
+  }
+
+  const workBlock =
+    (perRepTime * reps + restReps * Math.max(0, reps - 1)) * sets + restSets * Math.max(0, sets - 1);
 
   return {
-    seconds: preparationTime + setsTime + interSetRestTime,
+    seconds: preparationTime + workBlock * sideMultiplier,
     isEstimate,
   };
 }

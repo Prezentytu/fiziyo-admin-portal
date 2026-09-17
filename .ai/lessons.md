@@ -22,6 +22,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-09-17 - Czas ćwiczenia musi być ten sam w portalu i w playerze
+
+- **Kategoria**: `UI/UX`
+- **Problem**: W apce nie było wyliczonego czasu, a portal pokazywał inną liczbę niż player (duration jako czas serii, BOTH podwajał powtórzenia zamiast bloku pracy).
+- **Przyczyna**: Dwa wzory: portal `sets × duration` i `reps × 2` dla BOTH; mobile `duration × reps` i `workBlock × 2`. Detal iOS pokazywał tylko surowy `duration`.
+- **Rozwiązanie**: `calculateExerciseTotalSeconds` liczy jak `computePlannedDurationSec`; detal iOS pokazuje kafle serii i całości.
+- **Reguła**: Jeśli pokazujesz czas ćwiczenia terapeucie, licz go tak, jak timer pacjenta — nie jako legacy override serii.
+
 ### 2026-09-15 - Leftover branch `dev` nie może trzymać DEV
 
 - **Kategoria**: `Build/Tooling` | `Git`
@@ -45,6 +53,7 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Przyczyna**: Upload zdjęcia od razu mutuje API i refetchuje `exerciseById`. Hook formularza w trybie bez autosave nadpisywał draft przy każdej nowej referencji `source`, zeroując `isDirty`. Użytkownik myślał, że wygenerowane zdjęcie czeka na Zapisz.
 - **Rozwiązanie**: Hydracja tylko gdy draft nie jest brudny (albo zmieniło się id ćwiczenia). Po zapisie mediów toast i pasek: „Zdjęcie zapisane od razu — nie wymaga przycisku Zapisz”.
 - **Reguła**: Jeśli media idą osobną mutacją + refetch, dirty tracking pól tekstowych musi przetrwać zmianę referencji `source`; UI ma powiedzieć, że media już są zapisane. `data-testid` dawaj jako pierwszy atrybut tagu — skaner kończy opening tag na pierwszym `>` (w tym `=>` i `>=`), więc testid po `onClick={() =>` wypada z detekcji i psuje allowlistę po przesunięciu linii.
+
 ### 2026-09-15 - Kosz przy placeholderze to no-op, nie akcja
 
 - **Kategoria**: `UI/UX`

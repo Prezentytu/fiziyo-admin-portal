@@ -27,6 +27,7 @@ function makeDraft(overrides: Partial<ExerciseCoreDraft> = {}): ExerciseCoreDraf
     preparationTime: 5,
     duration: null,
     loadKg: null,
+    type: 'reps',
     mainTags: ['tag-a', 'tag-b'],
     additionalTags: ['tag-c'],
     ...overrides,
@@ -75,6 +76,7 @@ describe('useExerciseEditorForm hydration', () => {
     defaultSets: 3,
     defaultReps: 10,
     defaultRestBetweenSets: 60,
+    type: 'TIME',
   };
 
   it('zachowuje brudny draft po zmianie referencji source (refetch zdjęcia)', () => {
@@ -114,5 +116,17 @@ describe('useExerciseEditorForm hydration', () => {
 
     expect(result.current.core.restSets).toBe(45);
     expect(result.current.isDirty).toBe(false);
+  });
+
+  it('przenosi typ ćwiczenia do draftu, żeby wyliczany czas rozróżniał TIME i leftover duration', () => {
+    const { result } = renderHook(() =>
+      useExerciseEditorForm({
+        source,
+        updateCore: async () => undefined,
+        updateEnrichment: async () => undefined,
+      })
+    );
+
+    expect(result.current.core.type).toBe('TIME');
   });
 });

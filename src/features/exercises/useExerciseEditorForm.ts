@@ -41,6 +41,8 @@ export interface ExerciseCoreDraft {
   duration: number | null;
   /** Obciążenie strukturalne w kg (zastępuje free-text loadText). */
   loadKg: number | null;
+  /** Typ katalogowy — tylko do wyliczenia czasu; nie jest polem zapisu formularza. */
+  type?: string | null;
   mainTags: string[];
   additionalTags: string[];
 }
@@ -93,6 +95,7 @@ export interface ExerciseEditorSource {
   preparationTime?: number | null;
   defaultDuration?: number | null;
   duration?: number | null;
+  type?: string | null;
   defaultLoad?: ExerciseLoadLike | null;
   loadValue?: number | null;
   loadUnit?: string | null;
@@ -159,6 +162,7 @@ function deriveCoreDraft(source: ExerciseEditorSource | null | undefined): Exerc
     preparationTime: firstNumber(source?.preparationTime),
     duration: firstNumber(source?.defaultDuration, source?.duration),
     loadKg: source ? deriveLoadKg(source) : null,
+    type: source?.type ?? null,
     mainTags: normalizeTagIds(source?.mainTags),
     additionalTags: normalizeTagIds(source?.additionalTags),
   };

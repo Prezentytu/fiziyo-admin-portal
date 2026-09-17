@@ -72,7 +72,7 @@ Nie duplikuj etykiet/tierów lokalnie — derywuj z kontraktu.
 
 **TIER 3 - Personalizacja:** Notatka, Strona ciała, Tempo, Czas przygotowania
 
-**TIER 4 - Zaawansowane:** Przerwa między powt., Zakres ruchu, `duration` (override czasu serii), Własna nazwa/opis
+**TIER 4 - Zaawansowane:** Przerwa między powt., Zakres ruchu, `duration` (legacy zapis czasu; w wyliczeniu TIME = czas powtórzenia, nie override całej serii), Własna nazwa/opis
 
 ## Precyzyjne labele (OBOWIĄZKOWE)
 
@@ -94,6 +94,7 @@ Serie × Powtórzenia [× Czas powtórzenia]
 - `executionTime` = 0/null → bez timera
 - NIE eksponuj terapeucie „typu ćwiczenia” jako osobnej etykiety; UI ma pokazywać parametry wykonania, a semantyka timera wynika z `executionTime`
 - W `CreateExerciseWizard` pole wejściowe TIER 1 to `Czas powtórzenia`; `Czas serii` jest pokazywany jako wartość wyliczana, a `duration` pozostaje w sekcji zaawansowanej dla ćwiczeń liczonych czasem.
+- Kafle „Czas serii/ćwiczenia (wyliczany)” liczą `calculateExerciseTotalSeconds` — ten sam wzór co player (`computePlannedDurationSec`). Nie używaj `sets × duration` ani `reps × 2` dla BOTH.
 
 Przykłady: `3 × 10`, `3 × 10 × 10s`, `3 × 1 × 30s`
 

@@ -682,6 +682,7 @@ function EditExerciseOverrideDialogContent({
             <ExerciseParametersFields
               surface="patientOverride"
               values={parameterValues}
+              exerciseType={exercise?.type}
               onChange={handleParametersChange}
               inheritedValues={inheritedValues}
               showContentSection

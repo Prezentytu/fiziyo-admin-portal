@@ -166,10 +166,12 @@ export function ExerciseExecutionCard({
         preparationTime: exercise.preparationTime,
         tempo: exercise.tempo,
         side: exercise.side,
+        type: exercise.isTimeBased ? 'time' : 'reps',
       }),
     [
       exercise.duration,
       exercise.executionTime,
+      exercise.isTimeBased,
       exercise.preparationTime,
       exercise.reps,
       exercise.restReps,
@@ -687,6 +689,7 @@ export function ExerciseExecutionCard({
               <ExerciseParametersFields
                 surface={cardSurface === 'patientPlan' ? 'patientPlan' : 'mapping'}
                 values={parameterValues}
+                exerciseType={exercise.isTimeBased ? 'time' : 'reps'}
                 onChange={handleParametersChange}
                 omitFields={omitFields}
                 showContentSection
