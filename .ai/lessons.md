@@ -22,6 +22,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-09-15 - Hardening parsera karty idzie z kanonem
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: Portal nie odmawiał zgody z treści issue, gdy kanon fizjo-app już miał `authorize` i zastrzeżone klucze karty.
+- **Przyczyna**: Adapter powierzchni nie przeniósł commita hardeningu parsera razem z kanonem.
+- **Rozwiązanie**: Przeniesiono stałe, `authorizationFromIssue`, `describeHandoff` i CLI `authorize` z testami; lokalny wymóg `.ai/agent-adapter.json` zostaje.
+- **Reguła**: Jeśli kanon commituje hardening `scripts/task-card.mjs`, zawsze przenieś parser i testy do portalu w tym samym cyklu, zanim etykieta `agent-fix` cokolwiek uruchomi.
+
 ### 2026-09-15 - Leftover branch `dev` nie może trzymać DEV
 
 - **Kategoria**: `Build/Tooling` | `Git`
