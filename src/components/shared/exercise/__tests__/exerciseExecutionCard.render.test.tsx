@@ -62,7 +62,8 @@ describe('ExerciseExecutionCard inline read-only source info', () => {
     expect(screen.getAllByText('Obciążenie').length).toBeGreaterThan(0);
     expect(screen.queryByText('Odziedziczone z ćwiczenia')).not.toBeInTheDocument();
     expect(screen.queryByText('nogi')).not.toBeInTheDocument();
-    expect(screen.getAllByText('9 min 35 s').length).toBeGreaterThan(0);
+    // Player: 5 + [(8*10)*3 + 2*45] * 2 (BOTH) = 665 s
+    expect(screen.getAllByText('11 min 5 s').length).toBeGreaterThan(0);
 
     await user.click(screen.getByTestId('exercise-card-exercise-1-open-details-btn'));
 
