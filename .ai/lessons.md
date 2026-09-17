@@ -22,6 +22,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-09-17 - VERCEL_TEAM_ID slug nie może iść jako teamId
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: Pin DEV padał `Vercel API 400` po dodaniu sekretów; log pokazywał tylko status, bez body.
+- **Przyczyna**: Skrypt akceptował slug zespołu (`prezentytus-projects`), ale zawsze wysyłał `teamId=`. Vercel na to odpowiada 400. Dodatkowo rerun starego `deployment_status` z Preview PR używa SHA feature branch, nie `main`.
+- **Rozwiązanie**: `team_` → `teamId`, inny poprawny identyfikator → `slug`. Błąd API zawiera `code` + `message`. Pin odpalaj z `main` / `workflow_dispatch`, nie Re-run Preview.
+- **Reguła**: Vercel `teamId` to tylko `team_…`. Slug zespołu idzie w `slug`. Nie rerunuj pinu z Preview PR.
+
 ### 2026-09-15 - Leftover branch `dev` nie może trzymać DEV
 
 - **Kategoria**: `Build/Tooling` | `Git`

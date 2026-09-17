@@ -7,6 +7,7 @@ import {
   aliasDevDomain,
   assertPreviewDeployment,
   isDevDomain,
+  listProjectDomains,
   pinDevportalDomain,
   planDevDomainAssignment,
   selectMainPreviewDeployment,
@@ -104,5 +105,29 @@ describe("pin-devportal-domain", () => {
     assert.equal(pinned.deploymentId, DPL);
     assert.equal(calls.some((item) => item.url.includes("/v2/aliases") && item.body?.alias === "devportal.fiziyo.pl"), true);
     await assert.rejects(() => aliasDevDomain(fetchImpl, { VERCEL_TOKEN: "n".repeat(24), VERCEL_PROJECT_ID: "prj_abc123" }, "bad"));
+  });
+
+  it("sends a team slug as slug and surfaces the Vercel 400 body", async () => {
+    const calls = [];
+    const fetchImpl = async (url) => {
+      calls.push(url);
+      return {
+        ok: false,
+        status: 400,
+        text: async () => JSON.stringify({ error: { code: "bad_request", message: "invalid teamId" } }),
+      };
+    };
+
+    await assert.rejects(
+      () =>
+        listProjectDomains(fetchImpl, {
+          VERCEL_TOKEN: "n".repeat(24),
+          VERCEL_PROJECT_ID: "prj_abc123",
+          VERCEL_TEAM_ID: "prezentytus-projects",
+        }),
+      /400 bad_request: invalid teamId/
+    );
+    assert.match(calls[0], /[?&]slug=prezentytus-projects/);
+    assert.doesNotMatch(calls[0], /teamId=/);
   });
 });

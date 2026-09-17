@@ -8,8 +8,11 @@ import {
   PROD_API_ORIGIN,
   PROD_APP_URL,
   assertIdentity,
+  assertProjectId,
+  assertTeamId,
   canSkipDevIdentity,
   executePromote,
+  formatVercelApiError,
   normalizeDeploymentId,
   normalizeSha,
   planPromote,
@@ -18,6 +21,7 @@ import {
   requireAncestor,
   requireMain,
   selectSourceDeployment,
+  teamScopeQuery,
 } from "./promote-admin.mjs";
 
 const SHA = "a".repeat(40);
@@ -35,6 +39,14 @@ const identityHeaders = (overrides = {}) =>
   });
 
 describe("promote-admin gates", () => {
+  it("sends team_ as teamId and a team slug as slug", () => {
+    assert.equal(teamScopeQuery("team_1a2b3c"), "teamId=team_1a2b3c");
+    assert.equal(teamScopeQuery("prezentytus-projects"), "slug=prezentytus-projects");
+    assert.equal(assertProjectId("  prj_abc123  "), "prj_abc123");
+    assert.equal(assertTeamId("  team_1  "), "team_1");
+    assert.equal(formatVercelApiError(400, '{"error":{"code":"bad_request","message":"invalid teamId"}}'), "Vercel API 400 bad_request: invalid teamId");
+  });
+
   it("accepts a full SHA and the main tip fallback", () => {
     assert.equal(normalizeSha(SHA), SHA);
     assert.equal(normalizeSha("  ", SHA), SHA);

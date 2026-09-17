@@ -5,8 +5,10 @@ import {
   DEV_API_ORIGIN,
   DEV_APP_URL,
   PROJECT_NAME,
+  applyTeamScope,
   assertProjectId,
-  assertTeamId,
+  formatVercelApiError,
+  teamScopeQuery,
   normalizeDeploymentId,
   normalizeSha,
 } from "./promote-admin.mjs";
@@ -14,8 +16,6 @@ import {
 export const DEV_DOMAINS = ["devportal.fiziyo.pl", "dev.portal.fiziyo.pl"];
 export const TRUNK_BRANCH = "main";
 export const LEGACY_INTEGRATION_BRANCH = "dev";
-
-const TEAM_ID = /^(team_[A-Za-z0-9]+|[A-Za-z0-9_-]{2,64})$/;
 
 export function isDevDomain(name) {
   return DEV_DOMAINS.includes(String(name ?? ""));
@@ -59,13 +59,8 @@ export function selectMainPreviewDeployment(deployments, sha) {
   return ready[0] || null;
 }
 
-function teamQuery(teamId) {
-  const id = assertTeamId(teamId);
-  return id ? `teamId=${encodeURIComponent(id)}` : "";
-}
-
 function withQuery(requestPath, teamId) {
-  const query = teamQuery(teamId);
+  const query = teamScopeQuery(teamId);
   return query ? `${requestPath}?${query}` : requestPath;
 }
 
@@ -82,7 +77,7 @@ async function vercelJson(fetchImpl, token, method, requestPath, body) {
     cache: "no-store",
     signal: AbortSignal.timeout(30000),
   });
-  if (!response.ok) throw new Error(`Vercel API ${response.status}`);
+  if (!response.ok) throw new Error(formatVercelApiError(response.status, await response.text()));
   if (response.status === 202) return { accepted: true };
   const text = await response.text();
   return text ? JSON.parse(text) : {};
@@ -113,7 +108,7 @@ export async function aliasDevDomain(fetchImpl, env, deploymentId) {
 export async function listShaDeployments(fetchImpl, env, sha) {
   const projectId = assertProjectId(env.VERCEL_PROJECT_ID);
   const query = new URLSearchParams({ projectId, sha, limit: "20" });
-  if (env.VERCEL_TEAM_ID && TEAM_ID.test(env.VERCEL_TEAM_ID)) query.set("teamId", env.VERCEL_TEAM_ID);
+  applyTeamScope(query, env.VERCEL_TEAM_ID);
   const payload = await vercelJson(fetchImpl, env.VERCEL_TOKEN, "GET", `/v6/deployments?${query}`);
   return Array.isArray(payload.deployments) ? payload.deployments : [];
 }
