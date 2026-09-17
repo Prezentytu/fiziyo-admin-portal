@@ -1087,6 +1087,8 @@ function AssignmentWizardContent({
       const executionTime = params?.executionTime ?? exercise?.defaultExecutionTime;
       const restBetweenSets = params?.restSets ?? exercise?.defaultRestBetweenSets ?? 60;
       const duration = isTimeBasedExercise ? (params?.duration ?? exercise?.defaultDuration) : undefined;
+      const side = params?.exerciseSide ?? exercise?.side ?? exercise?.exerciseSide;
+      const preparationTime = params?.preparationTime ?? exercise?.preparationTime;
 
       return (
         totalSeconds +
@@ -1096,6 +1098,8 @@ function AssignmentWizardContent({
           duration,
           executionTime,
           rest: restBetweenSets,
+          side,
+          preparationTime,
         })
       );
     }, 0);

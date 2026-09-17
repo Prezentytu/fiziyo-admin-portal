@@ -99,3 +99,7 @@ Brak nowych elementów interaktywnych.
 - Utworzenie specyfikacji i implementacja workflow + skryptu bramek.
 - Leftover git branch `dev` wyłączony z pociągu: `vercel.json` nie wdraża `dev`,
   `pin-devportal.yml` trzyma domenę DEV na `main`, `e2e-trigger` ignoruje `ref=dev`.
+- Leftover git branch `dev` wyłączony z pociągu: `vercel.json` nie wdraża `dev`,
+  `pin-devportal.yml` trzyma domenę DEV na `main`, `e2e-trigger` ignoruje `ref=dev`.
+- Leftover git branch `dev` wyłączony z pociągu: `vercel.json` nie wdraża `dev`,
+  `pin-devportal.yml` trzyma domenę DEV na `main`, `e2e-trigger` ignoruje `ref=dev`.

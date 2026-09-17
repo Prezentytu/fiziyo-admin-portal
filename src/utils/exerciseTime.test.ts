@@ -64,18 +64,50 @@ describe('calculateExerciseTotalSeconds', () => {
     });
   });
 
-  it('podwaja efektywne powtorzenia dla side=both', () => {
-    const result = calculateExerciseTotalSeconds({
-      sets: 1,
-      reps: 10,
-      executionTime: 5,
-      side: 'both',
-    });
-
-    expect(result).toEqual({
+  it('podwaja prace w serii dla side=both bez wstawiania restReps miedzy stronami', () => {
+    expect(
+      calculateExerciseTotalSeconds({
+        sets: 1,
+        reps: 10,
+        executionTime: 5,
+        side: 'both',
+      }),
+    ).toEqual({
       seconds: 100,
       isEstimate: false,
     });
+
+    expect(
+      calculateExerciseTotalSeconds({
+        sets: 1,
+        reps: 8,
+        executionTime: 5,
+        preparationTime: 25,
+        side: 'BOTH',
+      }),
+    ).toEqual({ seconds: 105, isEstimate: false });
+
+    expect(
+      calculateExerciseTotalSeconds({
+        sets: 2,
+        reps: 1,
+        executionTime: 20,
+        restSets: 15,
+        preparationTime: 15,
+        side: 'both',
+      }),
+    ).toEqual({ seconds: 110, isEstimate: false });
+
+    expect(
+      calculateExerciseTotalSeconds({
+        sets: 2,
+        reps: 8,
+        executionTime: 5,
+        restReps: 2,
+        restSets: 30,
+        side: 'both',
+      }),
+    ).toEqual({ seconds: 246, isEstimate: false });
   });
 
   it('daje priorytet executionTime nad duration', () => {

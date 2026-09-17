@@ -122,6 +122,20 @@ describe('deployment dispatch identity', () => {
     expect(result.requests).toEqual([]);
   });
 
+  it('ignores leftover git branch dev even on the dedicated DEV URL', async () => {
+    const result = await run({}, 'b'.repeat(40), 'a'.repeat(40), { ref: 'dev' });
+    expect(result.dispatches).toEqual([]);
+    expect(result.errors).toEqual([]);
+    expect(result.requests).toEqual([]);
+  });
+
+  it('ignores leftover git branch dev even on the dedicated DEV URL', async () => {
+    const result = await run({}, 'b'.repeat(40), 'a'.repeat(40), { ref: 'dev' });
+    expect(result.dispatches).toEqual([]);
+    expect(result.errors).toEqual([]);
+    expect(result.requests).toEqual([]);
+  });
+
   it('fails closed when the dedicated DEV URL is served by a SHA outside main', async () => {
     const result = await run({}, 'b'.repeat(40), 'a'.repeat(40), { compareStatus: 'diverged' });
     expect(result.dispatches).toEqual([]);
