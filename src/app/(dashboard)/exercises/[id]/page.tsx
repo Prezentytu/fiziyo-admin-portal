@@ -527,6 +527,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
     preparationTime: normalizedFields.preparationTime,
     tempo: normalizedFields.tempo ?? undefined,
     side: normalizedFields.side ?? undefined,
+    type: exercise.type,
   });
 
   const exerciseDurationSummary =

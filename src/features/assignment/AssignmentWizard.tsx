@@ -1085,7 +1085,7 @@ function AssignmentWizardContent({
       const sets = params?.sets ?? exercise?.defaultSets ?? 3;
       const reps = params?.reps ?? exercise?.defaultReps ?? 10;
       const executionTime = params?.executionTime ?? exercise?.defaultExecutionTime;
-      const restBetweenSets = params?.restSets ?? exercise?.defaultRestBetweenSets ?? 60;
+      const restBetweenSets = params?.restSets ?? exercise?.defaultRestBetweenSets;
       const duration = isTimeBasedExercise ? (params?.duration ?? exercise?.defaultDuration) : undefined;
 
       return (
@@ -1096,6 +1096,11 @@ function AssignmentWizardContent({
           duration,
           executionTime,
           rest: restBetweenSets,
+          restReps: params?.restReps ?? exercise?.defaultRestBetweenReps,
+          preparationTime: params?.preparationTime ?? exercise?.preparationTime,
+          tempo: params?.tempo ?? exercise?.tempo,
+          side: params?.exerciseSide ?? exercise?.side,
+          type: exercise?.type,
         })
       );
     }, 0);

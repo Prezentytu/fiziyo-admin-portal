@@ -102,6 +102,7 @@ export function ExerciseParametersEditor({
     <ExerciseParametersFields
       surface="template"
       values={values}
+      exerciseType={core.type}
       onChange={handleChange}
       isDirtyField={dirtyForField}
       collapseAdvanced={variant === 'create'}

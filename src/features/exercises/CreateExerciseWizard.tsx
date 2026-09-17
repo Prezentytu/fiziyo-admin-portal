@@ -1107,6 +1107,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
         preparationTime: data.preparationTime ?? undefined,
         tempo: data.tempo || undefined,
         side: data.exerciseSide,
+        type: (data.executionTime ?? 0) > 0 ? 'time' : 'reps',
       }),
     [
       data.sets,
@@ -1209,6 +1210,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
       preparationTime: data.preparationTime,
       duration: data.duration,
       loadKg: data.loadKg,
+      type: (data.executionTime ?? 0) > 0 ? 'time' : 'reps',
       mainTags: data.mainTags,
       additionalTags: data.additionalTags,
     }),

@@ -92,15 +92,87 @@ describe('calculateExerciseTotalSeconds', () => {
     });
   });
 
-  it('uzywa duration jako fallback gdy brak executionTime', () => {
+  it('dla TIME mnozy duration przez powtorzenia jak player, nie traktuje go jako czas calej serii', () => {
     const result = calculateExerciseTotalSeconds({
       sets: 3,
       reps: 10,
       duration: 40,
+      type: 'TIME',
+    });
+
+    expect(result).toEqual({
+      seconds: 1200,
+      isEstimate: false,
+    });
+  });
+
+  it('dla TIME bez duration/executionTime/tempo nie podstawia falszywych 3s', () => {
+    const result = calculateExerciseTotalSeconds({
+      sets: 3,
+      reps: 10,
+      type: 'TIME',
+    });
+
+    expect(result).toEqual({
+      seconds: 0,
+      isEstimate: false,
+    });
+  });
+
+  it('dla TIME bez reps liczy jak player (reps=1)', () => {
+    const result = calculateExerciseTotalSeconds({
+      sets: 3,
+      duration: 40,
+      type: 'TIME',
     });
 
     expect(result).toEqual({
       seconds: 120,
+      isEstimate: false,
+    });
+  });
+
+  it('dla REPS ignoruje leftover duration i szacuje 3s na powtorzenie', () => {
+    const result = calculateExerciseTotalSeconds({
+      sets: 3,
+      reps: 10,
+      duration: 40,
+      type: 'REPS',
+    });
+
+    expect(result).toEqual({
+      seconds: 90,
+      isEstimate: true,
+    });
+  });
+
+  it('podwaja caly blok pracy dla side=both, w tym przerwy miedzy seriami', () => {
+    const result = calculateExerciseTotalSeconds({
+      sets: 3,
+      reps: 10,
+      executionTime: 5,
+      restSets: 60,
+      side: 'both',
+    });
+
+    // [(10*5)*3 + 2*60] * 2 = 540
+    expect(result).toEqual({
+      seconds: 540,
+      isEstimate: false,
+    });
+  });
+
+  it('zgadza sie z playerem: 1x8 BOTH, 5s, 25s przygotowania = 105s', () => {
+    const result = calculateExerciseTotalSeconds({
+      sets: 1,
+      reps: 8,
+      executionTime: 5,
+      preparationTime: 25,
+      side: 'BOTH',
+    });
+
+    expect(result).toEqual({
+      seconds: 105,
       isEstimate: false,
     });
   });

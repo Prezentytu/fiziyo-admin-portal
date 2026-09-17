@@ -43,11 +43,20 @@ interface ExerciseMapping {
     duration?: number;
     executionTime?: number;
     defaultExecutionTime?: number;
+    defaultSets?: number;
+    defaultReps?: number;
+    defaultDuration?: number;
     restSets?: number;
     restReps?: number;
     defaultRestBetweenSets?: number;
     defaultRestBetweenReps?: number;
+    preparationTime?: number;
+    tempo?: string;
+    side?: string;
+    exerciseSide?: string;
   };
+  preparationTime?: number;
+  tempo?: string;
 }
 
 export interface ExerciseSet {
@@ -139,13 +148,13 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
   const estimatedDuration = useMemo(() => {
     let totalSeconds = 0;
     for (const mapping of set.exerciseMappings || []) {
-      const sets = mapping.sets || mapping.exercise?.sets || 3;
-      const duration = mapping.duration || mapping.exercise?.duration || 0;
-      const reps = mapping.reps || mapping.exercise?.reps || 10;
+      const sets = mapping.sets ?? mapping.exercise?.sets ?? mapping.exercise?.defaultSets ?? 0;
+      const duration = mapping.duration ?? mapping.exercise?.duration ?? mapping.exercise?.defaultDuration ?? 0;
+      const reps = mapping.reps ?? mapping.exercise?.reps ?? mapping.exercise?.defaultReps;
       const executionTime =
-        mapping.executionTime || mapping.exercise?.executionTime || mapping.exercise?.defaultExecutionTime || 0;
-      const restSets = mapping.restSets || mapping.exercise?.restSets || mapping.exercise?.defaultRestBetweenSets || 30;
-      const restReps = mapping.restReps || mapping.exercise?.restReps || mapping.exercise?.defaultRestBetweenReps || 0;
+        mapping.executionTime ?? mapping.exercise?.executionTime ?? mapping.exercise?.defaultExecutionTime ?? 0;
+      const restSets = mapping.restSets ?? mapping.exercise?.restSets ?? mapping.exercise?.defaultRestBetweenSets ?? 0;
+      const restReps = mapping.restReps ?? mapping.exercise?.restReps ?? mapping.exercise?.defaultRestBetweenReps ?? 0;
 
       totalSeconds += calculateEstimatedTime({
         sets,
@@ -154,6 +163,10 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
         executionTime,
         rest: restSets,
         restReps,
+        preparationTime: mapping.preparationTime ?? mapping.exercise?.preparationTime,
+        tempo: mapping.tempo ?? mapping.exercise?.tempo,
+        side: mapping.exercise?.exerciseSide ?? mapping.exercise?.side,
+        type: mapping.exercise?.type,
       });
     }
     return Math.round(totalSeconds / 60); // minutes

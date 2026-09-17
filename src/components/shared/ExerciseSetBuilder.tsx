@@ -667,6 +667,7 @@ export function ExerciseSetBuilder({
         preparationTime: params.preparationTime,
         tempo: params.tempo,
         side: params.exerciseSide ?? exercise.side ?? exercise.exerciseSide,
+        type: exercise.type,
       });
 
       totalSeconds += duration.seconds;
