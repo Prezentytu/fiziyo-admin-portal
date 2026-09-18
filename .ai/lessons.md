@@ -22,6 +22,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-09-18 - UpdateExercise: none strony to string enumu, nie null
+
+- **Kategoria**: `GraphQL`
+- **Problem**: Zmiana „Na każdą stronę” → „Razem” w edytorze katalogu zapisywała się bez błędu, a `Side` zostawał `Both` (objętość pacjenta ×2).
+- **Przyczyna**: Dirty-diff i legacy mapper wysyłały `exerciseSide: null`. Backend `UpdateExercise` pomija puste `exerciseSide` (`IsNullOrEmpty`), więc None nigdy nie nadpisywało Both/Left/Right.
+- **Rozwiązanie**: Przy zmianie strony wysyłaj `'none'` (i inne wartości enumu) jako string. Null zostaw tylko gdy pole nie jest w dirty-diff.
+- **Reguła**: Jeśli GraphQL update pomija null, zawsze zrób sentinel czyszczenia jawnym stringiem enumu (`none`), nigdy `null`.
+
 ### 2026-09-17 - VERCEL_TEAM_ID slug nie może iść jako teamId
 
 - **Kategoria**: `Build/Tooling`
@@ -53,6 +61,7 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Przyczyna**: Upload zdjęcia od razu mutuje API i refetchuje `exerciseById`. Hook formularza w trybie bez autosave nadpisywał draft przy każdej nowej referencji `source`, zeroując `isDirty`. Użytkownik myślał, że wygenerowane zdjęcie czeka na Zapisz.
 - **Rozwiązanie**: Hydracja tylko gdy draft nie jest brudny (albo zmieniło się id ćwiczenia). Po zapisie mediów toast i pasek: „Zdjęcie zapisane od razu — nie wymaga przycisku Zapisz”.
 - **Reguła**: Jeśli media idą osobną mutacją + refetch, dirty tracking pól tekstowych musi przetrwać zmianę referencji `source`; UI ma powiedzieć, że media już są zapisane. `data-testid` dawaj jako pierwszy atrybut tagu — skaner kończy opening tag na pierwszym `>` (w tym `=>` i `>=`), więc testid po `onClick={() =>` wypada z detekcji i psuje allowlistę po przesunięciu linii.
+
 ### 2026-09-15 - Kosz przy placeholderze to no-op, nie akcja
 
 - **Kategoria**: `UI/UX`
