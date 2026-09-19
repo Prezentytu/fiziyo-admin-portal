@@ -39,6 +39,7 @@ describe('CustomizeSetStep preview details flow', () => {
             defaultExecutionTime: 8,
             defaultRestBetweenSets: 60,
             images: ['/image-1.jpg'],
+            scope: 'GLOBAL',
           },
         ]}
         organizationId="org-1"
