@@ -22,6 +22,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-09-19 - QR pacjenta zawsze koduje HTTPS, nigdy custom scheme
+
+- **Kategoria**: `UI/UX` | `Testing`
+- **Problem**: Skaner telefonu na demo K01 pokazał „brak używalnych danych”, bo QR kodował `fiziyo://connect?...`.
+- **Przyczyna**: Kamera otwiera tylko `http(s):`. Custom URI bez zainstalowanej apki jest dla skanera pustym payloadem. Copy i PDF używały jeszcze innych URL-i.
+- **Rozwiązanie**: `buildPatientJoinUrl` / `buildPatientConnectUrl` w `src/lib/patientJoinUrl.ts`. QR tylko gdy `isHttpsUrl`. Pusty payload = spinner, nie kod.
+- **Reguła**: Jeśli QR ma otworzyć się kamerą, zawsze koduj pełny `https://` na domenie FiziYo; nigdy `fiziyo://`, JSON ani pusty string.
+
 ### 2026-09-17 - VERCEL_TEAM_ID slug nie może iść jako teamId
 
 - **Kategoria**: `Build/Tooling`

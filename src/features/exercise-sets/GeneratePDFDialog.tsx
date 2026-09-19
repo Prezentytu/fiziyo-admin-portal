@@ -35,6 +35,7 @@ import type {
   PDFExercise,
 } from '@/components/pdf';
 import { getMediaUrl } from '@/utils/mediaUrl';
+import { isHttpsUrl, PATIENT_START_URL } from '@/lib/patientJoinUrl';
 
 import { GET_ORGANIZATION_BY_ID_QUERY } from '@/graphql/queries/organizations.queries';
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
@@ -151,6 +152,8 @@ export function GeneratePDFDialog({
 
   const organization = (orgData as OrganizationByIdResponse)?.organizationById;
   const therapistUser = (userData as UserByClerkIdResponse)?.userByClerkId;
+  const qrUrl = PATIENT_START_URL;
+  const canRenderQr = isHttpsUrl(qrUrl);
 
   // Generuj QR code data URL
   const getQRCodeDataUrl = useCallback((): string | undefined => {
@@ -191,6 +194,7 @@ export function GeneratePDFDialog({
         sets: mapping.sets,
         reps: mapping.reps,
         duration: mapping.duration,
+        executionTime: mapping.executionTime,
         restSets: mapping.restSets,
         restReps: mapping.restReps,
         order: mapping.order,
@@ -245,6 +249,7 @@ export function GeneratePDFDialog({
           therapist={pdfTherapist}
           options={pdfOptions}
           qrCodeDataUrl={qrCodeDataUrl}
+          joinUrl={qrUrl}
         />
       );
 
@@ -301,7 +306,6 @@ export function GeneratePDFDialog({
 
   const exerciseCount = exerciseSet.exerciseMappings?.length || 0;
   const exerciseCountText = formatExercises(exerciseCount);
-  const qrUrl = `https://app.fiziyo.pl/sets/${exerciseSet.id}`;
 
   const exercisesWithImageCount = (exerciseSet.exerciseMappings || []).filter(
     (mapping) => !!resolvePdfExerciseImageUrl(mapping.exercise)
@@ -347,6 +351,7 @@ export function GeneratePDFDialog({
                     : 'border-border/60 hover:border-border'
                 )}
                 onClick={() => setViewMode('full')}
+                data-testid="set-pdf-view-full"
               >
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
@@ -374,6 +379,7 @@ export function GeneratePDFDialog({
                     : 'border-border/60 hover:border-border'
                 )}
                 onClick={() => setViewMode('compact')}
+                data-testid="set-pdf-view-compact"
               >
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
@@ -411,6 +417,7 @@ export function GeneratePDFDialog({
                     checked={showImages}
                     disabled={noImagesAvailable}
                     onCheckedChange={(checked) => setShowImages(checked === true)}
+                    data-testid="set-pdf-show-images"
                   />
                   <div className="flex items-center gap-2 text-sm group-hover:text-foreground transition-colors">
                     <ImageIcon className="h-4 w-4 text-muted-foreground" />
@@ -423,7 +430,11 @@ export function GeneratePDFDialog({
               )}
 
               <label className="flex items-center gap-3 cursor-pointer group">
-                <Checkbox checked={showFrequency} onCheckedChange={(checked) => setShowFrequency(checked === true)} />
+                <Checkbox
+                  checked={showFrequency}
+                  onCheckedChange={(checked) => setShowFrequency(checked === true)}
+                  data-testid="set-pdf-show-frequency"
+                />
                 <div className="flex items-center gap-2 text-sm group-hover:text-foreground transition-colors">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <span>Harmonogram (kiedy ćwiczyć)</span>
@@ -431,7 +442,11 @@ export function GeneratePDFDialog({
               </label>
 
               <label className="flex items-center gap-3 cursor-pointer group">
-                <Checkbox checked={showQRCode} onCheckedChange={(checked) => setShowQRCode(checked === true)} />
+                <Checkbox
+                  checked={showQRCode}
+                  onCheckedChange={(checked) => setShowQRCode(checked === true)}
+                  data-testid="set-pdf-show-qr"
+                />
                 <div className="flex items-center gap-2 text-sm group-hover:text-foreground transition-colors">
                   <QrCode className="h-4 w-4 text-muted-foreground" />
                   <span>Kod QR do aplikacji mobilnej</span>
@@ -444,7 +459,6 @@ export function GeneratePDFDialog({
           <div className="space-y-2">
             <Label htmlFor="notes" className="text-sm font-semibold">
               Uwagi dla pacjenta
-              <span className="text-muted-foreground font-normal ml-1">(opcjonalne)</span>
             </Label>
             <Textarea
               id="notes"
@@ -453,17 +467,20 @@ export function GeneratePDFDialog({
               onChange={(e) => setNotes(e.target.value)}
               className="resize-none min-h-[80px]"
               rows={3}
+              data-testid="set-pdf-notes"
             />
           </div>
         </div>
 
         {/* Ukryty QR Code do generowania obrazu */}
-        <div ref={qrRef} className="hidden">
-          <QRCodeCanvas value={qrUrl} size={200} level="M" />
-        </div>
+        {canRenderQr && (
+          <div ref={qrRef} className="hidden">
+            <QRCodeCanvas value={qrUrl} size={200} level="M" />
+          </div>
+        )}
 
         <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} data-testid="set-pdf-cancel-btn">
             Anuluj
           </Button>
           <Button
