@@ -412,11 +412,14 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `patient-takeover-confirm-btn`                      | Potwierdź przejęcie                        | `TakeOverDialog.tsx`               |
 | `patient-expandable-{id}`                           | Karta rozwijana                            | `PatientExpandableCard.tsx`        |
 | `patient-expandable-{id}-assign-btn`                | Personalizuj i przypisz                    | `PatientExpandableCard.tsx`        |
+| `patient-expandable-{id}-assign-gotowiec-btn`       | Przypisz gotowiec                          | `PatientExpandableCard.tsx`        |
 | `patient-expandable-{id}-menu-trigger`              | Menu kontekstowe                           | `PatientExpandableCard.tsx`        |
 | `patient-detail-back-btn`                           | Przycisk wstecz                            | `patients/[id]/page.tsx`           |
 | `patient-detail-name`                               | Imię i nazwisko                            | `patients/[id]/page.tsx`           |
 | `patient-detail-menu-trigger`                       | Menu akcji                                 | `patients/[id]/page.tsx`           |
 | `patient-detail-assign-btn`                         | Personalizuj i przypisz                    | `patients/[id]/page.tsx`           |
+| `patient-detail-assign-gotowiec-btn`                | Przypisz gotowiec (hero)                   | `patients/[id]/page.tsx`           |
+| `patient-dialog-assign-gotowiec-btn`                | Przypisz gotowiec po utworzeniu            | `PatientDialog.tsx`                |
 | `patient-detail-qr-btn`                             | Kod QR                                     | `patients/[id]/page.tsx`           |
 | `patient-detail-edit-btn`                           | Edytuj dane                                | `patients/[id]/page.tsx`           |
 | `patient-form`                                      | Formularz pacjenta                         | `PatientForm.tsx`                  |
@@ -469,6 +472,13 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | data-testid                             | Element                                   | Plik                          |
 | --------------------------------------- | ----------------------------------------- | ----------------------------- |
 | `assign-wizard`                         | Kreator przypisywania                     | `AssignmentWizard.tsx`        |
+| `set-gotowiec-section`                  | Sekcja kafelków gotowców FiziYo           | `SelectSetStep.tsx`           |
+| `set-gotowiec-tile-{id}`                | Kafelek szablonu FiziYo                   | `SelectSetStep.tsx`           |
+| `set-gotowiec-case-{id}`                | Chip przypadku klinicznego                | `SelectSetStep.tsx`           |
+| `set-gotowiec-empty`                    | Pusty stan gotowców                       | `SelectSetStep.tsx`           |
+| `set-gotowiec-customize-btn`            | Wróć do podstawowych parametrów           | `SummaryStep.tsx`             |
+| `assign-set-clear-selection-btn`        | Wyczyść wybór zestawu                     | `SelectSetStep.tsx`           |
+| `assign-set-unassign-btn`               | Odpisz zestaw od pacjenta                 | `SelectSetStep.tsx`           |
 | `assign-wizard-step-indicator`          | Wskaźnik kroków                           | `AssignmentWizard.tsx`        |
 | `assign-wizard-close-btn`               | Zamknij kreator                           | `AssignmentWizard.tsx`        |
 | `assign-wizard-back-btn`                | Wstecz                                    | `AssignmentWizard.tsx`        |

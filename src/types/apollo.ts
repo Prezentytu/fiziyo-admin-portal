@@ -267,6 +267,7 @@ export interface ExerciseSetMapping {
   loadValue?: number;
   loadUnit?: string;
   loadText?: string;
+  overridesJson?: string | null;
   exercise?: {
     id: string;
     name: string;
@@ -331,6 +332,10 @@ export interface ExerciseSet {
 
 export interface OrganizationExerciseSetsResponse {
   exerciseSets: ExerciseSet[];
+}
+
+export interface FiziyoTemplateExerciseSetsResponse {
+  fiziyoTemplateExerciseSets: ExerciseSet[];
 }
 
 // ========================================

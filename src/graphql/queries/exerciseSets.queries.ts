@@ -155,6 +155,16 @@ export const GET_PATIENT_EXERCISE_SETS_QUERY = gql`
   }
 `;
 
+// Katalog zweryfikowanych szablonów FiziYo (IgnoreQueryFilters po stronie API)
+export const GET_FIZIYO_TEMPLATE_EXERCISE_SETS_QUERY = gql`
+  query GetFiziyoTemplateExerciseSets {
+    fiziyoTemplateExerciseSets {
+      ...ExerciseSetWithExercisesFragment
+    }
+  }
+  ${EXERCISE_SET_WITH_EXERCISES_FRAGMENT}
+`;
+
 // Query do pobierania zestawów organizacji z ćwiczeniami
 export const GET_ORGANIZATION_EXERCISE_SETS_QUERY = gql`
   query GetOrganizationExerciseSets($organizationId: String!) {

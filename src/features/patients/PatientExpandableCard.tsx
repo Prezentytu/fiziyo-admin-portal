@@ -108,6 +108,8 @@ export interface Patient {
 interface PatientExpandableCardProps {
   readonly patient: Patient;
   readonly onAssignSet: (patient: Patient) => void;
+  /** Opens assignment wizard with FiziYo ready-made templates highlighted. */
+  readonly onAssignGotowiec?: (patient: Patient) => void;
   /** Pokaż QR kod / receptę dla pacjenta */
   readonly onShowQR?: (patient: Patient) => void;
   /** Odpięcie pacjenta od fizjoterapeuty - tylko Admin/Owner */
@@ -124,6 +126,7 @@ interface PatientExpandableCardProps {
 export function PatientExpandableCard({
   patient,
   onAssignSet,
+  onAssignGotowiec,
   onShowQR,
   onUnassign,
   onRemoveFromOrganization,
@@ -313,6 +316,7 @@ export function PatientExpandableCard({
           {/* Edit Diagnosis button (on hover, only for my patients) */}
           {isMyPatient && (
             <button
+              data-testid={`patient-expandable-${patient.id}-edit-label-btn`}
               type="button"
               onMouseDown={(e) => {
                 e.stopPropagation();
@@ -331,6 +335,21 @@ export function PatientExpandableCard({
                 Cel terapii
               </Badge>
             </button>
+          )}
+
+          {/* Always-visible ready-made template CTA */}
+          {isMyPatient && onAssignGotowiec && (
+            <Button
+              variant="default"
+              size="sm"
+              className="h-8 shrink-0 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
+              onClick={(e) => handleAction(e, () => onAssignGotowiec(patient))}
+              title="Przypisz gotowiec"
+              data-testid={`patient-expandable-${patient.id}-assign-gotowiec-btn`}
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Przypisz gotowiec
+            </Button>
           )}
 
           {/* Hover Actions */}
@@ -405,6 +424,12 @@ export function PatientExpandableCard({
                 {/* Actions for my patients */}
                 {isMyPatient && (
                   <>
+                    {onAssignGotowiec && (
+                      <DropdownMenuItem onClick={() => onAssignGotowiec(patient)}>
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Przypisz gotowiec
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={() => onAssignSet(patient)}>
                       <FolderKanban className="mr-2 h-4 w-4" />
                       Personalizuj i przypisz

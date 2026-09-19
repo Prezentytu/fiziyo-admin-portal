@@ -154,6 +154,11 @@ Admin (`fiziyo-admin`) i mobile (`fizjo-app`) aktualizuja query/mutation oraz ty
 
 ## Changelog
 
+### 2026-09-19
+
+- Portal woła istniejącą query `fiziyoTemplateExerciseSets` i pokazuje szablony FiziYo na górze kroku wyboru (SPEC-029). Always-fork bez zmian.
+- Filtr przypadku klinicznego z nazwy/opisu/ćwiczeń — bez nowego pola GraphQL (`HIDE_EXERCISE_TAGS`).
+
 ### 2026-03-07
 
 - Utworzenie specyfikacji rozdzielenia `template vs patient plan`.

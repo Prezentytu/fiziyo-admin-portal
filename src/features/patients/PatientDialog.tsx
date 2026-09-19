@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { UnifiedPatientInput, PatientFormValues } from './UnifiedPatientInput';
 import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
+import type { AssignmentWizardIntent } from '@/features/assignment/types';
 import { CREATE_SHADOW_PATIENT_MUTATION } from '@/graphql/mutations/users.mutations';
 import {
   GET_THERAPIST_PATIENTS_QUERY,
@@ -55,6 +56,7 @@ export function PatientDialog({
   const [formIsDirty, setFormIsDirty] = useState(false);
   const [createdPatient, setCreatedPatient] = useState<CreatedPatient | null>(null);
   const [showAssignWizard, setShowAssignWizard] = useState(false);
+  const [assignIntent, setAssignIntent] = useState<AssignmentWizardIntent>('default');
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
 
   const handleCloseAttempt = useCallback(() => {
@@ -90,6 +92,12 @@ export function PatientDialog({
   }, []);
 
   const handleAssignSet = useCallback(() => {
+    setAssignIntent('default');
+    setShowAssignWizard(true);
+  }, []);
+
+  const handleAssignGotowiec = useCallback(() => {
+    setAssignIntent('gotowiec');
     setShowAssignWizard(true);
   }, []);
 
@@ -99,6 +107,7 @@ export function PatientDialog({
       setFormIsDirty(false);
       setCreatedPatient(null);
       setShowSuccessAnimation(false);
+      setAssignIntent('default');
     }
   }, [open]);
 
@@ -316,14 +325,25 @@ export function PatientDialog({
               >
                 {/* Primary Action - Assign Set */}
                 {embeddedMode !== 'assignment' && (
-                  <Button
-                    onClick={handleAssignSet}
-                    className="w-full h-12 text-base gap-2 bg-linear-to-r from-primary to-primary-dark shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-200"
-                    data-testid="patient-dialog-assign-btn"
-                  >
-                    <Send className="h-5 w-5" />
-                    Personalizuj i przypisz
-                  </Button>
+                  <>
+                    <Button
+                      onClick={handleAssignGotowiec}
+                      className="w-full h-12 text-base gap-2 bg-linear-to-r from-primary to-primary-dark shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-200"
+                      data-testid="patient-dialog-assign-gotowiec-btn"
+                    >
+                      <Sparkles className="h-5 w-5" />
+                      Przypisz gotowiec
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleAssignSet}
+                      className="w-full h-11 gap-2 hover:bg-surface-light transition-all duration-200"
+                      data-testid="patient-dialog-assign-btn"
+                    >
+                      <Send className="h-4 w-4" />
+                      Personalizuj i przypisz
+                    </Button>
+                  </>
                 )}
 
                 {/* Secondary Action - Add Another */}
@@ -409,6 +429,7 @@ export function PatientDialog({
           preselectedPatient={wizardPatient}
           organizationId={organizationId}
           therapistId={therapistId}
+          intent={assignIntent}
           onSuccess={() => {
             // Don't close immediately - let user see QR code in AssignmentSuccessDialog first
             // PatientDialog can be closed via X button or by clicking outside

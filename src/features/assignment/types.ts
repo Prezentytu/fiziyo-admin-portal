@@ -344,6 +344,8 @@ export interface AssignedPatientInfo {
 }
 
 // Props for wizard
+export type AssignmentWizardIntent = 'default' | 'gotowiec';
+
 export interface AssignmentWizardProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -355,4 +357,6 @@ export interface AssignmentWizardProps {
   onSuccess?: () => void;
   editMode?: boolean;
   initialAssignment?: AssignmentEditInput;
+  /** Opens select-set with FiziYo ready-made templates highlighted. */
+  intent?: AssignmentWizardIntent;
 }

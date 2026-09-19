@@ -12,6 +12,8 @@ interface EmptyStateProps {
   secondaryActionLabel?: string;
   onSecondaryAction?: () => void;
   secondaryActionLoading?: boolean;
+  actionTestId?: string;
+  secondaryActionTestId?: string;
   className?: string;
 }
 
@@ -25,6 +27,8 @@ export function EmptyState({
   secondaryActionLabel,
   onSecondaryAction,
   secondaryActionLoading = false,
+  actionTestId,
+  secondaryActionTestId,
   className,
 }: EmptyStateProps) {
   return (
@@ -40,13 +44,18 @@ export function EmptyState({
       {(actionLabel || secondaryActionLabel) && (
         <div className="flex flex-col sm:flex-row items-center gap-2">
           {actionLabel && onAction && (
-            <Button onClick={onAction} disabled={actionLoading}>
+            <Button onClick={onAction} disabled={actionLoading} data-testid={actionTestId}>
               {actionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {actionLabel}
             </Button>
           )}
           {secondaryActionLabel && onSecondaryAction && (
-            <Button variant="outline" onClick={onSecondaryAction} disabled={secondaryActionLoading}>
+            <Button
+              variant="outline"
+              onClick={onSecondaryAction}
+              disabled={secondaryActionLoading}
+              data-testid={secondaryActionTestId}
+            >
               {secondaryActionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {secondaryActionLabel}
             </Button>

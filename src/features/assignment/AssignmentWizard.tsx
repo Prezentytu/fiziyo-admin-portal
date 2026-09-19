@@ -28,6 +28,13 @@ import { AssignmentSuccessDialog } from './AssignmentSuccessDialog';
 import type { ExerciseInstance, ExerciseParams } from '@/components/shared/ExerciseSetBuilder';
 import { canProceedFromStep } from './utils/assignmentWizardUtils';
 import { decideAssignmentPlanMode, type AssignmentExecutionMode } from './utils/assignmentPlanDecision';
+import { mapRawSetToWizardSet } from './utils/mapWizardExerciseSet';
+import {
+  canFastAssignGotowiec,
+  isFiziyoVerifiedTemplate,
+  mergeTemplateSets,
+  nextWizardStepAfterGotowiecSelect,
+} from './utils/gotowiecTemplates';
 import {
   buildAssignmentOverrideDeltasFromBuilder,
   remapOverrideDeltasToMappingIds,
@@ -68,6 +75,7 @@ import { aiService } from '@/services/aiService';
 import {
   GET_ORGANIZATION_EXERCISE_SETS_QUERY,
   GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY,
+  GET_FIZIYO_TEMPLATE_EXERCISE_SETS_QUERY,
 } from '@/graphql/queries/exerciseSets.queries';
 import { GET_ORGANIZATION_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
 import {
@@ -84,7 +92,7 @@ import {
 import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import { GET_CURRENT_BILLING_STATUS_QUERY } from '@/graphql/queries/billing.queries';
-import type { OrganizationExerciseSetsResponse, OrganizationPatientsResponse } from '@/types/apollo';
+import type { OrganizationExerciseSetsResponse, OrganizationPatientsResponse, FiziyoTemplateExerciseSetsResponse } from '@/types/apollo';
 import type {
   AddExerciseToExerciseSetMutationData,
   AssignExerciseSetToPatientMutationData,
@@ -232,11 +240,14 @@ function AssignmentWizardContent({
   onCloseAttempt,
   onHasChanges,
   onAssignmentSuccess,
+  intent = 'default',
 }: AssignmentWizardContentProps) {
   const isEditMode = editMode && !!initialAssignment;
 
   // State for customize-set mode - true when creating new set, false when customizing existing
   const [isCreatingNewSet, setIsCreatingNewSet] = useState(false);
+  const [pendingGotowiecStep, setPendingGotowiecStep] = useState<WizardStep | null>(null);
+  const [gotowiecFastPath, setGotowiecFastPath] = useState(intent === 'gotowiec');
 
   // Compute dynamic steps based on what's preselected and if creating new set
   const steps = useMemo(
@@ -367,6 +378,8 @@ function AssignmentWizardContent({
   // Handle set change - create Ghost Copy and apply Smart Defaults
   const handleSetChange = useCallback((set: ExerciseSet | null) => {
     setSelectedSet(set);
+    setGotowiecFastPath(false);
+    setPendingGotowiecStep(null);
     // Clear create-new mode when selecting existing set
     setIsCreatingNewSet(false);
 
@@ -407,15 +420,31 @@ function AssignmentWizardContent({
     }
   }, []);
 
+  const handleGotowiecChosen = useCallback(
+    (set: ExerciseSet) => {
+      if (!canFastAssignGotowiec(set)) return;
+      setGotowiecFastPath(true);
+      setPendingGotowiecStep(nextWizardStepAfterGotowiecSelect(steps, 'select-set'));
+    },
+    [steps]
+  );
+
   // Queries - load sets if needed (from-patient mode, no preselected set, or user navigates to select-set step)
   const needsSets = !isEditMode && (mode === 'from-patient' || !preselectedSet || currentStep === 'select-set');
-  const { data: setsData, loading: loadingSets } = useQuery<OrganizationExerciseSetsResponse>(
+  const { data: setsData, loading: loadingOrgSets } = useQuery<OrganizationExerciseSetsResponse>(
     GET_ORGANIZATION_EXERCISE_SETS_QUERY,
     {
     variables: { organizationId },
     skip: !organizationId || !open || !needsSets,
     }
   );
+  const { data: fiziyoSetsData, loading: loadingFiziyoSets } = useQuery<FiziyoTemplateExerciseSetsResponse>(
+    GET_FIZIYO_TEMPLATE_EXERCISE_SETS_QUERY,
+    {
+      skip: !open || !needsSets,
+    }
+  );
+  const loadingSets = loadingOrgSets || loadingFiziyoSets;
 
   // Load patients if needed (from-set mode or no preselected patient)
   const needsPatients = !isEditMode && !preselectedPatient;
@@ -442,7 +471,7 @@ function AssignmentWizardContent({
     GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY,
     {
       variables: { exerciseSetId: effectiveSetId || '' },
-      skip: !effectiveSetId || !open,
+      skip: !effectiveSetId || !open || (selectedSet != null && isFiziyoVerifiedTemplate(selectedSet)),
     }
   );
 
@@ -490,115 +519,10 @@ function AssignmentWizardContent({
 
   // Process data - map all fields including sets, reps, duration from both mapping and exercise
   const exerciseSets: ExerciseSet[] = useMemo(() => {
-    return (setsData?.exerciseSets || []).map((set) => ({
-      id: set.id,
-      name: set.name,
-      description: set.description,
-      isActive: set.isActive,
-      isTemplate: set.isTemplate,
-      kind: set.kind,
-      templateSource: set.templateSource,
-      reviewStatus: set.reviewStatus,
-      sourceExerciseSetId: set.sourceExerciseSetId,
-      frequency: set.frequency as Frequency | undefined,
-      exerciseMappings: set.exerciseMappings?.map((m) => {
-        const mappingLoad =
-          buildStructuredLoad(m.load) ??
-          buildStructuredLoad({
-            loadWeightKg: m.load?.loadWeightKg,
-            loadSource: m.load?.loadSource,
-            type: m.loadType,
-            value: m.loadValue,
-            unit: m.loadUnit,
-            text: m.loadText,
-          });
-        const exerciseLoad =
-          buildStructuredLoad(m.exercise?.defaultLoad) ??
-          buildStructuredLoad({
-            loadWeightKg: m.exercise?.defaultLoad?.loadWeightKg,
-            loadSource: m.exercise?.defaultLoad?.loadSource,
-            type: m.exercise?.loadType,
-            value: m.exercise?.loadValue,
-            unit: m.exercise?.loadUnit,
-            text: m.exercise?.loadText,
-          });
-
-        return {
-        id: m.id,
-        exerciseId: m.exerciseId,
-        exerciseSetId: m.exerciseSetId,
-        order: m.order,
-        // Mapping-level overrides
-        sets: m.sets,
-        reps: m.reps,
-        duration: m.duration,
-        restSets: m.restSets,
-        restReps: m.restReps,
-        preparationTime: m.preparationTime,
-        executionTime: m.executionTime,
-        tempo: m.tempo,
-        load: mappingLoad,
-        loadType: m.loadType,
-        loadValue: m.loadValue,
-        loadUnit: m.loadUnit,
-        loadText: m.loadText,
-        notes: m.notes,
-        customName: m.customName,
-        customDescription: m.customDescription,
-        videoUrl: m.videoUrl,
-        imageUrl: m.imageUrl,
-        images: m.images,
-        // Exercise data with all fields (support both new and legacy names)
-        exercise: m.exercise
-          ? {
-              id: m.exercise.id,
-              name: m.exercise.name,
-              type: m.exercise.type,
-              // Support both new and legacy field names
-              description: m.exercise.patientDescription || m.exercise.description,
-              patientDescription: m.exercise.patientDescription,
-              clinicalDescription: m.exercise.clinicalDescription,
-              audioCue: m.exercise.audioCue,
-              rangeOfMotion: m.exercise.rangeOfMotion,
-              side: m.exercise.side,
-              exerciseSide: m.exercise.side?.toLowerCase() || m.exercise.exerciseSide,
-              imageUrl: m.exercise.thumbnailUrl || m.exercise.imageUrl,
-              thumbnailUrl: m.exercise.thumbnailUrl,
-              images: m.exercise.images,
-              gifUrl: m.exercise.gifUrl,
-              videoUrl: m.exercise.videoUrl,
-              notes: m.exercise.notes,
-              // Exercise default values (support both new and legacy names)
-              sets: m.exercise.defaultSets ?? m.exercise.sets,
-              reps: m.exercise.defaultReps ?? m.exercise.reps,
-              duration: m.exercise.defaultDuration ?? m.exercise.duration,
-              restSets: m.exercise.defaultRestBetweenSets ?? m.exercise.restSets,
-              restReps: m.exercise.defaultRestBetweenReps ?? m.exercise.restReps,
-              preparationTime: m.exercise.preparationTime,
-              executionTime: m.exercise.defaultExecutionTime ?? m.exercise.executionTime,
-              tempo: m.exercise.tempo,
-              defaultLoad: exerciseLoad,
-              loadType: m.exercise.loadType,
-              loadValue: m.exercise.loadValue,
-              loadUnit: m.exercise.loadUnit,
-              loadText: m.exercise.loadText,
-              defaultSets: m.exercise.defaultSets,
-              defaultReps: m.exercise.defaultReps,
-              defaultDuration: m.exercise.defaultDuration,
-              defaultRestBetweenSets: m.exercise.defaultRestBetweenSets,
-              defaultRestBetweenReps: m.exercise.defaultRestBetweenReps,
-              defaultExecutionTime: m.exercise.defaultExecutionTime,
-              mainTags: m.exercise.mainTags,
-              additionalTags: m.exercise.additionalTags,
-              difficultyLevel: m.exercise.difficultyLevel,
-              scope: m.exercise.scope,
-              status: m.exercise.status,
-            }
-          : undefined,
-      };
-      }),
-    }));
-  }, [setsData]);
+    const organizationSets = (setsData?.exerciseSets || []).map(mapRawSetToWizardSet);
+    const fiziyoSets = (fiziyoSetsData?.fiziyoTemplateExerciseSets || []).map(mapRawSetToWizardSet);
+    return mergeTemplateSets(organizationSets, fiziyoSets);
+  }, [setsData, fiziyoSetsData]);
 
   const assignableSourceSets = useMemo(
     () => exerciseSets.filter((set) => set.kind === 'TEMPLATE' || set.isTemplate === true),
@@ -1055,6 +979,15 @@ function AssignmentWizardContent({
     animationKey.current += 1;
     setCurrentStep(step);
   };
+
+  useEffect(() => {
+    if (!pendingGotowiecStep) return;
+    if (!selectedSet || builderInstances.length === 0) return;
+    goToStep(pendingGotowiecStep);
+    setPendingGotowiecStep(null);
+    // goToStep closes over currentStep; only re-run when the skip target is ready.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- skip once after gotowiec seed
+  }, [pendingGotowiecStep, selectedSet, builderInstances.length]);
 
   const goNext = useCallback(() => {
     const currentIndex = steps.findIndex((s) => s.id === currentStep);
@@ -1563,18 +1496,23 @@ function AssignmentWizardContent({
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if user is typing in an input
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-        return;
-      }
+      const isPrimaryShortcut = (e.metaKey || e.ctrlKey) && e.key === 'Enter';
+      const isPlainEnter = e.key === 'Enter' && !e.shiftKey && !e.metaKey && !e.ctrlKey;
+      const targetIsField = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement;
 
-      if (e.key === 'Enter' && !e.shiftKey && canProceed()) {
+      if (isPrimaryShortcut || (isPlainEnter && !targetIsField)) {
+        if (!canProceed()) return;
         e.preventDefault();
         if (isLastStep) {
           handleSubmitRef.current();
         } else {
           goNext();
         }
+        return;
+      }
+
+      if (targetIsField) {
+        return;
       }
 
       if (e.key === 'Backspace' && !isFirstStep) {
@@ -1596,6 +1534,8 @@ function AssignmentWizardContent({
             exerciseSets={assignableSourceSets}
             selectedSet={selectedSet}
             onSelectSet={handleSetChange}
+            onSelectGotowiec={handleGotowiecChosen}
+            highlightGotowce={intent === 'gotowiec' || gotowiecFastPath}
             assignedSets={assignedSets}
             onUnassign={(assignmentId, setName) => handleUnassignRequest(assignmentId, setName, 'set')}
             loading={loadingSets}
@@ -1690,7 +1630,8 @@ function AssignmentWizardContent({
             saveAsTemplate={saveAsOrganizationSet}
             onSaveAsTemplateChange={setSaveAsOrganizationSet}
             onGoToStep={goToStep}
-              editMode={isEditMode}
+            editMode={isEditMode}
+            gotowiecFastPath={gotowiecFastPath}
           />
         );
       }

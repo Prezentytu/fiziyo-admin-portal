@@ -22,6 +22,22 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-09-19 - data-testid musi być w pierwszych liniach tagu
+
+- **Kategoria**: `Testing` | `UI/UX`
+- **Problem**: `check:testids` zgłaszał `PatientExpandableCard` mimo atrybutu `data-testid` na przycisku.
+- **Przyczyna**: Skaner scala max 12 linii otwierającego tagu; handlery `onClick` wypchnęły atrybut poza okno.
+- **Rozwiązanie**: `data-testid` tuż pod `<button`.
+- **Reguła**: Jeśli `check:testids` nie widzi testid, zawsze wstaw `data-testid` w pierwszych liniach tagu, nie po handlerach.
+
+### 2026-09-19 - Gotowce FiziYo nie są w query organizacji
+
+- **Kategoria**: `GraphQL` | `UI/UX`
+- **Problem**: Wizard ładował tylko `exerciseSets(organizationId)`, więc katalog `FIZIYO_VERIFIED` był niewidoczny; terapeuta musiał personalizować każdy zestaw.
+- **Przyczyna**: Istniejąca query `fiziyoTemplateExerciseSets` nie była wołana z portalu; tagi ćwiczeń są ukryte (`HIDE_EXERCISE_TAGS`).
+- **Rozwiązanie**: Merge obu list, kafelek gotowca + filtr przypadku z nazwy/opisu, skip customize/schedule, CTA na wierszu pacjenta.
+- **Reguła**: Jeśli szablon FiziYo ma być na liście przypisania, zawsze wołaj `fiziyoTemplateExerciseSets` obok query org; przypadku szukaj w nazwie/opisie, nie w ukrytej taksonomii.
+
 ### 2026-09-17 - VERCEL_TEAM_ID slug nie może iść jako teamId
 
 - **Kategoria**: `Build/Tooling`

@@ -27,7 +27,8 @@ Wizard można uruchomić z trzech miejsc:
 
 | Miejsce                                         | Tryb         | Co jest predefiniowane      |
 | ----------------------------------------------- | ------------ | --------------------------- |
-| **Strona pacjenta** → "Personalizuj i przypisz" | from-patient | Pacjent jest już wybrany    |
+| **Lista / karta pacjenta** → "Przypisz gotowiec"     | from-patient | Pacjent + `intent=gotowiec` |
+| **Strona pacjenta** → "Personalizuj i przypisz"      | from-patient | Pacjent jest już wybrany    |
 | **Strona zestawu** → "Personalizuj i przypisz"  | from-set     | Zestaw jest już wybrany     |
 | **Dashboard** → "Personalizuj i przypisz"       | from-patient | Nic nie jest predefiniowane |
 
@@ -233,6 +234,14 @@ Ten krok określa także tryb końcowy:
 ---
 
 ## Przykładowe scenariusze użycia
+
+### Scenariusz 0: Gotowiec (≤3 kroki)
+
+1. Fizjo tworzy pacjenta albo klika „Przypisz gotowiec” na wierszu
+2. Wybiera kafelek szablonu FiziYo (filtr przypadku opcjonalny)
+3. Potwierdza na podsumowaniu (parametry i harmonogram ze szablonu; edycja zwinięta)
+
+**Czas:** kilka kliknięć. Always-fork bez zmian: powstaje `PATIENT_PLAN`.
 
 ### Scenariusz 1: Standardowe przypisanie
 

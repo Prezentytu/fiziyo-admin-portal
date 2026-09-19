@@ -14,7 +14,7 @@ Moduł pacjentów: lista, profil, przypisania zestawów, status Premium.
 
 ### Punkt wejścia do Assignment Wizard
 
-Ze strony pacjenta: przycisk "Przypisz zestaw" otwiera wizard z predefiniowanym pacjentem (tryb `from-patient`).
+Ze strony pacjenta: przycisk "Przypisz gotowiec" otwiera wizard z `intent=gotowiec` (szablony FiziYo na górze). "Personalizuj i przypisz" zostaje pełnym flow.
 
 ### Premium status
 
