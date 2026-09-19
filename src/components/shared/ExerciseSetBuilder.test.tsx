@@ -103,7 +103,7 @@ describe('ExerciseSetBuilder description field', () => {
 describe('ExerciseSetBuilder preview semantics', () => {
   it('keeps picker and repeated-instance controls unique under a custom prefix', async () => {
     const user = userEvent.setup();
-    const exercise = { id: 'exercise-1', name: 'Mostek', defaultSets: 3, defaultReps: 10 };
+    const exercise = { id: 'exercise-1', name: 'Mostek', defaultSets: 3, defaultReps: 10, scope: 'GLOBAL' };
     const onPreviewExercise = vi.fn();
     const onSelectedInstancesChange = vi.fn();
 
@@ -171,6 +171,7 @@ describe('ExerciseSetBuilder preview semantics', () => {
       imageUrl: '/image-1.jpg',
       defaultSets: 3,
       defaultReps: 10,
+      scope: 'GLOBAL',
     };
 
     render(
