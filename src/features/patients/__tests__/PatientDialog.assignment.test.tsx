@@ -149,3 +149,42 @@ describe('PatientDialog embedded assignment flow', () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 });
+
+describe('PatientDialog default success actions', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('pokazuje jedno główne CTA po dodaniu pacjenta i zostawia Zamknij', async () => {
+    const user = userEvent.setup();
+
+    mockCreatePatientMutation.mockResolvedValueOnce({
+      data: {
+        createShadowPatient: {
+          id: 'patient-created',
+          fullname: 'Anna Nowak',
+          email: 'anna@example.com',
+        },
+      },
+    });
+
+    render(
+      <PatientDialog
+        open={true}
+        onOpenChange={vi.fn()}
+        organizationId="org-1"
+        therapistId="therapist-1"
+      />
+    );
+
+    await user.click(screen.getByTestId('mock-create-patient-submit-btn'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Pacjent dodany!')).toBeInTheDocument();
+    });
+
+    expect(screen.getByTestId('patient-dialog-assign-btn')).toHaveTextContent('Personalizuj i przypisz');
+    expect(screen.getByTestId('patient-dialog-add-another-btn')).toHaveTextContent('Dodaj kolejnego pacjenta');
+    expect(screen.getByTestId('patient-dialog-close-btn')).toHaveTextContent('Zamknij');
+  });
+});

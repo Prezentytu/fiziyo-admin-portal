@@ -305,16 +305,13 @@ export function PatientDialog({
                 <p className="text-lg text-muted-foreground">{createdPatient.fullname}</p>
               </div>
 
-              {/* Next Steps */}
-
-              {/* Action Buttons */}
+              {/* Next Steps — one primary CTA; secondary actions stay available for batch add / E2E close */}
               <div
                 className={cn(
                   'flex flex-col gap-3',
                   showSuccessAnimation && 'animate-in fade-in slide-in-from-bottom-3 duration-300 delay-300'
                 )}
               >
-                {/* Primary Action - Assign Set */}
                 {embeddedMode !== 'assignment' && (
                   <Button
                     onClick={handleAssignSet}
@@ -326,27 +323,26 @@ export function PatientDialog({
                   </Button>
                 )}
 
-                {/* Secondary Action - Add Another */}
-                <Button
-                  variant="outline"
-                  onClick={handleAddAnother}
-                  className="w-full h-11 gap-2 hover:bg-surface-light transition-all duration-200"
-                  data-testid="patient-dialog-add-another-btn"
-                >
-                  <UserPlus2 className="h-4 w-4" />
-                  Dodaj kolejnego pacjenta
-                </Button>
-
-                {/* Tertiary Action - Close */}
-                <Button
-                  variant="ghost"
-                  onClick={handleClose}
-                  className="w-full gap-2 text-muted-foreground hover:text-foreground transition-all duration-200"
-                  data-testid="patient-dialog-close-btn"
-                >
-                  <X className="h-4 w-4" />
-                  Zamknij
-                </Button>
+                <div className="flex items-center justify-between gap-3">
+                  <Button
+                    variant="ghost"
+                    onClick={handleAddAnother}
+                    className="gap-2 text-muted-foreground hover:text-foreground"
+                    data-testid="patient-dialog-add-another-btn"
+                  >
+                    <UserPlus2 className="h-4 w-4" />
+                    Dodaj kolejnego pacjenta
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={handleClose}
+                    className="gap-2 text-muted-foreground hover:text-foreground"
+                    data-testid="patient-dialog-close-btn"
+                  >
+                    <X className="h-4 w-4" />
+                    Zamknij
+                  </Button>
+                </div>
               </div>
             </div>
           ) : (

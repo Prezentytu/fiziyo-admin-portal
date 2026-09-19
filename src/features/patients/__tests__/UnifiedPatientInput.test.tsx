@@ -29,7 +29,7 @@ vi.mock('sonner', () => ({
   },
 }));
 
-describe('UnifiedPatientInput manual submit', () => {
+describe('UnifiedPatientInput contact submit', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
@@ -72,15 +72,28 @@ describe('UnifiedPatientInput manual submit', () => {
     );
   }
 
-  it('does not trigger search automatically while typing', async () => {
+  it('does not trigger search automatically while the contact is still incomplete', async () => {
+    const user = userEvent.setup();
+    renderComponent();
+
+    await user.type(screen.getByTestId('patient-unified-input'), 'pacjent@');
+
+    const latestEmailOptions = getLastQueryOptions(FIND_USER_BY_EMAIL_QUERY);
+    expect(latestEmailOptions?.skip).toBe(true);
+    expect(latestEmailOptions?.variables?.email).toBe('');
+  });
+
+  it('auto-advances email search after a complete address', async () => {
     const user = userEvent.setup();
     renderComponent();
 
     await user.type(screen.getByTestId('patient-unified-input'), 'pacjent@example.com');
 
-    const latestEmailOptions = getLastQueryOptions(FIND_USER_BY_EMAIL_QUERY);
-    expect(latestEmailOptions?.skip).toBe(true);
-    expect(latestEmailOptions?.variables?.email).toBe('');
+    await waitFor(() => {
+      const latestEmailOptions = getLastQueryOptions(FIND_USER_BY_EMAIL_QUERY);
+      expect(latestEmailOptions?.skip).toBe(false);
+      expect(latestEmailOptions?.variables?.email).toBe('pacjent@example.com');
+    });
   });
 
   it('triggers email search only after clicking Next', async () => {
