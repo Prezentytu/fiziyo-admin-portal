@@ -254,7 +254,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
           <User className="h-8 w-8 text-muted-foreground" />
         </div>
         <p className="text-destructive">{userError ? `Błąd: ${userError.message}` : 'Nie znaleziono pacjenta'}</p>
-        <Button variant="outline" onClick={() => router.push('/patients')}>
+        <Button variant="outline" onClick={() => router.push('/patients')} data-testid="patient-detail-not-found-back-btn">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Wróć do listy
         </Button>
@@ -437,6 +437,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
               <a
                 href={`mailto:${patient.email}`}
                 className="flex items-center gap-1 hover:text-foreground transition-colors"
+                data-testid="patient-detail-email-link"
               >
                 <Mail className="h-3.5 w-3.5 shrink-0" />
                 {patient.email}
@@ -446,6 +447,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
               <a
                 href={`tel:${patient.contactData.phone}`}
                 className="flex items-center gap-1 hover:text-foreground transition-colors"
+                data-testid="patient-detail-phone-link"
               >
                 <Phone className="h-3.5 w-3.5 shrink-0" />
                 {patient.contactData.phone}

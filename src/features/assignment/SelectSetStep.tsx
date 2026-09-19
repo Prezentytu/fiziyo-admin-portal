@@ -173,6 +173,7 @@ export function SelectSetStep({
                   setSelectedMappingForDetails(null);
                 }}
                 className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                data-testid="assign-set-clear-selection-btn"
               >
                 Wyczyść wybór
               </button>
@@ -393,7 +394,13 @@ export function SelectSetStep({
                 {selectedToUnassign === previewSet.id && <Badge variant="destructive">Wybrany do odpisania</Badge>}
               </div>
               {selectedToUnassign === previewSet.id && onUnassign && (
-                <Button variant="destructive" size="sm" className="mt-3 w-full" onClick={handleUnassign}>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="mt-3 w-full"
+                  onClick={handleUnassign}
+                  data-testid="assign-set-unassign-btn"
+                >
                   <X className="h-4 w-4 mr-2" />
                   Odpisz ten zestaw od pacjenta
                 </Button>

@@ -328,6 +328,7 @@ export function PatientExpandableCard({
               }}
               className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
               title="Edytuj cel terapii"
+              data-testid={`patient-expandable-${patient.id}-edit-label-btn`}
             >
               <Badge variant="outline" className="text-[10px] px-2 py-0.5 gap-1 hover:bg-surface-light">
                 <Tag className="h-3 w-3" />

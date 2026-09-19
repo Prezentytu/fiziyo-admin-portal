@@ -428,7 +428,13 @@ export default function PatientsPage() {
           <Badge variant="secondary" className="text-xs">
             {filteredPatients.length} z {filteredByType.length}
           </Badge>
-          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setSearchQuery('')}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 px-2 text-xs"
+            onClick={() => setSearchQuery('')}
+            data-testid="patient-search-clear-btn"
+          >
             Wyczyść wyszukiwanie
           </Button>
         </div>
