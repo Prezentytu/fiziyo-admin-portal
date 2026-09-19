@@ -53,7 +53,7 @@ export function tryBuildPatientConnectUrl(
 ): string | null {
   const patientId = params?.patientId;
   const organizationId = params?.organizationId;
-  if (!patientId?.trim() || !organizationId?.trim()) return null;
+  if (!params || !patientId?.trim() || !organizationId?.trim()) return null;
   try {
     return buildPatientConnectUrl({
       patientId,

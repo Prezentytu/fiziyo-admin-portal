@@ -39,6 +39,7 @@ interface ExerciseMapping {
   duration?: number;
   restSets?: number;
   restReps?: number;
+  executionTime?: number;
   notes?: string;
   customName?: string;
   customDescription?: string;
@@ -57,6 +58,7 @@ interface ExerciseMapping {
     defaultSets?: number;
     defaultReps?: number;
     defaultDuration?: number;
+    defaultExecutionTime?: number;
     defaultRestBetweenSets?: number;
     defaultRestBetweenReps?: number;
     sets?: number;
