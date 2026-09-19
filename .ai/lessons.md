@@ -22,6 +22,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-09-19 - data-testid musi być w pierwszych liniach tagu
+
+- **Kategoria**: `Testing` | `UI/UX`
+- **Problem**: `check:testids` zgłaszał `PatientExpandableCard` mimo atrybutu `data-testid` na przycisku.
+- **Przyczyna**: Skaner scala max 12 linii otwierającego tagu; handlery `onClick` wypchnęły atrybut poza okno.
+- **Rozwiązanie**: `data-testid` tuż pod `<button`.
+- **Reguła**: Jeśli `check:testids` nie widzi testid, zawsze wstaw `data-testid` w pierwszych liniach tagu, nie po handlerach.
+
 ### 2026-09-19 - Gotowce FiziYo nie są w query organizacji
 
 - **Kategoria**: `GraphQL` | `UI/UX`
