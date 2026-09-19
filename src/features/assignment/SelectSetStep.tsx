@@ -2,7 +2,7 @@
 
 import { useState, type MouseEvent } from 'react';
 import Image from 'next/image';
-import { Search, FolderKanban, Check, Dumbbell, ChevronRight, X, Plus, Loader2 } from 'lucide-react';
+import { Search, FolderKanban, Check, Dumbbell, ChevronRight, X, Plus, Loader2, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +12,14 @@ import { cn } from '@/lib/utils';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { ExerciseDetailsDialog } from './ExerciseDetailsDialog';
 import { filterSetsByQuery, sortSetsForSelection } from './utils/selectSetStepUtils';
+import {
+  availableClinicalCases,
+  canFastAssignGotowiec,
+  clinicalCasesForSet,
+  exerciseCount,
+  filterGotowce,
+  partitionAssignableSets,
+} from './utils/gotowiecTemplates';
 import type { ExerciseSet, AssignedSetInfo, ExerciseMapping } from './types';
 
 interface SelectSetStepProps {
@@ -25,6 +33,8 @@ interface SelectSetStepProps {
   onCreateSet?: (searchQuery?: string) => void | Promise<void>;
   isCreatingSet?: boolean;
   patientName?: string;
+  onSelectGotowiec?: (set: ExerciseSet) => void;
+  highlightGotowce?: boolean;
 }
 
 export function SelectSetStep({
@@ -38,8 +48,11 @@ export function SelectSetStep({
   onCreateSet,
   isCreatingSet = false,
   patientName,
+  onSelectGotowiec,
+  highlightGotowce = false,
 }: Readonly<SelectSetStepProps>) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [caseFilter, setCaseFilter] = useState<string | null>(null);
   const [previewSet, setPreviewSet] = useState<ExerciseSet | null>(selectedSet);
   const [selectedToUnassign, setSelectedToUnassign] = useState<string | null>(null);
   const [selectedMappingForDetails, setSelectedMappingForDetails] = useState<ExerciseMapping | null>(null);
@@ -47,7 +60,10 @@ export function SelectSetStep({
   // Create a map for quick lookup of assigned sets
   const assignedSetsMap = new Map(assignedSets.map((a) => [a.exerciseSetId, a]));
 
-  const filteredSets = filterSetsByQuery(exerciseSets, searchQuery);
+  const { gotowce, otherTemplates } = partitionAssignableSets(exerciseSets);
+  const caseChips = availableClinicalCases(gotowce);
+  const filteredGotowce = filterGotowce(gotowce, searchQuery, caseFilter);
+  const filteredSets = filterSetsByQuery(otherTemplates, searchQuery);
   const sortedSets = sortSetsForSelection(filteredSets, assignedSets);
 
   const availableCount = exerciseSets.filter((set) => !assignedSetsMap.has(set.id)).length;
@@ -77,6 +93,16 @@ export function SelectSetStep({
     }
   };
 
+  const handleGotowiecClick = (set: ExerciseSet) => {
+    setSelectedToUnassign(null);
+    setPreviewSet(set);
+    setSelectedMappingForDetails(null);
+    onSelectSet(set);
+    if (canFastAssignGotowiec(set)) {
+      onSelectGotowiec?.(set);
+    }
+  };
+
   const handleUnassign = () => {
     if (!selectedToUnassign) return;
     const assignmentInfo = assignedSetsMap.get(selectedToUnassign);
@@ -103,13 +129,33 @@ export function SelectSetStep({
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Szukaj zestawów..."
+              placeholder="Szukaj zestawów lub przypadku..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 h-11"
               data-testid="assign-set-search"
             />
           </div>
+          {caseChips.length > 0 && (
+            <div className="flex flex-wrap gap-1.5" data-testid="set-gotowiec-case-row">
+              {caseChips.map((chip) => (
+                <button
+                  key={chip.id}
+                  type="button"
+                  onClick={() => setCaseFilter((current) => (current === chip.id ? null : chip.id))}
+                  className={cn(
+                    'rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
+                    caseFilter === chip.id
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground'
+                  )}
+                  data-testid={`set-gotowiec-case-${chip.id}`}
+                >
+                  {chip.label}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="flex items-center justify-between">
             <p className="text-xs text-muted-foreground">
               {availableCount} dostępnych
@@ -141,6 +187,61 @@ export function SelectSetStep({
             </div>
           ) : (
             <div className="p-3 pr-4 space-y-2">
+              <div
+                className={cn(
+                  'rounded-xl border p-3 space-y-2',
+                  highlightGotowce ? 'border-primary/40 bg-primary/5' : 'border-border bg-card'
+                )}
+                data-testid="set-gotowiec-section"
+              >
+                <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  Gotowce FiziYo
+                </div>
+                {filteredGotowce.length === 0 ? (
+                  <p className="text-xs text-muted-foreground" data-testid="set-gotowiec-empty">
+                    {gotowce.length === 0
+                      ? 'Brak gotowców FiziYo w katalogu'
+                      : 'Żaden gotowiec nie pasuje do filtra'}
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {filteredGotowce.map((set) => {
+                      const isSelected = selectedSet?.id === set.id;
+                      const cases = clinicalCasesForSet(set);
+                      return (
+                        <button
+                          key={set.id}
+                          type="button"
+                          onClick={() => handleGotowiecClick(set)}
+                          className={cn(
+                            'rounded-lg border p-3 text-left transition-colors',
+                            isSelected
+                              ? 'border-primary bg-primary/10'
+                              : 'border-border bg-surface hover:border-primary/40 hover:bg-surface-light'
+                          )}
+                          data-testid={`set-gotowiec-tile-${set.id}`}
+                        >
+                          <p className="font-semibold text-sm text-foreground line-clamp-2">{set.name}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {exerciseCount(set)} ćwiczeń
+                          </p>
+                          {cases.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {cases.map((chip) => (
+                                <Badge key={chip.id} variant="secondary" className="text-[10px]">
+                                  {chip.label}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
               {/* Phantom Set - Karta "Stwórz nowy" */}
               {onCreateSet && (
                 <div
@@ -171,7 +272,7 @@ export function SelectSetStep({
               )}
 
               {/* Empty state */}
-              {sortedSets.length === 0 && (
+              {sortedSets.length === 0 && filteredGotowce.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-12 text-center px-4">
                   <FolderKanban className="h-12 w-12 text-muted-foreground/50 mb-3" />
                   <p className="text-sm font-medium text-foreground mb-1">

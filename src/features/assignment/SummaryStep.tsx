@@ -27,6 +27,7 @@ interface SummaryStepProps {
   onSaveAsTemplateChange: (value: boolean) => void;
   onGoToStep?: (step: 'select-set' | 'customize-set' | 'select-patients' | 'schedule') => void;
   editMode?: boolean;
+  gotowiecFastPath?: boolean;
 }
 
 // Helper: Oblicz łączny czas zestawu
@@ -75,6 +76,7 @@ export function SummaryStep({
   onSaveAsTemplateChange,
   onGoToStep,
   editMode = false,
+  gotowiecFastPath = false,
 }: SummaryStepProps) {
   const { user } = useUser();
   const { currentOrganization } = useOrganization();
@@ -194,12 +196,13 @@ export function SummaryStep({
             {/* Edytuj - powrót do kroku 1 */}
             {onGoToStep && (
               <button
-                data-testid="summary-edit-exercises-btn"
-                onClick={() => onGoToStep(editMode ? 'customize-set' : 'select-set')}
+                type="button"
+                data-testid={gotowiecFastPath ? 'set-gotowiec-customize-btn' : 'summary-edit-exercises-btn'}
+                onClick={() => onGoToStep(gotowiecFastPath || editMode ? 'customize-set' : 'select-set')}
                 className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1.5 transition-colors"
               >
                 <Pencil className="h-3 w-3" />
-                Edytuj
+                {gotowiecFastPath ? 'Dostosuj podstawowe parametry' : 'Edytuj'}
               </button>
             )}
           </div>

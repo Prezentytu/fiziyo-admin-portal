@@ -12,13 +12,13 @@ Kroki są dynamiczne zależnie od punktu wejścia:
 - `from-patient` z preselected pacjentem i bez preselected zestawu: `select-set -> customize-set -> schedule -> summary`
 - `from-patient` bez preselected pacjenta (dashboard): `select-set -> customize-set -> select-patients -> schedule -> summary`
 
-`customize-set` jest zawsze obecny i nie jest opcjonalny.
+`customize-set` jest zawsze w indicatorze kroków. Na ścieżce gotowca (`intent=gotowiec` albo kafelek `FIZIYO_VERIFIED`) wizard pomija `customize-set` i `schedule`, skacząc do `summary` (albo `select-patients`). Edycja parametrów wraca przyciskiem „Dostosuj podstawowe parametry”.
 
 ## Model danych i intencja UX
 
 - Użytkownik wybiera zestaw źródłowy (lub tworzy od zera).
 - Użytkownik personalizuje nazwę planu i **wszystkie** parametry ćwiczenia (`cardSurface="patientPlan"`).
-- Dawkowanie (sets/reps/tempo/load/…) → mapping `PATIENT_PLAN`.
+- Parametry ćwiczenia (sets/reps/tempo/load/…) → mapping `PATIENT_PLAN`.
 - side / ROM / difficulty / opisy / audioCue / enrichment → JSON `exerciseOverrides` po `assign` (SPEC-021/024).
 - Seed z zestawu źródłowego: `seedBuilderParamsFromMapping` (w tym `mapping.overridesJson` + `enrichment` z TEMPLATE — SPEC-023/024).
 - Instrukcje dla pacjenta edytuj w karcie (`ExercisePatientContentFields`) — nie klonuj sekcji enrichment lokalnie.
@@ -48,7 +48,8 @@ Wyszukiwarka + Enter dodaje ćwiczenia do planu pacjenta.
 
 | Miejsce                                     | Tryb         | Predefiniowane |
 | ------------------------------------------- | ------------ | -------------- |
-| Strona pacjenta → "Personalizuj i przypisz" | from-patient | Pacjent        |
+| Strona pacjenta → "Przypisz gotowiec"              | from-patient | Pacjent + `intent=gotowiec` |
+| Strona pacjenta → "Personalizuj i przypisz"        | from-patient | Pacjent                     |
 | Strona zestawu → "Personalizuj i przypisz"  | from-set     | Zestaw         |
 | Dashboard → "Personalizuj i przypisz"       | from-patient | Nic            |
 
@@ -56,6 +57,7 @@ Wyszukiwarka + Enter dodaje ćwiczenia do planu pacjenta.
 
 - `utils/assignmentWizardUtils.ts` — `canProceed` i logika przejść
 - `utils/selectSetStepUtils.ts` — filtrowanie/sortowanie w kroku wyboru zestawu
+- `utils/gotowiecTemplates.ts` — filtr/match przypadku i skip kroków gotowca
 - `types.ts` — domena + `getWizardSteps`
 - komponenty kroków i dialogi sukcesu obok siebie w `src/features/assignment/`
 
@@ -71,7 +73,7 @@ Wyszukiwarka + Enter dodaje ćwiczenia do planu pacjenta.
 
 ## Referencje
 
-- Specyfikacja: [SPEC-001 Assignment Wizard](../../../.ai/specs/SPEC-001-2026-02-04-assignment-wizard.md)
+- Specyfikacja: [SPEC-001 Assignment Wizard](../../../.ai/specs/SPEC-001-2026-02-04-assignment-wizard.md), [SPEC-029 Gotowce](../../../.ai/specs/SPEC-029-2026-09-19-gotowce.md)
 - Dokumentacja: `docs/assignment-wizard-overview.md`
 - Mapa data-testid: `docs/testing/data-testid-map.md`
 

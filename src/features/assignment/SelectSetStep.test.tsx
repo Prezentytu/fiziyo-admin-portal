@@ -78,3 +78,68 @@ describe('SelectSetStep details flow', () => {
   });
 });
 
+describe('SelectSetStep gotowce', () => {
+  function createGotowiec(): ExerciseSet {
+    return {
+      id: 'gotowiec-1',
+      name: 'Kolano skoczka',
+      description: 'Gotowiec FiziYo',
+      kind: 'TEMPLATE',
+      isTemplate: true,
+      templateSource: 'FIZIYO_VERIFIED',
+      exerciseMappings: [
+        {
+          id: 'mapping-g1',
+          exerciseId: 'exercise-g1',
+          sets: 3,
+          reps: 10,
+          exercise: { id: 'exercise-g1', name: 'Przysiad' },
+        },
+      ],
+    };
+  }
+
+  it('renders FiziyoVerified tiles and clinical case chips', () => {
+    render(
+      <SelectSetStep
+        exerciseSets={[createGotowiec(), createExerciseSet()]}
+        selectedSet={null}
+        onSelectSet={() => {}}
+      />
+    );
+
+    expect(screen.getByTestId('set-gotowiec-section')).toBeInTheDocument();
+    expect(screen.getByTestId('set-gotowiec-tile-gotowiec-1')).toHaveTextContent('Kolano skoczka');
+    expect(screen.getByTestId('set-gotowiec-case-kolano')).toHaveTextContent('Kolano');
+  });
+
+  it('calls onSelectGotowiec when a verified tile is clicked', async () => {
+    const user = userEvent.setup();
+    const onSelectSet = vi.fn();
+    const onSelectGotowiec = vi.fn();
+    const gotowiec = createGotowiec();
+
+    render(
+      <SelectSetStep
+        exerciseSets={[gotowiec]}
+        selectedSet={null}
+        onSelectSet={onSelectSet}
+        onSelectGotowiec={onSelectGotowiec}
+      />
+    );
+
+    await user.click(screen.getByTestId('set-gotowiec-tile-gotowiec-1'));
+
+    expect(onSelectSet).toHaveBeenCalledWith(gotowiec);
+    expect(onSelectGotowiec).toHaveBeenCalledWith(gotowiec);
+  });
+
+  it('shows empty copy when no FiziyoVerified templates exist', () => {
+    render(
+      <SelectSetStep exerciseSets={[createExerciseSet()]} selectedSet={null} onSelectSet={() => {}} />
+    );
+
+    expect(screen.getByTestId('set-gotowiec-empty')).toHaveTextContent('Brak gotowców FiziYo w katalogu');
+  });
+});
+

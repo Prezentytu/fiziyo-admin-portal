@@ -38,7 +38,7 @@ const hasSubscriptionIssue = (patient: Patient): boolean => {
   const daysUntilExpiry = Math.floor((expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   return daysUntilExpiry <= 7; // Expiring within 7 days or already expired
 };
-import type { Patient as AssignmentPatient } from '@/features/assignment/types';
+import type { AssignmentWizardIntent, Patient as AssignmentPatient } from '@/features/assignment/types';
 import { cn } from '@/lib/utils';
 
 import { GET_ORGANIZATION_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
@@ -60,6 +60,7 @@ export default function PatientsPage() {
   const [patientFilter, setPatientFilter] = useState<TherapyFilterType>('my');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [assignIntent, setAssignIntent] = useState<AssignmentWizardIntent>('default');
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [unassigningPatient, setUnassigningPatient] = useState<Patient | null>(null);
   const [removingFromOrgPatient, setRemovingFromOrgPatient] = useState<Patient | null>(null);
@@ -193,6 +194,13 @@ export default function PatientsPage() {
   });
 
   const handleAssignSet = (patient: Patient) => {
+    setAssignIntent('default');
+    setSelectedPatient(patient);
+    setIsAssignDialogOpen(true);
+  };
+
+  const handleAssignGotowiec = (patient: Patient) => {
+    setAssignIntent('gotowiec');
     setSelectedPatient(patient);
     setIsAssignDialogOpen(true);
   };
@@ -464,6 +472,7 @@ export default function PatientsPage() {
               key={patient.id}
               patient={patient}
               onAssignSet={handleAssignSet}
+              onAssignGotowiec={handleAssignGotowiec}
               onShowQR={handleShowQR}
               onUnassign={(p) => setUnassigningPatient(p)}
               onRemoveFromOrganization={(p) => setRemovingFromOrgPatient(p)}
@@ -494,15 +503,18 @@ export default function PatientsPage() {
             setIsAssignDialogOpen(open);
             if (!open) {
               setSelectedPatient(null);
+              setAssignIntent('default');
             }
           }}
           mode="from-patient"
           preselectedPatient={wizardPatient}
           organizationId={organizationId}
           therapistId={therapistId}
+          intent={assignIntent}
           onSuccess={() => {
             setIsAssignDialogOpen(false);
             setSelectedPatient(null);
+            setAssignIntent('default');
           }}
         />
       )}

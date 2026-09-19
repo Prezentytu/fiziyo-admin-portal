@@ -64,6 +64,18 @@ export interface ExerciseSetWithAssignmentsQueryData {
   } | null;
 }
 
+export interface FiziyoTemplateExerciseSetsQueryData {
+  fiziyoTemplateExerciseSets: Array<{
+    id: string;
+    name?: string | null;
+    description?: string | null;
+    isTemplate?: boolean | null;
+    kind?: 'TEMPLATE' | 'PATIENT_PLAN' | null;
+    templateSource?: 'FIZIYO_VERIFIED' | 'ORGANIZATION_PRIVATE' | 'ORG_PRIVATE' | null;
+    exerciseMappings?: unknown;
+  }>;
+}
+
 export interface PatientClinicalNotesQueryData {
   patientClinicalNotes: ClinicalNote[];
 }

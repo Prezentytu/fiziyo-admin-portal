@@ -19,6 +19,7 @@ import {
   Send,
   QrCode,
   User,
+  Sparkles,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -55,7 +56,7 @@ import type { OrganizationPatientsResponse, UserByIdResponse } from '@/types/apo
 
 // Dialogs
 import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
-import type { AssignmentEditInput, Patient as AssignmentPatient } from '@/features/assignment/types';
+import type { AssignmentEditInput, AssignmentWizardIntent, Patient as AssignmentPatient } from '@/features/assignment/types';
 import { EditExerciseOverrideDialog } from '@/features/patients/EditExerciseOverrideDialog';
 import { AddExerciseToPatientDialog } from '@/features/patients/AddExerciseToPatientDialog';
 import { ExercisePreviewDrawer } from '@/features/patients/ExercisePreviewDrawer';
@@ -79,6 +80,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
 
   // Dialog states
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [assignIntent, setAssignIntent] = useState<AssignmentWizardIntent>('default');
   const [isQRCodeDialogOpen, setIsQRCodeDialogOpen] = useState(false);
   const [isEditPatientOpen, setIsEditPatientOpen] = useState(false);
   const [editingPlanAssignment, setEditingPlanAssignment] = useState<PatientAssignment | null>(null);
@@ -310,6 +312,11 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
     setExtendingAssignment(assignment);
   };
 
+  const openAssignWizard = (intent: AssignmentWizardIntent) => {
+    setAssignIntent(intent);
+    setIsAssignDialogOpen(true);
+  };
+
   const assignmentsSectionContent = (() => {
     if (assignmentsLoading) {
       return (
@@ -326,9 +333,13 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
             <EmptyState
               icon={FolderKanban}
               title="Brak przypisanych zestawów"
-              description="Personalizuj i przypisz zestaw ćwiczeń, aby pacjent mógł rozpocząć rehabilitację"
-              actionLabel="Personalizuj i przypisz"
-              onAction={() => setIsAssignDialogOpen(true)}
+              description="Przypisz gotowiec FiziYo albo spersonalizuj plan, aby pacjent mógł rozpocząć rehabilitację"
+              actionLabel="Przypisz gotowiec"
+              onAction={() => openAssignWizard('gotowiec')}
+              actionTestId="patient-detail-assign-gotowiec-empty-btn"
+              secondaryActionLabel="Personalizuj i przypisz"
+              onSecondaryAction={() => openAssignWizard('default')}
+              secondaryActionTestId="patient-detail-assign-btn-empty"
             />
           </CardContent>
         </Card>
@@ -469,25 +480,43 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
 
       {/* Hero Actions + Quick Stats */}
       <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12">
-        <button
-          onClick={() => setIsAssignDialogOpen(true)}
-          disabled={!organizationId || !therapistId}
-          className="group relative overflow-hidden rounded-2xl bg-linear-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 sm:col-span-1 lg:col-span-4"
-          data-testid="patient-detail-assign-btn"
-        >
-          <div className="absolute inset-0 bg-linear-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
-          <div className="relative flex items-center gap-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
-              <Send className="h-5 w-5 text-white" />
+        <div className="flex flex-col gap-3 sm:col-span-1 lg:col-span-4">
+          <button
+            onClick={() => openAssignWizard('gotowiec')}
+            disabled={!organizationId || !therapistId}
+            className="group relative overflow-hidden rounded-2xl bg-linear-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            data-testid="patient-detail-assign-gotowiec-btn"
+          >
+            <div className="absolute inset-0 bg-linear-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
+            <div className="relative flex items-center gap-4">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
+                <Sparkles className="h-5 w-5 text-white" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-base font-bold text-white">Przypisz gotowiec</h3>
+                <p className="text-sm text-white/70">Szablon FiziYo na przypadek</p>
+              </div>
+              <Plus className="h-5 w-5 text-white/60 group-hover:text-white transition-colors shrink-0" />
             </div>
-            <div className="min-w-0 flex-1">
-              <h3 className="text-base font-bold text-white">Personalizuj i przypisz</h3>
-              <p className="text-sm text-white/70">Program ćwiczeń</p>
+          </button>
+          <button
+            onClick={() => openAssignWizard('default')}
+            disabled={!organizationId || !therapistId}
+            className="group relative overflow-hidden rounded-2xl border border-border/20 bg-surface-elevated p-4 text-left transition-all duration-150 hover:border-primary/30 hover:bg-surface hover:shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            data-testid="patient-detail-assign-btn"
+          >
+            <div className="relative flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 shrink-0">
+                <Send className="h-4 w-4 text-primary" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-sm font-semibold text-foreground">Personalizuj i przypisz</h3>
+                <p className="text-xs text-muted-foreground">Program ćwiczeń od zera</p>
+              </div>
             </div>
-            <Plus className="h-5 w-5 text-white/60 group-hover:text-white transition-colors shrink-0" />
-          </div>
-        </button>
+          </button>
+        </div>
 
         <button
           onClick={() => setIsQRCodeDialogOpen(true)}
@@ -592,11 +621,15 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
       {organizationId && therapistId && patient && (
         <AssignmentWizard
           open={isAssignDialogOpen}
-          onOpenChange={setIsAssignDialogOpen}
+          onOpenChange={(open) => {
+            setIsAssignDialogOpen(open);
+            if (!open) setAssignIntent('default');
+          }}
           mode="from-patient"
           preselectedPatient={assignmentWizardPatient}
           organizationId={organizationId}
           therapistId={therapistId}
+          intent={assignIntent}
           onSuccess={() => refetchAssignments()}
         />
       )}
