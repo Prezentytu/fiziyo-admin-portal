@@ -413,6 +413,7 @@ export function AssignmentSuccessDialog({
                   size="sm"
                   onClick={() => setSelectedPatientIndex(index)}
                   className="shrink-0 h-8"
+                  data-testid={`assign-success-patient-${patient.id}`}
                 >
                   {patient.name}
                 </Button>

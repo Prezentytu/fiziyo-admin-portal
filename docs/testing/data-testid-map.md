@@ -506,6 +506,7 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `assign-success-qr`                     | Kod QR HTTPS pacjenta                     | `AssignmentSuccessDialog.tsx` |
 | `assign-success-qr-loading`             | Stan ładowania QR                         | `AssignmentSuccessDialog.tsx` |
 | `assign-success-copy-link-btn`          | Kopiuj link obok QR                       | `AssignmentSuccessDialog.tsx` |
+| `assign-success-patient-{id}`           | Przełącznik pacjenta przy QR              | `AssignmentSuccessDialog.tsx` |
 | `assign-summary-submit-btn`             | Utwórz plan i przypisz                    | `SummaryStep.tsx`             |
 
 ### 8. AI Chat (ai-)
@@ -607,6 +608,8 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `org-share-qr`                   | QR zaproszenia personelu | `ShareSheet.tsx`      |
 | `org-share-qr-loading`           | Pusty URL — spinner QR | `ShareSheet.tsx`        |
 | `org-share-copy-btn`             | Kopiuj link personelu | `ShareSheet.tsx`         |
+| `org-share-native-btn`           | Native share (mobile) | `ShareSheet.tsx`         |
+| `org-share-copy-url-btn`         | Kopiuj URL z podglądu | `ShareSheet.tsx`         |
 | `org-clinic-dialog`              | Dialog placówki       | `ClinicDialog.tsx`       |
 | `org-clinic-name-input`          | Nazwa placówki        | `ClinicDialog.tsx`       |
 | `org-clinic-address-input`       | Adres                 | `ClinicDialog.tsx`       |
@@ -665,6 +668,8 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `invite-qr-code`                        | QR HTTPS `/start?token=`                       | `PatientInviteDialog.tsx`  |
 | `invite-qr-loading`                     | Spinner przed tokenem                          | `PatientInviteDialog.tsx`  |
 | `invite-qr-copy-btn`                    | Kopiuj link obok QR zaproszenia                | `PatientInviteDialog.tsx`  |
+| `invite-cancel-btn`                     | Anuluj w tabie wysyłki                         | `PatientInviteDialog.tsx`  |
+| `invite-refresh-btn`                    | Odśwież listę zaproszeń                        | `PatientInvitesCard.tsx`   |
 
 ### 12. Ustawienia (settings-)
 

@@ -393,7 +393,7 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
                   </div>
 
                   <div className="flex items-center justify-between gap-3 border-t border-border/50 pt-4">
-                    <Button variant="outline" onClick={handleClose}>
+                    <Button variant="outline" onClick={handleClose} data-testid="invite-cancel-btn">
                       Anuluj
                     </Button>
                     <Button onClick={handleSendInvite} disabled={!sendMode || loading} data-testid="invite-send-btn">

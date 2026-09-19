@@ -220,6 +220,7 @@ export function ShareSheet({ url, organizationName, role, expiresAt, className }
               {shareOptions.map((option, index) => (
                 <button
                   key={option.name}
+                  data-testid={`org-share-${option.name.toLowerCase()}-btn`}
                   onClick={() => handleShareOption(option)}
                   className={cn(
                     'flex flex-col items-center justify-center gap-2 p-4 rounded-xl',
@@ -231,7 +232,6 @@ export function ShareSheet({ url, organizationName, role, expiresAt, className }
                     isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
                   )}
                   style={{ transitionDelay: `${100 + index * 40}ms` }}
-                  data-testid={`org-share-${option.name.toLowerCase()}-btn`}
                 >
                   <option.icon className="h-6 w-6" />
                   <span className="text-xs font-medium">{option.name}</span>
@@ -240,6 +240,7 @@ export function ShareSheet({ url, organizationName, role, expiresAt, className }
 
               {/* Copy link button */}
               <button
+                data-testid="org-share-copy-btn"
                 onClick={handleCopyLink}
                 className={cn(
                   'flex flex-col items-center justify-center gap-2 p-4 rounded-xl',
@@ -252,7 +253,6 @@ export function ShareSheet({ url, organizationName, role, expiresAt, className }
                   isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
                 )}
                 style={{ transitionDelay: `${100 + shareOptions.length * 40}ms` }}
-                data-testid="org-share-copy-btn"
               >
                 {copied ? <Check className="h-6 w-6" /> : <Copy className="h-6 w-6" />}
                 <span className="text-xs font-medium">{copied ? 'Skopiowano!' : 'Kopiuj link'}</span>
@@ -262,6 +262,7 @@ export function ShareSheet({ url, organizationName, role, expiresAt, className }
             {/* Native share button (mobile) */}
             {supportsNativeShare && (
               <Button
+                data-testid="org-share-native-btn"
                 onClick={handleNativeShare}
                 variant="outline"
                 size="sm"
@@ -289,6 +290,7 @@ export function ShareSheet({ url, organizationName, role, expiresAt, className }
         >
           <code className="flex-1 text-xs text-muted-foreground truncate font-mono">{url}</code>
           <button
+            data-testid="org-share-copy-url-btn"
             onClick={handleCopyLink}
             className={cn(
               'shrink-0 p-2 rounded-lg transition-all duration-200',
