@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useQuery } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { User, Building2, Eye, Settings, SlidersHorizontal } from 'lucide-react';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -21,12 +22,28 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
 import type { UserByClerkIdResponse, UserOrganizationsResponse, OrganizationByIdResponse } from '@/types/apollo';
 
+const SETTINGS_TABS = ['profile', 'organization', 'advanced', 'organizations', 'accessibility'] as const;
+
+function resolveSettingsTab(raw: string | null): string {
+  if (raw && SETTINGS_TABS.includes(raw as (typeof SETTINGS_TABS)[number])) {
+    return raw;
+  }
+  return 'profile';
+}
+
 export default function SettingsPage() {
   const { user: clerkUser } = useUser();
   const { currentOrganization, isLoading: orgContextLoading } = useOrganization();
   const { canManageOrganization, canImportCatalog } = useRoleAccess();
   const organizationId = currentOrganization?.organizationId;
-  const [activeTab, setActiveTab] = useState('profile');
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState(() => resolveSettingsTab(searchParams.get('tab')));
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    router.replace(`/settings?tab=${value}`, { scroll: false });
+  };
 
   // Get user data
   const {
@@ -112,7 +129,7 @@ export default function SettingsPage() {
     <div className="flex min-h-full -m-4 lg:-m-6 2xl:-m-8 bg-background">
       <Tabs
         value={activeTab}
-        onValueChange={setActiveTab}
+        onValueChange={handleTabChange}
         className="flex w-full overflow-hidden"
         orientation="vertical"
       >

@@ -47,6 +47,7 @@ import {
 import type { ExerciseExecutionCardData } from '@/components/shared/exercise';
 import { ColorBadge } from '@/components/shared/ColorBadge';
 import { filterExercisesBySource, countBySource } from '@/utils/exerciseSourceFilter';
+import { resolveCatalogEmptyCopy } from '@/utils/catalogEmptyState';
 import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
 import { buildExerciseLoadParamFields } from '@/utils/exerciseLoadMutation';
 import type { ExerciseSourceFilter } from '@/utils/exerciseSourceFilter';
@@ -518,7 +519,7 @@ export function ExerciseSetBuilder({
   createExerciseTestId = 'assignment-create-exercise-tile-btn',
 }: Readonly<ExerciseSetBuilderProps>) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [sourceFilter, setSourceFilter] = useState<ExerciseSourceFilter>('all');
+  const [sourceFilter, setSourceFilter] = useState<ExerciseSourceFilter>('fiziyo');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [instanceToRemove, setInstanceToRemove] = useState<string | null>(null);
 
@@ -817,11 +818,32 @@ export function ExerciseSetBuilder({
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
               ) : filteredExercises.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <Dumbbell className="h-12 w-12 text-muted-foreground/50 mb-4" />
-                  <p className="text-sm font-medium text-muted-foreground">
-                    {searchQuery ? 'Brak wyników wyszukiwania' : 'Brak ćwiczeń w tej kategorii'}
-                  </p>
+                <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
+                  <Dumbbell className="h-12 w-12 text-muted-foreground/50" />
+                  {(() => {
+                    const emptyCopy = resolveCatalogEmptyCopy({
+                      sourceFilter,
+                      isSearch: Boolean(searchQuery.trim()),
+                      fiziyoCount,
+                      ownCount: organizationCount,
+                    });
+                    return (
+                      <>
+                        <p className="text-sm font-medium text-foreground">{emptyCopy.title}</p>
+                        <p className="text-xs text-muted-foreground max-w-sm">{emptyCopy.description}</p>
+                        {emptyCopy.showBrowseCatalog ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            data-testid={`${testIdPrefix}-empty-browse-catalog-btn`}
+                            onClick={() => setSourceFilter('fiziyo')}
+                          >
+                            Przeglądaj katalog FiziYo
+                          </Button>
+                        ) : null}
+                      </>
+                    );
+                  })()}
                 </div>
               ) : (
                 <div className="space-y-6">

@@ -161,13 +161,26 @@ export interface ExportExercisesToCsvVariables {
 
 // Query do pobierania wszystkich dostępnych ćwiczeń dla organizacji
 // Obejmuje: organizacyjne, globalne i publiczne templates
+export const AVAILABLE_EXERCISES_LIST_TAKE = 500;
+
 export const GET_AVAILABLE_EXERCISES_QUERY = gql`
-  query GetAvailableExercises($organizationId: String!) {
-    availableExercises(organizationId: $organizationId) {
+  query GetAvailableExercises($organizationId: String!, $take: Int = 500) {
+    availableExercises(organizationId: $organizationId, take: $take) {
       ...ExerciseFullFragment
     }
   }
   ${EXERCISE_FULL_FRAGMENT}
+`;
+
+export const GET_CATALOG_HEALTH_QUERY = gql`
+  query GetCatalogHealth {
+    catalogHealth {
+      globalExercises
+      withVideo
+      withImage
+      verified
+    }
+  }
 `;
 
 // Query do pobierania tylko globalnych ćwiczeń

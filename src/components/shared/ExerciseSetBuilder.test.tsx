@@ -191,3 +191,35 @@ describe('ExerciseSetBuilder preview semantics', () => {
     expect(onPreviewExercise).toHaveBeenCalledWith(exercise);
   });
 });
+
+describe('ExerciseSetBuilder catalog default', () => {
+  it('starts on the FiziYo catalog filter', () => {
+    render(
+      <ExerciseSetBuilder
+        {...createProps({
+          availableExercises: [{ id: 'global-1', name: 'Przysiad FiziYo', scope: 'GLOBAL' }],
+        })}
+      />
+    );
+
+    expect(screen.getByTestId('set-builder-filter-fiziyo').className).toContain('border-violet/40');
+    expect(screen.getByText('Przysiad FiziYo')).toBeInTheDocument();
+  });
+
+  it('offers browse-catalog CTA when own-exercises filter is empty and globals exist', async () => {
+    const user = userEvent.setup();
+    render(
+      <ExerciseSetBuilder
+        {...createProps({
+          availableExercises: [{ id: 'global-1', name: 'Przysiad FiziYo', scope: 'GLOBAL' }],
+        })}
+      />
+    );
+
+    await user.click(screen.getByTestId('set-builder-filter-organization'));
+    expect(screen.getByTestId('set-builder-empty-browse-catalog-btn')).toHaveTextContent(
+      'Przeglądaj katalog FiziYo'
+    );
+    expect(screen.getByText('Nie masz jeszcze własnych ćwiczeń')).toBeInTheDocument();
+  });
+});
