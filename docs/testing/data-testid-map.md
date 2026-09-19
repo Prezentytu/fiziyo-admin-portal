@@ -229,6 +229,7 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | ------------------------------------------- | --------------------------------------- | -------------------------------- |
 | `exercise-page-title`                       | Tytuł strony                            | `exercises/page.tsx`             |
 | `exercise-search-input`                     | Wyszukiwarka                            | `exercises/page.tsx`             |
+| `exercise-search-clear-btn`                 | Wyczyść wyszukiwanie                    | `exercises/page.tsx`             |
 | `exercise-view-grid-btn`                    | Widok siatki                            | `exercises/page.tsx`             |
 | `exercise-view-list-btn`                    | Widok listy                             | `exercises/page.tsx`             |
 | `exercise-create-btn`                       | Dodaj ćwiczenie                         | `exercises/page.tsx`             |
