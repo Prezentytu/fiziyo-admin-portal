@@ -9,9 +9,14 @@ interface EmptyStateProps {
   actionLabel?: string;
   onAction?: () => void;
   actionLoading?: boolean;
+  actionTestId?: string;
   secondaryActionLabel?: string;
   onSecondaryAction?: () => void;
   secondaryActionLoading?: boolean;
+  secondaryActionTestId?: string;
+  tertiaryActionLabel?: string;
+  onTertiaryAction?: () => void;
+  tertiaryActionTestId?: string;
   className?: string;
 }
 
@@ -22,11 +27,17 @@ export function EmptyState({
   actionLabel,
   onAction,
   actionLoading = false,
+  actionTestId,
   secondaryActionLabel,
   onSecondaryAction,
   secondaryActionLoading = false,
+  secondaryActionTestId,
+  tertiaryActionLabel,
+  onTertiaryAction,
+  tertiaryActionTestId,
   className,
 }: EmptyStateProps) {
+  const hasActions = Boolean(actionLabel || secondaryActionLabel || tertiaryActionLabel);
   return (
     <div
       data-testid="common-empty-state"
@@ -37,18 +48,28 @@ export function EmptyState({
       </div>
       <h3 className="mb-1 text-lg font-semibold">{title}</h3>
       {description && <p className="mb-4 max-w-sm text-sm text-muted-foreground">{description}</p>}
-      {(actionLabel || secondaryActionLabel) && (
+      {hasActions && (
         <div className="flex flex-col sm:flex-row items-center gap-2">
           {actionLabel && onAction && (
-            <Button onClick={onAction} disabled={actionLoading}>
+            <Button onClick={onAction} disabled={actionLoading} data-testid={actionTestId}>
               {actionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {actionLabel}
             </Button>
           )}
           {secondaryActionLabel && onSecondaryAction && (
-            <Button variant="outline" onClick={onSecondaryAction} disabled={secondaryActionLoading}>
+            <Button
+              variant="outline"
+              onClick={onSecondaryAction}
+              disabled={secondaryActionLoading}
+              data-testid={secondaryActionTestId}
+            >
               {secondaryActionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {secondaryActionLabel}
+            </Button>
+          )}
+          {tertiaryActionLabel && onTertiaryAction && (
+            <Button variant="ghost" onClick={onTertiaryAction} data-testid={tertiaryActionTestId}>
+              {tertiaryActionLabel}
             </Button>
           )}
         </div>

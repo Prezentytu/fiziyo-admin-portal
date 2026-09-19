@@ -22,6 +22,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-09-19 - Pusta biblioteka nowej org nie może brzmieć „w przygotowaniu”
+
+- **Kategoria**: `UI/UX` | `GraphQL`
+- **Problem**: Po wipe K01 zobaczył pustą bazę i odpadł; default zakładka „Wszystkie” nie pokazywała Katalogu FiziYo jako pierwszego ekranu.
+- **Przyczyna**: `availableExercises` już zwraca Global bez sync, ale UI startowało od `all` / `organizationExercises`, a empty copy nie prowadziło do katalogu.
+- **Rozwiązanie**: Domyślny filtr `fiziyo`, empty CTA (`Przeglądaj katalog FiziYo` / `Utwórz ćwiczenie` / `Importuj paczkę`), `take: 500`, additive `catalogHealth`.
+- **Reguła**: Jeśli lista ćwiczeń nowej organizacji jest pusta, zawsze pokaż Katalog FiziYo i CTA bez „w przygotowaniu” / „on demand”.
+
 ### 2026-09-17 - VERCEL_TEAM_ID slug nie może iść jako teamId
 
 - **Kategoria**: `Build/Tooling`

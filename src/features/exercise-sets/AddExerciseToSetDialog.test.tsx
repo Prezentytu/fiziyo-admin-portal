@@ -102,7 +102,7 @@ describe('AddExerciseToSetDialog', () => {
             images: ['/image-1.jpg', '/image-2.jpg'],
             defaultSets: 3,
             defaultReps: 10,
-            scope: 'ORGANIZATION',
+            scope: 'GLOBAL',
           },
         ],
         exerciseTags: [],
