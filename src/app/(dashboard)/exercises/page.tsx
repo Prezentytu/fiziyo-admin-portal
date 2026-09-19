@@ -437,7 +437,13 @@ export default function ExercisesPage() {
               <Badge variant="secondary" className="text-xs">
                 {filteredExercises.length} z {totalCount}
               </Badge>
-              <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setSearchQuery('')}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-xs"
+                onClick={() => setSearchQuery('')}
+                data-testid="exercise-search-clear-btn"
+              >
                 Wyczyść wyszukiwanie
               </Button>
             </div>
