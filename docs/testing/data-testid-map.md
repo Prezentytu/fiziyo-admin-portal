@@ -477,6 +477,8 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `set-gotowiec-case-{id}`                | Chip przypadku klinicznego                | `SelectSetStep.tsx`           |
 | `set-gotowiec-empty`                    | Pusty stan gotowców                       | `SelectSetStep.tsx`           |
 | `set-gotowiec-customize-btn`            | Wróć do podstawowych parametrów           | `SummaryStep.tsx`             |
+| `assign-set-clear-selection-btn`        | Wyczyść wybór zestawu                     | `SelectSetStep.tsx`           |
+| `assign-set-unassign-btn`               | Odpisz zestaw od pacjenta                 | `SelectSetStep.tsx`           |
 | `assign-wizard-step-indicator`          | Wskaźnik kroków                           | `AssignmentWizard.tsx`        |
 | `assign-wizard-close-btn`               | Zamknij kreator                           | `AssignmentWizard.tsx`        |
 | `assign-wizard-back-btn`                | Wstecz                                    | `AssignmentWizard.tsx`        |
