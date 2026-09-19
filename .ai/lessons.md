@@ -22,6 +22,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-09-19 - Auto-advance kompletnego pola zdejmuje Dalej, którego klika E2E
+
+- **Kategoria**: `Testing` | `UI/UX`
+- **Problem**: Unit test bronił ręcznego Dalej, a Playwright klikał Dalej po `fill` emaila.
+- **Przyczyna**: Pominięcie kroku przy kompletnym kontakcie unmountuje przycisk używany przez Page Object.
+- **Rozwiązanie**: `shouldAutoAdvanceContact` + debounce; Dalej zostaje fallbackiem; PO czeka na Imię.
+- **Reguła**: Jeśli UI auto-przechodzi po kompletnym polu, Page Object czeka na następny stan zamiast klikać znikający Dalej.
+
 ### 2026-09-17 - VERCEL_TEAM_ID slug nie może iść jako teamId
 
 - **Kategoria**: `Build/Tooling`
