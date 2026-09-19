@@ -241,6 +241,17 @@ Bez zmian w `fizjo-app`.
 - Pacjent (iOS) nie tworzy pacjentów ani szablonów; postęp ogląda w apce, fizjo w panelu. Duplikat journal/progress jest problemem panelu, nie playera.
 - `SPEC-010` obiecuje parytet assignment admin ↔ mobile; dziś quick path jest tylko na mobile — to argument za opcją B, nie za dalszymi cięciami CRUD pacjenta.
 
-## Weryfikacja (uzupełniane po testach)
+## Weryfikacja
 
-Zobacz treść PR i odpowiedź koordynatora. Każde sprawdzenie: ✅ / ❌ / unverified.
+Co uruchomiłem (worktree `w5-klikniecia`, gałąź `cursor/k01-mniej-klikniec-a18f`):
+
+- `npx vitest run` 4 pliki (contact, UnifiedPatientInput, PatientDialog, PatientInviteDialog): **15 passed**
+- `eslint --max-warnings 0` na zmienionych plikach: **exit 0**
+- `npm run type-check`: **exit 0**
+- `npm run validate`: lint ✅, testids ✅, tsc ✅, vitest **127 plików / 624 testy** ✅; `next build` najpierw ❌ (Turbopack + symlink `node_modules` w worktree), potem ✅ po `cp -al` (nie zmiana kodu)
+- `fiziyo-tests`: `npm ci` ✅, `npm run lint` ✅, `npm run tsc:check` ✅
+- E2E na DEV / przeglądarka: **unverified** (brak DEV API)
+- backend `dotnet test`: nie dotyczy
+
+Nie wierzę, że pełny `npm run validate` jako jedna komenda po hardlinku został powtórzony — powtórzyłem tylko `npm run build`, bo testy i tsc już przeszły na tym samym commicie `e48a873`.
+
