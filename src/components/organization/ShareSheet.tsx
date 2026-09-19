@@ -197,8 +197,16 @@ export function ShareSheet({ url, organizationName, role, expiresAt, className }
                 'transition-all duration-500 delay-100',
                 isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
               )}
+              data-testid="org-share-qr"
             >
-              <QRCodeSVG value={url} size={160} level="M" bgColor="#ffffff" fgColor="#000000" />
+              {url.trim() ? (
+                <QRCodeSVG value={url} size={160} level="M" bgColor="#ffffff" fgColor="#000000" />
+              ) : (
+                <div
+                  className="flex h-[160px] w-[160px] items-center justify-center rounded-md bg-muted"
+                  data-testid="org-share-qr-loading"
+                />
+              )}
             </div>
             <p className="text-xs text-muted-foreground mt-3 text-center sm:text-left">Zeskanuj kod QR telefonem</p>
           </div>

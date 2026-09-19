@@ -32,6 +32,7 @@ import type { PatientInviteLink } from '@/types/revenue.types';
 import { PatientInviteDialog } from './PatientInviteDialog';
 import { ShareInviteButton } from './ShareInviteButton';
 import { cn } from '@/lib/utils';
+import { tryBuildPatientJoinUrl } from '@/lib/patientJoinUrl';
 
 // ========================================
 // Types
@@ -208,7 +209,7 @@ export function PatientInvitesCard({ organizationId, className }: PatientInvites
 // ========================================
 
 function InviteRow({ invite, onCancel }: { invite: PatientInviteLink; onCancel: () => void }) {
-  const fullUrl = `https://fiziyo.pl/start?token=${invite.token}`;
+  const fullUrl = tryBuildPatientJoinUrl(invite.token);
 
   // Calculate days until expiration
   const expiresAt = new Date(invite.expiresAt);
@@ -251,7 +252,7 @@ function InviteRow({ invite, onCancel }: { invite: PatientInviteLink; onCancel: 
 
         {invite.status === 'pending' && (
           <>
-            <ShareInviteButton url={fullUrl} patientName={invite.patientName} />
+            {fullUrl && <ShareInviteButton url={fullUrl} patientName={invite.patientName} />}
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

@@ -384,6 +384,13 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `set-frequency-day-{day}`                     | Dzień tygodnia                           | `FrequencyPicker.tsx`         |
 | `set-pdf-dialog`                              | Dialog PDF                               | `GeneratePDFDialog.tsx`       |
 | `set-pdf-download-btn`                        | Pobierz PDF                              | `GeneratePDFDialog.tsx`       |
+| `set-pdf-cancel-btn`                          | Anuluj PDF                               | `GeneratePDFDialog.tsx`       |
+| `set-pdf-view-full`                           | Tryb szczegółowy                         | `GeneratePDFDialog.tsx`       |
+| `set-pdf-view-compact`                        | Tryb kompaktowy                          | `GeneratePDFDialog.tsx`       |
+| `set-pdf-show-images`                         | Checkbox zdjęć                           | `GeneratePDFDialog.tsx`       |
+| `set-pdf-show-frequency`                      | Checkbox harmonogramu                    | `GeneratePDFDialog.tsx`       |
+| `set-pdf-show-qr`                             | Checkbox QR                              | `GeneratePDFDialog.tsx`       |
+| `set-pdf-notes`                               | Uwagi dla pacjenta                       | `GeneratePDFDialog.tsx`       |
 
 ### 6. Pacjenci (patient-)
 
@@ -443,6 +450,8 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `patient-note-{id}`                                 | Notatka                                    | `PatientNotes.tsx`                 |
 | `patient-note-{id}-delete-btn`                      | Usuń notatkę                               | `PatientNotes.tsx`                 |
 | `patient-qr-dialog`                                 | Dialog QR                                  | `PatientQRCodeDialog.tsx`          |
+| `patient-qr-code`                                   | Kod QR HTTPS                               | `PatientQRCodeDialog.tsx`          |
+| `patient-qr-loading`                                | Stan ładowania QR                          | `PatientQRCodeDialog.tsx`          |
 | `patient-qr-download-btn`                           | Pobierz QR                                 | `PatientQRCodeDialog.tsx`          |
 | `patient-qr-copy-btn`                               | Kopiuj link                                | `PatientQRCodeDialog.tsx`          |
 | `patient-schedule-dialog`                           | Dialog harmonogramu                        | `EditAssignmentScheduleDialog.tsx` |
@@ -494,6 +503,9 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `summary-schedule-summary`              | Karta harmonogramu w podsumowaniu         | `SummaryStep.tsx`             |
 | `assign-wizard-header-schedule-summary` | Skrót harmonogramu w headerze wizarda     | `AssignmentWizard.tsx`        |
 | `assign-success-schedule-summary`       | Karta harmonogramu w dialogu sukcesu      | `AssignmentSuccessDialog.tsx` |
+| `assign-success-qr`                     | Kod QR HTTPS pacjenta                     | `AssignmentSuccessDialog.tsx` |
+| `assign-success-qr-loading`             | Stan ładowania QR                         | `AssignmentSuccessDialog.tsx` |
+| `assign-success-copy-link-btn`          | Kopiuj link obok QR                       | `AssignmentSuccessDialog.tsx` |
 | `assign-summary-submit-btn`             | Utwórz plan i przypisz                    | `SummaryStep.tsx`             |
 
 ### 8. AI Chat (ai-)
@@ -591,6 +603,10 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `org-invite-submit-btn`          | Wyślij zaproszenie    | `InviteMemberDialog.tsx` |
 | `org-invite-generate-link-btn`   | Generuj link          | `InviteMemberDialog.tsx` |
 | `org-invite-copy-link-btn`       | Kopiuj link           | `InviteMemberDialog.tsx` |
+| `org-share-sheet`                | Arkusz udostępniania  | `ShareSheet.tsx`         |
+| `org-share-qr`                   | QR zaproszenia personelu | `ShareSheet.tsx`      |
+| `org-share-qr-loading`           | Pusty URL — spinner QR | `ShareSheet.tsx`        |
+| `org-share-copy-btn`             | Kopiuj link personelu | `ShareSheet.tsx`         |
 | `org-clinic-dialog`              | Dialog placówki       | `ClinicDialog.tsx`       |
 | `org-clinic-name-input`          | Nazwa placówki        | `ClinicDialog.tsx`       |
 | `org-clinic-address-input`       | Adres                 | `ClinicDialog.tsx`       |
@@ -645,6 +661,10 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `finances-partner-level-card`           | Karta poziomu PARTNER (stan maksymalny)        | `GamificationProgress.tsx` |
 | `finances-growth-action-bar`            | Pasek CTA zapraszania pacjentów                | `GrowthActionBar.tsx`      |
 | `finances-growth-action-btn`            | Przycisk CTA: Zaproś pacjenta                  | `GrowthActionBar.tsx`      |
+| `invite-dialog`                         | Dialog zaproszenia pacjenta                    | `PatientInviteDialog.tsx`  |
+| `invite-qr-code`                        | QR HTTPS `/start?token=`                       | `PatientInviteDialog.tsx`  |
+| `invite-qr-loading`                     | Spinner przed tokenem                          | `PatientInviteDialog.tsx`  |
+| `invite-qr-copy-btn`                    | Kopiuj link obok QR zaproszenia                | `PatientInviteDialog.tsx`  |
 
 ### 12. Ustawienia (settings-)
 
