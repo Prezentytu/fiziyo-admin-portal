@@ -48,8 +48,6 @@ describe('isFiziyoVerifiedTemplate', () => {
     ).toBe(false);
     expect(
       isFiziyoVerifiedTemplate({
-        id: '3',
-        name: 'Plan',
         kind: 'PATIENT_PLAN',
         isTemplate: false,
         templateSource: 'FIZIYO_VERIFIED',
