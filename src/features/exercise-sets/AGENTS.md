@@ -39,6 +39,7 @@ Mapowanie ćwiczenia do zestawu. Pola NULL = wartość z Exercise.
 
 - `CreateSetWizard.tsx` — pełny kreator zestawu (composer)
 - `ExerciseBuilderSidebar` / `CreateSetDialog` — szybki kreator z listy ćwiczeń (ten sam write-path)
+- `buildBuilderExerciseMapping.ts` — adapter sidebara: dawkowanie + `overridesJson` strony vs katalog
 - `components/SetNameField.tsx` + `SetDescriptionCollapsible.tsx` — wspólne pola metadanych (nazwa+AI, opis)
 - `utils/createSetSubmit.ts` — kanoniczny write-path `createExerciseSet` + `addExerciseToSet` (TEMPLATE + frequency)
 - `ExerciseSetBuilder.tsx` — builder współdzielony (shared)
