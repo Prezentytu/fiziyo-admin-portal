@@ -105,8 +105,6 @@ export default function ExercisesPage() {
     [toggleExercise]
   );
 
-  const organizationId = currentOrganization?.organizationId;
-
   // Get exercises (includes organization, global, and personal exercises)
   const { data, loading, error } = useQuery(GET_AVAILABLE_EXERCISES_QUERY, {
     variables: { organizationId, take: AVAILABLE_EXERCISES_LIST_TAKE },
