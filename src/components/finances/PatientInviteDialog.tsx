@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useMutation } from '@apollo/client/react';
-import { Mail, Phone, User, Loader2, Copy, Check, Link2, Ticket, QrCode, Send } from 'lucide-react';
+import { Mail, Phone, User, Loader2, Copy, Check, Ticket, QrCode, Send } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -51,7 +51,7 @@ function resolveSendMode(hasValidEmail: boolean, hasValidPhone: boolean): 'email
 
 export function PatientInviteDialog({ open, onOpenChange, organizationId }: PatientInviteDialogProps) {
   // State
-  const [activeTab, setActiveTab] = useState('link');
+  const [activeTab, setActiveTab] = useState('qr');
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [patientName, setPatientName] = useState('');
@@ -162,9 +162,8 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
     }
   };
 
-  // Handle close
   const handleClose = () => {
-    setActiveTab('link');
+    setActiveTab('qr');
     setGeneratedLink(null);
     setCopied(false);
     setPatientName('');
@@ -187,6 +186,15 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
       <DialogContent
         className="max-w-[95vw] sm:max-w-xl overflow-hidden"
         data-testid="invite-dialog"
+        onKeyDown={(event) => {
+          if (!(event.metaKey || event.ctrlKey) || event.key !== 'Enter') return;
+          event.preventDefault();
+          if (activeTab === 'send') {
+            void handleSendInvite();
+            return;
+          }
+          void handleCopyLink();
+        }}
       >
         <div className="flex items-start gap-4 rounded-xl border border-border/50 bg-linear-to-r from-primary/5 via-emerald-500/5 to-primary/5 p-5">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm">
@@ -209,22 +217,14 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
         ) : (
           /* Tabs */
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger
-                value="link"
-                className="gap-2"
-                data-testid="invite-tab-link"
-              >
-                <Link2 className="h-4 w-4 shrink-0" />
-                Link
-              </TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger
                 value="qr"
                 className="gap-2"
                 data-testid="invite-tab-qr"
               >
                 <QrCode className="h-4 w-4 shrink-0" />
-                QR kod
+                QR i link
               </TabsTrigger>
               <TabsTrigger
                 value="send"
@@ -236,11 +236,10 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
               </TabsTrigger>
             </TabsList>
 
-            {/* Tab: Link */}
-            <TabsContent value="link" className="mt-4 space-y-4">
+            <TabsContent value="qr" className="mt-4 space-y-4">
               <div className="space-y-2">
                 <label htmlFor="invite-name-input" className="text-sm text-muted-foreground">
-                  Personalizacja
+                  Imię pacjenta
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -248,52 +247,13 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
                     id="invite-name-input"
                     value={patientName}
                     onChange={(e) => setPatientName(e.target.value)}
-                    placeholder="Imię pacjenta (opcjonalne)"
+                    placeholder="Imię pacjenta"
                     className="pl-10 h-11"
                     data-testid="invite-name-input"
                   />
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Jeśli podasz imię, dodamy je do linku, żeby pacjent od razu widział bardziej osobiste zaproszenie.
-                </p>
               </div>
 
-              <div className="rounded-xl border border-border/60 bg-surface/50 p-4 space-y-3">
-                <div className="relative">
-                  <Input value={personalizedLink} readOnly className="pr-20 h-11 text-sm" data-testid="invite-link-display" />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-2 top-1/2 -translate-y-1/2"
-                    onClick={handleCopyLink}
-                    data-testid="invite-copy-inline-btn"
-                  >
-                    {copied ? <Check className="h-4 w-4" /> : 'Kopiuj'}
-                  </Button>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-xs text-muted-foreground">
-                    Link otworzy ekran startowy pacjenta z dostępem do aktywacji Premium.
-                  </p>
-                  <Button onClick={handleCopyLink} className="shrink-0" data-testid="invite-copy-main-btn">
-                    {copied ? (
-                      <>
-                        <Check className="h-4 w-4 mr-2" />
-                        Skopiowano
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-4 w-4 mr-2" />
-                        Kopiuj link
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </TabsContent>
-
-            {/* Tab: QR Code */}
-            <TabsContent value="qr" className="mt-4">
               <div className="rounded-xl border border-border/60 bg-surface/50 p-5">
                 <div className="flex flex-col items-center gap-4">
                   <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5" data-testid="invite-qr-code">
@@ -312,16 +272,30 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
                     />
                   </div>
                   <div className="space-y-1 text-center">
-                    <p className="text-sm font-medium text-foreground">Pokaż pacjentowi kod do zeskanowania</p>
+                    <p className="text-sm font-medium text-foreground">Pokaż pacjentowi kod albo skopiuj link</p>
                     <p className="text-xs text-muted-foreground">
-                      Kod prowadzi do tego samego linku co zakładka `Link`, więc możesz wygodnie przełączać kanał przekazania.
+                      Ten sam adres działa na QR i w schowku — bez przełączania zakładek.
                     </p>
                   </div>
                   <div className="w-full flex items-center justify-between gap-3 border-t border-border/50 pt-4">
-                    <p className="text-xs text-muted-foreground">Jeśli pacjent jest z Tobą w gabinecie, QR zwykle daje najmniejsze tarcie.</p>
-                    <Button variant="outline" onClick={handleCopyLink}>
-                      <Copy className="h-4 w-4 mr-2" />
-                      Kopiuj link
+                    <Input
+                      value={personalizedLink}
+                      readOnly
+                      className="h-11 text-sm"
+                      data-testid="invite-link-display"
+                    />
+                    <Button onClick={handleCopyLink} className="shrink-0" data-testid="invite-copy-main-btn">
+                      {copied ? (
+                        <>
+                          <Check className="h-4 w-4 mr-2" />
+                          Skopiowano
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-4 w-4 mr-2" />
+                          Kopiuj link
+                        </>
+                      )}
                     </Button>
                   </div>
                 </div>
