@@ -29,6 +29,13 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Przyczyna**: `matchesSearchQuery` / `ToLower().Contains(cała fraza)` bez tokenizacji; e-mail autora w `ApplySearch` dawał szum.
 - **Rozwiązanie**: `matchesExerciseSearch` / `filterExercisesBySearch` (portal `src/features/exercises/utils`) i backend `ExerciseSearchQuery` — token AND, ranking nazwy, bez e-maila.
 - **Reguła**: Jeśli filtrujesz katalog ćwiczeń, zawsze tokenizuj zapytanie (AND, min. 2 znaki) i nie dopasowuj e-maila autora.
+### 2026-09-20 - Preview domena nie może mieć gitBranch main
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: Pin DEV padał `cannot_set_production_branch_as_preview` po poprawnych sekretach.
+- **Przyczyna**: `devportal.fiziyo.pl` jest Preview domeną. Skrypt robił PATCH `gitBranch: main`, a `main` to Production Branch. Vercel tego zabrania.
+- **Rozwiązanie**: Leftover branch (`dev` albo inny) odczepiamy (`gitBranch: null`). DEV trzyma się Preview z `main` przez `POST /v2/aliases`, nie przez git branch.
+- **Reguła**: Preview domeny nie przypinaj do production branch. Trunk zostaje w wyborze deploymentu i aliasie, nie w `gitBranch`.
 
 ### 2026-09-17 - VERCEL_TEAM_ID slug nie może iść jako teamId
 

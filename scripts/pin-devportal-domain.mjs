@@ -24,13 +24,11 @@ export function isDevDomain(name) {
 export function planDevDomainAssignment(domain) {
   const name = String(domain?.name ?? "");
   if (!isDevDomain(name)) throw new Error("Not a DEV domain.");
-  if (domain.gitBranch === LEGACY_INTEGRATION_BRANCH) {
-    return { action: "reassign", gitBranch: TRUNK_BRANCH, previous: LEGACY_INTEGRATION_BRANCH };
+  const previous = domain.gitBranch || null;
+  if (!previous) {
+    return { action: "keep", gitBranch: null, previous: null };
   }
-  if (domain.gitBranch === TRUNK_BRANCH) {
-    return { action: "keep", gitBranch: TRUNK_BRANCH, previous: TRUNK_BRANCH };
-  }
-  return { action: "reassign", gitBranch: TRUNK_BRANCH, previous: domain.gitBranch || null };
+  return { action: "detach", gitBranch: null, previous };
 }
 
 export function shouldSkipPin({ ref, environment } = {}) {
@@ -89,11 +87,11 @@ export async function listProjectDomains(fetchImpl, env) {
   return Array.isArray(payload.domains) ? payload.domains : [];
 }
 
-export async function assignDomainToMain(fetchImpl, env, domainName) {
+export async function detachDomainFromGitBranch(fetchImpl, env, domainName) {
   const projectId = assertProjectId(env.VERCEL_PROJECT_ID);
   const encoded = encodeURIComponent(domainName);
   return vercelJson(fetchImpl, env.VERCEL_TOKEN, "PATCH", withQuery(`/v9/projects/${projectId}/domains/${encoded}`, env.VERCEL_TEAM_ID), {
-    gitBranch: TRUNK_BRANCH,
+    gitBranch: null,
   });
 }
 
@@ -125,9 +123,9 @@ export async function pinDevportalDomain(env, { fetchImpl = fetch } = {}) {
   const reassigned = [];
   for (const domain of domains) {
     const plan = planDevDomainAssignment(domain);
-    if (plan.action === "reassign") {
-      await assignDomainToMain(fetchImpl, env, domain.name);
-      reassigned.push({ name: domain.name, from: plan.previous, to: plan.gitBranch });
+    if (plan.action === "detach") {
+      await detachDomainFromGitBranch(fetchImpl, env, domain.name);
+      reassigned.push({ name: domain.name, from: plan.previous, to: null });
     }
   }
 
