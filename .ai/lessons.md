@@ -22,6 +22,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-09-20 - Pin DEV nie może padać na Preview PR
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: Check `pin` czerwienił każdy PR po deployu Vercel (`Brak deploymentu Preview dla DEV.`).
+- **Przyczyna**: `deployment.ref` z Vercel to SHA, nie `main`. `shouldSkipPin` omijał tylko Production i gałąź `dev`, więc Preview feature branch szukał Preview z `main` dla SHA spoza trunka i rzucał.
+- **Rozwiązanie**: Preview spoza `main` oraz ref ≠ `main` kończą się skipem (`feature-preview`) zanim skrypt woła alias. Job w `pin-devportal.yml` nie startuje na `environment=Preview`.
+- **Reguła**: Pin DEV tylko z `workflow_dispatch` albo Preview/`ref=main`. Sukces Preview PR to nie powód, żeby ruszać `devportal.fiziyo.pl`.
+
 ### 2026-09-20 - Preview domena nie może mieć gitBranch main
 
 - **Kategoria**: `Build/Tooling`
@@ -61,6 +69,7 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Przyczyna**: Upload zdjęcia od razu mutuje API i refetchuje `exerciseById`. Hook formularza w trybie bez autosave nadpisywał draft przy każdej nowej referencji `source`, zeroując `isDirty`. Użytkownik myślał, że wygenerowane zdjęcie czeka na Zapisz.
 - **Rozwiązanie**: Hydracja tylko gdy draft nie jest brudny (albo zmieniło się id ćwiczenia). Po zapisie mediów toast i pasek: „Zdjęcie zapisane od razu — nie wymaga przycisku Zapisz”.
 - **Reguła**: Jeśli media idą osobną mutacją + refetch, dirty tracking pól tekstowych musi przetrwać zmianę referencji `source`; UI ma powiedzieć, że media już są zapisane. `data-testid` dawaj jako pierwszy atrybut tagu — skaner kończy opening tag na pierwszym `>` (w tym `=>` i `>=`), więc testid po `onClick={() =>` wypada z detekcji i psuje allowlistę po przesunięciu linii.
+
 ### 2026-09-15 - Kosz przy placeholderze to no-op, nie akcja
 
 - **Kategoria**: `UI/UX`
