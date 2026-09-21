@@ -22,13 +22,6 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
-### 2026-09-18 - UpdateExercise: none strony to string enumu, nie null
-
-- **Kategoria**: `GraphQL`
-- **Problem**: Zmiana „Na każdą stronę” → „Razem” w edytorze katalogu zapisywała się bez błędu, a `Side` zostawał `Both` (objętość pacjenta ×2).
-- **Przyczyna**: Dirty-diff i legacy mapper wysyłały `exerciseSide: null`. Backend `UpdateExercise` pomija puste `exerciseSide` (`IsNullOrEmpty`), więc None nigdy nie nadpisywało Both/Left/Right.
-- **Rozwiązanie**: Przy zmianie strony wysyłaj `'none'` (i inne wartości enumu) jako string. Null zostaw tylko gdy pole nie jest w dirty-diff.
-- **Reguła**: Jeśli GraphQL update pomija null, zawsze zrób sentinel czyszczenia jawnym stringiem enumu (`none`), nigdy `null`.
 ### 2026-09-21 - QR zaproszenia bez tokenu to niedostępność, nie spinner
 
 - **Kategoria**: `UI/UX` | `Testing`
@@ -92,6 +85,22 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Przyczyna**: Kamera otwiera tylko `http(s):`. Custom URI bez zainstalowanej apki jest dla skanera pustym payloadem. Copy i PDF używały jeszcze innych URL-i.
 - **Rozwiązanie**: `buildPatientJoinUrl` / `buildPatientConnectUrl` w `src/lib/patientJoinUrl.ts`. QR tylko gdy `isHttpsUrl`. Pusty payload = spinner, nie kod.
 - **Reguła**: Jeśli QR ma otworzyć się kamerą, zawsze koduj pełny `https://` na domenie FiziYo; nigdy `fiziyo://`, JSON ani pusty string.
+
+### 2026-09-19 - Sidebar create-set musi pisać overridesJson strony
+
+- **Kategoria**: `GraphQL`
+- **Problem**: Kreator z listy ćwiczeń pokazywał i liczył zmienioną stronę (Razem vs Na każdą stronę), a `CreateSetDialog` nie wysyłał `overridesJson`. Mapping dziedziczył katalogowe Both → objętość pacjenta ×2.
+- **Przyczyna**: Sidebar i `CreateSetWizard` dzielą `submitCreateTemplateSet`, ale dialog mapował tylko kolumny dawkowania.
+- **Rozwiązanie**: `buildBuilderExerciseMapping` zapisuje deltę strony względem katalogowego `side`; test blokuje powrót inline mapowania w dialogu.
+- **Reguła**: Jeśli karta zestawu edytuje `side`, zawsze wyślij deltę w `overridesJson` na tym samym write-path co wizard, nigdy samego dawkowania.
+
+### 2026-09-18 - UpdateExercise: none strony to string enumu, nie null
+
+- **Kategoria**: `GraphQL`
+- **Problem**: Zmiana „Na każdą stronę” → „Razem” w edytorze katalogu zapisywała się bez błędu, a `Side` zostawał `Both` (objętość pacjenta ×2).
+- **Przyczyna**: Dirty-diff i legacy mapper wysyłały `exerciseSide: null`. Backend `UpdateExercise` pomija puste `exerciseSide` (`IsNullOrEmpty`), więc None nigdy nie nadpisywało Both/Left/Right.
+- **Rozwiązanie**: Przy zmianie strony wysyłaj `'none'` (i inne wartości enumu) jako string. Null zostaw tylko gdy pole nie jest w dirty-diff.
+- **Reguła**: Jeśli GraphQL update pomija null, zawsze zrób sentinel czyszczenia jawnym stringiem enumu (`none`), nigdy `null`.
 
 ### 2026-09-17 - VERCEL_TEAM_ID slug nie może iść jako teamId
 

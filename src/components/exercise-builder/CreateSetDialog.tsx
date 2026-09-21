@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { buildBuilderExerciseMapping } from '@/components/exercise-builder/buildBuilderExerciseMapping';
 import { useExerciseBuilder } from '@/contexts/ExerciseBuilderContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import {
@@ -143,22 +144,7 @@ export function CreateSetDialog({ open, onOpenChange }: CreateSetDialogProps) {
           name: sanitizedName,
           description,
         },
-        selectedExercises.map((exercise) => ({
-          exerciseId: exercise.id,
-          sets: exercise.sets,
-          reps: exercise.reps,
-          duration: exercise.duration,
-          restSets: exercise.restSets,
-          restReps: exercise.restReps,
-          preparationTime: exercise.preparationTime,
-          executionTime: exercise.executionTime,
-          notes: exercise.notes,
-          customName: exercise.customName,
-          customDescription: exercise.customDescription,
-          tempo: exercise.tempo,
-          loadWeightKg: exercise.loadWeightKg,
-          loadValue: exercise.loadValue,
-        }))
+        selectedExercises.map(buildBuilderExerciseMapping)
       );
 
       toast.success('Zestaw został utworzony', {
