@@ -52,6 +52,22 @@ test("flags leftover dev integration branch", () => {
   }
 });
 
+test("flags pin that still fails Vercel Preview PR deployments", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "trunk-"));
+  try {
+    writeTree(root, {
+      "scripts/pin-devportal-domain.mjs":
+        'export const LEGACY_INTEGRATION_BRANCH = "dev";\nexport const TRUNK_BRANCH = "main";\n',
+      ".github/workflows/pin-devportal.yml": "name: Pin DEV portal to main\n",
+    });
+    const errors = checkTrunkMain(root).join("\n");
+    assert.match(errors, /skip Vercel Preview deployments/);
+    assert.match(errors, /must not run the pin job on Vercel Preview PR/);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("flags assigning the production branch to a Preview domain", () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "trunk-"));
   try {

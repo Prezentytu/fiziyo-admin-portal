@@ -56,6 +56,30 @@ describe("pin-devportal-domain", () => {
     assert.equal(shouldSkipPin({ environment: "Production" }), "production");
     assert.equal(shouldSkipPin({ ref: "dev" }), "legacy-dev-branch");
     assert.equal(shouldSkipPin({ ref: "main", environment: "Preview" }), "");
+    assert.equal(shouldSkipPin({ ref: SHA, environment: "Preview" }), "feature-preview");
+    assert.equal(shouldSkipPin({ ref: "cursor/k01-wyszukiwanie-a18f", environment: "Preview" }), "feature-preview");
+  });
+
+  it("skips PR Preview deployments without calling Vercel alias", async () => {
+    const calls = [];
+    const fetchImpl = async (url, options) => {
+      calls.push({ url, method: options.method });
+      return { ok: true, status: 200, text: async () => JSON.stringify({ domains: [], deployments: [] }) };
+    };
+
+    const skipped = await pinDevportalDomain(
+      {
+        VERCEL_TOKEN: "n".repeat(24),
+        VERCEL_PROJECT_ID: "prj_abc123",
+        DEPLOYMENT_REF: SHA,
+        DEPLOYMENT_SHA: SHA,
+        DEPLOYMENT_ENV: "Preview",
+      },
+      { fetchImpl }
+    );
+    assert.equal(skipped.skipped, "feature-preview");
+    assert.equal(skipped.aliased, false);
+    assert.equal(calls.length, 0);
   });
 
   it("pins Preview of main and ignores a leftover dev deployment", async () => {
