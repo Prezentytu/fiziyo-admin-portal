@@ -5,45 +5,31 @@ interface PDFFooterProps {
   generatedAt: string;
   qrCodeDataUrl?: string;
   therapistName?: string;
+  joinUrl?: string;
 }
 
 /**
- * App Banner Footer - Wersja Marketingowa
- *
- * Strategia: Papier = DEMO, Aplikacja = PREMIUM
- * Podkreślamy to, czego papier NIE potrafi:
- * - Timer (nie musisz liczyć)
- * - Wideo (bezpieczeństwo)
- * - Historia (śledzenie postępów)
+ * App Banner Footer — QR + https join URL so a patient without the app can still open a browser.
  */
-export function PDFFooter({ generatedAt, qrCodeDataUrl, therapistName }: PDFFooterProps) {
-  // WERSJA Z QR KODEM - APP PROMO BANNER
+export function PDFFooter({ generatedAt, qrCodeDataUrl, therapistName, joinUrl }: PDFFooterProps) {
   if (qrCodeDataUrl) {
     return (
       <View style={pdfStyles.appBanner} fixed>
-        {/* QR Code */}
         <View style={pdfStyles.appBannerQR}>
           <PdfImage src={qrCodeDataUrl} style={pdfStyles.appBannerQRImage} />
         </View>
 
-        {/* Marketing Content */}
         <View style={pdfStyles.appBannerContent}>
-          {/* Tytuł */}
-          <Text style={pdfStyles.appBannerTitle}>URUCHOM ASYSTENTA TRENINGU</Text>
-
-          {/* Subtitle */}
+          <Text style={pdfStyles.appBannerTitle}>OTWÓRZ PLAN W FIZIYO</Text>
           <Text style={pdfStyles.appBannerSubtitle}>
-            Papier to tylko ściąga. Zeskanuj kod, aby pobrać bezpłatną aplikację i ćwiczyć bezpieczniej w domu.
+            Zeskanuj kod albo wpisz link. Bez apki zobaczysz instrukcję; z apką — timer i wideo.
           </Text>
-
-          {/* Features - Co daje apka? (BEZ lektora i czatu!) */}
           <View style={pdfStyles.appBannerFeatures}>
             <Text style={pdfStyles.appBannerFeature}>• Timer (ćwicz bez liczenia w głowie)</Text>
             <Text style={pdfStyles.appBannerFeature}>• Wideo instruktażowe HD</Text>
             <Text style={pdfStyles.appBannerFeature}>• Śledzenie postępów i regularności</Text>
           </View>
-
-          {/* Legal Note */}
+          {joinUrl ? <Text style={pdfStyles.appBannerJoinUrl}>{joinUrl}</Text> : null}
           <Text style={pdfStyles.appBannerLegal}>
             Wygenerowano: {generatedAt} • Zatwierdził: {therapistName || 'Fizjoterapeuta'}
           </Text>
@@ -52,12 +38,12 @@ export function PDFFooter({ generatedAt, qrCodeDataUrl, therapistName }: PDFFoot
     );
   }
 
-  // WERSJA BEZ QR (FALLBACK) - Prosta stopka
   return (
     <View style={pdfStyles.footer} fixed>
       <Text style={pdfStyles.footerText}>
         Dokument wygenerowano: {generatedAt}
         {therapistName && ` • ${therapistName}`}
+        {joinUrl ? ` • ${joinUrl}` : ''}
       </Text>
       <Text style={pdfStyles.footerBrand}>FiziYo</Text>
     </View>
