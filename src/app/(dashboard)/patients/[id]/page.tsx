@@ -643,8 +643,9 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
             exerciseMappings: pdfAssignment.exerciseSet.exerciseMappings,
             frequency: pdfAssignment.frequency,
           }}
-          patient={{ name: displayName, email: patient.email }}
+          patient={{ id: patient.id, name: displayName, email: patient.email }}
           organizationId={organizationId}
+          therapistId={therapistId}
         />
       )}
 
