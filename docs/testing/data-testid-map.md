@@ -139,24 +139,27 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 #### Linki nawigacyjne (Sidebar 2.0 - 3 strefy)
 
 **Strefa 1: Klinika**
-| data-testid | Element | Plik |
-|-------------|---------|------|
-| `nav-link-dashboard` | Link: Panel | `Sidebar.tsx` |
-| `nav-link-patients` | Link: Pacjenci | `Sidebar.tsx` |
-| `nav-link-exercise-sets` | Link: Zestawy | `Sidebar.tsx` |
-| `nav-link-exercises` | Link: Ćwiczenia | `Sidebar.tsx` |
+
+| data-testid              | Element         | Plik          |
+| ------------------------ | --------------- | ------------- |
+| `nav-link-dashboard`     | Link: Panel     | `Sidebar.tsx` |
+| `nav-link-patients`      | Link: Pacjenci  | `Sidebar.tsx` |
+| `nav-link-exercise-sets` | Link: Zestawy   | `Sidebar.tsx` |
+| `nav-link-exercises`     | Link: Ćwiczenia | `Sidebar.tsx` |
 
 **Strefa 2: Smart Tools**
-| data-testid | Element | Plik |
-|-------------|---------|------|
+
+| data-testid       | Element                      | Plik          |
+| ----------------- | ---------------------------- | ------------- |
 | `nav-link-import` | Link: Import Dokumentów (AI) | `Sidebar.tsx` |
 
 **Strefa 3: Organizacja (tylko admin/owner)**
-| data-testid | Element | Plik |
-|-------------|---------|------|
-| `nav-link-organization` | Link: Zespół | `Sidebar.tsx` |
-| `nav-link-billing` | Link: Rozliczenia | `Sidebar.tsx` |
-| `nav-link-settings` | Link: Ustawienia | `Sidebar.tsx` |
+
+| data-testid             | Element           | Plik          |
+| ----------------------- | ----------------- | ------------- |
+| `nav-link-organization` | Link: Zespół      | `Sidebar.tsx` |
+| `nav-link-billing`      | Link: Rozliczenia | `Sidebar.tsx` |
+| `nav-link-settings`     | Link: Ustawienia  | `Sidebar.tsx` |
 
 #### User Profile Footer (nowy komponent)
 
@@ -384,6 +387,15 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `set-frequency-day-{day}`                     | Dzień tygodnia                           | `FrequencyPicker.tsx`         |
 | `set-pdf-dialog`                              | Dialog PDF                               | `GeneratePDFDialog.tsx`       |
 | `set-pdf-download-btn`                        | Pobierz PDF                              | `GeneratePDFDialog.tsx`       |
+| `set-pdf-cancel-btn`                          | Anuluj PDF                               | `GeneratePDFDialog.tsx`       |
+| `set-pdf-view-full`                           | Tryb szczegółowy                         | `GeneratePDFDialog.tsx`       |
+| `set-pdf-view-compact`                        | Tryb kompaktowy                          | `GeneratePDFDialog.tsx`       |
+| `set-pdf-show-images`                         | Checkbox zdjęć                           | `GeneratePDFDialog.tsx`       |
+| `set-pdf-show-frequency`                      | Checkbox harmonogramu                    | `GeneratePDFDialog.tsx`       |
+| `set-pdf-show-qr`                             | Checkbox QR                              | `GeneratePDFDialog.tsx`       |
+| `set-pdf-qr-payload`                          | Ukryty QR; `data-qr-url` = payload       | `GeneratePDFDialog.tsx`       |
+| `set-pdf-qr-unavailable`                      | Hint gdy brak patient/org/therapist      | `GeneratePDFDialog.tsx`       |
+| `set-pdf-notes`                               | Uwagi dla pacjenta                       | `GeneratePDFDialog.tsx`       |
 
 ### 6. Pacjenci (patient-)
 
@@ -443,8 +455,12 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `patient-note-{id}`                                 | Notatka                                    | `PatientNotes.tsx`                 |
 | `patient-note-{id}-delete-btn`                      | Usuń notatkę                               | `PatientNotes.tsx`                 |
 | `patient-qr-dialog`                                 | Dialog QR                                  | `PatientQRCodeDialog.tsx`          |
+| `patient-qr-code`                                   | Kod QR HTTPS; `data-qr-url` = payload      | `PatientQRCodeDialog.tsx`          |
+| `patient-qr-payload`                                | Ukryty canvas QR; `data-qr-url` = payload  | `PatientQRCodeDialog.tsx`          |
+| `patient-qr-unavailable`                            | Hint gdy brak patient/org/therapist        | `PatientQRCodeDialog.tsx`          |
 | `patient-qr-download-btn`                           | Pobierz QR                                 | `PatientQRCodeDialog.tsx`          |
 | `patient-qr-copy-btn`                               | Kopiuj link                                | `PatientQRCodeDialog.tsx`          |
+| `patient-qr-share-btn`                              | Wyślij link                                | `PatientQRCodeDialog.tsx`          |
 | `patient-schedule-dialog`                           | Dialog harmonogramu                        | `EditAssignmentScheduleDialog.tsx` |
 | `patient-schedule-start-date`                       | Data rozpoczęcia                           | `EditAssignmentScheduleDialog.tsx` |
 | `patient-schedule-end-date`                         | Data zakończenia                           | `EditAssignmentScheduleDialog.tsx` |
@@ -494,6 +510,11 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `summary-schedule-summary`              | Karta harmonogramu w podsumowaniu         | `SummaryStep.tsx`             |
 | `assign-wizard-header-schedule-summary` | Skrót harmonogramu w headerze wizarda     | `AssignmentWizard.tsx`        |
 | `assign-success-schedule-summary`       | Karta harmonogramu w dialogu sukcesu      | `AssignmentSuccessDialog.tsx` |
+| `assign-success-qr`                     | Kod QR HTTPS; `data-qr-url` = payload     | `AssignmentSuccessDialog.tsx` |
+| `assign-success-qr-payload`             | Ukryty canvas QR; `data-qr-url` = payload | `AssignmentSuccessDialog.tsx` |
+| `assign-success-qr-unavailable`         | Hint gdy brak patient/org/therapist       | `AssignmentSuccessDialog.tsx` |
+| `assign-success-copy-link-btn`          | Kopiuj link obok QR                       | `AssignmentSuccessDialog.tsx` |
+| `assign-success-patient-{id}`           | Przełącznik pacjenta przy QR              | `AssignmentSuccessDialog.tsx` |
 | `assign-summary-submit-btn`             | Utwórz plan i przypisz                    | `SummaryStep.tsx`             |
 
 ### 8. AI Chat (ai-)
@@ -564,47 +585,53 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 
 ### 10. Organizacja (org-)
 
-| data-testid                      | Element               | Plik                     |
-| -------------------------------- | --------------------- | ------------------------ |
-| `org-page-title`                 | Tytuł strony          | `organization/page.tsx`  |
-| `org-tab-team`                   | Zakładka: Zespół      | `organization/page.tsx`  |
-| `org-tab-clinics`                | Zakładka: Placówki    | `organization/page.tsx`  |
-| `org-tab-invitations`            | Zakładka: Zaproszenia | `organization/page.tsx`  |
-| `org-tab-settings`               | Zakładka: Ustawienia  | `organization/page.tsx`  |
-| `org-team-section`               | Sekcja zespołu        | `TeamSection.tsx`        |
-| `org-team-invite-btn`            | Zaproś członka        | `TeamSection.tsx`        |
-| `org-member-{id}`                | Karta członka         | `MemberCard.tsx`         |
-| `org-member-{id}-menu`           | Menu członka          | `MemberCard.tsx`         |
-| `org-member-{id}-remove-btn`     | Usuń członka          | `MemberCard.tsx`         |
-| `org-member-{id}-role-select`    | Zmień rolę            | `MemberCard.tsx`         |
-| `org-clinics-section`            | Sekcja placówek       | `ClinicsSection.tsx`     |
-| `org-clinics-add-btn`            | Dodaj placówkę        | `ClinicsSection.tsx`     |
-| `org-clinic-{id}`                | Karta placówki        | `ClinicCard.tsx`         |
-| `org-clinic-{id}-edit-btn`       | Edytuj                | `ClinicCard.tsx`         |
-| `org-clinic-{id}-delete-btn`     | Usuń                  | `ClinicCard.tsx`         |
-| `org-invite-dialog`              | Dialog zaproszenia    | `InviteMemberDialog.tsx` |
-| `org-invite-tab-email`           | Zakładka: Email       | `InviteMemberDialog.tsx` |
-| `org-invite-tab-link`            | Zakładka: Link        | `InviteMemberDialog.tsx` |
-| `org-invite-email-input`         | Email                 | `InviteMemberDialog.tsx` |
-| `org-invite-role-select`         | Rola                  | `InviteMemberDialog.tsx` |
-| `org-invite-message-input`       | Wiadomość             | `InviteMemberDialog.tsx` |
-| `org-invite-submit-btn`          | Wyślij zaproszenie    | `InviteMemberDialog.tsx` |
-| `org-invite-generate-link-btn`   | Generuj link          | `InviteMemberDialog.tsx` |
-| `org-invite-copy-link-btn`       | Kopiuj link           | `InviteMemberDialog.tsx` |
-| `org-clinic-dialog`              | Dialog placówki       | `ClinicDialog.tsx`       |
-| `org-clinic-name-input`          | Nazwa placówki        | `ClinicDialog.tsx`       |
-| `org-clinic-address-input`       | Adres                 | `ClinicDialog.tsx`       |
-| `org-clinic-contact-input`       | Kontakt               | `ClinicDialog.tsx`       |
-| `org-clinic-submit-btn`          | Zapisz placówkę       | `ClinicDialog.tsx`       |
-| `org-settings-tab`               | Ustawienia org.       | `SettingsTab.tsx`        |
-| `org-settings-name-input`        | Nazwa organizacji     | `SettingsTab.tsx`        |
-| `org-settings-submit-btn`        | Zapisz ustawienia     | `SettingsTab.tsx`        |
-| `org-subscription-card`          | Karta subskrypcji     | `SubscriptionCard.tsx`   |
-| `org-subscription-plan`          | Aktualny plan         | `SubscriptionCard.tsx`   |
-| `org-subscription-upgrade-btn`   | Ulepsz plan           | `SubscriptionCard.tsx`   |
-| `org-invitation-{id}`            | Zaproszenie           | `InvitationsTab.tsx`     |
-| `org-invitation-{id}-resend-btn` | Wyślij ponownie       | `InvitationsTab.tsx`     |
-| `org-invitation-{id}-revoke-btn` | Anuluj                | `InvitationsTab.tsx`     |
+| data-testid                      | Element                  | Plik                     |
+| -------------------------------- | ------------------------ | ------------------------ |
+| `org-page-title`                 | Tytuł strony             | `organization/page.tsx`  |
+| `org-tab-team`                   | Zakładka: Zespół         | `organization/page.tsx`  |
+| `org-tab-clinics`                | Zakładka: Placówki       | `organization/page.tsx`  |
+| `org-tab-invitations`            | Zakładka: Zaproszenia    | `organization/page.tsx`  |
+| `org-tab-settings`               | Zakładka: Ustawienia     | `organization/page.tsx`  |
+| `org-team-section`               | Sekcja zespołu           | `TeamSection.tsx`        |
+| `org-team-invite-btn`            | Zaproś członka           | `TeamSection.tsx`        |
+| `org-member-{id}`                | Karta członka            | `MemberCard.tsx`         |
+| `org-member-{id}-menu`           | Menu członka             | `MemberCard.tsx`         |
+| `org-member-{id}-remove-btn`     | Usuń członka             | `MemberCard.tsx`         |
+| `org-member-{id}-role-select`    | Zmień rolę               | `MemberCard.tsx`         |
+| `org-clinics-section`            | Sekcja placówek          | `ClinicsSection.tsx`     |
+| `org-clinics-add-btn`            | Dodaj placówkę           | `ClinicsSection.tsx`     |
+| `org-clinic-{id}`                | Karta placówki           | `ClinicCard.tsx`         |
+| `org-clinic-{id}-edit-btn`       | Edytuj                   | `ClinicCard.tsx`         |
+| `org-clinic-{id}-delete-btn`     | Usuń                     | `ClinicCard.tsx`         |
+| `org-invite-dialog`              | Dialog zaproszenia       | `InviteMemberDialog.tsx` |
+| `org-invite-tab-email`           | Zakładka: Email          | `InviteMemberDialog.tsx` |
+| `org-invite-tab-link`            | Zakładka: Link           | `InviteMemberDialog.tsx` |
+| `org-invite-email-input`         | Email                    | `InviteMemberDialog.tsx` |
+| `org-invite-role-select`         | Rola                     | `InviteMemberDialog.tsx` |
+| `org-invite-message-input`       | Wiadomość                | `InviteMemberDialog.tsx` |
+| `org-invite-submit-btn`          | Wyślij zaproszenie       | `InviteMemberDialog.tsx` |
+| `org-invite-generate-link-btn`   | Generuj link             | `InviteMemberDialog.tsx` |
+| `org-invite-copy-link-btn`       | Kopiuj link              | `InviteMemberDialog.tsx` |
+| `org-share-sheet`                | Arkusz udostępniania     | `ShareSheet.tsx`         |
+| `org-share-qr`                   | QR zaproszenia personelu | `ShareSheet.tsx`         |
+| `org-share-qr-loading`           | Pusty URL — spinner QR   | `ShareSheet.tsx`         |
+| `org-share-copy-btn`             | Kopiuj link personelu    | `ShareSheet.tsx`         |
+| `org-share-native-btn`           | Native share (mobile)    | `ShareSheet.tsx`         |
+| `org-share-copy-url-btn`         | Kopiuj URL z podglądu    | `ShareSheet.tsx`         |
+| `org-clinic-dialog`              | Dialog placówki          | `ClinicDialog.tsx`       |
+| `org-clinic-name-input`          | Nazwa placówki           | `ClinicDialog.tsx`       |
+| `org-clinic-address-input`       | Adres                    | `ClinicDialog.tsx`       |
+| `org-clinic-contact-input`       | Kontakt                  | `ClinicDialog.tsx`       |
+| `org-clinic-submit-btn`          | Zapisz placówkę          | `ClinicDialog.tsx`       |
+| `org-settings-tab`               | Ustawienia org.          | `SettingsTab.tsx`        |
+| `org-settings-name-input`        | Nazwa organizacji        | `SettingsTab.tsx`        |
+| `org-settings-submit-btn`        | Zapisz ustawienia        | `SettingsTab.tsx`        |
+| `org-subscription-card`          | Karta subskrypcji        | `SubscriptionCard.tsx`   |
+| `org-subscription-plan`          | Aktualny plan            | `SubscriptionCard.tsx`   |
+| `org-subscription-upgrade-btn`   | Ulepsz plan              | `SubscriptionCard.tsx`   |
+| `org-invitation-{id}`            | Zaproszenie              | `InvitationsTab.tsx`     |
+| `org-invitation-{id}-resend-btn` | Wyślij ponownie          | `InvitationsTab.tsx`     |
+| `org-invitation-{id}-revoke-btn` | Anuluj                   | `InvitationsTab.tsx`     |
 
 ### 11. Rozliczenia Pay-as-you-go (billing-)
 
@@ -645,6 +672,12 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `finances-partner-level-card`           | Karta poziomu PARTNER (stan maksymalny)        | `GamificationProgress.tsx` |
 | `finances-growth-action-bar`            | Pasek CTA zapraszania pacjentów                | `GrowthActionBar.tsx`      |
 | `finances-growth-action-btn`            | Przycisk CTA: Zaproś pacjenta                  | `GrowthActionBar.tsx`      |
+| `invite-dialog`                         | Dialog zaproszenia pacjenta                    | `PatientInviteDialog.tsx`  |
+| `invite-qr-code`                        | QR HTTPS `/start?token=`; `data-qr-url`        | `PatientInviteDialog.tsx`  |
+| `invite-qr-unavailable`                 | Hint gdy mutacja bez tokenu/URL                | `PatientInviteDialog.tsx`  |
+| `invite-qr-copy-btn`                    | Kopiuj link obok QR zaproszenia                | `PatientInviteDialog.tsx`  |
+| `invite-cancel-btn`                     | Anuluj w tabie wysyłki                         | `PatientInviteDialog.tsx`  |
+| `invite-refresh-btn`                    | Odśwież listę zaproszeń                        | `PatientInvitesCard.tsx`   |
 
 ### 12. Ustawienia (settings-)
 

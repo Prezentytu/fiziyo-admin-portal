@@ -22,6 +22,30 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-09-21 - QR zaproszenia bez tokenu to niedostępność, nie spinner
+
+- **Kategoria**: `UI/UX` | `Testing`
+- **Problem**: `PatientInviteDialog` po `success: false` albo sukcesie bez tokenu kręcił `invite-qr-loading`.
+- **Przyczyna**: Górny spinner znika z `loading === false`, a zakładka QR używała `!canRenderQr` jako „jeszcze ładuję”.
+- **Rozwiązanie**: `invite-qr-unavailable`; spinner dialogu tylko przy `loading && !generatedLink`.
+- **Reguła**: Jeśli mutacja zaproszenia się skończyła bez HTTPS URL, zawsze stan niedostępności. Spinner QR tylko gdy request jeszcze trwa.
+
+### 2026-09-21 - Brak connect URL to stan bez QR, nie spinner
+
+- **Kategoria**: `UI/UX` | `Testing`
+- **Problem**: Po wymaganiu trzech id dialog sukcesu i hub pacjenta kręciły „Przygotowuję kod” w nieskończoność.
+- **Przyczyna**: `joinUrl` jest synchroniczny z propsów. Spinner był placeholderem pustego payloadu, nie ładowaniem.
+- **Rozwiązanie**: `assign-success-qr-unavailable` / `patient-qr-unavailable`; kopiuj/share/pobierz QR wyłączone.
+- **Reguła**: Jeśli QR connect nie ma trzech id, zawsze pokaż stan niedostępności. Nigdy spinner „Przygotowuję kod” i nigdy goły `/start`.
+
+### 2026-09-21 - QR PDF bez patient/org/therapist nie koduje pustego /start
+
+- **Kategoria**: `UI/UX` | `Testing`
+- **Problem**: `GeneratePDFDialog` kodował stałe `https://fiziyo.pl/start` bez parametrów; skan z PDF nie otworzy connect.
+- **Przyczyna**: Caller karty pacjenta przekazywał tylko imię i email. Apka odrzuca link bez `patient`, `org` i `therapist`.
+- **Rozwiązanie**: `tryBuildPatientConnectUrl` wymaga trzech id. PDF QR tylko wtedy; inaczej checkbox wyłączony.
+- **Reguła**: Jeśli QR ma otworzyć `/connect`, zawsze koduj `patient`+`org`+`therapist`. Brak któregokolwiek = brak QR, nigdy goły `/start`.
+
 ### 2026-09-21 - Pusta lista rulesets to nie 403 planu Free
 
 - **Kategoria**: `Build/Tooling`
@@ -53,6 +77,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Przyczyna**: `devportal.fiziyo.pl` jest Preview domeną. Skrypt robił PATCH `gitBranch: main`, a `main` to Production Branch. Vercel tego zabrania.
 - **Rozwiązanie**: Leftover branch (`dev` albo inny) odczepiamy (`gitBranch: null`). DEV trzyma się Preview z `main` przez `POST /v2/aliases`, nie przez git branch.
 - **Reguła**: Preview domeny nie przypinaj do production branch. Trunk zostaje w wyborze deploymentu i aliasie, nie w `gitBranch`.
+
+### 2026-09-19 - QR pacjenta zawsze koduje HTTPS, nigdy custom scheme
+
+- **Kategoria**: `UI/UX` | `Testing`
+- **Problem**: Skaner telefonu na demo K01 pokazał „brak używalnych danych”, bo QR kodował `fiziyo://connect?...`.
+- **Przyczyna**: Kamera otwiera tylko `http(s):`. Custom URI bez zainstalowanej apki jest dla skanera pustym payloadem. Copy i PDF używały jeszcze innych URL-i.
+- **Rozwiązanie**: `buildPatientJoinUrl` / `buildPatientConnectUrl` w `src/lib/patientJoinUrl.ts`. QR tylko gdy `isHttpsUrl`. Pusty payload = spinner, nie kod.
+- **Reguła**: Jeśli QR ma otworzyć się kamerą, zawsze koduj pełny `https://` na domenie FiziYo; nigdy `fiziyo://`, JSON ani pusty string.
 
 ### 2026-09-17 - VERCEL_TEAM_ID slug nie może iść jako teamId
 

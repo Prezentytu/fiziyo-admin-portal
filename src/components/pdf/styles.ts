@@ -510,6 +510,11 @@ export const pdfStyles = StyleSheet.create({
     color: colors.textLight,
     marginTop: 4,
   },
+  appBannerJoinUrl: {
+    fontSize: 7,
+    color: colors.accent,
+    marginTop: 4,
+  },
 
   // ==================== NUMER STRONY ====================
   pageNumber: {
