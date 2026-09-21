@@ -22,6 +22,30 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-09-20 - Dodanie ćwiczenia do zestawu musi wysłać overridesJson
+
+- **Kategoria**: `GraphQL`
+- **Problem**: Dialog „Dodaj ćwiczenia” i fork TEMPLATE w Assignment Wizard pokazywały Razem, ale `addExerciseToExerciseSet` nie dostawał `overridesJson`. Mapping dziedziczył katalogowe Both — pacjent robił objętość ×2.
+- **Przyczyna**: Kreator zestawu i pełna edycja już budują deltę strony; `AddExerciseToSetDialog` i `buildAddExerciseVariables` wysyłały tylko kolumny dawkowania.
+- **Rozwiązanie**: Ten sam `buildMappingOverridesFromParams` co w `CreateSetWizard`. Test strażnik skanuje write-pathy z edytorem strony.
+- **Reguła**: Każdy `addExerciseToExerciseSet` z karty `cardSurface="mapping"` albo zapis TEMPLATE musi wysłać `overridesJson`. Same kolumny dawkowania nie przenoszą strony.
+
+### 2026-09-20 - Preview domena nie może mieć gitBranch main
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: Pin DEV padał `cannot_set_production_branch_as_preview` po poprawnych sekretach.
+- **Przyczyna**: `devportal.fiziyo.pl` jest Preview domeną. Skrypt robił PATCH `gitBranch: main`, a `main` to Production Branch. Vercel tego zabrania.
+- **Rozwiązanie**: Leftover branch (`dev` albo inny) odczepiamy (`gitBranch: null`). DEV trzyma się Preview z `main` przez `POST /v2/aliases`, nie przez git branch.
+- **Reguła**: Preview domeny nie przypinaj do production branch. Trunk zostaje w wyborze deploymentu i aliasie, nie w `gitBranch`.
+
+### 2026-09-17 - VERCEL_TEAM_ID slug nie może iść jako teamId
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: Pin DEV padał `Vercel API 400` po dodaniu sekretów; log pokazywał tylko status, bez body.
+- **Przyczyna**: Skrypt akceptował slug zespołu (`prezentytus-projects`), ale zawsze wysyłał `teamId=`. Vercel na to odpowiada 400. Dodatkowo rerun starego `deployment_status` z Preview PR używa SHA feature branch, nie `main`.
+- **Rozwiązanie**: `team_` → `teamId`, inny poprawny identyfikator → `slug`. Błąd API zawiera `code` + `message`. Pin odpalaj z `main` / `workflow_dispatch`, nie Re-run Preview.
+- **Reguła**: Vercel `teamId` to tylko `team_…`. Slug zespołu idzie w `slug`. Nie rerunuj pinu z Preview PR.
+
 ### 2026-09-15 - Hardening parsera karty idzie z kanonem
 
 - **Kategoria**: `Build/Tooling`
@@ -53,6 +77,7 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Przyczyna**: Upload zdjęcia od razu mutuje API i refetchuje `exerciseById`. Hook formularza w trybie bez autosave nadpisywał draft przy każdej nowej referencji `source`, zeroując `isDirty`. Użytkownik myślał, że wygenerowane zdjęcie czeka na Zapisz.
 - **Rozwiązanie**: Hydracja tylko gdy draft nie jest brudny (albo zmieniło się id ćwiczenia). Po zapisie mediów toast i pasek: „Zdjęcie zapisane od razu — nie wymaga przycisku Zapisz”.
 - **Reguła**: Jeśli media idą osobną mutacją + refetch, dirty tracking pól tekstowych musi przetrwać zmianę referencji `source`; UI ma powiedzieć, że media już są zapisane. `data-testid` dawaj jako pierwszy atrybut tagu — skaner kończy opening tag na pierwszym `>` (w tym `=>` i `>=`), więc testid po `onClick={() =>` wypada z detekcji i psuje allowlistę po przesunięciu linii.
+
 ### 2026-09-15 - Kosz przy placeholderze to no-op, nie akcja
 
 - **Kategoria**: `UI/UX`

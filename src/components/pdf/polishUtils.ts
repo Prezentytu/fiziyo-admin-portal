@@ -127,10 +127,10 @@ export function translateExerciseTypeShort(type?: string): string {
 export function translateExerciseSidePolish(side?: string): string {
   if (!side) return '';
   const sides: Record<string, string> = {
-    left: 'Lewa strona',
-    right: 'Prawa strona',
-    alternating: 'Naprzemiennie L/P',
-    both: 'Obie strony jednocześnie',
+    left: 'Tylko lewa',
+    right: 'Tylko prawa',
+    alternating: 'Naprzemiennie',
+    both: 'Na każdą stronę',
     none: '',
   };
   return sides[side.toLowerCase()] || '';

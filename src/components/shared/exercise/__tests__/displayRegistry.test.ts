@@ -44,13 +44,14 @@ describe('displayRegistry', () => {
     expect(formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.reps, source)).toBe('10');
     expect(formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.duration, source)).toBe('5 minut');
     expect(formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.executionTime, source)).toBe('12s');
-    expect(formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.side, source, 'Nie ustawiono')).toBe('Lewa strona');
+    expect(formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.side, source, 'Nie ustawiono')).toBe('Tylko lewa');
   });
 
   it('normalizuje etykiety difficulty i side', () => {
     expect(formatDifficultyLabel('MEDIUM')).toBe('Średni');
     expect(formatDifficultyLabel('Custom')).toBe('Custom');
-    expect(formatSideLabel('none')).toBe('Bez podziału');
+    expect(formatSideLabel('none')).toBe('Razem');
+    expect(formatSideLabel('both')).toBe('Na każdą stronę');
   });
 
   it('utrzymuje globalny feature-flag ukrycia tagów', () => {

@@ -51,3 +51,17 @@ test("flags leftover dev integration branch", () => {
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("flags assigning the production branch to a Preview domain", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "trunk-"));
+  try {
+    writeTree(root, {
+      "scripts/pin-devportal-domain.mjs":
+        'export const LEGACY_INTEGRATION_BRANCH = "dev";\nexport const TRUNK_BRANCH = "main";\n{ gitBranch: TRUNK_BRANCH }\n',
+    });
+    const errors = checkTrunkMain(root).join("\n");
+    assert.match(errors, /production branch to a Preview domain/);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});

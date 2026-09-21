@@ -48,6 +48,7 @@ import {
 } from './utils/scheduleFrequencyUtils';
 import { calculateEstimatedTime } from '@/utils/exerciseTime';
 import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
+import { buildMappingOverridesFromParams } from '@/features/exercise-sets/utils/buildMappingOverridesFromParams';
 import {
   getWizardSteps,
   createGhostCopy,
@@ -1087,6 +1088,8 @@ function AssignmentWizardContent({
       const executionTime = params?.executionTime ?? exercise?.defaultExecutionTime;
       const restBetweenSets = params?.restSets ?? exercise?.defaultRestBetweenSets ?? 60;
       const duration = isTimeBasedExercise ? (params?.duration ?? exercise?.defaultDuration) : undefined;
+      const side = params?.exerciseSide ?? exercise?.side ?? exercise?.exerciseSide;
+      const preparationTime = params?.preparationTime ?? exercise?.preparationTime;
 
       return (
         totalSeconds +
@@ -1096,6 +1099,8 @@ function AssignmentWizardContent({
           duration,
           executionTime,
           rest: restBetweenSets,
+          side,
+          preparationTime,
         })
       );
     }, 0);
@@ -1111,6 +1116,7 @@ function AssignmentWizardContent({
     (instance: ExerciseInstance, exerciseSetId: string, order: number) => {
       const params = builderParams.get(instance.instanceId);
       const exercise = availableExercises.find((item) => item.id === instance.exerciseId);
+      const overridesJson = buildMappingOverridesFromParams(exercise, params ?? {});
 
       return {
         exerciseId: instance.exerciseId,
@@ -1128,6 +1134,7 @@ function AssignmentWizardContent({
         customName: normalizeMutationText(params?.customName),
         customDescription: normalizeMutationText(params?.customDescription),
         ...buildExerciseLoadMutationVars(params?.loadWeightKg ?? params?.loadValue),
+        overridesJson: overridesJson ?? '',
       };
     },
     [availableExercises, builderParams, normalizeMutationText]

@@ -47,6 +47,8 @@ interface ExerciseMapping {
     restReps?: number;
     defaultRestBetweenSets?: number;
     defaultRestBetweenReps?: number;
+    side?: string;
+    exerciseSide?: string;
   };
 }
 
@@ -146,6 +148,7 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
         mapping.executionTime || mapping.exercise?.executionTime || mapping.exercise?.defaultExecutionTime || 0;
       const restSets = mapping.restSets || mapping.exercise?.restSets || mapping.exercise?.defaultRestBetweenSets || 30;
       const restReps = mapping.restReps || mapping.exercise?.restReps || mapping.exercise?.defaultRestBetweenReps || 0;
+      const side = mapping.exercise?.side ?? mapping.exercise?.exerciseSide;
 
       totalSeconds += calculateEstimatedTime({
         sets,
@@ -154,6 +157,7 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
         executionTime,
         rest: restSets,
         restReps,
+        side,
       });
     }
     return Math.round(totalSeconds / 60); // minutes

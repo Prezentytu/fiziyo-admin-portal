@@ -1,3 +1,5 @@
+import { formatExerciseSideLabel } from './exerciseSideLabels';
+
 /**
  * Oblicza szacowany czas wykonania ćwiczenia w sekundach.
  *
@@ -13,29 +15,20 @@ export function calculateEstimatedTime(params: {
   executionTime?: number;
   rest?: number;
   restReps?: number;
+  side?: string;
+  preparationTime?: number;
 }): number {
-  const { sets, reps, duration, executionTime, rest = 60, restReps = 0 } = params;
-
-  const repsPerSet = reps || 10;
-  const normalizedExecutionTime = executionTime && executionTime > 0 ? executionTime : 0;
-  const durationOverride = duration && duration > 0 ? duration : 0;
-
-  let exerciseTime = 0;
-  let microBreakTime = 0;
-
-  if (normalizedExecutionTime > 0) {
-    exerciseTime = sets * repsPerSet * normalizedExecutionTime;
-    microBreakTime = sets * Math.max(0, repsPerSet - 1) * Math.max(0, restReps);
-  } else if (durationOverride > 0) {
-    exerciseTime = sets * durationOverride;
-  } else {
-    exerciseTime = sets * repsPerSet * 3;
-    microBreakTime = sets * Math.max(0, repsPerSet - 1) * Math.max(0, restReps);
-  }
-
-  const restTime = Math.max(0, sets - 1) * rest;
-
-  return exerciseTime + microBreakTime + restTime;
+  const { sets, reps, duration, executionTime, rest = 60, restReps = 0, side, preparationTime } = params;
+  return calculateExerciseTotalSeconds({
+    sets,
+    reps,
+    duration,
+    executionTime,
+    restSets: rest,
+    restReps,
+    side,
+    preparationTime,
+  }).seconds;
 }
 
 function normalizePositiveNumber(value: number | undefined): number {
@@ -98,7 +91,6 @@ export function calculateExerciseTotalSeconds(params: {
   const reps = Math.max(1, Math.floor(params.reps ?? 10));
   const side = params.side?.toLowerCase();
   const sideMultiplier = side === 'both' ? 2 : 1;
-  const effectiveReps = reps * sideMultiplier;
 
   const preparationTime = normalizePositiveNumber(params.preparationTime);
   const restSets = normalizePositiveNumber(params.restSets);
@@ -110,15 +102,15 @@ export function calculateExerciseTotalSeconds(params: {
   const repetitionTime = executionTime > 0 ? executionTime : (tempoExecutionTime ?? 3);
   const isEstimate = executionTime <= 0 && tempoExecutionTime == null && durationOverride <= 0;
 
-  // executionTime is the primary source for timer behavior; duration acts as fallback only.
-  const timePerSet =
+  // Work is doubled for BOTH inside each set; restReps stay per side, restSets stay between sets.
+  const workOneSideOfOneSet =
     executionTime > 0
-      ? effectiveReps * executionTime + Math.max(0, effectiveReps - 1) * restReps
+      ? reps * executionTime + Math.max(0, reps - 1) * restReps
       : durationOverride > 0
         ? durationOverride
-        : effectiveReps * repetitionTime + Math.max(0, effectiveReps - 1) * restReps;
+        : reps * repetitionTime + Math.max(0, reps - 1) * restReps;
 
-  const setsTime = sets * timePerSet;
+  const setsTime = sets * workOneSideOfOneSet * sideMultiplier;
   const interSetRestTime = Math.max(0, sets - 1) * restSets;
 
   return {
@@ -172,26 +164,25 @@ export function formatEstimatedTime(seconds: number): string {
 /**
  * Mapuje wartość Side na ikonę/label do wyświetlenia.
  *
- * - None / Both → "↔" (obustronne)
- * - Left → "L"
- * - Right → "R"
- * - Alternating → "⟳"
+ * - None → razem (ruch obustronny naraz)
+ * - Both → na każdą stronę (lewa, potem prawa w serii)
+ * - Left / Right / Alternating
  */
 export function getSideIndicator(side: string | undefined | null): { icon: string; label: string; showBadge: boolean } {
   const normalizedSide = side?.toLowerCase() || 'none';
 
   switch (normalizedSide) {
     case 'left':
-      return { icon: 'L', label: 'Lewa strona', showBadge: true };
+      return { icon: 'L', label: formatExerciseSideLabel('left'), showBadge: true };
     case 'right':
-      return { icon: 'R', label: 'Prawa strona', showBadge: true };
+      return { icon: 'R', label: formatExerciseSideLabel('right'), showBadge: true };
     case 'alternating':
-      return { icon: '⟳', label: 'Naprzemiennie', showBadge: true };
+      return { icon: '⟳', label: formatExerciseSideLabel('alternating'), showBadge: true };
     case 'both':
-      return { icon: '↔', label: 'Obustronne', showBadge: false };
+      return { icon: 'L+P', label: formatExerciseSideLabel('both'), showBadge: true };
     case 'none':
     default:
-      return { icon: '↔', label: 'Obustronne', showBadge: false };
+      return { icon: '↔', label: formatExerciseSideLabel('none'), showBadge: false };
   }
 }
 
@@ -200,5 +191,10 @@ export function getSideIndicator(side: string | undefined | null): { icon: strin
  */
 export function shouldShowSideBadge(side: string | undefined | null): boolean {
   const normalizedSide = side?.toLowerCase() || 'none';
-  return normalizedSide === 'left' || normalizedSide === 'right' || normalizedSide === 'alternating';
+  return (
+    normalizedSide === 'left' ||
+    normalizedSide === 'right' ||
+    normalizedSide === 'alternating' ||
+    normalizedSide === 'both'
+  );
 }

@@ -11,7 +11,7 @@ export const PROJECT_NAME = "fiziyo-admin-portal";
 const SHA = /^[0-9a-f]{40}$/;
 const DEPLOYMENT_ID = /^dpl_[A-Za-z0-9]{8,80}$/;
 const PROJECT_ID = /^(prj_[A-Za-z0-9]+|[a-z0-9][a-z0-9-]{1,62})$/;
-const TEAM_ID = /^(team_[A-Za-z0-9]+|[A-Za-z0-9_-]{2,64})$/;
+const TEAM_ID = /^(team_[A-Za-z0-9]+|[A-Za-z0-9][A-Za-z0-9_-]{1,63})$/;
 
 export function normalizeSha(input, fallback = "") {
   const sha = String(input ?? "")
@@ -35,14 +35,47 @@ export function canSkipDevIdentity(overrideReason) {
 }
 
 export function assertProjectId(projectId) {
-  if (!PROJECT_ID.test(String(projectId ?? ""))) throw new Error("Niepoprawny VERCEL_PROJECT_ID.");
-  return projectId;
+  const id = String(projectId ?? "").trim();
+  if (!PROJECT_ID.test(id)) throw new Error("Niepoprawny VERCEL_PROJECT_ID.");
+  return id;
 }
 
 export function assertTeamId(teamId) {
-  if (!teamId) return "";
-  if (!TEAM_ID.test(teamId)) throw new Error("Niepoprawny VERCEL_TEAM_ID.");
-  return teamId;
+  const id = String(teamId ?? "").trim();
+  if (!id) return "";
+  if (!TEAM_ID.test(id)) throw new Error("Niepoprawny VERCEL_TEAM_ID.");
+  return id;
+}
+
+export function resolveTeamScope(teamId) {
+  const id = assertTeamId(teamId);
+  if (!id) return null;
+  return { key: id.startsWith("team_") ? "teamId" : "slug", value: id };
+}
+
+export function teamScopeQuery(teamId) {
+  const scope = resolveTeamScope(teamId);
+  return scope ? `${scope.key}=${encodeURIComponent(scope.value)}` : "";
+}
+
+export function applyTeamScope(query, teamId) {
+  const scope = resolveTeamScope(teamId);
+  if (scope) query.set(scope.key, scope.value);
+  return query;
+}
+
+export function formatVercelApiError(status, bodyText) {
+  const text = String(bodyText ?? "").trim();
+  if (!text) return `Vercel API ${status}`;
+  try {
+    const payload = JSON.parse(text);
+    const code = payload?.error?.code || payload?.code;
+    const message = payload?.error?.message || payload?.message;
+    const detail = [code, message].filter((part) => typeof part === "string" && part.trim()).join(": ");
+    return detail ? `Vercel API ${status} ${detail}` : `Vercel API ${status}`;
+  } catch {
+    return `Vercel API ${status}`;
+  }
 }
 
 export function normalizeDeploymentId(value) {
@@ -103,14 +136,9 @@ export function planPromote({ source, explicitDeployment }) {
   return { action: "create-git" };
 }
 
-function teamQuery(teamId) {
-  const id = assertTeamId(teamId);
-  return id ? `teamId=${encodeURIComponent(id)}` : "";
-}
-
-function withQuery(path, teamId) {
-  const query = teamQuery(teamId);
-  return query ? `${path}?${query}` : path;
+function withQuery(requestPath, teamId) {
+  const query = teamScopeQuery(teamId);
+  return query ? `${requestPath}?${query}` : requestPath;
 }
 
 export async function observeSignIn(baseUrl, expected, fetchImpl = fetch) {
@@ -156,7 +184,7 @@ async function vercelJson(fetchImpl, token, method, requestPath, body) {
     cache: "no-store",
     signal: AbortSignal.timeout(30000),
   });
-  if (!response.ok) throw new Error(`Vercel API ${response.status}`);
+  if (!response.ok) throw new Error(formatVercelApiError(response.status, await response.text()));
   if (response.status === 202) return { accepted: true };
   const text = await response.text();
   return text ? JSON.parse(text) : {};
@@ -176,8 +204,7 @@ export async function loadExplicitDeployment(fetchImpl, env, deploymentId, sha) 
 export async function listShaDeployments(fetchImpl, env, sha) {
   const projectId = assertProjectId(env.VERCEL_PROJECT_ID);
   const query = new URLSearchParams({ projectId, sha, limit: "20" });
-  const teamId = assertTeamId(env.VERCEL_TEAM_ID);
-  if (teamId) query.set("teamId", teamId);
+  applyTeamScope(query, env.VERCEL_TEAM_ID);
   const payload = await vercelJson(fetchImpl, env.VERCEL_TOKEN, "GET", `/v6/deployments?${query}`);
   return Array.isArray(payload.deployments) ? payload.deployments : [];
 }

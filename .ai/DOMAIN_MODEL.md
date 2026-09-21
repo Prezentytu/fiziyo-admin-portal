@@ -18,11 +18,11 @@ Prezentacja opiera się na `executionTime` (timer w aplikacji pacjenta) i kontek
 
 | Wartość           | Opis                                |
 | ----------------- | ----------------------------------- |
-| `None` (0)        | Obustronne — brak podziału          |
-| `Left` (1)        | Tylko lewa                          |
-| `Right` (2)       | Tylko prawa                         |
-| `Both` (3)        | Lewa + prawa po kolei (objętość x2) |
-| `Alternating` (4) | Naprzemiennie (np. Dead Bug)        |
+| `None` (0)        | Razem — jeden przebieg, także ruch obustronny naraz |
+| `Left` (1)        | Tylko lewa                                          |
+| `Right` (2)       | Tylko prawa                                         |
+| `Both` (3)        | Na każdą stronę: w serii lewa → prawa (objętość ×2) |
+| `Alternating` (4) | Naprzemiennie, dawka łącznie (np. Dead Bug)         |
 
 ### ExerciseScope
 

@@ -44,6 +44,8 @@ function calculateTotalTime(mappings: ExerciseMapping[], overrides: Map<string, 
 
     // Duration służy do kalkulacji czasu serii; w pozostałych przypadkach używamy executionTime.
     const duration = isTimeBased ? (override?.duration ?? mapping.duration ?? exercise?.defaultDuration) : undefined;
+    const side = override?.exerciseSide ?? mapping.exercise?.side ?? exercise?.side ?? exercise?.exerciseSide;
+    const preparationTime = override?.preparationTime ?? mapping.preparationTime ?? exercise?.preparationTime;
 
     return (
       total +
@@ -53,6 +55,8 @@ function calculateTotalTime(mappings: ExerciseMapping[], overrides: Map<string, 
         duration,
         executionTime,
         rest,
+        side,
+        preparationTime,
       })
     );
   }, 0);

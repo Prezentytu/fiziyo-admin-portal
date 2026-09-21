@@ -7,6 +7,7 @@ import {
   aliasDevDomain,
   assertPreviewDeployment,
   isDevDomain,
+  listProjectDomains,
   pinDevportalDomain,
   planDevDomainAssignment,
   selectMainPreviewDeployment,
@@ -17,17 +18,22 @@ const SHA = "b".repeat(40);
 const DPL = "dpl_previewmain1234";
 
 describe("pin-devportal-domain", () => {
-  it("reassigns a domain that still follows git branch dev", () => {
+  it("detaches leftover git branches instead of assigning the production branch", () => {
     assert.equal(isDevDomain("devportal.fiziyo.pl"), true);
     assert.deepEqual(planDevDomainAssignment({ name: "devportal.fiziyo.pl", gitBranch: LEGACY_INTEGRATION_BRANCH }), {
-      action: "reassign",
-      gitBranch: TRUNK_BRANCH,
+      action: "detach",
+      gitBranch: null,
       previous: LEGACY_INTEGRATION_BRANCH,
     });
     assert.deepEqual(planDevDomainAssignment({ name: "devportal.fiziyo.pl", gitBranch: TRUNK_BRANCH }), {
-      action: "keep",
-      gitBranch: TRUNK_BRANCH,
+      action: "detach",
+      gitBranch: null,
       previous: TRUNK_BRANCH,
+    });
+    assert.deepEqual(planDevDomainAssignment({ name: "devportal.fiziyo.pl", gitBranch: null }), {
+      action: "keep",
+      gitBranch: null,
+      previous: null,
     });
   });
 
@@ -102,7 +108,36 @@ describe("pin-devportal-domain", () => {
     );
     assert.equal(pinned.aliased, true);
     assert.equal(pinned.deploymentId, DPL);
+    assert.equal(
+      calls.some((item) => item.method === "PATCH" && item.url.includes("/domains/") && item.body?.gitBranch === null),
+      true
+    );
+    assert.equal(calls.some((item) => item.body?.gitBranch === "main"), false);
     assert.equal(calls.some((item) => item.url.includes("/v2/aliases") && item.body?.alias === "devportal.fiziyo.pl"), true);
     await assert.rejects(() => aliasDevDomain(fetchImpl, { VERCEL_TOKEN: "n".repeat(24), VERCEL_PROJECT_ID: "prj_abc123" }, "bad"));
+  });
+
+  it("sends a team slug as slug and surfaces the Vercel 400 body", async () => {
+    const calls = [];
+    const fetchImpl = async (url) => {
+      calls.push(url);
+      return {
+        ok: false,
+        status: 400,
+        text: async () => JSON.stringify({ error: { code: "bad_request", message: "invalid teamId" } }),
+      };
+    };
+
+    await assert.rejects(
+      () =>
+        listProjectDomains(fetchImpl, {
+          VERCEL_TOKEN: "n".repeat(24),
+          VERCEL_PROJECT_ID: "prj_abc123",
+          VERCEL_TEAM_ID: "prezentytus-projects",
+        }),
+      /400 bad_request: invalid teamId/
+    );
+    assert.match(calls[0], /[?&]slug=prezentytus-projects/);
+    assert.doesNotMatch(calls[0], /teamId=/);
   });
 });

@@ -55,6 +55,9 @@ export function checkTrunkMain(root) {
     if (!pin.includes('LEGACY_INTEGRATION_BRANCH = "dev"') || !pin.includes('TRUNK_BRANCH = "main"')) {
       errors.push("Pin DEV domain script must move leftover branch dev onto main");
     }
+    if (pin.includes("gitBranch: TRUNK_BRANCH") || /gitBranch:\s*["']main["']/.test(pin)) {
+      errors.push("Pin DEV must not assign the production branch to a Preview domain");
+    }
   }
 
   for (const [relative, pattern, message] of FORBIDDEN_SNIPPETS) {
