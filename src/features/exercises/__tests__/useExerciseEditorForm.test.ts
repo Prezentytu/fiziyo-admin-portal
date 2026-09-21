@@ -66,6 +66,21 @@ describe('buildChangedCoreVariables', () => {
     const variables = buildChangedCoreVariables(initial, current);
     expect(variables.difficultyLevel).toBeNull();
   });
+
+  it('wysyła exerciseSide none jako nazwę enumu, nie null', () => {
+    const initial = makeDraft({ side: 'both' });
+    const current = makeDraft({ side: 'none' });
+    const variables = buildChangedCoreVariables(initial, current);
+    expect(variables.exerciseSide).toBe('none');
+  });
+
+  it('nie wysyła exerciseSide gdy strona się nie zmieniła', () => {
+    const initial = makeDraft({ side: 'both' });
+    const current = makeDraft({ side: 'both', sets: 4 });
+    const variables = buildChangedCoreVariables(initial, current);
+    expect(variables).not.toHaveProperty('exerciseSide');
+    expect(variables.sets).toBe(4);
+  });
 });
 
 describe('useExerciseEditorForm hydration', () => {

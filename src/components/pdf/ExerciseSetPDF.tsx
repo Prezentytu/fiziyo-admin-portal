@@ -7,6 +7,7 @@ import { PDFHeader } from './PDFHeader';
 import { PDFFooter } from './PDFFooter';
 import { ExercisePDFItem } from './ExercisePDFItem';
 import { formatExercises } from './polishUtils';
+import { chunkExercisesForPages, PDF_EXERCISES_PER_COMPACT_PAGE, PDF_EXERCISES_PER_FULL_PAGE } from './pdfPageUtils';
 import type { ExerciseSetPDFProps } from './types';
 
 const DAYS = [
@@ -34,6 +35,7 @@ export function ExerciseSetPDF({
   therapist,
   options,
   qrCodeDataUrl,
+  joinUrl,
 }: ExerciseSetPDFProps) {
   const now = new Date();
   const formattedDate = format(now, 'd MMMM yyyy', { locale: pl });
@@ -41,6 +43,7 @@ export function ExerciseSetPDF({
 
   // Sortuj ćwiczenia
   const sortedExercises = [...exerciseSet.exercises].sort((a, b) => (a.order || 0) - (b.order || 0));
+  const exercisePages = chunkExercisesForPages(sortedExercises, { compact: options.compactMode });
 
   const exerciseCountText = formatExercises(sortedExercises.length);
 
@@ -70,122 +73,121 @@ export function ExerciseSetPDF({
       subject={`Program ćwiczeń dla ${patient?.name || 'pacjenta'}`}
       creator="FiziYo - Aplikacja dla fizjoterapeutów"
     >
-      <Page size="A4" style={pdfStyles.page}>
-        {/* 1. NAGŁÓWEK */}
-        <PDFHeader organization={organization} date={formattedDate} />
+      {exercisePages.map((pageExercises, pageIndex) => {
+        const isFirstPage = pageIndex === 0;
+        const globalOffset = pageIndex * (options.compactMode ? PDF_EXERCISES_PER_COMPACT_PAGE : PDF_EXERCISES_PER_FULL_PAGE);
 
-        {/* 2. INFO STRIP (Scalona sekcja) */}
-        <View style={pdfStyles.infoStrip}>
-          {/* Rząd 1: 4 kolumny */}
-          <View style={pdfStyles.infoStripRow}>
-            {/* Pacjent */}
-            <View style={pdfStyles.infoStripColumn}>
-              <Text style={pdfStyles.infoStripLabel}>Pacjent</Text>
-              <Text style={pdfStyles.infoStripValue}>{patient?.name || 'Nieznany'}</Text>
-            </View>
+        return (
+          <Page key={`pdf-page-${pageIndex}`} size="A4" style={pdfStyles.page}>
+            <PDFHeader organization={organization} date={formattedDate} />
 
-            {/* Terapeuta */}
-            <View style={pdfStyles.infoStripColumn}>
-              <Text style={pdfStyles.infoStripLabel}>Terapeuta</Text>
-              <Text style={pdfStyles.infoStripValueSmall}>{therapist?.name || '-'}</Text>
-            </View>
+            {isFirstPage && (
+              <View style={pdfStyles.infoStrip}>
+                <View style={pdfStyles.infoStripRow}>
+                  <View style={pdfStyles.infoStripColumn}>
+                    <Text style={pdfStyles.infoStripLabel}>Pacjent</Text>
+                    <Text style={pdfStyles.infoStripValue}>{patient?.name || 'Nieznany'}</Text>
+                  </View>
 
-            {/* Data */}
-            <View style={pdfStyles.infoStripColumn}>
-              <Text style={pdfStyles.infoStripLabel}>Data</Text>
-              <Text style={pdfStyles.infoStripValueSmall}>{formattedDate}</Text>
-            </View>
+                  <View style={pdfStyles.infoStripColumn}>
+                    <Text style={pdfStyles.infoStripLabel}>Terapeuta</Text>
+                    <Text style={pdfStyles.infoStripValueSmall}>{therapist?.name || '-'}</Text>
+                  </View>
 
-            {/* Częstotliwość */}
-            <View style={pdfStyles.infoStripColumnLast}>
-              <Text style={pdfStyles.infoStripLabel}>Częstotliwość</Text>
-              <Text style={pdfStyles.infoStripValueAccent}>
-                {frequencyText}
-                {daysText && <Text style={pdfStyles.infoStripValueSmall}> {daysText}</Text>}
-              </Text>
-            </View>
-          </View>
+                  <View style={pdfStyles.infoStripColumn}>
+                    <Text style={pdfStyles.infoStripLabel}>Data</Text>
+                    <Text style={pdfStyles.infoStripValueSmall}>{formattedDate}</Text>
+                  </View>
 
-          {/* Rząd 2: Dni tygodnia - TYLKO jeśli wybrano konkretne */}
-          {hasSpecificDays && (
-            <View style={pdfStyles.infoStripDaysRow}>
-              <Text style={pdfStyles.infoStripDaysLabel}>Dni treningowe:</Text>
-              <View style={pdfStyles.infoStripDaysContainer}>
-                {DAYS.map((day) => {
-                  const isActive = frequency?.[day.key as keyof typeof frequency] === true;
-                  return (
-                    <View
-                      key={day.key}
-                      style={[
-                        pdfStyles.infoStripDayBox,
-                        isActive ? pdfStyles.infoStripDayBoxActive : pdfStyles.infoStripDayBoxInactive,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          pdfStyles.infoStripDayText,
-                          isActive ? pdfStyles.infoStripDayTextActive : pdfStyles.infoStripDayTextInactive,
-                        ]}
-                      >
-                        {day.label}
-                      </Text>
+                  <View style={pdfStyles.infoStripColumnLast}>
+                    <Text style={pdfStyles.infoStripLabel}>Częstotliwość</Text>
+                    <Text style={pdfStyles.infoStripValueAccent}>
+                      {frequencyText}
+                      {daysText && <Text style={pdfStyles.infoStripValueSmall}> {daysText}</Text>}
+                    </Text>
+                  </View>
+                </View>
+
+                {hasSpecificDays && (
+                  <View style={pdfStyles.infoStripDaysRow}>
+                    <Text style={pdfStyles.infoStripDaysLabel}>Dni treningowe:</Text>
+                    <View style={pdfStyles.infoStripDaysContainer}>
+                      {DAYS.map((day) => {
+                        const isActive = frequency?.[day.key as keyof typeof frequency] === true;
+                        return (
+                          <View
+                            key={day.key}
+                            style={[
+                              pdfStyles.infoStripDayBox,
+                              isActive ? pdfStyles.infoStripDayBoxActive : pdfStyles.infoStripDayBoxInactive,
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                pdfStyles.infoStripDayText,
+                                isActive ? pdfStyles.infoStripDayTextActive : pdfStyles.infoStripDayTextInactive,
+                              ]}
+                            >
+                              {day.label}
+                            </Text>
+                          </View>
+                        );
+                      })}
                     </View>
-                  );
-                })}
+                  </View>
+                )}
+
+                {periodText && <Text style={pdfStyles.infoStripNote}>Okres planu: {periodText}</Text>}
+
+                {frequency?.breakBetweenSets && frequency.timesPerDay && frequency.timesPerDay > 1 && (
+                  <Text style={pdfStyles.infoStripNote}>
+                    * Pamiętaj o zachowaniu min. {frequency.breakBetweenSets}h przerwy między sesjami.
+                  </Text>
+                )}
               </View>
+            )}
+
+            {isFirstPage && options.notes && (
+              <View style={pdfStyles.generalNotes}>
+                <Text style={pdfStyles.sectionTitle}>Zalecenia ogólne</Text>
+                <Text style={pdfStyles.generalNotesText}>{options.notes}</Text>
+              </View>
+            )}
+
+            <View style={pdfStyles.exercisesSection}>
+              <View style={pdfStyles.exercisesSectionHeader}>
+                <Text style={pdfStyles.exercisesSectionTitle}>
+                  {isFirstPage ? 'Plan Treningowy' : `${exerciseSet.name} — kontynuacja`}
+                </Text>
+                <Text style={pdfStyles.exercisesSectionCount}>{exerciseCountText}</Text>
+              </View>
+
+              {pageExercises.map((exercise, indexOnPage) => (
+                <ExercisePDFItem
+                  key={exercise.id}
+                  exercise={exercise}
+                  index={globalOffset + indexOnPage}
+                  showImage={options.showImages}
+                  compact={options.compactMode}
+                />
+              ))}
             </View>
-          )}
 
-          {periodText && <Text style={pdfStyles.infoStripNote}>Okres planu: {periodText}</Text>}
-
-          {/* Notatka o przerwie */}
-          {frequency?.breakBetweenSets && frequency.timesPerDay && frequency.timesPerDay > 1 && (
-            <Text style={pdfStyles.infoStripNote}>
-              * Pamiętaj o zachowaniu min. {frequency.breakBetweenSets}h przerwy między sesjami.
-            </Text>
-          )}
-        </View>
-
-        {/* 3. ZALECENIA OGÓLNE (jeśli są) */}
-        {options.notes && (
-          <View style={pdfStyles.generalNotes}>
-            <Text style={pdfStyles.sectionTitle}>Zalecenia ogólne</Text>
-            <Text style={pdfStyles.generalNotesText}>{options.notes}</Text>
-          </View>
-        )}
-
-        {/* 4. LISTA ĆWICZEŃ */}
-        <View style={pdfStyles.exercisesSection}>
-          <View style={pdfStyles.exercisesSectionHeader}>
-            <Text style={pdfStyles.exercisesSectionTitle}>Plan Treningowy</Text>
-            <Text style={pdfStyles.exercisesSectionCount}>{exerciseCountText}</Text>
-          </View>
-
-          {sortedExercises.map((exercise, index) => (
-            <ExercisePDFItem
-              key={exercise.id}
-              exercise={exercise}
-              index={index}
-              showImage={options.showImages}
-              compact={options.compactMode}
+            <PDFFooter
+              generatedAt={formattedDateTime}
+              therapistName={therapist?.name}
+              qrCodeDataUrl={options.showQRCode ? qrCodeDataUrl : undefined}
+              joinUrl={joinUrl}
             />
-          ))}
-        </View>
 
-        {/* 5. STOPKA - App Banner (Marketing) */}
-        <PDFFooter
-          generatedAt={formattedDateTime}
-          therapistName={therapist?.name}
-          qrCodeDataUrl={options.showQRCode ? qrCodeDataUrl : undefined}
-        />
-
-        {/* Numer strony */}
-        <Text
-          style={pdfStyles.pageNumber}
-          render={({ pageNumber, totalPages }) => `Strona ${pageNumber} z ${totalPages}`}
-          fixed
-        />
-      </Page>
+            <Text
+              style={pdfStyles.pageNumber}
+              render={({ pageNumber, totalPages }) => `Strona ${pageNumber} z ${totalPages}`}
+              fixed
+            />
+          </Page>
+        );
+      })}
     </Document>
   );
 }
