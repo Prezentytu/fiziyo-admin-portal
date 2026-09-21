@@ -269,6 +269,7 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
                     size="sm"
                     className="absolute right-2 top-1/2 -translate-y-1/2"
                     onClick={handleCopyLink}
+                    disabled={!canRenderQr}
                     data-testid="invite-copy-inline-btn"
                   >
                     {copied ? <Check className="h-4 w-4" /> : 'Kopiuj'}
@@ -278,7 +279,12 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
                   <p className="text-xs text-muted-foreground">
                     Link otworzy ekran startowy pacjenta z dostępem do aktywacji Premium.
                   </p>
-                  <Button onClick={handleCopyLink} className="shrink-0" data-testid="invite-copy-main-btn">
+                  <Button
+                    onClick={handleCopyLink}
+                    disabled={!canRenderQr}
+                    className="shrink-0"
+                    data-testid="invite-copy-main-btn"
+                  >
                     {copied ? (
                       <>
                         <Check className="h-4 w-4 mr-2" />
@@ -299,8 +305,12 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
             <TabsContent value="qr" className="mt-4">
               <div className="rounded-xl border border-border/60 bg-surface/50 p-5">
                 <div className="flex flex-col items-center gap-4">
-                  <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5" data-testid="invite-qr-code">
-                    {canRenderQr ? (
+                  {canRenderQr ? (
+                    <div
+                      className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5"
+                      data-testid="invite-qr-code"
+                      data-qr-url={personalizedLink}
+                    >
                       <QRCodeSVG
                         value={personalizedLink}
                         size={200}
@@ -314,16 +324,16 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
                           excavate: true,
                         }}
                       />
-                    ) : (
-                      <div
-                        className="flex h-[200px] w-[200px] flex-col items-center justify-center"
-                        data-testid="invite-qr-loading"
-                      >
-                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                        <p className="mt-2 text-xs text-muted-foreground">Przygotowuję kod</p>
-                      </div>
-                    )}
-                  </div>
+                    </div>
+                  ) : (
+                    <div
+                      className="flex h-[200px] w-[200px] flex-col items-center justify-center rounded-2xl border border-border/40 bg-surface-light px-3 text-center"
+                      data-testid="invite-qr-unavailable"
+                    >
+                      <QrCode className="h-8 w-8 text-muted-foreground" />
+                      <p className="mt-2 text-xs text-muted-foreground">Brak linku zaproszenia</p>
+                    </div>
+                  )}
                   <div className="space-y-1 text-center">
                     <p className="text-sm font-medium text-foreground">Pokaż pacjentowi kod do zeskanowania</p>
                     <p className="text-xs text-muted-foreground">

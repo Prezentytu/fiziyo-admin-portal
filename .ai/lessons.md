@@ -22,6 +22,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-09-21 - QR zaproszenia bez tokenu to niedostępność, nie spinner
+
+- **Kategoria**: `UI/UX` | `Testing`
+- **Problem**: `PatientInviteDialog` po `success: false` albo sukcesie bez tokenu kręcił `invite-qr-loading`.
+- **Przyczyna**: Górny spinner znika z `loading === false`, a zakładka QR używała `!canRenderQr` jako „jeszcze ładuję”.
+- **Rozwiązanie**: `invite-qr-unavailable`; spinner dialogu tylko przy `loading && !generatedLink`.
+- **Reguła**: Jeśli mutacja zaproszenia się skończyła bez HTTPS URL, zawsze stan niedostępności. Spinner QR tylko gdy request jeszcze trwa.
+
 ### 2026-09-21 - Brak connect URL to stan bez QR, nie spinner
 
 - **Kategoria**: `UI/UX` | `Testing`

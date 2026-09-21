@@ -673,8 +673,8 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `finances-growth-action-bar`            | Pasek CTA zapraszania pacjentów                | `GrowthActionBar.tsx`      |
 | `finances-growth-action-btn`            | Przycisk CTA: Zaproś pacjenta                  | `GrowthActionBar.tsx`      |
 | `invite-dialog`                         | Dialog zaproszenia pacjenta                    | `PatientInviteDialog.tsx`  |
-| `invite-qr-code`                        | QR HTTPS `/start?token=`                       | `PatientInviteDialog.tsx`  |
-| `invite-qr-loading`                     | Spinner przed tokenem                          | `PatientInviteDialog.tsx`  |
+| `invite-qr-code`                        | QR HTTPS `/start?token=`; `data-qr-url`        | `PatientInviteDialog.tsx`  |
+| `invite-qr-unavailable`                 | Hint gdy mutacja bez tokenu/URL                | `PatientInviteDialog.tsx`  |
 | `invite-qr-copy-btn`                    | Kopiuj link obok QR zaproszenia                | `PatientInviteDialog.tsx`  |
 | `invite-cancel-btn`                     | Anuluj w tabie wysyłki                         | `PatientInviteDialog.tsx`  |
 | `invite-refresh-btn`                    | Odśwież listę zaproszeń                        | `PatientInvitesCard.tsx`   |

@@ -6,8 +6,8 @@
 
 - Upoważnienie: Adam (czat 2026-09-21) — kontynuacja draft PR #83; bez landing, bez auth, bez deployu, bez nowych botów
 - Writer: cloud agent
-- Dozwolone pliki: `src/lib/patientJoinUrl.ts`, `src/lib/__tests__/patientJoinUrl.test.ts`, `src/features/exercise-sets/GeneratePDFDialog.tsx`, `src/features/exercise-sets/GeneratePDFDialog.test.tsx`, `src/features/assignment/AssignmentSuccessDialog.tsx`, `src/features/assignment/AssignmentSuccessDialog.test.tsx`, `src/features/patients/PatientQRCodeDialog.tsx`, `src/features/patients/PatientQRCodeDialog.test.tsx`, `src/app/(dashboard)/patients/[id]/page.tsx`, `docs/testing/data-testid-map.md`, `.ai/lessons.md`, `.ai/runs/2026-09-21-pdf-qr-connect-params.md`
-- Wykluczenia: GraphQL, auth, landing, fizjo-app, token invite, merge, PROD, nowe PR-y/boty
+- Dozwolone pliki: `src/lib/patientJoinUrl.ts`, `src/lib/__tests__/patientJoinUrl.test.ts`, `src/features/exercise-sets/GeneratePDFDialog.tsx`, `src/features/exercise-sets/GeneratePDFDialog.test.tsx`, `src/features/assignment/AssignmentSuccessDialog.tsx`, `src/features/assignment/AssignmentSuccessDialog.test.tsx`, `src/features/patients/PatientQRCodeDialog.tsx`, `src/features/patients/PatientQRCodeDialog.test.tsx`, `src/components/finances/PatientInviteDialog.tsx`, `src/components/finances/PatientInviteDialog.test.tsx`, `src/app/(dashboard)/patients/[id]/page.tsx`, `docs/testing/data-testid-map.md`, `.ai/lessons.md`, `.ai/runs/2026-09-21-pdf-qr-connect-params.md`
+- Wykluczenia: GraphQL, auth, landing, fizjo-app, zmiana kontraktu token vs connect, merge, PROD, nowe PR-y/boty
 - Acceptance: connect QR koduje `https://fiziyo.pl/start?patient=&org=&therapist=` albo pokazuje unavailable (nie spinner); test UI ładuje payload; patient/org w URL nie jest autoryzacją
 
 ## Repo i baseline
