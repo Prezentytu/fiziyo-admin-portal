@@ -58,6 +58,13 @@ export function checkTrunkMain(root) {
     if (pin.includes("gitBranch: TRUNK_BRANCH") || /gitBranch:\s*["']main["']/.test(pin)) {
       errors.push("Pin DEV must not assign the production branch to a Preview domain");
     }
+    if (!pin.includes("feature-preview") || !/environment === ["']Preview["']/.test(pin)) {
+      errors.push("Pin DEV must skip Vercel Preview deployments that are not trunk main");
+    }
+    const pinWorkflowText = fs.readFileSync(pinWorkflow, "utf8");
+    if (!pinWorkflowText.includes("environment != 'Preview'")) {
+      errors.push("Pin DEV workflow must not run the pin job on Vercel Preview PR deployments");
+    }
   }
 
   for (const [relative, pattern, message] of FORBIDDEN_SNIPPETS) {

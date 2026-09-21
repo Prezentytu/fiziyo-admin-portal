@@ -22,6 +22,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-09-20 - Pin DEV nie może padać na Preview PR
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: Check `pin` czerwienił każdy PR po deployu Vercel (`Brak deploymentu Preview dla DEV.`).
+- **Przyczyna**: `deployment.ref` z Vercel to SHA, nie `main`. `shouldSkipPin` omijał tylko Production i gałąź `dev`, więc Preview feature branch szukał Preview z `main` dla SHA spoza trunka i rzucał.
+- **Rozwiązanie**: Preview spoza `main` oraz ref ≠ `main` kończą się skipem (`feature-preview`) zanim skrypt woła alias. Job w `pin-devportal.yml` nie startuje na `environment=Preview`.
+- **Reguła**: Pin DEV tylko z `workflow_dispatch` albo Preview/`ref=main`. Sukces Preview PR to nie powód, żeby ruszać `devportal.fiziyo.pl`.
+
 ### 2026-09-20 - Dodanie ćwiczenia do zestawu musi wysłać overridesJson
 
 - **Kategoria**: `GraphQL`
