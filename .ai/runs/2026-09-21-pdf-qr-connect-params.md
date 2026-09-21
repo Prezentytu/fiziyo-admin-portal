@@ -31,5 +31,13 @@
 - Connect QR wymaga trzech id, bo `fizjo-app` `parseConnectUrl` odrzuca niepełny link. Token invite bez zmian.
 - Landing i test `/connect` poza tym runem.
 
-- Kandydat: fiziyo-admin-portal `cursor/k01-pdf-qr-a18f` `732c103848e506f884c2c0552b119d521e045bd2` (czyste drzewo po commicie)
-- Kontrola: 2026-09-21 `npm run validate` exit 0; vitest 650 passed; next build Turbopack compiled
+## Dowody
+
+- Kandydat: fiziyo-admin-portal `cursor/k01-pdf-qr-a18f` `732c103848e506f884c2c0552b119d521e045bd2` plus ten commit runu
+- Kontrola: 2026-09-21 `npm run validate` exit 0 na `732c103`; vitest 650 passed; next build Turbopack compiled
+
+## Handoff
+
+- Następny krok: Adam zleca Cloud Agent na `fizjo-app` test `fiziyo://connect` na DEV
+- Blokady: brak dowodu, że pacjent przechodzi `/connect`; landing nie ruszany
+- BOARD: K01-PDF-QR | fiziyo-admin-portal | PDF QR tylko z patient+org+therapist
