@@ -22,6 +22,13 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-09-18 - UpdateExercise: none strony to string enumu, nie null
+
+- **Kategoria**: `GraphQL`
+- **Problem**: Zmiana „Na każdą stronę” → „Razem” w edytorze katalogu zapisywała się bez błędu, a `Side` zostawał `Both` (objętość pacjenta ×2).
+- **Przyczyna**: Dirty-diff i legacy mapper wysyłały `exerciseSide: null`. Backend `UpdateExercise` pomija puste `exerciseSide` (`IsNullOrEmpty`), więc None nigdy nie nadpisywało Both/Left/Right.
+- **Rozwiązanie**: Przy zmianie strony wysyłaj `'none'` (i inne wartości enumu) jako string. Null zostaw tylko gdy pole nie jest w dirty-diff.
+- **Reguła**: Jeśli GraphQL update pomija null, zawsze zrób sentinel czyszczenia jawnym stringiem enumu (`none`), nigdy `null`.
 ### 2026-09-21 - QR zaproszenia bez tokenu to niedostępność, nie spinner
 
 - **Kategoria**: `UI/UX` | `Testing`
