@@ -33,6 +33,20 @@ test("repo trunk is main-only", () => {
   assert.deepEqual(checkTrunkMain(process.cwd()), []);
 });
 
+test("flags policy that treats empty rulesets as a GitHub Pro 403", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "trunk-"));
+  try {
+    writeTree(root, {
+      "docs/architecture/cloud-agent-policy.md":
+        "PR-y targetują `main`.\nRulesets na prywatnym `fiziyo-admin-portal` przy planie Free zwracają 403 — worker zapisu zostaje wyłączony.\n",
+    });
+    const errors = checkTrunkMain(root).join("\n");
+    assert.match(errors, /empty rulesets as a GitHub Pro 403/);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("flags leftover dev integration branch", () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "trunk-"));
   try {

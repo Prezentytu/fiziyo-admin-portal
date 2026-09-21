@@ -22,6 +22,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-09-21 - Pusta lista rulesets to nie 403 planu Free
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: Portal `#78` po zielonym `validate` nadal nie nadawał się do merge: pin padał na Preview PR, a §6 polityki tłumaczył wyłączenie workera 403 „Upgrade to GitHub Pro”.
+- **Przyczyna**: Workflow pinu jest brany z SHA deploymentu, więc merge `#95` na `main` nie naprawia otwartego PR bez wlania `main`. `GET …/rulesets` na `fiziyo-admin-portal` zwraca 200 `[]`; 403 planu jest historyczny.
+- **Rozwiązanie**: Wlać `main` (pin skip Preview). §6 jak kanon fizjo-app: worker wyłączony bo `enabled: false`. `check-trunk-main` blokuje powrót zdania o 403 Free.
+- **Reguła**: Jeśli GitHub `rulesets` zwraca `[]`, zawsze cytuj ten odczyt. Nie uzasadniaj wyłączenia workera historycznym 403 Pro.
+
 ### 2026-09-20 - Pin DEV nie może padać na Preview PR
 
 - **Kategoria**: `Build/Tooling`
