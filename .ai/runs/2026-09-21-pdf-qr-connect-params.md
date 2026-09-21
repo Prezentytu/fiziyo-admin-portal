@@ -28,6 +28,8 @@
 - [x] AssignmentSuccessDialog / PatientQRCodeDialog: unavailable zamiast spinnera
 - [x] Testy payloadu tych dialogów
 - [x] `npm run validate` na `873bf3b` — 132 files / 654 tests, build OK
+- [x] PatientInviteDialog: unavailable zamiast spinnera po mutacji bez tokenu
+- [x] `npm run validate` na `fea27b8` — 132 files / 656 tests, build OK
 
 ## Decyzje
 
@@ -37,8 +39,9 @@
 
 ## Dowody
 
-- Kandydat: fiziyo-admin-portal `cursor/k01-pdf-qr-a18f` `873bf3b48768019e438fb47142be075f8dc3218e`
-- Kontrola: 2026-09-21 `npm run validate` exit 0 na `873bf3b`; vitest 654 passed; next build Turbopack compiled
+- Kandydat: fiziyo-admin-portal `cursor/k01-pdf-qr-a18f` `fea27b85880e231c6e68d1da396606b35e9c394d`
+- Kontrola: 2026-09-21 `npm run validate` exit 0 na `fea27b8`; vitest 656 passed; next build Turbopack compiled
+- P1: `GET https://fiziyo.pl/start?...` 404 Apache (2026-09-21); parser mobile nadal `path === 'connect'`
 
 ## Handoff
 
