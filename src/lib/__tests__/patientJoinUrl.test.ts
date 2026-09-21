@@ -44,23 +44,34 @@ describe('buildPatientConnectUrl', () => {
     ).toBe('https://fiziyo.pl/start?patient=pat-1&org=org-9&therapist=th-2');
   });
 
-  it('omits therapist when missing', () => {
-    expect(buildPatientConnectUrl({ patientId: 'pat-1', organizationId: 'org-9' })).toBe(
-      'https://fiziyo.pl/start?patient=pat-1&org=org-9'
-    );
-  });
-
-  it('throws when patient or org is empty', () => {
-    expect(() => buildPatientConnectUrl({ patientId: '', organizationId: 'org-9' })).toThrow();
-    expect(() => buildPatientConnectUrl({ patientId: 'pat-1', organizationId: '  ' })).toThrow();
+  it('throws when patient, org or therapist is empty', () => {
+    expect(() =>
+      buildPatientConnectUrl({ patientId: '', organizationId: 'org-9', therapistId: 'th-2' })
+    ).toThrow();
+    expect(() =>
+      buildPatientConnectUrl({ patientId: 'pat-1', organizationId: '  ', therapistId: 'th-2' })
+    ).toThrow();
+    expect(() =>
+      buildPatientConnectUrl({ patientId: 'pat-1', organizationId: 'org-9', therapistId: '' })
+    ).toThrow();
   });
 });
 
 describe('tryBuildPatientConnectUrl', () => {
-  it('returns null when ids are missing', () => {
+  it('returns null when any connect id is missing', () => {
     expect(tryBuildPatientConnectUrl({})).toBeNull();
-    expect(tryBuildPatientConnectUrl({ patientId: 'p' })).toBeNull();
+    expect(tryBuildPatientConnectUrl({ patientId: 'p', organizationId: 'o' })).toBeNull();
+    expect(
+      tryBuildPatientConnectUrl({ patientId: 'p', organizationId: 'o', therapistId: '  ' })
+    ).toBeNull();
     expect(tryBuildPatientConnectUrl(null)).toBeNull();
+  });
+
+  it('does not emit a bare /start URL', () => {
+    expect(tryBuildPatientConnectUrl({ organizationId: 'org-9' })).toBeNull();
+    expect(tryBuildPatientConnectUrl({ patientId: 'pat-1', organizationId: 'org-9' })).not.toBe(
+      PATIENT_START_URL
+    );
   });
 });
 

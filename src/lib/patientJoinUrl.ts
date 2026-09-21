@@ -29,22 +29,24 @@ export function tryBuildPatientJoinUrl(code: string | null | undefined): string 
 export interface PatientConnectParams {
   patientId: string;
   organizationId: string;
-  therapistId?: string | null;
+  therapistId: string;
 }
 
+/**
+ * App `/connect` rejects the link unless patient, org and therapist are all present.
+ * IDs in the URL are routing hints, not authorization.
+ */
 export function buildPatientConnectUrl(params: PatientConnectParams): string {
   const patientId = params.patientId.trim();
   const organizationId = params.organizationId.trim();
-  if (!patientId || !organizationId) {
-    throw new Error('Patient connect URL requires patientId and organizationId');
+  const therapistId = params.therapistId.trim();
+  if (!patientId || !organizationId || !therapistId) {
+    throw new Error('Patient connect URL requires patientId, organizationId and therapistId');
   }
   const url = new URL(PATIENT_START_PATH, PATIENT_JOIN_ORIGIN);
   url.searchParams.set('patient', patientId);
   url.searchParams.set('org', organizationId);
-  const therapistId = params.therapistId?.trim();
-  if (therapistId) {
-    url.searchParams.set('therapist', therapistId);
-  }
+  url.searchParams.set('therapist', therapistId);
   return url.toString();
 }
 
@@ -53,12 +55,15 @@ export function tryBuildPatientConnectUrl(
 ): string | null {
   const patientId = params?.patientId;
   const organizationId = params?.organizationId;
-  if (!params || !patientId?.trim() || !organizationId?.trim()) return null;
+  const therapistId = params?.therapistId;
+  if (!params || !patientId?.trim() || !organizationId?.trim() || !therapistId?.trim()) {
+    return null;
+  }
   try {
     return buildPatientConnectUrl({
       patientId,
       organizationId,
-      therapistId: params.therapistId,
+      therapistId,
     });
   } catch {
     return null;

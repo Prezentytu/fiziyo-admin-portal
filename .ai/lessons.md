@@ -22,6 +22,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-09-21 - QR PDF bez patient/org/therapist nie koduje pustego /start
+
+- **Kategoria**: `UI/UX` | `Testing`
+- **Problem**: `GeneratePDFDialog` kodował stałe `https://fiziyo.pl/start` bez parametrów; skan z PDF nie otworzy connect.
+- **Przyczyna**: Caller karty pacjenta przekazywał tylko imię i email. Apka odrzuca link bez `patient`, `org` i `therapist`.
+- **Rozwiązanie**: `tryBuildPatientConnectUrl` wymaga trzech id. PDF QR tylko wtedy; inaczej checkbox wyłączony.
+- **Reguła**: Jeśli QR ma otworzyć `/connect`, zawsze koduj `patient`+`org`+`therapist`. Brak któregokolwiek = brak QR, nigdy goły `/start`.
+
 ### 2026-09-21 - Pusta lista rulesets to nie 403 planu Free
 
 - **Kategoria**: `Build/Tooling`

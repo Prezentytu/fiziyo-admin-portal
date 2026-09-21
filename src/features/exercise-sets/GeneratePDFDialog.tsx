@@ -35,7 +35,7 @@ import type {
   PDFExercise,
 } from '@/components/pdf';
 import { getMediaUrl } from '@/utils/mediaUrl';
-import { isHttpsUrl, PATIENT_START_URL } from '@/lib/patientJoinUrl';
+import { isHttpsUrl, tryBuildPatientConnectUrl } from '@/lib/patientJoinUrl';
 
 import { GET_ORGANIZATION_BY_ID_QUERY } from '@/graphql/queries/organizations.queries';
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
@@ -106,6 +106,7 @@ interface ExerciseSetInput {
 }
 
 interface PatientInput {
+  id?: string;
   name: string;
   email?: string;
 }
@@ -116,6 +117,7 @@ interface GeneratePDFDialogProps {
   exerciseSet: ExerciseSetInput;
   patient?: PatientInput;
   organizationId: string;
+  therapistId?: string;
 }
 
 type ViewMode = 'full' | 'compact';
@@ -126,6 +128,7 @@ export function GeneratePDFDialog({
   exerciseSet,
   patient,
   organizationId,
+  therapistId,
 }: GeneratePDFDialogProps) {
   const { user } = useUser();
   const qrRef = useRef<HTMLDivElement>(null);
@@ -152,7 +155,12 @@ export function GeneratePDFDialog({
 
   const organization = (orgData as OrganizationByIdResponse)?.organizationById;
   const therapistUser = (userData as UserByClerkIdResponse)?.userByClerkId;
-  const qrUrl = PATIENT_START_URL;
+  const resolvedTherapistId = therapistId?.trim() || therapistUser?.id;
+  const qrUrl = tryBuildPatientConnectUrl({
+    patientId: patient?.id,
+    organizationId,
+    therapistId: resolvedTherapistId,
+  });
   const canRenderQr = isHttpsUrl(qrUrl);
 
   // Generuj QR code data URL
@@ -229,16 +237,16 @@ export function GeneratePDFDialog({
         ? { name: therapistUser.fullname }
         : undefined;
 
+      const includeQr = showQRCode && canRenderQr;
       const pdfOptions: PDFOptions = {
         showImages: viewMode === 'full' && showImages,
         showFrequency,
-        showQRCode,
+        showQRCode: includeQr,
         compactMode: viewMode === 'compact',
         notes: notes.trim() || undefined,
       };
 
-      // Pobierz QR code
-      const qrCodeDataUrl = getQRCodeDataUrl();
+      const qrCodeDataUrl = includeQr ? getQRCodeDataUrl() : undefined;
 
       // Generuj dokument PDF
       const doc = (
@@ -249,7 +257,7 @@ export function GeneratePDFDialog({
           therapist={pdfTherapist}
           options={pdfOptions}
           qrCodeDataUrl={qrCodeDataUrl}
-          joinUrl={qrUrl}
+          joinUrl={includeQr ? qrUrl : undefined}
         />
       );
 
@@ -441,15 +449,26 @@ export function GeneratePDFDialog({
                 </div>
               </label>
 
-              <label className="flex items-center gap-3 cursor-pointer group">
+              <label
+                className={cn(
+                  'flex items-center gap-3 group',
+                  canRenderQr ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'
+                )}
+              >
                 <Checkbox
-                  checked={showQRCode}
+                  checked={showQRCode && canRenderQr}
+                  disabled={!canRenderQr}
                   onCheckedChange={(checked) => setShowQRCode(checked === true)}
                   data-testid="set-pdf-show-qr"
                 />
                 <div className="flex items-center gap-2 text-sm group-hover:text-foreground transition-colors">
                   <QrCode className="h-4 w-4 text-muted-foreground" />
                   <span>Kod QR do aplikacji mobilnej</span>
+                  {!canRenderQr && (
+                    <span className="text-xs text-muted-foreground" data-testid="set-pdf-qr-unavailable">
+                      (brak pacjenta albo terapeuty)
+                    </span>
+                  )}
                 </div>
               </label>
             </div>
@@ -473,8 +492,8 @@ export function GeneratePDFDialog({
         </div>
 
         {/* Ukryty QR Code do generowania obrazu */}
-        {canRenderQr && (
-          <div ref={qrRef} className="hidden">
+        {canRenderQr && qrUrl && (
+          <div ref={qrRef} className="hidden" data-testid="set-pdf-qr-payload" data-qr-url={qrUrl}>
             <QRCodeCanvas value={qrUrl} size={200} level="M" />
           </div>
         )}
