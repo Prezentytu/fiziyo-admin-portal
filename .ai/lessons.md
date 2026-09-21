@@ -70,6 +70,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Rozwiązanie**: Ten sam `buildMappingOverridesFromParams` co w `CreateSetWizard`. Test strażnik skanuje write-pathy z edytorem strony.
 - **Reguła**: Każdy `addExerciseToExerciseSet` z karty `cardSurface="mapping"` albo zapis TEMPLATE musi wysłać `overridesJson`. Same kolumny dawkowania nie przenoszą strony.
 
+
+### 2026-09-19 - Wyszukiwanie ćwiczeń: AND tokenów, nie ciągła fraza
+
+- **Kategoria**: `UI/UX` | `Testing`
+- **Problem**: Dopisanie słowa w wyszukiwarce gubiło ćwiczenie, bo klient i backend szukały całego ciągu (`przysiad kettlebell` ≠ `Przysiad z kettlebell`).
+- **Przyczyna**: `matchesSearchQuery` / `ToLower().Contains(cała fraza)` bez tokenizacji; e-mail autora w `ApplySearch` dawał szum.
+- **Rozwiązanie**: `matchesExerciseSearch` / `filterExercisesBySearch` (portal `src/features/exercises/utils`) i backend `ExerciseSearchQuery` — token AND, ranking nazwy, bez e-maila.
+- **Reguła**: Jeśli filtrujesz katalog ćwiczeń, zawsze tokenizuj zapytanie (AND, min. 2 znaki) i nie dopasowuj e-maila autora.
 ### 2026-09-20 - Preview domena nie może mieć gitBranch main
 
 - **Kategoria**: `Build/Tooling`
