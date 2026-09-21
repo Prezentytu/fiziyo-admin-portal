@@ -34,6 +34,8 @@ export function planDevDomainAssignment(domain) {
 export function shouldSkipPin({ ref, environment } = {}) {
   if (environment === "Production") return "production";
   if (ref === LEGACY_INTEGRATION_BRANCH) return "legacy-dev-branch";
+  if (environment === "Preview" && ref !== TRUNK_BRANCH) return "feature-preview";
+  if (ref && ref !== TRUNK_BRANCH) return "feature-preview";
   return "";
 }
 
@@ -113,7 +115,7 @@ export async function listShaDeployments(fetchImpl, env, sha) {
 
 export async function pinDevportalDomain(env, { fetchImpl = fetch } = {}) {
   const skip = shouldSkipPin({ ref: env.DEPLOYMENT_REF, environment: env.DEPLOYMENT_ENV });
-  if (skip === "production") {
+  if (skip === "production" || skip === "feature-preview") {
     return { skipped: skip, reassigned: [], aliased: false };
   }
 

@@ -33,6 +33,20 @@ test("repo trunk is main-only", () => {
   assert.deepEqual(checkTrunkMain(process.cwd()), []);
 });
 
+test("flags policy that treats empty rulesets as a GitHub Pro 403", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "trunk-"));
+  try {
+    writeTree(root, {
+      "docs/architecture/cloud-agent-policy.md":
+        "PR-y targetują `main`.\nRulesets na prywatnym `fiziyo-admin-portal` przy planie Free zwracają 403 — worker zapisu zostaje wyłączony.\n",
+    });
+    const errors = checkTrunkMain(root).join("\n");
+    assert.match(errors, /empty rulesets as a GitHub Pro 403/);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("flags leftover dev integration branch", () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "trunk-"));
   try {
@@ -47,6 +61,22 @@ test("flags leftover dev integration branch", () => {
     assert.match(errors, /CONTRIBUTING still uses branch dev/);
     assert.match(errors, /git.deploymentEnabled.dev/);
     assert.match(errors, /Pin DEV domain script must move leftover branch dev onto main/);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("flags pin that still fails Vercel Preview PR deployments", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "trunk-"));
+  try {
+    writeTree(root, {
+      "scripts/pin-devportal-domain.mjs":
+        'export const LEGACY_INTEGRATION_BRANCH = "dev";\nexport const TRUNK_BRANCH = "main";\n',
+      ".github/workflows/pin-devportal.yml": "name: Pin DEV portal to main\n",
+    });
+    const errors = checkTrunkMain(root).join("\n");
+    assert.match(errors, /skip Vercel Preview deployments/);
+    assert.match(errors, /must not run the pin job on Vercel Preview PR/);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
