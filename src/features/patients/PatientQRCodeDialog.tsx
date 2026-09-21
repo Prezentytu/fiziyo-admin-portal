@@ -5,7 +5,7 @@ import { useQuery } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
 import { pdf } from '@react-pdf/renderer';
-import { Download, Printer, Copy, Check, Smartphone, Share2, User, FilePlus, Loader2 } from 'lucide-react';
+import { Download, Printer, Copy, Check, Smartphone, Share2, User, FilePlus, QrCode } from 'lucide-react';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -356,7 +356,7 @@ export function PatientQRCodeDialog({
 
   const handleCopyLink = async () => {
     if (!joinUrl) {
-      toast.error('Link nie jest jeszcze gotowy');
+      toast.error('Brak kompletnego linku do aplikacji');
       return;
     }
     try {
@@ -536,6 +536,10 @@ export function PatientQRCodeDialog({
   const handleDownloadPDF = () => generatePatientCardPDF(true);
 
   const handleShare = async () => {
+    if (!joinUrl) {
+      toast.error('Brak kompletnego linku do aplikacji');
+      return;
+    }
     if (navigator.share) {
       try {
         await navigator.share({
@@ -584,6 +588,7 @@ export function PatientQRCodeDialog({
                     ref={qrContainerRef}
                     className="mb-4 p-3 bg-white rounded-xl shadow-lg hover:scale-105 transition-transform duration-300"
                     data-testid="patient-qr-code"
+                    data-qr-url={joinUrl}
                   >
                     <QRCodeSVG
                       value={joinUrl}
@@ -601,11 +606,11 @@ export function PatientQRCodeDialog({
                   </div>
                 ) : (
                   <div
-                    className="mb-4 flex h-[156px] w-[156px] flex-col items-center justify-center rounded-xl border border-border/40 bg-surface-light"
-                    data-testid="patient-qr-loading"
+                    className="mb-4 flex h-[156px] w-[156px] flex-col items-center justify-center rounded-xl border border-border/40 bg-surface-light px-3 text-center"
+                    data-testid="patient-qr-unavailable"
                   >
-                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                    <p className="mt-2 text-xs text-muted-foreground">Przygotowuję kod</p>
+                    <QrCode className="h-6 w-6 text-muted-foreground" />
+                    <p className="mt-2 text-xs text-muted-foreground">Brak pacjenta albo terapeuty</p>
                   </div>
                 )}
 
@@ -624,6 +629,7 @@ export function PatientQRCodeDialog({
                   variant="outline"
                   size="sm"
                   onClick={handleShare}
+                  disabled={!canRenderQr}
                   className="w-full gap-2"
                   data-testid="patient-qr-share-btn"
                 >
@@ -772,6 +778,7 @@ export function PatientQRCodeDialog({
               variant="ghost"
               size="sm"
               onClick={handleDownloadQR}
+              disabled={!canRenderQr}
               className="text-xs text-muted-foreground"
               data-testid="patient-qr-download-btn"
             >
@@ -782,8 +789,8 @@ export function PatientQRCodeDialog({
         </div>
 
         {/* Ukryty QR Code Canvas do generowania obrazu dla PDF */}
-        {joinUrl && (
-          <div ref={qrCanvasRef} className="hidden">
+        {canRenderQr && joinUrl && (
+          <div ref={qrCanvasRef} className="hidden" data-testid="patient-qr-payload" data-qr-url={joinUrl}>
             <QRCodeCanvas value={joinUrl} size={200} level="M" />
           </div>
         )}

@@ -455,10 +455,12 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `patient-note-{id}`                                 | Notatka                                    | `PatientNotes.tsx`                 |
 | `patient-note-{id}-delete-btn`                      | Usuń notatkę                               | `PatientNotes.tsx`                 |
 | `patient-qr-dialog`                                 | Dialog QR                                  | `PatientQRCodeDialog.tsx`          |
-| `patient-qr-code`                                   | Kod QR HTTPS                               | `PatientQRCodeDialog.tsx`          |
-| `patient-qr-loading`                                | Stan ładowania QR                          | `PatientQRCodeDialog.tsx`          |
+| `patient-qr-code`                                   | Kod QR HTTPS; `data-qr-url` = payload      | `PatientQRCodeDialog.tsx`          |
+| `patient-qr-payload`                                | Ukryty canvas QR; `data-qr-url` = payload  | `PatientQRCodeDialog.tsx`          |
+| `patient-qr-unavailable`                            | Hint gdy brak patient/org/therapist        | `PatientQRCodeDialog.tsx`          |
 | `patient-qr-download-btn`                           | Pobierz QR                                 | `PatientQRCodeDialog.tsx`          |
 | `patient-qr-copy-btn`                               | Kopiuj link                                | `PatientQRCodeDialog.tsx`          |
+| `patient-qr-share-btn`                              | Wyślij link                                | `PatientQRCodeDialog.tsx`          |
 | `patient-schedule-dialog`                           | Dialog harmonogramu                        | `EditAssignmentScheduleDialog.tsx` |
 | `patient-schedule-start-date`                       | Data rozpoczęcia                           | `EditAssignmentScheduleDialog.tsx` |
 | `patient-schedule-end-date`                         | Data zakończenia                           | `EditAssignmentScheduleDialog.tsx` |
@@ -508,8 +510,9 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `summary-schedule-summary`              | Karta harmonogramu w podsumowaniu         | `SummaryStep.tsx`             |
 | `assign-wizard-header-schedule-summary` | Skrót harmonogramu w headerze wizarda     | `AssignmentWizard.tsx`        |
 | `assign-success-schedule-summary`       | Karta harmonogramu w dialogu sukcesu      | `AssignmentSuccessDialog.tsx` |
-| `assign-success-qr`                     | Kod QR HTTPS pacjenta                     | `AssignmentSuccessDialog.tsx` |
-| `assign-success-qr-loading`             | Stan ładowania QR                         | `AssignmentSuccessDialog.tsx` |
+| `assign-success-qr`                     | Kod QR HTTPS; `data-qr-url` = payload     | `AssignmentSuccessDialog.tsx` |
+| `assign-success-qr-payload`             | Ukryty canvas QR; `data-qr-url` = payload | `AssignmentSuccessDialog.tsx` |
+| `assign-success-qr-unavailable`         | Hint gdy brak patient/org/therapist       | `AssignmentSuccessDialog.tsx` |
 | `assign-success-copy-link-btn`          | Kopiuj link obok QR                       | `AssignmentSuccessDialog.tsx` |
 | `assign-success-patient-{id}`           | Przełącznik pacjenta przy QR              | `AssignmentSuccessDialog.tsx` |
 | `assign-summary-submit-btn`             | Utwórz plan i przypisz                    | `SummaryStep.tsx`             |

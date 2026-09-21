@@ -22,6 +22,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-09-21 - Brak connect URL to stan bez QR, nie spinner
+
+- **Kategoria**: `UI/UX` | `Testing`
+- **Problem**: Po wymaganiu trzech id dialog sukcesu i hub pacjenta kręciły „Przygotowuję kod” w nieskończoność.
+- **Przyczyna**: `joinUrl` jest synchroniczny z propsów. Spinner był placeholderem pustego payloadu, nie ładowaniem.
+- **Rozwiązanie**: `assign-success-qr-unavailable` / `patient-qr-unavailable`; kopiuj/share/pobierz QR wyłączone.
+- **Reguła**: Jeśli QR connect nie ma trzech id, zawsze pokaż stan niedostępności. Nigdy spinner „Przygotowuję kod” i nigdy goły `/start`.
+
 ### 2026-09-21 - QR PDF bez patient/org/therapist nie koduje pustego /start
 
 - **Kategoria**: `UI/UX` | `Testing`

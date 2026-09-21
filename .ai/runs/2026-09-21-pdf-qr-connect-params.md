@@ -2,20 +2,20 @@
 
 - Issue / spec: [fiziyo-admin-portal#83](https://github.com/Prezentytu/fiziyo-admin-portal/pull/83); analiza `.ai/analysis/2026-09-19-k01-pdf-qr.md`
 - Owning repo: fiziyo-admin-portal
-- Status runu: done (kandydat na #83; merge zablokowany do dowodu `/connect` + landing)
+- Status runu: in progress (kandydat na #83; merge zablokowany do dowodu `/connect` + landing)
 
-- Upoważnienie: Adam (czat 2026-09-21) — kontynuacja draft PR #83; bez landing, bez auth, bez deployu
+- Upoważnienie: Adam (czat 2026-09-21) — kontynuacja draft PR #83; bez landing, bez auth, bez deployu, bez nowych botów
 - Writer: cloud agent
-- Dozwolone pliki: `src/lib/patientJoinUrl.ts`, `src/lib/__tests__/patientJoinUrl.test.ts`, `src/features/exercise-sets/GeneratePDFDialog.tsx`, `src/features/exercise-sets/GeneratePDFDialog.test.tsx`, `src/app/(dashboard)/patients/[id]/page.tsx`, `docs/testing/data-testid-map.md`, `.ai/lessons.md`, `.ai/runs/2026-09-21-pdf-qr-connect-params.md`
-- Wykluczenia: GraphQL, auth, landing, fizjo-app, token invite, merge, PROD
-- Acceptance: PDF QR koduje `https://fiziyo.pl/start?patient=&org=&therapist=` albo nie ma QR; test UI ładuje payload; patient/org w URL nie jest autoryzacją
+- Dozwolone pliki: `src/lib/patientJoinUrl.ts`, `src/lib/__tests__/patientJoinUrl.test.ts`, `src/features/exercise-sets/GeneratePDFDialog.tsx`, `src/features/exercise-sets/GeneratePDFDialog.test.tsx`, `src/features/assignment/AssignmentSuccessDialog.tsx`, `src/features/assignment/AssignmentSuccessDialog.test.tsx`, `src/features/patients/PatientQRCodeDialog.tsx`, `src/features/patients/PatientQRCodeDialog.test.tsx`, `src/app/(dashboard)/patients/[id]/page.tsx`, `docs/testing/data-testid-map.md`, `.ai/lessons.md`, `.ai/runs/2026-09-21-pdf-qr-connect-params.md`
+- Wykluczenia: GraphQL, auth, landing, fizjo-app, token invite, merge, PROD, nowe PR-y/boty
+- Acceptance: connect QR koduje `https://fiziyo.pl/start?patient=&org=&therapist=` albo pokazuje unavailable (nie spinner); test UI ładuje payload; patient/org w URL nie jest autoryzacją
 
 ## Repo i baseline
 
-- Repo / checkout / branch / HEAD: fiziyo-admin-portal / `cursor/k01-pdf-qr-a18f` / `400b353430d4c232e9741a4d24828cdf56988aa6` przed tą poprawką
-- Instrukcje: `AGENTS.md`, `src/features/patients/AGENTS.md`, `src/features/exercise-sets/AGENTS.md`, `.ai/skills/check-and-commit`, `.ai/skills/smart-test`
-- Zastane zmiany: czysty checkout gałęzi #83
-- Wymagany zakres i kontrole: vitest helper + GeneratePDFDialog; potem lint/type-check/testids na zmienionych plikach; `npm run validate` raz na commicie
+- Repo / checkout / branch / HEAD: fiziyo-admin-portal / `cursor/k01-pdf-qr-a18f` / `e9ae75041315ab6d4835d47e0810af3689ec10e0` przed tą poprawką spinnera
+- Instrukcje: `AGENTS.md`, `src/features/assignment/AGENTS.md`, `src/features/patients/AGENTS.md`, `src/features/exercise-sets/AGENTS.md`, `.ai/skills/check-and-commit`, `.ai/skills/smart-test`
+- Zastane zmiany: czysty checkout gałęzi #83 po helperze PDF
+- Wymagany zakres i kontrole: vitest dialogów QR; potem `npm run validate` raz na commicie
 - Dostępność: available
 
 ## Progress
@@ -23,21 +23,25 @@
 - [x] Wymagaj therapist w `buildPatientConnectUrl`
 - [x] GeneratePDFDialog nie koduje gołego `/start`
 - [x] Caller karty pacjenta przekazuje `patient.id` i `therapistId`
-- [x] Testy helpera i GeneratePDFDialog (15 passed)
+- [x] Testy helpera i GeneratePDFDialog
 - [x] `npm run validate` na `732c103` — 130 files / 650 tests, build OK
+- [ ] AssignmentSuccessDialog / PatientQRCodeDialog: unavailable zamiast spinnera
+- [ ] Testy payloadu tych dialogów
+- [ ] `npm run validate` na commicie spinnera
 
 ## Decyzje
 
 - Connect QR wymaga trzech id, bo `fizjo-app` `parseConnectUrl` odrzuca niepełny link. Token invite bez zmian.
+- P1 HTTPS `/start` 404 i parse `fiziyo://` zostają poza tym PR (landing + mobile). Nie wracamy do `fiziyo://` w QR.
 - Landing i test `/connect` poza tym runem.
 
 ## Dowody
 
-- Kandydat: fiziyo-admin-portal `cursor/k01-pdf-qr-a18f` `732c103848e506f884c2c0552b119d521e045bd2` plus ten commit runu
+- Kandydat przed spinnerem: fiziyo-admin-portal `cursor/k01-pdf-qr-a18f` `e9ae75041315ab6d4835d47e0810af3689ec10e0`
 - Kontrola: 2026-09-21 `npm run validate` exit 0 na `732c103`; vitest 650 passed; next build Turbopack compiled
 
 ## Handoff
 
-- Następny krok: Adam zleca Cloud Agent na `fizjo-app` test `fiziyo://connect` na DEV
+- Następny krok: ten sam PR #83 — unavailable QR; potem validate
 - Blokady: brak dowodu, że pacjent przechodzi `/connect`; landing nie ruszany
-- BOARD: K01-PDF-QR | fiziyo-admin-portal | PDF QR tylko z patient+org+therapist
+- BOARD: K01-PDF-QR | fiziyo-admin-portal | PDF/dialog QR tylko z patient+org+therapist, bez fałszywego spinnera

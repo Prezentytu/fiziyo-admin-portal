@@ -5,7 +5,7 @@ import { useQuery } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
 import { pdf } from '@react-pdf/renderer';
-import { CheckCircle2, Download, Printer, ChevronDown, Copy, Check, Smartphone, Share2, Calendar, Sparkles, User, Users, FileText, Loader2 } from 'lucide-react';
+import { CheckCircle2, Download, Printer, ChevronDown, Copy, Check, Smartphone, Share2, Calendar, Sparkles, User, Users, FileText, QrCode } from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 
@@ -130,7 +130,7 @@ export function AssignmentSuccessDialog({
 
   const handleCopyLink = async () => {
     if (!joinUrl) {
-      toast.error('Link nie jest jeszcze gotowy');
+      toast.error('Brak kompletnego linku do aplikacji');
       return;
     }
     try {
@@ -332,6 +332,10 @@ export function AssignmentSuccessDialog({
   const handleDownloadPDF = () => generatePatientCardPDF(true);
 
   const handleShare = async () => {
+    if (!joinUrl) {
+      toast.error('Brak kompletnego linku do aplikacji');
+      return;
+    }
     if (navigator.share) {
       try {
         await navigator.share({
@@ -438,6 +442,7 @@ export function AssignmentSuccessDialog({
                 ref={qrContainerRef}
                 className="p-3 bg-white rounded-xl shadow-sm border border-border/40"
                 data-testid="assign-success-qr"
+                data-qr-url={joinUrl}
               >
                 <QRCodeSVG
                   value={joinUrl}
@@ -455,11 +460,11 @@ export function AssignmentSuccessDialog({
               </div>
             ) : (
               <div
-                className="flex h-[144px] w-[144px] flex-col items-center justify-center rounded-xl border border-border/40 bg-surface-light"
-                data-testid="assign-success-qr-loading"
+                className="flex h-[144px] w-[144px] flex-col items-center justify-center rounded-xl border border-border/40 bg-surface-light px-3 text-center"
+                data-testid="assign-success-qr-unavailable"
               >
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                <p className="mt-2 text-xs text-muted-foreground">Przygotowuję kod</p>
+                <QrCode className="h-6 w-6 text-muted-foreground" />
+                <p className="mt-2 text-xs text-muted-foreground">Brak pacjenta albo terapeuty</p>
               </div>
             )}
             <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-border bg-surface-light px-3 py-1.5 text-sm font-medium text-foreground">
@@ -503,6 +508,7 @@ export function AssignmentSuccessDialog({
                   variant="ghost"
                   size="sm"
                   onClick={handleCopyLink}
+                  disabled={!canRenderQr}
                   className="justify-start text-xs text-muted-foreground h-8"
                   data-testid="assign-success-copy-btn"
                 >
@@ -513,6 +519,7 @@ export function AssignmentSuccessDialog({
                   variant="ghost"
                   size="sm"
                   onClick={handleShare}
+                  disabled={!canRenderQr}
                   className="justify-start text-xs text-muted-foreground h-8"
                   data-testid="assign-success-share-btn"
                 >
@@ -545,6 +552,7 @@ export function AssignmentSuccessDialog({
                   variant="ghost"
                   size="sm"
                   onClick={handleDownloadQR}
+                  disabled={!canRenderQr}
                   className="justify-start text-xs text-muted-foreground h-8"
                   data-testid="assign-success-download-qr-btn"
                 >
@@ -556,8 +564,8 @@ export function AssignmentSuccessDialog({
           </Collapsible>
         </div>
 
-        {joinUrl && (
-          <div ref={qrCanvasRef} className="hidden">
+        {canRenderQr && joinUrl && (
+          <div ref={qrCanvasRef} className="hidden" data-testid="assign-success-qr-payload" data-qr-url={joinUrl}>
             <QRCodeCanvas value={joinUrl} size={200} level="M" />
           </div>
         )}
