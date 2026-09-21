@@ -10,6 +10,7 @@
     "scripts/check-agent-adapter.mjs",
     "scripts/check-agent-adapter.test.mjs",
     ".github/workflows/agent-intake.yml",
+    ".github/ISSUE_TEMPLATE/zgloszenie-agent.md",
     ".github/workflows/agent-promote.yml",
     ".github/workflows/promote.yml",
     "scripts/promote-admin.mjs",
@@ -41,6 +42,30 @@
     ".cursor/agents/reviewer.md",
     ".cursor/agents/sec-auditor.md",
     ".cursor/BUGBOT.md"
+  ],
+  "portableSurfaceOverrides": [
+    ".cursor/BUGBOT.md",
+    ".cursor/automations/06-night-scan.md",
+    ".cursor/automations/07-drift.md",
+    ".cursor/automations/README.md",
+    ".cursor/hooks.json",
+    ".github/ISSUE_TEMPLATE/bot-finding.md",
+    ".github/ISSUE_TEMPLATE/design.md",
+    ".github/ISSUE_TEMPLATE/flaky.md",
+    ".github/ISSUE_TEMPLATE/idea.md",
+    ".github/ISSUE_TEMPLATE/zgloszenie-agent.md",
+    "docs/architecture/cloud-agent-policy.md",
+    "scripts/check-agent-adapter.mjs",
+    "scripts/check-agent-adapter.test.mjs",
+    "scripts/task-card.mjs",
+    "scripts/task-card.test.mjs"
+  ],
+  "portableSurfaceExcluded": [
+    "backend/.cursor/BUGBOT.md",
+    "src/graphql/.cursor/BUGBOT.md",
+    ".cursor/hooks/guard-read.mjs",
+    ".cursor/hooks/guard-shell.mjs",
+    ".cursor/hooks/record-check.mjs"
   ],
   "checks": [
     {
