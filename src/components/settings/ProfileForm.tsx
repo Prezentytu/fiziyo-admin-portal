@@ -10,7 +10,7 @@ import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import * as z from 'zod';
 
-import AvatarEditor from 'react-avatar-editor';
+import AvatarEditor, { type AvatarEditorRef } from 'react-avatar-editor';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -89,7 +89,7 @@ export function ProfileForm({ user, clerkId, onSuccess }: Readonly<ProfileFormPr
   const [cropDialogOpen, setCropDialogOpen] = useState(false);
   const [cropImageFile, setCropImageFile] = useState<File | null>(null);
   const [cropScale, setCropScale] = useState(1.2);
-  const avatarEditorRef = useRef<AvatarEditor | null>(null);
+  const avatarEditorRef = useRef<AvatarEditorRef | null>(null);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -545,9 +545,7 @@ export function ProfileForm({ user, clerkId, onSuccess }: Readonly<ProfileFormPr
             <div className="relative overflow-hidden rounded-2xl border border-border bg-surface">
               {cropImageFile && (
               <AvatarEditor
-                ref={(ref: AvatarEditor | null) => {
-                  avatarEditorRef.current = ref;
-                }}
+                ref={avatarEditorRef}
                 image={cropImageFile}
                 width={256}
                 height={256}

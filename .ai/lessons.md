@@ -22,6 +22,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-09-21 - Grupowy major Dependabota nie wchodzi, gdy stack nie deklaruje wsparcia
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: PR #103 bumpował 16 majorów; `validate` padał na `npm run lint` (`typescript-eslint does not support TS 7.0`).
+- **Przyczyna**: Grupa `major` złączyła TypeScript 7, ESLint 10, Table v9, Lucide v1, Clerk 7 i GraphQL 17 bez migracji kodu. `eslint-config-next@16` ciągnie `typescript-eslint` z peer `typescript: >=4.8.4 <6.1.0`.
+- **Rozwiązanie**: Z 16 majorów zostaje `react-avatar-editor` 15 (brak wymogu Node 22, API zgodne z `ProfileForm`). Reszta: TS 7 łamie `typescript-eslint`; Table v9 / Lucide v1 bez migracji; Clerk 7 / GraphQL 17 poza SPEC-027; commitlint/jest-dom/jsdom/lint-staged/vitest 5 wymagają Node ≥22, a CI ma Node 20. Ignore tych majorów w `dependabot.yml`.
+- **Reguła**: Jeśli Dependabot grupuje majory, zawsze zestaw `engines` z `node-version` w `ci.yml` oraz peery `eslint-config-next`; Clerk/GraphQL/TS/ESLint/Table/Lucide nie wchodzą do tygodniowej grupy.
+
 ### 2026-09-21 - QR zaproszenia bez tokenu to niedostępność, nie spinner
 
 - **Kategoria**: `UI/UX` | `Testing`

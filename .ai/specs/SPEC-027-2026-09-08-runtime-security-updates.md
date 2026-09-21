@@ -44,3 +44,4 @@ Brak GraphQL/DTO/UI/data-testid changes.
 
 - 2026-09-08: zgoda na scoped runtime updates po wykryciu advisory podczas CI pracy.
 - 2026-09-14: zbiorczy bump z aktualnego `main` — Next `16.3.4` → `16.3.5`, GraphQL `16.14.2`, bez Clerk 7 / GraphQL 17 / TypeScript 6. Stare PR-y Dependabota (#22, #40, #50, #51, #52) zastąpione jednym PR-em; #52 obniżyłby Next do `16.2.9`.
+- 2026-09-21: grupa major z #103 odrzucona. CI Node 20 blokuje commitlint/jest-dom/jsdom/lint-staged/vitest 5 (`engines` ≥22). TS 7 / ESLint 10 / Clerk 7 / GraphQL 17 / Table v9 / Lucide v1 bez migracji. Ignore w `dependabot.yml`; z grupy zostaje `react-avatar-editor` 15.
