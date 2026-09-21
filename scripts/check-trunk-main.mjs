@@ -9,6 +9,11 @@ const FORBIDDEN_SNIPPETS = [
   [".github/PULL_REQUEST_TEMPLATE.md", /targetuje `dev`/, "PR template still sends humans to branch dev"],
   ["CONTRIBUTING.md", /PR against `dev`|branch from `dev`/, "CONTRIBUTING still uses branch dev as integration"],
   ["docs/architecture/cloud-agent-policy.md", /targetują `dev`/, "cloud-agent-policy still targets branch dev"],
+  [
+    "docs/architecture/cloud-agent-policy.md",
+    /przy planie Free zwracają 403/,
+    "cloud-agent-policy still treats empty rulesets as a GitHub Pro 403",
+  ],
   ["docs/testing/e2e-cross-repo-pipeline.md", /brancha `dev`|dev -> main|Deploy na `dev`/, "E2E runbook still routes through branch dev"],
   ["docs/PROJECT_OVERVIEW.md", /PR do `dev`/, "PROJECT_OVERVIEW still mentions PRs to branch dev"],
 ];
