@@ -30,6 +30,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Rozwiązanie**: Preview spoza `main` oraz ref ≠ `main` kończą się skipem (`feature-preview`) zanim skrypt woła alias. Job w `pin-devportal.yml` nie startuje na `environment=Preview`.
 - **Reguła**: Pin DEV tylko z `workflow_dispatch` albo Preview/`ref=main`. Sukces Preview PR to nie powód, żeby ruszać `devportal.fiziyo.pl`.
 
+### 2026-09-20 - Dodanie ćwiczenia do zestawu musi wysłać overridesJson
+
+- **Kategoria**: `GraphQL`
+- **Problem**: Dialog „Dodaj ćwiczenia” i fork TEMPLATE w Assignment Wizard pokazywały Razem, ale `addExerciseToExerciseSet` nie dostawał `overridesJson`. Mapping dziedziczył katalogowe Both — pacjent robił objętość ×2.
+- **Przyczyna**: Kreator zestawu i pełna edycja już budują deltę strony; `AddExerciseToSetDialog` i `buildAddExerciseVariables` wysyłały tylko kolumny dawkowania.
+- **Rozwiązanie**: Ten sam `buildMappingOverridesFromParams` co w `CreateSetWizard`. Test strażnik skanuje write-pathy z edytorem strony.
+- **Reguła**: Każdy `addExerciseToExerciseSet` z karty `cardSurface="mapping"` albo zapis TEMPLATE musi wysłać `overridesJson`. Same kolumny dawkowania nie przenoszą strony.
+
 ### 2026-09-20 - Preview domena nie może mieć gitBranch main
 
 - **Kategoria**: `Build/Tooling`
