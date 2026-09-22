@@ -22,6 +22,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-09-22 - Scalony kanał QR+link nie wraca do fałszywego URL
+
+- **Kategoria**: `UI/UX` | `Testing`
+- **Problem**: Rebase W5 na main po #83 kusił placeholderem `https://fiziyo.app/invite` albo trzecią zakładką Link.
+- **Przyczyna**: #84 scala kanały, żeby nie klikać między QR a schowkiem; #83 wymaga HTTPS z tokenu.
+- **Rozwiązanie**: Jedna zakładka „QR i link”; QR tylko przy `isHttpsUrl`; bez tokenu `invite-qr-unavailable`; jeden Kopiuj wyłączony.
+- **Reguła**: Jeśli scalasz QR z linkiem, zawsze zostaw `resolvePatientJoinUrlFromInvite` i `isHttpsUrl`. Nigdy placeholder URL i nigdy trzecia zakładka tylko po to, by uniknąć konfliktu.
+
 ### 2026-09-19 - Auto-advance kompletnego pola zdejmuje Dalej, którego klika E2E
 
 - **Kategoria**: `Testing` | `UI/UX`
@@ -30,6 +38,94 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Rozwiązanie**: `shouldAutoAdvanceContact` + debounce; Dalej zostaje fallbackiem; PO czeka na Imię.
 - **Reguła**: Jeśli UI auto-przechodzi po kompletnym polu, Page Object czeka na następny stan zamiast klikać znikający Dalej.
 
+### 2026-09-21 - QR zaproszenia bez tokenu to niedostępność, nie spinner
+
+- **Kategoria**: `UI/UX` | `Testing`
+- **Problem**: `PatientInviteDialog` po `success: false` albo sukcesie bez tokenu kręcił `invite-qr-loading`.
+- **Przyczyna**: Górny spinner znika z `loading === false`, a zakładka QR używała `!canRenderQr` jako „jeszcze ładuję”.
+- **Rozwiązanie**: `invite-qr-unavailable`; spinner dialogu tylko przy `loading && !generatedLink`.
+- **Reguła**: Jeśli mutacja zaproszenia się skończyła bez HTTPS URL, zawsze stan niedostępności. Spinner QR tylko gdy request jeszcze trwa.
+
+### 2026-09-21 - Brak connect URL to stan bez QR, nie spinner
+
+- **Kategoria**: `UI/UX` | `Testing`
+- **Problem**: Po wymaganiu trzech id dialog sukcesu i hub pacjenta kręciły „Przygotowuję kod” w nieskończoność.
+- **Przyczyna**: `joinUrl` jest synchroniczny z propsów. Spinner był placeholderem pustego payloadu, nie ładowaniem.
+- **Rozwiązanie**: `assign-success-qr-unavailable` / `patient-qr-unavailable`; kopiuj/share/pobierz QR wyłączone.
+- **Reguła**: Jeśli QR connect nie ma trzech id, zawsze pokaż stan niedostępności. Nigdy spinner „Przygotowuję kod” i nigdy goły `/start`.
+
+### 2026-09-21 - QR PDF bez patient/org/therapist nie koduje pustego /start
+
+- **Kategoria**: `UI/UX` | `Testing`
+- **Problem**: `GeneratePDFDialog` kodował stałe `https://fiziyo.pl/start` bez parametrów; skan z PDF nie otworzy connect.
+- **Przyczyna**: Caller karty pacjenta przekazywał tylko imię i email. Apka odrzuca link bez `patient`, `org` i `therapist`.
+- **Rozwiązanie**: `tryBuildPatientConnectUrl` wymaga trzech id. PDF QR tylko wtedy; inaczej checkbox wyłączony.
+- **Reguła**: Jeśli QR ma otworzyć `/connect`, zawsze koduj `patient`+`org`+`therapist`. Brak któregokolwiek = brak QR, nigdy goły `/start`.
+
+### 2026-09-21 - Pusta lista rulesets to nie 403 planu Free
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: Portal `#78` po zielonym `validate` nadal nie nadawał się do merge: pin padał na Preview PR, a §6 polityki tłumaczył wyłączenie workera 403 „Upgrade to GitHub Pro”.
+- **Przyczyna**: Workflow pinu jest brany z SHA deploymentu, więc merge `#95` na `main` nie naprawia otwartego PR bez wlania `main`. `GET …/rulesets` na `fiziyo-admin-portal` zwraca 200 `[]`; 403 planu jest historyczny.
+- **Rozwiązanie**: Wlać `main` (pin skip Preview). §6 jak kanon fizjo-app: worker wyłączony bo `enabled: false`. `check-trunk-main` blokuje powrót zdania o 403 Free.
+- **Reguła**: Jeśli GitHub `rulesets` zwraca `[]`, zawsze cytuj ten odczyt. Nie uzasadniaj wyłączenia workera historycznym 403 Pro.
+
+### 2026-09-20 - Pin DEV nie może padać na Preview PR
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: Check `pin` czerwienił każdy PR po deployu Vercel (`Brak deploymentu Preview dla DEV.`).
+- **Przyczyna**: `deployment.ref` z Vercel to SHA, nie `main`. `shouldSkipPin` omijał tylko Production i gałąź `dev`, więc Preview feature branch szukał Preview z `main` dla SHA spoza trunka i rzucał.
+- **Rozwiązanie**: Preview spoza `main` oraz ref ≠ `main` kończą się skipem (`feature-preview`) zanim skrypt woła alias. Job w `pin-devportal.yml` nie startuje na `environment=Preview`.
+- **Reguła**: Pin DEV tylko z `workflow_dispatch` albo Preview/`ref=main`. Sukces Preview PR to nie powód, żeby ruszać `devportal.fiziyo.pl`.
+
+### 2026-09-20 - Dodanie ćwiczenia do zestawu musi wysłać overridesJson
+
+- **Kategoria**: `GraphQL`
+- **Problem**: Dialog „Dodaj ćwiczenia” i fork TEMPLATE w Assignment Wizard pokazywały Razem, ale `addExerciseToExerciseSet` nie dostawał `overridesJson`. Mapping dziedziczył katalogowe Both — pacjent robił objętość ×2.
+- **Przyczyna**: Kreator zestawu i pełna edycja już budują deltę strony; `AddExerciseToSetDialog` i `buildAddExerciseVariables` wysyłały tylko kolumny dawkowania.
+- **Rozwiązanie**: Ten sam `buildMappingOverridesFromParams` co w `CreateSetWizard`. Test strażnik skanuje write-pathy z edytorem strony.
+- **Reguła**: Każdy `addExerciseToExerciseSet` z karty `cardSurface="mapping"` albo zapis TEMPLATE musi wysłać `overridesJson`. Same kolumny dawkowania nie przenoszą strony.
+
+
+### 2026-09-19 - Wyszukiwanie ćwiczeń: AND tokenów, nie ciągła fraza
+
+- **Kategoria**: `UI/UX` | `Testing`
+- **Problem**: Dopisanie słowa w wyszukiwarce gubiło ćwiczenie, bo klient i backend szukały całego ciągu (`przysiad kettlebell` ≠ `Przysiad z kettlebell`).
+- **Przyczyna**: `matchesSearchQuery` / `ToLower().Contains(cała fraza)` bez tokenizacji; e-mail autora w `ApplySearch` dawał szum.
+- **Rozwiązanie**: `matchesExerciseSearch` / `filterExercisesBySearch` (portal `src/features/exercises/utils`) i backend `ExerciseSearchQuery` — token AND, ranking nazwy, bez e-maila.
+- **Reguła**: Jeśli filtrujesz katalog ćwiczeń, zawsze tokenizuj zapytanie (AND, min. 2 znaki) i nie dopasowuj e-maila autora.
+### 2026-09-20 - Preview domena nie może mieć gitBranch main
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: Pin DEV padał `cannot_set_production_branch_as_preview` po poprawnych sekretach.
+- **Przyczyna**: `devportal.fiziyo.pl` jest Preview domeną. Skrypt robił PATCH `gitBranch: main`, a `main` to Production Branch. Vercel tego zabrania.
+- **Rozwiązanie**: Leftover branch (`dev` albo inny) odczepiamy (`gitBranch: null`). DEV trzyma się Preview z `main` przez `POST /v2/aliases`, nie przez git branch.
+- **Reguła**: Preview domeny nie przypinaj do production branch. Trunk zostaje w wyborze deploymentu i aliasie, nie w `gitBranch`.
+
+### 2026-09-19 - QR pacjenta zawsze koduje HTTPS, nigdy custom scheme
+
+- **Kategoria**: `UI/UX` | `Testing`
+- **Problem**: Skaner telefonu na demo K01 pokazał „brak używalnych danych”, bo QR kodował `fiziyo://connect?...`.
+- **Przyczyna**: Kamera otwiera tylko `http(s):`. Custom URI bez zainstalowanej apki jest dla skanera pustym payloadem. Copy i PDF używały jeszcze innych URL-i.
+- **Rozwiązanie**: `buildPatientJoinUrl` / `buildPatientConnectUrl` w `src/lib/patientJoinUrl.ts`. QR tylko gdy `isHttpsUrl`. Pusty payload = spinner, nie kod.
+- **Reguła**: Jeśli QR ma otworzyć się kamerą, zawsze koduj pełny `https://` na domenie FiziYo; nigdy `fiziyo://`, JSON ani pusty string.
+
+### 2026-09-19 - Sidebar create-set musi pisać overridesJson strony
+
+- **Kategoria**: `GraphQL`
+- **Problem**: Kreator z listy ćwiczeń pokazywał i liczył zmienioną stronę (Razem vs Na każdą stronę), a `CreateSetDialog` nie wysyłał `overridesJson`. Mapping dziedziczył katalogowe Both → objętość pacjenta ×2.
+- **Przyczyna**: Sidebar i `CreateSetWizard` dzielą `submitCreateTemplateSet`, ale dialog mapował tylko kolumny dawkowania.
+- **Rozwiązanie**: `buildBuilderExerciseMapping` zapisuje deltę strony względem katalogowego `side`; test blokuje powrót inline mapowania w dialogu.
+- **Reguła**: Jeśli karta zestawu edytuje `side`, zawsze wyślij deltę w `overridesJson` na tym samym write-path co wizard, nigdy samego dawkowania.
+
+### 2026-09-18 - UpdateExercise: none strony to string enumu, nie null
+
+- **Kategoria**: `GraphQL`
+- **Problem**: Zmiana „Na każdą stronę” → „Razem” w edytorze katalogu zapisywała się bez błędu, a `Side` zostawał `Both` (objętość pacjenta ×2).
+- **Przyczyna**: Dirty-diff i legacy mapper wysyłały `exerciseSide: null`. Backend `UpdateExercise` pomija puste `exerciseSide` (`IsNullOrEmpty`), więc None nigdy nie nadpisywało Both/Left/Right.
+- **Rozwiązanie**: Przy zmianie strony wysyłaj `'none'` (i inne wartości enumu) jako string. Null zostaw tylko gdy pole nie jest w dirty-diff.
+- **Reguła**: Jeśli GraphQL update pomija null, zawsze zrób sentinel czyszczenia jawnym stringiem enumu (`none`), nigdy `null`.
+
 ### 2026-09-17 - VERCEL_TEAM_ID slug nie może iść jako teamId
 
 - **Kategoria**: `Build/Tooling`
@@ -37,6 +133,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Przyczyna**: Skrypt akceptował slug zespołu (`prezentytus-projects`), ale zawsze wysyłał `teamId=`. Vercel na to odpowiada 400. Dodatkowo rerun starego `deployment_status` z Preview PR używa SHA feature branch, nie `main`.
 - **Rozwiązanie**: `team_` → `teamId`, inny poprawny identyfikator → `slug`. Błąd API zawiera `code` + `message`. Pin odpalaj z `main` / `workflow_dispatch`, nie Re-run Preview.
 - **Reguła**: Vercel `teamId` to tylko `team_…`. Slug zespołu idzie w `slug`. Nie rerunuj pinu z Preview PR.
+
+### 2026-09-15 - Hardening parsera karty idzie z kanonem
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: Portal nie odmawiał zgody z treści issue, gdy kanon fizjo-app już miał `authorize` i zastrzeżone klucze karty.
+- **Przyczyna**: Adapter powierzchni nie przeniósł commita hardeningu parsera razem z kanonem.
+- **Rozwiązanie**: Przeniesiono stałe, `authorizationFromIssue`, `describeHandoff` i CLI `authorize` z testami; lokalny wymóg `.ai/agent-adapter.json` zostaje.
+- **Reguła**: Jeśli kanon commituje hardening `scripts/task-card.mjs`, zawsze przenieś parser i testy do portalu w tym samym cyklu, zanim etykieta `agent-fix` cokolwiek uruchomi.
 
 ### 2026-09-15 - Leftover branch `dev` nie może trzymać DEV
 
@@ -61,6 +165,7 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Przyczyna**: Upload zdjęcia od razu mutuje API i refetchuje `exerciseById`. Hook formularza w trybie bez autosave nadpisywał draft przy każdej nowej referencji `source`, zeroując `isDirty`. Użytkownik myślał, że wygenerowane zdjęcie czeka na Zapisz.
 - **Rozwiązanie**: Hydracja tylko gdy draft nie jest brudny (albo zmieniło się id ćwiczenia). Po zapisie mediów toast i pasek: „Zdjęcie zapisane od razu — nie wymaga przycisku Zapisz”.
 - **Reguła**: Jeśli media idą osobną mutacją + refetch, dirty tracking pól tekstowych musi przetrwać zmianę referencji `source`; UI ma powiedzieć, że media już są zapisane. `data-testid` dawaj jako pierwszy atrybut tagu — skaner kończy opening tag na pierwszym `>` (w tym `=>` i `>=`), więc testid po `onClick={() =>` wypada z detekcji i psuje allowlistę po przesunięciu linii.
+
 ### 2026-09-15 - Kosz przy placeholderze to no-op, nie akcja
 
 - **Kategoria**: `UI/UX`

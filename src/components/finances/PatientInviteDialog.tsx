@@ -12,6 +12,11 @@ import { toast } from 'sonner';
 import { CREATE_PATIENT_INVITE_LINK_MUTATION } from '@/graphql/mutations';
 import { GET_PATIENT_INVITE_LINKS_QUERY } from '@/graphql/queries';
 import type { CreatePatientInviteLinkResponse } from '@/types/apollo';
+import {
+  isHttpsUrl,
+  resolvePatientJoinUrlFromInvite,
+  withPatientDisplayName,
+} from '@/lib/patientJoinUrl';
 
 // ========================================
 // Types
@@ -64,14 +69,9 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
   const personalizedLink = useMemo(() => {
     if (!generatedLink) return '';
     if (!patientName.trim()) return generatedLink;
-    try {
-      const url = new URL(generatedLink);
-      url.searchParams.set('name', patientName.trim());
-      return url.toString();
-    } catch {
-      return generatedLink;
-    }
+    return withPatientDisplayName(generatedLink, patientName);
   }, [generatedLink, patientName]);
+  const canRenderQr = isHttpsUrl(personalizedLink);
 
   const normalizedEmail = patientEmail.trim();
   const normalizedPhone = patientPhone.trim();
@@ -92,8 +92,11 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
       ],
       onCompleted: (data) => {
         if (data.createPatientInviteLink.success) {
-          const url = data.createPatientInviteLink.fullUrl;
-          setGeneratedLink(url || null);
+          const url = resolvePatientJoinUrlFromInvite(data.createPatientInviteLink);
+          setGeneratedLink(url);
+          if (!url) {
+            toast.error('Nie udało się utworzyć zaproszenia');
+          }
         } else {
           toast.error('Nie udało się utworzyć zaproszenia');
         }
@@ -122,10 +125,9 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
 
   // Handle copy link
   const handleCopyLink = async () => {
-    const linkToCopy = personalizedLink || generatedLink;
-    if (!linkToCopy) return;
+    if (!canRenderQr) return;
     try {
-      await navigator.clipboard.writeText(linkToCopy);
+      await navigator.clipboard.writeText(personalizedLink);
       setCopied(true);
       toast.success('Link skopiowany!');
       setTimeout(() => setCopied(false), 2000);
@@ -256,21 +258,35 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
 
               <div className="rounded-xl border border-border/60 bg-surface/50 p-5">
                 <div className="flex flex-col items-center gap-4">
-                  <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5" data-testid="invite-qr-code">
-                    <QRCodeSVG
-                      value={personalizedLink || 'https://fiziyo.app/invite'}
-                      size={200}
-                      level="H"
-                      imageSettings={{
-                        src: '/images/logo_new.png',
-                        x: undefined,
-                        y: undefined,
-                        height: 40,
-                        width: 40,
-                        excavate: true,
-                      }}
-                    />
-                  </div>
+                  {canRenderQr ? (
+                    <div
+                      className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5"
+                      data-testid="invite-qr-code"
+                      data-qr-url={personalizedLink}
+                    >
+                      <QRCodeSVG
+                        value={personalizedLink}
+                        size={200}
+                        level="H"
+                        imageSettings={{
+                          src: '/images/logo_new.png',
+                          x: undefined,
+                          y: undefined,
+                          height: 40,
+                          width: 40,
+                          excavate: true,
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      className="flex h-[200px] w-[200px] flex-col items-center justify-center rounded-2xl border border-border/40 bg-surface-light px-3 text-center"
+                      data-testid="invite-qr-unavailable"
+                    >
+                      <QrCode className="h-8 w-8 text-muted-foreground" />
+                      <p className="mt-2 text-xs text-muted-foreground">Brak linku zaproszenia</p>
+                    </div>
+                  )}
                   <div className="space-y-1 text-center">
                     <p className="text-sm font-medium text-foreground">Pokaż pacjentowi kod albo skopiuj link</p>
                     <p className="text-xs text-muted-foreground">
@@ -284,7 +300,12 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
                       className="h-11 text-sm"
                       data-testid="invite-link-display"
                     />
-                    <Button onClick={handleCopyLink} className="shrink-0" data-testid="invite-copy-main-btn">
+                    <Button
+                      onClick={handleCopyLink}
+                      disabled={!canRenderQr}
+                      className="shrink-0"
+                      data-testid="invite-copy-main-btn"
+                    >
                       {copied ? (
                         <>
                           <Check className="h-4 w-4 mr-2" />
