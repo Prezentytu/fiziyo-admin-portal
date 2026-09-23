@@ -77,6 +77,14 @@ describe('createSetSubmit', () => {
     });
   });
 
+  it('forwards mapping overridesJson so Razem is not dropped', () => {
+    const vars = buildAddExerciseToSetVariables('set-1', 0, {
+      exerciseId: 'ex-1',
+      overridesJson: JSON.stringify({ exerciseSide: 'none' }),
+    });
+    expect(JSON.parse(vars.overridesJson ?? '{}')).toEqual({ exerciseSide: 'none' });
+  });
+
   it('falls back to loadValue when loadWeightKg is missing', () => {
     const vars = buildAddExerciseToSetVariables('set-1', 0, {
       exerciseId: 'ex-1',

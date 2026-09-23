@@ -5,7 +5,7 @@ import { useQuery } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
 import { pdf } from '@react-pdf/renderer';
-import { Download, Printer, Copy, Check, Smartphone, Share2, User, FilePlus } from 'lucide-react';
+import { Download, Printer, Copy, Check, Smartphone, Share2, User, FilePlus, QrCode } from 'lucide-react';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,7 @@ import type {
 import { GET_ORGANIZATION_BY_ID_QUERY } from '@/graphql/queries/organizations.queries';
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
+import { isHttpsUrl, tryBuildPatientConnectUrl } from '@/lib/patientJoinUrl';
 import type { OrganizationByIdResponse, UserByClerkIdResponse } from '@/types/apollo';
 import type { PatientAssignmentsByUserQueryData } from '@/graphql/types/operation-responses';
 
@@ -38,6 +39,7 @@ interface ExerciseMapping {
   duration?: number;
   restSets?: number;
   restReps?: number;
+  executionTime?: number;
   notes?: string;
   customName?: string;
   customDescription?: string;
@@ -56,6 +58,7 @@ interface ExerciseMapping {
     defaultSets?: number;
     defaultReps?: number;
     defaultDuration?: number;
+    defaultExecutionTime?: number;
     defaultRestBetweenSets?: number;
     defaultRestBetweenReps?: number;
     sets?: number;
@@ -340,18 +343,24 @@ export function PatientQRCodeDialog({
   // Early return after all hooks
   if (!patient) return null;
 
-  // Sprawdź czy są plany
+  const joinUrl = tryBuildPatientConnectUrl({
+    patientId: patient.id,
+    organizationId,
+    therapistId,
+  });
+  const canRenderQr = isHttpsUrl(joinUrl);
+
   const hasPlans = discoveredPlans.length > 0;
   const hasMultiplePlans = discoveredPlans.length > 1;
   const exerciseCount = selectedPlan?.exerciseMappings?.length || 0;
 
-  // Generowanie linków
-  const appDeepLink = `fiziyo://connect?patient=${patient.id}&therapist=${therapistId}&org=${organizationId}`;
-  const webLink = `https://fiziyo.pl/instrukcja`;
-
   const handleCopyLink = async () => {
+    if (!joinUrl) {
+      toast.error('Brak kompletnego linku do aplikacji');
+      return;
+    }
     try {
-      await navigator.clipboard.writeText(webLink);
+      await navigator.clipboard.writeText(joinUrl);
       setCopied(true);
       toast.success('Link skopiowany do schowka');
       setTimeout(() => setCopied(false), 2000);
@@ -430,6 +439,7 @@ export function PatientQRCodeDialog({
         duration: mapping.duration ?? mapping.exercise?.defaultDuration ?? mapping.exercise?.duration,
         restSets: mapping.restSets ?? mapping.exercise?.defaultRestBetweenSets ?? mapping.exercise?.restSets,
         restReps: mapping.restReps ?? mapping.exercise?.defaultRestBetweenReps ?? mapping.exercise?.restReps,
+        executionTime: mapping.executionTime ?? mapping.exercise?.defaultExecutionTime,
         order: mapping.order,
         customName: mapping.customName,
         customDescription: mapping.customDescription,
@@ -473,6 +483,7 @@ export function PatientQRCodeDialog({
           therapist={pdfTherapist}
           options={pdfOptions}
           qrCodeDataUrl={qrCodeDataUrl}
+          joinUrl={joinUrl ?? undefined}
         />
       );
 
@@ -514,8 +525,8 @@ export function PatientQRCodeDialog({
         URL.revokeObjectURL(url);
       }
     } catch (error) {
-      console.error('Błąd generowania PDF:', error);
-      toast.error('Nie udało się wygenerować PDF');
+      const message = error instanceof Error ? error.message : 'Nieznany błąd';
+      toast.error('Nie udało się wygenerować PDF', { description: message });
     } finally {
       setIsGeneratingPDF(false);
     }
@@ -525,12 +536,16 @@ export function PatientQRCodeDialog({
   const handleDownloadPDF = () => generatePatientCardPDF(true);
 
   const handleShare = async () => {
+    if (!joinUrl) {
+      toast.error('Brak kompletnego linku do aplikacji');
+      return;
+    }
     if (navigator.share) {
       try {
         await navigator.share({
           title: `FiziYo - Program ćwiczeń dla ${patient.name}`,
           text: 'Pobierz aplikację FiziYo, aby ćwiczyć w domu',
-          url: webLink,
+          url: joinUrl ?? undefined,
         });
       } catch {
         // User cancelled
@@ -568,24 +583,36 @@ export function PatientQRCodeDialog({
             <div className="flex flex-col p-5 rounded-xl border border-border/60 bg-surface/50 min-h-[320px] hover:border-border transition-colors">
               {/* Treść główna - CENTRUM */}
               <div className="flex-1 flex flex-col items-center justify-center">
-                <div
-                  ref={qrContainerRef}
-                  className="mb-4 p-3 bg-white rounded-xl shadow-lg hover:scale-105 transition-transform duration-300"
-                >
-                  <QRCodeSVG
-                    value={appDeepLink}
-                    size={130}
-                    level="H"
-                    bgColor="#ffffff"
-                    fgColor="#121212"
-                    imageSettings={{
-                      src: '/images/icon.png',
-                      height: 26,
-                      width: 26,
-                      excavate: true,
-                    }}
-                  />
-                </div>
+                {canRenderQr && joinUrl ? (
+                  <div
+                    ref={qrContainerRef}
+                    className="mb-4 p-3 bg-white rounded-xl shadow-lg hover:scale-105 transition-transform duration-300"
+                    data-testid="patient-qr-code"
+                    data-qr-url={joinUrl}
+                  >
+                    <QRCodeSVG
+                      value={joinUrl}
+                      size={130}
+                      level="H"
+                      bgColor="#ffffff"
+                      fgColor="#121212"
+                      imageSettings={{
+                        src: '/images/icon.png',
+                        height: 26,
+                        width: 26,
+                        excavate: true,
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div
+                    className="mb-4 flex h-[156px] w-[156px] flex-col items-center justify-center rounded-xl border border-border/40 bg-surface-light px-3 text-center"
+                    data-testid="patient-qr-unavailable"
+                  >
+                    <QrCode className="h-6 w-6 text-muted-foreground" />
+                    <p className="mt-2 text-xs text-muted-foreground">Brak pacjenta albo terapeuty</p>
+                  </div>
+                )}
 
                 <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-1">
                   <Smartphone className="h-4 w-4 text-blue-400" />
@@ -602,6 +629,7 @@ export function PatientQRCodeDialog({
                   variant="outline"
                   size="sm"
                   onClick={handleShare}
+                  disabled={!canRenderQr}
                   className="w-full gap-2"
                   data-testid="patient-qr-share-btn"
                 >
@@ -612,6 +640,7 @@ export function PatientQRCodeDialog({
                   variant="ghost"
                   size="sm"
                   onClick={handleCopyLink}
+                  disabled={!canRenderQr}
                   className="w-full gap-2"
                   data-testid="patient-qr-copy-btn"
                 >
@@ -749,6 +778,7 @@ export function PatientQRCodeDialog({
               variant="ghost"
               size="sm"
               onClick={handleDownloadQR}
+              disabled={!canRenderQr}
               className="text-xs text-muted-foreground"
               data-testid="patient-qr-download-btn"
             >
@@ -759,9 +789,11 @@ export function PatientQRCodeDialog({
         </div>
 
         {/* Ukryty QR Code Canvas do generowania obrazu dla PDF */}
-        <div ref={qrCanvasRef} className="hidden">
-          <QRCodeCanvas value={`https://app.fiziyo.pl/sets/${selectedPlan?.id || ''}`} size={200} level="M" />
-        </div>
+        {canRenderQr && joinUrl && (
+          <div ref={qrCanvasRef} className="hidden" data-testid="patient-qr-payload" data-qr-url={joinUrl}>
+            <QRCodeCanvas value={joinUrl} size={200} level="M" />
+          </div>
+        )}
 
         {/* Footer */}
         <div className="flex justify-end pt-4 border-t border-border">

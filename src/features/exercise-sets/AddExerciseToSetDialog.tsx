@@ -34,6 +34,7 @@ import { ADD_EXERCISE_TO_EXERCISE_SET_MUTATION } from '@/graphql/mutations/exerc
 import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
 import { pluralize } from '@/utils/textUtils';
 import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
+import { buildMappingOverridesFromParams } from '@/features/exercise-sets/utils/buildMappingOverridesFromParams';
 import type {
   ExerciseTagsResponse,
   TagCategoriesResponse,
@@ -260,6 +261,7 @@ export function AddExerciseToSetDialog({
         const instance = newInstances[i];
         const params = exerciseParams.get(instance.instanceId);
         const exercise = exerciseLookup.get(instance.exerciseId);
+        const overridesJson = buildMappingOverridesFromParams(exercise, params ?? {});
 
         await addExerciseToSet({
           variables: {
@@ -278,6 +280,7 @@ export function AddExerciseToSetDialog({
             customDescription: params?.customDescription ?? null,
             tempo: params?.tempo ?? null,
             ...buildExerciseLoadMutationVars(params?.loadWeightKg ?? params?.loadValue),
+            overridesJson: overridesJson ?? '',
           },
           refetchQueries: [
             {

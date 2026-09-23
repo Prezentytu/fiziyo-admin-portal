@@ -23,3 +23,7 @@ updates:
       interval: weekly
     labels:
       - ci
+    groups:
+      github-actions:
+        patterns:
+          - "*"

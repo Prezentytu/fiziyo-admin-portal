@@ -207,6 +207,28 @@ describe('ExerciseSetBuilder catalog default', () => {
     expect(screen.getByText('Przysiad FiziYo')).toBeInTheDocument();
   });
 
+  it('keeps token AND search on the default FiziYo catalog', async () => {
+    const user = userEvent.setup();
+    render(
+      <ExerciseSetBuilder
+        {...createProps({
+          availableExercises: [
+            { id: 'global-1', name: 'Przysiad z kettlebell', scope: 'GLOBAL' },
+            { id: 'org-1', name: 'Przysiad kettlebell hantle', scope: 'ORGANIZATION' },
+          ],
+        })}
+      />
+    );
+
+    expect(screen.getByText('Przysiad z kettlebell')).toBeInTheDocument();
+    expect(screen.queryByText('Przysiad kettlebell hantle')).not.toBeInTheDocument();
+
+    await user.type(screen.getByTestId('set-builder-search-input'), 'przysiad kettlebell');
+
+    expect(screen.getByText('Przysiad z kettlebell')).toBeInTheDocument();
+    expect(screen.queryByText('Przysiad kettlebell hantle')).not.toBeInTheDocument();
+  });
+
   it('offers browse-catalog CTA when own-exercises filter is empty and globals exist', async () => {
     const user = userEvent.setup();
     render(
