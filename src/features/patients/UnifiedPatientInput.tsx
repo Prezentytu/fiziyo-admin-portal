@@ -28,12 +28,21 @@ import {
 import { GET_ALL_PATIENT_ASSIGNMENTS_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import type { FindUserByEmailData, FindUserByPhoneData } from '@/graphql/types/user.types';
 import type { OrganizationPatientsResponse } from '@/types/apollo';
+import {
+  AUTO_ADVANCE_CONTACT_MS,
+  detectContactType,
+  getCleanPhone,
+  isValidEmail,
+  isValidPhone,
+  shouldAutoAdvanceContact,
+  type PatientContactType,
+} from './utils/patientContact';
 
 // ============================================
 // TYPES
 // ============================================
 
-type ContactType = 'email' | 'phone' | 'unknown';
+type ContactType = PatientContactType;
 type ViewState = 'search' | 'found' | 'form';
 
 interface FoundUser {
@@ -92,35 +101,6 @@ export type PatientFormValues = {
   phone?: string;
   email?: string;
   contextLabel?: string;
-};
-
-// ============================================
-// UTILITIES
-// ============================================
-
-// Detect contact type from input
-const detectContactType = (value: string): ContactType => {
-  if (value.includes('@')) return 'email';
-  const digitsOnly = value.replace(/[\s+\-()]/g, '');
-  if (/^\d+$/.test(digitsOnly) && digitsOnly.length >= 7) return 'phone';
-  return 'unknown';
-};
-
-// Validate email format
-const isValidEmail = (email: string): boolean => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-};
-
-// Validate phone (9 digits)
-const isValidPhone = (phone: string): boolean => {
-  const cleanPhone = phone.replace(/[\s+\-()]/g, '');
-  return cleanPhone.length === 9 && /^\d+$/.test(cleanPhone);
-};
-
-// Extract clean phone number
-const getCleanPhone = (phone: string): string => {
-  return phone.replace(/[\s+\-()]/g, '');
 };
 
 // Quick tags for notes
@@ -381,6 +361,17 @@ export function UnifiedPatientInput({
     toast.error('Wpisz poprawny email lub numer telefonu');
   }, [contactValue]);
 
+  useEffect(() => {
+    if (viewState !== 'search' || isSearching) return;
+    if (!shouldAutoAdvanceContact(contactValue, submittedContact)) return;
+
+    const timeoutId = window.setTimeout(() => {
+      handleNext();
+    }, AUTO_ADVANCE_CONTACT_MS);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [contactValue, handleNext, isSearching, submittedContact, viewState]);
+
   const handleAddExistingPatient = useCallback(async (skipTakeoverConfirm: boolean = false) => {
     if (!foundUser) return;
 
@@ -509,6 +500,22 @@ export function UnifiedPatientInput({
         return;
       }
 
+      if ((e.metaKey || e.ctrlKey) && key === 'Enter') {
+        e.preventDefault();
+        if (viewState === 'search') {
+          handleNext();
+        } else if (viewState === 'form') {
+          void form.handleSubmit(handleSubmitNewPatient)();
+        } else if (viewState === 'found' && foundUser) {
+          if (isAlreadyAssignedToTherapist) {
+            globalThis.location.href = new URL(`/patients/${foundUser.id}`, globalThis.location.origin).href;
+          } else {
+            void handleAddExistingPatient();
+          }
+        }
+        return;
+      }
+
       // Enter key in found state
       if (key === 'Enter' && viewState === 'found' && foundUser) {
         e.preventDefault();
@@ -534,6 +541,8 @@ export function UnifiedPatientInput({
       handleBackToSearch,
       onCancel,
       handleEditContact,
+      form,
+      handleSubmitNewPatient,
     ]
   );
 
@@ -589,7 +598,7 @@ export function UnifiedPatientInput({
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-3 pt-6 border-t border-border mt-8">
+          <div className="flex items-center justify-between gap-3 pt-6 border-t border-border mt-8">
             <Button type="button" variant="outline" onClick={onCancel} data-testid="patient-unified-cancel-btn">
               Anuluj
             </Button>
@@ -876,7 +885,7 @@ export function UnifiedPatientInput({
               </div>
 
               {/* Actions */}
-              <div className="flex justify-end gap-3 pt-6 border-t border-border">
+              <div className="flex items-center justify-between gap-3 pt-6 border-t border-border">
                 <Button
                   type="button"
                   variant="outline"

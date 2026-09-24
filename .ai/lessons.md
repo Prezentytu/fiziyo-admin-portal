@@ -22,6 +22,22 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-09-22 - Scalony kanał QR+link nie wraca do fałszywego URL
+
+- **Kategoria**: `UI/UX` | `Testing`
+- **Problem**: Rebase W5 na main po #83 kusił placeholderem `https://fiziyo.app/invite` albo trzecią zakładką Link.
+- **Przyczyna**: #84 scala kanały, żeby nie klikać między QR a schowkiem; #83 wymaga HTTPS z tokenu.
+- **Rozwiązanie**: Jedna zakładka „QR i link”; QR tylko przy `isHttpsUrl`; bez tokenu `invite-qr-unavailable`; jeden Kopiuj wyłączony.
+- **Reguła**: Jeśli scalasz QR z linkiem, zawsze zostaw `resolvePatientJoinUrlFromInvite` i `isHttpsUrl`. Nigdy placeholder URL i nigdy trzecia zakładka tylko po to, by uniknąć konfliktu.
+
+### 2026-09-19 - Auto-advance kompletnego pola zdejmuje Dalej, którego klika E2E
+
+- **Kategoria**: `Testing` | `UI/UX`
+- **Problem**: Unit test bronił ręcznego Dalej, a Playwright klikał Dalej po `fill` emaila.
+- **Przyczyna**: Pominięcie kroku przy kompletnym kontakcie unmountuje przycisk używany przez Page Object.
+- **Rozwiązanie**: `shouldAutoAdvanceContact` + debounce; Dalej zostaje fallbackiem; PO czeka na Imię.
+- **Reguła**: Jeśli UI auto-przechodzi po kompletnym polu, Page Object czeka na następny stan zamiast klikać znikający Dalej.
+
 ### 2026-09-21 - QR zaproszenia bez tokenu to niedostępność, nie spinner
 
 - **Kategoria**: `UI/UX` | `Testing`
