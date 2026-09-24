@@ -566,10 +566,16 @@ export default function ExerciseSetsPage() {
               description={
                 searchQuery || filter !== 'all-templates'
                   ? 'Spróbuj zmienić kryteria wyszukiwania lub filtry'
-                  : 'Utwórz pierwszy zestaw ćwiczeń'
+                  : 'Utwórz pierwszy zestaw albo przeglądaj katalog FiziYo i złóż go z gotowych ćwiczeń.'
               }
               actionLabel={!searchQuery && filter === 'all-templates' ? 'Nowy zestaw' : undefined}
               onAction={!searchQuery && filter === 'all-templates' ? () => setIsCreateWizardOpen(true) : undefined}
+              actionTestId="set-empty-create-btn"
+              secondaryActionLabel={!searchQuery && filter === 'all-templates' ? 'Przeglądaj katalog FiziYo' : undefined}
+              onSecondaryAction={
+                !searchQuery && filter === 'all-templates' ? () => router.push('/exercises') : undefined
+              }
+              secondaryActionTestId="set-empty-browse-catalog-btn"
             />
           </CardContent>
         </Card>

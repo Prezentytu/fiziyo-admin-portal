@@ -22,6 +22,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-09-23 - Merge katalogu FiziYo z wyszukiwaniem AND
+
+- **Kategoria**: `Git` | `UI/UX`
+- **Problem**: `#87` kolidowało z `main` po `#85` w `exercises/page.tsx` i `.ai/lessons.md`.
+- **Przyczyna**: Oba PR zmieniały importy i filtr listy; auto-merge nie dawał `filterExercisesBySource`.
+- **Rozwiązanie**: Default `fiziyo` + `CatalogEmptyState` + `take: 500` z `#87`; `filterExercisesBySearch` (AND) z `#85`.
+- **Reguła**: Jeśli scalamy domyślny Katalog FiziYo z nowszym wyszukiwaniem, zawsze zostaw obie intencje — nie wracaj do `matchesSearchQuery` ani do `sourceFilter='all'`.
+
 ### 2026-09-21 - QR zaproszenia bez tokenu to niedostępność, nie spinner
 
 - **Kategoria**: `UI/UX` | `Testing`
@@ -70,6 +78,13 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Rozwiązanie**: Ten sam `buildMappingOverridesFromParams` co w `CreateSetWizard`. Test strażnik skanuje write-pathy z edytorem strony.
 - **Reguła**: Każdy `addExerciseToExerciseSet` z karty `cardSurface="mapping"` albo zapis TEMPLATE musi wysłać `overridesJson`. Same kolumny dawkowania nie przenoszą strony.
 
+### 2026-09-19 - Pusta biblioteka nowej org nie może brzmieć „w przygotowaniu”
+
+- **Kategoria**: `UI/UX` | `GraphQL`
+- **Problem**: Po wipe K01 zobaczył pustą bazę i odpadł; default zakładka „Wszystkie” nie pokazywała Katalogu FiziYo jako pierwszego ekranu.
+- **Przyczyna**: `availableExercises` już zwraca Global bez sync, ale UI startowało od `all` / `organizationExercises`, a empty copy nie prowadziło do katalogu.
+- **Rozwiązanie**: Domyślny filtr `fiziyo`, empty CTA (`Przeglądaj katalog FiziYo` / `Utwórz ćwiczenie` / `Importuj paczkę`), `take: 500`, additive `catalogHealth`.
+- **Reguła**: Jeśli lista ćwiczeń nowej organizacji jest pusta, zawsze pokaż Katalog FiziYo i CTA bez „w przygotowaniu” / „on demand”.
 
 ### 2026-09-19 - Wyszukiwanie ćwiczeń: AND tokenów, nie ciągła fraza
 
@@ -78,6 +93,7 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Przyczyna**: `matchesSearchQuery` / `ToLower().Contains(cała fraza)` bez tokenizacji; e-mail autora w `ApplySearch` dawał szum.
 - **Rozwiązanie**: `matchesExerciseSearch` / `filterExercisesBySearch` (portal `src/features/exercises/utils`) i backend `ExerciseSearchQuery` — token AND, ranking nazwy, bez e-maila.
 - **Reguła**: Jeśli filtrujesz katalog ćwiczeń, zawsze tokenizuj zapytanie (AND, min. 2 znaki) i nie dopasowuj e-maila autora.
+
 ### 2026-09-20 - Preview domena nie może mieć gitBranch main
 
 - **Kategoria**: `Build/Tooling`

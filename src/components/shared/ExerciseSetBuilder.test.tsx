@@ -103,7 +103,7 @@ describe('ExerciseSetBuilder description field', () => {
 describe('ExerciseSetBuilder preview semantics', () => {
   it('keeps picker and repeated-instance controls unique under a custom prefix', async () => {
     const user = userEvent.setup();
-    const exercise = { id: 'exercise-1', name: 'Mostek', defaultSets: 3, defaultReps: 10 };
+    const exercise = { id: 'exercise-1', name: 'Mostek', defaultSets: 3, defaultReps: 10, scope: 'GLOBAL' };
     const onPreviewExercise = vi.fn();
     const onSelectedInstancesChange = vi.fn();
 
@@ -171,6 +171,7 @@ describe('ExerciseSetBuilder preview semantics', () => {
       imageUrl: '/image-1.jpg',
       defaultSets: 3,
       defaultReps: 10,
+      scope: 'GLOBAL',
     };
 
     render(
@@ -189,5 +190,59 @@ describe('ExerciseSetBuilder preview semantics', () => {
 
     await user.click(screen.getByRole('button', { name: 'Podgląd ćwiczenia: Mostek' }));
     expect(onPreviewExercise).toHaveBeenCalledWith(exercise);
+  });
+});
+
+describe('ExerciseSetBuilder catalog default', () => {
+  it('starts on the FiziYo catalog filter', () => {
+    render(
+      <ExerciseSetBuilder
+        {...createProps({
+          availableExercises: [{ id: 'global-1', name: 'Przysiad FiziYo', scope: 'GLOBAL' }],
+        })}
+      />
+    );
+
+    expect(screen.getByTestId('set-builder-filter-fiziyo').className).toContain('border-violet/40');
+    expect(screen.getByText('Przysiad FiziYo')).toBeInTheDocument();
+  });
+
+  it('keeps token AND search on the default FiziYo catalog', async () => {
+    const user = userEvent.setup();
+    render(
+      <ExerciseSetBuilder
+        {...createProps({
+          availableExercises: [
+            { id: 'global-1', name: 'Przysiad z kettlebell', scope: 'GLOBAL' },
+            { id: 'org-1', name: 'Przysiad kettlebell hantle', scope: 'ORGANIZATION' },
+          ],
+        })}
+      />
+    );
+
+    expect(screen.getByText('Przysiad z kettlebell')).toBeInTheDocument();
+    expect(screen.queryByText('Przysiad kettlebell hantle')).not.toBeInTheDocument();
+
+    await user.type(screen.getByTestId('set-builder-search-input'), 'przysiad kettlebell');
+
+    expect(screen.getByText('Przysiad z kettlebell')).toBeInTheDocument();
+    expect(screen.queryByText('Przysiad kettlebell hantle')).not.toBeInTheDocument();
+  });
+
+  it('offers browse-catalog CTA when own-exercises filter is empty and globals exist', async () => {
+    const user = userEvent.setup();
+    render(
+      <ExerciseSetBuilder
+        {...createProps({
+          availableExercises: [{ id: 'global-1', name: 'Przysiad FiziYo', scope: 'GLOBAL' }],
+        })}
+      />
+    );
+
+    await user.click(screen.getByTestId('set-builder-filter-organization'));
+    expect(screen.getByTestId('set-builder-empty-browse-catalog-btn')).toHaveTextContent(
+      'Przeglądaj katalog FiziYo'
+    );
+    expect(screen.getByText('Nie masz jeszcze własnych ćwiczeń')).toBeInTheDocument();
   });
 });

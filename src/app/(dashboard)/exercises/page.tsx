@@ -11,8 +11,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { LoadingState } from '@/components/shared/LoadingState';
-import { EmptyState } from '@/components/shared/EmptyState';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { CatalogEmptyState } from '@/features/exercises/CatalogEmptyState';
 import { ExerciseCard, Exercise } from '@/features/exercises/ExerciseCard';
 import { ExerciseDialog } from '@/features/exercises/ExerciseDialog';
 import { SubmitToGlobalDialog } from '@/features/exercises/SubmitToGlobalDialog';
@@ -22,7 +22,10 @@ import { ExerciseBuilderSidebar } from '@/components/exercise-builder/ExerciseBu
 import { ExerciseBuilderFAB } from '@/components/exercise-builder/ExerciseBuilderFAB';
 import { cn } from '@/lib/utils';
 
-import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
+import {
+  AVAILABLE_EXERCISES_LIST_TAKE,
+  GET_AVAILABLE_EXERCISES_QUERY,
+} from '@/graphql/queries/exercises.queries';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
 import {
@@ -30,10 +33,10 @@ import {
   SUBMIT_FOR_ORGANIZATION_REVIEW_MUTATION,
   SUBMIT_TO_GLOBAL_REVIEW_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
+import { filterExercisesBySource, type ExerciseSourceFilter } from '@/utils/exerciseSourceFilter';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useExerciseBuilder, type BuilderExercise } from '@/contexts/ExerciseBuilderContext';
 import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
-import { useDataManagement } from '@/hooks/useDataManagement';
 import { useRealtimeExercises } from '@/hooks/useRealtimeExercises';
 import { ORG_VERIFICATION_REFETCH_QUERIES } from '@/hooks/useOrganizationVerificationRealtime';
 import type { AvailableExercisesResponse, ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
@@ -41,16 +44,13 @@ import { sortExercisesByNewest } from '@/features/exercises/utils/sortExercisesB
 import { filterExercisesBySearch } from '@/features/exercises/utils/exerciseSearch';
 import { getExerciseDefaultParams } from '@/features/exercise-sets/utils/exerciseDefaults';
 
-// Typ dla filtra źródła ćwiczeń
-type ExerciseSourceFilter = 'all' | 'organization' | 'fiziyo';
-
 export default function ExercisesPage() {
   const router = useRouter();
   const { currentOrganization } = useOrganization();
   const { toggleExercise, isInBuilder } = useExerciseBuilder();
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [sourceFilter, setSourceFilter] = useState<ExerciseSourceFilter>('all');
+  const [sourceFilter, setSourceFilter] = useState<ExerciseSourceFilter>('fiziyo');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
   const [deletingExercise, setDeletingExercise] = useState<Exercise | null>(null);
@@ -105,14 +105,9 @@ export default function ExercisesPage() {
     [toggleExercise]
   );
 
-  // Data management hook for importing examples
-  const { importExampleSets, isImporting, hasImportedExamples } = useDataManagement({
-    organizationId,
-  });
-
   // Get exercises (includes organization, global, and personal exercises)
   const { data, loading, error } = useQuery(GET_AVAILABLE_EXERCISES_QUERY, {
-    variables: { organizationId },
+    variables: { organizationId, take: AVAILABLE_EXERCISES_LIST_TAKE },
     skip: !organizationId,
     fetchPolicy: 'cache-and-network',
   });
@@ -143,7 +138,7 @@ export default function ExercisesPage() {
     refetchQueries: [
       {
         query: GET_AVAILABLE_EXERCISES_QUERY,
-        variables: { organizationId },
+        variables: { organizationId, take: AVAILABLE_EXERCISES_LIST_TAKE },
       },
     ],
   });
@@ -153,7 +148,7 @@ export default function ExercisesPage() {
     refetchQueries: [
       {
         query: GET_AVAILABLE_EXERCISES_QUERY,
-        variables: { organizationId },
+        variables: { organizationId, take: AVAILABLE_EXERCISES_LIST_TAKE },
       },
     ],
   });
@@ -163,7 +158,7 @@ export default function ExercisesPage() {
       refetchQueries: [
         {
           query: GET_AVAILABLE_EXERCISES_QUERY,
-          variables: { organizationId },
+          variables: { organizationId, take: AVAILABLE_EXERCISES_LIST_TAKE },
         },
         ...ORG_VERIFICATION_REFETCH_QUERIES,
       ],
@@ -179,16 +174,10 @@ export default function ExercisesPage() {
   const exercises = mapExercisesWithTags(rawExercises, tagsMap);
 
   // Filtrowanie po źródle (zakładki)
-  const sourceFilteredExercises = useMemo(() => {
-    if (sourceFilter === 'all') return exercises;
-    if (sourceFilter === 'organization') {
-      return exercises.filter((e) => e.scope === 'ORGANIZATION' || e.scope === 'PERSONAL');
-    }
-    if (sourceFilter === 'fiziyo') {
-      return exercises.filter((e) => e.scope === 'GLOBAL');
-    }
-    return exercises;
-  }, [exercises, sourceFilter]);
+  const sourceFilteredExercises = useMemo(
+    () => filterExercisesBySource(exercises, sourceFilter),
+    [exercises, sourceFilter]
+  );
 
   // Liczniki dla zakładek (po deduplikacji)
   const organizationCount = useMemo(
@@ -462,19 +451,14 @@ export default function ExercisesPage() {
           ) : filteredExercises.length === 0 ? (
             <Card className="border-dashed border-border/60">
               <CardContent className="py-16">
-                <EmptyState
-                  icon={Dumbbell}
-                  title={searchQuery ? 'Nie znaleziono ćwiczeń' : 'Brak ćwiczeń'}
-                  description={
-                    searchQuery
-                      ? 'Spróbuj zmienić kryteria wyszukiwania'
-                      : 'Dodaj pierwsze ćwiczenie lub załaduj przykładowe zestawy'
-                  }
-                  actionLabel={!searchQuery ? 'Dodaj ćwiczenie' : undefined}
-                  onAction={!searchQuery ? () => setIsDialogOpen(true) : undefined}
-                  secondaryActionLabel={!searchQuery && !hasImportedExamples ? 'Załaduj przykłady' : undefined}
-                  onSecondaryAction={!searchQuery && !hasImportedExamples ? importExampleSets : undefined}
-                  secondaryActionLoading={isImporting}
+                <CatalogEmptyState
+                  sourceFilter={sourceFilter}
+                  isSearch={Boolean(searchQuery)}
+                  fiziyoCount={fiziyoCount}
+                  ownCount={organizationCount}
+                  onBrowseCatalog={() => setSourceFilter('fiziyo')}
+                  onCreate={() => setIsDialogOpen(true)}
+                  onImport={() => router.push('/settings?tab=advanced')}
                 />
               </CardContent>
             </Card>
