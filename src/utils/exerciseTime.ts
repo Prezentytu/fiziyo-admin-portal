@@ -17,8 +17,9 @@ export function calculateEstimatedTime(params: {
   restReps?: number;
   side?: string;
   preparationTime?: number;
+  tempo?: string;
 }): number {
-  const { sets, reps, duration, executionTime, rest = 60, restReps = 0, side, preparationTime } = params;
+  const { sets, reps, duration, executionTime, rest = 60, restReps = 0, side, preparationTime, tempo } = params;
   return calculateExerciseTotalSeconds({
     sets,
     reps,
@@ -28,6 +29,7 @@ export function calculateEstimatedTime(params: {
     restReps,
     side,
     preparationTime,
+    tempo,
   }).seconds;
 }
 

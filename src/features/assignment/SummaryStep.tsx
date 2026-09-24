@@ -55,8 +55,10 @@ function calculateTotalTime(mappings: ExerciseMapping[], overrides: Map<string, 
         duration,
         executionTime,
         rest,
+        restReps: override?.restReps ?? mapping.restReps ?? exercise?.defaultRestBetweenReps,
         side,
         preparationTime,
+        tempo: override?.tempo ?? mapping.tempo ?? exercise?.tempo,
       })
     );
   }, 0);

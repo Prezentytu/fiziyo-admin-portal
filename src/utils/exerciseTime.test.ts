@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { calculateExerciseTotalSeconds, formatExerciseDuration, parseTempo } from './exerciseTime';
+import {
+  calculateEstimatedTime,
+  calculateExerciseTotalSeconds,
+  formatExerciseDuration,
+  parseTempo,
+} from './exerciseTime';
 
 describe('parseTempo', () => {
   it('zwraca sume segmentow dla poprawnego tempa', () => {
@@ -108,6 +113,31 @@ describe('calculateExerciseTotalSeconds', () => {
         side: 'both',
       }),
     ).toEqual({ seconds: 246, isEstimate: false });
+
+    // Player: work * 2 + restSets once. Doubling restSets would be 540.
+    expect(
+      calculateExerciseTotalSeconds({
+        sets: 3,
+        reps: 10,
+        executionTime: 5,
+        restSets: 60,
+        side: 'both',
+      }),
+    ).toEqual({ seconds: 420, isEstimate: false });
+  });
+
+  it('calculateEstimatedTime przekazuje tempo i nie mnozy restSets przez BOTH', () => {
+    expect(
+      calculateEstimatedTime({
+        sets: 2,
+        reps: 6,
+        tempo: '2-1-2-0',
+        rest: 10,
+        restReps: 1,
+        preparationTime: 5,
+        side: 'both',
+      }),
+    ).toBe(155);
   });
 
   it('daje priorytet executionTime nad duration', () => {

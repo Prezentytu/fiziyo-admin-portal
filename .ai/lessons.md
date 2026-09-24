@@ -22,6 +22,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-09-24 - BOTH nie podwaja restSets ani preparationTime
+
+- **Kategoria**: `UI/UX` | `Testing`
+- **Problem**: PR czasu ćwiczenia mnożył cały `workBlock` (w tym `restSets`) przez `side=both`, więc terapeuta widział 540 s / 11 min 5 s zamiast 420 s / 9 min 35 s z timera pacjenta.
+- **Przyczyna**: Źle zrozumiany SSOT: player liczy `prep + workOneSide * sets * sideMultiplier + restSets * (sets-1)`.
+- **Rozwiązanie**: Wzór z `main` / `computePlannedDurationSec`; test 420 s i fixture 110 s. `overridesJson` przy merge zostaje.
+- **Reguła**: Jeśli liczysz czas dla BOTH, mnoż tylko blok pracy jednej strony; przerwy między seriami i przygotowanie raz.
+
 ### 2026-09-21 - QR zaproszenia bez tokenu to niedostępność, nie spinner
 
 - **Kategoria**: `UI/UX` | `Testing`
@@ -70,7 +78,6 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Rozwiązanie**: Ten sam `buildMappingOverridesFromParams` co w `CreateSetWizard`. Test strażnik skanuje write-pathy z edytorem strony.
 - **Reguła**: Każdy `addExerciseToExerciseSet` z karty `cardSurface="mapping"` albo zapis TEMPLATE musi wysłać `overridesJson`. Same kolumny dawkowania nie przenoszą strony.
 
-
 ### 2026-09-19 - Wyszukiwanie ćwiczeń: AND tokenów, nie ciągła fraza
 
 - **Kategoria**: `UI/UX` | `Testing`
@@ -78,6 +85,7 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Przyczyna**: `matchesSearchQuery` / `ToLower().Contains(cała fraza)` bez tokenizacji; e-mail autora w `ApplySearch` dawał szum.
 - **Rozwiązanie**: `matchesExerciseSearch` / `filterExercisesBySearch` (portal `src/features/exercises/utils`) i backend `ExerciseSearchQuery` — token AND, ranking nazwy, bez e-maila.
 - **Reguła**: Jeśli filtrujesz katalog ćwiczeń, zawsze tokenizuj zapytanie (AND, min. 2 znaki) i nie dopasowuj e-maila autora.
+
 ### 2026-09-20 - Preview domena nie może mieć gitBranch main
 
 - **Kategoria**: `Build/Tooling`

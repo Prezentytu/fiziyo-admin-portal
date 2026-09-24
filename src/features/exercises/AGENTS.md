@@ -94,6 +94,7 @@ Serie × Powtórzenia [× Czas powtórzenia]
 - `executionTime` = 0/null → bez timera
 - NIE eksponuj terapeucie „typu ćwiczenia” jako osobnej etykiety; UI ma pokazywać parametry wykonania, a semantyka timera wynika z `executionTime`
 - W `CreateExerciseWizard` pole wejściowe TIER 1 to `Czas powtórzenia`; `Czas serii` jest pokazywany jako wartość wyliczana, a `duration` pozostaje w sekcji zaawansowanej dla ćwiczeń liczonych czasem.
+- Kafle „Czas serii/ćwiczenia (wyliczany)” liczą `calculateExerciseTotalSeconds` — ten sam wzór co player (`computePlannedDurationSec`): `sideMultiplier` tylko na bloku pracy, `restSets` i `preparationTime` raz.
 
 Przykłady: `3 × 10`, `3 × 10 × 10s`, `3 × 1 × 30s`
 
