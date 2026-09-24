@@ -102,6 +102,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Rozwiązanie**: `buildBuilderExerciseMapping` zapisuje deltę strony względem katalogowego `side`; test blokuje powrót inline mapowania w dialogu.
 - **Reguła**: Jeśli karta zestawu edytuje `side`, zawsze wyślij deltę w `overridesJson` na tym samym write-path co wizard, nigdy samego dawkowania.
 
+### 2026-09-19 - Fragment relacji nie może wołać wycofanych pól ExerciseRelation
+
+- **Kategoria**: `GraphQL`
+- **Problem**: `ExerciseRelationFragment` w panelu weryfikacji wybierał `confidence` i `verifiedAt`. SDL ma tylko `aiConfidence` i `isVerified`. `SET_EXERCISE_RELATION_MUTATION` padała przy zapisie progresji/regresji.
+- **Przyczyna**: Portal nie ma `graphql:validate` względem `fizjo-app/backend/schema.graphql`, więc martwe pola we fragmencie przechodziły CI.
+- **Rozwiązanie**: Fragment i typ TS wyrównane do SDL (`aiConfidence`, bez `verifiedAt`). Test powierzchni blokuje powrót wycofanych pól.
+- **Reguła**: Jeśli zmieniasz fragment albo selection set w `fiziyo-admin-portal`, zawsze zestaw pola z `fizjo-app/backend/schema.graphql`; brak walidatora w portalu nie oznacza zgodności.
+
 ### 2026-09-18 - UpdateExercise: none strony to string enumu, nie null
 
 - **Kategoria**: `GraphQL`
