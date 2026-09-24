@@ -57,7 +57,7 @@ export function buildExerciseUpdateVariables({ exerciseId, values }: BuildExerci
     executionTime: values.executionTime,
     videoUrl: values.videoUrl || null,
     notes: values.notes || null,
-    exerciseSide: values.exerciseSide === 'none' ? null : values.exerciseSide,
+    exerciseSide: values.exerciseSide,
     tempo: values.tempo || null,
     clinicalDescription: values.clinicalDescription || null,
     audioCue: values.audioCue || null,

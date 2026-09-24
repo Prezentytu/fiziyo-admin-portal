@@ -111,11 +111,11 @@ const translateSide = (side?: string) => {
   if (!side) return '';
   const normalizedSide = side.toLowerCase();
   const sides: Record<string, string> = {
-    left: 'lewa strona',
-    right: 'prawa strona',
-    both: 'obie strony',
+    left: 'tylko lewa',
+    right: 'tylko prawa',
+    both: 'na każdą stronę',
     alternating: 'naprzemiennie',
-    none: 'bez strony',
+    none: 'razem',
   };
   return sides[normalizedSide] || side;
 };
@@ -682,7 +682,6 @@ function EditExerciseOverrideDialogContent({
             <ExerciseParametersFields
               surface="patientOverride"
               values={parameterValues}
-              exerciseType={exercise?.type}
               onChange={handleParametersChange}
               inheritedValues={inheritedValues}
               showContentSection

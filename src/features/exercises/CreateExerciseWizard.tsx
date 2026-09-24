@@ -120,10 +120,10 @@ interface ExistingExercise {
 }
 
 const EXERCISE_SIDES: { value: ExerciseSide; label: string }[] = [
-  { value: 'none', label: 'Bez podziału' },
-  { value: 'both', label: 'Obie strony' },
-  { value: 'left', label: 'Lewa strona' },
-  { value: 'right', label: 'Prawa strona' },
+  { value: 'none', label: 'Razem' },
+  { value: 'both', label: 'Na każdą stronę' },
+  { value: 'left', label: 'Tylko lewa' },
+  { value: 'right', label: 'Tylko prawa' },
   { value: 'alternating', label: 'Naprzemiennie' },
 ];
 
@@ -691,9 +691,9 @@ function AIDiffDrawer({
             {hasDifferentSide && suggestion.exerciseSide !== 'none' && (
               <SuggestionCard
                 label="Strona ciała"
-                currentValue={EXERCISE_SIDES.find((s) => s.value === currentData.exerciseSide)?.label || 'Bez podziału'}
+                currentValue={EXERCISE_SIDES.find((s) => s.value === currentData.exerciseSide)?.label || 'Razem'}
                 suggestedValue={
-                  EXERCISE_SIDES.find((s) => s.value === suggestion.exerciseSide)?.label || 'Bez podziału'
+                  EXERCISE_SIDES.find((s) => s.value === suggestion.exerciseSide)?.label || 'Razem'
                 }
                 reason="Charakterystyka ćwiczenia jednostronnego"
                 onAccept={() => onAcceptField('exerciseSide', suggestion.exerciseSide)}
@@ -1107,7 +1107,6 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
         preparationTime: data.preparationTime ?? undefined,
         tempo: data.tempo || undefined,
         side: data.exerciseSide,
-        type: (data.executionTime ?? 0) > 0 ? 'time' : 'reps',
       }),
     [
       data.sets,
@@ -1210,7 +1209,6 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
       preparationTime: data.preparationTime,
       duration: data.duration,
       loadKg: data.loadKg,
-      type: (data.executionTime ?? 0) > 0 ? 'time' : 'reps',
       mainTags: data.mainTags,
       additionalTags: data.additionalTags,
     }),

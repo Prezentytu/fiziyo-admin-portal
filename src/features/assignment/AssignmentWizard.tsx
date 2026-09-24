@@ -48,6 +48,7 @@ import {
 } from './utils/scheduleFrequencyUtils';
 import { calculateEstimatedTime } from '@/utils/exerciseTime';
 import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
+import { buildMappingOverridesFromParams } from '@/features/exercise-sets/utils/buildMappingOverridesFromParams';
 import {
   getWizardSteps,
   createGhostCopy,
@@ -1085,8 +1086,10 @@ function AssignmentWizardContent({
       const sets = params?.sets ?? exercise?.defaultSets ?? 3;
       const reps = params?.reps ?? exercise?.defaultReps ?? 10;
       const executionTime = params?.executionTime ?? exercise?.defaultExecutionTime;
-      const restBetweenSets = params?.restSets ?? exercise?.defaultRestBetweenSets;
+      const restBetweenSets = params?.restSets ?? exercise?.defaultRestBetweenSets ?? 60;
       const duration = isTimeBasedExercise ? (params?.duration ?? exercise?.defaultDuration) : undefined;
+      const side = params?.exerciseSide ?? exercise?.side ?? exercise?.exerciseSide;
+      const preparationTime = params?.preparationTime ?? exercise?.preparationTime;
 
       return (
         totalSeconds +
@@ -1097,10 +1100,9 @@ function AssignmentWizardContent({
           executionTime,
           rest: restBetweenSets,
           restReps: params?.restReps ?? exercise?.defaultRestBetweenReps,
-          preparationTime: params?.preparationTime ?? exercise?.preparationTime,
+          side,
+          preparationTime,
           tempo: params?.tempo ?? exercise?.tempo,
-          side: params?.exerciseSide ?? exercise?.side,
-          type: exercise?.type,
         })
       );
     }, 0);
@@ -1116,6 +1118,7 @@ function AssignmentWizardContent({
     (instance: ExerciseInstance, exerciseSetId: string, order: number) => {
       const params = builderParams.get(instance.instanceId);
       const exercise = availableExercises.find((item) => item.id === instance.exerciseId);
+      const overridesJson = buildMappingOverridesFromParams(exercise, params ?? {});
 
       return {
         exerciseId: instance.exerciseId,
@@ -1133,6 +1136,7 @@ function AssignmentWizardContent({
         customName: normalizeMutationText(params?.customName),
         customDescription: normalizeMutationText(params?.customDescription),
         ...buildExerciseLoadMutationVars(params?.loadWeightKg ?? params?.loadValue),
+        overridesJson: overridesJson ?? '',
       };
     },
     [availableExercises, builderParams, normalizeMutationText]

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { calculateExerciseTotalSeconds, formatExerciseDuration, parseTempo } from './exerciseTime';
+import {
+  calculateEstimatedTime,
+  calculateExerciseTotalSeconds,
+  formatExerciseDuration,
+  parseTempo,
+} from './exerciseTime';
 
 describe('parseTempo', () => {
   it('zwraca sume segmentow dla poprawnego tempa', () => {
@@ -64,18 +69,75 @@ describe('calculateExerciseTotalSeconds', () => {
     });
   });
 
-  it('podwaja efektywne powtorzenia dla side=both', () => {
-    const result = calculateExerciseTotalSeconds({
-      sets: 1,
-      reps: 10,
-      executionTime: 5,
-      side: 'both',
-    });
-
-    expect(result).toEqual({
+  it('podwaja prace w serii dla side=both bez wstawiania restReps miedzy stronami', () => {
+    expect(
+      calculateExerciseTotalSeconds({
+        sets: 1,
+        reps: 10,
+        executionTime: 5,
+        side: 'both',
+      }),
+    ).toEqual({
       seconds: 100,
       isEstimate: false,
     });
+
+    expect(
+      calculateExerciseTotalSeconds({
+        sets: 1,
+        reps: 8,
+        executionTime: 5,
+        preparationTime: 25,
+        side: 'BOTH',
+      }),
+    ).toEqual({ seconds: 105, isEstimate: false });
+
+    expect(
+      calculateExerciseTotalSeconds({
+        sets: 2,
+        reps: 1,
+        executionTime: 20,
+        restSets: 15,
+        preparationTime: 15,
+        side: 'both',
+      }),
+    ).toEqual({ seconds: 110, isEstimate: false });
+
+    expect(
+      calculateExerciseTotalSeconds({
+        sets: 2,
+        reps: 8,
+        executionTime: 5,
+        restReps: 2,
+        restSets: 30,
+        side: 'both',
+      }),
+    ).toEqual({ seconds: 246, isEstimate: false });
+
+    // Player: work * 2 + restSets once. Doubling restSets would be 540.
+    expect(
+      calculateExerciseTotalSeconds({
+        sets: 3,
+        reps: 10,
+        executionTime: 5,
+        restSets: 60,
+        side: 'both',
+      }),
+    ).toEqual({ seconds: 420, isEstimate: false });
+  });
+
+  it('calculateEstimatedTime przekazuje tempo i nie mnozy restSets przez BOTH', () => {
+    expect(
+      calculateEstimatedTime({
+        sets: 2,
+        reps: 6,
+        tempo: '2-1-2-0',
+        rest: 10,
+        restReps: 1,
+        preparationTime: 5,
+        side: 'both',
+      }),
+    ).toBe(155);
   });
 
   it('daje priorytet executionTime nad duration', () => {
@@ -92,87 +154,15 @@ describe('calculateExerciseTotalSeconds', () => {
     });
   });
 
-  it('dla TIME mnozy duration przez powtorzenia jak player, nie traktuje go jako czas calej serii', () => {
+  it('uzywa duration jako fallback gdy brak executionTime', () => {
     const result = calculateExerciseTotalSeconds({
       sets: 3,
       reps: 10,
       duration: 40,
-      type: 'TIME',
-    });
-
-    expect(result).toEqual({
-      seconds: 1200,
-      isEstimate: false,
-    });
-  });
-
-  it('dla TIME bez duration/executionTime/tempo nie podstawia falszywych 3s', () => {
-    const result = calculateExerciseTotalSeconds({
-      sets: 3,
-      reps: 10,
-      type: 'TIME',
-    });
-
-    expect(result).toEqual({
-      seconds: 0,
-      isEstimate: false,
-    });
-  });
-
-  it('dla TIME bez reps liczy jak player (reps=1)', () => {
-    const result = calculateExerciseTotalSeconds({
-      sets: 3,
-      duration: 40,
-      type: 'TIME',
     });
 
     expect(result).toEqual({
       seconds: 120,
-      isEstimate: false,
-    });
-  });
-
-  it('dla REPS ignoruje leftover duration i szacuje 3s na powtorzenie', () => {
-    const result = calculateExerciseTotalSeconds({
-      sets: 3,
-      reps: 10,
-      duration: 40,
-      type: 'REPS',
-    });
-
-    expect(result).toEqual({
-      seconds: 90,
-      isEstimate: true,
-    });
-  });
-
-  it('podwaja caly blok pracy dla side=both, w tym przerwy miedzy seriami', () => {
-    const result = calculateExerciseTotalSeconds({
-      sets: 3,
-      reps: 10,
-      executionTime: 5,
-      restSets: 60,
-      side: 'both',
-    });
-
-    // [(10*5)*3 + 2*60] * 2 = 540
-    expect(result).toEqual({
-      seconds: 540,
-      isEstimate: false,
-    });
-  });
-
-  it('zgadza sie z playerem: 1x8 BOTH, 5s, 25s przygotowania = 105s', () => {
-    const result = calculateExerciseTotalSeconds({
-      sets: 1,
-      reps: 8,
-      executionTime: 5,
-      preparationTime: 25,
-      side: 'BOTH',
-    });
-
-    expect(result).toEqual({
-      seconds: 105,
       isEstimate: false,
     });
   });

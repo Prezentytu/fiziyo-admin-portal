@@ -59,8 +59,6 @@ export type ParameterTestIdKind = 'input' | 'select' | 'info';
 export interface ExerciseParametersFieldsProps {
   surface: ExerciseFieldSurface;
   values: ExerciseParameterValues;
-  /** GraphQL ExerciseType — needed so leftover duration is not treated as a TIME set override. */
-  exerciseType?: string | number | null;
   onChange: (patch: Partial<ExerciseParameterValues>) => void;
   inheritedValues?: Partial<ExerciseParameterValues>;
   isDirtyField?: (key: ExerciseFieldKey) => boolean;
@@ -464,7 +462,6 @@ function isInheritedMatch(
 export function ExerciseParametersFields({
   surface,
   values,
-  exerciseType,
   onChange,
   inheritedValues,
   isDirtyField,
@@ -516,7 +513,6 @@ export function ExerciseParametersFields({
     preparationTime: 0,
     tempo: values.tempo || undefined,
     side: values.side || undefined,
-    type: exerciseType ?? undefined,
   });
 
   const totalSeconds = calculateExerciseTotalSeconds({
@@ -529,7 +525,6 @@ export function ExerciseParametersFields({
     preparationTime: values.preparationTime ?? undefined,
     tempo: values.tempo || undefined,
     side: values.side || undefined,
-    type: exerciseType ?? undefined,
   });
 
   const dirty = (key: ExerciseFieldKey) => Boolean(isDirtyField?.(key));

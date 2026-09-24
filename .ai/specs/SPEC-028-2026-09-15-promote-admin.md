@@ -69,22 +69,22 @@ Brak nowych elementów interaktywnych.
 
 ## Risk Assessment
 
-| Ryzyko | Wpływ | Mitygacja |
-| ------ | ----- | --------- |
-| Alias Preview DEV na prod domenę | High — prod Clerk/API zastąpione DEV | Planner nigdy nie woła `/promote` gdy `target !== production` |
-| `vercel deploy --prod` bez git metadata | High — brak nagłówków SPEC-026 | Create przez API z `deploymentId` albo `gitSource`; live HEAD wymaga SHA |
-| Token w logach | High | Fetch nie loguje body ani Authorization; evidence JSON bez sekretów |
-| GitHub Free: `environment: production` bez protection | Medium | Jak w `fizjo-app`: procedura Adama, nie wymuszone review |
-| Agent odpala workflow | High | `agent-guard` już blokuje `gh workflow run promote.yml` |
+| Ryzyko                                                | Wpływ                                | Mitygacja                                                                |
+| ----------------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------ |
+| Alias Preview DEV na prod domenę                      | High — prod Clerk/API zastąpione DEV | Planner nigdy nie woła `/promote` gdy `target !== production`            |
+| `vercel deploy --prod` bez git metadata               | High — brak nagłówków SPEC-026       | Create przez API z `deploymentId` albo `gitSource`; live HEAD wymaga SHA |
+| Token w logach                                        | High                                 | Fetch nie loguje body ani Authorization; evidence JSON bez sekretów      |
+| GitHub Free: `environment: production` bez protection | Medium                               | Jak w `fizjo-app`: procedura Adama, nie wymuszone review                 |
+| Agent odpala workflow                                 | High                                 | `agent-guard` już blokuje `gh workflow run promote.yml`                  |
 
 ## Integration Test Coverage
 
-| Scenariusz | Typ testu | Priorytet |
-| ---------- | --------- | --------- |
-| Preview → rebuild, production → alias | Jednostkowy | High |
-| Odrzucenie aliasu Preview i złego SHA | Jednostkowy | High |
-| Live identity mismatch / brak tokenu | Jednostkowy | High |
-| Workflow tylko dispatch, inputy przez env | Kontrakt YAML | High |
+| Scenariusz                                | Typ testu     | Priorytet |
+| ----------------------------------------- | ------------- | --------- |
+| Preview → rebuild, production → alias     | Jednostkowy   | High      |
+| Odrzucenie aliasu Preview i złego SHA     | Jednostkowy   | High      |
+| Live identity mismatch / brak tokenu      | Jednostkowy   | High      |
+| Workflow tylko dispatch, inputy przez env | Kontrakt YAML | High      |
 
 ## Verification plan
 
@@ -97,5 +97,9 @@ Brak nowych elementów interaktywnych.
 ### 2026-09-15
 
 - Utworzenie specyfikacji i implementacja workflow + skryptu bramek.
+- Leftover git branch `dev` wyłączony z pociągu: `vercel.json` nie wdraża `dev`,
+  `pin-devportal.yml` trzyma domenę DEV na `main`, `e2e-trigger` ignoruje `ref=dev`.
+- Leftover git branch `dev` wyłączony z pociągu: `vercel.json` nie wdraża `dev`,
+  `pin-devportal.yml` trzyma domenę DEV na `main`, `e2e-trigger` ignoruje `ref=dev`.
 - Leftover git branch `dev` wyłączony z pociągu: `vercel.json` nie wdraża `dev`,
   `pin-devportal.yml` trzyma domenę DEV na `main`, `e2e-trigger` ignoruje `ref=dev`.

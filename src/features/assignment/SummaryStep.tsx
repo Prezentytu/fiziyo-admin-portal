@@ -40,10 +40,12 @@ function calculateTotalTime(mappings: ExerciseMapping[], overrides: Map<string, 
     const sets = override?.sets ?? mapping.sets ?? exercise?.defaultSets ?? 3;
     const reps = override?.reps ?? mapping.reps ?? exercise?.defaultReps ?? 10;
     const executionTime = override?.executionTime ?? mapping.executionTime ?? exercise?.defaultExecutionTime;
-    const rest = override?.restSets ?? mapping.restSets ?? exercise?.defaultRestBetweenSets;
+    const rest = override?.restSets ?? mapping.restSets ?? exercise?.defaultRestBetweenSets ?? 60;
 
     // Duration służy do kalkulacji czasu serii; w pozostałych przypadkach używamy executionTime.
     const duration = isTimeBased ? (override?.duration ?? mapping.duration ?? exercise?.defaultDuration) : undefined;
+    const side = override?.exerciseSide ?? mapping.exercise?.side ?? exercise?.side ?? exercise?.exerciseSide;
+    const preparationTime = override?.preparationTime ?? mapping.preparationTime ?? exercise?.preparationTime;
 
     return (
       total +
@@ -54,10 +56,9 @@ function calculateTotalTime(mappings: ExerciseMapping[], overrides: Map<string, 
         executionTime,
         rest,
         restReps: override?.restReps ?? mapping.restReps ?? exercise?.defaultRestBetweenReps,
-        preparationTime: override?.preparationTime ?? mapping.preparationTime ?? exercise?.preparationTime,
+        side,
+        preparationTime,
         tempo: override?.tempo ?? mapping.tempo ?? exercise?.tempo,
-        side: override?.exerciseSide ?? exercise?.side ?? exercise?.exerciseSide,
-        type: exercise?.type,
       })
     );
   }, 0);

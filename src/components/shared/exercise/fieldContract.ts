@@ -77,10 +77,10 @@ export const MAPPING_OVERRIDE_FIELD_KEYS: readonly ExerciseFieldKey[] = [
 ] as const;
 
 export const SIDE_OPTIONS: readonly ExerciseFieldOption[] = [
-  { value: 'none', label: 'Bez podziału' },
-  { value: 'left', label: 'Lewa strona' },
-  { value: 'right', label: 'Prawa strona' },
-  { value: 'both', label: 'Obie strony' },
+  { value: 'none', label: 'Razem' },
+  { value: 'left', label: 'Tylko lewa' },
+  { value: 'right', label: 'Tylko prawa' },
+  { value: 'both', label: 'Na każdą stronę' },
   { value: 'alternating', label: 'Naprzemiennie' },
 ] as const;
 

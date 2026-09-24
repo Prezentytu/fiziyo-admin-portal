@@ -1,4 +1,5 @@
 import { formatDurationPolish } from '@/utils/durationPolish';
+import { EXERCISE_SIDE_HELP } from '@/utils/exerciseSideLabels';
 
 export type ExerciseFieldGroup = 'dosage' | 'execution' | 'content' | 'classification';
 
@@ -79,11 +80,11 @@ const DIFFICULTY_LABELS: Record<string, string> = {
 };
 
 const SIDE_LABELS: Record<string, string> = {
-  left: 'Lewa strona',
-  right: 'Prawa strona',
-  both: 'Obie strony',
+  left: 'Tylko lewa',
+  right: 'Tylko prawa',
+  both: 'Na każdą stronę',
   alternating: 'Naprzemiennie',
-  none: 'Bez podziału',
+  none: 'Razem',
 };
 
 const asPositiveSeconds = (value?: number): string | null => {
@@ -222,7 +223,7 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
   side: {
     key: 'side',
     label: 'Strona ciała',
-    tooltip: 'Określa stronę ciała: lewa, prawa, obie lub naprzemiennie.',
+    tooltip: EXERCISE_SIDE_HELP,
     iconKey: 'side',
     group: 'execution',
     isInlineVisible: true,

@@ -41,8 +41,6 @@ export interface ExerciseCoreDraft {
   duration: number | null;
   /** Obciążenie strukturalne w kg (zastępuje free-text loadText). */
   loadKg: number | null;
-  /** Typ katalogowy — tylko do wyliczenia czasu; nie jest polem zapisu formularza. */
-  type?: string | null;
   mainTags: string[];
   additionalTags: string[];
 }
@@ -95,7 +93,6 @@ export interface ExerciseEditorSource {
   preparationTime?: number | null;
   defaultDuration?: number | null;
   duration?: number | null;
-  type?: string | null;
   defaultLoad?: ExerciseLoadLike | null;
   loadValue?: number | null;
   loadUnit?: string | null;
@@ -162,7 +159,6 @@ function deriveCoreDraft(source: ExerciseEditorSource | null | undefined): Exerc
     preparationTime: firstNumber(source?.preparationTime),
     duration: firstNumber(source?.defaultDuration, source?.duration),
     loadKg: source ? deriveLoadKg(source) : null,
-    type: source?.type ?? null,
     mainTags: normalizeTagIds(source?.mainTags),
     additionalTags: normalizeTagIds(source?.additionalTags),
   };
@@ -213,7 +209,9 @@ export function buildChangedCoreVariables(
   if (current.tempo !== initial.tempo) variables.tempo = asText(current.tempo);
   if (current.rangeOfMotion !== initial.rangeOfMotion) variables.rangeOfMotion = asText(current.rangeOfMotion);
   if (current.videoUrl !== initial.videoUrl) variables.videoUrl = asText(current.videoUrl);
-  if (current.side !== initial.side) variables.exerciseSide = current.side === 'none' ? null : current.side;
+  // UpdateExercise skips null/omitted exerciseSide. "none" must be sent as the
+  // enum name so Razem (None) can replace Both/Left/Right instead of no-oping.
+  if (current.side !== initial.side) variables.exerciseSide = current.side;
   if (current.difficultyLevel !== initial.difficultyLevel)
     variables.difficultyLevel = current.difficultyLevel === 'UNKNOWN' ? null : current.difficultyLevel;
   if (current.sets !== initial.sets) variables.sets = current.sets;
