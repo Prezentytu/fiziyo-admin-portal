@@ -3,11 +3,11 @@
 `main` jest trunkiem. Merge wdraża tylko DEV. Produkcja to ręczny workflow
 w tym repo, nie klik w Vercel.
 
-| Środowisko | URL | Skąd |
-| ---------- | --- | ---- |
-| Preview PR | `*.vercel.app` | każdy PR |
-| DEV | `https://devportal.fiziyo.pl` | merge do `main` |
-| PROD | `https://portal.fiziyo.pl` | Actions → **Promote admin** |
+| Środowisko | URL                           | Skąd                        |
+| ---------- | ----------------------------- | --------------------------- |
+| Preview PR | `*.vercel.app`                | każdy PR                    |
+| DEV        | `https://devportal.fiziyo.pl` | merge do `main`             |
+| PROD       | `https://portal.fiziyo.pl`    | Actions → **Promote admin** |
 
 Preview nie jest shared DEV. `NEXT_PUBLIC_*` są utrwalone w buildzie — Promote
 **nigdy** nie aliasuje deploymentu Preview (Clerk/API DEV) na domenę produkcji.
@@ -16,6 +16,8 @@ Preview zawsze dostaje nowy build `target: production`.
 Gałąź `dev` nie jest w pociągu (D-09-06-b). `vercel.json` wyłącza jej deploye.
 Workflow `pin-devportal.yml` przy `deployment_status` przestawia alias
 `devportal.fiziyo.pl` na Preview z `main` i nie aliasuje leftover `dev`.
+Preview PR (Vercel `environment=Preview` albo `deployment.ref` ≠ `main`) jest
+pomijany — to nie shared DEV.
 `e2e-trigger` odmawia certyfikatu, gdy live SHA nie należy do `main`.
 Wymaga tych samych sekretów Vercel co Promote (`VERCEL_TOKEN`, `VERCEL_PROJECT_ID`).
 

@@ -229,11 +229,10 @@ export const EXERCISE_RELATION_FRAGMENT = gql`
     sourceExerciseId
     targetExerciseId
     relationType
-    confidence
+    aiConfidence
     isAISuggested
     isVerified
     createdAt
-    verifiedAt
     targetExercise {
       id
       name
@@ -255,7 +254,7 @@ export const EXERCISE_RELATION_FRAGMENT = gql`
  * @param relationType - REGRESSION or PROGRESSION
  */
 export const SET_EXERCISE_RELATION_MUTATION = gql`
-  mutation SetExerciseRelation($sourceExerciseId: String!, $targetExerciseId: String!, $relationType: String!) {
+  mutation SetExerciseRelation($sourceExerciseId: String!, $targetExerciseId: String!, $relationType: ExerciseRelationType!) {
     setExerciseRelation(
       sourceExerciseId: $sourceExerciseId
       targetExerciseId: $targetExerciseId
@@ -274,7 +273,7 @@ export const SET_EXERCISE_RELATION_MUTATION = gql`
  * @param relationType - REGRESSION or PROGRESSION
  */
 export const REMOVE_EXERCISE_RELATION_MUTATION = gql`
-  mutation RemoveExerciseRelation($sourceExerciseId: String!, $relationType: String!) {
+  mutation RemoveExerciseRelation($sourceExerciseId: String!, $relationType: ExerciseRelationType!) {
     removeExerciseRelation(sourceExerciseId: $sourceExerciseId, relationType: $relationType)
   }
 `;

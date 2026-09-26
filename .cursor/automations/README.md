@@ -9,6 +9,7 @@ Przed pilotem wyłącz stary bezpośredni trigger `agent-fix` w Cursor. Zmiana p
 nie zmienia zdalnej automacji. Jedynym wykonawcą uruchomień implementacji jest
 chroniony dispatcher w `agent-ops`. Etykieta, parser i login właściciela PAT
 nie są autoryzacją. `agent-promote.yml` jedynie pokazuje kanał kwalifikacji.
+`task-card.mjs check` potwierdza format; `authorize` zawsze kończy się odmową.
 
 - `01-intake.md`: odczyt i deduplikacja zgłoszenia. Webhook wymaga jawnego
   `AGENT_INTAKE_ENABLED=true` po sprawdzeniu narzędzi i tożsamości odbiorcy.

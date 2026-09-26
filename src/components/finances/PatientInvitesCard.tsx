@@ -32,6 +32,7 @@ import type { PatientInviteLink } from '@/types/revenue.types';
 import { PatientInviteDialog } from './PatientInviteDialog';
 import { ShareInviteButton } from './ShareInviteButton';
 import { cn } from '@/lib/utils';
+import { tryBuildPatientJoinUrl } from '@/lib/patientJoinUrl';
 
 // ========================================
 // Types
@@ -157,7 +158,13 @@ export function PatientInvitesCard({ organizationId, className }: PatientInvites
               Zaproszenia Pacjentów
             </CardTitle>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" onClick={() => refetch()} title="Odśwież">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => refetch()}
+                title="Odśwież"
+                data-testid="invite-refresh-btn"
+              >
                 <RefreshCw className="h-4 w-4" />
               </Button>
               <Button size="sm" onClick={() => setDialogOpen(true)} className="gap-2" data-testid="invite-patient-btn">
@@ -208,7 +215,7 @@ export function PatientInvitesCard({ organizationId, className }: PatientInvites
 // ========================================
 
 function InviteRow({ invite, onCancel }: { invite: PatientInviteLink; onCancel: () => void }) {
-  const fullUrl = `https://fiziyo.pl/start?token=${invite.token}`;
+  const fullUrl = tryBuildPatientJoinUrl(invite.token);
 
   // Calculate days until expiration
   const expiresAt = new Date(invite.expiresAt);
@@ -251,7 +258,7 @@ function InviteRow({ invite, onCancel }: { invite: PatientInviteLink; onCancel: 
 
         {invite.status === 'pending' && (
           <>
-            <ShareInviteButton url={fullUrl} patientName={invite.patientName} />
+            {fullUrl && <ShareInviteButton url={fullUrl} patientName={invite.patientName} />}
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

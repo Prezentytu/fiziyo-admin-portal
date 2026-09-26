@@ -30,6 +30,7 @@ import { getMediaUrl } from '@/utils/mediaUrl';
 import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
 
 import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
+import { filterExercisesBySearch } from '@/features/exercises/utils/exerciseSearch';
 import {
   ADD_EXERCISE_TO_EXERCISE_SET_MUTATION,
   UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION,
@@ -305,8 +306,7 @@ function AddExerciseToPatientDialogContent({
     // Apply search filter
     if (!searchQuery.trim()) return filtered;
 
-    const query = searchQuery.toLowerCase();
-    return filtered.filter((e) => e.name.toLowerCase().includes(query) || e.description?.toLowerCase().includes(query));
+    return filterExercisesBySearch(filtered, searchQuery);
   }, [exercisesData, existingExerciseIds, searchQuery]);
 
   // Track changes
