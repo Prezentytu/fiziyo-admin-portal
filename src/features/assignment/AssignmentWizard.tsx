@@ -1099,8 +1099,10 @@ function AssignmentWizardContent({
           duration,
           executionTime,
           rest: restBetweenSets,
+          restReps: params?.restReps ?? exercise?.defaultRestBetweenReps,
           side,
           preparationTime,
+          tempo: params?.tempo ?? exercise?.tempo,
         })
       );
     }, 0);
