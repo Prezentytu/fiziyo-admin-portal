@@ -22,6 +22,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-09-28 - Grupy major Dependabota nie wciągaj hurtem
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: PR #106 (16 majorów) pada na `npm run lint`: `typescript-eslint` z `eslint-config-next` nie obsługuje TypeScript 7.0.
+- **Przyczyna**: Jedna grupa `major` miesza migracje auth (Clerk 7), kontraktu (GraphQL 17) i toolchainu (TypeScript 7, ESLint 10, Vitest 5).
+- **Rozwiązanie**: Zbiorczy PR bierze tylko minor/patch z aktualnego `main` oraz wyrównanie `actions/checkout` do wersji już używanej w CI. #106 zostaje zamknięty.
+- **Reguła**: Jeśli Dependabot otwiera grupę `major`, nie łącz jej z minor/patch. TypeScript 7 i ESLint 10 zostają poza bumpem, dopóki `typescript-eslint` ich nie obsługuje.
+
 ### 2026-09-24 - BOTH nie podwaja restSets ani preparationTime
 
 - **Kategoria**: `UI/UX` | `Testing`
@@ -197,6 +205,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Przyczyna**: Sonda schematu została w `exercises.queries.ts` po tym, jak lista panelu przeszła na `availableExercises` / `organizationExercises`.
 - **Rozwiązanie**: Usunięto martwe dokumenty; lista współdzielona w ECOSYSTEM nie wskazuje już `GET_EXERCISES_QUERY`.
 - **Reguła**: Jeśli ECOSYSTEM mówi, że query jest współdzielone, sprawdź importy w obu klientach — nieużywana kopia z polem spoza SDL to ścieżka do crasha, nie alias.
+
+### 2026-09-28 - Grupy major Dependabota nie wciągaj hurtem
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: PR #106 (16 majorów) pada na `npm run lint`: `typescript-eslint` z `eslint-config-next` nie obsługuje TypeScript 7.0.
+- **Przyczyna**: Jedna grupa `major` miesza migracje auth (Clerk 7), kontraktu (GraphQL 17) i toolchainu (TypeScript 7, ESLint 10, Vitest 5).
+- **Rozwiązanie**: Zbiorczy PR bierze tylko minor/patch z aktualnego `main` oraz wyrównanie `actions/checkout` do wersji już używanej w CI. #106 zostaje zamknięty.
+- **Reguła**: Jeśli Dependabot otwiera grupę `major`, nie łącz jej z minor/patch. TypeScript 7 i ESLint 10 zostają poza bumpem, dopóki `typescript-eslint` ich nie obsługuje.
 
 ### 2026-09-14 - Starych PR-ów Dependabota nie merguj bez porównania z main
 
