@@ -231,13 +231,18 @@ export function ActivatePremiumDialog({
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-surface-light border border-border/60">
-                <CreditCard className="h-4 w-4 text-muted-foreground shrink-0" />
-                <p className="text-sm">
-                  Do Twojego miesięcznego rachunku zostanie doliczonych{' '}
-                  <span className="font-semibold text-primary">15 PLN</span>.
-                </p>
-              </div>
+              {action !== 'RevokeNow' && (
+                <div
+                  className="flex items-center gap-2 p-3 rounded-lg bg-surface-light border border-border/60"
+                  data-testid="patient-premium-charge-notice"
+                >
+                  <CreditCard className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <p className="text-sm">
+                    Do Twojego miesięcznego rachunku zostanie doliczonych{' '}
+                    <span className="font-semibold text-primary">15 PLN</span>.
+                  </p>
+                </div>
+              )}
               {isReasonRequired && (
                 <div className="space-y-2">
                   <Label>Powód zmiany</Label>
