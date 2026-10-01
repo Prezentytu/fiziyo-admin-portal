@@ -8,6 +8,7 @@ import {
   applyTeamScope,
   assertProjectId,
   formatVercelApiError,
+  readIdentity,
   teamScopeQuery,
   normalizeDeploymentId,
   normalizeSha,
@@ -16,26 +17,38 @@ import {
 export const DEV_DOMAINS = ["devportal.fiziyo.pl", "dev.portal.fiziyo.pl"];
 export const TRUNK_BRANCH = "main";
 export const LEGACY_INTEGRATION_BRANCH = "dev";
+export const VERCEL_PRODUCTION_BRANCH = "production";
 
 export function isDevDomain(name) {
   return DEV_DOMAINS.includes(String(name ?? ""));
 }
 
+export function assertTrunkIsNotProductionBranch(project) {
+  const productionBranch = String(project?.link?.productionBranch ?? "");
+  if (!productionBranch || productionBranch === TRUNK_BRANCH) {
+    throw new Error(
+      `Vercel Production Branch = "${productionBranch || "?"}". Każdy merge do main idzie wtedy na PROD, ` +
+        `a domena DEV bez gitBranch staje się domeną produkcji. Ustaw Settings → Environments → Production → ` +
+        `Branch Tracking na "${VERCEL_PRODUCTION_BRANCH}".`
+    );
+  }
+  return productionBranch;
+}
+
+// Vercel treats a domain without gitBranch as a Production domain, so DEV must stay bound to the trunk.
 export function planDevDomainAssignment(domain) {
   const name = String(domain?.name ?? "");
   if (!isDevDomain(name)) throw new Error("Not a DEV domain.");
   const previous = domain.gitBranch || null;
-  if (!previous) {
-    return { action: "keep", gitBranch: null, previous: null };
+  if (previous === TRUNK_BRANCH) {
+    return { action: "keep", gitBranch: TRUNK_BRANCH, previous };
   }
-  return { action: "detach", gitBranch: null, previous };
+  return { action: "assign", gitBranch: TRUNK_BRANCH, previous };
 }
 
-export function shouldSkipPin({ ref, environment } = {}) {
+export function shouldSkipAlias({ ref, environment } = {}) {
   if (environment === "Production") return "production";
   if (ref === LEGACY_INTEGRATION_BRANCH) return "legacy-dev-branch";
-  if (environment === "Preview" && ref !== TRUNK_BRANCH) return "feature-preview";
-  if (ref && ref !== TRUNK_BRANCH) return "feature-preview";
   return "";
 }
 
@@ -57,6 +70,16 @@ export function selectMainPreviewDeployment(deployments, sha) {
     return state === "READY" && commit === expected && onTrunk && item.target !== "production";
   });
   return ready[0] || null;
+}
+
+export function assertDevIdentity(observed, { sha } = {}) {
+  if (observed.schema !== "1" || observed.apiOrigin !== DEV_API_ORIGIN) {
+    throw new Error(`DEV serwuje API "${observed.apiOrigin || "?"}" zamiast ${DEV_API_ORIGIN}.`);
+  }
+  if (sha && observed.sha !== sha) {
+    throw new Error(`DEV serwuje SHA ${observed.sha || "?"} zamiast ${sha}.`);
+  }
+  return { ...observed, deploymentId: normalizeDeploymentId(observed.deploymentId) };
 }
 
 function withQuery(requestPath, teamId) {
@@ -83,17 +106,22 @@ async function vercelJson(fetchImpl, token, method, requestPath, body) {
   return text ? JSON.parse(text) : {};
 }
 
+export async function getProject(fetchImpl, env) {
+  const projectId = assertProjectId(env.VERCEL_PROJECT_ID);
+  return vercelJson(fetchImpl, env.VERCEL_TOKEN, "GET", withQuery(`/v9/projects/${projectId}`, env.VERCEL_TEAM_ID));
+}
+
 export async function listProjectDomains(fetchImpl, env) {
   const projectId = assertProjectId(env.VERCEL_PROJECT_ID);
   const payload = await vercelJson(fetchImpl, env.VERCEL_TOKEN, "GET", withQuery(`/v9/projects/${projectId}/domains`, env.VERCEL_TEAM_ID));
   return Array.isArray(payload.domains) ? payload.domains : [];
 }
 
-export async function detachDomainFromGitBranch(fetchImpl, env, domainName) {
+export async function assignDomainToTrunk(fetchImpl, env, domainName) {
   const projectId = assertProjectId(env.VERCEL_PROJECT_ID);
   const encoded = encodeURIComponent(domainName);
   return vercelJson(fetchImpl, env.VERCEL_TOKEN, "PATCH", withQuery(`/v9/projects/${projectId}/domains/${encoded}`, env.VERCEL_TEAM_ID), {
-    gitBranch: null,
+    gitBranch: TRUNK_BRANCH,
   });
 }
 
@@ -113,11 +141,34 @@ export async function listShaDeployments(fetchImpl, env, sha) {
   return Array.isArray(payload.deployments) ? payload.deployments : [];
 }
 
-export async function pinDevportalDomain(env, { fetchImpl = fetch } = {}) {
-  const skip = shouldSkipPin({ ref: env.DEPLOYMENT_REF, environment: env.DEPLOYMENT_ENV });
-  if (skip === "production" || skip === "feature-preview") {
-    return { skipped: skip, reassigned: [], aliased: false };
+export async function waitForDevIdentity(expected, { fetchImpl = fetch, attempts = 12, delayMs = 5000, sleep = delay } = {}) {
+  let lastError;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      const response = await fetchImpl(`${DEV_APP_URL}/sign-in`, {
+        method: "HEAD",
+        redirect: "error",
+        cache: "no-store",
+        signal: AbortSignal.timeout(20000),
+      });
+      if (!response.ok) throw new Error(`sign-in ${response.status}`);
+      return assertDevIdentity(readIdentity(response.headers), expected);
+    } catch (error) {
+      lastError = error;
+      if (attempt < attempts - 1) await sleep(delayMs);
+    }
   }
+  throw lastError;
+}
+
+function delay(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+export async function pinDevportalDomain(env, { fetchImpl = fetch, sleep = delay } = {}) {
+  const productionBranch = assertTrunkIsNotProductionBranch(await getProject(fetchImpl, env));
 
   const domains = (await listProjectDomains(fetchImpl, env)).filter((item) => isDevDomain(item.name));
   if (!domains.length) throw new Error("Brak domeny DEV w projekcie Vercel.");
@@ -125,28 +176,36 @@ export async function pinDevportalDomain(env, { fetchImpl = fetch } = {}) {
   const reassigned = [];
   for (const domain of domains) {
     const plan = planDevDomainAssignment(domain);
-    if (plan.action === "detach") {
-      await detachDomainFromGitBranch(fetchImpl, env, domain.name);
-      reassigned.push({ name: domain.name, from: plan.previous, to: null });
+    if (plan.action === "assign") {
+      await assignDomainToTrunk(fetchImpl, env, domain.name);
+      reassigned.push({ name: domain.name, from: plan.previous, to: plan.gitBranch });
     }
   }
 
-  if (skip === "legacy-dev-branch") {
-    return { skipped: skip, reassigned, aliased: false };
+  const environment = env.DEPLOYMENT_ENV;
+  let skipped = shouldSkipAlias({ ref: env.DEPLOYMENT_REF, environment });
+  let sha = !skipped && env.DEPLOYMENT_SHA ? normalizeSha(env.DEPLOYMENT_SHA) : "";
+  let deploymentId = null;
+  if (sha) {
+    const preview = selectMainPreviewDeployment(await listShaDeployments(fetchImpl, env), sha);
+    if (!preview && environment === "Preview") {
+      skipped = "feature-preview";
+      sha = "";
+    } else {
+      deploymentId = normalizeDeploymentId(assertPreviewDeployment(preview).id || preview.uid);
+      await aliasDevDomain(fetchImpl, env, deploymentId);
+    }
   }
 
-  const sha = env.DEPLOYMENT_SHA ? normalizeSha(env.DEPLOYMENT_SHA) : "";
-  if (!sha) return { skipped: "", reassigned, aliased: false, apiOrigin: DEV_API_ORIGIN };
-
-  const preview = assertPreviewDeployment(selectMainPreviewDeployment(await listShaDeployments(fetchImpl, env), sha));
-  await aliasDevDomain(fetchImpl, env, preview.id || preview.uid);
+  const live = await waitForDevIdentity({ sha }, { fetchImpl, sleep });
   return {
-    skipped: "",
+    skipped,
+    productionBranch,
     reassigned,
-    aliased: true,
-    deploymentId: normalizeDeploymentId(preview.id || preview.uid),
+    aliased: Boolean(deploymentId),
+    deploymentId: deploymentId ?? live.deploymentId,
     project: env.VERCEL_PROJECT_NAME || PROJECT_NAME,
-    apiOrigin: DEV_API_ORIGIN,
+    apiOrigin: live.apiOrigin,
   };
 }
 

@@ -13,10 +13,7 @@ concurrency:
 
 jobs:
   pin:
-    if: >
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.deployment_status.state == 'success' &&
-        github.event.deployment_status.environment != 'Preview')
+    if: github.event_name == 'workflow_dispatch' || github.event.deployment_status.state == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

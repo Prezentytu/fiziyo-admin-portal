@@ -60,15 +60,18 @@ export function checkTrunkMain(root) {
     if (!pin.includes('LEGACY_INTEGRATION_BRANCH = "dev"') || !pin.includes('TRUNK_BRANCH = "main"')) {
       errors.push("Pin DEV domain script must move leftover branch dev onto main");
     }
-    if (pin.includes("gitBranch: TRUNK_BRANCH") || /gitBranch:\s*["']main["']/.test(pin)) {
-      errors.push("Pin DEV must not assign the production branch to a Preview domain");
+    if (/gitBranch:\s*null/.test(pin)) {
+      errors.push("Pin DEV must not detach the DEV domain from git (branchless domain = Production domain)");
+    }
+    if (!pin.includes("link?.productionBranch")) {
+      errors.push("Pin DEV must refuse a Vercel project whose Production Branch is main");
     }
     if (!pin.includes("feature-preview") || !/environment === ["']Preview["']/.test(pin)) {
       errors.push("Pin DEV must skip Vercel Preview deployments that are not trunk main");
     }
     const pinWorkflowText = fs.readFileSync(pinWorkflow, "utf8");
-    if (!pinWorkflowText.includes("environment != 'Preview'")) {
-      errors.push("Pin DEV workflow must not run the pin job on Vercel Preview PR deployments");
+    if (/environment\s*!=\s*'Preview'/.test(pinWorkflowText)) {
+      errors.push("Pin DEV workflow must run on Preview deployments: DEV is the Preview of main");
     }
   }
 

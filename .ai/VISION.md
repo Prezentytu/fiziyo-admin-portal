@@ -8,7 +8,7 @@ Panel gabinetu dla **fizjoterapeuty**: katalog ćwiczeń (własne gabinetu + kat
 
 ## Dokąd idziemy
 
-Cel: **fizjoterapeuta nie wpisuje nic ręcznie.** Wizyta prowadzona z FiziYo w tle kończy się gotowym pacjentem, notatką, zestawem i przypisaniem; fizjoterapeuta klika „OK” albo „popraw to i to → OK”. Rola panelu w tej wizji: miejsce **przeglądu i korekty** propozycji copilota (kolejka „do zatwierdzenia”), masowa praca na katalogu i zestawach, konfiguracja gabinetu. Miarą funkcji jest liczba minut i kliknięć oszczędzonych fizjoterapeucie oraz regularność ćwiczeń pacjenta.
+Cel: **fizjoterapeuta nie wpisuje nic ręcznie.** Wizyta prowadzona z FiziYo w tle kończy się gotowym pacjentem, notatką, zestawem i przypisaniem; fizjoterapeuta klika „OK” albo „popraw to i to → OK”. Koniec drogi (pełny opis w `fizjo-app/.ai/VISION.md`): mówi, kto przyszedł i czego potrzebuje, dostaje propozycję zestawu, poprawia głosem („zmień to ćwiczenie”). Ćwiczenie, którego nie ma, powstaje w locie. Katalog jest etapem, nie warunkiem tego końca. Rola panelu w tej wizji: miejsce **przeglądu i korekty** propozycji copilota (kolejka „do zatwierdzenia”), masowa praca na katalogu i zestawach, konfiguracja gabinetu. Miarą funkcji jest liczba minut i kliknięć oszczędzonych fizjoterapeucie oraz regularność ćwiczeń pacjenta.
 
 ## Kto płaci
 
@@ -18,7 +18,7 @@ Fizjoterapeuta oferuje pacjentowi **usługę premium** (opieka między wizytami 
 
 1. **Izolacja tenantów i autoryzacja** — `organizationId` scoping, token-exchange, role (`SPEC-016`). Zmiana w `auth` / `permission` = skill `sec-report` przed merge.
 2. **Szybkość pracy fizjoterapeuty** — od wizyty do przypisanego zestawu bez wpisywania; wizard, import katalogu (`SPEC-025`), parametry ćwiczeń (`SPEC-022`), przegląd propozycji copilota.
-3. **Jakość danych katalogu** — weryfikacja dual-track (`SPEC-013`), generacja ilustracji AI (`SPEC-020`, wspólna fala z mobile `SPEC-036`). Katalog jest tym, z czego copilot składa zestawy.
+3. **Jakość danych katalogu** — weryfikacja dual-track (`SPEC-013`), generacja ilustracji AI (`SPEC-020`, wspólna fala z mobile `SPEC-036`). Na obecnym etapie katalog jest tym, z czego copilot składa zestawy. Koniec drogi nie traktuje ogólnej bazy jako warunku.
 4. **Theme-safe, testowalne UI** — `data-testid` obowiązkowe (E2E w `fiziyo-tests`), light + dark od pierwszej wersji.
 5. **Release** — merge do `main` = deploy `devportal.fiziyo.pl`; PROD `portal.fiziyo.pl` = ręczny Promote. Nic na PROD bez człowieka.
 
@@ -43,4 +43,4 @@ Wąskie zadania, krótkie wątki, dowody. Agent w chmurze: branch `agent/…`, d
 
 ---
 
-Ostatnia aktualizacja: 2026-09-11 (Adam).
+Ostatnia aktualizacja: 2026-09-24 (Adam) — wyciąg zsynchronizowany z końcem drogi w `fizjo-app/.ai/VISION.md`.

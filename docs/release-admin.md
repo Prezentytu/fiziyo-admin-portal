@@ -16,10 +16,22 @@ Preview zawsze dostaje nowy build `target: production`.
 Gałąź `dev` nie jest w pociągu (D-09-06-b). `vercel.json` wyłącza jej deploye.
 Workflow `pin-devportal.yml` przy `deployment_status` przestawia alias
 `devportal.fiziyo.pl` na Preview z `main` i nie aliasuje leftover `dev`.
-Preview PR (Vercel `environment=Preview` albo `deployment.ref` ≠ `main`) jest
-pomijany — to nie shared DEV.
+Preview PR (deployment Vercel z `githubCommitRef` ≠ `main`) kończy się skipem
+`feature-preview` bez aliasu — to nie shared DEV.
 `e2e-trigger` odmawia certyfikatu, gdy live SHA nie należy do `main`.
 Wymaga tych samych sekretów Vercel co Promote (`VERCEL_TOKEN`, `VERCEL_PROJECT_ID`).
+
+### Wymagane ustawienia projektu Vercel
+
+| Ustawienie                                             | Wartość                                                               | Dlaczego                                                                                                       |
+| ------------------------------------------------------ | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Settings → Environments → Production → Branch Tracking | `production` (gałąź zablokowana rulesetem `production-branch-locked`) | Gdy Production Branch = `main`, każdy merge buduje Production i wiesza go na `portal.fiziyo.pl` bez człowieka  |
+| Settings → Domains → `devportal.fiziyo.pl`             | Preview, Git Branch `main`                                            | Domena bez Git Branch jest domeną **Production** i po każdym deployu produkcji pokazuje build z API/Clerk PROD |
+| Settings → Domains → `portal.fiziyo.pl`                | Production (bez Git Branch)                                           | Jedyna domena produkcji                                                                                        |
+
+`pin-devportal.yml` sprawdza te warunki przy każdym deployu (także Production)
+i świeci na czerwono, gdy `devportal` serwuje inne API niż
+`https://fizjo-app-api.azurewebsites.net`.
 
 ## DEV
 

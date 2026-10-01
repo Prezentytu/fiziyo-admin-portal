@@ -94,6 +94,16 @@ Brak nowych elementów interaktywnych.
 
 ## Changelog
 
+### 2026-10-01
+
+- Incydent: Vercel Production Branch = `main`, więc każdy merge szedł na PROD
+  automatycznie, a `devportal.fiziyo.pl` (odczepiony od git = domena Production)
+  serwował build z API/Clerk PROD; CORS PROD odrzucał origin DEV.
+- `pin-devportal-domain.mjs` odmawia pracy, gdy Production Branch = `main`,
+  przypina domenę DEV do `main` (nigdy `gitBranch: null`) i weryfikuje live
+  `x-fiziyo-api-origin` DEV także przy deployach Production.
+- Wymagane ustawienia Vercel opisane w `docs/release-admin.md`.
+
 ### 2026-09-15
 
 - Utworzenie specyfikacji i implementacja workflow + skryptu bramek.

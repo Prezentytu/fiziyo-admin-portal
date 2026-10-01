@@ -22,6 +22,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-10-01 - Domena DEV bez gitBranch to domena Production
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: `devportal.fiziyo.pl` serwował build produkcyjny (`x-fiziyo-api-origin` PROD, ten sam `dpl_` co `portal`). Token-exchange i `/graphql` padały na CORS, a każdy merge do `main` sam lądował na `portal.fiziyo.pl`.
+- **Przyczyna**: Vercel Production Branch = `main`. Fix z 2026-09-20 odczepił domenę DEV (`gitBranch: null`), a Vercel traktuje domenę bez gitBranch jako domenę Production i przypina ją do każdego deployu produkcji. Pin pomijał zdarzenia Production po cichu.
+- **Rozwiązanie**: Production Branch w Vercel = `production` (nie pushujemy). `devportal` = Preview z gitBranch `main`. Pin odmawia pracy przy Production Branch = `main`, nigdy nie zeruje gitBranch i sprawdza live API DEV przy każdym deployu. Workflow znów startuje na `environment=Preview` (DEV to teraz Preview z `main`); Preview PR rozpoznaje po `githubCommitRef` z Vercel i kończy skipem `feature-preview`. Wpisy z 2026-09-20 o `gitBranch: null` i wykluczeniu Preview z workflow są nieaktualne.
+- **Reguła**: „Merge do `main` = DEV” wymaga, by `main` nie był Production Branch w Vercel. Pin weryfikuj odczytem live `x-fiziyo-api-origin`, nie samym 200 z API Vercel. `deployment.ref` z Vercel to SHA — gałąź bierz z metadanych deploymentu Vercel.
+
 ### 2026-09-28 - Grupy major Dependabota nie wciągaj hurtem
 
 - **Kategoria**: `Build/Tooling`
@@ -70,7 +78,7 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Rozwiązanie**: Wlać `main` (pin skip Preview). §6 jak kanon fizjo-app: worker wyłączony bo `enabled: false`. `check-trunk-main` blokuje powrót zdania o 403 Free.
 - **Reguła**: Jeśli GitHub `rulesets` zwraca `[]`, zawsze cytuj ten odczyt. Nie uzasadniaj wyłączenia workera historycznym 403 Pro.
 
-### 2026-09-20 - Pin DEV nie może padać na Preview PR
+### 2026-09-20 - Pin DEV nie może padać na Preview PR (wykluczenie Preview z workflow nieaktualne, zob. 2026-10-01)
 
 - **Kategoria**: `Build/Tooling`
 - **Problem**: Check `pin` czerwienił każdy PR po deployu Vercel (`Brak deploymentu Preview dla DEV.`).
@@ -94,7 +102,7 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Rozwiązanie**: `matchesExerciseSearch` / `filterExercisesBySearch` (portal `src/features/exercises/utils`) i backend `ExerciseSearchQuery` — token AND, ranking nazwy, bez e-maila.
 - **Reguła**: Jeśli filtrujesz katalog ćwiczeń, zawsze tokenizuj zapytanie (AND, min. 2 znaki) i nie dopasowuj e-maila autora.
 
-### 2026-09-20 - Preview domena nie może mieć gitBranch main
+### 2026-09-20 - Preview domena nie może mieć gitBranch main (nieaktualne, zob. 2026-10-01)
 
 - **Kategoria**: `Build/Tooling`
 - **Problem**: Pin DEV padał `cannot_set_production_branch_as_preview` po poprawnych sekretach.
