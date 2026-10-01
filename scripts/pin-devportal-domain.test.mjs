@@ -37,7 +37,7 @@ function json(payload, status = 200) {
   return { ok: status < 400, status, text: async () => JSON.stringify(payload) };
 }
 
-function vercelMock({ productionBranch = VERCEL_PRODUCTION_BRANCH, gitBranch = TRUNK_BRANCH, live = {} } = {}) {
+function vercelMock({ productionBranch = VERCEL_PRODUCTION_BRANCH, gitBranch = TRUNK_BRANCH, live = {}, commitRef = "main" } = {}) {
   const calls = [];
   const fetchImpl = async (url, options = {}) => {
     calls.push({ url, method: options.method, body: options.body ? JSON.parse(options.body) : undefined });
@@ -48,7 +48,7 @@ function vercelMock({ productionBranch = VERCEL_PRODUCTION_BRANCH, gitBranch = T
     if (/\/v9\/projects\/[^/?]+(\?|$)/.test(url)) return json({ link: { productionBranch } });
     if (url.includes("/v6/deployments")) {
       return json({
-        deployments: [{ id: DPL, target: "preview", readyState: "READY", meta: { githubCommitSha: SHA, githubCommitRef: "main" } }],
+        deployments: [{ id: DPL, target: "preview", readyState: "READY", meta: { githubCommitSha: SHA, githubCommitRef: commitRef } }],
       });
     }
     return json({});
@@ -122,6 +122,18 @@ describe("pin-devportal-domain", () => {
     assert.equal(calls.some((item) => item.body && "gitBranch" in item.body && item.body.gitBranch === null), false);
     assert.equal(calls.some((item) => item.url.includes("/v2/aliases") && item.body?.alias === "devportal.fiziyo.pl"), true);
     await assert.rejects(() => aliasDevDomain(fetchImpl, ENV, "bad"));
+  });
+
+  it("skips a PR Preview without aliasing or failing, but still verifies the DEV API", async () => {
+    const { calls, fetchImpl } = vercelMock({ commitRef: "cursor/k01-wyszukiwanie-a18f", live: { sha: "c".repeat(40) } });
+    const result = await pinDevportalDomain(
+      { ...ENV, DEPLOYMENT_REF: SHA, DEPLOYMENT_SHA: SHA, DEPLOYMENT_ENV: "Preview" },
+      { fetchImpl, sleep: noSleep }
+    );
+    assert.equal(result.skipped, "feature-preview");
+    assert.equal(result.aliased, false);
+    assert.equal(result.apiOrigin, DEV_API_ORIGIN);
+    assert.equal(calls.some((item) => item.url.includes("/v2/aliases")), false);
   });
 
   it("fails a Production deployment event when DEV ended up on the production build", async () => {

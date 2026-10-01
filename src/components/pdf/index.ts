@@ -8,6 +8,7 @@ export { PDFFooter } from './PDFFooter';
 export { PDFFrequency } from './PDFFrequency';
 export { ExercisePDFItem } from './ExercisePDFItem';
 export { preloadPdfExerciseImages, resolvePdfExerciseImageUrl } from './pdfExerciseUtils';
+export { chunkExercisesForPages, formatExecutionParameters } from './pdfPageUtils';
 
 // Style
 export { pdfStyles } from './styles';

@@ -9,6 +9,11 @@ const FORBIDDEN_SNIPPETS = [
   [".github/PULL_REQUEST_TEMPLATE.md", /targetuje `dev`/, "PR template still sends humans to branch dev"],
   ["CONTRIBUTING.md", /PR against `dev`|branch from `dev`/, "CONTRIBUTING still uses branch dev as integration"],
   ["docs/architecture/cloud-agent-policy.md", /targetują `dev`/, "cloud-agent-policy still targets branch dev"],
+  [
+    "docs/architecture/cloud-agent-policy.md",
+    /przy planie Free zwracają 403/,
+    "cloud-agent-policy still treats empty rulesets as a GitHub Pro 403",
+  ],
   ["docs/testing/e2e-cross-repo-pipeline.md", /brancha `dev`|dev -> main|Deploy na `dev`/, "E2E runbook still routes through branch dev"],
   ["docs/PROJECT_OVERVIEW.md", /PR do `dev`/, "PROJECT_OVERVIEW still mentions PRs to branch dev"],
 ];
@@ -60,6 +65,13 @@ export function checkTrunkMain(root) {
     }
     if (!pin.includes("link?.productionBranch")) {
       errors.push("Pin DEV must refuse a Vercel project whose Production Branch is main");
+    }
+    if (!pin.includes("feature-preview") || !/environment === ["']Preview["']/.test(pin)) {
+      errors.push("Pin DEV must skip Vercel Preview deployments that are not trunk main");
+    }
+    const pinWorkflowText = fs.readFileSync(pinWorkflow, "utf8");
+    if (/environment\s*!=\s*'Preview'/.test(pinWorkflowText)) {
+      errors.push("Pin DEV workflow must run on Preview deployments: DEV is the Preview of main");
     }
   }
 

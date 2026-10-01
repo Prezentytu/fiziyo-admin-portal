@@ -44,3 +44,4 @@ Brak GraphQL/DTO/UI/data-testid changes.
 
 - 2026-09-08: zgoda na scoped runtime updates po wykryciu advisory podczas CI pracy.
 - 2026-09-14: zbiorczy bump z aktualnego `main` — Next `16.3.4` → `16.3.5`, GraphQL `16.14.2`, bez Clerk 7 / GraphQL 17 / TypeScript 6. Stare PR-y Dependabota (#22, #40, #50, #51, #52) zastąpione jednym PR-em; #52 obniżyłby Next do `16.2.9`.
+- 2026-09-28: zbiorczy bump z aktualnego `main` — Next `16.3.5` → `16.3.6` (łata `next/og`), Apollo Client `4.3.1`, graphql-ws `6.3.0`, prettier `3.9.9`. `actions/checkout` w Promote wyrównany do v7, jak w CI. Poza zakresem zostają majory z #106 (Clerk 7, GraphQL 17, TypeScript 7, ESLint 10 i reszta grupy).

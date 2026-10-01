@@ -52,6 +52,7 @@ import { buildExerciseLoadParamFields } from '@/utils/exerciseLoadMutation';
 import type { ExerciseSourceFilter } from '@/utils/exerciseSourceFilter';
 import { cn } from '@/lib/utils';
 import { EMPTY_EXERCISE_PARAMS, getExerciseDefaultParams } from '@/features/exercise-sets/utils/exerciseDefaults';
+import { filterExercisesBySearch } from '@/features/exercises/utils/exerciseSearch';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 
 // ============================================================
@@ -554,20 +555,8 @@ export function ExerciseSetBuilder({
 
   // Filtered exercises: source first, then search
   const filteredExercises = useMemo(() => {
-    let result = sourceFilteredExercises;
-
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter((ex) => {
-        const nameMatch = ex.name.toLowerCase().includes(query);
-        const descMatch = ex.description?.toLowerCase().includes(query);
-        const tagMatch = getExerciseTags(ex).some((tag) => tag.name?.toLowerCase().includes(query));
-        return nameMatch || descMatch || tagMatch;
-      });
-    }
-
-    return result;
-  }, [sourceFilteredExercises, searchQuery, getExerciseTags]);
+    return filterExercisesBySearch(sourceFilteredExercises, searchQuery);
+  }, [sourceFilteredExercises, searchQuery]);
 
   // Params helpers
   const getDefaultParams = useCallback(

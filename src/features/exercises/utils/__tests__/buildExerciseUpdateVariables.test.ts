@@ -33,13 +33,13 @@ describe('buildExerciseUpdateVariables', () => {
     expect(result.exerciseId).toBe('exercise-1');
   });
 
-  it('maps none side to null', () => {
+  it('sends none side as the enum name so UpdateExercise can persist Razem', () => {
     const result = buildExerciseUpdateVariables({
       exerciseId: 'exercise-1',
       values: { ...baseValues, type: 'time', sets: null, reps: null, duration: 60, executionTime: 20 },
     });
 
-    expect(result.exerciseSide).toBeNull();
+    expect(result.exerciseSide).toBe('none');
   });
 
   it('passes through tag IDs when provided', () => {

@@ -182,13 +182,19 @@ export async function pinDevportalDomain(env, { fetchImpl = fetch, sleep = delay
     }
   }
 
-  const skipped = shouldSkipAlias({ ref: env.DEPLOYMENT_REF, environment: env.DEPLOYMENT_ENV });
-  const sha = !skipped && env.DEPLOYMENT_SHA ? normalizeSha(env.DEPLOYMENT_SHA) : "";
+  const environment = env.DEPLOYMENT_ENV;
+  let skipped = shouldSkipAlias({ ref: env.DEPLOYMENT_REF, environment });
+  let sha = !skipped && env.DEPLOYMENT_SHA ? normalizeSha(env.DEPLOYMENT_SHA) : "";
   let deploymentId = null;
   if (sha) {
-    const preview = assertPreviewDeployment(selectMainPreviewDeployment(await listShaDeployments(fetchImpl, env), sha));
-    deploymentId = normalizeDeploymentId(preview.id || preview.uid);
-    await aliasDevDomain(fetchImpl, env, deploymentId);
+    const preview = selectMainPreviewDeployment(await listShaDeployments(fetchImpl, env), sha);
+    if (!preview && environment === "Preview") {
+      skipped = "feature-preview";
+      sha = "";
+    } else {
+      deploymentId = normalizeDeploymentId(assertPreviewDeployment(preview).id || preview.uid);
+      await aliasDevDomain(fetchImpl, env, deploymentId);
+    }
   }
 
   const live = await waitForDevIdentity({ sha }, { fetchImpl, sleep });

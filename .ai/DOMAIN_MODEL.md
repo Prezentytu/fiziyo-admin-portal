@@ -16,8 +16,8 @@ Prezentacja opiera się na `executionTime` (timer w aplikacji pacjenta) i kontek
 
 ### ExerciseSide
 
-| Wartość           | Opis                                |
-| ----------------- | ----------------------------------- |
+| Wartość           | Opis                                                |
+| ----------------- | --------------------------------------------------- |
 | `None` (0)        | Razem — jeden przebieg, także ruch obustronny naraz |
 | `Left` (1)        | Tylko lewa                                          |
 | `Right` (2)       | Tylko prawa                                         |

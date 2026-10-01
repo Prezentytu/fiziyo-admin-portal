@@ -209,7 +209,9 @@ export function buildChangedCoreVariables(
   if (current.tempo !== initial.tempo) variables.tempo = asText(current.tempo);
   if (current.rangeOfMotion !== initial.rangeOfMotion) variables.rangeOfMotion = asText(current.rangeOfMotion);
   if (current.videoUrl !== initial.videoUrl) variables.videoUrl = asText(current.videoUrl);
-  if (current.side !== initial.side) variables.exerciseSide = current.side === 'none' ? null : current.side;
+  // UpdateExercise skips null/omitted exerciseSide. "none" must be sent as the
+  // enum name so Razem (None) can replace Both/Left/Right instead of no-oping.
+  if (current.side !== initial.side) variables.exerciseSide = current.side;
   if (current.difficultyLevel !== initial.difficultyLevel)
     variables.difficultyLevel = current.difficultyLevel === 'UNKNOWN' ? null : current.difficultyLevel;
   if (current.sets !== initial.sets) variables.sets = current.sets;

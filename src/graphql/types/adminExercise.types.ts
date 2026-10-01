@@ -437,12 +437,10 @@ export interface ExerciseRelation {
   targetExerciseId: string;
   relationType: ExerciseRelationType;
   targetExercise: ExerciseRelationTarget;
-  confidence?: number; // 0-1, jak pewna jest sugestia AI
+  aiConfidence?: number;
   isAISuggested?: boolean;
   isVerified?: boolean;
   createdAt?: string;
-  verifiedAt?: string;
-  verifiedById?: string;
 }
 
 /**

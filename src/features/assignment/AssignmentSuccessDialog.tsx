@@ -5,21 +5,7 @@ import { useQuery } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
 import { pdf } from '@react-pdf/renderer';
-import {
-  CheckCircle2,
-  Download,
-  Printer,
-  ChevronDown,
-  Copy,
-  Check,
-  Smartphone,
-  Share2,
-  Calendar,
-  Sparkles,
-  User,
-  Users,
-  FileText,
-} from 'lucide-react';
+import { CheckCircle2, Download, Printer, ChevronDown, Copy, Check, Smartphone, Share2, Calendar, Sparkles, User, Users, FileText, QrCode } from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 
@@ -42,6 +28,7 @@ import type {
 
 import { GET_ORGANIZATION_BY_ID_QUERY } from '@/graphql/queries/organizations.queries';
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
+import { isHttpsUrl, tryBuildPatientConnectUrl } from '@/lib/patientJoinUrl';
 import type { OrganizationByIdResponse, UserByClerkIdResponse } from '@/types/apollo';
 import type { ExerciseSet, Frequency } from './types';
 import type { AssignmentExecutionMode } from './utils/assignmentPlanDecision';
@@ -105,6 +92,12 @@ export function AssignmentSuccessDialog({
 
   const selectedPatient = patients[selectedPatientIndex];
   const isSinglePatient = patients.length === 1;
+  const joinUrl = tryBuildPatientConnectUrl({
+    patientId: selectedPatient?.id,
+    organizationId,
+    therapistId,
+  });
+  const canRenderQr = isHttpsUrl(joinUrl);
 
   // Pobierz dane organizacji
   const { data: orgData } = useQuery(GET_ORGANIZATION_BY_ID_QUERY, {
@@ -132,17 +125,16 @@ export function AssignmentSuccessDialog({
   // Early return after all hooks
   if (!selectedPatient) return null;
 
-  // Generowanie linku do aplikacji pacjenta
-  const appDeepLink = `fiziyo://connect?patient=${selectedPatient.id}${therapistId ? `&therapist=${therapistId}` : ''}&org=${organizationId}`;
-  const webLink = `https://fiziyo.pl/instrukcja`;
-
-  // Formatowanie daty premium
   const premiumDate = premiumValidUntil ? new Date(premiumValidUntil) : null;
   const formattedPremiumDate = premiumDate ? format(premiumDate, 'd MMMM yyyy', { locale: pl }) : null;
 
   const handleCopyLink = async () => {
+    if (!joinUrl) {
+      toast.error('Brak kompletnego linku do aplikacji');
+      return;
+    }
     try {
-      await navigator.clipboard.writeText(webLink);
+      await navigator.clipboard.writeText(joinUrl);
       setCopied(true);
       toast.success('Link skopiowany do schowka');
       setTimeout(() => setCopied(false), 2000);
@@ -224,6 +216,7 @@ export function AssignmentSuccessDialog({
         duration: mapping.duration ?? mapping.exercise?.defaultDuration ?? mapping.exercise?.duration,
         restSets: mapping.restSets ?? mapping.exercise?.defaultRestBetweenSets ?? mapping.exercise?.restSets,
         restReps: mapping.restReps ?? mapping.exercise?.defaultRestBetweenReps ?? mapping.exercise?.restReps,
+        executionTime: mapping.executionTime,
         order: mapping.order,
         customName: mapping.customName,
         customDescription: mapping.customDescription,
@@ -282,6 +275,7 @@ export function AssignmentSuccessDialog({
           therapist={pdfTherapist}
           options={pdfOptions}
           qrCodeDataUrl={qrCodeDataUrl}
+          joinUrl={joinUrl ?? undefined}
         />
       );
 
@@ -327,8 +321,8 @@ export function AssignmentSuccessDialog({
         URL.revokeObjectURL(url);
       }
     } catch (error) {
-      console.error('Błąd generowania PDF:', error);
-      toast.error('Nie udało się wygenerować PDF');
+      const message = error instanceof Error ? error.message : 'Nieznany błąd';
+      toast.error('Nie udało się wygenerować PDF', { description: message });
     } finally {
       setIsGeneratingPDF(false);
     }
@@ -338,12 +332,16 @@ export function AssignmentSuccessDialog({
   const handleDownloadPDF = () => generatePatientCardPDF(true);
 
   const handleShare = async () => {
+    if (!joinUrl) {
+      toast.error('Brak kompletnego linku do aplikacji');
+      return;
+    }
     if (navigator.share) {
       try {
         await navigator.share({
           title: `FiziYo - Program ćwiczeń dla ${selectedPatient.name}`,
           text: 'Zeskanuj kod QR lub kliknij link, aby połączyć się z aplikacją FiziYo',
-          url: webLink,
+          url: joinUrl ?? undefined,
         });
       } catch {
         // User cancelled
@@ -419,6 +417,7 @@ export function AssignmentSuccessDialog({
                   size="sm"
                   onClick={() => setSelectedPatientIndex(index)}
                   className="shrink-0 h-8"
+                  data-testid={`assign-success-patient-${patient.id}`}
                 >
                   {patient.name}
                 </Button>
@@ -438,28 +437,51 @@ export function AssignmentSuccessDialog({
           )}
 
           <div className="flex flex-col items-center rounded-xl bg-surface/50 p-5 border border-border/60">
-            <div
-              ref={qrContainerRef}
-              className="p-3 bg-white rounded-xl shadow-sm border border-border/40"
-            >
-              <QRCodeSVG
-                value={appDeepLink}
-                size={120}
-                level="H"
-                bgColor="#ffffff"
-                fgColor="#121212"
-                imageSettings={{
-                  src: '/images/icon.png',
-                  height: 24,
-                  width: 24,
-                  excavate: true,
-                }}
-              />
-            </div>
+            {canRenderQr && joinUrl ? (
+              <div
+                ref={qrContainerRef}
+                className="p-3 bg-white rounded-xl shadow-sm border border-border/40"
+                data-testid="assign-success-qr"
+                data-qr-url={joinUrl}
+              >
+                <QRCodeSVG
+                  value={joinUrl}
+                  size={120}
+                  level="H"
+                  bgColor="#ffffff"
+                  fgColor="#121212"
+                  imageSettings={{
+                    src: '/images/icon.png',
+                    height: 24,
+                    width: 24,
+                    excavate: true,
+                  }}
+                />
+              </div>
+            ) : (
+              <div
+                className="flex h-[144px] w-[144px] flex-col items-center justify-center rounded-xl border border-border/40 bg-surface-light px-3 text-center"
+                data-testid="assign-success-qr-unavailable"
+              >
+                <QrCode className="h-6 w-6 text-muted-foreground" />
+                <p className="mt-2 text-xs text-muted-foreground">Brak pacjenta albo terapeuty</p>
+              </div>
+            )}
             <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-border bg-surface-light px-3 py-1.5 text-sm font-medium text-foreground">
               <Smartphone className="h-4 w-4 text-muted-foreground" />
               Aplikacja mobilna
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCopyLink}
+              disabled={!canRenderQr}
+              className="mt-3"
+              data-testid="assign-success-copy-link-btn"
+            >
+              {copied ? <Check className="h-3.5 w-3.5 mr-1.5 text-primary" /> : <Copy className="h-3.5 w-3.5 mr-1.5" />}
+              {copied ? 'Skopiowano link' : 'Kopiuj link'}
+            </Button>
           </div>
 
           <Collapsible
@@ -486,6 +508,7 @@ export function AssignmentSuccessDialog({
                   variant="ghost"
                   size="sm"
                   onClick={handleCopyLink}
+                  disabled={!canRenderQr}
                   className="justify-start text-xs text-muted-foreground h-8"
                   data-testid="assign-success-copy-btn"
                 >
@@ -496,6 +519,7 @@ export function AssignmentSuccessDialog({
                   variant="ghost"
                   size="sm"
                   onClick={handleShare}
+                  disabled={!canRenderQr}
                   className="justify-start text-xs text-muted-foreground h-8"
                   data-testid="assign-success-share-btn"
                 >
@@ -528,6 +552,7 @@ export function AssignmentSuccessDialog({
                   variant="ghost"
                   size="sm"
                   onClick={handleDownloadQR}
+                  disabled={!canRenderQr}
                   className="justify-start text-xs text-muted-foreground h-8"
                   data-testid="assign-success-download-qr-btn"
                 >
@@ -539,9 +564,11 @@ export function AssignmentSuccessDialog({
           </Collapsible>
         </div>
 
-        <div ref={qrCanvasRef} className="hidden">
-          <QRCodeCanvas value={`https://app.fiziyo.pl/sets/${exerciseSet?.id || ''}`} size={200} level="M" />
-        </div>
+        {canRenderQr && joinUrl && (
+          <div ref={qrCanvasRef} className="hidden" data-testid="assign-success-qr-payload" data-qr-url={joinUrl}>
+            <QRCodeCanvas value={joinUrl} size={200} level="M" />
+          </div>
+        )}
 
         <div className="flex flex-col gap-3 pt-4 border-t border-border sm:flex-row sm:items-center sm:justify-between">
           <Button

@@ -1,7 +1,8 @@
 import { View, Text, Image as PdfImage } from '@react-pdf/renderer';
 import { pdfStyles } from './styles';
 import { getMediaUrl } from '@/utils/mediaUrl';
-import { formatDurationPolish, formatSeconds, translateExerciseSidePolish } from './polishUtils';
+import { translateExerciseSidePolish } from './polishUtils';
+import { formatExecutionParameters, shouldAllowExerciseRowWrap } from './pdfPageUtils';
 import type { PDFExercise } from './types';
 
 interface ExercisePDFItemProps {
@@ -21,37 +22,38 @@ interface ExercisePDFItemProps {
 export function ExercisePDFItem({ exercise, index, showImage, compact }: ExercisePDFItemProps) {
   const displayName = exercise.customName || exercise.name;
   const displayDescription = exercise.customDescription || exercise.description;
-  // Image is always pre-resolved upstream (data URL from preloader OR plain URL).
-  // Plain URL is still passed through getMediaUrl for legacy relative-path safety.
   const imageUrl = exercise.imageUrl?.startsWith('data:')
     ? exercise.imageUrl
     : getMediaUrl(exercise.imageUrl);
   const sideLabel = translateExerciseSidePolish(exercise.exerciseSide);
+  const parameterItems = formatExecutionParameters({
+    sets: exercise.sets,
+    reps: exercise.reps,
+    duration: exercise.duration,
+    executionTime: exercise.executionTime,
+    restSets: exercise.restSets,
+  });
+  const allowWrap = shouldAllowExerciseRowWrap(displayDescription);
 
-  // Formatowanie parametrów
-  const durationText = exercise.duration ? formatDurationPolish(exercise.duration) : null;
-  const restText = exercise.restSets ? formatSeconds(exercise.restSets) : null;
-
-  // Kompaktowy widok
   if (compact) {
     return (
       <View style={pdfStyles.exerciseRowCompact} wrap={false}>
         <Text style={pdfStyles.exerciseCompactNumber}>{index + 1}.</Text>
         <Text style={pdfStyles.exerciseCompactName}>{displayName}</Text>
         <View style={pdfStyles.exerciseCompactParams}>
-          {exercise.sets && <Text style={pdfStyles.exerciseCompactParam}>{exercise.sets} serii</Text>}
-          {exercise.reps && <Text style={pdfStyles.exerciseCompactParam}>{exercise.reps} powt.</Text>}
-          {durationText && !exercise.reps && <Text style={pdfStyles.exerciseCompactParam}>{durationText}</Text>}
+          {parameterItems.slice(0, 3).map((item) => (
+            <Text key={item.label} style={pdfStyles.exerciseCompactParam}>
+              {item.value}
+            </Text>
+          ))}
           {sideLabel && <Text style={pdfStyles.exerciseCompactParam}>{sideLabel}</Text>}
         </View>
       </View>
     );
   }
 
-  // Pełny widok - Clean Layout
   return (
-    <View style={pdfStyles.exerciseRowClean} wrap={false}>
-      {/* KOLUMNA 1: OBRAZEK */}
+    <View style={pdfStyles.exerciseRowClean} wrap={allowWrap}>
       {showImage && (
         <View style={pdfStyles.exerciseColImageClean}>
           {imageUrl ? (
@@ -64,16 +66,13 @@ export function ExercisePDFItem({ exercise, index, showImage, compact }: Exercis
         </View>
       )}
 
-      {/* KOLUMNA 2: TREŚĆ */}
       <View style={pdfStyles.exerciseColContentClean}>
-        {/* Nagłówek */}
         <View style={pdfStyles.exerciseHeaderClean}>
           <Text style={pdfStyles.exerciseNumberClean}>{index + 1}.</Text>
           <Text style={pdfStyles.exerciseNameClean}>{displayName.toUpperCase()}</Text>
           {sideLabel && <Text style={pdfStyles.exerciseSideTagClean}>{sideLabel}</Text>}
         </View>
 
-        {/* Opis */}
         {displayDescription ? (
           <Text style={pdfStyles.exerciseDescriptionClean}>{displayDescription}</Text>
         ) : (
@@ -82,14 +81,12 @@ export function ExercisePDFItem({ exercise, index, showImage, compact }: Exercis
           </Text>
         )}
 
-        {/* Uwagi terapeuty (jeśli są) */}
         {exercise.notes && (
           <View style={pdfStyles.exerciseTherapistNotesClean}>
             <Text style={pdfStyles.exerciseTherapistNotesTextClean}>Uwaga: {exercise.notes}</Text>
           </View>
         )}
 
-        {/* Notatki - liniatura */}
         <View style={pdfStyles.exerciseNotesSection}>
           <Text style={pdfStyles.exerciseNotesLabelClean}>Notatki terapeuty:</Text>
           <View style={pdfStyles.exerciseNotesLineClean} />
@@ -97,43 +94,26 @@ export function ExercisePDFItem({ exercise, index, showImage, compact }: Exercis
         </View>
       </View>
 
-      {/* KOLUMNA 3: PARAMETRY (Czysta tabelka) */}
       <View style={pdfStyles.exerciseColParamsClean}>
-        {exercise.sets && (
-          <View style={pdfStyles.paramItemCleanWithBorder}>
-            <Text style={pdfStyles.paramLabelClean}>Serie</Text>
-            <Text style={pdfStyles.paramValueCleanLarge}>{exercise.sets}</Text>
+        {parameterItems.map((item, itemIndex) => (
+          <View
+            key={item.label}
+            style={itemIndex < parameterItems.length - 1 ? pdfStyles.paramItemCleanWithBorder : pdfStyles.paramItemClean}
+          >
+            <Text style={pdfStyles.paramLabelClean}>{item.label}</Text>
+            <Text
+              style={
+                item.label === 'Serie'
+                  ? pdfStyles.paramValueCleanLarge
+                  : item.label === 'Powtórzenia'
+                    ? pdfStyles.paramValueCleanMedium
+                    : pdfStyles.paramValueCleanSmall
+              }
+            >
+              {item.value}
+            </Text>
           </View>
-        )}
-
-        {exercise.reps && (
-          <View style={pdfStyles.paramItemCleanWithBorder}>
-            <Text style={pdfStyles.paramLabelClean}>Powtórzenia</Text>
-            <Text style={pdfStyles.paramValueCleanMedium}>{exercise.reps}</Text>
-          </View>
-        )}
-
-        {durationText && !exercise.reps && (
-          <View style={pdfStyles.paramItemCleanWithBorder}>
-            <Text style={pdfStyles.paramLabelClean}>Czas</Text>
-            <Text style={pdfStyles.paramValueCleanSmall}>{durationText}</Text>
-          </View>
-        )}
-
-        {restText && (
-          <View style={pdfStyles.paramItemClean}>
-            <Text style={pdfStyles.paramLabelClean}>Przerwa</Text>
-            <Text style={pdfStyles.paramValueCleanSmall}>{restText}</Text>
-          </View>
-        )}
-
-        {/* Fallback */}
-        {!exercise.sets && !exercise.reps && !exercise.duration && (
-          <View style={pdfStyles.paramItemClean}>
-            <Text style={pdfStyles.paramLabelClean}>Podstawowe parametry</Text>
-            <Text style={pdfStyles.paramValueCleanSmall}>Wg zaleceń</Text>
-          </View>
-        )}
+        ))}
       </View>
     </View>
   );

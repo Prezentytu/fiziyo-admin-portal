@@ -13,6 +13,7 @@ export interface PDFExercise {
   sets?: number;
   reps?: number;
   duration?: number;
+  executionTime?: number;
   restSets?: number;
   restReps?: number;
   order?: number;
@@ -76,4 +77,5 @@ export interface ExerciseSetPDFProps {
   therapist?: PDFTherapist;
   options: PDFOptions;
   qrCodeDataUrl?: string;
+  joinUrl?: string;
 }

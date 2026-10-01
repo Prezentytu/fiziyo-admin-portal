@@ -16,6 +16,8 @@ Preview zawsze dostaje nowy build `target: production`.
 Gałąź `dev` nie jest w pociągu (D-09-06-b). `vercel.json` wyłącza jej deploye.
 Workflow `pin-devportal.yml` przy `deployment_status` przestawia alias
 `devportal.fiziyo.pl` na Preview z `main` i nie aliasuje leftover `dev`.
+Preview PR (deployment Vercel z `githubCommitRef` ≠ `main`) kończy się skipem
+`feature-preview` bez aliasu — to nie shared DEV.
 `e2e-trigger` odmawia certyfikatu, gdy live SHA nie należy do `main`.
 Wymaga tych samych sekretów Vercel co Promote (`VERCEL_TOKEN`, `VERCEL_PROJECT_ID`).
 

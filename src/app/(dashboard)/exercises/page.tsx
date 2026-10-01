@@ -30,7 +30,6 @@ import {
   SUBMIT_FOR_ORGANIZATION_REVIEW_MUTATION,
   SUBMIT_TO_GLOBAL_REVIEW_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
-import { matchesSearchQuery, matchesAnyText } from '@/utils/textUtils';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useExerciseBuilder, type BuilderExercise } from '@/contexts/ExerciseBuilderContext';
 import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
@@ -39,6 +38,7 @@ import { useRealtimeExercises } from '@/hooks/useRealtimeExercises';
 import { ORG_VERIFICATION_REFETCH_QUERIES } from '@/hooks/useOrganizationVerificationRealtime';
 import type { AvailableExercisesResponse, ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
 import { sortExercisesByNewest } from '@/features/exercises/utils/sortExercisesByNewest';
+import { filterExercisesBySearch } from '@/features/exercises/utils/exerciseSearch';
 import { getExerciseDefaultParams } from '@/features/exercise-sets/utils/exerciseDefaults';
 
 // Typ dla filtra źródła ćwiczeń
@@ -200,27 +200,10 @@ export default function ExercisesPage() {
   // Stats - łączna liczba (po deduplikacji)
   const totalCount = exercises.length;
 
-  // Helper to get all tag names from an exercise
-  const getTagNames = (exercise: Exercise): string[] => {
-    const allTags = [...(exercise.mainTags || []), ...(exercise.additionalTags || [])];
-    return allTags
-      .map((tag) => (typeof tag === 'object' && 'name' in tag ? tag.name : null))
-      .filter((name): name is string => name !== null);
-  };
-
-  // Filter exercises - by name, description, or tag names
-  const searchFilteredExercises = sourceFilteredExercises.filter((exercise) => {
-    // Match by name or description
-    if (matchesSearchQuery(exercise.name, searchQuery) || matchesSearchQuery(exercise.description, searchQuery)) {
-      return true;
-    }
-    // Match by tag names
-    const tagNames = getTagNames(exercise);
-    return matchesAnyText(tagNames, searchQuery);
-  });
-
-  // Sort by creation date (newest first)
-  const filteredExercises = sortExercisesByNewest(searchFilteredExercises);
+  const filteredExercises = filterExercisesBySearch(
+    sortExercisesByNewest(sourceFilteredExercises),
+    searchQuery
+  );
 
   const handleView = (exercise: Exercise) => {
     router.push(`/exercises/${exercise.id}`);
@@ -454,7 +437,13 @@ export default function ExercisesPage() {
               <Badge variant="secondary" className="text-xs">
                 {filteredExercises.length} z {totalCount}
               </Badge>
-              <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setSearchQuery('')}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-xs"
+                onClick={() => setSearchQuery('')}
+                data-testid="exercise-search-clear-btn"
+              >
                 Wyczyść wyszukiwanie
               </Button>
             </div>
