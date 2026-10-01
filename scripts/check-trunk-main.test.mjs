@@ -11,9 +11,8 @@ const FILES = {
   ".github/workflows/ci.yml": "on:\n  pull_request:\n    branches: [main]\n",
   ".github/workflows/e2e-trigger.yml": "env:\n  REPO_READ_TOKEN: token\nscript: compare/${sha}...main\nif (ref === 'dev') return;\n",
   ".github/workflows/pin-devportal.yml": "name: Pin DEV portal to main\n",
-  "scripts/pin-devportal-domain.mjs": "export {}\n",
-  "scripts/pin-devportal-domain.mjs": "export const LEGACY_INTEGRATION_BRANCH = \"dev\";\nexport const TRUNK_BRANCH = \"main\";\n",
-  ".github/workflows/pin-devportal.yml": "name: Pin DEV portal to main\n",
+  "scripts/pin-devportal-domain.mjs":
+    'export const LEGACY_INTEGRATION_BRANCH = "dev";\nexport const TRUNK_BRANCH = "main";\nproject?.link?.productionBranch\n',
   ".github/PULL_REQUEST_TEMPLATE.md": "- [ ] PR targetuje `main`\n",
   "CONTRIBUTING.md": "Create a branch from `main`\nOpen a PR against `main`\n",
   "docs/architecture/cloud-agent-policy.md": "PR-y targetują `main`.\n",
@@ -52,15 +51,16 @@ test("flags leftover dev integration branch", () => {
   }
 });
 
-test("flags assigning the production branch to a Preview domain", () => {
+test("flags detaching the DEV domain and a missing Production Branch guard", () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "trunk-"));
   try {
     writeTree(root, {
       "scripts/pin-devportal-domain.mjs":
-        'export const LEGACY_INTEGRATION_BRANCH = "dev";\nexport const TRUNK_BRANCH = "main";\n{ gitBranch: TRUNK_BRANCH }\n',
+        'export const LEGACY_INTEGRATION_BRANCH = "dev";\nexport const TRUNK_BRANCH = "main";\n{ gitBranch: null }\n',
     });
     const errors = checkTrunkMain(root).join("\n");
-    assert.match(errors, /production branch to a Preview domain/);
+    assert.match(errors, /must not detach the DEV domain/);
+    assert.match(errors, /Production Branch is main/);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }

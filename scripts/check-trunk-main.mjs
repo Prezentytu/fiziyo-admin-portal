@@ -55,8 +55,11 @@ export function checkTrunkMain(root) {
     if (!pin.includes('LEGACY_INTEGRATION_BRANCH = "dev"') || !pin.includes('TRUNK_BRANCH = "main"')) {
       errors.push("Pin DEV domain script must move leftover branch dev onto main");
     }
-    if (pin.includes("gitBranch: TRUNK_BRANCH") || /gitBranch:\s*["']main["']/.test(pin)) {
-      errors.push("Pin DEV must not assign the production branch to a Preview domain");
+    if (/gitBranch:\s*null/.test(pin)) {
+      errors.push("Pin DEV must not detach the DEV domain from git (branchless domain = Production domain)");
+    }
+    if (!pin.includes("link?.productionBranch")) {
+      errors.push("Pin DEV must refuse a Vercel project whose Production Branch is main");
     }
   }
 

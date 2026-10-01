@@ -22,7 +22,15 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
-### 2026-09-20 - Preview domena nie może mieć gitBranch main
+### 2026-10-01 - Domena DEV bez gitBranch to domena Production
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: `devportal.fiziyo.pl` serwował build produkcyjny (`x-fiziyo-api-origin` PROD, ten sam `dpl_` co `portal`). Token-exchange i `/graphql` padały na CORS, a każdy merge do `main` sam lądował na `portal.fiziyo.pl`.
+- **Przyczyna**: Vercel Production Branch = `main`. Fix z 2026-09-20 odczepił domenę DEV (`gitBranch: null`), a Vercel traktuje domenę bez gitBranch jako domenę Production i przypina ją do każdego deployu produkcji. Pin pomijał zdarzenia Production po cichu.
+- **Rozwiązanie**: Production Branch w Vercel = `production` (nie pushujemy). `devportal` = Preview z gitBranch `main`. Pin odmawia pracy przy Production Branch = `main`, nigdy nie zeruje gitBranch i sprawdza live API DEV przy każdym deployu. Wpis z 2026-09-20 jest nieaktualny.
+- **Reguła**: „Merge do `main` = DEV” wymaga, by `main` nie był Production Branch w Vercel. Pin weryfikuj odczytem live `x-fiziyo-api-origin`, nie samym 200 z API Vercel.
+
+### 2026-09-20 - Preview domena nie może mieć gitBranch main (nieaktualne, zob. 2026-10-01)
 
 - **Kategoria**: `Build/Tooling`
 - **Problem**: Pin DEV padał `cannot_set_production_branch_as_preview` po poprawnych sekretach.
@@ -61,6 +69,7 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Przyczyna**: Upload zdjęcia od razu mutuje API i refetchuje `exerciseById`. Hook formularza w trybie bez autosave nadpisywał draft przy każdej nowej referencji `source`, zeroując `isDirty`. Użytkownik myślał, że wygenerowane zdjęcie czeka na Zapisz.
 - **Rozwiązanie**: Hydracja tylko gdy draft nie jest brudny (albo zmieniło się id ćwiczenia). Po zapisie mediów toast i pasek: „Zdjęcie zapisane od razu — nie wymaga przycisku Zapisz”.
 - **Reguła**: Jeśli media idą osobną mutacją + refetch, dirty tracking pól tekstowych musi przetrwać zmianę referencji `source`; UI ma powiedzieć, że media już są zapisane. `data-testid` dawaj jako pierwszy atrybut tagu — skaner kończy opening tag na pierwszym `>` (w tym `=>` i `>=`), więc testid po `onClick={() =>` wypada z detekcji i psuje allowlistę po przesunięciu linii.
+
 ### 2026-09-15 - Kosz przy placeholderze to no-op, nie akcja
 
 - **Kategoria**: `UI/UX`

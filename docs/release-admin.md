@@ -3,11 +3,11 @@
 `main` jest trunkiem. Merge wdraża tylko DEV. Produkcja to ręczny workflow
 w tym repo, nie klik w Vercel.
 
-| Środowisko | URL | Skąd |
-| ---------- | --- | ---- |
-| Preview PR | `*.vercel.app` | każdy PR |
-| DEV | `https://devportal.fiziyo.pl` | merge do `main` |
-| PROD | `https://portal.fiziyo.pl` | Actions → **Promote admin** |
+| Środowisko | URL                           | Skąd                        |
+| ---------- | ----------------------------- | --------------------------- |
+| Preview PR | `*.vercel.app`                | każdy PR                    |
+| DEV        | `https://devportal.fiziyo.pl` | merge do `main`             |
+| PROD       | `https://portal.fiziyo.pl`    | Actions → **Promote admin** |
 
 Preview nie jest shared DEV. `NEXT_PUBLIC_*` są utrwalone w buildzie — Promote
 **nigdy** nie aliasuje deploymentu Preview (Clerk/API DEV) na domenę produkcji.
@@ -18,6 +18,18 @@ Workflow `pin-devportal.yml` przy `deployment_status` przestawia alias
 `devportal.fiziyo.pl` na Preview z `main` i nie aliasuje leftover `dev`.
 `e2e-trigger` odmawia certyfikatu, gdy live SHA nie należy do `main`.
 Wymaga tych samych sekretów Vercel co Promote (`VERCEL_TOKEN`, `VERCEL_PROJECT_ID`).
+
+### Wymagane ustawienia projektu Vercel
+
+| Ustawienie                                             | Wartość                                                               | Dlaczego                                                                                                       |
+| ------------------------------------------------------ | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Settings → Environments → Production → Branch Tracking | `production` (gałąź zablokowana rulesetem `production-branch-locked`) | Gdy Production Branch = `main`, każdy merge buduje Production i wiesza go na `portal.fiziyo.pl` bez człowieka  |
+| Settings → Domains → `devportal.fiziyo.pl`             | Preview, Git Branch `main`                                            | Domena bez Git Branch jest domeną **Production** i po każdym deployu produkcji pokazuje build z API/Clerk PROD |
+| Settings → Domains → `portal.fiziyo.pl`                | Production (bez Git Branch)                                           | Jedyna domena produkcji                                                                                        |
+
+`pin-devportal.yml` sprawdza te warunki przy każdym deployu (także Production)
+i świeci na czerwono, gdy `devportal` serwuje inne API niż
+`https://fizjo-app-api.azurewebsites.net`.
 
 ## DEV
 

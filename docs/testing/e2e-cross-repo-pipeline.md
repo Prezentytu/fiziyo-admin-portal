@@ -46,7 +46,7 @@ Ten runbook opisuje docelowy model dla DEV, preview i `prod`, tak aby:
 - `preview` (`https://*.vercel.app`) -> `dev Clerk`
 
 Preview nie powinien korzystac z `prod Clerk`.
-Dedykowany DEV (`devportal.fiziyo.pl`) moze byc w Vercel typem `Preview`, ale alias i git branch musza wskazac `main`. `vercel.json` wylacza deploye z galezi `dev`.
+Dedykowany DEV (`devportal.fiziyo.pl`) jest w Vercel domena `Preview` z Git Branch `main`; Production Branch projektu to `production`, nie `main` (`docs/release-admin.md`). `vercel.json` wylacza deploye z galezi `dev`.
 
 ## Clerk preview redirects - konfiguracja w kodzie
 
