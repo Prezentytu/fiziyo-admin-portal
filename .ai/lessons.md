@@ -22,6 +22,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-10-01 - Cofnięcie Premium nie zapowiada doliczenia 15 PLN
+
+- **Kategoria**: `Billing`
+- **Problem**: Dialog zarządzania dostępem Premium zawsze pokazywał „zostanie doliczonych 15 PLN”, także przy akcji „Cofnij dostęp teraz”.
+- **Przyczyna**: Komunikat opłaty był poza warunkiem akcji; `RevokeNow` zamyka okres (`PremiumValidUntil = now`) i nie dodaje licencji.
+- **Rozwiązanie**: Notice opłaty renderuje się tylko dla przedłużenia i daty wygaśnięcia; test RTL łapie cofnięcie.
+- **Reguła**: Jeśli ten sam dialog obsługuje aktywację i cofnięcie, komunikat o doliczeniu opłaty zawsze wiąż z akcją, która zwiększa licencję — nigdy z `RevokeNow`.
+
 ### 2026-10-01 - Domena DEV bez gitBranch to domena Production
 
 - **Kategoria**: `Build/Tooling`

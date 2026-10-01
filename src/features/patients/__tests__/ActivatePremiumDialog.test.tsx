@@ -127,5 +127,28 @@ describe('ActivatePremiumDialog', () => {
       reason: 'Koniec współpracy',
     });
   });
+
+  it('nie zapowiada doliczenia 15 PLN przy cofnięciu dostępu', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ActivatePremiumDialog
+        open={true}
+        onOpenChange={() => {}}
+        patientName="Jan Kowalski"
+        currentPremiumValidUntil="2026-04-29T00:00:00.000Z"
+        onConfirm={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('patient-premium-charge-notice')).toBeInTheDocument();
+    expect(screen.getByText(/15 PLN/)).toBeInTheDocument();
+
+    await user.click(screen.getByText('Cofnij dostęp teraz'));
+
+    expect(screen.queryByTestId('patient-premium-charge-notice')).not.toBeInTheDocument();
+    expect(screen.queryByText(/15 PLN/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/zostanie doliczonych/i)).not.toBeInTheDocument();
+  });
 });
 
