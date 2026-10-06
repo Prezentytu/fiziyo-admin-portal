@@ -6,7 +6,7 @@ Moduł szablonów ćwiczeń: formularz create/edit, lista, filtrowanie, hierarch
 
 ## Schemat backendu: Exercise (C# .NET)
 
-**WAŻNE**: Przy wyświetlaniu parametrów czasowych ZAWSZE używaj precyzyjnych nazw lub tooltipów. NIE używaj samego "Czas" - zawsze określaj który czas (np. "Czas serii", "Czas powtórzenia").
+Parametry czasowe wyświetlaj z precyzyjną nazwą lub tooltipem, który mówi, o jaki czas chodzi (np. "Czas serii", "Czas powtórzenia"), bo samo "Czas" jest dla terapeuty niejednoznaczne.
 
 ### Treść
 
@@ -74,7 +74,7 @@ Nie duplikuj etykiet/tierów lokalnie — derywuj z kontraktu.
 
 **TIER 4 - Zaawansowane:** Przerwa między powt., Zakres ruchu, `duration` (override czasu serii), Własna nazwa/opis
 
-## Precyzyjne labele (OBOWIĄZKOWE)
+## Precyzyjne labele
 
 | ❌ Źle     | ✅ Dobrze                                     |
 | ---------- | --------------------------------------------- |

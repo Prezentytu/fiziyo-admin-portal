@@ -1,6 +1,6 @@
 # AGENTS.md - FiziYo Admin Portal
 
-WAŻNE: Preferuj wnioskowanie oparte na dokumentacji (retrieval-led) zamiast wnioskowania opartego na danych treningowych dla zadań Next.js/React.
+Next.js 16, React 19 i Apollo Client 4 mogą być nowsze niż wiedza modelu: przy zadaniach Next.js/React sprawdzaj API w dokumentacji (`node_modules/next/dist/docs/`) zamiast polegać na pamięci.
 
 ## Always
 
@@ -25,7 +25,7 @@ WAŻNE: Preferuj wnioskowanie oparte na dokumentacji (retrieval-led) zamiast wni
 - Nigdy nie używaj `any` ani `useLazyQuery`.
 - Nigdy nie usuwaj `data-testid` i nie omijaj zasad theme-safe UI.
 - Nigdy nie pisz „dawkowanie” w UI/copy dla terapeuty — używaj „podstawowe parametry” (lub nazw pól); zob. `src/features/exercises/AGENTS.md`.
-- Nigdy nie modyfikuj `.env`/credentials ani nie pushuj do `main/master` bez review.
+- Nigdy nie modyfikuj `.env`/credentials.
 
 ## Validation Commands
 
@@ -40,45 +40,45 @@ Szczegóły: `.ai/docs/agent-rules.md` i `docs/architecture/agent-workflow.md`.
 
 ## Task Router
 
-Przed rozpoczęciem pracy dopasuj zadanie do tabeli i przeczytaj WSZYSTKIE pasujące guide'y. Jeśli wpis prowadzi do routera lub indeksu, otwórz z niego wszystkie wskazane dokumenty:
+Przed rozpoczęciem pracy dopasuj zadanie do tabeli i przeczytaj pasujące guide'y. Jeśli wpis prowadzi do routera lub indeksu, otwórz z niego dokumenty pasujące do zadania:
 
-| Zadanie                                          | Guide                                                                                               |
-| ------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
-| Tworzenie/edycja ćwiczeń                         | `src/features/exercises/AGENTS.md`                                                                  |
-| Assignment Wizard                                | `src/features/assignment/AGENTS.md`                                                                 |
-| Praca z pacjentami                               | `src/features/patients/AGENTS.md`                                                                   |
-| Weryfikacja treści                               | `src/features/verification/AGENTS.md`                                                               |
-| Import dokumentów                                | `src/features/import/AGENTS.md`                                                                     |
-| Zapytania/mutacje GraphQL                        | `src/graphql/AGENTS.md`                                                                             |
-| Komponenty współdzielone                         | `src/components/shared/AGENTS.md`                                                                   |
-| Zestawy ćwiczeń                                  | `src/features/exercise-sets/AGENTS.md`                                                              |
-| Nowa specyfikacja                                | `.ai/specs/AGENTS.md`, `.ai/skills/spec-writing/`                                                   |
-| Analiza spec przed implementacją                 | `.ai/skills/pre-implement-spec/`                                                                    |
-| Implementacja ze specyfikacji                    | `.ai/skills/implement-spec/`                                                                        |
-| Testy regresyjne / integracyjne                  | `.ai/skills/integration-tests/`                                                                     |
-| Guardian UI / migracja tokenów                   | `.ai/skills/ui-guardian/`                                                                           |
-| Audyt bezpieczeństwa auth/tenant                 | `.ai/skills/sec-report/`                                                                            |
-| Scenariusze QA przed release                     | `.ai/skills/qa-scenarios/`                                                                          |
-| Zadanie / handoff cross-repo                     | `docs/architecture/agent-workflow.md`                                                               |
-| Run autonomiczny                                 | `.ai/skills/auto-implement/`                                                                        |
-| Wznowienie runu                                  | `.ai/skills/continue-run/`                                                                          |
-| Nawigator skilli ("co dalej?")                   | `.ai/skills/help/`                                                                                  |
-| Tworzenie nowego skilla                          | `.ai/skills/skill-creator/`                                                                         |
-| Zasady inżynierskie (router/index)                | `.ai/skills/principles-router.md`                                                                  |
-| Pipeline E2E / cross-repo CI                     | `docs/testing/e2e-cross-repo-pipeline.md`                                                           |
-| Code review                                      | `.ai/skills/code-review/`                                                                           |
-| UI/UX / design / accessibility                   | `.ai/skills/product-designer/SKILL.md` + `.ai/skills/product-designer/references/cro-psychology.md` |
-| Ustawienia użytkownika                           | `src/components/settings/AGENTS.md`                                                                 |
-| Organizacja i gabinety                           | `src/components/organization/AGENTS.md`                                                             |
-| Finanse i billing                                | `src/components/finances/AGENTS.md`                                                                 |
-| Quality gate przed commitem                      | `.ai/skills/check-and-commit/`                                                                      |
-| Dobór testów do diffa                            | `.ai/skills/smart-test/`                                                                            |
-| Analiza przyczyny źródłowej                      | `.ai/skills/root-cause/`                                                                            |
-| Nowy AGENTS.md modułu                            | `.ai/skills/create-agents-md/`                                                                      |
-| Kontekst cross-repo / backend                    | `.ai/ECOSYSTEM.md`                                                                                  |
-| Encje / enumy / relacje                          | `.ai/DOMAIN_MODEL.md`                                                                               |
-| Flow biznesowe / auth / AI                       | `.ai/DATA_FLOWS.md`                                                                                 |
-| Struktura modułów (utils, testy)                 | `.ai/STRUCTURE.md`                                                                                  |
+| Zadanie                            | Guide                                                                                               |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Tworzenie/edycja ćwiczeń           | `src/features/exercises/AGENTS.md`                                                                  |
+| Assignment Wizard                  | `src/features/assignment/AGENTS.md`                                                                 |
+| Praca z pacjentami                 | `src/features/patients/AGENTS.md`                                                                   |
+| Weryfikacja treści                 | `src/features/verification/AGENTS.md`                                                               |
+| Import dokumentów                  | `src/features/import/AGENTS.md`                                                                     |
+| Zapytania/mutacje GraphQL          | `src/graphql/AGENTS.md`                                                                             |
+| Komponenty współdzielone           | `src/components/shared/AGENTS.md`                                                                   |
+| Zestawy ćwiczeń                    | `src/features/exercise-sets/AGENTS.md`                                                              |
+| Nowa specyfikacja                  | `.ai/specs/AGENTS.md`, `.ai/skills/spec-writing/`                                                   |
+| Analiza spec przed implementacją   | `.ai/skills/pre-implement-spec/`                                                                    |
+| Implementacja ze specyfikacji      | `.ai/skills/implement-spec/`                                                                        |
+| Testy regresyjne / integracyjne    | `.ai/skills/integration-tests/`                                                                     |
+| Guardian UI / migracja tokenów     | `.ai/skills/ui-guardian/`                                                                           |
+| Audyt bezpieczeństwa auth/tenant   | `.ai/skills/sec-report/`                                                                            |
+| Scenariusze QA przed release       | `.ai/skills/qa-scenarios/`                                                                          |
+| Zadanie / handoff cross-repo       | `docs/architecture/agent-workflow.md`                                                               |
+| Run autonomiczny                   | `.ai/skills/auto-implement/`                                                                        |
+| Wznowienie runu                    | `.ai/skills/continue-run/`                                                                          |
+| Nawigator skilli ("co dalej?")     | `.ai/skills/help/`                                                                                  |
+| Tworzenie nowego skilla            | `.ai/skills/skill-creator/`                                                                         |
+| Zasady inżynierskie (router/index) | `.ai/skills/principles-router.md`                                                                   |
+| Pipeline E2E / cross-repo CI       | `docs/testing/e2e-cross-repo-pipeline.md`                                                           |
+| Code review                        | `.ai/skills/code-review/`                                                                           |
+| UI/UX / design / accessibility     | `.ai/skills/product-designer/SKILL.md` + `.ai/skills/product-designer/references/cro-psychology.md` |
+| Ustawienia użytkownika             | `src/components/settings/AGENTS.md`                                                                 |
+| Organizacja i gabinety             | `src/components/organization/AGENTS.md`                                                             |
+| Finanse i billing                  | `src/components/finances/AGENTS.md`                                                                 |
+| Quality gate przed commitem        | `.ai/skills/check-and-commit/`                                                                      |
+| Dobór testów do diffa              | `.ai/skills/smart-test/`                                                                            |
+| Analiza przyczyny źródłowej        | `.ai/skills/root-cause/`                                                                            |
+| Nowy AGENTS.md modułu              | `.ai/skills/create-agents-md/`                                                                      |
+| Kontekst cross-repo / backend      | `.ai/ECOSYSTEM.md`                                                                                  |
+| Encje / enumy / relacje            | `.ai/DOMAIN_MODEL.md`                                                                               |
+| Flow biznesowe / auth / AI         | `.ai/DATA_FLOWS.md`                                                                                 |
+| Struktura modułów (utils, testy)   | `.ai/STRUCTURE.md`                                                                                  |
 
 ## Workflow Orchestration
 
@@ -98,9 +98,7 @@ Przed rozpoczęciem pracy dopasuj zadanie do tabeli i przeczytaj WSZYSTKIE pasuj
 
 ## Core Principles
 
-- **Simplicity First**: Każda zmiana tak prosta jak to możliwe. Minimalny wpływ na kod.
-- **No Laziness**: Szukaj root cause. Zero tymczasowych fixów. Standardy senior developera.
-- **Minimal Impact**: Zmiana dotyka tylko to co konieczne. Unikaj wprowadzania błędów.
+- Najmniejsza zmiana, która usuwa przyczynę problemu, a nie objaw; bez tymczasowych obejść. Szczegóły: `.ai/skills/principle-laziness-protocol/`.
 
 ## Komendy
 
@@ -247,7 +245,7 @@ const { data, loading } = useQuery(GET_EXERCISES_QUERY, {
   fetchPolicy: 'cache-first',
 });
 
-// ❌ Zakazane: useLazyQuery (deprecated w Apollo 4.0)
+// ❌ Zakazane w tym repo: useLazyQuery
 const [fetch] = useLazyQuery(GET_EXERCISES_QUERY);
 ```
 
@@ -319,9 +317,9 @@ import type { Exercise } from '@/types';
 | Zapytania GraphQL | UPPER_SNAKE | `GET_EXERCISES_QUERY` |
 | Foldery           | kebab-case  | `exercise-sets/`      |
 
-## Testowanie - data-testid OBOWIĄZKOWE
+## Testowanie - data-testid
 
-Każdy interaktywny element MUSI mieć `data-testid`:
+Każdy interaktywny element ma `data-testid` (sprawdza to `npm run validate`, a E2E z `fiziyo-tests` na nich polegają):
 
 ```typescript
 // Format: [moduł]-[komponent]-[element]-[akcja?]
@@ -339,13 +337,13 @@ Prefiksy modułów: `auth-`, `nav-`, `exercise-`, `set-`, `patient-`, `org-`, `s
 
 ## Interakcja UI
 
-### Skróty klawiszowe (OBOWIĄZKOWE)
+### Skróty klawiszowe
 
-- Każdy nowy dialog MUSI wspierać `Cmd/Ctrl + Enter` jako skrót głównej akcji
-- Każdy dialog MUSI wspierać `Escape` do zamykania
+- Każdy nowy dialog wspiera `Cmd/Ctrl + Enter` jako skrót głównej akcji
+- Każdy dialog wspiera `Escape` do zamykania
 - Używaj wzorców z istniejących komponentów
 
-### Układ stopki dialogu (OBOWIĄZKOWE)
+### Układ stopki dialogu
 
 - W dialogach formularzowych przycisk wtórny `Anuluj` umieszczaj po lewej stronie stopki, a główne CTA (`Zapisz` / `Utwórz`) po prawej.
 - Domyślny layout stopki: `flex items-center justify-between` (nie grupuj obu przycisków po prawej przez `justify-end`).
@@ -383,9 +381,9 @@ Prefiksy modułów: `auth-`, `nav-`, `exercise-`, `set-`, `patient-`, `org-`, `s
 <div style={{ backgroundColor: '#1a1a1a' }}>
 ```
 
-### Theme-safe UI (LIGHT + DARK) - OBOWIĄZKOWE
+### Theme-safe UI (light + dark)
 
-- Każda nowa lub edytowana część UI MUSI być czytelna w obu motywach od pierwszej wersji.
+- Każda nowa lub edytowana część UI jest czytelna w obu motywach od pierwszej wersji.
 - Bazowe style buduj na tokenach semantycznych: `bg-surface`, `bg-card`, `text-foreground`, `text-muted-foreground`, `border-border`.
 - Unikaj hardcoded baz kolorów (`zinc`, `gray`, `slate`, `white`, `black`) dla kontenerów i typografii; wyjątki status/media tylko z poprawnym wariantem `dark:`.
 - Hover/focus nie mogą obniżać kontrastu tekstu; stan interakcji ma utrzymać lub poprawić czytelność.
@@ -419,15 +417,6 @@ Prefiksy modułów: `auth-`, `nav-`, `exercise-`, `set-`, `patient-`, `org-`, `s
 - Preferuj małe, atomowe commity
 - Zawsze uruchom lint przed commitem
 
-## Granice (czego agent NIE MOŻE robić bez zgody)
-
-- NIE usuwaj plików bez potwierdzenia
-- NIE modyfikuj `.env` ani plików credentials
-- NIE pushuj do main/master bez review
-- NIE usuwaj atrybutów data-testid
-- NIE używaj typu `any` - używaj `unknown`
-- NIE używaj `useLazyQuery` - używaj `useQuery` z `skip`
-
 ## Wiedza domenowa (.ai/)
 
 Pełna dokumentacja ekosystemu dla agentów AI:
@@ -437,9 +426,9 @@ Pełna dokumentacja ekosystemu dla agentów AI:
 | `.ai/ECOSYSTEM.md`    | Mapa cross-repo: admin ↔ mobile ↔ backend, GraphQL contract, gdzie szukać kodu | Zmiana dotykająca więcej niż jeden klient; praca z backendem |
 | `.ai/DOMAIN_MODEL.md` | Encje, enumy (pełne wartości), state machines, JSONB, relacje                  | Praca z danymi; nowe pola/encje; walidacja                   |
 | `.ai/DATA_FLOWS.md`   | Diagramy: auth, assignment, billing, AI, rejestracja, real-time, media         | Implementacja lub debugowanie flow wielowarstwowego          |
-| `.ai/specs/`          | Specyfikacje modułów (SPEC-001…005)                                            | Przed implementacją nowej funkcjonalności                    |
+| `.ai/specs/`          | Specyfikacje modułów (indeks: `.ai/specs/README.md`)                           | Przed implementacją nowej funkcjonalności                    |
 | `.ai/lessons.md`      | Dziennik wniosków z pracy AI                                                   | Po korekcie — dodaj wpis                                     |
-| `.ai/skills/`         | Umiejętności: spec-writing, code-review, create-agents-md, product-designer    | Tworzenie specyfikacji, przegląd kodu, zadania UI/UX         |
+| `.ai/skills/`         | Skille projektu (indeks: `.ai/skills/README.md`)                               | Tworzenie specyfikacji, przegląd kodu, zadania UI/UX         |
 
 ## Schemat backendu i wzorce domenowe
 

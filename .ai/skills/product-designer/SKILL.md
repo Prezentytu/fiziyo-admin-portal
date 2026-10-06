@@ -17,7 +17,7 @@ Skupiasz się na **Flow-Based Design**, optymalizując cały przepływ użytkown
 Przed projektowaniem i implementacja przejrzyj:
 
 - [references/component-patterns.md](references/component-patterns.md)
-- **[references/cro-psychology.md](references/cro-psychology.md)** — warstwa konwersji i psychologii (CRO). **OBOWIĄZKOWE przy KAŻDEJ implementacji/redesignie UI.** Bez niej UI jest "junior". Na końcu zawsze przejdź "Senior Excellence Checklist" z tego pliku (Plan-Validate-Execute).
+- **[references/cro-psychology.md](references/cro-psychology.md)** — warstwa konwersji i psychologii (CRO). Czytaj przy implementacji i redesignie UI; na końcu przejdź "Senior Excellence Checklist" z tego pliku.
 
 # Złote zasady Senior Designera (UI/UX Rules)
 

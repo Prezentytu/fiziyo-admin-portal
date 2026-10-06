@@ -29,12 +29,14 @@ Kandydata identyfikuj przez repo, HEAD i fingerprint staged/unstaged oraz nowych
 
 Klasyfikuj uwagi według severity:
 
-| Severity     | Przykłady                                                                                 | Akcja            |
-| ------------ | ----------------------------------------------------------------------------------------- | ---------------- |
-| **Critical** | `any` types, brak data-testid na interaktywnych elementach, brak walidacji zod na wejściu | Zablokuj merge   |
-| **High**     | useLazyQuery zamiast useQuery, brak `"use client"` gdzie potrzebne, hardcoded kolory      | Wymagaj poprawki |
-| **Medium**   | Nieoptymalne fetchPolicy, brak domyślnych wartości w formularzu, React.FC                 | Sugeruj poprawkę |
-| **Low**      | Długie nazwy zmiennych, brakujące komentarze w złożonej logice                            | Opcjonalnie      |
+| Severity     | Przykłady                                                                                 | Werdykt     |
+| ------------ | ----------------------------------------------------------------------------------------- | ----------- |
+| **Critical** | `any` types, brak data-testid na interaktywnych elementach, brak walidacji zod na wejściu | `send back` |
+| **High**     | useLazyQuery zamiast useQuery, brak `"use client"` gdzie potrzebne, hardcoded kolory      | `send back` |
+| **Medium**   | Nieoptymalne fetchPolicy, brak domyślnych wartości w formularzu, React.FC                 | notatka     |
+| **Low**      | Długie nazwy zmiennych, brakujące komentarze w złożonej logice                            | notatka     |
+
+Critical i High dają `send back` tylko wtedy, gdy są udowodnione (`file:line` i dowód, że przypadek zachodzi). Prawdopodobne i niezweryfikowane to notatki. Ta sama granica obowiązuje w `.cursor/BUGBOT.md` i u subagenta `reviewer`.
 
 ## Heurystyki per typ zmiany
 

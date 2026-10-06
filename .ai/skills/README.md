@@ -65,7 +65,7 @@ Canonical source pozostaje w `.ai/skills/`, a workflow agentow jest spinany prze
 Każdy skill zawiera plik `SKILL.md` z:
 
 - **description** — co skill robi i kiedy go użyć
-- **instructions** — krok po kroku jak wykonać zadanie
+- **instructions** — cel, ograniczenia i jak sprawdzić wynik; numerowane kroki tylko tam, gdzie kolejność ma znaczenie
 - **templates** — szablony do kopiowania
 - **references** — linki do istniejących przykładów
 

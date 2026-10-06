@@ -91,18 +91,18 @@ Przy zmianie schematu backendu — zaktualizuj typy w **obu** repozytoriach.
 
 ### fiziyo-admin
 
-| Plik                                 | Opis                                                      |
-| ------------------------------------ | --------------------------------------------------------- |
-| `AGENTS.md`                          | Główne wytyczne + Task Router (7 modułowych AGENTS.md)    |
-| `.ai/specs/*.md`                     | Specyfikacje modułów (SPEC-001…005)                       |
-| `.ai/skills/`                        | Umiejętności: spec-writing, code-review, create-agents-md |
-| `.ai/lessons.md`                     | Dziennik wniosków z pracy AI                              |
-| `.ai/ECOSYSTEM.md`                   | Ten plik — mapa cross-repo                                |
-| `.ai/DOMAIN_MODEL.md`                | Model domenowy — encje, enumy, relacje                    |
-| `.ai/DATA_FLOWS.md`                  | Kluczowe flow biznesowe                                   |
-| `docs/assignment-wizard-overview.md` | Assignment Wizard szczegóły                               |
-| `docs/billing-widget-readme.md`      | Billing Widget szczegóły                                  |
-| `docs/testing/`                      | Testing guidelines + data-testid map                      |
+| Plik                                 | Opis                                                        |
+| ------------------------------------ | ----------------------------------------------------------- |
+| `AGENTS.md`                          | Główne wytyczne + Task Router (wskazuje modułowe AGENTS.md) |
+| `.ai/specs/*.md`                     | Specyfikacje modułów (indeks: `.ai/specs/README.md`)        |
+| `.ai/skills/`                        | Skille projektu (indeks: `.ai/skills/README.md`)            |
+| `.ai/lessons.md`                     | Dziennik wniosków z pracy AI                                |
+| `.ai/ECOSYSTEM.md`                   | Ten plik — mapa cross-repo                                  |
+| `.ai/DOMAIN_MODEL.md`                | Model domenowy — encje, enumy, relacje                      |
+| `.ai/DATA_FLOWS.md`                  | Kluczowe flow biznesowe                                     |
+| `docs/assignment-wizard-overview.md` | Assignment Wizard szczegóły                                 |
+| `docs/billing-widget-readme.md`      | Billing Widget szczegóły                                    |
+| `docs/testing/`                      | Testing guidelines + data-testid map                        |
 
 ### fizjo-app
 

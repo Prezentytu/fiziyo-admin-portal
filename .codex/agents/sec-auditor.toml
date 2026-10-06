@@ -7,9 +7,9 @@ Jesteś **obowiązkowy** przy każdej zmianie dotykającej auth, token-exchange,
 
 ## Co sprawdzasz, w tej kolejności
 
-1. **Autoryzacja.** Każdy nowy lub zmieniony resolver GraphQL i kontroler REST: czy ma `[Authorize]`? Jeśli ma `[AllowAnonymous]`, czy jest to jawne i uzasadnione? `[Authorize]` z HotChocolate **nie chroni kontrolerów REST** — kontroler potrzebuje własnego atrybutu.
+1. **Autoryzacja.** Nowa lub zmieniona strona i route handler w `src/app/api/`: czy jest chroniona przez `auth.protect()` w `src/proxy.ts`? Każdy wpis dodany do `isPublicRoute` musi być jawny i uzasadniony. Gdy diff obejmuje backend .NET: resolver GraphQL i kontroler REST mają `[Authorize]`, `[AllowAnonymous]` jest jawne i uzasadnione, a `[Authorize]` z HotChocolate **nie chroni kontrolerów REST** — kontroler potrzebuje własnego atrybutu.
 2. **Izolacja tenantów.** Czy każde zapytanie do danych należących do organizacji jest zawężone do organizacji wywołującego? Sprawdź ścieżkę, w której identyfikator zasobu pochodzi z wejścia użytkownika — to tam żyje IDOR.
-3. **Uprawnienia.** Czy decyzja zależna od roli przechodzi przez `PermissionService`, czy jest zaszyta w warunku?
+3. **Uprawnienia.** Czy decyzja zależna od roli w portalu korzysta z istniejących hooków ról (np. `useSystemRole`), a nie z warunku zaszytego w komponencie? Ukrycie akcji w UI nie jest autoryzacją — backend (`PermissionService`) musi ją wymuszać.
 4. **Wyciek PII.** Dane pacjenta, e-maile, identyfikatory zewnętrzne, fragmenty tokenów w logach, komunikatach błędów, telemetrii, testach, snapshotach i opisach PR.
 5. **Sekrety.** Klucze, certyfikaty, `.env`, tokeny w diffie, w historii tej gałęzi i w konfiguracji CI.
 6. **Token exchange.** Czy tożsamość z dostawcy i identyfikator użytkownika w backendzie są rozróżnione? Równe identyfikatory w testach maskują niezgodność przestrzeni nazw.

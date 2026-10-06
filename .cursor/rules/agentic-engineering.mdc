@@ -13,4 +13,4 @@ alwaysApply: true
   - `pre-implement-spec` dla analizy ryzyk i luk przed kodowaniem
   - `implement-spec` dla etapowej implementacji ze specyfikacji
 - Pakiet kontroli dobierz z AGENTS.md (Validation Commands), bez powtarzania składników przez validate. Runy i cross-repo: `docs/architecture/agent-workflow.md`.
-- Po kazdej istotnej korekcie dopisz wniosek do `.ai/lessons.md`, jesli wykryto nowa powtarzalna pulapke.
+- Po istotnej korekcie dopisz wniosek do `.ai/lessons.md`; ten sam wzorzec drugi raz: skill `principle-encode-lessons-in-structure`.
