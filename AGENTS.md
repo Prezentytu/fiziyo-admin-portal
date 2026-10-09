@@ -100,18 +100,6 @@ Przed rozpoczęciem pracy dopasuj zadanie do tabeli i przeczytaj pasujące guide
 
 - Najmniejsza zmiana, która usuwa przyczynę problemu, a nie objaw; bez tymczasowych obejść. Szczegóły: `.ai/skills/principle-laziness-protocol/`.
 
-## Komendy
-
-- Instalacja: `npm install`
-- Serwer dev: `npm run dev` (HTTPS)
-- Build: `npm run build`
-- Lint: `npm run lint`, `npm run lint:fix`
-- Type-check: `npm run type-check`
-- Formatowanie: `npm run format`, `npm run format:check`
-- Walidacja pełna: `npm run validate` (lint + test IDs + type-check + testy + build)
-- Kontrakt agentów: `npm run agent:check`, `npm run agent:test`
-- Testy: `npm run test`, `npm run test:run`, `npm run test:coverage`
-
 ## Testowanie
 
 - **Logika biznesowa** (filtry, reguły widoczności, walidacja): testy jednostkowe obowiązkowe. Wyciągaj czyste funkcje do helperów i testuj je (Vitest). Zobacz `docs/testing/testing-guidelines.md`.
@@ -123,66 +111,6 @@ Przed rozpoczęciem pracy dopasuj zadanie do tabeli i przeczytaj pasujące guide
 
 Panel administracyjny FiziYo dla fizjoterapeutów - zarządzanie ćwiczeniami, zestawami, pacjentami, gabinetami.
 Integracja z fizjo-app (React Native) przez wspólny backend GraphQL (.NET Core).
-
-## Stack technologiczny
-
-| Warstwa     | Technologia                                       |
-| ----------- | ------------------------------------------------- |
-| Framework   | Next.js 16 (App Router)                           |
-| Język       | TypeScript 5 (strict mode)                        |
-| UI          | React 19 + Tailwind CSS 4 + shadcn/ui             |
-| Dane        | Apollo Client 4.0 (GraphQL)                       |
-| Formularze  | react-hook-form + zod                             |
-| Tabele      | TanStack React Table                              |
-| Autoryzacja | Clerk (NextJS SDK) → Token Exchange → Własny JWT  |
-| Backend     | .NET Core 9.0 + HotChocolate GraphQL + PostgreSQL |
-
-## Struktura projektu
-
-```
-src/
-├── app/                      # Next.js App Router
-│   ├── (auth)/               # Logowanie, rejestracja, invite
-│   ├── (blocked)/            # Redirect pacjenta poza panelem
-│   ├── (dashboard)/          # Główne strony
-│   │   ├── exercises/
-│   │   ├── exercise-sets/
-│   │   ├── patients/
-│   │   ├── organization/
-│   │   ├── finances/         # Strony rozliczeń (nie billing/)
-│   │   ├── verification/
-│   │   ├── import/
-│   │   ├── appointments/     # Placeholder
-│   │   ├── onboarding/
-│   │   └── settings/
-│   └── api/                  # Route handlers (pdf, feedback, reports)
-├── features/                 # Moduły domenowe (.ai/STRUCTURE.md)
-│   ├── assignment/
-│   ├── exercises/
-│   ├── exercise-sets/
-│   ├── patients/
-│   ├── verification/
-│   ├── import/
-│   └── auth/                 # helpers (np. siła hasła)
-├── components/
-│   ├── shared/               # DataTable, ExerciseExecutionCard
-│   ├── ui/                   # shadcn/ui
-│   ├── layout/
-│   ├── organization/
-│   ├── finances/             # Strony (dashboard)/finances
-│   ├── billing/              # Widget planu (SPEC-002)
-│   ├── settings/
-│   ├── exercise-builder/
-│   └── ...
-├── graphql/                  # queries, mutations, subscriptions, types (ręczne)
-├── data/                     # ICF, słowniki
-├── hooks/
-├── services/
-├── lib/
-├── contexts/
-├── utils/
-└── types/                    # Typy UI/domenowe (nie GraphQL)
-```
 
 ## Styl kodu
 
