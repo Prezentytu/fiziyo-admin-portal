@@ -17,23 +17,6 @@ export const UPDATE_ORGANIZATION_NAME_MUTATION = gql`
 `;
 
 /**
- * Mutacja do dodawania użytkownika do organizacji po emailu
- */
-export const ADD_MEMBER_MUTATION = gql`
-  mutation AddMember($organizationId: String!, $userEmail: String!, $role: String!) {
-    addMember(organizationId: $organizationId, userEmail: $userEmail, role: $role) {
-      id
-      organizationId
-      userId
-      role
-      invitedBy
-      joinedAt
-      status
-    }
-  }
-`;
-
-/**
  * Mutacja do dodawania użytkownika do organizacji bezpośrednio po userId
  */
 export const ADD_DIRECT_MEMBER_MUTATION = gql`
@@ -73,60 +56,6 @@ export const UPDATE_MEMBER_ROLE_MUTATION = gql`
       joinedAt
       status
     }
-  }
-`;
-
-/**
- * Mutacja do tworzenia gabinetu w organizacji
- */
-export const CREATE_CLINIC_IN_ORGANIZATION_MUTATION = gql`
-  mutation CreateClinicInOrganization(
-    $organizationId: String!
-    $name: String!
-    $address: String!
-    $contactInfo: String
-  ) {
-    createClinic(organizationId: $organizationId, name: $name, address: $address, contactInfo: $contactInfo) {
-      id
-      organizationId
-      name
-      address
-      contactInfo
-      isActive
-      createdById
-    }
-  }
-`;
-
-/**
- * Mutacja do aktualizacji gabinetu
- */
-export const UPDATE_CLINIC_IN_ORGANIZATION_MUTATION = gql`
-  mutation UpdateClinicInOrganization(
-    $clinicId: String!
-    $name: String
-    $address: String
-    $contactInfo: String
-    $isActive: Boolean
-  ) {
-    updateClinic(clinicId: $clinicId, name: $name, address: $address, contactInfo: $contactInfo, isActive: $isActive) {
-      id
-      organizationId
-      name
-      address
-      contactInfo
-      isActive
-      createdById
-    }
-  }
-`;
-
-/**
- * Mutacja do usuwania gabinetu
- */
-export const DELETE_CLINIC_IN_ORGANIZATION_MUTATION = gql`
-  mutation DeleteClinicInOrganization($clinicId: String!) {
-    deleteClinic(clinicId: $clinicId)
   }
 `;
 
@@ -173,38 +102,6 @@ export const CREATE_ORGANIZATION_MUTATION = gql`
       sharedExercisesByDefault
       creationTime
     }
-  }
-`;
-
-/**
- * Mutacja do dodawania właściciela organizacji
- * Wymaga uprawnień OWNER lub SITE_ADMIN
- */
-export const ADD_OWNER_MUTATION = gql`
-  mutation AddOwner($organizationId: String!, $userId: String!) {
-    addOwner(organizationId: $organizationId, userId: $userId) {
-      id
-      organizationId
-      userId
-      role
-      joinedAt
-      status
-      user {
-        id
-        fullname
-        email
-      }
-    }
-  }
-`;
-
-/**
- * Mutacja do usuwania właściciela organizacji
- * Wymaga uprawnień OWNER lub SITE_ADMIN
- */
-export const REMOVE_OWNER_MUTATION = gql`
-  mutation RemoveOwner($organizationId: String!, $userIdToRemove: String!) {
-    removeOwner(organizationId: $organizationId, userIdToRemove: $userIdToRemove)
   }
 `;
 
@@ -281,45 +178,6 @@ export const ACCEPT_INVITATION_MUTATION = gql`
 export const REVOKE_INVITATION_MUTATION = gql`
   mutation RevokeInvitation($invitationId: String!) {
     revokeInvitation(invitationId: $invitationId)
-  }
-`;
-
-/**
- * Mutacja do walidacji tokenu zaproszenia
- * Zwraca informacje o zaproszeniu lub null jeśli nieważne/wygasłe
- */
-export const VALIDATE_INVITATION_MUTATION = gql`
-  mutation ValidateInvitation($invitationToken: String!) {
-    validateInvitation(invitationToken: $invitationToken) {
-      id
-      organizationId
-      email
-      role
-      invitationToken
-      createdAt
-      expiresAt
-      status
-      message
-      organization {
-        id
-        name
-        logoUrl
-      }
-    }
-  }
-`;
-
-/**
- * Mutacja do włączania/wyłączania automatycznej synchronizacji ćwiczeń z GitHub
- * Gdy włączone, nowe ćwiczenia z repozytorium fiziyo-exercises będą automatycznie importowane
- */
-export const SET_AUTO_SYNC_EXERCISES_MUTATION = gql`
-  mutation SetAutoSyncExampleExercises($organizationId: String!, $enabled: Boolean!) {
-    setAutoSyncExampleExercises(organizationId: $organizationId, enabled: $enabled) {
-      id
-      name
-      autoSyncExampleExercises
-    }
   }
 `;
 

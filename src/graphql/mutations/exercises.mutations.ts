@@ -235,48 +235,6 @@ export const DELETE_EXERCISE_MUTATION = gql`
 `;
 
 /**
- * Mutacja do przypisywania ćwiczenia do pacjenta
- */
-export const ASSIGN_EXERCISE_TO_PATIENT_MUTATION = gql`
-  mutation AssignExerciseToPatient(
-    $userId: String!
-    $exerciseId: String!
-    $sets: Decimal
-    $reps: Decimal
-    $duration: Decimal
-    $restSets: Decimal
-    $restReps: Decimal
-    $notes: String
-    $startDate: DateTime
-    $endDate: DateTime
-    $frequency: FrequencyInput
-  ) {
-    assignExerciseToPatient(
-      userId: $userId
-      exerciseId: $exerciseId
-      sets: $sets
-      reps: $reps
-      duration: $duration
-      restSets: $restSets
-      restReps: $restReps
-      notes: $notes
-      startDate: $startDate
-      endDate: $endDate
-      frequency: $frequency
-    ) {
-      id
-      userId
-      assignedById
-      exerciseId
-      assignedAt
-      startDate
-      endDate
-      status
-    }
-  }
-`;
-
-/**
  * Mutacja do tworzenia tagu ćwiczenia
  */
 export const CREATE_EXERCISE_TAG_MUTATION = gql`
@@ -432,36 +390,6 @@ export const DUPLICATE_EXERCISE_SET_MUTATION = gql`
 `;
 
 /**
- * Mutacja do tworzenia kategorii tagu
- */
-export const CREATE_TAG_CATEGORY_MUTATION = gql`
-  mutation CreateTagCategory(
-    $name: String!
-    $color: String!
-    $description: String!
-    $icon: String!
-    $organizationId: String!
-  ) {
-    createTagCategory(
-      name: $name
-      color: $color
-      description: $description
-      icon: $icon
-      organizationId: $organizationId
-    ) {
-      id
-      name
-      color
-      description
-      icon
-      isActive
-      organizationId
-      createdById
-    }
-  }
-`;
-
-/**
  * Mutacja do aktualizacji kategorii tagu
  */
 export const UPDATE_TAG_CATEGORY_MUTATION = gql`
@@ -597,39 +525,6 @@ export const UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION = gql`
       exerciseSetId
       exerciseOverrides
       status
-    }
-  }
-`;
-
-/**
- * Mutacja do aktualizacji częstotliwości zestawu ćwiczeń
- */
-export const UPDATE_EXERCISE_SET_FREQUENCY_MUTATION = gql`
-  mutation UpdateExerciseSetFrequency($exerciseSetId: String!, $frequency: FrequencyInput!) {
-    updateExerciseSetFrequency(exerciseSetId: $exerciseSetId, frequency: $frequency) {
-      id
-      name
-      description
-      organizationId
-      isActive
-      createdById
-      isTemplate
-      kind
-      templateSource
-      reviewStatus
-      sourceExerciseSetId
-      frequency {
-        timesPerDay
-        timesPerWeek
-        breakBetweenSets
-        monday
-        tuesday
-        wednesday
-        thursday
-        friday
-        saturday
-        sunday
-      }
     }
   }
 `;
@@ -863,29 +758,6 @@ export const ADD_EXERCISE_TO_EXERCISE_SET_MUTATION = gql`
 `;
 
 /**
- * Mutacja do dodawania tagu do ćwiczenia
- */
-export const ADD_TAG_TO_EXERCISE_MUTATION = gql`
-  mutation AddTagToExercise($exerciseId: String!, $tagId: String!, $isMainTag: Boolean!) {
-    addTagToExercise(exerciseId: $exerciseId, tagId: $tagId, isMainTag: $isMainTag) {
-      id
-      exerciseId
-      tagId
-      isMainTag
-    }
-  }
-`;
-
-/**
- * Mutacja do usuwania tagu z ćwiczenia
- */
-export const REMOVE_TAG_FROM_EXERCISE_MUTATION = gql`
-  mutation RemoveTagFromExercise($exerciseId: String!, $tagId: String!) {
-    removeTagFromExercise(exerciseId: $exerciseId, tagId: $tagId)
-  }
-`;
-
-/**
  * Import katalogu z pliku JSON (format bundle). Zachowuje oryginalne ID, więc zdjęcia zostają.
  */
 export const IMPORT_EXERCISE_BUNDLE_MUTATION = gql`
@@ -931,19 +803,6 @@ export interface ImportExerciseBundleVariables {
 }
 
 /**
- * Mutacja do importu ćwiczeń z CSV
- */
-export const IMPORT_EXERCISES_FROM_CSV_MUTATION = gql`
-  mutation ImportExercisesFromCsv($organizationId: String!, $csvData: String!) {
-    importExercisesFromCsv(organizationId: $organizationId, csvData: $csvData) {
-      total
-      success
-      errors
-    }
-  }
-`;
-
-/**
  * Mutacja do importu przykładowych zestawów ćwiczeń
  */
 export const CREATE_EXAMPLE_EXERCISE_SETS_MUTATION = gql`
@@ -977,23 +836,6 @@ export const CLEAR_ALL_DATA_MUTATION = gql`
 `;
 
 /**
- * Mutacja do zmiany scope ćwiczenia
- * Pozwala na zmianę zakresu widoczności ćwiczenia (PERSONAL, ORGANIZATION, GLOBAL)
- */
-export const UPDATE_EXERCISE_SCOPE_MUTATION = gql`
-  mutation UpdateExerciseScope($exerciseId: String!, $newScope: ExerciseScope!) {
-    updateExerciseScope(exerciseId: $exerciseId, newScope: $newScope) {
-      id
-      name
-      scope
-      isPublicTemplate
-      organizationId
-      ownerId
-    }
-  }
-`;
-
-/**
  * Mutacja do kopiowania publicznego template ćwiczenia do organizacji
  * Umożliwia skopiowanie ćwiczenia z publicznych templates do własnej organizacji
  */
@@ -1019,23 +861,6 @@ export const COPY_EXERCISE_TEMPLATE_MUTATION = gql`
 `;
 
 /**
- * Mutacja do publikowania ćwiczenia jako publiczny template
- * Udostępnia ćwiczenie jako template dla innych organizacji
- */
-export const PUBLISH_EXERCISE_AS_TEMPLATE_MUTATION = gql`
-  mutation PublishExerciseAsTemplate($exerciseId: String!) {
-    publishExerciseAsTemplate(exerciseId: $exerciseId) {
-      id
-      name
-      scope
-      isPublicTemplate
-      organizationId
-      ownerId
-    }
-  }
-`;
-
-/**
  * Mutacja do uploadowania obrazu do ćwiczenia (base64)
  */
 export const UPLOAD_EXERCISE_IMAGE_MUTATION = gql`
@@ -1050,35 +875,6 @@ export const UPLOAD_EXERCISE_IMAGE_MUTATION = gql`
 export const DELETE_EXERCISE_IMAGE_MUTATION = gql`
   mutation DeleteExerciseImage($exerciseId: String!, $imageUrl: String!) {
     deleteExerciseImage(exerciseId: $exerciseId, imageUrl: $imageUrl)
-  }
-`;
-
-/**
- * Mutacja do synchronizacji opublikowanych ćwiczeń systemowych do organizacji
- * Kopiuje TYLKO Published ćwiczenia z bazy FiziYo, których jeszcze nie ma w organizacji
- */
-export const SYNC_PUBLISHED_EXERCISES_MUTATION = gql`
-  mutation SyncPublishedExercises($organizationId: String!) {
-    syncPublishedExercises(organizationId: $organizationId) {
-      success
-      addedCount
-      skippedCount
-      totalAvailable
-      message
-    }
-  }
-`;
-
-/**
- * Query do sprawdzenia ile nowych ćwiczeń jest dostępnych do synchronizacji
- */
-export const CHECK_SYNC_AVAILABILITY_QUERY = gql`
-  query CheckSyncAvailability($organizationId: String!) {
-    checkSyncAvailability(organizationId: $organizationId) {
-      totalPublished
-      alreadyInOrganization
-      newAvailable
-    }
   }
 `;
 
@@ -1110,25 +906,6 @@ export const SUBMIT_TO_GLOBAL_REVIEW_MUTATION = gql`
 `;
 
 /**
- * @deprecated Użyj RESUBMIT_FROM_ORIGINAL_MUTATION zamiast tej mutacji
- * Mutacja do ponownego zgłaszania ćwiczenia po wprowadzeniu poprawek.
- * Działa na starym modelu (bez kopii globalnej).
- */
-export const RESUBMIT_EXERCISE_FOR_REVIEW_MUTATION = gql`
-  mutation ResubmitExerciseForReview($exerciseId: String!) {
-    resubmitExerciseForReview(exerciseId: $exerciseId) {
-      id
-      name
-      status
-      scope
-      isPublicTemplate
-      adminReviewNotes
-      updatedAt
-    }
-  }
-`;
-
-/**
  * Mutacja do ponownego zgłaszania ćwiczenia z oryginału po wprowadzeniu poprawek.
  * Aktualizuje istniejącą globalną kopię danymi z poprawionego oryginału.
  * Dostępne dla twórcy ćwiczenia gdy globalna kopia ma status CHANGES_REQUESTED.
@@ -1150,40 +927,9 @@ export const RESUBMIT_FROM_ORIGINAL_MUTATION = gql`
   }
 `;
 
-/**
- * Mutacja do wycofania zgłoszenia ćwiczenia z kolejki weryfikacji.
- * Dostępne dla twórcy ćwiczenia gdy status to PENDING_REVIEW.
- */
-export const WITHDRAW_FROM_REVIEW_MUTATION = gql`
-  mutation WithdrawFromReview($exerciseId: String!) {
-    withdrawFromReview(exerciseId: $exerciseId) {
-      id
-      name
-      status
-      scope
-      updatedAt
-      globalSubmissionId
-    }
-  }
-`;
-
 export const SUBMIT_FOR_ORGANIZATION_REVIEW_MUTATION = gql`
   mutation SubmitForOrganizationReview($exerciseId: String!) {
     submitForOrganizationReview(exerciseId: $exerciseId) {
-      id
-      organizationVerificationStatus
-      submittedForOrgReviewAt
-      orgReviewedById
-      orgReviewedAt
-      orgReviewNotes
-      updatedAt
-    }
-  }
-`;
-
-export const WITHDRAW_FROM_ORGANIZATION_REVIEW_MUTATION = gql`
-  mutation WithdrawFromOrganizationReview($exerciseId: String!) {
-    withdrawFromOrganizationReview(exerciseId: $exerciseId) {
       id
       organizationVerificationStatus
       submittedForOrgReviewAt

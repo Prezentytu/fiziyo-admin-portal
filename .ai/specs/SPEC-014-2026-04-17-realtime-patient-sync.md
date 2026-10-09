@@ -63,13 +63,13 @@ sequenceDiagram
 
 ### 1.2 Admin (`fiziyo-admin`)
 
-| Plik                                                                          | Zmiana                                                                                                                                             |
-| ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/features/exercises/ExerciseForm.tsx`                                     | Schema rozszerzona o passthrough: `mainTags`, `additionalTags`, `difficultyLevel`, `loadType/Value/Unit/Text`.                                     |
-| `src/features/exercises/ExerciseDialog.tsx`                                   | `defaultValues` zachowuje istniejace tagi z `exercise` (helper `normalizeTagIds`).                                                                 |
-| `src/features/exercises/utils/buildExerciseUpdateVariables.ts`                | Mapuje wszystkie pola z `UPDATE_EXERCISE_MUTATION`. Pola passthrough wysylane jako `undefined` gdy puste -> backend zachowuje istniejace wartosci. |
-| `src/features/exercises/utils/__tests__/buildExerciseUpdateVariables.test.ts` | 7 testow (regresja kontraktu).                                                                                                                     |
-| `src/features/assignment/AssignmentWizard.tsx`                                | `useApolloClient` + `awaitRefetchQueries: true` na kazdej mutacji w `handleEditSubmit` + final `client.refetchQueries` po petli.                   |
+| Plik                                                             | Zmiana                                                                                                                                                 |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `src/features/exercises/ExerciseForm.tsx`                        | Schema rozszerzona o passthrough: `mainTags`, `additionalTags`, `difficultyLevel`, `loadType/Value/Unit/Text`.                                         |
+| `src/features/exercises/ExerciseDialog.tsx`                      | `defaultValues` zachowuje istniejace tagi z `exercise` (helper `normalizeTagIds`).                                                                     |
+| `src/features/exercises/useExerciseEditorForm.ts`                | Od 2026-07-28 zastępuje `buildExerciseUpdateVariables` (usunięty 2026-10-09): zapis wszystkich pól `UPDATE_EXERCISE_MUTATION` przez formularz edytora. |
+| `src/features/exercises/__tests__/useExerciseEditorForm.test.ts` | Regresja kontraktu zapisu (m.in. `additionalTags`).                                                                                                    |
+| `src/features/assignment/AssignmentWizard.tsx`                   | `useApolloClient` + `awaitRefetchQueries: true` na kazdej mutacji w `handleEditSubmit` + final `client.refetchQueries` po petli.                       |
 
 ## Faza 2 - Backend (.NET / HotChocolate)
 
@@ -164,7 +164,7 @@ Szczegolowa tabela mutacja -> odbiorcy w
 
 ### Regresja jednostkowa (zaimplementowana)
 
-- `src/features/exercises/utils/__tests__/buildExerciseUpdateVariables.test.ts`
+- `src/features/exercises/__tests__/useExerciseEditorForm.test.ts` (zastąpił usunięty `buildExerciseUpdateVariables.test.ts`)
   - 7 testow regresyjnych: passthrough `mainTags`, `additionalTags`,
     `difficultyLevel`, `loadType`, `loadValue`, `loadUnit`, `loadText`;
     kontrakt zgodny z `UPDATE_EXERCISE_MUTATION`.
@@ -209,6 +209,10 @@ Brak nowych - subskrypcja jest niewidoczna w UI. Refresh control korzysta z
 domyslnych RN test IDs.
 
 ## Changelog
+
+### 2026-10-09
+
+- Usunięto nieużywany helper `buildExerciseUpdateVariables` i jego test; regresję kontraktu zapisu pokrywa `useExerciseEditorForm.test.ts`.
 
 ### 2026-07-29
 

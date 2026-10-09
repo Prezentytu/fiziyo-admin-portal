@@ -39,29 +39,8 @@ export {
 } from './exerciseSets.subscriptions';
 
 // Assignments
-export { ON_ASSIGNMENT_CREATED, ON_ASSIGNMENT_UPDATED, ON_ASSIGNMENT_DELETED } from './assignments.subscriptions';
-export { ON_THERAPIST_ASSIGNMENT_CREATED, ON_THERAPIST_ASSIGNMENT_UPDATED } from './therapistAssignments.subscriptions';
-
-// Tags
-export {
-  ON_TAG_CREATED,
-  ON_TAG_UPDATED,
-  ON_TAG_DELETED,
-  ON_TAG_CATEGORY_CREATED,
-  ON_TAG_CATEGORY_UPDATED,
-  ON_TAG_CATEGORY_DELETED,
-} from './tags.subscriptions';
+export { ON_THERAPIST_ASSIGNMENT_CREATED } from './therapistAssignments.subscriptions';
 
 // Patients
 export { ON_PATIENT_CREATED, ON_PATIENT_UPDATED, ON_PATIENT_DELETED } from './patients.subscriptions';
 export { ON_MEMBER_CREATED } from './members.subscriptions';
-
-// Clinics
-export { ON_CLINIC_CREATED, ON_CLINIC_UPDATED, ON_CLINIC_DELETED } from './clinics.subscriptions';
-
-// Clinical Notes
-export {
-  ON_CLINICAL_NOTE_CREATED,
-  ON_CLINICAL_NOTE_UPDATED,
-  ON_CLINICAL_NOTE_DELETED,
-} from './clinicalNotes.subscriptions';

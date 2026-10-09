@@ -8,9 +8,3 @@ export const ON_THERAPIST_ASSIGNMENT_CREATED = gql`
     onTherapistAssignmentCreated(organizationId: $organizationId)
   }
 `;
-
-export const ON_THERAPIST_ASSIGNMENT_UPDATED = gql`
-  subscription OnTherapistAssignmentUpdated($organizationId: String!) {
-    onTherapistAssignmentUpdated(organizationId: $organizationId)
-  }
-`;

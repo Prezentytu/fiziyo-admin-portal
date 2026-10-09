@@ -109,52 +109,6 @@ export const EXERCISE_SET_WITH_EXERCISES_FRAGMENT = gql`
   ${EXERCISE_SET_BASIC_FRAGMENT}
 `;
 
-// Query do pobierania listy zestawów ćwiczeń
-export const GET_EXERCISE_SETS_QUERY = gql`
-  query GetExerciseSets {
-    exerciseSets {
-      id
-      name
-      isActive
-      isTemplate
-      kind
-      templateSource
-      reviewStatus
-      sourceExerciseSetId
-    }
-  }
-`;
-
-// Query do pobierania pojedynczego zestawu z ćwiczeniami
-export const GET_EXERCISE_SET_BY_ID_QUERY = gql`
-  query GetExerciseSetById($id: String!) {
-    exerciseSetById(id: $id) {
-      ...ExerciseSetWithExercisesFragment
-    }
-  }
-  ${EXERCISE_SET_WITH_EXERCISES_FRAGMENT}
-`;
-
-// Query do pobierania zestawów przypisanych do pacjenta
-export const GET_PATIENT_EXERCISE_SETS_QUERY = gql`
-  query GetPatientExerciseSets($patientId: String!) {
-    exerciseSets(where: { patientAssignments: { some: { userId: { eq: $patientId } } } }) {
-      id
-      name
-      description
-      isActive
-      createdById
-      organizationId
-      creationTime
-      isTemplate
-      kind
-      templateSource
-      reviewStatus
-      sourceExerciseSetId
-    }
-  }
-`;
-
 // Query do pobierania zestawów organizacji z ćwiczeniami
 export const GET_ORGANIZATION_EXERCISE_SETS_QUERY = gql`
   query GetOrganizationExerciseSets($organizationId: String!) {
@@ -166,19 +120,6 @@ export const GET_ORGANIZATION_EXERCISE_SETS_QUERY = gql`
     }
   }
   ${EXERCISE_SET_WITH_EXERCISES_FRAGMENT}
-`;
-
-// Query do pobierania ostatnio używanych zestawów (na podstawie przypisań)
-export const GET_RECENTLY_USED_SETS_QUERY = gql`
-  query GetRecentlyUsedSets($organizationId: String!) {
-    patientAssignments(
-      where: { exerciseSet: { organizationId: { eq: $organizationId } } }
-      order: [{ assignedAt: DESC }]
-    ) {
-      exerciseSetId
-      assignedAt
-    }
-  }
 `;
 
 // Query do pobierania zestawu z przypisaniami

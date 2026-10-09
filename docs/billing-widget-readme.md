@@ -1,5 +1,7 @@
 # Billing Widget Pay-as-you-go - Dokumentacja
 
+> **Stan historyczny.** `BillingSummaryWidget` usunięto 2026-10-09 (nieużywany od refaktoru strony billing, `e2222a5`). Plan gabinetu pokazują dziś `BillingHeroCard` i `BillingStatusBar` z `src/components/billing/`. Model biznesowy poniżej jest aktualny.
+
 ## Przegląd
 
 Implementacja widgetu finansowego dla nowego modelu rozliczeniowego "Pay-as-you-go" w aplikacji FiziYo Admin.
@@ -13,10 +15,12 @@ Implementacja widgetu finansowego dla nowego modelu rozliczeniowego "Pay-as-you-
 ### Psychologia nazewnictwa
 
 ✅ **Używamy neutralnego języka B2B:**
+
 - "Należność" / "Opłata licencyjna"
 - "Aktywne licencje" / "Aktywni Pacjenci Premium"
 
 ❌ **NIE używamy:**
+
 - "Koszt" - brzmi negatywnie, depresyjnie
 
 ## Komponenty
@@ -26,19 +30,22 @@ Implementacja widgetu finansowego dla nowego modelu rozliczeniowego "Pay-as-you-
 **Lokalizacja**: `src/components/billing/BillingSummaryWidget.tsx`
 
 **Warianty**:
+
 - `compact` - Kompaktowa karta na głównym dashboardzie
 - `full` - Pełny panel na stronie `/billing`
 
 **Props**:
+
 ```typescript
 interface BillingSummaryWidgetProps {
-  variant: "compact" | "full";
+  variant: 'compact' | 'full';
   organizationId?: string;
   className?: string;
 }
 ```
 
 **Funkcje**:
+
 - Wyświetla liczbę aktywnych pacjentów Premium
 - Pokazuje należność (liczba × cena = suma)
 - Przycisk do szczegółów (tylko w wariancie compact)
@@ -49,6 +56,7 @@ interface BillingSummaryWidgetProps {
 **Lokalizacja**: `src/components/billing/TherapistBillingTable.tsx`
 
 **Props**:
+
 ```typescript
 interface TherapistBillingTableProps {
   organizationId?: string;
@@ -57,6 +65,7 @@ interface TherapistBillingTableProps {
 ```
 
 **Funkcje**:
+
 - Tabela z podziałem należności na terapeutów
 - Wyszukiwanie po nazwisku/emailu
 - Sortowanie po liczbie aktywacji (domyślnie malejąco)
@@ -123,12 +132,9 @@ interface TherapistBillingStats {
 Widget compact pojawia się po sekcji "Quick Actions", tylko dla Owner/Admin:
 
 ```tsx
-{canViewBilling && organizationId && (
-  <BillingSummaryWidget
-    variant="compact"
-    organizationId={organizationId}
-  />
-)}
+{
+  canViewBilling && organizationId && <BillingSummaryWidget variant="compact" organizationId={organizationId} />;
+}
 ```
 
 ### Billing Page (`src/app/(dashboard)/billing/page.tsx`)
@@ -155,15 +161,14 @@ Dla testów E2E:
 
 ```typescript
 // BillingSummaryWidget
-"billing-summary-widget"
-"billing-active-patients-count"
-"billing-estimated-amount"
-"billing-details-btn"
+'billing-summary-widget';
+'billing-active-patients-count';
+'billing-estimated-amount';
+'billing-details-btn';
 
 // TherapistBillingTable
-"billing-therapist-table"
-"billing-therapist-search-input"
-`billing-therapist-row-${therapistId}`
+'billing-therapist-table';
+'billing-therapist-search-input'`billing-therapist-row-${therapistId}`;
 ```
 
 ## Design
@@ -176,6 +181,7 @@ Dla testów E2E:
 ## Backend Requirements
 
 Backend musi implementować resolver `currentBillingStatus` zwracający:
+
 - Licznik aktywnych pacjentów Premium (`premiumActiveUntil` w bieżącym miesiącu)
 - Cenę za pacjenta (15 PLN)
 - Podział na terapeutów

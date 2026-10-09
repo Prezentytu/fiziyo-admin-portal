@@ -21,7 +21,7 @@ Nie mieszaj tych dwóch drzew w jednym commicie bez powodu.
 - Strony finansów importują baryłki z obu katalogów. Sprawdź konsumenta
   przez `rg`, nie ufaj `index.ts`.
 - `PatientInviteDialog` — jedyny dialog zaproszenia premium z tego folderu.
-- `BillingSummaryWidget` — jedyny widget planu; nie klonuj go w `finances/`.
+- Plan gabinetu pokazują `BillingHeroCard` i `BillingStatusBar` z `billing/`; nie klonuj ich w `finances/`.
 
 ## Gdy dodajesz plik
 

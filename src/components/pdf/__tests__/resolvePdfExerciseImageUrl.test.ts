@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveExerciseImageUrl } from '../pdfImageResolver';
+import { resolvePdfExerciseImageUrl as resolveExerciseImageUrl } from '@/components/pdf/pdfExerciseUtils';
 
 describe('resolveExerciseImageUrl', () => {
   it('returns undefined when exercise is undefined', () => {

@@ -199,12 +199,12 @@ Nadpisania per pacjent lecą jako JSON przez `UPDATE_PATIENT_EXERCISE_OVERRIDES_
 
 ## Risk Assessment
 
-| Ryzyko                                                           | Wpływ  | Mitigacja                                                                 |
-| ---------------------------------------------------------------- | ------ | ------------------------------------------------------------------------- |
-| Część flow nadal traktuje `duration` jako główne pole            | Wysoki | Przepięcie wszystkich powierzchni z mapy standaryzacji + testy regresyjne |
-| Presety czasowe zmienią zachowanie istniejących userów           | Średni | Jasny copy i migration note w changelog                                   |
-| Rozjazd helperów czasu (`exerciseTime` vs `calculateSeriesTime`) | Średni | Ujednolicenie formuł i testy jednostkowe                                  |
-| Niespójność admin vs backend po częściowym wdrożeniu             | Wysoki | Wdrożenie addytywne i zachowanie kompatybilności kontraktów               |
+| Ryzyko                                                                                                           | Wpływ  | Mitigacja                                                                 |
+| ---------------------------------------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------- |
+| Część flow nadal traktuje `duration` jako główne pole                                                            | Wysoki | Przepięcie wszystkich powierzchni z mapy standaryzacji + testy regresyjne |
+| Presety czasowe zmienią zachowanie istniejących userów                                                           | Średni | Jasny copy i migration note w changelog                                   |
+| Rozjazd helperów czasu (`exerciseTime` vs `calculateSeriesTime`, rozwiązane: zostało tylko `utils/exerciseTime`) | Średni | Ujednolicenie formuł i testy jednostkowe                                  |
+| Niespójność admin vs backend po częściowym wdrożeniu                                                             | Wysoki | Wdrożenie addytywne i zachowanie kompatybilności kontraktów               |
 
 ## Integration Test Coverage
 
@@ -217,6 +217,10 @@ Nadpisania per pacjent lecą jako JSON przez `UPDATE_PATIENT_EXERCISE_OVERRIDES_
 | Helper czasu: formuła z `restReps` nie regresuje                                                   | Jednostkowy  | High      |
 
 ## Changelog
+
+### 2026-10-09
+
+- Usunięto nieużywany `features/exercises/utils/calculateSeriesTime.ts`; jedynym źródłem czasu serii jest `src/utils/exerciseTime.ts`.
 
 ### 2026-07-28 (Mapping Field Parity)
 

@@ -30,28 +30,21 @@ Moduł zestawów ćwiczeń pozwala fizjoterapeutom grupować ćwiczenia w logicz
 | `EditExerciseInSetDialog`   | Edycja parametrów ćwiczenia w zestawie              |
 | `AddExerciseToSetDialog`    | Dodawanie ćwiczenia do zestawu                      |
 | `FrequencyPicker`           | Wybór częstotliwości (dni tygodnia, razy dziennie)  |
-| `SetFilters`                | Filtrowanie zestawów                                |
-| `SetQuickStats`             | Statystyki zestawu (ćwiczenia, czas, przypisania)   |
-| `AISetGenerator`            | Generowanie zestawu przez AI                        |
 | `GeneratePDFDialog`         | Eksport zestawu do PDF                              |
 
 ### Interfejsy API (GraphQL)
 
 **Queries:**
 
-- `GET_EXERCISE_SETS_QUERY` - lista zestawów
-- `GET_EXERCISE_SET_BY_ID_QUERY` - zestaw z ćwiczeniami
 - `GET_ORGANIZATION_EXERCISE_SETS_QUERY` - zestawy organizacji
-- `GET_PATIENT_EXERCISE_SETS_QUERY` - zestawy pacjenta
 - `GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY` - zestaw z przypisaniami
-- `GET_EXERCISE_SET_MAPPINGS_BY_SET_QUERY` - mapowania w zestawie
 
 **Mutations:**
 
 - CRUD: `CREATE_EXERCISE_SET_MUTATION`, `UPDATE_EXERCISE_SET_MUTATION`, `DELETE_EXERCISE_SET_MUTATION`, `DUPLICATE_EXERCISE_SET_MUTATION`
 - Mappings: `ADD_EXERCISE_TO_EXERCISE_SET_MUTATION`, `UPDATE_EXERCISE_IN_SET_MUTATION`, `REMOVE_EXERCISE_FROM_SET_MUTATION`
 - Assignments: `ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION`, `UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION`, `REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION`
-- Settings: `UPDATE_EXERCISE_SET_FREQUENCY_MUTATION`, `UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION`
+- Settings: `UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION`
 
 ### Kluczowe typy danych
 
@@ -74,7 +67,7 @@ Prefiks: `set-`
 
 `GeneratePDFDialog` korzysta z `@react-pdf/renderer` w 100% w browserze, co generuje dwa systemowe ograniczenia: (1) Azure Front Door CDN nie zwraca naglowkow CORS, wiec direct-fetch z react-pdf jest blokowany przez browser, (2) react-pdf v4 wspiera tylko PNG/JPG natywnie. Pipeline rozwiazujacy oba problemy:
 
-1. **Resolver URL** - `pdfImageResolver.resolveExerciseImageUrl` daje pojedynczy fallback chain `thumbnailUrl → imageUrl → images[0]` synchronicznie z mobile i widokami detal.
+1. **Resolver URL** - `resolvePdfExerciseImageUrl` (`src/components/pdf/pdfExerciseUtils.ts`) daje pojedynczy fallback chain `thumbnailUrl → imageUrl → images[0]` synchronicznie z mobile i widokami detal.
 2. **Server-side proxy** - `src/app/api/pdf/image-proxy/route.ts` posredniczy w fetch obrazow (whitelista hostow `azurefd.net`, `fiziyo.com`, `blob.core.windows.net`, timeout 5s, cache `public, max-age=86400`).
 3. **Preloader** - `pdfImagePreloader.preloadPdfImages` pobiera URL-e przez proxy, konwertuje WebP/AVIF → PNG przez `<canvas>`, zwraca `Map<originalUrl, dataUrl|null>`. `Promise.allSettled` zapewnia per-image isolation - jedno zepsute zdjecie nie blokuje calego PDF.
 4. **Render** - przed `pdf().toBlob()` `handleGeneratePDF` zamienia `imageUrl` na base64 dataURL (lub `undefined` gdy load failed). `ExercisePDFItem` rozpoznaje `data:` URL i renderuje go bezposrednio bez `getMediaUrl`.
@@ -83,6 +76,11 @@ Prefiks: `set-`
 Logo organizacji preloadowane analogicznym mechanizmem (osobne wywolanie `preloadPdfImages`).
 
 ## Changelog
+
+### 2026-10-09
+
+- Porządki po przeglądzie kodu: usunięto nieużywane komponenty i operacje GraphQL bez konsumenta w panelu; tabele komponentów i listy API pokazują tylko kod, który istnieje.
+- `pdfImageResolver.ts` był duplikatem `resolvePdfExerciseImageUrl`; test fallback chain przeniesiono do `src/components/pdf/__tests__/resolvePdfExerciseImageUrl.test.ts`.
 
 ### 2026-07-27
 
@@ -101,7 +99,7 @@ Logo organizacji preloadowane analogicznym mechanizmem (osobne wywolanie `preloa
 ### 2026-04-17
 
 - Naprawiono brak zdjec w generowanym PDF: dodano server-side image proxy (`/api/pdf/image-proxy`), preloader z konwersja WebP/AVIF → PNG, integracje w `GeneratePDFDialog` z toast feedbackiem i disabled checkbox gdy brak URL-i.
-- Wyodrebniono `resolveExerciseImageUrl` do `pdfImageResolver.ts` (single source of truth dla fallback chain `thumbnailUrl → imageUrl → images[0]`).
+- Wyodrebniono `resolveExerciseImageUrl` do `pdfImageResolver.ts` (od 2026-10-09: `resolvePdfExerciseImageUrl` w `components/pdf/pdfExerciseUtils.ts`; single source of truth dla fallback chain `thumbnailUrl → imageUrl → images[0]`).
 
 ### 2026-04-15
 

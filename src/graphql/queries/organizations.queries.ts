@@ -1,14 +1,5 @@
 import { gql } from '@apollo/client';
 
-// Fragment dla podstawowych danych organizacji
-export const ORGANIZATION_BASIC_FRAGMENT = gql`
-  fragment OrganizationBasicFragment on Organization {
-    id
-    name
-    isActive
-  }
-`;
-
 // Fragment dla pełnych danych organizacji
 // NAPRAWIONE: usunięto ownerId (nie istnieje w schema)
 export const ORGANIZATION_FULL_FRAGMENT = gql`
@@ -32,27 +23,6 @@ export const ORGANIZATION_FULL_FRAGMENT = gql`
   }
 `;
 
-// Query do pobierania listy organizacji
-export const GET_ORGANIZATIONS_QUERY = gql`
-  query GetOrganizations {
-    organizations {
-      id
-      name
-      isActive
-    }
-  }
-`;
-
-// Query do pobierania aktywnych organizacji
-export const GET_ACTIVE_ORGANIZATIONS_QUERY = gql`
-  query GetActiveOrganizations {
-    organizations(where: { isActive: { eq: true } }) {
-      ...OrganizationFullFragment
-    }
-  }
-  ${ORGANIZATION_FULL_FRAGMENT}
-`;
-
 // Query do pobierania pojedynczej organizacji
 export const GET_ORGANIZATION_BY_ID_QUERY = gql`
   query GetOrganizationById($id: String!) {
@@ -61,54 +31,6 @@ export const GET_ORGANIZATION_BY_ID_QUERY = gql`
     }
   }
   ${ORGANIZATION_FULL_FRAGMENT}
-`;
-
-// Query do pobierania szczegółów organizacji dla pacjenta (z terapeutą i rolą)
-export const GET_PATIENT_ORGANIZATION_DETAILS_QUERY = gql`
-  query GetPatientOrganizationDetails($patientId: String!, $organizationId: String!) {
-    patientOrganizationDetails(patientId: $patientId, organizationId: $organizationId) {
-      organization {
-        id
-        name
-        description
-        logoUrl
-        isActive
-      }
-      membershipRole
-      joinedAt
-      therapist {
-        id
-        fullname
-        email
-        image
-        personalData {
-          firstName
-          lastName
-        }
-      }
-      clinics {
-        id
-        name
-        address
-        contactInfo
-        isActive
-      }
-      admins {
-        id
-        fullname
-        email
-        image
-        personalData {
-          firstName
-          lastName
-        }
-        contactData {
-          phone
-          address
-        }
-      }
-    }
-  }
 `;
 
 // Query do pobierania członków organizacji
@@ -127,27 +49,6 @@ export const GET_ORGANIZATION_MEMBERS_QUERY = gql`
         fullname
         email
         image
-      }
-    }
-  }
-`;
-
-// Query do pobierania członkostw użytkownika w organizacjach
-export const GET_USER_ORGANIZATION_MEMBERSHIPS_QUERY = gql`
-  query GetUserOrganizationMemberships($userId: String!) {
-    userOrganizationMemberships(userId: $userId) {
-      id
-      organizationId
-      userId
-      role
-      invitedBy
-      status
-      joinedAt
-      organization {
-        id
-        name
-        logoUrl
-        isActive
       }
     }
   }
