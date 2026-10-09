@@ -35,7 +35,6 @@ import {
 
 interface ActivityReportProps {
   readonly patientId: string;
-  readonly patientName?: string;
   readonly heatmapDays?: number;
   readonly journalDays?: number;
   readonly onSendMessage?: () => void;
@@ -144,7 +143,6 @@ const EMPTY_WORKOUT_SESSIONS: NonNullable<PatientWorkoutSessionsQueryResponse['p
 
 export function ActivityReport({
   patientId,
-  patientName: _patientName,
   heatmapDays = 28,
   journalDays = 5,
   onSendMessage,
@@ -167,6 +165,8 @@ export function ActivityReport({
   const commonQueryOptions = {
     fetchPolicy: 'cache-and-network' as const,
     pollInterval: PROGRESS_POLL_MS,
+    // Six queries poll together; pause them while the tab is in the background.
+    skipPollAttempt: () => document.hidden,
     notifyOnNetworkStatusChange: true,
   };
 

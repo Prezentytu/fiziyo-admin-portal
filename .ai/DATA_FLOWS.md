@@ -102,7 +102,7 @@ Diagramy i opisy głównych przepływów danych. Czytaj gdy implementujesz lub m
 │  FAZA 5: Terapeuta monitoruje postępy                           │
 │                                                                  │
 │  Panel Admin: Profil pacjenta → Zakładka postępy                │
-│  GET_EXERCISE_PROGRESS_QUERY, GET_WEEKLY_PROGRESS_QUERY          │
+│  GET_PATIENT_ACTIVITY_REPORT_QUERY, GET_PATIENT_WEEKLY_ADHERENCE │
 │  Dane: ukończone serie, ból, trudność, regularność               │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -238,7 +238,7 @@ Panel / Mobile                     Backend (.NET)              OpenAI/OpenRouter
 
 **Pliki:**
 
-- Admin: `src/services/aiService.ts`, `src/services/chatService.ts`, `src/services/verificationAIService.ts`
+- Admin: `src/services/aiService.ts`, `src/services/chatService.ts`
 - Mobile: `src/services/chatService.ts`, `components/AI/`
 - Backend: `Controllers/AIController.cs`, `Controllers/ChatController.cs`, `Controllers/DocumentAnalyzerController.cs`
 

@@ -120,24 +120,20 @@ Wszystkie powierzchnie UI wyświetlające szczegóły ćwiczenia muszą korzysta
 
 ## Architektura
 
-### Komponenty UI (16)
+### Komponenty UI
 
-| Komponent               | Odpowiedzialność                            |
-| ----------------------- | ------------------------------------------- |
-| `ExerciseForm`          | Główny formularz tworzenia/edycji ćwiczenia |
-| `ExerciseCard`          | Karta ćwiczenia w liście/gridzie            |
-| `ExerciseDialog`        | Dialog szczegółów ćwiczenia                 |
-| `CreateExerciseWizard`  | Wizard tworzenia nowego ćwiczenia           |
-| `MediaUploadSection`    | Upload obrazów i wideo                      |
-| `ExerciseVoiceInput`    | Input głosowy (AI transkrypcja)             |
-| `TagPicker`             | Wybór tagów z autocomplete                  |
-| `TagCard`               | Wyświetlanie tagu                           |
-| `TagDialog`             | Tworzenie/edycja tagu                       |
-| `QuickTemplates`        | Szybkie szablony ćwiczeń                    |
-| `AIExerciseSuggestions` | Sugestie AI na podstawie kontekstu          |
-| `CreateSetWizard`       | Tworzenie zestawu z preselekcją ćwiczenia   |
-| `SubmitToGlobalDialog`  | Zgłaszanie ćwiczenia do globalnej bazy      |
-| `FeedbackBanner`        | Banner z informacjami zwrotnymi             |
+| Komponent              | Odpowiedzialność                            |
+| ---------------------- | ------------------------------------------- |
+| `ExerciseEditor`       | Główny formularz tworzenia/edycji ćwiczenia |
+| `ExerciseCard`         | Karta ćwiczenia w liście/gridzie            |
+| `ExerciseDialog`       | Dialog szczegółów ćwiczenia                 |
+| `CreateExerciseWizard` | Wizard tworzenia nowego ćwiczenia           |
+| `TagPicker`            | Wybór tagów z autocomplete                  |
+| `TagCard`              | Wyświetlanie tagu                           |
+| `TagDialog`            | Tworzenie/edycja tagu                       |
+| `CreateSetWizard`      | Tworzenie zestawu z preselekcją ćwiczenia   |
+| `SubmitToGlobalDialog` | Zgłaszanie ćwiczenia do globalnej bazy      |
+| `FeedbackBanner`       | Banner z informacjami zwrotnymi             |
 
 Na ekranie szczegółów ćwiczenia akcja `Dodaj do zestawu` otwiera `CreateSetWizard` z `initialExerciseIds=[exercise.id]`.
 
@@ -145,24 +141,19 @@ Na ekranie szczegółów ćwiczenia akcja `Dodaj do zestawu` otwiera `CreateSetW
 
 **Queries:**
 
-- `GET_EXERCISES_QUERY` - lista ćwiczeń z filtrowaniem
-- `GET_EXERCISES_FULL_QUERY` - pełne dane ćwiczeń
 - `GET_EXERCISE_BY_ID_QUERY` - pojedyncze ćwiczenie
-- `GET_ORGANIZATION_EXERCISES_QUERY` - ćwiczenia organizacji
-- `GET_AVAILABLE_EXERCISES_QUERY` - dostępne ćwiczenia
-- `GET_GLOBAL_EXERCISES_QUERY` - globalna baza ćwiczeń
-- `GET_PUBLIC_TEMPLATE_EXERCISES_QUERY` - publiczne szablony
-- `EXPORT_EXERCISES_TO_CSV_QUERY` - eksport CSV
+- `GET_ORGANIZATION_EXERCISES_QUERY` - lista ćwiczeń organizacji w panelu
+- `GET_AVAILABLE_EXERCISES_QUERY` - ćwiczenia dostępne dla organizacji (własne + globalne)
+
+`GET_EXERCISES_QUERY` (nieograniczona lista `exercises`) jest tylko w mobile; panel go nie eksportuje (`src/graphql/__tests__/exercisesQuerySurface.test.ts`).
 
 **Mutations:**
 
 - CRUD: `CREATE_EXERCISE_MUTATION`, `UPDATE_EXERCISE_MUTATION`, `DELETE_EXERCISE_MUTATION`
-- Scope: `UPDATE_EXERCISE_SCOPE_MUTATION`
-- Templates: `COPY_EXERCISE_TEMPLATE_MUTATION`, `PUBLISH_EXERCISE_AS_TEMPLATE_MUTATION`
-- Global Review: `SUBMIT_TO_GLOBAL_REVIEW_MUTATION`, `RESUBMIT_FROM_ORIGINAL_MUTATION`, `WITHDRAW_FROM_REVIEW_MUTATION`
+- Templates: `COPY_EXERCISE_TEMPLATE_MUTATION`
+- Global Review: `SUBMIT_TO_GLOBAL_REVIEW_MUTATION`, `RESUBMIT_FROM_ORIGINAL_MUTATION`
 - Media: `UPLOAD_EXERCISE_IMAGE_MUTATION`, `DELETE_EXERCISE_IMAGE_MUTATION`
-- Tags: `CREATE_EXERCISE_TAG_MUTATION`, `UPDATE_TAG_MUTATION`, `DELETE_TAG_MUTATION`, `ADD_TAG_TO_EXERCISE_MUTATION`, `REMOVE_TAG_FROM_EXERCISE_MUTATION`
-- Import: `IMPORT_EXERCISES_FROM_CSV_MUTATION`, `SYNC_PUBLISHED_EXERCISES_MUTATION`
+- Tags: `CREATE_EXERCISE_TAG_MUTATION`, `UPDATE_TAG_MUTATION`, `DELETE_TAG_MUTATION`
 
 ### Kluczowe typy danych
 
@@ -174,13 +165,16 @@ Na ekranie szczegółów ćwiczenia akcja `Dodaj do zestawu` otwiera `CreateSetW
 
 Prefiks: `exercise-`
 
-- `exercise-form-submit-btn`
 - `exercise-card-{id}`
-- `exercise-dialog-edit-btn`
-- `exercise-tag-picker`
-- `exercise-voice-input-btn`
+- `exercise-editor-name-input`
+- `exercise-dialog-save-btn`
+- `exercise-create-save-btn`
 
 ## Changelog
+
+### 2026-10-09
+
+- Porządki po przeglądzie kodu: usunięto nieużywane komponenty i operacje GraphQL bez konsumenta w panelu; tabele komponentów i listy API pokazują tylko kod, który istnieje.
 
 ### 2026-07-28
 

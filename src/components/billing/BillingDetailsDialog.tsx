@@ -15,6 +15,7 @@ import { GET_BILLING_DETAILS_QUERY } from '@/graphql/queries';
 import type { GetBillingDetailsResponse, UpdateBillingDetailsResponse } from '@/types/apollo';
 import { billingDetailsSchema, type BillingDetailsFormValues } from '@/types/billing-details.types';
 import { isFeatureEnabled } from '@/lib/featureFlags';
+import { normalizeIban, normalizeNip } from '@/lib/validators/billing';
 
 interface BillingDetailsDialogProps {
   readonly open: boolean;
@@ -36,18 +37,17 @@ const EMPTY_VALUES: BillingDetailsFormValues = {
 function normalizeForSave(values: BillingDetailsFormValues): BillingDetailsFormValues {
   return {
     companyName: values.companyName.trim(),
-    nip: values.nip.replaceAll(/[\s-]/g, '').trim(),
+    nip: normalizeNip(values.nip),
     address: values.address.trim(),
     postalCode: values.postalCode.trim(),
     city: values.city.trim(),
-    iban: values.iban.replaceAll(/\s/g, '').toUpperCase().trim(),
+    iban: normalizeIban(values.iban),
     billingEmail: values.billingEmail.trim().toLowerCase(),
   };
 }
 
 function formatIbanForDisplay(inputValue: string): string {
-  const normalized = inputValue.replaceAll(/\s/g, '').toUpperCase();
-  return normalized.replaceAll(/(.{4})/g, '$1 ').trim();
+  return normalizeIban(inputValue).replaceAll(/(.{4})/g, '$1 ').trim();
 }
 
 export function BillingDetailsDialog({ open, onOpenChange, organizationId, onSaved }: Readonly<BillingDetailsDialogProps>) {

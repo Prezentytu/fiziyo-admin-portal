@@ -87,6 +87,9 @@ export async function GET(request: NextRequest) {
       headers: {
         'content-type': contentType,
         'cache-control': 'public, max-age=86400, s-maxage=86400, immutable',
+        // Upstream hosts are only suffix-matched; never let a proxied SVG run script on the portal origin.
+        'content-security-policy': "default-src 'none'; sandbox",
+        'x-content-type-options': 'nosniff',
         'x-pdf-image-proxy': '1',
       },
     });

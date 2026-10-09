@@ -40,7 +40,6 @@ Widget finansowy dla modelu rozliczeniowego "Pay-as-you-go":
 
 | Komponent             | Lokalizacja                                        | Opis                             |
 | --------------------- | -------------------------------------------------- | -------------------------------- |
-| BillingSummaryWidget  | `src/components/billing/BillingSummaryWidget.tsx`  | Widget podsumowania              |
 | TherapistBillingTable | `src/components/billing/TherapistBillingTable.tsx` | Tabela z podziałem na terapeutów |
 
 ## Interfejsy
@@ -159,6 +158,10 @@ billing-therapist-row-{therapistId}
 - Cena 15 PLN może być hardcoded lub pobrana z backendu (`pricePerPatient`)
 
 ## Changelog
+
+### 2026-10-09
+
+- `BillingSummaryWidget` (i `BillingKpiCard`) usunięte: od refaktoru strony billing (`e2222a5`) plan gabinetu pokazują `BillingHeroCard` i `BillingStatusBar`. Sekcja Integracja poniżej opisuje stan historyczny.
 
 ### 2026-03-08
 

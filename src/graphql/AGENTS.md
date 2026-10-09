@@ -22,7 +22,7 @@ graphql/
 ### useQuery z skip (NIE useLazyQuery)
 
 ```typescript
-const { data, loading } = useQuery(GET_EXERCISES_QUERY, {
+const { data, loading } = useQuery(GET_ORGANIZATION_EXERCISES_QUERY, {
   variables: { organizationId: orgId || '' },
   skip: !orgId,
   fetchPolicy: 'cache-first',

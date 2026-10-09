@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { useQuery, useMutation } from '@apollo/client/react';
+import { useQuery, useMutation, useApolloClient } from '@apollo/client/react';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -361,6 +361,8 @@ export function EditExerciseSetFullDialog({
     }
   }, [availableExercises, description, isGeneratingSetMeta, name, selectedInstances]);
 
+  const apolloClient = useApolloClient();
+
   const handleSave = useCallback(async () => {
     const trimmedName = name.trim();
     if (!trimmedName) {
@@ -385,18 +387,12 @@ export function EditExerciseSetFullDialog({
             name: trimmedName,
             description: (description ?? '').trim() || null,
           },
-          refetchQueries: [
-            { query: GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY, variables: { exerciseSetId } },
-          ],
         });
       }
 
       for (const item of saveDiff.toRemove) {
         await removeExerciseFromSet({
           variables: { exerciseId: item.exerciseId, exerciseSetId },
-          refetchQueries: [
-            { query: GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY, variables: { exerciseSetId } },
-          ],
         });
       }
 
@@ -423,9 +419,6 @@ export function EditExerciseSetFullDialog({
             ...buildExerciseLoadMutationVars(params.loadWeightKg ?? params.loadValue),
             overridesJson: overridesJson ?? '',
           },
-          refetchQueries: [
-            { query: GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY, variables: { exerciseSetId } },
-          ],
         });
       }
 
@@ -452,9 +445,6 @@ export function EditExerciseSetFullDialog({
             ...buildExerciseLoadMutationVars(params.loadWeightKg ?? params.loadValue),
             overridesJson: overridesJson ?? '',
           },
-          refetchQueries: [
-            { query: GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY, variables: { exerciseSetId } },
-          ],
         });
       }
 
@@ -464,8 +454,14 @@ export function EditExerciseSetFullDialog({
     } catch (error) {
       console.error('Błąd podczas zapisywania zestawu:', error);
       toast.error('Nie udało się zapisać zestawu');
+    } finally {
+      // One refetch after all mutations instead of one per mutation.
+      void apolloClient
+        .query({ query: GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY, variables: { exerciseSetId }, fetchPolicy: 'network-only' })
+        .catch((refetchError) => console.error('Błąd odświeżania zestawu:', refetchError));
     }
   }, [
+    apolloClient,
     name,
     description,
     selectedInstances,

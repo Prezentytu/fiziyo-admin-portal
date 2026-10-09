@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import Link from 'next/link';
+import { getInitialsFromName } from '@/utils/textUtils';
 
 // ========================================
 // Types
@@ -54,15 +55,6 @@ const roleColors: Record<string, string> = {
   STAFF: 'bg-muted text-muted-foreground border-border',
   staff: 'bg-muted text-muted-foreground border-border',
 };
-
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map((word) => word[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
-}
 
 // ========================================
 // Component
@@ -143,7 +135,7 @@ export function OrganizationSwitcher({ isCollapsed = false }: OrganizationSwitch
             isCollapsed ? 'h-9 w-9 text-sm' : 'h-9 w-9 text-sm'
           )}
         >
-          {getInitials(currentOrganization.organizationName)}
+          {getInitialsFromName(currentOrganization.organizationName)}
         </div>
       )}
 
@@ -234,7 +226,7 @@ export function OrganizationSwitcher({ isCollapsed = false }: OrganizationSwitch
                 </span>
               ) : (
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-surface-light to-surface text-xs font-semibold text-muted-foreground shrink-0">
-                  {getInitials(org.organizationName)}
+                  {getInitialsFromName(org.organizationName)}
                 </div>
               )}
 

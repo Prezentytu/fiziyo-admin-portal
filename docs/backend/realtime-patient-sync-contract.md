@@ -204,7 +204,7 @@ foreach (var item in affectedUserIds)
 ## 5. Persistence layer
 
 Backend uzywa juz LISTEN/NOTIFY (PostgreSQL) dla istniejacych subskrypcji
-admina (`OnAssignmentUpdated($organizationId)` w `assignments.subscriptions.ts`).
+admina (np. `OnAssignmentUpdated($organizationId)`; panel nie trzyma już definicji tej subskrypcji, bo nie miała konsumenta).
 Nowy topic `OnMyAssignmentChanged_{userId}` wpasowuje sie w ten sam mechanizm.
 
 Konfiguracja w `Program.cs` powinna juz miec:

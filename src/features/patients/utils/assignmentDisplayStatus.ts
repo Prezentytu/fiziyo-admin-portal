@@ -1,4 +1,5 @@
 import type { BadgeProps } from '@/components/ui/badge';
+import { pluralize } from '@/utils/textUtils';
 
 export type AssignmentDisplayKind = 'active' | 'expiring_soon' | 'expired' | 'paused' | 'completed' | 'cancelled' | 'unknown';
 
@@ -73,8 +74,7 @@ export function resolveAssignmentDisplayStatus({
   } else if (end) {
     const daysToEnd = Math.ceil((end.getTime() - now.getTime()) / DAY_MS);
     if (daysToEnd > 0 && daysToEnd <= EXPIRING_SOON_DAYS) {
-      const suffix = daysToEnd === 1 ? 'dzień' : 'dni';
-      primary = { label: `Wygasa za ${daysToEnd} ${suffix}`, variant: 'warning', kind: 'expiring_soon' };
+      primary = { label: `Wygasa za ${pluralize(daysToEnd, 'dzień')}`, variant: 'warning', kind: 'expiring_soon' };
     } else {
       primary = { label: 'Aktywny', variant: 'success', kind: 'active' };
     }

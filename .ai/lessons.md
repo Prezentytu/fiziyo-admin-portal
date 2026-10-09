@@ -22,6 +22,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-10-09 - Dokumentacja agentów cytowała usunięte operacje GraphQL
+
+- **Kategoria**: `GraphQL` | `Docs`
+- **Problem**: Po usunięciu martwych operacji AGENTS.md, ECOSYSTEM i specy nadal podawały `GET_EXERCISES_QUERY` (w panelu zakazane) i `GET_ADMIN_EXERCISES_QUERY` (nie istnieje), w tym jako wzorzec `useQuery` do kopiowania.
+- **Przyczyna**: Listy API i przykłady w dokumentach były pisane ręcznie i nic nie porównywało ich z eksportami w `src/`.
+- **Rozwiązanie**: Nazwy podmienione na żywe eksporty; `agent:check` uruchamia `scripts/check-agent-docs-graphql.mjs`, który odrzuca w plikach `AGENTS.md` nazwy `*_QUERY/_MUTATION/_SUBSCRIPTION/_FRAGMENT` bez eksportu w `src/`.
+- **Reguła**: Usuwając operację GraphQL albo komponent, przeszukaj `AGENTS.md`, `.ai/` i `docs/` po nazwie w tym samym PR. Nazwy z mobile oznaczaj w dokumentach jako mobile, nie jako listę panelu.
+
 ### 2026-10-01 - Cofnięcie Premium nie zapowiada doliczenia 15 PLN
 
 - **Kategoria**: `Billing`

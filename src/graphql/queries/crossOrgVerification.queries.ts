@@ -1,6 +1,6 @@
 import { gql } from '@apollo/client';
 import { EXERCISE_FULL_FRAGMENT } from './exercises.queries';
-import { ADMIN_EXERCISE_FRAGMENT, VERIFICATION_QUEUE_ITEM_FRAGMENT } from './adminExercises.queries';
+import { VERIFICATION_QUEUE_ITEM_FRAGMENT } from './adminExercises.queries';
 
 export const GET_CROSS_ORG_VERIFICATION_STATS_QUERY = gql`
   query GetCrossOrgVerificationStats {
@@ -60,13 +60,4 @@ export const GET_EXERCISE_BY_ID_FOR_CROSS_ORG_VERIFICATION_QUERY = gql`
     }
   }
   ${EXERCISE_FULL_FRAGMENT}
-`;
-
-export const GET_EXERCISE_BY_ID_FOR_CROSS_ORG_VERIFICATION_ADMIN_QUERY = gql`
-  query GetExerciseByIdForCrossOrgVerificationAdmin($exerciseId: String!) {
-    exerciseByIdForCrossOrgVerification(exerciseId: $exerciseId) {
-      ...AdminExerciseFragment
-    }
-  }
-  ${ADMIN_EXERCISE_FRAGMENT}
 `;

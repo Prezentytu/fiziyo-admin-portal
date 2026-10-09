@@ -19,6 +19,7 @@ import { getMediaUrl } from '@/utils/mediaUrl';
 import { calculateEstimatedTime } from '@/utils/exerciseTime';
 import { HIDE_EXERCISE_TAGS } from '@/components/shared/exercise';
 import type { ExerciseTag } from '@/types/apollo';
+import { isPatientPlan, isTemplateSet } from '@/features/exercise-sets/utils/setKind';
 
 interface ExerciseMapping {
   id: string;
@@ -106,25 +107,25 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
 
   const exerciseCount = set.exerciseMappings?.length || 0;
   const assignmentCount = set.patientAssignments?.length || 0;
-  const isTemplateSet = set.kind === 'TEMPLATE' || set.isTemplate === true;
-  const isPatientPlan = set.kind === 'PATIENT_PLAN';
+  const isTemplate = isTemplateSet(set);
+  const isPlan = isPatientPlan(set);
 
   const setTypeBadge = useMemo(() => {
-    if (isPatientPlan) {
+    if (isPlan) {
       return {
         label: 'Spersonalizowany zestaw ćwiczeń',
         className: 'border-info/30 bg-info/10 text-info',
       };
     }
 
-    if (isTemplateSet && set.templateSource === 'FIZIYO_VERIFIED') {
+    if (isTemplate && set.templateSource === 'FIZIYO_VERIFIED') {
       return {
         label: 'Zestaw FiziYo',
         className: 'border-primary/30 bg-primary/10 text-primary',
       };
     }
 
-    if (isTemplateSet) {
+    if (isTemplate) {
       return {
         label: 'Zestaw organizacji',
         className: 'border-info/30 bg-info/10 text-info',
@@ -132,7 +133,7 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
     }
 
     return null;
-  }, [isPatientPlan, isTemplateSet, set.templateSource]);
+  }, [isPlan, isTemplate, set.templateSource]);
 
   // Get ALL exercise images with names for scrubbing
   const allExerciseImages = useMemo(() => {
@@ -456,7 +457,7 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
         {/* Footer - always at bottom with mt-auto */}
         <div className="flex items-center justify-between mt-auto pt-2">
           <span className="text-xs text-muted-foreground">
-            {isTemplateSet
+            {isTemplate
               ? assignmentCount > 0
                 ? `Legacy przypisania: ${assignmentCount}`
                 : 'Zestaw zrodlowy'

@@ -58,6 +58,7 @@ export default function CrossOrgVerificationPage() {
     skip: !isSiteSuperAdmin,
     fetchPolicy: 'cache-and-network',
     pollInterval: 30_000,
+    skipPollAttempt: () => document.hidden,
   });
 
   const {
@@ -76,6 +77,7 @@ export default function CrossOrgVerificationPage() {
       skip: !isSiteSuperAdmin,
       fetchPolicy: 'cache-and-network',
       pollInterval: 30_000,
+      skipPollAttempt: () => document.hidden,
     }
   );
 

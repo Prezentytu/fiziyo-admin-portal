@@ -57,10 +57,10 @@ W głównym [AGENTS.md](../../../AGENTS.md) dodaj wiersz do tabeli Task Router:
 
 ### 4. Opcjonalnie: CLAUDE.md
 
-Dla kompatybilności z Claude Code możesz dodać `CLAUDE.md` jako alias:
+Dla kompatybilności z Claude Code możesz dodać `CLAUDE.md`, który importuje `AGENTS.md` (sam link go nie ładuje):
 
 ```markdown
-See [AGENTS.md](AGENTS.md)
+@AGENTS.md
 ```
 
 ## Szablon AGENTS.md modułu

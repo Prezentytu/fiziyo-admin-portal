@@ -76,6 +76,7 @@ import {
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { DashboardRouteLoading } from '@/components/layout/DashboardRouteLoading';
+import { isTemplateSet } from '@/features/exercise-sets/utils/setKind';
 
 interface SetDetailPageProps {
   params: Promise<{ id: string }>;
@@ -497,9 +498,9 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
     );
   }
 
-  const isTemplateSet = exerciseSet.kind === 'TEMPLATE' || exerciseSet.isTemplate === true;
+  const isTemplate = isTemplateSet(exerciseSet);
   const exercises = exerciseSet?.exerciseMappings || [];
-  const assignments = isTemplateSet ? [] : exerciseSet?.patientAssignments || [];
+  const assignments = isTemplate ? [] : exerciseSet?.patientAssignments || [];
 
   return (
     <div className="space-y-6">
@@ -675,7 +676,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
               <Users className="h-5 w-5 text-secondary" />
               {`Przypisani pacjenci (${assignments.length})`}
             </h2>
-            {!isTemplateSet && (
+            {!isTemplate && (
               <Button data-testid="set-detail-assign-patient-btn" size="sm" onClick={() => setIsAssignDialogOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />
                 Personalizuj i przypisz

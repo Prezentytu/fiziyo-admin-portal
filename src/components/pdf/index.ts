@@ -17,8 +17,6 @@ export { pdfStyles } from './styles';
 export {
   formatSets,
   formatReps,
-  formatSeconds,
-  formatDurationPolish,
   formatExercises,
   formatTimes,
   formatDaysPolish,

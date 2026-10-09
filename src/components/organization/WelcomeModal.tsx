@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { getInitialsFromName } from '@/utils/textUtils';
 
 // ========================================
 // Types
@@ -35,15 +36,6 @@ const roleLabels: Record<string, string> = {
   MEMBER: 'Członek',
   STAFF: 'Personel',
 };
-
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map((word) => word[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
-}
 
 // ========================================
 // Quick Tips Data
@@ -192,7 +184,7 @@ export function WelcomeModal({
               </span>
             ) : (
               <div className="flex h-24 w-24 items-center justify-center rounded-2xl border-4 border-surface bg-gradient-to-br from-primary to-primary-dark text-primary-foreground text-2xl font-bold shadow-xl">
-                {getInitials(organizationName)}
+                {getInitialsFromName(organizationName)}
               </div>
             )}
           </div>
@@ -228,7 +220,7 @@ export function WelcomeModal({
             >
               <Avatar className="h-10 w-10">
                 <AvatarImage src={invitedByImage ?? undefined} alt={invitedByName} />
-                <AvatarFallback className="bg-primary/20 text-primary">{getInitials(invitedByName)}</AvatarFallback>
+                <AvatarFallback className="bg-primary/20 text-primary">{getInitialsFromName(invitedByName)}</AvatarFallback>
               </Avatar>
               <div className="text-left">
                 <p className="text-sm font-medium text-foreground">{invitedByName}</p>

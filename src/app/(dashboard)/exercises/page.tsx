@@ -170,13 +170,20 @@ export default function ExercisesPage() {
     }
   );
 
-  const rawExercises: Exercise[] = (data as AvailableExercisesResponse)?.availableExercises || [];
-  const tags = (tagsData as ExerciseTagsResponse)?.exerciseTags || [];
-  const categories = (categoriesData as TagCategoriesResponse)?.tagsByOrganizationId || [];
+  // Memoized so the tag mapping, sort and filters below don't rerun on every keystroke.
+  const rawExercises = useMemo<Exercise[]>(
+    () => (data as AvailableExercisesResponse)?.availableExercises || [],
+    [data]
+  );
+  const tags = useMemo(() => (tagsData as ExerciseTagsResponse)?.exerciseTags || [], [tagsData]);
+  const categories = useMemo(
+    () => (categoriesData as TagCategoriesResponse)?.tagsByOrganizationId || [],
+    [categoriesData]
+  );
 
   // Map tag IDs to full tag objects (with colors resolved from categories)
-  const tagsMap = createTagsMap(tags, categories);
-  const exercises = mapExercisesWithTags(rawExercises, tagsMap);
+  const tagsMap = useMemo(() => createTagsMap(tags, categories), [tags, categories]);
+  const exercises = useMemo(() => mapExercisesWithTags(rawExercises, tagsMap), [rawExercises, tagsMap]);
 
   // Filtrowanie po źródle (zakładki)
   const sourceFilteredExercises = useMemo(() => {
@@ -200,9 +207,10 @@ export default function ExercisesPage() {
   // Stats - łączna liczba (po deduplikacji)
   const totalCount = exercises.length;
 
-  const filteredExercises = filterExercisesBySearch(
-    sortExercisesByNewest(sourceFilteredExercises),
-    searchQuery
+  const sortedExercises = useMemo(() => sortExercisesByNewest(sourceFilteredExercises), [sourceFilteredExercises]);
+  const filteredExercises = useMemo(
+    () => filterExercisesBySearch(sortedExercises, searchQuery),
+    [sortedExercises, searchQuery]
   );
 
   const handleView = (exercise: Exercise) => {

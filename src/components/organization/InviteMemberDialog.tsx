@@ -21,6 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ShareSheet } from '@/components/organization/ShareSheet';
 import { SEND_INVITATION_MUTATION, GENERATE_INVITE_LINK_MUTATION } from '@/graphql/mutations/organizations.mutations';
 import type { GenerateInviteLinkResponse } from '@/types/apollo';
+import { buildInviteUrl } from '@/lib/organization/inviteUrl';
 
 // ========================================
 // Schema & Types
@@ -160,8 +161,7 @@ export function InviteMemberDialog({
           toast.error('Brak tokenu w odpowiedzi');
           return;
         }
-        const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://app.fizjo.pl';
-        const url = `${baseUrl}/invite?token=${token}`;
+        const url = buildInviteUrl(token);
 
         setGeneratedLink({
           token,

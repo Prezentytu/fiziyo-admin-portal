@@ -55,34 +55,12 @@ export const ASSIGN_PATIENTS_TO_CLINIC_MUTATION = gql`
 `;
 
 /**
- * Mutacja do usuwania przypisań pacjentów z gabinetu
- */
-export const REMOVE_PATIENTS_FROM_CLINIC_MUTATION = gql`
-  mutation RemovePatientsFromClinic($clinicId: String!, $patientIds: [String!]!) {
-    removePatientsFromClinic(clinicId: $clinicId, patientIds: $patientIds) {
-      removed
-    }
-  }
-`;
-
-/**
  * Mutacja do przypisywania fizjoterapeutów do gabinetu
  */
 export const ASSIGN_THERAPISTS_TO_CLINIC_MUTATION = gql`
   mutation AssignTherapistsToClinic($clinicId: String!, $therapistIds: [String!]!) {
     assignTherapistsToClinic(clinicId: $clinicId, therapistIds: $therapistIds) {
       assigned
-    }
-  }
-`;
-
-/**
- * Mutacja do usuwania przypisań fizjoterapeutów z gabinetu
- */
-export const REMOVE_THERAPISTS_FROM_CLINIC_MUTATION = gql`
-  mutation RemoveTherapistsFromClinic($clinicId: String!, $therapistIds: [String!]!) {
-    removeTherapistsFromClinic(clinicId: $clinicId, therapistIds: $therapistIds) {
-      removed
     }
   }
 `;

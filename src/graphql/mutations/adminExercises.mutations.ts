@@ -50,21 +50,6 @@ export const UNPUBLISH_EXERCISE_MUTATION = gql`
   ${ADMIN_EXERCISE_FRAGMENT}
 `;
 
-/**
- * Batch approve multiple exercises
- * @param exerciseIds - Array of exercise IDs to approve
- */
-export const BATCH_APPROVE_EXERCISES_MUTATION = gql`
-  mutation BatchApproveExercises($exerciseIds: [String!]!) {
-    batchApproveExercises(exerciseIds: $exerciseIds) {
-      success
-      processedCount
-      totalRequested
-      errors
-    }
-  }
-`;
-
 export const BATCH_ARCHIVE_EXERCISES_MUTATION = gql`
   mutation BatchArchiveExercises($exerciseIds: [String!]!, $reason: String) {
     batchArchiveExercises(exerciseIds: $exerciseIds, reason: $reason) {
@@ -72,20 +57,6 @@ export const BATCH_ARCHIVE_EXERCISES_MUTATION = gql`
       successCount
       failedIds
       errors
-    }
-  }
-`;
-
-/**
- * Publish all approved exercises - changes status to Published
- * Makes exercises visible to all users
- */
-export const PUBLISH_APPROVED_EXERCISES_MUTATION = gql`
-  mutation PublishApprovedExercises {
-    publishApprovedExercises {
-      success
-      publishedCount
-      message
     }
   }
 `;
@@ -133,41 +104,6 @@ export const IMPORT_EXERCISES_TO_REVIEW_MUTATION = gql`
 export const UPDATE_EXERCISE_FIELD_MUTATION = gql`
   mutation UpdateExerciseField($exerciseId: String!, $fieldName: String!, $value: String) {
     updateExerciseField(exerciseId: $exerciseId, fieldName: $fieldName, value: $value) {
-      ...AdminExerciseFragment
-    }
-  }
-  ${ADMIN_EXERCISE_FRAGMENT}
-`;
-
-/**
- * Approve exercise and get next one - for "Approve & Next" flow
- * Returns the approved exercise and the next pending exercise
- * @param exerciseId - ID of the exercise to approve
- * @param reviewNotes - Optional review notes
- */
-export const APPROVE_EXERCISE_AND_GET_NEXT_MUTATION = gql`
-  mutation ApproveExerciseAndGetNext($exerciseId: String!, $reviewNotes: String) {
-    approveExerciseAndGetNext(exerciseId: $exerciseId, reviewNotes: $reviewNotes) {
-      approvedExercise {
-        ...AdminExerciseFragment
-      }
-      nextExercise {
-        ...AdminExerciseFragment
-      }
-      remainingCount
-    }
-  }
-  ${ADMIN_EXERCISE_FRAGMENT}
-`;
-
-/**
- * Batch update exercise fields - for saving multiple changes at once
- * @param exerciseId - ID of the exercise to update
- * @param updates - Object with field:value pairs
- */
-export const BATCH_UPDATE_EXERCISE_FIELDS_MUTATION = gql`
-  mutation BatchUpdateExerciseFields($exerciseId: String!, $updates: JSON!) {
-    batchUpdateExerciseFields(exerciseId: $exerciseId, updates: $updates) {
       ...AdminExerciseFragment
     }
   }
@@ -276,22 +212,4 @@ export const REMOVE_EXERCISE_RELATION_MUTATION = gql`
   mutation RemoveExerciseRelation($sourceExerciseId: String!, $relationType: ExerciseRelationType!) {
     removeExerciseRelation(sourceExerciseId: $sourceExerciseId, relationType: $relationType)
   }
-`;
-
-/**
- * Batch set relations during approve
- * Saves all relationships when approving exercise
- */
-export const SET_EXERCISE_RELATIONS_BATCH_MUTATION = gql`
-  mutation SetExerciseRelationsBatch($exerciseId: String!, $regressionId: String, $progressionId: String) {
-    setExerciseRelationsBatch(exerciseId: $exerciseId, regressionId: $regressionId, progressionId: $progressionId) {
-      regression {
-        ...ExerciseRelationFragment
-      }
-      progression {
-        ...ExerciseRelationFragment
-      }
-    }
-  }
-  ${EXERCISE_RELATION_FRAGMENT}
 `;

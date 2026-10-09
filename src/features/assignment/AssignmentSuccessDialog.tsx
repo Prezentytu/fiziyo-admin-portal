@@ -4,7 +4,6 @@ import { useState, useRef, useCallback } from 'react';
 import { useQuery } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
-import { pdf } from '@react-pdf/renderer';
 import { CheckCircle2, Download, Printer, ChevronDown, Copy, Check, Smartphone, Share2, Calendar, Sparkles, User, Users, FileText, QrCode } from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -16,7 +15,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { ScheduleSummary } from '@/components/shared';
 import { toast } from 'sonner';
 
-import { ExerciseSetPDF, preloadPdfExerciseImages, resolvePdfExerciseImageUrl } from '@/components/pdf';
+import { loadPdfRenderer } from '@/components/pdf/loadPdfRenderer';
+import { preloadPdfExerciseImages, resolvePdfExerciseImageUrl } from '@/components/pdf/pdfExerciseUtils';
 import type {
   PDFExerciseSet,
   PDFOrganization,
@@ -267,6 +267,7 @@ export function AssignmentSuccessDialog({
       const qrCodeDataUrl = getQRCodeDataUrl();
 
       // Generuj dokument PDF
+      const { pdf, ExerciseSetPDF } = await loadPdfRenderer();
       const doc = (
         <ExerciseSetPDF
           exerciseSet={pdfExerciseSet}

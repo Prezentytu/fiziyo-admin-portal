@@ -4,7 +4,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { FIND_USER_BY_EMAIL_QUERY } from '@/graphql/queries/users.queries';
 import { GET_ALL_THERAPIST_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
-import { SmartPatientLookup } from '../SmartPatientLookup';
 import { UnifiedPatientInput } from '../UnifiedPatientInput';
 
 const mockUseQuery = vi.fn();
@@ -50,15 +49,13 @@ describe.each(['https://clinic.example', 'http://localhost:4317'])('patient navi
     vi.unstubAllGlobals();
   });
 
-  it.each(['unified-click', 'unified-enter', 'smart-click'] as const)(
+  it.each(['unified-click', 'unified-enter'] as const)(
     'keeps full-page same-origin navigation for %s without assigning the patient again',
     async (mode) => {
       const user = userEvent.setup();
       const onSuccess = vi.fn();
-      const Component = mode === 'smart-click' ? SmartPatientLookup : UnifiedPatientInput;
-
       render(
-        <Component
+        <UnifiedPatientInput
           organizationId="org-1"
           therapistId="therapist-1"
           onSuccess={onSuccess}
@@ -67,15 +64,10 @@ describe.each(['https://clinic.example', 'http://localhost:4317'])('patient navi
         />
       );
 
-      const inputId = mode === 'smart-click' ? 'patient-lookup-email-input' : 'patient-unified-input';
-      await user.type(screen.getByTestId(inputId), 'patient@example.com');
-      if (mode !== 'smart-click') {
-        await user.click(screen.getByTestId('patient-unified-next-btn'));
-      }
+      await user.type(screen.getByTestId('patient-unified-input'), 'patient@example.com');
+      await user.click(screen.getByTestId('patient-unified-next-btn'));
 
-      const profileButton = await screen.findByTestId(
-        mode === 'smart-click' ? 'patient-lookup-go-to-patient-btn' : 'patient-unified-go-to-profile-btn'
-      );
+      const profileButton = await screen.findByTestId('patient-unified-go-to-profile-btn');
       if (mode === 'unified-enter') {
         profileButton.focus();
         await user.keyboard('{Enter}');

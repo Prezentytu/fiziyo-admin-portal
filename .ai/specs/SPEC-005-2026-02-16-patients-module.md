@@ -16,61 +16,42 @@ Moduł pacjentów umożliwia zarządzanie bazą pacjentów fizjoterapeuty - doda
 
 ### Komponenty UI (31)
 
-| Komponent                      | Odpowiedzialność                                             |
-| ------------------------------ | ------------------------------------------------------------ |
-| `PatientCard`                  | Karta pacjenta w liście                                      |
-| `PatientForm`                  | Formularz danych pacjenta                                    |
-| `PatientDialog`                | Dialog szczegółów                                            |
-| `EditPatientDialog`            | Edycja danych pacjenta                                       |
-| `SmartPatientLookup`           | Wyszukiwanie pacjenta po email/telefonie z auto-wypełnianiem |
-| `UnifiedPatientInput`          | Zunifikowany input dodawania pacjenta                        |
-| `PatientAssignmentCard`        | Karta przypisania zestawu                                    |
-| `EditAssignmentScheduleDialog` | Edycja harmonogramu przypisania                              |
-| `EditExerciseOverrideDialog`   | Nadpisywanie parametrów ćwiczenia dla pacjenta               |
-| `ActivityReport`               | Raport aktywności pacjenta                                   |
-| `ActivityChart`                | Wykres aktywności                                            |
-| `ExerciseStats`                | Statystyki ćwiczeń pacjenta                                  |
-| `PatientNotes`                 | Notatki o pacjencie                                          |
-| `PatientQRCodeDialog`          | Kod QR dla pacjenta (link do aplikacji)                      |
-| `TherapistBadge`               | Badge terapeuty przypisanego                                 |
-| `TakeOverDialog`               | Przejęcie pacjenta od innego terapeuty                       |
-| `ExtendSetDialog`              | Przedłużenie zestawu ćwiczeń                                 |
-| `PatientQuickStats`            | Szybkie statystyki pacjenta                                  |
-| `PatientExpandableCard`        | Rozwijana karta pacjenta                                     |
-| `ExercisePreviewDrawer`        | Drawer podglądu ćwiczenia                                    |
-| `AddExerciseToPatientDialog`   | Dodanie ćwiczenia bezpośrednio do pacjenta                   |
-| `PremiumStatusBadge`           | Badge statusu premium                                        |
-| `ActivatePremiumDialog`        | Aktywacja premium dla pacjenta                               |
-| `TherapyStatusCard`            | Karta statusu terapii                                        |
-| `NextStepCard`                 | Następne kroki w terapii                                     |
-| `FeelingsHeatmap`              | Heatmapa samopoczucia pacjenta                               |
-| `EventJournal`                 | Dziennik zdarzeń                                             |
-| `EditContextLabelDialog`       | Edycja etykiety kontekstu                                    |
-| `SetFilters`                   | Filtrowanie przypisań                                        |
-| `PatientThumbnail`             | Miniaturka pacjenta                                          |
-| `PatientFilter`                | Filtrowanie listy pacjentów                                  |
+| Komponent                    | Odpowiedzialność                               |
+| ---------------------------- | ---------------------------------------------- |
+| `PatientForm`                | Formularz danych pacjenta                      |
+| `PatientDialog`              | Dialog szczegółów                              |
+| `EditPatientDialog`          | Edycja danych pacjenta                         |
+| `UnifiedPatientInput`        | Zunifikowany input dodawania pacjenta          |
+| `PatientAssignmentCard`      | Karta przypisania zestawu                      |
+| `EditExerciseOverrideDialog` | Nadpisywanie parametrów ćwiczenia dla pacjenta |
+| `ActivityReport`             | Raport aktywności pacjenta                     |
+| `PatientQRCodeDialog`        | Kod QR dla pacjenta (link do aplikacji)        |
+| `TherapistBadge`             | Badge terapeuty przypisanego                   |
+| `TakeOverDialog`             | Przejęcie pacjenta od innego terapeuty         |
+| `ExtendSetDialog`            | Przedłużenie zestawu ćwiczeń                   |
+| `PatientExpandableCard`      | Rozwijana karta pacjenta                       |
+| `ExercisePreviewDrawer`      | Drawer podglądu ćwiczenia                      |
+| `AddExerciseToPatientDialog` | Dodanie ćwiczenia bezpośrednio do pacjenta     |
+| `PremiumStatusBadge`         | Badge statusu premium                          |
+| `ActivatePremiumDialog`      | Aktywacja premium dla pacjenta                 |
+| `TherapyStatusCard`          | Karta statusu terapii                          |
+| `NextStepCard`               | Następne kroki w terapii                       |
+| `FeelingsHeatmap`            | Heatmapa samopoczucia pacjenta                 |
+| `EventJournal`               | Dziennik zdarzeń                               |
+| `EditContextLabelDialog`     | Edycja etykiety kontekstu                      |
 
 ### Interfejsy API (GraphQL)
 
 **Queries:**
 
-- `GET_PATIENT_DASHBOARD_QUERY` - dashboard pacjenta
-- `GET_PATIENT_ASSIGNMENTS_QUERY` - przypisania pacjenta
 - `GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY` - przypisania po user ID
-- `GET_ACTIVE_PATIENT_ASSIGNMENTS_QUERY` - aktywne przypisania
-- `GET_PATIENT_ASSIGNMENT_BY_ID_QUERY` - szczegóły przypisania
-- `GET_ASSIGNMENTS_WITH_USERS_QUERY` - przypisania z danymi pacjentów
 - `FIND_USER_BY_EMAIL_QUERY`, `FIND_USER_BY_PHONE_QUERY` - wyszukiwanie pacjenta
-- `GET_USERS_QUERY`, `GET_USER_BY_ID_QUERY` - dane użytkowników
-- `GET_ORGANIZATION_THERAPISTS_QUERY` - terapeuci organizacji
+- `GET_USER_BY_ID_QUERY` - dane użytkowników
 
 **Mutations:**
 
-- Shadow patients: `CREATE_SHADOW_PATIENT_MUTATION`, `ACTIVATE_SHADOW_PATIENT_MUTATION`, `UPDATE_SHADOW_PATIENT_MUTATION`
-- Premium: `ACTIVATE_PATIENT_PREMIUM_MUTATION`
+- Shadow patients: `CREATE_SHADOW_PATIENT_MUTATION`, `UPDATE_SHADOW_PATIENT_MUTATION`
 - Profile: `UPDATE_USER_MUTATION`, `UPDATE_USER_PROFILE_MUTATION`
-- Progress: `MARK_EXERCISE_COMPLETED_MUTATION`, `START_EXERCISE_SESSION_MUTATION`, `UPDATE_EXERCISE_PROGRESS_MUTATION`
-- Feedback: `SAVE_EXERCISE_FEEDBACK_MUTATION`
 
 ### Kluczowe typy danych
 
@@ -85,11 +66,10 @@ Moduł pacjentów umożliwia zarządzanie bazą pacjentów fizjoterapeuty - doda
 
 Prefiks: `patient-`
 
-- `patient-card-{id}`
 - `patient-form-submit-btn`
 - `patient-form-firstname-input`
-- `patient-assignment-card-{id}`
-- `patient-qr-code-btn`
+- `patient-assignment-{id}`
+- `patient-qr-dialog`
 - `patient-therapy-status-card`
 - `patient-therapy-status-badge`
 - `patient-next-step-call-btn`
@@ -117,6 +97,10 @@ Status terapii jest liczony lokalnie na froncie przez `calculateTherapyStatus` (
 - Akcje „Napisz” i „Brawo” wyświetlają informację o dostępności funkcji „wkrótce”.
 
 ## Changelog
+
+### 2026-10-09
+
+- Porządki po przeglądzie kodu: usunięto nieużywane komponenty i operacje GraphQL bez konsumenta w panelu; tabele komponentów i listy API pokazują tylko kod, który istnieje.
 
 ### 2026-05-28
 

@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useQuery } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
-import { pdf } from '@react-pdf/renderer';
 import { QRCodeCanvas } from 'qrcode.react';
 import { toast } from 'sonner';
 import { FileDown, Image as ImageIcon, Calendar, QrCode, Loader2, Download, Eye, List } from 'lucide-react';
@@ -23,8 +22,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
-import { ExerciseSetPDF, formatExercises } from '@/components/pdf';
-import { preloadPdfExerciseImages, resolvePdfExerciseImageUrl } from '@/components/pdf';
+import { loadPdfRenderer } from '@/components/pdf/loadPdfRenderer';
+import { formatExercises } from '@/components/pdf/polishUtils';
+import { preloadPdfExerciseImages, resolvePdfExerciseImageUrl } from '@/components/pdf/pdfExerciseUtils';
 import { preloadPdfImages } from '@/components/pdf/pdfImagePreloader';
 import type {
   PDFExerciseSet,
@@ -249,6 +249,7 @@ export function GeneratePDFDialog({
       const qrCodeDataUrl = includeQr ? getQRCodeDataUrl() : undefined;
 
       // Generuj dokument PDF
+      const { pdf, ExerciseSetPDF } = await loadPdfRenderer();
       const doc = (
         <ExerciseSetPDF
           exerciseSet={pdfExerciseSet}

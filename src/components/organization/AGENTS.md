@@ -19,9 +19,9 @@ Ustawienia konta zostaw w `src/components/settings/`.
 
 ## Wzorce
 
-- Zakładki: `MembersTab`, `ClinicsTab`, `InvitationsTab`, `SettingsTab`.
+- Strona organizacji: `TeamSection`, `ClinicsSection`, `InvitationsSection`; `SettingsTab` używa strona `/settings`.
 - Zaproszenie: `InviteMemberDialog` + `InvitationsSection`.
-- Kliniki: `ClinicDialog`, `ClinicCard`, `AssignToClinicDialog`.
+- Kliniki: `ClinicDialog`, `ClinicExpandableCard`, `AssignToClinicDialog`.
 - Katalog: `CatalogBundleImportCard`, `ExerciseVisibilitySettings`.
 - Logika listy zespołu: `teamSectionUtils.ts` + test obok.
 

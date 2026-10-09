@@ -48,6 +48,8 @@ import type {
   OrganizationPatientDto,
   OrganizationPatientsResponse,
 } from '@/types/apollo';
+import { formatRelativeTime } from '@/utils/dateUtils';
+import { isTemplateSet } from '@/features/exercise-sets/utils/setKind';
 
 interface ExerciseSetItem {
   id: string;
@@ -124,20 +126,6 @@ function formatPolishDate(date: Date): string {
   const days = ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'];
   const months = ['sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru'];
   return `${days[date.getDay()]}, ${date.getDate()} ${months[date.getMonth()]}`;
-}
-
-// Format relative time in Polish
-function formatRelativeTime(date: Date): string {
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-  if (diffHours < 1) return 'przed chwilą';
-  if (diffHours < 24) return `${diffHours} godz. temu`;
-  if (diffDays === 1) return 'wczoraj';
-  if (diffDays < 7) return `${diffDays} dni temu`;
-  return `${Math.floor(diffDays / 7)} tyg. temu`;
 }
 
 // Determine activity status based on last activity
@@ -261,7 +249,7 @@ export default function DashboardPage() {
   const quickSelectionSets = useMemo(
     () =>
       exerciseSets
-        .filter((set: ExerciseSetItem) => set.kind === 'TEMPLATE' || set.isTemplate === true)
+        .filter((set: ExerciseSetItem) => isTemplateSet(set))
         .sort((a: ExerciseSetItem, b: ExerciseSetItem) => {
           const dateA = new Date(a.creationTime || 0).getTime();
           const dateB = new Date(b.creationTime || 0).getTime();
