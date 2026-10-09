@@ -29,7 +29,6 @@ Moduł pacjentów umożliwia zarządzanie bazą pacjentów fizjoterapeuty - doda
 | `TherapistBadge`             | Badge terapeuty przypisanego                   |
 | `TakeOverDialog`             | Przejęcie pacjenta od innego terapeuty         |
 | `ExtendSetDialog`            | Przedłużenie zestawu ćwiczeń                   |
-| `PatientQuickStats`          | Szybkie statystyki pacjenta                    |
 | `PatientExpandableCard`      | Rozwijana karta pacjenta                       |
 | `ExercisePreviewDrawer`      | Drawer podglądu ćwiczenia                      |
 | `AddExerciseToPatientDialog` | Dodanie ćwiczenia bezpośrednio do pacjenta     |
@@ -40,7 +39,6 @@ Moduł pacjentów umożliwia zarządzanie bazą pacjentów fizjoterapeuty - doda
 | `FeelingsHeatmap`            | Heatmapa samopoczucia pacjenta                 |
 | `EventJournal`               | Dziennik zdarzeń                               |
 | `EditContextLabelDialog`     | Edycja etykiety kontekstu                      |
-| `PatientThumbnail`           | Miniaturka pacjenta                            |
 
 ### Interfejsy API (GraphQL)
 
@@ -68,11 +66,10 @@ Moduł pacjentów umożliwia zarządzanie bazą pacjentów fizjoterapeuty - doda
 
 Prefiks: `patient-`
 
-- `patient-card-{id}`
 - `patient-form-submit-btn`
 - `patient-form-firstname-input`
-- `patient-assignment-card-{id}`
-- `patient-qr-code-btn`
+- `patient-assignment-{id}`
+- `patient-qr-dialog`
 - `patient-therapy-status-card`
 - `patient-therapy-status-badge`
 - `patient-next-step-call-btn`

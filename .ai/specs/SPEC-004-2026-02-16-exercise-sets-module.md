@@ -23,8 +23,6 @@ Moduł zestawów ćwiczeń pozwala fizjoterapeutom grupować ćwiczenia w logicz
 | `SetNameField`              | Wspólne pole nazwy + AI + inline error              |
 | `SetDescriptionCollapsible` | Wspólny zwijany opis zestawu                        |
 | `createSetSubmit`           | Kanoniczny helper create+addExercise                |
-| `SetForm`                   | Formularz edycji zestawu                            |
-| `SetDialog`                 | Dialog szczegółów zestawu                           |
 | `SetCard`                   | Karta zestawu w liście                              |
 | `SetThumbnail`              | Miniaturka zestawu                                  |
 | `EditExerciseInSetDialog`   | Edycja parametrów ćwiczenia w zestawie              |
@@ -58,10 +56,11 @@ Moduł zestawów ćwiczeń pozwala fizjoterapeutom grupować ćwiczenia w logicz
 Prefiks: `set-`
 
 - `set-card-{id}`
-- `set-form-submit-btn`
-- `set-wizard-next-btn`
+- `set-create-wizard-btn`
+- `set-composer-create-btn`
+- `set-edit-full-submit-btn`
 - `set-frequency-picker`
-- `set-add-exercise-btn`
+- `set-add-exercise-submit-btn`
 
 ### Generowanie PDF (GeneratePDFDialog) - przeplyw obrazow
 

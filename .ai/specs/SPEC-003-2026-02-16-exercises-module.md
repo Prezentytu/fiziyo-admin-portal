@@ -120,11 +120,11 @@ Wszystkie powierzchnie UI wyświetlające szczegóły ćwiczenia muszą korzysta
 
 ## Architektura
 
-### Komponenty UI (16)
+### Komponenty UI
 
 | Komponent              | Odpowiedzialność                            |
 | ---------------------- | ------------------------------------------- |
-| `ExerciseForm`         | Główny formularz tworzenia/edycji ćwiczenia |
+| `ExerciseEditor`       | Główny formularz tworzenia/edycji ćwiczenia |
 | `ExerciseCard`         | Karta ćwiczenia w liście/gridzie            |
 | `ExerciseDialog`       | Dialog szczegółów ćwiczenia                 |
 | `CreateExerciseWizard` | Wizard tworzenia nowego ćwiczenia           |
@@ -141,10 +141,11 @@ Na ekranie szczegółów ćwiczenia akcja `Dodaj do zestawu` otwiera `CreateSetW
 
 **Queries:**
 
-- `GET_EXERCISES_QUERY` - lista ćwiczeń z filtrowaniem
 - `GET_EXERCISE_BY_ID_QUERY` - pojedyncze ćwiczenie
-- `GET_ORGANIZATION_EXERCISES_QUERY` - ćwiczenia organizacji
-- `GET_AVAILABLE_EXERCISES_QUERY` - dostępne ćwiczenia
+- `GET_ORGANIZATION_EXERCISES_QUERY` - lista ćwiczeń organizacji w panelu
+- `GET_AVAILABLE_EXERCISES_QUERY` - ćwiczenia dostępne dla organizacji (własne + globalne)
+
+`GET_EXERCISES_QUERY` (nieograniczona lista `exercises`) jest tylko w mobile; panel go nie eksportuje (`src/graphql/__tests__/exercisesQuerySurface.test.ts`).
 
 **Mutations:**
 
@@ -164,11 +165,10 @@ Na ekranie szczegółów ćwiczenia akcja `Dodaj do zestawu` otwiera `CreateSetW
 
 Prefiks: `exercise-`
 
-- `exercise-form-submit-btn`
 - `exercise-card-{id}`
-- `exercise-dialog-edit-btn`
-- `exercise-tag-picker`
-- `exercise-voice-input-btn`
+- `exercise-editor-name-input`
+- `exercise-dialog-save-btn`
+- `exercise-create-save-btn`
 
 ## Changelog
 

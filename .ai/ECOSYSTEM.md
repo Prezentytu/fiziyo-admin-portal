@@ -40,9 +40,8 @@ Zapytania używane w obu frontendach (wspólne resolwery):
 
 ### Operacje tylko w panelu admin
 
-- Billing/Revenue: `GET_BILLING_QUERY`, `GET_REVENUE_QUERY`
-- AI Credits: `GET_AI_CREDITS_QUERY`
-- Weryfikacja globalna: `GET_ADMIN_EXERCISES_QUERY`, `SUBMIT_TO_GLOBAL_REVIEW_MUTATION`
+- Billing/Revenue: `GET_CURRENT_BILLING_STATUS_QUERY`, `GET_REVENUE_HISTORY_QUERY`, `GET_BILLING_DETAILS_QUERY`, `UPDATE_BILLING_DETAILS_MUTATION`
+- Weryfikacja globalna: `GET_VERIFICATION_QUEUE_PAGE_QUERY`, `GET_VERIFICATION_QUEUE_NAVIGATOR_QUERY`, `GET_VERIFICATION_STATS_QUERY`, `SUBMIT_TO_GLOBAL_REVIEW_MUTATION`
 - Weryfikacja organizacyjna: `GET_ORGANIZATION_VERIFICATION_*`, `SUBMIT_FOR_ORGANIZATION_REVIEW_MUTATION`, `APPROVE_ORGANIZATION_EXERCISE_MUTATION`
 - Subskrypcje real-time: exercises, exerciseSets, patients, therapistAssignments, members
 

@@ -114,7 +114,7 @@ Przykłady: `3 × 10`, `3 × 10 × 10s`, `3 × 1 × 30s`
 ## Konwencje data-testid
 
 Prefiks: `exercise-`
-Przykłady: `exercise-form-submit-btn`, `exercise-form-name-input`, `exercise-card-{id}`
+Przykłady: `exercise-editor-name-input`, `exercise-dialog-save-btn`, `exercise-card-{id}`
 
 ## Weryfikacja organizacyjna (OrganizationVerificationStatus)
 

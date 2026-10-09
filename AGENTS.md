@@ -167,14 +167,14 @@ import { useState } from 'react';
 
 ```typescript
 // ✅ Poprawnie: useQuery z skip
-const { data, loading } = useQuery(GET_EXERCISES_QUERY, {
+const { data, loading } = useQuery(GET_ORGANIZATION_EXERCISES_QUERY, {
   variables: { organizationId: orgId || '' },
   skip: !orgId,
   fetchPolicy: 'cache-first',
 });
 
 // ❌ Zakazane w tym repo: useLazyQuery
-const [fetch] = useLazyQuery(GET_EXERCISES_QUERY);
+const [fetch] = useLazyQuery(GET_ORGANIZATION_EXERCISES_QUERY);
 ```
 
 ### Formularze - react-hook-form + zod
@@ -228,7 +228,7 @@ import { Button } from '@/components/ui/button';
 import { ExerciseCard } from '@/features/exercises/ExerciseCard';
 
 // 4. GraphQL
-import { GET_EXERCISES_QUERY } from '@/graphql/queries';
+import { GET_ORGANIZATION_EXERCISES_QUERY } from '@/graphql/queries';
 
 // 5. Utils i typy
 import { cn } from '@/lib/utils';
@@ -237,13 +237,13 @@ import type { Exercise } from '@/types';
 
 ## Konwencje nazewnictwa
 
-| Typ               | Konwencja   | Przykład              |
-| ----------------- | ----------- | --------------------- |
-| Komponenty        | PascalCase  | `ExerciseCard.tsx`    |
-| Utils             | camelCase   | `dateUtils.ts`        |
-| Stałe             | UPPER_SNAKE | `MAX_RETRY_COUNT`     |
-| Zapytania GraphQL | UPPER_SNAKE | `GET_EXERCISES_QUERY` |
-| Foldery           | kebab-case  | `exercise-sets/`      |
+| Typ               | Konwencja   | Przykład                   |
+| ----------------- | ----------- | -------------------------- |
+| Komponenty        | PascalCase  | `ExerciseCard.tsx`         |
+| Utils             | camelCase   | `dateUtils.ts`             |
+| Stałe             | UPPER_SNAKE | `MAX_RETRY_COUNT`          |
+| Zapytania GraphQL | UPPER_SNAKE | `GET_EXERCISE_BY_ID_QUERY` |
+| Foldery           | kebab-case  | `exercise-sets/`           |
 
 ## Testowanie - data-testid
 
