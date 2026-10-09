@@ -81,14 +81,22 @@ export class HttpLinkFactory {
     // Czekaj na slot (throttling)
     await this.waitForSlot();
 
-    // Tworzenie timeout promise
-    const timeoutPromise = new Promise<Response>((_, reject) =>
-      setTimeout(() => reject(new Error('Request timeout')), this.TIMEOUT_MS)
-    );
+    // Timeout przerywa fetch (zwalnia slot), a abort od Apollo nadal działa.
+    const controller = new AbortController();
+    let timedOut = false;
+    const timeoutId = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, this.TIMEOUT_MS);
+    const callerSignal = options?.signal;
+    const onCallerAbort = () => controller.abort(callerSignal?.reason);
+    if (callerSignal?.aborted) onCallerAbort();
+    else callerSignal?.addEventListener('abort', onCallerAbort, { once: true });
 
     try {
-      // Wyścig między fetch a timeout
-      const response = await Promise.race([fetch(uri, options), timeoutPromise]);
+      const response = await fetch(uri, { ...options, signal: controller.signal }).catch((error: unknown) => {
+        throw timedOut ? new Error('Request timeout') : error;
+      });
 
       // Podstawowe logowanie response (bez parsowania body)
       this.logger.logResponse(response);
@@ -130,6 +138,8 @@ export class HttpLinkFactory {
       this.logger.logError(error);
       throw error;
     } finally {
+      clearTimeout(timeoutId);
+      callerSignal?.removeEventListener('abort', onCallerAbort);
       // Zwolnij slot po zakończeniu (success lub error)
       this.releaseSlot();
     }

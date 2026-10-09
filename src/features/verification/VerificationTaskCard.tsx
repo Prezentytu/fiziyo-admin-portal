@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { HIDE_EXERCISE_TAGS } from '@/components/shared/exercise';
 import type { AdminExercise, ContentStatus } from '@/graphql/types/adminExercise.types';
+import { formatRelativeTime } from '@/utils/dateUtils';
 
 interface VerificationTaskCardProps {
   exercise: AdminExercise;
@@ -73,22 +74,6 @@ function getQualityIndicators(exercise: AdminExercise) {
   }
 
   return indicators;
-}
-
-function formatRelativeTime(dateString?: string): string {
-  if (!dateString) return '';
-
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-  if (diffHours < 1) return 'przed chwilą';
-  if (diffHours < 24) return `${diffHours} godz. temu`;
-  if (diffDays === 1) return 'wczoraj';
-  if (diffDays < 7) return `${diffDays} dni temu`;
-  return `${Math.floor(diffDays / 7)} tyg. temu`;
 }
 
 export function VerificationTaskCard({

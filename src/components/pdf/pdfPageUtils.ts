@@ -1,4 +1,4 @@
-import { formatDurationPolish, formatSeconds } from './polishUtils';
+import { formatDurationPolish, formatSecondsPolish } from '@/utils/durationPolish';
 
 export const PDF_EXERCISES_PER_FULL_PAGE = 4;
 export const PDF_EXERCISES_PER_COMPACT_PAGE = 10;
@@ -42,10 +42,10 @@ export function formatExecutionParameters(params: ExecutionParametersInput): For
     items.push({ label: 'Czas', value: formatDurationPolish(params.duration) });
   }
   if (params.executionTime) {
-    items.push({ label: 'Czas powtórzenia', value: formatSeconds(params.executionTime) });
+    items.push({ label: 'Czas powtórzenia', value: formatSecondsPolish(params.executionTime) });
   }
   if (params.restSets) {
-    items.push({ label: 'Przerwa', value: formatSeconds(params.restSets) });
+    items.push({ label: 'Przerwa', value: formatSecondsPolish(params.restSets) });
   }
   if (items.length === 0) {
     items.push({ label: 'Podstawowe parametry', value: 'Wg zaleceń' });

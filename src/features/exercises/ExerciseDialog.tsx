@@ -88,9 +88,10 @@ export function ExerciseDialog({
   } = useExerciseImageGeneration();
   const [isMediaStateReady, setIsMediaStateReady] = useState(false);
   const mediaFileInputRef = useRef<HTMLInputElement>(null);
+  // Only needed for the copy-name suggestion; don't fetch the whole library while the dialog is closed.
   const { data: organizationExercisesData } = useQuery(GET_ORGANIZATION_EXERCISES_QUERY, {
     variables: { organizationId },
-    skip: !organizationId,
+    skip: !organizationId || !open,
   });
 
   const initialMediaUrls = useMemo(() => {

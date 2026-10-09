@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Check, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getInitialsFromName } from '@/utils/textUtils';
 
 // ========================================
 // Helpers
@@ -29,15 +30,6 @@ const roleLabels: Record<string, string> = {
   MEMBER: 'Członek',
   member: 'Członek',
 };
-
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map((word) => word[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
-}
 
 // ========================================
 // Component
@@ -81,7 +73,7 @@ export function MobileOrgIndicator() {
         </span>
       ) : (
         <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/20 text-primary text-[10px] font-bold">
-          {getInitials(currentOrganization.organizationName)}
+          {getInitialsFromName(currentOrganization.organizationName)}
         </div>
       )}
 
@@ -134,7 +126,7 @@ export function MobileOrgIndicator() {
                 </span>
               ) : (
                 <div className="flex h-7 w-7 items-center justify-center rounded-md bg-surface-light text-[10px] font-semibold text-muted-foreground shrink-0">
-                  {getInitials(org.organizationName)}
+                  {getInitialsFromName(org.organizationName)}
                 </div>
               )}
 

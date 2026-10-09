@@ -156,6 +156,21 @@ export const getInitials = (firstName: string | null | undefined, lastName: stri
 };
 
 /**
+ * Inicjały z pełnej nazwy (maks. 2 znaki), np. nazwa gabinetu albo „Jan Kowalski”.
+ *
+ * @example
+ * getInitialsFromName('Jan Kowalski') // => "JK"
+ * getInitialsFromName('Fizjo Centrum Warszawa') // => "FC"
+ */
+export const getInitialsFromName = (name: string): string =>
+  name
+    .split(' ')
+    .map((word) => word[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+
+/**
  * Typy słów dla polskiej odmiany liczebników
  */
 export type PluralWord =

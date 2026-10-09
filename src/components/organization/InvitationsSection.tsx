@@ -36,6 +36,7 @@ import { GET_ORGANIZATION_INVITATIONS_QUERY } from '@/graphql/queries/organizati
 import { RESEND_INVITATION_MUTATION, REVOKE_INVITATION_MUTATION } from '@/graphql/mutations/organizations.mutations';
 import type { OrganizationInvitationsResponse, OrganizationInvitation } from '@/types/apollo';
 import { cn } from '@/lib/utils';
+import { buildInviteUrl } from '@/lib/organization/inviteUrl';
 
 // ========================================
 // Types
@@ -80,11 +81,6 @@ const statusConfig: Record<string, { label: string; color: string; icon: React.E
     icon: X,
   },
 };
-
-function getInviteUrl(token: string): string {
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://app.fizjo.pl';
-  return `${baseUrl}/invite?token=${token}`;
-}
 
 // ========================================
 // Component
@@ -140,7 +136,7 @@ export function InvitationsSection({ organizationId, onInviteClick }: Invitation
       toast.error('Brak tokenu zaproszenia');
       return;
     }
-    const url = getInviteUrl(invitation.invitationToken);
+    const url = buildInviteUrl(invitation.invitationToken);
     await navigator.clipboard.writeText(url);
     toast.success('Link skopiowany do schowka');
   };

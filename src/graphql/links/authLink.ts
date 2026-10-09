@@ -16,6 +16,9 @@ export class AuthLinkFactory {
   create(): ApolloLink {
     return new ApolloLink((operation: Operation, forward: NextLink): Observable<FetchResult> => {
       return new Observable<FetchResult>((observer) => {
+        let subscription: { unsubscribe(): void } | undefined;
+        let closed = false;
+
         const handleRequest = async () => {
           try {
             const token = await this.tokenProvider.getToken();
@@ -35,17 +38,24 @@ export class AuthLinkFactory {
             // Kontynuuj bez autoryzacji
           }
 
+          // Operacja anulowana w trakcie pobierania tokenu - nie wysyłaj requestu
+          if (closed) return;
+
           // Przekaż operację dalej
-          const subscription = forward(operation).subscribe({
+          subscription = forward(operation).subscribe({
             next: observer.next.bind(observer),
             error: observer.error.bind(observer),
             complete: observer.complete.bind(observer),
           });
-
-          return () => subscription.unsubscribe();
         };
 
         handleRequest();
+
+        // Cleanup musi wrócić z subscribera, a nie z funkcji async - inaczej unsubscribe nie anuluje requestu
+        return () => {
+          closed = true;
+          subscription?.unsubscribe();
+        };
       });
     });
   }

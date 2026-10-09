@@ -93,6 +93,7 @@ import type {
   ExerciseSetWithAssignmentsQueryData,
   PatientAssignmentsByUserQueryData,
 } from '@/graphql/types/operation-responses';
+import { isTemplateSet } from '@/features/exercise-sets/utils/setKind';
 
 // Success dialog data type
 interface SuccessDialogData {
@@ -602,7 +603,7 @@ function AssignmentWizardContent({
   }, [setsData]);
 
   const assignableSourceSets = useMemo(
-    () => exerciseSets.filter((set) => set.kind === 'TEMPLATE' || set.isTemplate === true),
+    () => exerciseSets.filter(isTemplateSet),
     [exerciseSets]
   );
 
@@ -1327,6 +1328,33 @@ function AssignmentWizardContent({
     if (selectedPatients.length === 0) return;
     if (isSubmitting) return;
 
+    // Refetched once after the assignment loop instead of once per patient (each pulls full org lists).
+    const assignRefetchQueries = [
+      // Billing status (aktywni pacjenci premium) - odświeża badge na dashboardzie
+      { query: GET_CURRENT_BILLING_STATUS_QUERY, variables: { organizationId } },
+      // Refresh sets list to update assignment counters on cards
+      { query: GET_ORGANIZATION_EXERCISE_SETS_QUERY, variables: { organizationId } },
+      // Always refetch patients list (premium status may change)
+      { query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'all' } },
+      ...(mode === 'from-patient' && preselectedPatient
+        ? [
+            {
+              query: GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY,
+              variables: { userId: preselectedPatient.id },
+            },
+          ]
+        : []),
+      ...(mode === 'from-set' && preselectedSet
+        ? [
+            {
+              query: GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY,
+              variables: { exerciseSetId: preselectedSet.id },
+            },
+          ]
+        : []),
+    ];
+    let assignedAnyPatient = false;
+
     setIsSubmitting(true);
     try {
       let lastPremiumValidUntil: string | null = null;
@@ -1454,31 +1482,8 @@ function AssignmentWizardContent({
             endDate: endDate.toISOString(),
             frequency: frequencyPayload,
           },
-          refetchQueries: [
-            // Billing status (aktywni pacjenci premium) - odświeża badge na dashboardzie
-            { query: GET_CURRENT_BILLING_STATUS_QUERY, variables: { organizationId } },
-            // Refresh sets list to update assignment counters on cards
-            { query: GET_ORGANIZATION_EXERCISE_SETS_QUERY, variables: { organizationId } },
-            // Always refetch patients list (premium status may change)
-            { query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'all' } },
-            ...(mode === 'from-patient' && preselectedPatient
-              ? [
-                  {
-                    query: GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY,
-                    variables: { userId: preselectedPatient.id },
-                  },
-                ]
-              : []),
-            ...(mode === 'from-set' && preselectedSet
-              ? [
-                  {
-                    query: GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY,
-                    variables: { exerciseSetId: preselectedSet.id },
-                  },
-                ]
-              : []),
-          ],
         });
+        assignedAnyPatient = true;
 
         // Pobierz premiumValidUntil z odpowiedzi (Beta Pilot Flow)
         const responseData = assignResult.data?.assignExerciseSetToPatient;
@@ -1532,6 +1537,11 @@ function AssignmentWizardContent({
       const errorMessage = error instanceof Error ? error.message : null;
       toast.error(errorMessage || 'Nie udało się przypisać zestawu');
     } finally {
+      if (assignedAnyPatient) {
+        void Promise.all(
+          assignRefetchQueries.map((refetch) => apolloClient.query({ ...refetch, fetchPolicy: 'network-only' }))
+        ).catch((refetchError) => console.error('Błąd odświeżania po przypisaniu:', refetchError));
+      }
       setIsSubmitting(false);
     }
   };

@@ -557,7 +557,6 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
               patientId={id}
               therapistId={therapistId}
               organizationId={organizationId}
-              patientName={patient?.fullname}
             />
             <PatientJournalNotes patientId={id} organizationId={organizationId} />
           </div>
@@ -576,7 +575,6 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
           <CardContent className="pt-0">
             <ActivityReport
               patientId={id}
-              patientName={displayName}
               heatmapDays={21}
               journalDays={3}
               onCall={therapyActions.handleCall}

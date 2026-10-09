@@ -39,7 +39,6 @@ interface ClinicalNotesListProps {
   readonly patientId: string;
   readonly therapistId: string;
   readonly organizationId: string;
-  readonly patientName?: string;
 }
 
 const VISIT_TYPE_LABELS: Record<VisitType, string> = {
@@ -53,7 +52,6 @@ export function ClinicalNotesList({
   patientId,
   therapistId,
   organizationId,
-  patientName: _patientName,
 }: ClinicalNotesListProps) {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [selectedNote, setSelectedNote] = useState<ClinicalNote | null>(null);

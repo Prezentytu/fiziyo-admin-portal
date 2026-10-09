@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { TAKE_OVER_PATIENT_MUTATION } from '@/graphql/mutations/therapists.mutations';
 import { GET_ORGANIZATION_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
 import type { TakeOverPatientResponse } from '@/types/apollo';
+import { getInitialsFromName } from '@/utils/textUtils';
 
 interface TherapistInfo {
   id: string;
@@ -94,14 +95,6 @@ export function TakeOverDialog({
   const patientName = patient?.fullname || patient?.email || 'Pacjent';
   const therapistName = previousTherapist?.fullname || previousTherapist?.email || 'poprzedniego fizjoterapeuty';
 
-  const getInitials = (name: string) =>
-    name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .slice(0, 2)
-      .toUpperCase();
-
   // Initial takeover dialog (for unassigned patients or first attempt)
   if (!isConfirming) {
     return (
@@ -120,7 +113,7 @@ export function TakeOverDialog({
             <div className="flex items-center gap-3 p-3 rounded-lg bg-surface border border-border/60">
               <Avatar className="h-10 w-10">
                 <AvatarImage src={patient.image} alt={patientName} />
-                <AvatarFallback className="bg-primary/20 text-primary">{getInitials(patientName)}</AvatarFallback>
+                <AvatarFallback className="bg-primary/20 text-primary">{getInitialsFromName(patientName)}</AvatarFallback>
               </Avatar>
               <div>
                 <span className="font-medium text-foreground block">{patientName}</span>
@@ -165,7 +158,7 @@ export function TakeOverDialog({
             <div className="flex flex-col items-center gap-1">
               <Avatar className="h-12 w-12 ring-2 ring-destructive/30">
                 <AvatarImage src={previousTherapist.image} alt={therapistName} />
-                <AvatarFallback className="bg-muted text-muted-foreground">{getInitials(therapistName)}</AvatarFallback>
+                <AvatarFallback className="bg-muted text-muted-foreground">{getInitialsFromName(therapistName)}</AvatarFallback>
               </Avatar>
               <span className="text-xs text-muted-foreground truncate max-w-[80px]">{therapistName}</span>
             </div>

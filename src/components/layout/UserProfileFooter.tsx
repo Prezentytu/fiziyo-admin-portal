@@ -23,6 +23,7 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import type { UserByClerkIdResponse } from '@/types/apollo';
 import { getCompactDisplayName, resolveDisplayName } from './userDisplayName';
+import { getInitialsFromName } from '@/utils/textUtils';
 
 // ========================================
 // Types
@@ -35,15 +36,6 @@ interface UserProfileFooterProps {
 // ========================================
 // Helpers
 // ========================================
-
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map((word) => word[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
-}
 
 // ========================================
 // Component
@@ -68,7 +60,7 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
   const email = user?.primaryEmailAddress?.emailAddress || backendUser?.email || '';
   const displayName = fullName || email.split('@')[0] || 'Brak danych';
   const compactDisplayName = getCompactDisplayName(displayName);
-  const initials = getInitials(displayName);
+  const initials = getInitialsFromName(displayName);
 
   // Loading state
   if (!isLoaded) {
@@ -185,7 +177,7 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
                     </span>
                   ) : (
                     <div className="flex h-6 w-6 items-center justify-center rounded-md bg-surface-light text-[10px] font-semibold text-muted-foreground">
-                      {getInitials(org.organizationName)}
+                      {getInitialsFromName(org.organizationName)}
                     </div>
                   )}
                   <span className={cn('flex-1 truncate', isActive && 'font-medium')}>{org.organizationName}</span>

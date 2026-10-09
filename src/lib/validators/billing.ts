@@ -5,11 +5,11 @@ export interface ValidationResult {
 
 const NIP_WEIGHTS = [6, 5, 7, 2, 3, 4, 5, 6, 7] as const;
 
-function normalizeNip(rawNip: string): string {
+export function normalizeNip(rawNip: string): string {
   return rawNip.replaceAll(/[\s-]/g, '');
 }
 
-function normalizeIban(rawIban: string): string {
+export function normalizeIban(rawIban: string): string {
   return rawIban.replaceAll(/\s/g, '').toUpperCase();
 }
 

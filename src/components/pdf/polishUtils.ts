@@ -1,4 +1,3 @@
-import { formatDurationPolish as formatDurationPolishShared, formatSecondsPolish } from '@/utils/durationPolish';
 
 /**
  * Funkcje pomocnicze do polskiej odmiany i formatowania
@@ -20,20 +19,6 @@ export function formatReps(count: number): string {
   if (count === 1) return '1 powtórzenie';
   if (count >= 2 && count <= 4) return `${count} powtórzenia`;
   return `${count} powtórzeń`;
-}
-
-/**
- * Odmiana polska dla sekund
- */
-export function formatSeconds(count: number): string {
-  return formatSecondsPolish(count);
-}
-
-/**
- * Formatowanie czasu trwania w czytelnej formie
- */
-export function formatDurationPolish(seconds: number): string {
-  return formatDurationPolishShared(seconds);
 }
 
 /**

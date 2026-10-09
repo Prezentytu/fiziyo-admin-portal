@@ -1,6 +1,7 @@
 import { differenceInDays, format, startOfDay } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { formatFrequencyDisplay } from '@/utils/frequencyDisplay';
+import { pluralize } from '@/utils/textUtils';
 
 const DAY_SHORTCUTS = [
   { key: 'monday', label: 'Pn' },
@@ -45,7 +46,7 @@ export interface ScheduleSummary {
 }
 
 export function pluralizeDay(dayCount: number): string {
-  return dayCount === 1 ? 'dzień' : 'dni';
+  return pluralize(dayCount, 'dzień', false);
 }
 
 export function calculateScheduleSummary(input: ScheduleSummaryInput): ScheduleSummary {

@@ -34,6 +34,7 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import type { UserByClerkIdResponse } from '@/types/apollo';
 import { resolveDisplayName } from './userDisplayName';
+import { getInitialsFromName } from '@/utils/textUtils';
 
 // ========================================
 // Types
@@ -101,15 +102,6 @@ const navigationGroups: NavigationGroup[] = [
 // Helpers
 // ========================================
 
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map((word) => word[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
-}
-
 interface MobileSidebarProps {
   readonly isOpen: boolean;
   readonly onClose: () => void;
@@ -134,7 +126,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
     resolveDisplayName(user?.fullName, user?.firstName, user?.lastName) ||
     'Użytkownik';
   const email = user?.primaryEmailAddress?.emailAddress || backendUser?.email || '';
-  const initials = getInitials(fullName);
+  const initials = getInitialsFromName(fullName);
 
   // Filter navigation groups based on user role
   const filteredNavigationGroups = useMemo(() => {

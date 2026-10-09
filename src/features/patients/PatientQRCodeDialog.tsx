@@ -4,7 +4,6 @@ import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { useQuery } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
-import { pdf } from '@react-pdf/renderer';
 import { Download, Printer, Copy, Check, Smartphone, Share2, User, FilePlus, QrCode } from 'lucide-react';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -12,7 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 
-import { ExerciseSetPDF, preloadPdfExerciseImages, resolvePdfExerciseImageUrl } from '@/components/pdf';
+import { loadPdfRenderer } from '@/components/pdf/loadPdfRenderer';
+import { preloadPdfExerciseImages, resolvePdfExerciseImageUrl } from '@/components/pdf/pdfExerciseUtils';
 import type {
   PDFExerciseSet,
   PDFOrganization,
@@ -475,6 +475,7 @@ export function PatientQRCodeDialog({
 
       const qrCodeDataUrl = getQRCodeDataUrl();
 
+      const { pdf, ExerciseSetPDF } = await loadPdfRenderer();
       const doc = (
         <ExerciseSetPDF
           exerciseSet={pdfExerciseSet}

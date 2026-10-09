@@ -37,6 +37,7 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import { isFiziyoTemplate, isMyTemplate, isPatientPlan, isTemplateSet } from '@/features/exercise-sets/utils/setKind';
 
 type FilterType = 'all-templates' | 'fiziyo-templates' | 'my-templates' | 'patient-plans';
 
@@ -173,13 +174,6 @@ export default function ExerciseSetsPage() {
     }
     return false;
   };
-
-  const isTemplateSet = (set: ExerciseSet) => set.kind === 'TEMPLATE' || set.isTemplate === true;
-  const isFiziyoTemplate = (set: ExerciseSet) => isTemplateSet(set) && set.templateSource === 'FIZIYO_VERIFIED';
-  const isMyTemplate = (set: ExerciseSet) =>
-    isTemplateSet(set)
-    && (set.templateSource === 'ORGANIZATION_PRIVATE' || set.templateSource === 'ORG_PRIVATE' || !set.templateSource);
-  const isPatientPlan = (set: ExerciseSet) => set.kind === 'PATIENT_PLAN';
 
   // Calculate stats
   const allTemplatesCount = exerciseSets.filter(isTemplateSet).length;

@@ -5,6 +5,7 @@ import { Trophy, Flame, CheckCircle2, XCircle, TrendingUp } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { pluralize } from '@/utils/textUtils';
 
 import { GET_REVIEWER_STATS_QUERY } from '@/graphql/queries/adminExercises.queries';
 import type { GetReviewerStatsResponse } from '@/graphql/types/adminExercise.types';
@@ -102,7 +103,7 @@ export function ReviewerAchievements({
             <Flame className="h-4 w-4 text-orange-500 shrink-0" />
             <span className="text-orange-500 font-medium">{stats.currentStreak}</span>
             <span className="text-muted-foreground hidden sm:inline">
-              {stats.currentStreak === 1 ? 'dzień' : 'dni'}
+              {pluralize(stats.currentStreak, 'dzień', false)}
             </span>
           </>
         )}
@@ -166,7 +167,7 @@ export function ReviewerAchievements({
               </span>
             </div>
             <p className="text-[11px] sm:text-xs text-muted-foreground">
-              {stats.currentStreak === 1 ? 'dzień' : stats.currentStreak > 1 && stats.currentStreak < 5 ? 'dni' : 'dni'}{' '}
+              {pluralize(stats.currentStreak, 'dzień', false)}{' '}
               z rzędu
             </p>
           </div>
