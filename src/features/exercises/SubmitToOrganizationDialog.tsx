@@ -90,7 +90,7 @@ export function SubmitToOrganizationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md" data-testid="exercise-submit-to-org-dialog">
+      <DialogContent className="grid-cols-[minmax(0,1fr)] sm:max-w-md" data-testid="exercise-submit-to-org-dialog">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Rocket className="h-5 w-5 text-primary" />
@@ -103,7 +103,7 @@ export function SubmitToOrganizationDialog({
         </DialogHeader>
 
         <div className="rounded-lg bg-muted/50 p-3 mb-4">
-          <p className="font-medium text-sm truncate">{exercise.name}</p>
+          <p className="font-medium text-sm break-words">{exercise.name}</p>
           {exercise.mainTags && exercise.mainTags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-2">
               {(exercise.mainTags as string[]).slice(0, 3).map((tag, index) => (

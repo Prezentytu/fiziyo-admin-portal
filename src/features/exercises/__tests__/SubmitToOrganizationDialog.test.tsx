@@ -42,4 +42,23 @@ describe('SubmitToOrganizationDialog', () => {
 
     expect(screen.getByText('Zgłoś do weryfikacji')).toBeInTheDocument();
   });
+  it('D-M-033: długa nazwa nie rozpycha dialogu (kolumna grid może się zwęzić, nazwa się zawija)', () => {
+    const longName = `E2E D-M-033 ${'Retrakcja i kontrolowane zgięcie szyi z utrzymaniem pozycji '.repeat(2)}`.trim();
+    render(
+      <SubmitToOrganizationDialog
+        open
+        onOpenChange={() => {}}
+        exercise={{ ...baseExercise, name: longName }}
+        onConfirm={vi.fn(async () => {})}
+      />
+    );
+
+    // jsdom has no layout; DialogContent is a grid whose implicit `auto` track grows to the
+    // unwrapped name width, so the track must be shrinkable and the name must wrap.
+    expect(screen.getByTestId('exercise-submit-to-org-dialog')).toHaveClass('grid-cols-[minmax(0,1fr)]');
+    const name = screen.getByText(longName);
+    expect(name).not.toHaveClass('truncate');
+    expect(name).not.toHaveClass('whitespace-nowrap');
+    expect(name).toHaveClass('break-words');
+  });
 });
