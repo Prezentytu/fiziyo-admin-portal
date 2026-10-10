@@ -56,4 +56,31 @@ describe('VerificationTaskCard', () => {
     expect(onSelectionChange).toHaveBeenCalledWith(true);
     expect(screen.getByTestId('verification-card-exercise-1-select-checkbox')).toBeInTheDocument();
   });
+  it('nie oznacza ćwiczenia z filmem YouTube jako „Brak wideo” i nie wstawia linku YouTube do <video>', () => {
+    const { container } = render(
+      <VerificationTaskCard
+        exercise={{ ...baseExercise, videoUrl: 'https://www.youtube.com/watch?v=7rnlAVhAK-8&t=6s', imageUrl: 'https://cdn.example/x.jpg' }}
+      />
+    );
+
+    expect(screen.queryByText('Brak wideo')).not.toBeInTheDocument();
+    expect(screen.getByText('Wideo')).toBeInTheDocument();
+    expect(container.querySelector('video')).toBeNull();
+  });
+
+  it('pokazuje podgląd <video> dla bezpośredniego pliku wideo', () => {
+    const { container } = render(
+      <VerificationTaskCard exercise={{ ...baseExercise, videoUrl: 'https://cdn.example/clip.mp4' }} />
+    );
+
+    expect(screen.queryByText('Brak wideo')).not.toBeInTheDocument();
+    expect(container.querySelector('video')).not.toBeNull();
+  });
+
+  it('nadal ostrzega „Brak wideo” i „Brak obrazu”, gdy ćwiczenie nie ma mediów', () => {
+    render(<VerificationTaskCard exercise={baseExercise} />);
+
+    expect(screen.getByText('Brak wideo')).toBeInTheDocument();
+    expect(screen.getByText('Brak obrazu')).toBeInTheDocument();
+  });
 });

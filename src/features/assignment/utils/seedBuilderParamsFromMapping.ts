@@ -1,10 +1,11 @@
-import type { ExerciseParams } from '@/components/shared/ExerciseSetBuilder';
+import type { ExerciseInstance, ExerciseParams } from '@/components/shared/ExerciseSetBuilder';
 import type { ExerciseOverrideFields } from '@/components/shared/exercise/exerciseOverride';
 import { parseMappingOverridesJson } from '@/components/shared/exercise/mappingOverrides';
 import { applyEnrichmentOverride } from '@/components/shared/exercise/enrichmentOverride';
 import { resolveEffectiveExerciseParams } from '@/components/shared/exercise/resolveEffectiveExerciseParams';
 import { parseOverrideMap } from '@/components/shared/exercise/exercisePersonalizationWriter';
 import type { ExerciseMapping } from '../types';
+import { sortMappingsByOrder } from './sortMappingsByOrder';
 
 /**
  * Seed Assignment Wizard / set-builder params from a source mapping,
@@ -95,4 +96,25 @@ export function getAssignmentOverrideForMapping(
 ): ExerciseOverrideFields | undefined {
   const map = parseOverrideMap(exerciseOverridesJson);
   return map[mappingId];
+}
+
+interface BuilderState {
+  mappings: ExerciseMapping[];
+  instances: ExerciseInstance[];
+  params: Map<string, ExerciseParams>;
+}
+
+/** Seeds the builder from a source set in saved order; `mappings` is the same sorted copy. */
+export function buildBuilderStateFromMappings(mappings: readonly ExerciseMapping[] | null | undefined): BuilderState {
+  const sortedMappings = sortMappingsByOrder(mappings);
+  const instances: ExerciseInstance[] = [];
+  const params = new Map<string, ExerciseParams>();
+
+  sortedMappings.forEach((mapping) => {
+    const instanceId = `existing-${mapping.id}`;
+    instances.push({ instanceId, exerciseId: mapping.exerciseId });
+    params.set(instanceId, seedBuilderParamsFromMapping(mapping));
+  });
+
+  return { mappings: sortedMappings, instances, params };
 }

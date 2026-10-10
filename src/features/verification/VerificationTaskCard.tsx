@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { cn } from '@/lib/utils';
 import { getMediaUrl } from '@/utils/mediaUrl';
+import { isVimeoUrl, isYouTubeUrl } from '@/utils/videoEmbed';
 import { HIDE_EXERCISE_TAGS } from '@/components/shared/exercise';
 import type { AdminExercise, ContentStatus } from '@/graphql/types/adminExercise.types';
 import { formatRelativeTime } from '@/utils/dateUtils';
@@ -92,7 +93,10 @@ export function VerificationTaskCard({
   const imageUrl = getMediaUrl(exercise.thumbnailUrl || exercise.imageUrl || exercise.images?.[0]);
   const gifUrl = getMediaUrl(exercise.gifUrl);
   const videoUrl = getMediaUrl(exercise.videoUrl);
-  const hasVideoPreview = gifUrl || videoUrl;
+  const isEmbeddedVideo = isYouTubeUrl(exercise.videoUrl) || isVimeoUrl(exercise.videoUrl);
+  const previewVideoUrl = (gifUrl || isEmbeddedVideo) ? null : videoUrl;
+  const hasVideoPreview = gifUrl || previewVideoUrl;
+  const hasVideo = gifUrl || videoUrl;
 
   const statusBadge = getStatusBadge(exercise.status);
   const qualityIndicators = getQualityIndicators(exercise);
@@ -114,7 +118,7 @@ export function VerificationTaskCard({
   // Handle hover to play video preview
   const handleMouseEnter = () => {
     setIsHovered(true);
-    if (videoRef.current && videoUrl && !gifUrl) {
+    if (videoRef.current && previewVideoUrl) {
       videoRef.current.play().catch(() => {
         // Ignore autoplay errors
       });
@@ -199,10 +203,10 @@ export function VerificationTaskCard({
               )}
 
               {/* Video preview (shown on hover if no GIF available) */}
-              {videoUrl && !gifUrl && (
+              {previewVideoUrl && (
                 <video
                   ref={videoRef}
-                  src={videoUrl}
+                  src={previewVideoUrl}
                   muted
                   loop
                   playsInline
@@ -217,7 +221,7 @@ export function VerificationTaskCard({
               {!imageUrl && <ImagePlaceholder type="exercise" className="h-full" iconClassName="h-12 w-12" />}
 
               {/* Video indicator badge */}
-              {hasVideoPreview && !isHovered && (
+              {hasVideo && !isHovered && (
                 <div className="absolute bottom-3 left-3 flex items-center gap-1 rounded-md border border-border/70 bg-background/85 px-2 py-1 backdrop-blur-sm dark:bg-black/45">
                   <Play className="h-3 w-3 fill-foreground text-foreground dark:fill-white dark:text-white" />
                   <span className="text-[10px] font-medium text-foreground dark:text-white">

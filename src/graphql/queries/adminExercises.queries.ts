@@ -97,6 +97,8 @@ export const VERIFICATION_QUEUE_ITEM_FRAGMENT = gql`
     thumbnailUrl
     imageUrl
     images
+    gifUrl
+    videoUrl
     patientDescription
     createdAt
     updatedAt

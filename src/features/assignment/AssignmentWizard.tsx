@@ -37,8 +37,10 @@ import { buildStructuredLoad, mapAvailableExercises, type RawAvailableExercise }
 import { appendPatientIfMissing } from './utils/patientSelectionUtils';
 import { computeExerciseDiff, type ExerciseMappingSnapshot } from './utils/exerciseDiff';
 import { buildExerciseSetFromBuilder } from './utils/buildExerciseSetFromBuilder';
+import { sortMappingsByOrder } from './utils/sortMappingsByOrder';
 import {
   getAssignmentOverrideForMapping,
+  buildBuilderStateFromMappings,
   seedBuilderParamsFromMapping,
 } from './utils/seedBuilderParamsFromMapping';
 import { mergeAssignmentOverridesOnEdit } from './utils/mergeAssignmentOverridesOnEdit';
@@ -282,7 +284,7 @@ function AssignmentWizardContent({
       return [];
     }
 
-    return initialAssignment.exerciseSet.exerciseMappings.map((mapping, index) => ({
+    return sortMappingsByOrder(initialAssignment.exerciseSet.exerciseMappings).map((mapping, index) => ({
       mappingId: mapping.id,
       exerciseId: mapping.exerciseId,
       order: mapping.order ?? index + 1,
@@ -322,7 +324,7 @@ function AssignmentWizardContent({
     }
 
     const assignmentSet = initialAssignment.exerciseSet;
-    const assignmentMappings = assignmentSet.exerciseMappings ?? [];
+    const assignmentMappings = sortMappingsByOrder(assignmentSet.exerciseMappings);
 
     const instances: ExerciseInstance[] = [];
     const params = new Map<string, ExerciseParams>();
@@ -374,21 +376,10 @@ function AssignmentWizardContent({
 
     // Ghost Copy - kopiuj ćwiczenia do lokalnego stanu (nie dotyka bazy)
     if (set?.exerciseMappings) {
-      setLocalExercises(set.exerciseMappings.map(createGhostCopy));
+      const { mappings, instances, params } = buildBuilderStateFromMappings(set.exerciseMappings);
+      setLocalExercises(mappings.map(createGhostCopy));
 
       // Also populate builder state for customize-set step
-      const instances: ExerciseInstance[] = [];
-      const params = new Map<string, ExerciseParams>();
-
-      set.exerciseMappings.forEach((mapping) => {
-        const instanceId = `existing-${mapping.id}`;
-        instances.push({
-          instanceId,
-          exerciseId: mapping.exerciseId,
-        });
-        params.set(instanceId, seedBuilderParamsFromMapping(mapping));
-      });
-
       setBuilderInstances(instances);
       setBuilderParams(params);
     } else {
@@ -804,7 +795,7 @@ function AssignmentWizardContent({
       const updatedSet = exerciseSets.find((s) => s.id === selectedSet.id);
       // Tylko przy pierwszym załadowaniu (gdy localExercises jest puste)
       if (updatedSet && localExercises.length === 0 && updatedSet.exerciseMappings?.length) {
-        setLocalExercises(updatedSet.exerciseMappings.map(createGhostCopy));
+        setLocalExercises(sortMappingsByOrder(updatedSet.exerciseMappings).map(createGhostCopy));
       }
     }
   }, [exerciseSets, selectedSet, localExercises.length, isEditMode]);
@@ -815,17 +806,8 @@ function AssignmentWizardContent({
     if (!open || !preselectedSet || localExercises.length > 0) return;
     const set = preselectedSet;
     if (set.exerciseMappings?.length) {
-      setLocalExercises(set.exerciseMappings.map(createGhostCopy));
-      const instances: ExerciseInstance[] = [];
-      const params = new Map<string, ExerciseParams>();
-      set.exerciseMappings.forEach((mapping) => {
-        const instanceId = `existing-${mapping.id}`;
-        instances.push({
-          instanceId,
-          exerciseId: mapping.exerciseId,
-        });
-        params.set(instanceId, seedBuilderParamsFromMapping(mapping));
-      });
+      const { mappings, instances, params } = buildBuilderStateFromMappings(set.exerciseMappings);
+      setLocalExercises(mappings.map(createGhostCopy));
       setBuilderInstances(instances);
       setBuilderParams(params);
     }
