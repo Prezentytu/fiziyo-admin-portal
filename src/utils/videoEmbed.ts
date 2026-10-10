@@ -33,7 +33,41 @@ export function getYouTubeEmbedUrl(url: string): string | null {
     return null;
   }
 
-  return `https://www.youtube.com/embed/${youtubeId}?playsinline=1&modestbranding=1&rel=0`;
+  const query = new URLSearchParams({ playsinline: '1', modestbranding: '1', rel: '0' });
+  const startSeconds = extractYouTubeStartSeconds(url);
+  if (startSeconds !== null) {
+    query.set('start', String(startSeconds));
+  }
+
+  return `https://www.youtube.com/embed/${youtubeId}?${query.toString()}`;
+}
+
+/** Reads `t` / `start` (query or hash) in the forms YouTube accepts: `6`, `6s`, `1m30s`, `1h2m3s`. */
+function extractYouTubeStartSeconds(url: string): number | null {
+  const parsedUrl = tryParseUrl(url);
+  if (!parsedUrl) {
+    return null;
+  }
+
+  const hashParams = new URLSearchParams(parsedUrl.hash.replace(/^#/, ''));
+  const rawValue =
+    parsedUrl.searchParams.get('t') ??
+    parsedUrl.searchParams.get('start') ??
+    hashParams.get('t') ??
+    hashParams.get('start');
+
+  return rawValue ? parseYouTubeTimestamp(rawValue) : null;
+}
+
+function parseYouTubeTimestamp(value: string): number | null {
+  const match = /^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s?)?$/.exec(value.trim());
+  if (!match) {
+    return null;
+  }
+
+  const [, hours, minutes, seconds] = match;
+  const totalSeconds = Number(hours ?? 0) * 3600 + Number(minutes ?? 0) * 60 + Number(seconds ?? 0);
+  return totalSeconds > 0 ? totalSeconds : null;
 }
 
 export function extractVimeoId(url: string): string | null {
