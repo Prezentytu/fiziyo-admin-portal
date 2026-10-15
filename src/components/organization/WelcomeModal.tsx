@@ -53,15 +53,15 @@ const quickTips = [
     icon: Users,
     title: 'Pacjenci',
     description: 'Dodawaj pacjentów i przypisuj plany',
-    color: 'text-blue-400',
-    bgColor: 'bg-blue-500/20',
+    color: 'text-status-info',
+    bgColor: 'bg-status-info-muted',
   },
   {
     icon: FolderOpen,
     title: 'Zestawy',
     description: 'Grupuj ćwiczenia w gotowe programy',
-    color: 'text-amber-400',
-    bgColor: 'bg-amber-500/20',
+    color: 'text-status-warning',
+    bgColor: 'bg-status-warning-muted',
   },
 ];
 

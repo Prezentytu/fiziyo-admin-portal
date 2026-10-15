@@ -187,7 +187,7 @@ export function WalletCard({ organizationId, className }: WalletCardProps) {
           {/* Secondary stats */}
           <div className="flex items-center gap-5 mt-1">
             <div className="flex items-center gap-2 text-sm">
-              <TrendingUp className="h-4 w-4 text-emerald-500" />
+              <TrendingUp className="h-4 w-4 text-status-success" />
               <span className="text-muted-foreground">Łącznie:</span>
               <span className="text-foreground font-semibold tabular-nums">
                 <CountUp
@@ -205,9 +205,9 @@ export function WalletCard({ organizationId, className }: WalletCardProps) {
             {/* Pending */}
             {displayData.pendingEarnings > 0 && (
               <div className="flex items-center gap-2 text-sm">
-                <Clock className="h-4 w-4 text-amber-500" />
+                <Clock className="h-4 w-4 text-status-warning" />
                 <span className="text-muted-foreground">Oczekuje:</span>
-                <span className="text-amber-500 font-semibold tabular-nums">
+                <span className="text-status-warning font-semibold tabular-nums">
                   <CountUp
                     end={displayData.pendingEarnings}
                     decimals={2}
@@ -226,9 +226,9 @@ export function WalletCard({ organizationId, className }: WalletCardProps) {
         {/* Footer - Status */}
         <div className="flex items-center justify-between mt-5 pt-4 border-t border-border">
           <div className="flex items-center gap-2">
-            <div className={cn('h-2 w-2 rounded-full', isReady ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-slate-400')} />
+            <div className={cn('h-2 w-2 rounded-full', isReady ? 'bg-tint-fill shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-fill-quaternary')} />
             <span className="text-xs font-medium text-muted-foreground">Status wypłat: {statusText}</span>
-            <StatusIcon className={cn('h-3.5 w-3.5', isReady ? 'text-emerald-500' : 'text-slate-400')} />
+            <StatusIcon className={cn('h-3.5 w-3.5', isReady ? 'text-status-success' : 'text-label-tertiary')} />
           </div>
 
           {/* Active Premium patients count */}

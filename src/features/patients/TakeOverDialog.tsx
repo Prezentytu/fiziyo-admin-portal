@@ -168,7 +168,7 @@ export function TakeOverDialog({
 
           <div className="flex flex-col items-center gap-1">
             <Avatar className="h-12 w-12 ring-2 ring-primary/50">
-              <AvatarFallback className="bg-primary text-primary-foreground">
+              <AvatarFallback className="bg-tint-fill text-on-tint">
                 <User className="h-6 w-6" />
               </AvatarFallback>
             </Avatar>

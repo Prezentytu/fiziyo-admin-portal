@@ -210,7 +210,7 @@ export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, o
                     />
                   </div>
                   {currentImage.isCustom && (
-                    <span className="absolute top-3 left-3 bg-primary text-primary-foreground text-xs font-medium px-2 py-1 rounded-md flex items-center gap-1">
+                    <span className="absolute top-3 left-3 bg-tint-fill text-on-tint text-xs font-medium px-2 py-1 rounded-md flex items-center gap-1">
                       <ImageIcon className="h-3 w-3" />
                       Dla pacjenta
                     </span>

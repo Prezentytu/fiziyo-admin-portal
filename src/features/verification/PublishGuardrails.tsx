@@ -282,7 +282,7 @@ export function PublishGuardrails({
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium flex items-center justify-between">
           <span className="flex items-center gap-2">
-            <Shield className={cn('h-4 w-4', canPublish ? 'text-emerald-500' : 'text-destructive')} />
+            <Shield className={cn('h-4 w-4', canPublish ? 'text-status-success' : 'text-destructive')} />
             Gotowość do publikacji
           </span>
           <div className="flex items-center gap-2">
@@ -292,12 +292,12 @@ export function PublishGuardrails({
               </Badge>
             )}
             {stats.warnings > 0 && (
-              <Badge variant="outline" className="text-[10px] border-amber-500/40 text-amber-600">
+              <Badge variant="outline" className="text-[10px] border-status-warning/40 text-status-warning">
                 {stats.warnings} {stats.warnings === 1 ? 'ostrzeżenie' : 'ostrzeżeń'}
               </Badge>
             )}
             {canPublish && stats.warnings === 0 && (
-              <Badge variant="outline" className="text-[10px] border-emerald-500/40 text-emerald-600">
+              <Badge variant="outline" className="text-[10px] border-status-success/40 text-status-success">
                 <CheckCircle2 className="h-3 w-3 mr-1" />
                 Gotowe
               </Badge>
@@ -315,7 +315,7 @@ export function PublishGuardrails({
             <span
               className={cn(
                 'font-medium',
-                stats.score === 100 ? 'text-emerald-500' : stats.score >= 70 ? 'text-amber-500' : 'text-destructive'
+                stats.score === 100 ? 'text-status-success' : stats.score >= 70 ? 'text-status-warning' : 'text-destructive'
               )}
             >
               {stats.score}%
@@ -326,9 +326,9 @@ export function PublishGuardrails({
             className={cn(
               'h-2',
               stats.score === 100
-                ? '[&>div]:bg-emerald-500'
+                ? '[&>div]:bg-tint-fill'
                 : stats.score >= 70
-                  ? '[&>div]:bg-amber-500'
+                  ? '[&>div]:bg-status-warning-fill'
                   : '[&>div]:bg-destructive'
             )}
           />
@@ -344,11 +344,11 @@ export function PublishGuardrails({
             return (
               <div key={category} className="space-y-1.5">
                 <div className="flex items-center gap-2 text-xs">
-                  <span className={cn(allPassed ? 'text-emerald-500' : 'text-muted-foreground')}>
+                  <span className={cn(allPassed ? 'text-status-success' : 'text-muted-foreground')}>
                     {categoryIcons[category]}
                   </span>
                   <span className="font-medium">{categoryLabels[category]}</span>
-                  {allPassed && <CheckCircle2 className="h-3 w-3 text-emerald-500" />}
+                  {allPassed && <CheckCircle2 className="h-3 w-3 text-status-success" />}
                 </div>
                 <div className="pl-6 space-y-1">
                   {results.map((result) => (
@@ -362,7 +362,7 @@ export function PublishGuardrails({
 
         {/* Summary message */}
         {canPublish ? (
-          <div className="flex items-center gap-2 p-2 rounded-md bg-emerald-500/10 text-emerald-600 text-xs">
+          <div className="flex items-center gap-2 p-2 rounded-md bg-status-success-muted text-status-success text-xs">
             <CheckCircle2 className="h-4 w-4 shrink-0" />
             <span>
               {stats.warnings > 0
@@ -388,13 +388,13 @@ function ValidationItem({ result }: { result: ValidationResult }) {
   const { rule, passed } = result;
 
   const icon = passed ? (
-    <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+    <CheckCircle2 className="h-3 w-3 text-status-success" />
   ) : rule.severity === 'error' ? (
     <XCircle className="h-3 w-3 text-destructive" />
   ) : rule.severity === 'warning' ? (
-    <AlertTriangle className="h-3 w-3 text-amber-500" />
+    <AlertTriangle className="h-3 w-3 text-status-warning" />
   ) : (
-    <Info className="h-3 w-3 text-blue-500" />
+    <Info className="h-3 w-3 text-status-info" />
   );
 
   return (
@@ -409,8 +409,8 @@ function ValidationItem({ result }: { result: ValidationResult }) {
                 : rule.severity === 'error'
                   ? 'text-destructive'
                   : rule.severity === 'warning'
-                    ? 'text-amber-600'
-                    : 'text-blue-600'
+                    ? 'text-status-warning'
+                    : 'text-status-info'
             )}
           >
             {icon}

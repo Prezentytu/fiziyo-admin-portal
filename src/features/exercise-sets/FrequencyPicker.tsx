@@ -151,7 +151,7 @@ export function FrequencyPicker({ value, onChange, className }: FrequencyPickerP
                 className={cn(
                   'flex h-12 w-12 items-center justify-center rounded-xl text-sm font-semibold transition-all duration-200',
                   isSelected
-                    ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30 scale-105'
+                    ? 'bg-tint-fill text-on-tint shadow-lg shadow-primary/30 scale-105'
                     : 'bg-surface-light text-muted-foreground hover:bg-surface hover:text-foreground border border-transparent hover:border-border/50'
                 )}
                 title={day.fullLabel}

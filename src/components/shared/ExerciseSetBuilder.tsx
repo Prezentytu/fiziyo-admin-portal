@@ -479,7 +479,7 @@ function SortableExerciseCard({
         index={index + 1}
         testIdPrefix={testIdPrefix ?? 'set-builder'}
         readOnlyReason={isReadonly ? 'W zestawie wcześniej' : undefined}
-        className={isReadonly ? 'border-amber-500/20 bg-amber-500/5 ring-1 ring-amber-500/15' : undefined}
+        className={isReadonly ? 'border-status-warning/20 bg-status-warning-muted ring-1 ring-status-warning/15' : undefined}
       />
     </div>
   );

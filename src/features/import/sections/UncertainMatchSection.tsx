@@ -47,8 +47,8 @@ export function UncertainMatchSection({
     <TooltipProvider>
       <div className={cn('space-y-3', className)} data-testid="import-uncertain-section">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-yellow-500/20">
-            <AlertTriangle className="h-5 w-5 text-yellow-500" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-status-warning-muted">
+            <AlertTriangle className="h-5 w-5 text-status-warning" />
           </div>
           <div>
             <h3 className="font-semibold text-foreground">Wymaga decyzji ({exercises.length})</h3>

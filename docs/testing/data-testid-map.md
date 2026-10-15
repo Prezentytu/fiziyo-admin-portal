@@ -212,19 +212,22 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 
 ### 3. Dashboard (dashboard-)
 
-| data-testid                     | Element                                        | Plik       |
-| ------------------------------- | ---------------------------------------------- | ---------- |
-| `dashboard-greeting`            | Powitanie                                      | `page.tsx` |
-| `dashboard-hero-assign-set-btn` | Personalizuj i przypisz (główna akcja)         | `page.tsx` |
-| `dashboard-create-set-btn`      | Utwórz zestaw                                  | `page.tsx` |
-| `dashboard-add-patient-btn`     | Dodaj pacjenta                                 | `page.tsx` |
-| `dashboard-activity-section`    | Sekcja "Wymagają uwagi"                        | `page.tsx` |
-| `dashboard-patients-view-all`   | Link: Wszyscy pacjenci                         | `page.tsx` |
-| `dashboard-patient-item-{id}`   | Element listy pacjentów z aktywnością          | `page.tsx` |
-| `dashboard-sets-section`        | Sekcja "Szybki wybór"                          | `page.tsx` |
-| `dashboard-sets-view-all`       | Link: Wszystkie zestawy                        | `page.tsx` |
-| `dashboard-set-item-{id}`       | Element listy zestawów                         | `page.tsx` |
-| `dashboard-quick-assign-{id}`   | Przycisk szybkiej personalizacji i przypisania | `page.tsx` |
+| data-testid                       | Element                                        | Plik       |
+| --------------------------------- | ---------------------------------------------- | ---------- |
+| `dashboard-greeting`              | Powitanie                                      | `page.tsx` |
+| `dashboard-hero-assign-set-btn`   | Personalizuj i przypisz (główna akcja)         | `page.tsx` |
+| `dashboard-create-set-btn`        | Utwórz zestaw                                  | `page.tsx` |
+| `dashboard-add-patient-btn`       | Dodaj pacjenta                                 | `page.tsx` |
+| `dashboard-activity-section`      | Sekcja "Pacjenci do sprawdzenia"               | `page.tsx` |
+| `dashboard-patients-view-all`     | Link: Wszyscy pacjenci                         | `page.tsx` |
+| `dashboard-patient-item-{id}`     | Element listy pacjentów z aktywnością          | `page.tsx` |
+| `dashboard-sets-section`          | Sekcja "Szybkie przypisanie"                   | `page.tsx` |
+| `dashboard-sets-view-all`         | Link: Wszystkie zestawy                        | `page.tsx` |
+| `dashboard-set-item-{id}`         | Element listy zestawów                         | `page.tsx` |
+| `dashboard-quick-assign-{id}`     | Przycisk szybkiej personalizacji i przypisania | `page.tsx` |
+| `dashboard-premium-view-all`      | Link: Wszyscy bez dostępu (kolejka Premium)    | `page.tsx` |
+| `dashboard-premium-item-{id}`     | Pacjent bez aktywnego Premium                  | `page.tsx` |
+| `dashboard-premium-activate-{id}` | Aktywuj Premium z kolejki                      | `page.tsx` |
 
 ### 4. Ćwiczenia (exercise-)
 
@@ -388,72 +391,77 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 
 ### 6. Pacjenci (patient-)
 
-| data-testid                                         | Element                                    | Plik                             |
-| --------------------------------------------------- | ------------------------------------------ | -------------------------------- |
-| `patient-page-title`                                | Tytuł strony                               | `patients/page.tsx`              |
-| `patient-search-input`                              | Wyszukiwarka                               | `patients/page.tsx`              |
-| `patient-filter-my-btn`                             | Filtr: Moi (Quick Stats)                   | `patients/page.tsx`              |
-| `patient-filter-all-btn`                            | Filtr: Wszyscy (Quick Stats)               | `patients/page.tsx`              |
-| `patient-filter-unassigned-btn`                     | Filtr: Nieprzypisani (Quick Stats)         | `patients/page.tsx`              |
-| `patient-create-btn`                                | Dodaj pacjenta                             | `patients/page.tsx`              |
-| `patient-card-{id}`                                 | Karta pacjenta                             | `PatientCard.tsx`                |
-| `patient-card-{id}-menu-trigger`                    | Menu kontekstowe                           | `PatientCard.tsx`                |
-| `patient-card-{id}-view-btn`                        | Podgląd                                    | `PatientCard.tsx`                |
-| `patient-card-{id}-edit-btn`                        | Edytuj                                     | `PatientCard.tsx`                |
-| `patient-card-{id}-assign-btn`                      | Personalizuj i przypisz                    | `PatientCard.tsx`                |
-| `patient-card-{id}-delete-btn`                      | Usuń                                       | `PatientCard.tsx`                |
-| `patient-card-therapist-badge`                      | Badge fizjoterapeuty                       | `TherapistBadge.tsx`             |
-| `patient-card-therapist-badge-unassigned`           | Badge nieprzypisany                        | `TherapistBadge.tsx`             |
-| `patient-takeover-btn`                              | Przejmij opiekę (przycisk)                 | `PatientExpandableCard.tsx`      |
-| `patient-takeover-dialog`                           | Dialog przejmowania opieki                 | `TakeOverDialog.tsx`             |
-| `patient-takeover-confirm-btn`                      | Potwierdź przejęcie                        | `TakeOverDialog.tsx`             |
-| `patient-expandable-{id}`                           | Karta rozwijana                            | `PatientExpandableCard.tsx`      |
-| `patient-expandable-{id}-assign-btn`                | Personalizuj i przypisz                    | `PatientExpandableCard.tsx`      |
-| `patient-expandable-{id}-menu-trigger`              | Menu kontekstowe                           | `PatientExpandableCard.tsx`      |
-| `patient-detail-back-btn`                           | Przycisk wstecz                            | `patients/[id]/page.tsx`         |
-| `patient-detail-name`                               | Imię i nazwisko                            | `patients/[id]/page.tsx`         |
-| `patient-detail-menu-trigger`                       | Menu akcji                                 | `patients/[id]/page.tsx`         |
-| `patient-detail-assign-btn`                         | Personalizuj i przypisz                    | `patients/[id]/page.tsx`         |
-| `patient-detail-qr-btn`                             | Kod QR                                     | `patients/[id]/page.tsx`         |
-| `patient-detail-edit-btn`                           | Edytuj dane                                | `patients/[id]/page.tsx`         |
-| `patient-form`                                      | Formularz pacjenta                         | `PatientForm.tsx`                |
-| `patient-form-firstname-input`                      | Imię                                       | `PatientForm.tsx`                |
-| `patient-form-lastname-input`                       | Nazwisko                                   | `PatientForm.tsx`                |
-| `patient-form-phone-input`                          | Telefon                                    | `PatientForm.tsx`                |
-| `patient-form-email-input`                          | Email                                      | `PatientForm.tsx`                |
-| `patient-form-context-input`                        | Etykieta kontekstu                         | `PatientForm.tsx`                |
-| `patient-form-submit-btn`                           | Zapisz                                     | `PatientForm.tsx`                |
-| `patient-form-cancel-btn`                           | Anuluj                                     | `PatientForm.tsx`                |
-| `patient-dialog`                                    | Dialog pacjenta                            | `PatientDialog.tsx`              |
-| `patient-dialog-title`                              | Tytuł dialogu                              | `PatientDialog.tsx`              |
-| `patient-assignment-{id}`                           | Karta przypisania                          | `PatientAssignmentCard.tsx`      |
-| `patient-assignment-status-badge-{id}`              | Główny badge statusu przypisania           | `PatientAssignmentCard.tsx`      |
-| `patient-assignment-premium-hint-{id}`              | Dodatkowy sygnał „Brak Premium”            | `PatientAssignmentCard.tsx`      |
-| `patient-assignment-{id}-edit-btn`                  | Edytuj harmonogram                         | `PatientAssignmentCard.tsx`      |
-| `patient-assignment-{id}-remove-btn`                | Usuń przypisanie                           | `PatientAssignmentCard.tsx`      |
-| `patient-assignment-{id}-pdf-btn`                   | Generuj PDF                                | `PatientAssignmentCard.tsx`      |
-| `patient-assignment-{id}-schedule-summary`          | Kompaktowy harmonogram (karta zwinięta)    | `PatientAssignmentCard.tsx`      |
-| `patient-assignment-expanded-{id}-schedule-summary` | Harmonogram szczegółowy (karta rozwinięta) | `PatientAssignmentCard.tsx`      |
-| `patient-qr-dialog`                                 | Dialog QR                                  | `PatientQRCodeDialog.tsx`        |
-| `patient-qr-code`                                   | Kod QR HTTPS; `data-qr-url` = payload      | `PatientQRCodeDialog.tsx`        |
-| `patient-qr-payload`                                | Ukryty canvas QR; `data-qr-url` = payload  | `PatientQRCodeDialog.tsx`        |
-| `patient-qr-unavailable`                            | Hint gdy brak patient/org/therapist        | `PatientQRCodeDialog.tsx`        |
-| `patient-qr-download-btn`                           | Pobierz QR                                 | `PatientQRCodeDialog.tsx`        |
-| `patient-qr-copy-btn`                               | Kopiuj link                                | `PatientQRCodeDialog.tsx`        |
-| `patient-qr-share-btn`                              | Wyślij link                                | `PatientQRCodeDialog.tsx`        |
-| `patient-override-dialog`                           | Dialog nadpisania                          | `EditExerciseOverrideDialog.tsx` |
-| `patient-override-sets-input`                       | Serie                                      | `EditExerciseOverrideDialog.tsx` |
-| `patient-override-reps-input`                       | Powtórzenia                                | `EditExerciseOverrideDialog.tsx` |
-| `patient-override-submit-btn`                       | Zapisz zmiany                              | `EditExerciseOverrideDialog.tsx` |
-| `patient-context-edit-btn`                          | Edytuj etykietę                            | `EditContextLabelDialog.tsx`     |
-| `patient-context-dialog`                            | Dialog etykiety                            | `EditContextLabelDialog.tsx`     |
-| `patient-context-submit-btn`                        | Zapisz etykietę                            | `EditContextLabelDialog.tsx`     |
-| `patient-premium-badge-{id}`                        | Badge statusu Premium                      | `PremiumStatusBadge.tsx`         |
-| `patient-premium-activate-btn-{id}`                 | Przycisk aktywacji Premium                 | `PremiumStatusBadge.tsx`         |
-| `patient-premium-confirm-dialog`                    | Dialog potwierdzenia aktywacji             | `ActivatePremiumDialog.tsx`      |
-| `patient-premium-confirm-dialog-title`              | Tytuł dialogu aktywacji                    | `ActivatePremiumDialog.tsx`      |
-| `patient-premium-confirm-dialog-confirm-btn`        | Przycisk potwierdzenia                     | `ActivatePremiumDialog.tsx`      |
-| `patient-premium-confirm-dialog-cancel-btn`         | Przycisk anulowania                        | `ActivatePremiumDialog.tsx`      |
+| data-testid                                         | Element                                         | Plik                             |
+| --------------------------------------------------- | ----------------------------------------------- | -------------------------------- |
+| `patient-page-title`                                | Tytuł strony                                    | `patients/page.tsx`              |
+| `patient-search-input`                              | Wyszukiwarka                                    | `patients/page.tsx`              |
+| `patient-sort-select`                               | Sortowanie listy (najdłużej bez treningu / A–Z) | `patients/page.tsx`              |
+| `patient-compact-toggle-btn`                        | Widok zwarty listy                              | `patients/page.tsx`              |
+| `patient-search-clear-btn`                          | Wyczyść wyszukiwanie                            | `patients/page.tsx`              |
+| `patient-expandable-{id}-premium-btn`               | Aktywuj Premium w wierszu                       | `PatientExpandableCard.tsx`      |
+| `patient-expandable-{id}-connect-btn`               | Połącz z aplikacją (pacjent bez konta)          | `PatientExpandableCard.tsx`      |
+| `patient-filter-my-btn`                             | Filtr: Moi (Quick Stats)                        | `patients/page.tsx`              |
+| `patient-filter-all-btn`                            | Filtr: Wszyscy (Quick Stats)                    | `patients/page.tsx`              |
+| `patient-filter-unassigned-btn`                     | Filtr: Nieprzypisani (Quick Stats)              | `patients/page.tsx`              |
+| `patient-create-btn`                                | Dodaj pacjenta                                  | `patients/page.tsx`              |
+| `patient-card-{id}`                                 | Karta pacjenta                                  | `PatientCard.tsx`                |
+| `patient-card-{id}-menu-trigger`                    | Menu kontekstowe                                | `PatientCard.tsx`                |
+| `patient-card-{id}-view-btn`                        | Podgląd                                         | `PatientCard.tsx`                |
+| `patient-card-{id}-edit-btn`                        | Edytuj                                          | `PatientCard.tsx`                |
+| `patient-card-{id}-assign-btn`                      | Personalizuj i przypisz                         | `PatientCard.tsx`                |
+| `patient-card-{id}-delete-btn`                      | Usuń                                            | `PatientCard.tsx`                |
+| `patient-card-therapist-badge`                      | Badge fizjoterapeuty                            | `TherapistBadge.tsx`             |
+| `patient-card-therapist-badge-unassigned`           | Badge nieprzypisany                             | `TherapistBadge.tsx`             |
+| `patient-takeover-btn`                              | Przejmij opiekę (przycisk)                      | `PatientExpandableCard.tsx`      |
+| `patient-takeover-dialog`                           | Dialog przejmowania opieki                      | `TakeOverDialog.tsx`             |
+| `patient-takeover-confirm-btn`                      | Potwierdź przejęcie                             | `TakeOverDialog.tsx`             |
+| `patient-expandable-{id}`                           | Karta rozwijana                                 | `PatientExpandableCard.tsx`      |
+| `patient-expandable-{id}-assign-btn`                | Personalizuj i przypisz                         | `PatientExpandableCard.tsx`      |
+| `patient-expandable-{id}-menu-trigger`              | Menu kontekstowe                                | `PatientExpandableCard.tsx`      |
+| `patient-detail-back-btn`                           | Przycisk wstecz                                 | `patients/[id]/page.tsx`         |
+| `patient-detail-name`                               | Imię i nazwisko                                 | `patients/[id]/page.tsx`         |
+| `patient-detail-menu-trigger`                       | Menu akcji                                      | `patients/[id]/page.tsx`         |
+| `patient-detail-assign-btn`                         | Personalizuj i przypisz                         | `patients/[id]/page.tsx`         |
+| `patient-detail-qr-btn`                             | Kod QR                                          | `patients/[id]/page.tsx`         |
+| `patient-detail-edit-btn`                           | Edytuj dane                                     | `patients/[id]/page.tsx`         |
+| `patient-form`                                      | Formularz pacjenta                              | `PatientForm.tsx`                |
+| `patient-form-firstname-input`                      | Imię                                            | `PatientForm.tsx`                |
+| `patient-form-lastname-input`                       | Nazwisko                                        | `PatientForm.tsx`                |
+| `patient-form-phone-input`                          | Telefon                                         | `PatientForm.tsx`                |
+| `patient-form-email-input`                          | Email                                           | `PatientForm.tsx`                |
+| `patient-form-context-input`                        | Etykieta kontekstu                              | `PatientForm.tsx`                |
+| `patient-form-submit-btn`                           | Zapisz                                          | `PatientForm.tsx`                |
+| `patient-form-cancel-btn`                           | Anuluj                                          | `PatientForm.tsx`                |
+| `patient-dialog`                                    | Dialog pacjenta                                 | `PatientDialog.tsx`              |
+| `patient-dialog-title`                              | Tytuł dialogu                                   | `PatientDialog.tsx`              |
+| `patient-assignment-{id}`                           | Karta przypisania                               | `PatientAssignmentCard.tsx`      |
+| `patient-assignment-status-badge-{id}`              | Główny badge statusu przypisania                | `PatientAssignmentCard.tsx`      |
+| `patient-assignment-premium-hint-{id}`              | Dodatkowy sygnał „Brak Premium”                 | `PatientAssignmentCard.tsx`      |
+| `patient-assignment-{id}-edit-btn`                  | Edytuj harmonogram                              | `PatientAssignmentCard.tsx`      |
+| `patient-assignment-{id}-remove-btn`                | Usuń przypisanie                                | `PatientAssignmentCard.tsx`      |
+| `patient-assignment-{id}-pdf-btn`                   | Generuj PDF                                     | `PatientAssignmentCard.tsx`      |
+| `patient-assignment-{id}-schedule-summary`          | Kompaktowy harmonogram (karta zwinięta)         | `PatientAssignmentCard.tsx`      |
+| `patient-assignment-expanded-{id}-schedule-summary` | Harmonogram szczegółowy (karta rozwinięta)      | `PatientAssignmentCard.tsx`      |
+| `patient-qr-dialog`                                 | Dialog QR                                       | `PatientQRCodeDialog.tsx`        |
+| `patient-qr-code`                                   | Kod QR HTTPS; `data-qr-url` = payload           | `PatientQRCodeDialog.tsx`        |
+| `patient-qr-payload`                                | Ukryty canvas QR; `data-qr-url` = payload       | `PatientQRCodeDialog.tsx`        |
+| `patient-qr-unavailable`                            | Hint gdy brak patient/org/therapist             | `PatientQRCodeDialog.tsx`        |
+| `patient-qr-download-btn`                           | Pobierz QR                                      | `PatientQRCodeDialog.tsx`        |
+| `patient-qr-copy-btn`                               | Kopiuj link                                     | `PatientQRCodeDialog.tsx`        |
+| `patient-qr-share-btn`                              | Wyślij link                                     | `PatientQRCodeDialog.tsx`        |
+| `patient-override-dialog`                           | Dialog nadpisania                               | `EditExerciseOverrideDialog.tsx` |
+| `patient-override-sets-input`                       | Serie                                           | `EditExerciseOverrideDialog.tsx` |
+| `patient-override-reps-input`                       | Powtórzenia                                     | `EditExerciseOverrideDialog.tsx` |
+| `patient-override-submit-btn`                       | Zapisz zmiany                                   | `EditExerciseOverrideDialog.tsx` |
+| `patient-context-edit-btn`                          | Edytuj etykietę                                 | `EditContextLabelDialog.tsx`     |
+| `patient-context-dialog`                            | Dialog etykiety                                 | `EditContextLabelDialog.tsx`     |
+| `patient-context-submit-btn`                        | Zapisz etykietę                                 | `EditContextLabelDialog.tsx`     |
+| `patient-premium-badge-{id}`                        | Badge statusu Premium                           | `PremiumStatusBadge.tsx`         |
+| `patient-premium-activate-btn-{id}`                 | Przycisk aktywacji Premium                      | `PremiumStatusBadge.tsx`         |
+| `patient-premium-confirm-dialog`                    | Dialog potwierdzenia aktywacji                  | `ActivatePremiumDialog.tsx`      |
+| `patient-premium-confirm-dialog-title`              | Tytuł dialogu aktywacji                         | `ActivatePremiumDialog.tsx`      |
+| `patient-premium-confirm-dialog-confirm-btn`        | Przycisk potwierdzenia                          | `ActivatePremiumDialog.tsx`      |
+| `patient-premium-confirm-dialog-cancel-btn`         | Przycisk anulowania                             | `ActivatePremiumDialog.tsx`      |
 
 ### 7. Przypisywanie zestawów (assign-)
 
@@ -863,3 +871,18 @@ Przy dodawaniu nowych komponentów:
 2. Dodaj `data-testid` do interaktywnych elementów
 3. Zaktualizuj tę dokumentację
 4. Sprawdź unikalność identyfikatorów
+
+| `patient-detail-premium-btn` | Aktywuj Premium w nagłówku karty | `patients/[id]/page.tsx` |
+| `patient-detail-remove-from-list-btn` | Odepnij ode mnie (menu) | `patients/[id]/page.tsx` |
+
+### Design system v4 (SPEC-029) — nowe identyfikatory
+
+| data-testid                                                                                      | Element                                     | Plik                      |
+| ------------------------------------------------------------------------------------------------ | ------------------------------------------- | ------------------------- |
+| `set-search-clear-btn`, `set-filter-reset-btn`, `set-tags-clear-btn`, `set-tag-filter-clear-btn` | Czyszczenie wyszukiwania i filtrów zestawów | `exercise-sets/page.tsx`  |
+| `exercise-tags-add-btn`, `exercise-tags-tab-tags`, `exercise-tags-tab-categories`                | Tagi i kategorie                            | `exercises/tags/page.tsx` |
+| `appointments-notify-btn`                                                                        | Powiadom mnie (wizyty)                      | `appointments/page.tsx`   |
+| `finances-invite-now-btn`, `finances-invoices-back-btn`, `finances-payouts-back-btn`             | Finanse                                     | `finances/**`             |
+| `import-step-{id}-btn`, `import-back-btn`                                                        | Kroki i powrót importu                      | `import/page.tsx`         |
+| `patient-detail-not-found-back-btn`, `patient-detail-email-link`, `patient-detail-phone-link`    | Karta pacjenta                              | `patients/[id]/page.tsx`  |
+| `clinical-notes-editor-close-btn`                                                                | Zamknij edytor notatki                      | `ClinicalNotesList.tsx`   |

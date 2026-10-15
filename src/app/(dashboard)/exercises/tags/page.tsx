@@ -22,6 +22,7 @@ import { DELETE_TAG_MUTATION, DELETE_TAG_CATEGORY_MUTATION } from '@/graphql/mut
 import { matchesSearchQuery } from '@/utils/textUtils';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import type { ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
+import { PageSheet } from '@/components/shared/page';
 
 export default function TagsPage() {
   const { currentOrganization } = useOrganization();
@@ -119,14 +120,14 @@ export default function TagsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <PageSheet contentClassName="gap-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Tagi i kategorie</h1>
+          <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground">Tagi i kategorie</h1>
           <p className="text-muted-foreground">Zarządzaj tagami dla ćwiczeń</p>
         </div>
-        <Button onClick={() => setIsTagDialogOpen(true)} disabled={!organizationId}>
+        <Button onClick={() => setIsTagDialogOpen(true)} disabled={!organizationId} data-testid="exercise-tags-add-btn">
           <Plus className="mr-2 h-4 w-4" />
           Dodaj tag
         </Button>
@@ -138,11 +139,11 @@ export default function TagsPage() {
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'tags' | 'categories')}>
         <TabsList>
-          <TabsTrigger value="tags" className="flex items-center gap-2">
+          <TabsTrigger value="tags" className="flex items-center gap-2" data-testid="exercise-tags-tab-tags">
             <Tag className="h-4 w-4" />
             Tagi ({filteredTags.length})
           </TabsTrigger>
-          <TabsTrigger value="categories" className="flex items-center gap-2">
+          <TabsTrigger value="categories" className="flex items-center gap-2" data-testid="exercise-tags-tab-categories">
             <FolderOpen className="h-4 w-4" />
             Kategorie ({filteredCategories.length})
           </TabsTrigger>
@@ -232,6 +233,6 @@ export default function TagsPage() {
         onConfirm={handleDeleteCategory}
         isLoading={deletingCategoryLoading}
       />
-    </div>
+    </PageSheet>
   );
 }

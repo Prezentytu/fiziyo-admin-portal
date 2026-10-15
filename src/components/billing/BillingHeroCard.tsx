@@ -135,7 +135,7 @@ export function BillingHeroCard({ organizationId, className }: BillingHeroCardPr
     >
       {/* Subtle glow effect */}
       <div className="absolute -top-32 -right-32 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
-      <div className="absolute -bottom-32 -left-32 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl" />
+      <div className="absolute -bottom-32 -left-32 w-64 h-64 bg-status-success-muted rounded-full blur-3xl" />
 
       {/* Top accent line */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-primary to-violet" />
@@ -201,8 +201,8 @@ export function BillingHeroCard({ organizationId, className }: BillingHeroCardPr
 
           {/* Price per license pill */}
           <div className="flex items-center gap-3 rounded-xl bg-surface-light/50 backdrop-blur-sm border border-border px-4 py-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/20">
-              <Tag className="h-4 w-4 text-emerald-400" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-status-success-muted">
+              <Tag className="h-4 w-4 text-status-success" />
             </div>
             <div>
               <p className="text-xl font-bold text-white tabular-nums">

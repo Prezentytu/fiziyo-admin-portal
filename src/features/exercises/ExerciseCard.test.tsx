@@ -31,7 +31,7 @@ describe('ExerciseCard menu actions', () => {
       />
     );
 
-    const trigger = screen.getByRole('button');
+    const trigger = screen.getByRole('button', { name: /Więcej opcji/ });
     await user.click(trigger);
 
     expect(screen.getByText('Zgłoś do Bazy Globalnej')).toBeInTheDocument();
@@ -58,7 +58,7 @@ describe('ExerciseCard menu actions', () => {
       />
     );
 
-    await user.click(screen.getByRole('button'));
+    await user.click(screen.getByRole('button', { name: /Więcej opcji/ }));
     expect(screen.getByText('Zgłoś do weryfikacji organizacyjnej')).toBeInTheDocument();
 
     await user.click(screen.getByTestId('exercise-card-exercise-1-submit-org-review-btn'));

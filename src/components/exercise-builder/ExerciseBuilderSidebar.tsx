@@ -158,7 +158,7 @@ export function ExerciseBuilderSidebar({ className }: ExerciseBuilderSidebarProp
 
             <div className="flex gap-3">
               <Button
-                className="flex-1 h-14 rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90 shadow-xl shadow-primary/20 text-base font-bold transition-all hover:scale-[1.02] active:scale-[0.98] group"
+                className="flex-1 h-14 rounded-2xl bg-tint-fill text-on-tint hover:bg-tint-fill-hover shadow-xl shadow-primary/20 text-base font-bold transition-all hover:scale-[1.02] active:scale-[0.98] group"
                 onClick={() => setIsCreateDialogOpen(true)}
                 data-testid="exercise-builder-create-btn"
               >

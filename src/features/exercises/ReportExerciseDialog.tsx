@@ -156,7 +156,7 @@ export function ReportExerciseDialog({
       <DialogContent className="max-w-xl" data-testid="exercise-report-dialog">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Flag className="h-5 w-5 text-amber-500" />
+            <Flag className="h-5 w-5 text-status-warning" />
             Zgłoś ćwiczenie do poprawki
           </DialogTitle>
           <DialogDescription>

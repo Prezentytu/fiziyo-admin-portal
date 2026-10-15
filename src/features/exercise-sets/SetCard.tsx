@@ -20,6 +20,7 @@ import { calculateEstimatedTime } from '@/utils/exerciseTime';
 import { HIDE_EXERCISE_TAGS } from '@/components/shared/exercise';
 import type { ExerciseTag } from '@/types/apollo';
 import { isPatientPlan, isTemplateSet } from '@/features/exercise-sets/utils/setKind';
+import { formatExerciseCount } from '@/utils/polishPlural';
 
 interface ExerciseMapping {
   id: string;
@@ -114,21 +115,21 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
     if (isPlan) {
       return {
         label: 'Spersonalizowany zestaw ćwiczeń',
-        className: 'border-info/30 bg-info/10 text-info',
+        className: 'border-transparent bg-status-info-muted text-status-info',
       };
     }
 
     if (isTemplate && set.templateSource === 'FIZIYO_VERIFIED') {
       return {
         label: 'Zestaw FiziYo',
-        className: 'border-primary/30 bg-primary/10 text-primary',
+        className: 'border-transparent bg-tint-muted text-tint',
       };
     }
 
     if (isTemplate) {
       return {
         label: 'Zestaw organizacji',
-        className: 'border-info/30 bg-info/10 text-info',
+        className: 'border-transparent bg-status-info-muted text-status-info',
       };
     }
 
@@ -228,8 +229,9 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
     <div
       data-testid={`set-card-${set.id}`}
       className={cn(
-        'group relative flex flex-col rounded-xl border border-border/60 bg-surface overflow-hidden',
-        'transition-all duration-200 hover:border-border hover:shadow-lg hover:shadow-black/5',
+        'group relative flex flex-col rounded-card bg-grouped-tertiary overflow-hidden',
+        'transition-colors duration-200 hover:bg-fill-tertiary',
+        'focus-within:ring-2 focus-within:ring-ring',
         'cursor-pointer h-full',
         className
       )}
@@ -237,7 +239,7 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
     >
       {/* ImageArea - Interactive section with state-based rendering */}
       <div
-        className="relative aspect-[4/3] overflow-hidden bg-surface-light"
+        className="relative aspect-[4/3] overflow-hidden bg-fill-quaternary"
         onMouseLeave={handleMouseLeave}
         onMouseMove={handleMouseMove}
       >
@@ -384,12 +386,14 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
               )}
             >
               <Button
-                className="h-9 px-5 bg-primary/90 hover:bg-primary text-primary-foreground backdrop-blur-sm shadow-lg rounded-full font-medium"
+                size="sm"
+                className="shadow-floating"
                 onClick={(e) => handleAction(e, () => onAssign(set))}
+                aria-label={`Personalizuj i przypisz: ${set.name}`}
                 data-testid={`set-card-${set.id}-assign-btn`}
               >
-                <Send className="h-3.5 w-3.5 mr-1.5" />
-                Personalizuj i przypisz
+                <Send aria-hidden="true" />
+                Przypisz
               </Button>
             </div>
           )}
@@ -397,7 +401,7 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
       </div>
 
       {/* Content section - Fixed heights for grid alignment */}
-      <div className="flex flex-col flex-1 p-4 bg-surface">
+      <div className="flex flex-col flex-1 p-4">
         {/* Tags row - fixed height h-5, single line with fade */}
         <div className="h-5 flex items-center overflow-hidden relative">
           {!HIDE_EXERCISE_TAGS && aggregatedTags.length > 0 ? (
@@ -406,7 +410,7 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
                 {aggregatedTags.slice(0, 2).map((tag, index) => (
                   <span key={tag.id} className="flex items-center gap-1.5">
                     {index > 0 && <span className="text-muted-foreground/40">•</span>}
-                    <span className="text-primary font-medium uppercase tracking-wider truncate max-w-[80px]">
+                    <span className="text-tint font-semibold truncate max-w-[80px]">
                       {tag.name}
                     </span>
                   </span>
@@ -416,7 +420,7 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
                 )}
               </div>
               {/* Fade gradient for overflow */}
-              <div className="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-surface to-transparent pointer-events-none" />
+              <div className="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-grouped-tertiary to-transparent pointer-events-none" />
             </>
           ) : (
             <span className="text-[11px] text-muted-foreground/50">—</span>
@@ -425,8 +429,18 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
 
         {/* Title row - fixed height for 2 lines */}
         <div className="h-12 mt-1">
-          <h3 className="text-base font-semibold leading-snug line-clamp-2 text-foreground group-hover:text-secondary transition-colors">
-            {set.name}
+          <h3 className="text-[17px] font-semibold leading-snug line-clamp-2 text-foreground">
+            <button
+              type="button"
+              className="rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              onClick={(event) => {
+                event.stopPropagation();
+                onView?.(set);
+              }}
+              data-testid={`set-card-${set.id}-open-btn`}
+            >
+              {set.name}
+            </button>
           </h3>
         </div>
 
@@ -444,7 +458,7 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
         {/* Metadata: exercise count and estimated time under type (fixed height for grid alignment) */}
         <div className="h-5 flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
           <Dumbbell className="h-3 w-3 shrink-0" />
-          <span>{exerciseCount} ćw</span>
+          <span>{formatExerciseCount(exerciseCount)}</span>
           {estimatedDuration > 0 && (
             <>
               <span className="text-muted-foreground/60">•</span>
@@ -456,14 +470,14 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
 
         {/* Footer - always at bottom with mt-auto */}
         <div className="flex items-center justify-between mt-auto pt-2">
-          <span className="text-xs text-muted-foreground">
+          <span className="text-[13px] text-label-secondary">
             {isTemplate
               ? assignmentCount > 0
-                ? `Legacy przypisania: ${assignmentCount}`
-                : 'Zestaw zrodlowy'
+                ? `Wcześniejsze przypisania: ${assignmentCount}`
+                : 'Gotowy do przypisania'
               : assignmentCount > 0
-                ? `Przypisany do ${assignmentCount} ${assignmentCount === 1 ? 'pacjenta' : 'pacjentow'}`
-                : 'Oczekuje na przypisanie'}
+                ? `Przypisany do ${assignmentCount} ${assignmentCount === 1 ? 'pacjenta' : 'pacjentów'}`
+                : 'Czeka na przypisanie'}
           </span>
           {set.isActive === false && (
             <Badge variant="outline" className="text-[10px] px-1.5 py-0">

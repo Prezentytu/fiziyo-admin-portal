@@ -281,7 +281,7 @@ export function PatientDialog({
                   <div
                     className={cn(
                       'absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full',
-                      'bg-primary text-primary-foreground shadow-lg ring-4 ring-background',
+                      'bg-tint-fill text-on-tint shadow-lg ring-4 ring-background',
                       'transition-all duration-300 delay-200',
                       showSuccessAnimation && 'animate-in zoom-in-50 duration-300'
                     )}
@@ -354,8 +354,8 @@ export function PatientDialog({
             <>
               <DialogHeader className="px-8 py-6 border-b border-border shrink-0 bg-linear-to-r from-surface to-surface-light/50">
                 <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-primary to-primary-dark shadow-lg shadow-primary/25">
-                    <UserPlus className="h-6 w-6 text-primary-foreground" />
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-tint-fill">
+                    <UserPlus className="h-6 w-6 text-on-tint" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <DialogTitle className="text-xl font-bold" data-testid="patient-dialog-title">

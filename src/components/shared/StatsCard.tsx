@@ -80,9 +80,9 @@ export function StatsCard({
               'flex items-center justify-center rounded-xl',
               isHero ? 'h-16 w-16' : 'h-12 w-12',
               variant === 'primary' && 'bg-gradient-to-br from-primary/90 to-primary-dark/90',
-              variant === 'secondary' && 'bg-gradient-to-br from-secondary/90 to-teal-600/90',
-              variant === 'info' && 'bg-gradient-to-br from-info/90 to-blue-600/90',
-              variant === 'warning' && 'bg-gradient-to-br from-warning/90 to-amber-600/90',
+              variant === 'secondary' && 'bg-gradient-to-br from-secondary/90 to-status-success-muted',
+              variant === 'info' && 'bg-gradient-to-br from-info/90 to-status-info-muted',
+              variant === 'warning' && 'bg-gradient-to-br from-warning/90 to-status-warning-muted',
               variant === 'success' && 'bg-gradient-to-br from-primary/90 to-primary-dark/90'
             )}
           >

@@ -40,7 +40,7 @@ export function NewExerciseCard({ exercise, decision, onDecisionChange, classNam
         'rounded-xl border transition-all duration-200',
         isSkipped
           ? 'border-border/40 bg-muted/20 opacity-60'
-          : 'border-blue-500/30 bg-blue-500/5 hover:border-blue-500/50',
+          : 'border-status-info/30 bg-status-info-muted hover:border-status-info/50',
         className
       )}
       data-testid={`import-new-card-${exercise.tempId}`}
@@ -50,10 +50,10 @@ export function NewExerciseCard({ exercise, decision, onDecisionChange, classNam
           <div
             className={cn(
               'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
-              isSkipped ? 'bg-muted' : 'bg-blue-500/20'
+              isSkipped ? 'bg-muted' : 'bg-status-info-muted'
             )}
           >
-            <Plus className={cn('h-4 w-4', isSkipped ? 'text-muted-foreground' : 'text-blue-500')} />
+            <Plus className={cn('h-4 w-4', isSkipped ? 'text-muted-foreground' : 'text-status-info')} />
           </div>
           <div className="min-w-0 flex-1">
             <h3 className={cn('text-base font-semibold text-foreground truncate', isSkipped && 'line-through text-muted-foreground')}>

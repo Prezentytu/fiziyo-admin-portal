@@ -62,12 +62,12 @@ const roleLabels: Record<string, string> = {
 const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
   pending: {
     label: 'Oczekujące',
-    color: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+    color: 'bg-status-warning-muted text-status-warning border-status-warning/30',
     icon: Clock,
   },
   accepted: {
     label: 'Zaakceptowane',
-    color: 'bg-green-500/20 text-green-400 border-green-500/30',
+    color: 'bg-status-success-muted text-status-success border-status-success/30',
     icon: Check,
   },
   expired: {
@@ -77,7 +77,7 @@ const statusConfig: Record<string, { label: string; color: string; icon: React.E
   },
   revoked: {
     label: 'Anulowane',
-    color: 'bg-red-500/20 text-red-400 border-red-500/30',
+    color: 'bg-status-danger-muted text-status-danger border-status-danger/30',
     icon: X,
   },
 };
@@ -311,7 +311,7 @@ function InvitationItem({ invitation, onCopyLink, onResend, onRevoke, isLoading 
             {isPending && (
               <>
                 <span>•</span>
-                <span className={isExpired ? 'text-red-400 font-bold' : ''}>
+                <span className={isExpired ? 'text-status-danger font-bold' : ''}>
                   {isExpired
                     ? 'Wygasło'
                     : `Wygasa ${formatDistanceToNow(new Date(invitation.expiresAt), { locale: pl, addSuffix: true })}`}

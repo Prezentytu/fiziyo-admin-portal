@@ -3,17 +3,18 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const badgeVariants = cva(
-  'inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+  'inline-flex items-center gap-1 rounded-full border border-transparent px-2 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
   {
     variants: {
       variant: {
-        default: 'border-transparent bg-primary text-primary-foreground shadow hover:bg-primary/80',
-        secondary: 'border-transparent bg-surface-light text-foreground hover:bg-surface-hover',
-        destructive: 'border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80',
-        outline: 'text-foreground',
-        success: 'border-transparent bg-success/20 text-success',
-        warning: 'border-transparent bg-warning/20 text-warning',
-        info: 'border-transparent bg-info/20 text-info',
+        default: 'bg-tint-muted text-tint',
+        secondary: 'bg-fill-tertiary text-label-secondary',
+        destructive: 'bg-status-danger-muted text-status-danger',
+        outline: 'border-separator text-label-secondary',
+        success: 'bg-status-success-muted text-status-success',
+        warning: 'bg-status-warning-muted text-status-warning',
+        info: 'bg-status-info-muted text-status-info',
+        solid: 'bg-tint-fill text-on-tint',
       },
     },
     defaultVariants: {

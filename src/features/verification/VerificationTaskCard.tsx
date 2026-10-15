@@ -33,19 +33,19 @@ function getStatusBadge(status: ContentStatus) {
       return {
         label: 'Oczekuje',
         variant: 'warning' as const,
-        className: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+        className: 'bg-status-warning-muted text-status-warning border-status-warning/20',
       };
     case 'CHANGES_REQUESTED':
       return {
         label: 'Do poprawy',
         variant: 'destructive' as const,
-        className: 'bg-orange-500/10 text-orange-600 border-orange-500/20',
+        className: 'bg-status-warning-muted text-status-warning border-status-warning/20',
       };
     case 'APPROVED':
       return {
         label: 'Zatwierdzony',
         variant: 'success' as const,
-        className: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+        className: 'bg-status-success-muted text-status-success border-status-success/20',
       };
     case 'PUBLISHED':
       return {
@@ -150,7 +150,7 @@ export function VerificationTaskCard({
           className={cn(
             'group relative overflow-hidden transition-all duration-300 cursor-pointer',
             'hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/10',
-            hasWarnings && 'border-amber-500/30',
+            hasWarnings && 'border-status-warning/30',
             selected && 'border-primary ring-1 ring-primary/30',
             className
           )}
@@ -237,7 +237,7 @@ export function VerificationTaskCard({
                   {hasOpenReport && (
                     <Badge
                       variant="outline"
-                      className="border-amber-500/30 bg-amber-500/15 text-amber-500"
+                      className="border-status-warning/30 bg-status-warning-muted text-status-warning"
                       data-testid={`verification-card-${exercise.id}-reported-badge`}
                     >
                       <Flag className="mr-1 h-3 w-3" />
@@ -257,7 +257,7 @@ export function VerificationTaskCard({
                       className={cn(
                         'text-[10px] px-2 py-0.5 backdrop-blur-sm',
                         indicator.type === 'warning'
-                          ? 'border-amber-600 bg-amber-500/80 text-white'
+                          ? 'border-status-warning bg-status-warning-muted text-white'
                           : 'border-info bg-info/80 text-white'
                       )}
                     >
@@ -317,7 +317,7 @@ export function VerificationTaskCard({
                   )}
                   {exercise.latestReport && (
                     <div
-                      className="rounded-md border border-amber-500/20 bg-amber-500/5 px-2 py-1 text-[10px] text-amber-600"
+                      className="rounded-md border border-status-warning/20 bg-status-warning-muted px-2 py-1 text-[10px] text-status-warning"
                       data-testid={`verification-card-${exercise.id}-report-context`}
                     >
                       {exercise.latestReport.reasonCategory}: {exercise.latestReport.description.slice(0, 72)}

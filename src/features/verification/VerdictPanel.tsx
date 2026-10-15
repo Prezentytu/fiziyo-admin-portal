@@ -231,17 +231,17 @@ export function VerdictPanel({
 
   // Status badge color
   const globalStatusConfig = {
-    PENDING_REVIEW: { label: 'Oczekuje', color: 'bg-amber-500/20 text-amber-500 border-amber-500/30' },
-    CHANGES_REQUESTED: { label: 'Do poprawy', color: 'bg-orange-500/20 text-orange-500 border-orange-500/30' },
-    PUBLISHED: { label: 'Opublikowane', color: 'bg-emerald-500/20 text-emerald-500 border-emerald-500/30' },
-    APPROVED: { label: 'Zatwierdzone', color: 'bg-blue-500/20 text-blue-500 border-blue-500/30' },
+    PENDING_REVIEW: { label: 'Oczekuje', color: 'bg-status-warning-muted text-status-warning border-status-warning/30' },
+    CHANGES_REQUESTED: { label: 'Do poprawy', color: 'bg-status-warning-muted text-status-warning border-status-warning/30' },
+    PUBLISHED: { label: 'Opublikowane', color: 'bg-status-success-muted text-status-success border-status-success/30' },
+    APPROVED: { label: 'Zatwierdzone', color: 'bg-status-info-muted text-status-info border-status-info/30' },
     ARCHIVED_GLOBAL: { label: 'Wycofane', color: 'bg-muted text-muted-foreground border-border' },
     DRAFT: { label: 'Szkic', color: 'bg-muted text-muted-foreground border-border' },
   };
   const organizationStatusConfig = {
-    PENDING_ORG_REVIEW: { label: 'Oczekuje na weryfikację', color: 'bg-amber-500/20 text-amber-500 border-amber-500/30' },
-    ORG_CHANGES_REQUESTED: { label: 'Do poprawy', color: 'bg-orange-500/20 text-orange-500 border-orange-500/30' },
-    ORG_VERIFIED: { label: 'Zweryfikowane', color: 'bg-emerald-500/20 text-emerald-500 border-emerald-500/30' },
+    PENDING_ORG_REVIEW: { label: 'Oczekuje na weryfikację', color: 'bg-status-warning-muted text-status-warning border-status-warning/30' },
+    ORG_CHANGES_REQUESTED: { label: 'Do poprawy', color: 'bg-status-warning-muted text-status-warning border-status-warning/30' },
+    ORG_VERIFIED: { label: 'Zweryfikowane', color: 'bg-status-success-muted text-status-success border-status-success/30' },
     ORG_ARCHIVED: { label: 'Zarchiwizowane', color: 'bg-muted text-muted-foreground border-border' },
     NOT_SUBMITTED: { label: 'Nie zgłoszone', color: 'bg-muted text-muted-foreground border-border' },
   };
@@ -289,9 +289,9 @@ export function VerdictPanel({
                   className={cn(
                     'h-full rounded-full transition-all',
                     readinessPercentage >= 80
-                      ? 'bg-emerald-500'
+                      ? 'bg-tint-fill'
                       : readinessPercentage >= 50
-                        ? 'bg-amber-500'
+                        ? 'bg-status-warning-fill'
                         : 'bg-destructive'
                   )}
                   style={{ width: `${readinessPercentage}%` }}
@@ -314,7 +314,7 @@ export function VerdictPanel({
                   className={cn(
                     'flex items-center gap-2.5 p-2 rounded-lg cursor-pointer transition-colors',
                     'hover:bg-accent/70',
-                    item.checked && 'bg-emerald-500/5'
+                    item.checked && 'bg-status-success-muted'
                   )}
                 >
                   <Checkbox
@@ -322,10 +322,10 @@ export function VerdictPanel({
                     checked={item.checked}
                     onCheckedChange={(checked) => handleSafetyChange(item.id, checked === true)}
                     disabled={anyLoading}
-                    className={cn('border-border', item.checked && 'border-emerald-500 bg-emerald-500')}
+                    className={cn('border-border', item.checked && 'border-status-success bg-tint-fill')}
                     data-testid={`safety-check-${item.id}`}
                   />
-                  <span className={cn('text-muted-foreground', item.checked && 'text-emerald-500')}>{item.icon}</span>
+                  <span className={cn('text-muted-foreground', item.checked && 'text-status-success')}>{item.icon}</span>
                   <span className={cn('text-sm', item.checked ? 'text-foreground' : 'text-muted-foreground')}>
                     {item.label}
                   </span>
@@ -335,12 +335,12 @@ export function VerdictPanel({
 
             {/* Validation status */}
             {!validationPassed && missingFields.length > 0 && (
-              <div className="mt-3 p-2.5 rounded-lg bg-red-500/10 border border-red-500/20">
-                <p className="text-xs font-medium text-red-400 mb-1.5 flex items-center gap-1.5">
+              <div className="mt-3 p-2.5 rounded-lg bg-status-danger-muted border border-status-danger/20">
+                <p className="text-xs font-medium text-status-danger mb-1.5 flex items-center gap-1.5">
                   <AlertTriangle className="h-3.5 w-3.5" />
                   Brakujące dane:
                 </p>
-                <ul className="text-xs text-red-300/80 space-y-0.5 pl-5 list-disc">
+                <ul className="text-xs text-status-danger space-y-0.5 pl-5 list-disc">
                   {missingFields.slice(0, 4).map((field) => (
                     <li key={field}>{field}</li>
                   ))}
@@ -355,15 +355,15 @@ export function VerdictPanel({
         <div className="p-4 flex-1 overflow-y-auto">
           {reportContext && (
             <div
-              className="mb-3 rounded-lg border border-amber-500/25 bg-amber-500/10 p-2.5"
+              className="mb-3 rounded-lg border border-status-warning/25 bg-status-warning-muted p-2.5"
               data-testid="verification-report-context"
             >
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-500">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-status-warning">
                 Zgłoszone ({reportContext.count})
               </p>
-              <p className="mt-1 text-xs text-amber-300">{reportContext.reasonCategory}</p>
-              <p className="mt-1 text-xs text-amber-200/90">{reportContext.description}</p>
-              <p className="mt-1 text-[10px] text-amber-300/80">
+              <p className="mt-1 text-xs text-status-warning">{reportContext.reasonCategory}</p>
+              <p className="mt-1 text-xs text-foreground">{reportContext.description}</p>
+              <p className="mt-1 text-[10px] text-status-warning">
                 {reportContext.reporterName || 'Terapeuta'} • {reportContext.routingTarget}
               </p>
             </div>
@@ -419,7 +419,7 @@ export function VerdictPanel({
                     className={cn(
                       'px-2 py-1 text-[10px] font-medium rounded-md transition-colors',
                       'border border-border/70 bg-card/70 text-muted-foreground',
-                      'hover:bg-amber-500/10 hover:text-amber-400 hover:border-amber-500/30',
+                      'hover:bg-status-warning-muted hover:text-status-warning hover:border-status-warning/30',
                       'disabled:opacity-50 disabled:cursor-not-allowed'
                     )}
                     data-testid={`quick-reject-${reason.id}`}
@@ -437,10 +437,10 @@ export function VerdictPanel({
           {/* Transition state: Show success message during approval */}
           {isApproving ? (
             <div className="flex flex-col items-center justify-center py-4 gap-3">
-              <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
-                <Loader2 className="h-5 w-5 text-emerald-500 animate-spin" />
+              <div className="w-10 h-10 rounded-full bg-status-success-muted flex items-center justify-center border border-status-success/20">
+                <Loader2 className="h-5 w-5 text-status-success animate-spin" />
               </div>
-              <p className="text-sm text-emerald-400 font-medium">Publikuję...</p>
+              <p className="text-sm text-status-success font-medium">Publikuję...</p>
               {hasMoreExercises && <p className="text-xs text-muted-foreground">Przechodzę do następnego</p>}
             </div>
           ) : isPublished ? (
@@ -470,7 +470,7 @@ export function VerdictPanel({
                       className={cn(
                         'w-full gap-2 font-semibold shadow-sm',
                         canApprove
-                          ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                          ? 'bg-tint-fill text-on-tint hover:bg-tint-fill-hover'
                           : 'cursor-not-allowed bg-muted text-muted-foreground'
                       )}
                       data-testid="verdict-approve-btn"
@@ -498,7 +498,7 @@ export function VerdictPanel({
                 disabled={anyLoading || !canRequestChanges}
                 className={cn(
                   'w-full gap-2',
-                  'border-amber-500/30 text-amber-500 hover:bg-amber-500/10 hover:text-amber-400'
+                  'border-status-warning/30 text-status-warning hover:bg-status-warning-muted hover:text-status-warning'
                 )}
                 data-testid="verdict-request-changes-btn"
               >
@@ -524,7 +524,7 @@ export function VerdictPanel({
                   size="default"
                   onClick={onReject}
                   disabled={anyLoading || !comment.trim()}
-                  className="w-full gap-2 text-muted-foreground hover:bg-red-500/10 hover:text-red-500"
+                  className="w-full gap-2 text-muted-foreground hover:bg-status-danger-muted hover:text-status-danger"
                   data-testid="verdict-reject-btn"
                 >
                   <XCircle className="h-4 w-4" />

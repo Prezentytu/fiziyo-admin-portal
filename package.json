@@ -15,6 +15,7 @@
     "lint": "eslint",
     "lint:fix": "eslint --fix",
     "check:testids": "node scripts/check-testid-coverage.mjs",
+    "check:design-tokens": "node scripts/check-design-tokens.mjs",
     "type-check": "tsc --noEmit",
     "format": "prettier --write \"src/**/*.{json,md}\"",
     "format:check": "prettier --check \"src/**/*.{json,md}\"",
@@ -22,7 +23,7 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "analyze": "ANALYZE=true next build",
-    "validate": "npm run lint && npm run check:testids && npm run type-check && npm run test:run && npm run build",
+    "validate": "npm run lint && npm run check:testids && npm run check:design-tokens && npm run type-check && npm run test:run && npm run build",
     "prepare": "husky"
   },
   "lint-staged": {

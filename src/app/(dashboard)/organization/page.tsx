@@ -214,7 +214,7 @@ export default function OrganizationPage() {
 
   return (
     <AccessGuard requiredAccess="admin" fallbackUrl="/">
-      <div className="flex h-full -m-4 lg:-m-6 2xl:-m-8 overflow-hidden bg-background">
+      <div className="flex h-full overflow-hidden rounded-card bg-card [--surface-card:var(--grouped-tertiary)]">
         <Tabs
           value={activeTab}
           onValueChange={setActiveTab}
@@ -222,9 +222,9 @@ export default function OrganizationPage() {
           orientation="vertical"
         >
           {/* Inner Sidebar */}
-          <div className="w-64 border-r border-border/40 bg-transparent flex flex-col shrink-0">
+          <div className="w-64 border-r-[0.5px] border-separator bg-transparent flex flex-col shrink-0">
             <div className="p-6">
-              <h1 className="text-xl font-bold text-foreground mb-6" data-testid="org-page-title">
+              <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground mb-6" data-testid="org-page-title">
                 Mój Zespół
               </h1>
 
@@ -261,7 +261,7 @@ export default function OrganizationPage() {
                     <Mail className="h-4 w-4" />
                     <span>Zaproszenia</span>
                     {pendingInvitations > 0 && (
-                      <Badge className="ml-auto bg-amber-500/10 text-amber-500 border-amber-500/20 text-[10px] px-1.5 h-4">
+                      <Badge className="ml-auto bg-status-warning-muted text-status-warning border-status-warning/20 text-[10px] px-1.5 h-4">
                         {pendingInvitations}
                       </Badge>
                     )}
@@ -272,7 +272,7 @@ export default function OrganizationPage() {
           </div>
 
           {/* Content Area */}
-          <div className="flex-1 overflow-y-auto bg-background/30">
+          <div className="flex-1 overflow-y-auto">
             <div className="max-w-5xl mx-auto p-8 lg:p-12">
               <TabsContent value="team" className="mt-0 outline-none">
                 <TeamSection

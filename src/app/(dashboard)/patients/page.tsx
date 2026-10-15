@@ -3,41 +3,23 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
-import { Plus, Users, UserPlus, UserCheck, AlertTriangle, Sparkles, Search } from 'lucide-react';
+import { Plus, Search, Users } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { PatientExpandableCard, Patient } from '@/features/patients/PatientExpandableCard';
+import { PageSheet, PageHeader } from '@/components/shared/page';
+import { PatientExpandableCard, PATIENT_ROW_GRID, type Patient } from '@/features/patients/PatientExpandableCard';
 import { PatientDialog } from '@/features/patients/PatientDialog';
 import { PatientQRCodeDialog } from '@/features/patients/PatientQRCodeDialog';
 import { TakeOverDialog } from '@/features/patients/TakeOverDialog';
 import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
-
-// Extended filter type for Therapy Management View
-type TherapyFilterType = 'my' | 'all' | 'needs_attention' | 'subscription';
-
-// Helper: Check if patient needs attention (inactive > 7 days)
-const needsAttention = (patient: Patient): boolean => {
-  if (!patient.lastActivity) return true; // Never active = needs attention
-  const lastActivityDate = new Date(patient.lastActivity);
-  const daysSinceActivity = Math.floor((Date.now() - lastActivityDate.getTime()) / (1000 * 60 * 60 * 24));
-  return daysSinceActivity >= 7;
-};
-
-// Helper: Check if patient has subscription issues (expired or expiring soon)
-const hasSubscriptionIssue = (patient: Patient): boolean => {
-  if (!patient.premiumValidUntil) return true; // No premium = issue
-  const expiryDate = new Date(patient.premiumValidUntil);
-  const daysUntilExpiry = Math.floor((expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-  return daysUntilExpiry <= 7; // Expiring within 7 days or already expired
-};
+import { getPatientActivityStatus, needsAttention } from '@/features/patients/utils/patientActivityStatus';
+import { sortPatients, type PatientSort } from '@/features/patients/utils/patientList';
 import type { Patient as AssignmentPatient } from '@/features/assignment/types';
 import { cn } from '@/lib/utils';
 
@@ -53,6 +35,24 @@ import { DashboardRouteLoading } from '@/components/layout/DashboardRouteLoading
 import type { UserByClerkIdResponse, OrganizationPatientsResponse, OrganizationPatientDto } from '@/types/apollo';
 import { useRealtimePatients } from '@/hooks/useRealtimePatients';
 
+type TherapyFilterType = 'my' | 'all' | 'needs_attention' | 'subscription';
+
+const patientNeedsAttention = (patient: Patient): boolean => needsAttention(getPatientActivityStatus(patient.lastActivity));
+
+// Expired, missing or ending within 7 days
+const hasSubscriptionIssue = (patient: Patient): boolean => {
+  if (!patient.premiumValidUntil) return true;
+  const daysUntilExpiry = Math.floor((new Date(patient.premiumValidUntil).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  return daysUntilExpiry <= 7;
+};
+
+const FILTER_TABS: ReadonlyArray<{ id: TherapyFilterType; label: string; testId: string; countClass: string }> = [
+  { id: 'my', label: 'Moi pacjenci', testId: 'patient-filter-my-btn', countClass: 'text-label-secondary' },
+  { id: 'all', label: 'Wszyscy', testId: 'patient-filter-all-btn', countClass: 'text-label-secondary' },
+  { id: 'needs_attention', label: 'Brak aktywności', testId: 'patient-filter-attention-btn', countClass: 'text-status-warning' },
+  { id: 'subscription', label: 'Subskrypcja', testId: 'patient-filter-subscription-btn', countClass: 'text-status-danger' },
+];
+
 export default function PatientsPage() {
   const { user } = useUser();
   const { currentOrganization, isLoading: orgContextLoading } = useOrganization();
@@ -65,6 +65,8 @@ export default function PatientsPage() {
   const [removingFromOrgPatient, setRemovingFromOrgPatient] = useState<Patient | null>(null);
   const [takeOverPatient, setTakeOverPatient] = useState<Patient | null>(null);
   const [qrPatient, setQrPatient] = useState<Patient | null>(null);
+  const [sort, setSort] = useState<PatientSort>('urgency');
+  const [isCompact, setIsCompact] = useState(false);
 
   // Get organization ID from context (changes when user switches organization)
   const organizationId = currentOrganization?.organizationId;
@@ -130,8 +132,7 @@ export default function PatientsPage() {
   const myPatients = allPatients.filter((p) => p.therapist?.id === therapistId);
   const myCount = myPatients.length;
   const totalCount = allPatients.length;
-  // Needs attention: my patients who are inactive > 7 days
-  const needsAttentionCount = myPatients.filter(needsAttention).length;
+  const needsAttentionCount = myPatients.filter(patientNeedsAttention).length;
   // Subscription issues: my patients with expired/expiring premium
   const subscriptionIssueCount = myPatients.filter(hasSubscriptionIssue).length;
 
@@ -141,7 +142,7 @@ export default function PatientsPage() {
       case 'my':
         return patients.filter((p) => p.therapist?.id === therapistId);
       case 'needs_attention':
-        return patients.filter((p) => p.therapist?.id === therapistId && needsAttention(p));
+        return patients.filter((p) => p.therapist?.id === therapistId && patientNeedsAttention(p));
       case 'subscription':
         return patients.filter((p) => p.therapist?.id === therapistId && hasSubscriptionIssue(p));
       default:
@@ -163,34 +164,14 @@ export default function PatientsPage() {
     );
   });
 
-  // Sort: my patients first, then by recent activity/assignment date, then by name
-  const filteredPatients = [...searchFilteredPatients].sort((a, b) => {
-    const aIsMine = a.therapist?.id === therapistId;
-    const bIsMine = b.therapist?.id === therapistId;
+  const filteredPatients = sortPatients(searchFilteredPatients, sort, therapistId);
 
-    // 1. My patients first
-    if (aIsMine && !bIsMine) return -1;
-    if (!aIsMine && bIsMine) return 1;
-
-    // 2. Sort by most recent activity (lastActivity or assignedAt)
-    // Use the more recent of lastActivity and assignedAt for each patient
-    const getRecentDate = (patient: Patient): number => {
-      const activity = patient.lastActivity ? new Date(patient.lastActivity).getTime() : 0;
-      const assigned = patient.assignedAt ? new Date(patient.assignedAt).getTime() : 0;
-      return Math.max(activity, assigned);
-    };
-
-    const aRecent = getRecentDate(a);
-    const bRecent = getRecentDate(b);
-
-    // Newest first (descending)
-    if (aRecent !== bRecent) return bRecent - aRecent;
-
-    // 3. Fallback: alphabetically by name
-    const aName = a.fullname || '';
-    const bName = b.fullname || '';
-    return aName.localeCompare(bName);
-  });
+  const tabCounts: Record<TherapyFilterType, number> = {
+    my: myCount,
+    all: totalCount,
+    needs_attention: needsAttentionCount,
+    subscription: subscriptionIssueCount,
+  };
 
   const handleAssignSet = (patient: Patient) => {
     setSelectedPatient(patient);
@@ -265,11 +246,11 @@ export default function PatientsPage() {
   const getEmptyStateTitle = (filter: TherapyFilterType) => {
     switch (filter) {
       case 'my':
-        return 'Brak Twoich pacjentów';
+        return 'Nie masz jeszcze pacjentów';
       case 'needs_attention':
-        return 'Wszyscy pacjenci są aktywni!';
+        return 'Wszyscy Twoi pacjenci ćwiczą';
       case 'subscription':
-        return 'Brak problemów z subskrypcją';
+        return 'Wszyscy mają aktywne Premium';
       default:
         return 'Brak pacjentów w organizacji';
     }
@@ -278,11 +259,11 @@ export default function PatientsPage() {
   const getEmptyStateDescription = (filter: TherapyFilterType) => {
     switch (filter) {
       case 'my':
-        return 'Dodaj pierwszego pacjenta lub przejmij opiekę nad istniejącym';
+        return 'Dodaj pierwszą osobę albo przejmij opiekę w zakładce „Wszyscy”.';
       case 'needs_attention':
-        return 'Wszyscy Twoi pacjenci regularnie wykonują ćwiczenia';
+        return 'Nikt nie ma przerwy dłuższej niż 1 dzień.';
       case 'subscription':
-        return 'Wszyscy Twoi pacjenci mają aktywny dostęp Premium';
+        return 'Nikomu z Twoich pacjentów nie kończy się dostęp w tym tygodniu.';
       default:
         return 'Dodaj pierwszego pacjenta do organizacji';
     }
@@ -295,186 +276,153 @@ export default function PatientsPage() {
   if (error) {
     return (
       <div className="flex h-full items-center justify-center">
-        <p className="text-destructive">Błąd ładowania pacjentów: {error.message}</p>
+        <p className="text-status-danger">Nie udało się pobrać pacjentów. Odśwież stronę.</p>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto w-full max-w-screen-2xl space-y-6">
-      {/* Compact Header with Search */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-foreground" data-testid="patient-page-title">
-          Pacjenci
-        </h1>
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Szukaj pacjentów..."
-            className="pl-9 bg-surface border-border/60"
-            data-testid="patient-search-input"
-          />
+    <PageSheet contentClassName="gap-6">
+      <PageHeader
+        title="Pacjenci"
+        titleTestId="patient-page-title"
+        subtitle={`${myCount} pod Twoją opieką · ${totalCount} w organizacji`}
+        actions={
+          <>
+            <label className="relative w-full sm:w-[300px]">
+              <span className="sr-only">Szukaj pacjentów</span>
+              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-label-secondary" aria-hidden="true" />
+              <Input
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Szukaj pacjentów"
+                className="pl-10"
+                data-testid="patient-search-input"
+              />
+            </label>
+            <Button
+              onClick={() => setIsDialogOpen(true)}
+              disabled={!organizationId}
+              aria-label="Dodaj pacjenta. Nowy pacjent w systemie"
+              data-testid="patient-create-btn"
+            >
+              <Plus aria-hidden="true" />
+              Dodaj pacjenta
+            </Button>
+          </>
+        }
+      />
+
+      <div className="flex flex-wrap items-end gap-x-4 gap-y-2 shadow-[inset_0_-0.5px_0_var(--separator)]">
+        <Tabs
+          value={patientFilter}
+          onValueChange={(value) => setPatientFilter(value as TherapyFilterType)}
+          className="min-w-0 flex-auto"
+        >
+          <TabsList variant="underline" aria-label="Filtr pacjentów" className="max-w-full">
+            {FILTER_TABS.map((tab) => (
+              <TabsTrigger key={tab.id} value={tab.id} activeVariant="underline" data-testid={tab.testId}>
+                {tab.label}
+                <span className={cn('ml-1.5 tabular-nums', tab.countClass)}>{tabCounts[tab.id]}</span>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+        <div className="flex items-center gap-1 pb-1.5">
+          <label className="inline-flex h-8 items-center gap-1.5 px-2.5 text-[13px] font-semibold text-label-secondary">
+            Sortuj
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as PatientSort)}
+              className="h-8 cursor-pointer rounded-full border-0 bg-fill-tertiary px-2.5 text-[13px] font-semibold text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              data-testid="patient-sort-select"
+            >
+              <option value="urgency">Najdłużej bez treningu</option>
+              <option value="name">Nazwisko A–Z</option>
+            </select>
+          </label>
+          <Button
+            variant={isCompact ? 'outline' : 'secondary'}
+            size="sm"
+            aria-pressed={isCompact}
+            onClick={() => setIsCompact((value) => !value)}
+            className={cn('hidden sm:inline-flex', isCompact && 'border-tint text-tint')}
+            data-testid="patient-compact-toggle-btn"
+          >
+            Widok zwarty
+          </Button>
         </div>
       </div>
 
-      {/* Hero Action - Add Patient */}
-      <button
-        onClick={() => setIsDialogOpen(true)}
-        disabled={!organizationId}
-        className="group relative overflow-hidden rounded-2xl bg-linear-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 w-full sm:w-auto sm:max-w-md"
-        data-testid="patient-create-btn"
-      >
-        <div className="absolute inset-0 bg-linear-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary-foreground/10 rounded-full blur-3xl group-hover:bg-primary-foreground/20 transition-all duration-500" />
-
-        <div className="relative flex items-center gap-4">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-foreground/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
-            <UserPlus className="h-5 w-5 text-primary-foreground" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <h3 className="text-base font-bold text-primary-foreground">Dodaj pacjenta</h3>
-            <p className="text-sm text-primary-foreground/70">Nowy pacjent w systemie</p>
-          </div>
-          <Plus className="h-5 w-5 text-primary-foreground/60 group-hover:text-primary-foreground transition-colors shrink-0" />
-        </div>
-      </button>
-
-      {/* Therapy Management Tabs */}
-      <Tabs
-        value={patientFilter}
-        onValueChange={(value) => setPatientFilter(value as TherapyFilterType)}
-        className="w-full"
-      >
-        <TabsList className="w-full sm:w-auto grid grid-cols-2 sm:grid-cols-4 2xl:grid-cols-4 h-auto p-1 bg-surface-light/50 rounded-xl">
-          <TabsTrigger
-            value="my"
-            activeVariant="accent"
-            className="cursor-pointer gap-2 px-4 py-2.5 transition-all duration-200 hover:bg-background/50"
-            data-testid="patient-filter-my-btn"
-          >
-            <UserCheck className="h-4 w-4" />
-            <span className="hidden sm:inline">Moi pacjenci</span>
-            <span className="sm:hidden">Moi</span>
-            <Badge variant="secondary" className="ml-1 text-xs bg-primary/20 text-primary">
-              {myCount}
-            </Badge>
-          </TabsTrigger>
-          <TabsTrigger
-            value="all"
-            activeVariant="accent"
-            className="cursor-pointer gap-2 px-4 py-2.5 transition-all duration-200 hover:bg-background/50"
-            data-testid="patient-filter-all-btn"
-          >
-            <Users className="h-4 w-4" />
-            <span className="hidden sm:inline">Wszyscy</span>
-            <span className="sm:hidden">Wszyscy</span>
-            <Badge variant="secondary" className="ml-1 text-xs">
-              {totalCount}
-            </Badge>
-          </TabsTrigger>
-          <TabsTrigger
-            value="needs_attention"
-            activeVariant="warning"
-            className={cn(
-              'cursor-pointer gap-2 px-4 py-2.5 transition-all duration-200 hover:bg-background/50',
-              needsAttentionCount > 0 && 'data-[state=inactive]:text-warning/80'
-            )}
-            data-testid="patient-filter-attention-btn"
-          >
-            <AlertTriangle className="h-4 w-4" />
-            <span className="hidden sm:inline">Brak aktywności</span>
-            <span className="sm:hidden">Brak akt.</span>
-            {needsAttentionCount > 0 && (
-              <Badge variant="secondary" className="ml-1 text-xs bg-warning/20 text-warning">
-                {needsAttentionCount}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger
-            value="subscription"
-            activeVariant="destructive"
-            className={cn(
-              'cursor-pointer gap-2 px-4 py-2.5 transition-all duration-200 hover:bg-background/50',
-              subscriptionIssueCount > 0 && 'data-[state=inactive]:text-destructive/80'
-            )}
-            data-testid="patient-filter-subscription-btn"
-          >
-            <Sparkles className="h-4 w-4" />
-            <span className="hidden sm:inline">Subskrypcja</span>
-            <span className="sm:hidden">Sub.</span>
-            {subscriptionIssueCount > 0 && (
-              <Badge variant="secondary" className="ml-1 text-xs bg-destructive/20 text-destructive">
-                {subscriptionIssueCount}
-              </Badge>
-            )}
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
-
-      {/* Results info */}
       {searchQuery && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>Wyniki:</span>
-          <Badge variant="secondary" className="text-xs">
-            {filteredPatients.length} z {filteredByType.length}
-          </Badge>
-          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setSearchQuery('')}>
+        <div className="flex items-center gap-2 text-[13px] text-label-secondary">
+          <span aria-live="polite">
+            {filteredPatients.length} z {filteredByType.length} pacjentów pasuje do „{searchQuery}”
+          </span>
+          <Button variant="ghost" size="sm" onClick={() => setSearchQuery('')} data-testid="patient-search-clear-btn">
             Wyczyść wyszukiwanie
           </Button>
         </div>
       )}
 
-      {/* Patients List */}
-      {loading ? (
-        <div className="space-y-2 animate-stagger">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <Card key={i} className="border-border/40">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-4">
-                  <Skeleton className="h-10 w-10 rounded-full" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-4 w-48" />
-                    <Skeleton className="h-3 w-32" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+      <section aria-label="Lista pacjentów">
+        <div
+          aria-hidden="true"
+          className={cn(
+            'hidden px-3 pb-2.5 text-[13px] font-semibold text-label-secondary min-[1180px]:grid',
+            PATIENT_ROW_GRID
+          )}
+        >
+          <span>Pacjent</span>
+          <span>Ostatni trening</span>
+          <span>Dostęp</span>
+          <span className="text-right">Akcje</span>
         </div>
-      ) : filteredPatients.length === 0 ? (
-        <Card className="border-dashed border-border/60">
-          <CardContent className="py-16">
+        {loading ? (
+          <div aria-busy="true">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex min-h-[68px] items-center gap-3 border-t-[0.5px] border-separator px-3">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-48" />
+                  <Skeleton className="h-3 w-32" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredPatients.length === 0 ? (
+          <div className="border-t-[0.5px] border-separator">
             <EmptyState
               icon={Users}
-              title={searchQuery ? 'Nie znaleziono pacjentów' : getEmptyStateTitle(patientFilter)}
+              title={searchQuery ? `Brak wyników dla „${searchQuery}”` : getEmptyStateTitle(patientFilter)}
               description={
-                searchQuery ? 'Spróbuj zmienić kryteria wyszukiwania' : getEmptyStateDescription(patientFilter)
+                searchQuery ? 'Sprawdź pisownię albo szukaj po e-mailu lub telefonie.' : getEmptyStateDescription(patientFilter)
               }
               actionLabel={!searchQuery && patientFilter === 'my' ? 'Dodaj pacjenta' : undefined}
               onAction={!searchQuery && patientFilter === 'my' ? () => setIsDialogOpen(true) : undefined}
             />
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-2 animate-stagger">
-          {filteredPatients.map((patient) => (
-            <PatientExpandableCard
-              key={patient.id}
-              patient={patient}
-              onAssignSet={handleAssignSet}
-              onShowQR={handleShowQR}
-              onUnassign={(p) => setUnassigningPatient(p)}
-              onRemoveFromOrganization={(p) => setRemovingFromOrgPatient(p)}
-              onTakeOver={handleTakeOver}
-              organizationId={organizationId || ''}
-              therapistId={therapistId || ''}
-              showTherapistBadge={patientFilter !== 'my'}
-            />
-          ))}
-        </div>
-      )}
+          </div>
+        ) : (
+          <div>
+            {filteredPatients.map((patient) => (
+              <PatientExpandableCard
+                key={patient.id}
+                patient={patient}
+                onAssignSet={handleAssignSet}
+                onShowQR={handleShowQR}
+                onUnassign={(p) => setUnassigningPatient(p)}
+                onRemoveFromOrganization={(p) => setRemovingFromOrgPatient(p)}
+                onTakeOver={handleTakeOver}
+                organizationId={organizationId || ''}
+                therapistId={therapistId || ''}
+                showTherapistBadge={patientFilter !== 'my'}
+                compact={isCompact}
+              />
+            ))}
+          </div>
+        )}
+      </section>
 
       {/* Patient Dialog */}
       {organizationId && therapistId && (
@@ -526,9 +474,9 @@ export default function PatientsPage() {
         open={!!removingFromOrgPatient}
         onOpenChange={(open) => !open && setRemovingFromOrgPatient(null)}
         title="Usuń z organizacji"
-        description={`Czy na pewno chcesz TRWALE usunąć pacjenta "${
+        description={`Pacjent „${
           removingFromOrgPatient?.fullname || 'Nieznany'
-        }" z organizacji? Ta operacja jest nieodwracalna!`}
+        }” zniknie z organizacji razem z planami. Tej operacji nie można cofnąć.`}
         confirmText="Usuń z organizacji"
         variant="destructive"
         onConfirm={handleRemoveFromOrganization}
@@ -563,6 +511,6 @@ export default function PatientsPage() {
           organizationId={organizationId}
         />
       )}
-    </div>
+    </PageSheet>
   );
 }

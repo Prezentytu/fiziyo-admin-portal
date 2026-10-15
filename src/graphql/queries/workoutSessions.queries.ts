@@ -4,7 +4,7 @@ import { gql } from '@apollo/client';
  * Historia sesji treningowych pacjenta (care-team). Addytywny kontrakt SPEC-025.
  */
 export const GET_PATIENT_WORKOUT_SESSIONS_QUERY = gql`
-  query GetPatientWorkoutSessions($patientId: String!, $from: DateOnly, $to: DateOnly) {
+  query GetPatientWorkoutSessions($patientId: String!, $from: LocalDate, $to: LocalDate) {
     patientWorkoutSessions(patientId: $patientId, from: $from, to: $to) {
       sessionId
       assignmentId

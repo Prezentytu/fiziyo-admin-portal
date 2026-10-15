@@ -19,7 +19,7 @@ const routeNames: Record<string, string> = {
   billing: 'Rozliczenia',
   settings: 'Ustawienia',
   tags: 'Tagi',
-  import: 'Import Dokumentów',
+  import: 'Import dokumentów',
   verification: 'Weryfikacja',
 };
 
@@ -46,7 +46,7 @@ function Breadcrumbs() {
       <Link
         href="/"
         data-testid="nav-breadcrumb-home"
-        className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded"
+        className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
       >
         <Home className="h-4 w-4" />
       </Link>
@@ -61,7 +61,7 @@ function Breadcrumbs() {
             <Link
               href={crumb.href}
               data-testid={`nav-breadcrumb-item-${index}`}
-              className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded"
+              className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
             >
               {crumb.label}
             </Link>
@@ -85,7 +85,7 @@ export function Header({ onMobileMenuToggle }: HeaderProps) {
     <TooltipProvider delayDuration={300}>
       <header
         data-testid="nav-header"
-        className="flex shrink-0 h-16 items-center justify-between border-b border-border bg-surface px-4 lg:px-6"
+        className="flex shrink-0 h-16 items-center justify-between bg-grouped px-4 lg:px-6"
       >
         {/* Left side - Mobile menu + Org indicator + Breadcrumbs */}
         <div className="flex items-center gap-3">
@@ -126,10 +126,10 @@ export function Header({ onMobileMenuToggle }: HeaderProps) {
                 data-testid="nav-notifications-btn"
                 aria-label="Powiadomienia"
               >
-                <Bell className="h-5 w-5 text-muted-foreground" />
+                <Bell className="h-5 w-5 text-label-secondary" />
                 {/* Notification badge */}
                 {hasNotifications && (
-                  <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-white">
+                  <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
                     {notificationCount > 9 ? '9+' : notificationCount}
                   </span>
                 )}

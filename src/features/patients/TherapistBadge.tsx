@@ -76,7 +76,7 @@ export function TherapistBadge({
             >
               <Avatar className={avatarSize}>
                 <AvatarImage src={therapist.image} alt={displayName} />
-                <AvatarFallback className="text-[8px] bg-primary text-primary-foreground">{initials}</AvatarFallback>
+                <AvatarFallback className="text-[8px] bg-tint-fill text-on-tint">{initials}</AvatarFallback>
               </Avatar>
               <span className="font-medium">Mój pacjent</span>
             </Badge>

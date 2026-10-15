@@ -33,18 +33,18 @@ const eventConfig: Record<
   }
 > = {
   discomfort: {
-    dotColor: 'bg-red-500',
-    lineColor: 'border-red-500/30',
+    dotColor: 'bg-status-danger-fill',
+    lineColor: 'border-status-danger/30',
     priority: 1,
   },
   message: {
-    dotColor: 'bg-blue-500',
+    dotColor: 'bg-status-info-fill',
     lineColor: 'border-border/60',
     priority: 2,
   },
   training: {
-    dotColor: 'bg-green-500',
-    lineColor: 'border-green-500/50',
+    dotColor: 'bg-tint-fill',
+    lineColor: 'border-status-success/50',
     priority: 3,
     glowEffect: true,
   },

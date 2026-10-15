@@ -196,12 +196,12 @@ function SimilarExercisesAlert({ exercises, onUseExisting }: SimilarExercisesAle
 
   return (
     <div
-      className="mt-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 animate-in fade-in slide-in-from-top-2 duration-200"
+      className="mt-3 p-3 rounded-lg bg-status-warning-muted border border-status-warning/20 animate-in fade-in slide-in-from-top-2 duration-200"
       data-testid="exercise-similar-alert"
     >
       <div className="flex items-center gap-2 mb-2">
-        <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
-        <p className="text-xs font-medium text-amber-400">Podobne w Twojej bazie:</p>
+        <AlertTriangle className="h-3.5 w-3.5 text-status-warning" />
+        <p className="text-xs font-medium text-status-warning">Podobne w Twojej bazie:</p>
       </div>
       <div className="space-y-1.5">
         {exercises.map((ex) => (
@@ -318,14 +318,14 @@ function NameSuggestionHero({
 
       {/* Alert: Similar exercises in database */}
       {!hasExactMatch && hasSimilar && (
-        <div className="px-5 py-3 bg-amber-500/10 border-t border-amber-500/20">
+        <div className="px-5 py-3 bg-status-warning-muted border-t border-status-warning/20">
           <div className="flex items-start gap-2">
-            <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+            <AlertTriangle className="h-4 w-4 text-status-warning shrink-0 mt-0.5" />
             <div>
-              <p className="text-xs font-semibold text-amber-400">Podobne ćwiczenia w Twojej bazie:</p>
+              <p className="text-xs font-semibold text-status-warning">Podobne ćwiczenia w Twojej bazie:</p>
               <ul className="mt-1 space-y-0.5">
                 {similarInDatabase!.similar.slice(0, 3).map((name, idx) => (
-                  <li key={idx} className="text-xs text-amber-400/80">
+                  <li key={idx} className="text-xs text-status-warning">
                     &bull; {name}
                   </li>
                 ))}
@@ -490,13 +490,13 @@ function AIDiffDrawer({
                   'p-3 rounded-lg border',
                   hint.severity === 'warning'
                     ? 'bg-secondary/5 border-secondary/20'
-                    : 'bg-blue-500/5 border-blue-500/20'
+                    : 'bg-status-info-muted border-status-info/20'
                 )}
               >
                 <p
                   className={cn(
                     'text-xs font-medium mb-1',
-                    hint.severity === 'warning' ? 'text-secondary' : 'text-blue-400'
+                    hint.severity === 'warning' ? 'text-secondary' : 'text-status-info'
                   )}
                 >
                   {hint.message}
@@ -2064,7 +2064,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
             onClick={handleSave}
             disabled={isSaving || !isValid}
             className={cn(
-              'px-8 bg-primary hover:bg-primary-dark text-primary-foreground font-semibold',
+              'px-8 bg-tint-fill hover:bg-tint-fill-hover text-on-tint font-semibold',
               'disabled:opacity-50 disabled:cursor-not-allowed'
             )}
             data-testid="exercise-create-save-btn"

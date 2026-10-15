@@ -146,7 +146,7 @@ function AiFillBar({
     <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border/40 bg-surface/50 p-3">
       <p className="text-xs text-muted-foreground">
         Wypełnione{' '}
-        <span className={completeness.filled === completeness.total ? 'text-emerald-600 dark:text-emerald-400' : ''}>
+        <span className={completeness.filled === completeness.total ? 'text-status-success' : ''}>
           {completeness.filled}/{completeness.total}
         </span>{' '}
         sekcji rozszerzonych

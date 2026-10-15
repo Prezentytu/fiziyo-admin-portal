@@ -33,7 +33,7 @@ export function ConfidentMatchRow({ exercise, match, decision, onSkip, className
     <div
       className={cn(
         'flex items-center gap-3 rounded-lg border border-transparent px-3 py-2.5 transition-all duration-200',
-        isSkipped ? 'opacity-50 bg-muted/30' : 'hover:bg-green-500/5 hover:border-green-500/20',
+        isSkipped ? 'opacity-50 bg-muted/30' : 'hover:bg-status-success-muted hover:border-status-success/20',
         className
       )}
       data-testid={`import-confident-row-${exercise.tempId}`}
@@ -42,10 +42,10 @@ export function ConfidentMatchRow({ exercise, match, decision, onSkip, className
       <div
         className={cn(
           'flex h-8 w-8 shrink-0 items-center justify-center rounded-full',
-          isSkipped ? 'bg-muted' : 'bg-green-500/20'
+          isSkipped ? 'bg-muted' : 'bg-status-success-muted'
         )}
       >
-        <Check className={cn('h-4 w-4', isSkipped ? 'text-muted-foreground' : 'text-green-500')} />
+        <Check className={cn('h-4 w-4', isSkipped ? 'text-muted-foreground' : 'text-status-success')} />
       </div>
 
       {/* PDF exercise name with hover preview */}

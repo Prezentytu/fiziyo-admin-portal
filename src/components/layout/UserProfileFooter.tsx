@@ -65,7 +65,7 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
   // Loading state
   if (!isLoaded) {
     return (
-      <div className={cn('border-t border-border', isCollapsed ? 'p-2' : 'p-4')}>
+      <div className={cn('mx-3 border-t-[0.5px] border-separator', isCollapsed ? 'py-2' : 'py-3')}>
         {isCollapsed ? (
           <Skeleton className="h-10 w-10 rounded-full mx-auto" />
         ) : (
@@ -89,14 +89,14 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
           className={cn(
             'group flex items-center rounded-2xl transition-all duration-200 cursor-pointer w-full',
             isCollapsed
-              ? 'h-12 w-12 justify-center hover:bg-surface-light mx-auto'
-              : 'gap-4 p-3 hover:bg-surface-light'
+              ? 'h-12 w-12 justify-center hover:bg-fill-quaternary mx-auto'
+              : 'gap-3 p-2 hover:bg-fill-quaternary'
           )}
         >
           {/* Avatar */}
           <Avatar className="h-9 w-9 shrink-0">
             <AvatarImage src={avatarUrl} alt={displayName} />
-            <AvatarFallback className="bg-linear-to-br from-primary to-primary-dark text-primary-foreground text-sm font-semibold">
+            <AvatarFallback className="bg-avatar text-avatar-label text-sm font-semibold">
               {initials}
             </AvatarFallback>
           </Avatar>
@@ -134,7 +134,7 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
               <AvatarImage src={avatarUrl} alt={displayName} />
-              <AvatarFallback className="bg-linear-to-br from-primary to-primary-dark text-primary-foreground text-sm font-semibold">
+              <AvatarFallback className="bg-avatar text-avatar-label text-sm font-semibold">
                 {initials}
               </AvatarFallback>
             </Avatar>
@@ -228,7 +228,7 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
   // Collapsed version with tooltip
   if (isCollapsed) {
     return (
-      <div className="border-t border-border p-2 bg-surface">
+      <div className="mx-3 border-t-[0.5px] border-separator py-2">
         <Tooltip open={!isOpen}>
           <TooltipTrigger asChild>
             <div>{menuContent}</div>
@@ -243,5 +243,5 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
   }
 
   // Expanded version
-  return <div className="border-t border-border p-4 bg-surface">{menuContent}</div>;
+  return <div className="mx-3 border-t-[0.5px] border-separator py-3">{menuContent}</div>;
 }

@@ -1,0 +1,10 @@
+{
+  "note": "Colors outside DS tokens per file (docs/design-system.md). Numbers may only go down. Regenerate with npm run check:design-tokens -- --update after a cleanup.",
+  "total": 10,
+  "files": {
+    "src/app/global-error.tsx": 5,
+    "src/components/settings/AccessibilitySettings.tsx": 1,
+    "src/features/exercises/TagDialog.tsx": 1,
+    "src/types/feedback.types.ts": 3
+  }
+}

@@ -103,6 +103,7 @@ Każda specyfikacja powinna mieć sekcję Changelog na końcu:
 | 026 | [Release identity](SPEC-026-2026-09-08-release-identity.md)                                           | Tożsamość release w panelu                                     | implemented |
 | 027 | [Runtime security updates](SPEC-027-2026-09-08-runtime-security-updates.md)                           | Aktualizacje zależności runtime                                | implemented |
 | 028 | [Promote admin](SPEC-028-2026-09-15-promote-admin.md)                                                 | Ręczny Promote PROD z GitHub Actions, nie z UI Vercel          | in-progress |
+| 029 | [Design system v4](SPEC-029-2026-10-15-design-system-v4.md)                                           | Tokeny, prymitywy i powłoka panelu wg design systemu FiziYo    | in-progress |
 
 ## Planowane specyfikacje
 

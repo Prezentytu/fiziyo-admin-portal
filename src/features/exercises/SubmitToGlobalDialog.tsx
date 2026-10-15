@@ -160,14 +160,14 @@ export function SubmitToGlobalDialog({
               className={cn(
                 'flex items-start gap-3 p-3 rounded-lg border transition-colors',
                 check.passed
-                  ? 'bg-emerald-500/5 border-emerald-500/20'
-                  : 'bg-amber-500/5 border-amber-500/20'
+                  ? 'bg-status-success-muted border-status-success/20'
+                  : 'bg-status-warning-muted border-status-warning/20'
               )}
             >
               <div
                 className={cn(
                   'shrink-0 mt-0.5',
-                  check.passed ? 'text-emerald-500' : 'text-amber-500'
+                  check.passed ? 'text-status-success' : 'text-status-warning'
                 )}
               >
                 {check.passed ? <CheckCircle className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
@@ -175,7 +175,7 @@ export function SubmitToGlobalDialog({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span
-                    className={cn('text-sm font-medium', check.passed ? 'text-emerald-600' : 'text-amber-600')}
+                    className={cn('text-sm font-medium', check.passed ? 'text-status-success' : 'text-status-warning')}
                   >
                     {check.label}
                   </span>
@@ -192,8 +192,8 @@ export function SubmitToGlobalDialog({
         </div>
 
         {hasSuggestions && (
-          <div className="mt-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-            <p className="text-sm text-amber-600 flex items-center gap-2">
+          <div className="mt-4 p-3 rounded-lg bg-status-warning-muted border border-status-warning/20">
+            <p className="text-sm text-status-warning flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 shrink-0" />
               Zalecamy uzupełnić dane, ale możesz zgłosić ćwiczenie już teraz
             </p>

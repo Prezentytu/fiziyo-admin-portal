@@ -521,7 +521,7 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
   // Loading
   if (loading) {
     return (
-      <div className="-m-4 flex h-full lg:h-[calc(100%+3rem)] 2xl:h-[calc(100%+4rem)] min-h-0 flex-col overflow-y-auto lg:-m-6 lg:overflow-hidden 2xl:-m-8">
+      <div className="flex h-full min-h-0 flex-col overflow-y-auto rounded-card bg-card lg:overflow-hidden">
         <div className="flex-1 flex flex-col lg:flex-row min-h-0">
           {/* Left: Video skeleton (42%) */}
           <div className="lg:w-[42%] bg-card p-3 border-r border-border/30">
@@ -573,7 +573,7 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
   // ============================================
 
   return (
-    <div className="-m-4 flex h-full lg:h-[calc(100%+3rem)] 2xl:h-[calc(100%+4rem)] min-h-0 flex-col overflow-y-auto lg:-m-6 lg:overflow-hidden 2xl:-m-8">
+    <div className="flex h-full min-h-0 flex-col overflow-y-auto rounded-card bg-card lg:overflow-hidden">
       {/* Main content area - 3 column layout 42/fluid/320 */}
       <div className="flex-1 flex flex-col lg:flex-row min-h-0">
         {/* LEFT COLUMN: Media Player (collapsible) */}
@@ -600,7 +600,7 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
                 </div>
                 <div className="h-1.5 w-16 overflow-hidden rounded-full bg-muted">
                   <div
-                    className="h-full rounded-full bg-emerald-500 transition-all duration-300"
+                    className="h-full rounded-full bg-tint-fill transition-all duration-300"
                     style={{ width: `${queueProgress.progressPercent}%` }}
                   />
                 </div>
@@ -623,12 +623,12 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
           <div className="flex-1 p-4 pr-5 lg:p-5 lg:pr-6 flex flex-col min-h-0 overflow-y-auto">
             {/* Previous review notes (if any) */}
             {exercise.adminReviewNotes && (
-              <Card className="border-amber-500/30 bg-amber-500/5 mb-4 shrink-0">
+              <Card className="border-status-warning/30 bg-status-warning-muted mb-4 shrink-0">
                 <CardContent className="p-3">
                   <div className="flex items-start gap-2">
-                    <FileText className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                    <FileText className="h-4 w-4 text-status-warning shrink-0 mt-0.5" />
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-amber-600">Poprzednie uwagi:</p>
+                      <p className="text-sm font-medium text-status-warning">Poprzednie uwagi:</p>
                       <p className="text-sm text-foreground mt-1">{exercise.adminReviewNotes}</p>
                     </div>
                   </div>

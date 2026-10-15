@@ -4,37 +4,31 @@ import { useState, useMemo } from 'react';
 import { useQuery } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
-import {
-  ArrowRight,
-  FolderKanban,
-  FolderPlus,
-  Users,
-  ChevronRight,
-  Send,
-  UserPlus,
-  Sparkles,
-  Wrench,
-  AlertCircle,
-  CheckCircle2,
-  Clock,
-  Plus,
-} from 'lucide-react';
+import { ArrowRight, ChevronRight, FolderPlus, Send, UserPlus } from 'lucide-react';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  PageSheet,
+  PageHeader,
+  SectionHeader,
+  SECTION_LINK_CLASS,
+  ActivityStatusLabel,
+  InitialsAvatar,
+} from '@/components/shared/page';
+import { EmptyState } from '@/components/shared/EmptyState';
 import { SetThumbnail } from '@/features/exercise-sets/SetThumbnail';
 import { CreateSetWizard } from '@/features/exercise-sets/CreateSetWizard';
 import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
 import { normalizeFrequencySeed } from '@/features/assignment/utils/scheduleFrequencyUtils';
 import { PatientDialog } from '@/features/patients/PatientDialog';
+import { ActivatePremiumDialog } from '@/features/patients/ActivatePremiumDialog';
 import { DashboardSkeleton } from '@/components/shared/DashboardSkeleton';
 import { GettingStartedCard } from '@/components/onboarding/GettingStartedCard';
 import { BillingStatusBar } from '@/components/billing';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
+import { usePatientPremium } from '@/hooks/usePatientPremium';
 import { useRealtimePatients } from '@/hooks/useRealtimePatients';
 import { useRealtimeExerciseSets } from '@/hooks/useRealtimeExerciseSets';
 
@@ -48,8 +42,15 @@ import type {
   OrganizationPatientDto,
   OrganizationPatientsResponse,
 } from '@/types/apollo';
-import { formatRelativeTime } from '@/utils/dateUtils';
 import { isTemplateSet } from '@/features/exercise-sets/utils/setKind';
+import {
+  comparePatientsByAttention,
+  getPatientActivityStatus,
+  needsAttention,
+  type PatientActivityStatus,
+} from '@/features/patients/utils/patientActivityStatus';
+import { getPremiumQueue } from '@/features/patients/utils/premiumQueue';
+import { formatExerciseCount } from '@/utils/polishPlural';
 
 interface ExerciseSetItem {
   id: string;
@@ -97,6 +98,8 @@ interface PatientAssignmentData {
     isShadowUser?: boolean;
   };
   lastActivity?: string;
+  premiumStatus?: 'FREE' | 'ACTIVE' | 'EXPIRED';
+  premiumValidUntil?: string;
 }
 
 interface ExerciseAssignment {
@@ -112,39 +115,20 @@ interface ExerciseAssignment {
   };
 }
 
-// Activity status types
-type ActivityStatus = 'active' | 'warning' | 'inactive';
-
 interface PatientWithActivity extends PatientAssignmentData {
-  activityStatus: ActivityStatus;
-  lastActivityText: string;
-  lastActivityDate?: Date;
+  activity: PatientActivityStatus;
 }
 
-// Format date in Polish
+const SHORT_MONTHS = ['sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru'];
+
 function formatPolishDate(date: Date): string {
   const days = ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'];
-  const months = ['sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru'];
-  return `${days[date.getDay()]}, ${date.getDate()} ${months[date.getMonth()]}`;
+  return `${days[date.getDay()]}, ${date.getDate()} ${SHORT_MONTHS[date.getMonth()]}`;
 }
 
-// Determine activity status based on last activity
-function getActivityStatus(lastCompletedAt?: string): { status: ActivityStatus; text: string; date?: Date } {
-  if (!lastCompletedAt) {
-    return { status: 'inactive', text: 'Brak aktywności' };
-  }
-
-  const lastDate = new Date(lastCompletedAt);
-  const now = new Date();
-  const diffDays = Math.floor((now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
-
-  if (diffDays < 1) {
-    return { status: 'active', text: `Ćwiczył ${formatRelativeTime(lastDate)}`, date: lastDate };
-  }
-  if (diffDays <= 3) {
-    return { status: 'warning', text: `Nieaktywny od ${diffDays} dni`, date: lastDate };
-  }
-  return { status: 'inactive', text: `Nieaktywny od ${diffDays} dni`, date: lastDate };
+function formatShortDate(value: string): string {
+  const date = new Date(value);
+  return `${date.getDate()} ${SHORT_MONTHS[date.getMonth()]}`;
 }
 
 function getGreeting(currentHour: number): string {
@@ -154,40 +138,16 @@ function getGreeting(currentHour: number): string {
 }
 
 function getDashboardSubtitle(patientsCount: number, patientsNeedingAttentionCount: number): string {
-  if (patientsCount === 0) {
-    return 'Nie masz jeszcze przypisanych pacjentów';
-  }
-
-  if (patientsNeedingAttentionCount > 0) {
-    return `Sprawdź, co u ${patientsNeedingAttentionCount} pacjentów`;
-  }
-
-  return 'Wszyscy Twoi pacjenci są aktywni';
+  if (patientsCount === 0) return 'Nie masz jeszcze przypisanych pacjentów';
+  if (patientsNeedingAttentionCount > 0) return `Sprawdź, co u ${patientsNeedingAttentionCount} pacjentów`;
+  return 'Wszyscy Twoi pacjenci ćwiczą';
 }
 
-// Activity status indicator component - use design tokens
-function ActivityIndicator({ status }: { readonly status: ActivityStatus }) {
-  switch (status) {
-    case 'active':
-      return (
-        <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-success flex items-center justify-center ring-2 ring-surface">
-          <CheckCircle2 className="h-2.5 w-2.5 text-white" />
-        </div>
-      );
-    case 'warning':
-      return (
-        <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-warning flex items-center justify-center ring-2 ring-surface">
-          <AlertCircle className="h-2.5 w-2.5 text-white" />
-        </div>
-      );
-    case 'inactive':
-      return (
-        <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-muted-foreground/60 flex items-center justify-center ring-2 ring-surface">
-          <Clock className="h-2.5 w-2.5 text-white" />
-        </div>
-      );
-  }
-}
+const QUICK_ACTION_CLASS =
+  'group flex min-h-16 flex-[1_1_200px] items-center gap-3.5 rounded-[13px] px-[18px] text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-40';
+
+const ROW_CLASS =
+  '-mx-3 flex min-h-[60px] items-center gap-3.5 border-t-[0.5px] border-separator px-3 transition-colors hover:bg-fill-quaternary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring';
 
 export default function DashboardPage() {
   const { user } = useUser();
@@ -197,6 +157,8 @@ export default function DashboardPage() {
   const [isCreateSetWizardOpen, setIsCreateSetWizardOpen] = useState(false);
   const [isPatientDialogOpen, setIsPatientDialogOpen] = useState(false);
   const [quickAssignSet, setQuickAssignSet] = useState<ExerciseSetItem | null>(null);
+  const { initiateActivation, confirmActivation, cancelActivation, isActivating, showConfirmDialog, activationTarget } =
+    usePatientPremium({ organizationId: currentOrganization?.organizationId ?? '' });
 
   // Get organization ID from context (changes when user switches organization)
   const organizationId = currentOrganization?.organizationId;
@@ -276,6 +238,8 @@ export default function DashboardPage() {
           isShadowUser: item.patient.isShadowUser,
         },
         lastActivity: item.lastActivity,
+        premiumStatus: item.premiumStatus,
+        premiumValidUntil: item.premiumValidUntil,
       }));
     },
     [patientsData]
@@ -288,434 +252,274 @@ export default function DashboardPage() {
     (a) => a.exerciseSetId && a.assignedById === therapistId
   ).length;
 
-  // Enhance patients with activity status and sort by priority
-  const patientsWithActivity: PatientWithActivity[] = useMemo(() => {
-    const enhanced = patients.map((assignment: PatientAssignmentData) => {
-      const { status, text, date } = getActivityStatus(assignment.lastActivity);
+  const patientsWithActivity: PatientWithActivity[] = useMemo(
+    () =>
+      patients
+        .map((assignment) => ({ ...assignment, activity: getPatientActivityStatus(assignment.lastActivity) }))
+        .sort(comparePatientsByAttention),
+    [patients]
+  );
 
-      return {
-        ...assignment,
-        activityStatus: status,
-        lastActivityText: text,
-        lastActivityDate: date,
-      };
-    });
+  const premiumQueue = useMemo(() => getPremiumQueue(patients), [patients]);
 
-    // Sort: newly added (no activity) first, then warning, inactive, active
-    // Newly added patients without any activity should appear at the top
-    return enhanced.sort((a, b) => {
-      const aHasNoActivity = !a.lastActivityDate;
-      const bHasNoActivity = !b.lastActivityDate;
-
-      // Patients without any activity (newly added) go first
-      if (aHasNoActivity && !bHasNoActivity) return -1;
-      if (!aHasNoActivity && bHasNoActivity) return 1;
-
-      // Both have no activity - sort by assignedAt (newest first)
-      if (aHasNoActivity && bHasNoActivity) {
-        const aAssigned = a.assignedAt ? new Date(a.assignedAt).getTime() : 0;
-        const bAssigned = b.assignedAt ? new Date(b.assignedAt).getTime() : 0;
-        return bAssigned - aAssigned;
-      }
-
-      // Both have activity - sort by status priority, then by date
-      const priorityOrder: Record<ActivityStatus, number> = { warning: 0, inactive: 1, active: 2 };
-      const priorityDiff = priorityOrder[a.activityStatus] - priorityOrder[b.activityStatus];
-      if (priorityDiff !== 0) return priorityDiff;
-
-      // Within same priority, sort by date (most recent first)
-      if (a.lastActivityDate && b.lastActivityDate) {
-        return b.lastActivityDate.getTime() - a.lastActivityDate.getTime();
-      }
-      return 0;
-    });
-  }, [patients]);
-
-  // Get current hour for greeting
-  const currentHour = new Date().getHours();
-  const greeting = getGreeting(currentHour);
+  const greeting = getGreeting(new Date().getHours());
   const todayDate = formatPolishDate(new Date());
 
-  // Patients needing attention (warning or inactive)
-  const patientsNeedingAttention = patientsWithActivity.filter((p) => p.activityStatus !== 'active');
+  const patientsNeedingAttention = patientsWithActivity.filter((patient) => needsAttention(patient.activity));
   const displayedPatients = patientsWithActivity.slice(0, 5);
   const dashboardSubtitle = getDashboardSubtitle(patientsCount, patientsNeedingAttention.length);
 
-  // Show skeleton while initial data is loading
   const isInitialLoading = !user || userLoading || (!organizationId && !userData);
 
   if (isInitialLoading) {
     return <DashboardSkeleton />;
   }
 
-  // Handle quick assign from set
-  const handleQuickAssign = (set: ExerciseSetItem, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleQuickAssign = (set: ExerciseSetItem) => {
     setQuickAssignSet(set);
     setIsAssignWizardOpen(true);
   };
 
   return (
-    <div className="mx-auto w-full max-w-screen-2xl space-y-5 md:space-y-6 xl:space-y-8">
-      {/* Header Section - Greeting with date */}
-      <div className="flex flex-wrap items-end justify-between gap-3 md:gap-4">
-        <div className="min-w-0">
-          <h1
-            data-testid="dashboard-greeting"
-            className="text-lg sm:text-xl lg:text-2xl font-semibold text-foreground tracking-tight"
-          >
-            {greeting}, {userName}!
-          </h1>
-          <p className="mt-1 md:mt-2 text-sm text-muted-foreground">
-            {dashboardSubtitle}
-          </p>
-        </div>
-        <p className="text-sm text-muted-foreground hidden sm:block">{todayDate}</p>
-      </div>
+    <PageSheet>
+      <PageHeader
+        title={`${greeting}, ${userName}`}
+        titleTestId="dashboard-greeting"
+        subtitle={dashboardSubtitle}
+        actions={<span className="hidden text-[15px] text-label-secondary sm:inline">{todayDate}</span>}
+      />
 
-      {/* Getting Started Card - Onboarding for new users */}
       <GettingStartedCard
         patientsCount={patientsCount}
         exerciseSetsCount={setsCount}
         assignmentsCount={therapistAssignmentsCount}
       />
 
-      {/* Quick Actions - spójna hierarchia: Primary + Secondary + Tertiary */}
-      <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-        {/* Action 1 - Personalizuj i przypisz (zielona - główna akcja) */}
+      <div role="group" aria-label="Szybkie akcje" className="flex flex-wrap gap-1.5 rounded-[18px] bg-grouped-tertiary p-1.5">
         <button
           type="button"
           onClick={() => setIsAssignWizardOpen(true)}
           disabled={!organizationId || !therapistId}
           aria-label="Personalizuj i przypisz zestaw ćwiczeń pacjentowi"
           data-testid="dashboard-hero-assign-set-btn"
-          className="group relative overflow-hidden rounded-xl md:rounded-2xl bg-linear-to-br from-primary via-primary to-primary-dark p-4 md:p-5 text-left transition-all duration-150 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+          className={`${QUICK_ACTION_CLASS} flex-[1_1_240px] bg-tint-fill text-on-tint hover:bg-tint-fill-hover`}
         >
-          <div className="absolute inset-0 bg-linear-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-150" />
-          <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary-foreground/10 rounded-full blur-3xl opacity-30 group-hover:opacity-50 transition-opacity duration-200" />
-
-          <div className="relative flex items-center gap-3 md:gap-4">
-            <div className="flex h-9 w-9 md:h-11 md:w-11 items-center justify-center rounded-lg md:rounded-xl bg-primary-foreground/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-150">
-              <Send className="h-4 w-4 md:h-5 md:w-5 text-primary-foreground" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h3 className="text-sm md:text-base font-bold text-primary-foreground mb-0.5 md:mb-1">
-                Personalizuj i przypisz
-              </h3>
-              <p className="text-xs text-primary-foreground/80">Dla obecnych pacjentów</p>
-            </div>
-            <ArrowRight className="h-4 w-4 md:h-5 md:w-5 text-primary-foreground/60 group-hover:text-primary-foreground group-hover:translate-x-1 transition-all duration-150 shrink-0" />
-          </div>
+          <Send className="h-5 w-5 shrink-0" aria-hidden="true" />
+          <span className="flex flex-1 flex-col">
+            <span className="text-[15px] font-semibold">Przypisz zestaw</span>
+            <span className="text-[13px] opacity-85">Dopasuj ćwiczenia do pacjenta</span>
+          </span>
+          <ArrowRight className="h-4 w-4 shrink-0 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
         </button>
-
-        {/* Action 2 - Nowy pacjent (niebieska) */}
         <button
           type="button"
           onClick={() => setIsPatientDialogOpen(true)}
           disabled={!organizationId || !therapistId}
           aria-label="Dodaj nowego pacjenta do bazy"
           data-testid="dashboard-add-patient-btn"
-          className="group relative overflow-hidden rounded-xl md:rounded-2xl border border-border/20 bg-surface-elevated p-4 md:p-5 text-left transition-all duration-150 hover:border-info/30 hover:bg-surface hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          className={`${QUICK_ACTION_CLASS} text-foreground hover:bg-fill-quaternary`}
         >
-          <div className="relative flex items-center gap-3 md:gap-4">
-            <div className="flex h-9 w-9 md:h-11 md:w-11 items-center justify-center rounded-lg md:rounded-xl bg-info/10 shrink-0 group-hover:bg-info/20 group-hover:scale-110 transition-all duration-150">
-              <UserPlus className="h-4 w-4 md:h-5 md:w-5 text-info" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h3 className="text-sm md:text-base font-semibold text-foreground group-hover:text-info transition-colors duration-150 mb-0.5 md:mb-1">
-                Nowy pacjent
-              </h3>
-              <p className="text-xs text-muted-foreground">Dodaj do bazy</p>
-            </div>
-            <ArrowRight className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground/40 group-hover:text-info group-hover:translate-x-1 transition-all duration-150 shrink-0" />
-          </div>
+          <UserPlus className="h-5 w-5 shrink-0 text-tint" aria-hidden="true" />
+          <span className="flex flex-1 flex-col">
+            <span className="text-[15px] font-semibold">Dodaj pacjenta</span>
+            <span className="text-[13px] text-label-secondary">Nowa osoba pod Twoją opieką</span>
+          </span>
         </button>
-
-        {/* Action 3 - Utwórz zestaw (ciemna/szara - rzadsza akcja) */}
         <button
           type="button"
           onClick={() => setIsCreateSetWizardOpen(true)}
           disabled={!organizationId}
           aria-label="Utwórz nowy zestaw ćwiczeń"
           data-testid="dashboard-create-set-btn"
-          className="group relative overflow-hidden rounded-xl md:rounded-2xl border border-border/20 bg-surface-light p-4 md:p-5 text-left transition-all duration-150 hover:border-primary/30 hover:bg-surface hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          className={`${QUICK_ACTION_CLASS} text-foreground hover:bg-fill-quaternary`}
         >
-          <div className="relative flex items-center gap-3 md:gap-4">
-            <div className="flex h-9 w-9 md:h-11 md:w-11 items-center justify-center rounded-lg md:rounded-xl bg-primary/10 shrink-0 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-150">
-              <FolderPlus className="h-4 w-4 md:h-5 md:w-5 text-primary" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h3 className="text-sm md:text-base font-semibold text-foreground group-hover:text-primary transition-colors mb-0.5 md:mb-1">
-                Utwórz zestaw
-              </h3>
-              <p className="text-xs text-muted-foreground">Nowy program</p>
-            </div>
-            <ArrowRight className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground/40 group-hover:text-primary group-hover:translate-x-1 transition-all duration-150 shrink-0" />
-          </div>
+          <FolderPlus className="h-5 w-5 shrink-0 text-tint" aria-hidden="true" />
+          <span className="flex flex-1 flex-col">
+            <span className="text-[15px] font-semibold">Utwórz zestaw</span>
+            <span className="text-[13px] text-label-secondary">Szablon do wielokrotnego użycia</span>
+          </span>
         </button>
       </div>
 
-      {/* Main Content - 8:4 Grid Layout */}
-      <div className="grid gap-4 md:gap-5 lg:grid-cols-12 lg:max-h-[clamp(22rem,50dvh,37.5rem)]">
-        {/* Left Column (8 cols): Activity + Billing */}
-        <div className="lg:col-span-8 flex h-full flex-col gap-4 md:gap-5">
-          <Card
-            data-testid="dashboard-activity-section"
-            className="bg-surface border-border shadow-md overflow-hidden rounded-xl md:rounded-2xl flex flex-1 min-h-0 flex-col"
-          >
-            <CardHeader className="p-4 md:px-6 md:pt-6 md:pb-4">
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2 md:gap-3 text-sm md:text-base font-semibold">
-                  <div className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg md:rounded-xl bg-info/10">
-                    <Users className="h-4 w-4 md:h-4.5 md:w-4.5 text-info" />
-                  </div>
-                  <span>Pacjenci do sprawdzenia</span>
-                  {patientsNeedingAttention.length > 0 && (
-                    <Badge variant="secondary" className="ml-1 bg-surface-light text-muted-foreground border-border font-medium">
-                      {patientsNeedingAttention.length}
-                    </Badge>
-                  )}
-                </CardTitle>
-                <Link href="/patients" data-testid="dashboard-patients-view-all" className="group">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 text-xs gap-1 text-muted-foreground hover:text-foreground"
-                  >
-                    Wszyscy ({patientsCount})
-                    <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-                  </Button>
-                </Link>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0 flex-1 min-h-0 overflow-y-auto">
-              {patientsLoading ? (
-                <div className="space-y-2">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-3 p-3 rounded-xl"
-                      style={{ animationDelay: `${i * 50}ms` }}
-                    >
-                      <Skeleton className="h-10 w-10 rounded-full shrink-0" />
-                      <div className="flex-1 space-y-1.5">
-                        <Skeleton className="h-4 w-32 rounded-lg" />
-                        <Skeleton className="h-3 w-48 rounded-lg" />
-                      </div>
-                      <Skeleton className="h-4 w-4 rounded shrink-0" />
-                    </div>
-                  ))}
-                </div>
-              ) : patients.length > 0 ? (
-                <div className="space-y-2 animate-stagger">
-                  {displayedPatients.map((assignment: PatientWithActivity) => {
-                    const isShadow = assignment.patient?.isShadowUser;
-                    return (
-                      <Link
-                        key={assignment.id}
-                        href={`/patients/${assignment.patient?.id}`}
-                        data-testid={`dashboard-patient-item-${assignment.patient?.id}`}
-                        className={`group flex items-center gap-3 p-3 rounded-xl transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface ${
-                          assignment.activityStatus === 'warning'
-                            ? 'bg-warning-muted hover:bg-warning-muted/80'
-                            : assignment.activityStatus === 'inactive'
-                              ? 'hover:bg-surface-light'
-                              : 'hover:bg-success-muted'
-                        }`}
-                      >
-                        <div className="relative shrink-0">
-                          <Avatar
-                            className={`h-10 w-10 ring-2 transition-all duration-150 ${
-                              assignment.activityStatus === 'warning'
-                                ? 'ring-warning/30 group-hover:ring-warning/50'
-                                : assignment.activityStatus === 'active'
-                                  ? 'ring-success/30 group-hover:ring-success/50'
-                                  : 'ring-border/20 group-hover:ring-primary/30'
-                            }`}
-                          >
-                            <AvatarImage src={assignment.patient?.image} />
-                            <AvatarFallback
-                              className={`text-sm font-medium ${
-                                isShadow
-                                  ? 'bg-muted-foreground/60 text-white'
-                                  : 'bg-linear-to-br from-info to-blue-600 text-white'
-                              }`}
-                            >
-                              {assignment.patient?.fullname?.[0] || '?'}
-                            </AvatarFallback>
-                          </Avatar>
-                          {isShadow ? (
-                            <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-muted-foreground/80 flex items-center justify-center ring-2 ring-surface">
-                              <Wrench className="h-2.5 w-2.5 text-white" />
-                            </div>
-                          ) : (
-                            <ActivityIndicator status={assignment.activityStatus} />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p
-                            className={`font-medium text-sm truncate transition-colors duration-150 ${
-                              assignment.activityStatus === 'warning'
-                                ? 'text-foreground group-hover:text-warning'
-                                : assignment.activityStatus === 'active'
-                                  ? 'text-foreground group-hover:text-success'
-                                  : 'text-foreground group-hover:text-primary'
-                            }`}
-                          >
-                            {assignment.patient?.fullname || 'Nieznany'}
-                          </p>
-                          <p
-                            className={`text-xs truncate ${
-                              assignment.activityStatus === 'warning'
-                                ? 'text-warning/90'
-                                : assignment.activityStatus === 'active'
-                                  ? 'text-success/90'
-                                  : 'text-muted-foreground'
-                            }`}
-                          >
-                            {assignment.lastActivityText}
-                          </p>
-                        </div>
-                        <ChevronRight
-                          className={`h-4 w-4 transition-all duration-150 group-hover:translate-x-0.5 ${
-                            assignment.activityStatus === 'warning'
-                              ? 'text-warning/30 group-hover:text-warning'
-                              : assignment.activityStatus === 'active'
-                                ? 'text-success/30 group-hover:text-success'
-                                : 'text-muted-foreground/30 group-hover:text-primary'
-                          }`}
-                        />
-                      </Link>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <div className="h-14 w-14 rounded-2xl bg-surface-light flex items-center justify-center mb-3">
-                    <UserPlus className="h-7 w-7 text-muted-foreground/50" />
-                  </div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">Brak przypisanych pacjentów</p>
-                  <p className="text-xs text-muted-foreground/70 mb-4">Dodaj pacjenta lub przejmij opiekę na liście pacjentów</p>
-                  <Button
-                    size="sm"
-                    className="h-8 text-xs"
-                    onClick={() => setIsPatientDialogOpen(true)}
-                    disabled={!organizationId || !therapistId}
-                  >
-                    Dodaj pacjenta
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {canViewBilling && organizationId && <BillingStatusBar organizationId={organizationId} />}
-        </div>
-
-        {/* Quick Sets - Right Column (4 cols) */}
-        <Card
-          data-testid="dashboard-sets-section"
-          className="bg-surface border-border shadow-md overflow-hidden lg:col-span-4 rounded-xl md:rounded-2xl flex h-full flex-col"
+      <div className="flex flex-wrap items-stretch">
+        <section
+          aria-labelledby="dashboard-patients-heading"
+          data-testid="dashboard-activity-section"
+          className="flex min-w-0 flex-[2_1_520px] flex-col lg:pr-9"
         >
-          <CardHeader className="p-4 md:px-6 md:pt-6 md:pb-4">
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 md:gap-3 text-sm md:text-base font-semibold">
-                <div className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg md:rounded-xl bg-info/10">
-                  <FolderKanban className="h-4 w-4 md:h-4.5 md:w-4.5 text-info" />
-                </div>
-                <span>Szybki wybór</span>
-              </CardTitle>
-              <Link href="/exercise-sets" data-testid="dashboard-sets-view-all" className="group">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 text-xs gap-1 text-muted-foreground hover:text-foreground"
-                >
-                  Wszystkie
-                  <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-                </Button>
+          <SectionHeader
+            id="dashboard-patients-heading"
+            title="Pacjenci do sprawdzenia"
+            action={
+              <Link href="/patients" data-testid="dashboard-patients-view-all" className={SECTION_LINK_CLASS}>
+                Wszyscy pacjenci
               </Link>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-0 flex-1 min-h-0 overflow-y-auto">
-            {setsLoading ? (
-              <div className="space-y-2">
-                {[1, 2, 3, 4].map((i) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-3 p-3 rounded-xl"
-                    style={{ animationDelay: `${(i + 4) * 50}ms` }}
-                  >
-                    <div className="h-10 w-10 rounded-lg overflow-hidden grid grid-cols-2 gap-0.5 shrink-0">
-                      <Skeleton className="rounded-none" />
-                      <Skeleton className="rounded-none" />
-                      <Skeleton className="rounded-none" />
-                      <Skeleton className="rounded-none" />
-                    </div>
-                    <div className="flex-1 space-y-1.5">
-                      <Skeleton className="h-4 w-24 rounded-lg" />
-                      <Skeleton className="h-3 w-16 rounded-lg" />
-                    </div>
-                    <Skeleton className="h-8 w-8 rounded-lg shrink-0" />
-                  </div>
-                ))}
-              </div>
-            ) : quickSelectionSets.length > 0 ? (
-              <div className="space-y-2 animate-stagger">
-                {quickSelectionSets.slice(0, 5).map((set: ExerciseSetItem) => (
-                  <div
-                    key={set.id}
-                    className="group flex items-center gap-3 p-3 rounded-xl transition-all duration-150 hover:bg-surface-light"
-                  >
-                    <Link
-                      href={`/exercise-sets/${set.id}`}
-                      data-testid={`dashboard-set-item-${set.id}`}
-                      className="flex items-center gap-3 flex-1 min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded-lg"
-                    >
-                      <SetThumbnail exerciseMappings={set.exerciseMappings} size="sm" />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm text-foreground group-hover:text-secondary transition-colors truncate">
-                          {set.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">{set.exerciseMappings?.length || 0} ćw.</p>
-                      </div>
-                    </Link>
-                    {/* Quick Assign Button */}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-primary/10 hover:text-primary"
-                      onClick={(e) => handleQuickAssign(set, e)}
-                      disabled={!organizationId || !therapistId}
-                      aria-label={`Personalizuj i przypisz ${set.name}`}
-                      data-testid={`dashboard-quick-assign-${set.id}`}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <div className="h-14 w-14 rounded-2xl bg-surface-light flex items-center justify-center mb-3">
-                  <Sparkles className="h-7 w-7 text-muted-foreground/50" />
+            }
+          />
+          {patientsLoading ? (
+            <div aria-busy="true">
+              {[1, 2, 3, 4, 5].map((index) => (
+                <div key={index} className="flex min-h-[60px] items-center gap-3.5 border-t-[0.5px] border-separator">
+                  <Skeleton className="h-9 w-9 rounded-full" />
+                  <Skeleton className="h-4 w-40 rounded-md" />
+                  <Skeleton className="ml-auto h-4 w-32 rounded-md" />
                 </div>
-                <p className="text-sm font-medium text-muted-foreground mb-1">Brak zestawów do szybkiego wyboru</p>
-                <p className="text-xs text-muted-foreground/70 mb-4">Utwórz niespersonalizowany zestaw</p>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="h-8 text-xs"
-                  onClick={() => setIsCreateSetWizardOpen(true)}
-                  disabled={!organizationId}
+              ))}
+            </div>
+          ) : patients.length > 0 ? (
+            displayedPatients.map((assignment) => {
+              const isShadow = Boolean(assignment.patient?.isShadowUser);
+              return (
+                <Link
+                  key={assignment.id}
+                  href={`/patients/${assignment.patient?.id}`}
+                  data-testid={`dashboard-patient-item-${assignment.patient?.id}`}
+                  className={`${ROW_CLASS} flex-wrap py-2.5 sm:flex-nowrap sm:py-0`}
                 >
-                  Utwórz zestaw
+                  <InitialsAvatar name={assignment.patient?.fullname} imageUrl={assignment.patient?.image} muted={isShadow} />
+                  <span className="flex min-w-0 flex-1 items-center gap-2">
+                    <span className="truncate text-[15px] font-semibold text-foreground">
+                      {assignment.patient?.fullname || 'Nieznany'}
+                    </span>
+                    {isShadow && (
+                      <span className="inline-flex h-[22px] shrink-0 items-center rounded-full bg-fill-tertiary px-2 text-[12px] font-semibold text-label-secondary">
+                        Bez konta
+                      </span>
+                    )}
+                  </span>
+                  <ActivityStatusLabel
+                    tone={assignment.activity.tone}
+                    label={assignment.activity.label}
+                    className="order-3 basis-full pl-[50px] sm:order-none sm:basis-auto sm:pl-0"
+                  />
+                  <ChevronRight className="hidden h-3.5 w-3.5 shrink-0 text-label-tertiary sm:block" aria-hidden="true" />
+                </Link>
+              );
+            })
+          ) : (
+            <EmptyState
+              icon={UserPlus}
+              title="Nie masz jeszcze pacjentów"
+              description="Dodaj pierwszą osobę albo przejmij opiekę na liście pacjentów."
+              actionLabel="Dodaj pacjenta"
+              onAction={() => setIsPatientDialogOpen(true)}
+            />
+          )}
+
+          {premiumQueue.length > 0 && (
+            <>
+              <SectionHeader
+                title="Bez aktywnego Premium"
+                className="mt-5"
+                action={
+                  <Link href="/patients" data-testid="dashboard-premium-view-all" className={SECTION_LINK_CLASS}>
+                    Wszyscy bez dostępu
+                  </Link>
+                }
+              />
+              {premiumQueue.slice(0, 3).map((assignment) => (
+                <div
+                  key={assignment.id}
+                  className="flex min-h-[60px] items-center gap-3.5 border-t-[0.5px] border-separator"
+                  data-testid={`dashboard-premium-item-${assignment.patient?.id}`}
+                >
+                  <InitialsAvatar name={assignment.patient?.fullname} imageUrl={assignment.patient?.image} />
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="truncate text-[15px] font-semibold text-foreground">
+                      {assignment.patient?.fullname || 'Nieznany'}
+                    </span>
+                    <span className="text-[13px] text-label-secondary">
+                      {assignment.premiumValidUntil
+                        ? `Premium wygasło ${formatShortDate(assignment.premiumValidUntil)}`
+                        : 'Bez Premium'}
+                    </span>
+                  </span>
+                  <Button
+                    variant="tinted"
+                    size="sm"
+                    onClick={() =>
+                      assignment.patient &&
+                      initiateActivation(
+                        assignment.patient.id,
+                        assignment.patient.fullname || 'Pacjent',
+                        assignment.premiumValidUntil
+                      )
+                    }
+                    data-testid={`dashboard-premium-activate-${assignment.patient?.id}`}
+                  >
+                    Aktywuj Premium
+                  </Button>
+                </div>
+              ))}
+            </>
+          )}
+
+          {canViewBilling && organizationId && (
+            <div className="mt-5">
+              <BillingStatusBar organizationId={organizationId} />
+            </div>
+          )}
+        </section>
+
+        <section
+          aria-labelledby="dashboard-sets-heading"
+          data-testid="dashboard-sets-section"
+          className="mt-6 flex min-w-0 flex-[1_1_300px] flex-col border-t-[0.5px] border-separator pt-6 lg:mt-0 lg:border-l-[0.5px] lg:border-t-0 lg:pl-9 lg:pt-0"
+        >
+          <SectionHeader
+            id="dashboard-sets-heading"
+            title="Szybkie przypisanie"
+            action={
+              <Link href="/exercise-sets" data-testid="dashboard-sets-view-all" className={SECTION_LINK_CLASS}>
+                Wszystkie zestawy
+              </Link>
+            }
+          />
+          {setsLoading ? (
+            <div aria-busy="true">
+              {[1, 2, 3, 4].map((index) => (
+                <div key={index} className="flex min-h-[60px] items-center gap-3 border-t-[0.5px] border-separator">
+                  <Skeleton className="h-10 w-10 rounded-control" />
+                  <Skeleton className="h-4 w-32 rounded-md" />
+                </div>
+              ))}
+            </div>
+          ) : quickSelectionSets.length > 0 ? (
+            quickSelectionSets.slice(0, 5).map((set) => (
+              <div key={set.id} className="flex min-h-[60px] items-center gap-3 border-t-[0.5px] border-separator">
+                <Link
+                  href={`/exercise-sets/${set.id}`}
+                  data-testid={`dashboard-set-item-${set.id}`}
+                  className="-ml-2 flex min-w-0 flex-1 items-center gap-3 rounded-control py-2 pl-2 transition-colors hover:bg-fill-quaternary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <SetThumbnail exerciseMappings={set.exerciseMappings} size="sm" />
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="truncate text-[15px] font-semibold text-foreground">{set.name}</span>
+                    <span className="text-[13px] text-label-secondary">{formatExerciseCount(set.exerciseMappings?.length || 0)}</span>
+                  </span>
+                </Link>
+                <Button
+                  variant="tinted"
+                  size="sm"
+                  onClick={() => handleQuickAssign(set)}
+                  disabled={!organizationId || !therapistId}
+                  aria-label={`Przypisz pacjentowi: ${set.name}`}
+                  data-testid={`dashboard-quick-assign-${set.id}`}
+                >
+                  Przypisz
                 </Button>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            ))
+          ) : (
+            <EmptyState
+              icon={FolderPlus}
+              title="Nie masz jeszcze szablonów"
+              description="Szablon to zestaw, który przypiszesz wielu pacjentom."
+              actionLabel="Utwórz zestaw"
+              onAction={() => setIsCreateSetWizardOpen(true)}
+            />
+          )}
+        </section>
       </div>
 
       {/* Assignment Wizard */}
@@ -768,6 +572,16 @@ export default function DashboardPage() {
         />
       )}
 
+      <ActivatePremiumDialog
+        open={showConfirmDialog}
+        onOpenChange={(open) => !open && cancelActivation()}
+        patientName={activationTarget?.patientName}
+        currentPremiumValidUntil={activationTarget?.premiumValidUntil}
+        onConfirm={confirmActivation}
+        onCancel={cancelActivation}
+        isLoading={isActivating}
+      />
+
       {/* Patient Dialog */}
       {organizationId && therapistId && (
         <PatientDialog
@@ -777,6 +591,6 @@ export default function DashboardPage() {
           therapistId={therapistId}
         />
       )}
-    </div>
+    </PageSheet>
   );
 }

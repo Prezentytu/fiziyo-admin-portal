@@ -46,7 +46,7 @@ function TransactionTypeBadge({ type }: { type: RevenueTransactionType }) {
       );
     case 'Commission':
       return (
-        <Badge variant="outline" className="text-xs border-emerald-500/30 text-emerald-500">
+        <Badge variant="outline" className="text-xs border-status-success/30 text-status-success">
           <ArrowUpRight className="h-3 w-3 mr-1" />
           Prowizja
         </Badge>
@@ -111,7 +111,7 @@ function TransactionRow({ transaction }: { transaction: RevenueTransaction }) {
       {/* Amount & Type */}
       <div className="flex items-center gap-3 shrink-0">
         <TransactionTypeBadge type={transaction.type} />
-        <p className={cn('text-sm font-bold tabular-nums', isPositive ? 'text-emerald-500' : 'text-foreground')}>
+        <p className={cn('text-sm font-bold tabular-nums', isPositive ? 'text-status-success' : 'text-foreground')}>
           {isPositive ? '+' : ''}
           {formatCurrency(
             transaction.type === 'Commission'

@@ -503,7 +503,7 @@ export function ExerciseDialog({
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Lock className="h-5 w-5 text-amber-500" />
+              <Lock className="h-5 w-5 text-status-warning" />
               Ćwiczenie oczekuje na weryfikację
             </DialogTitle>
             <DialogDescription>
@@ -515,10 +515,10 @@ export function ExerciseDialog({
           </DialogHeader>
 
           <div className="py-6">
-            <div className="flex items-center justify-center gap-3 p-6 rounded-lg bg-amber-500/10 border border-amber-500/20">
-              <Clock className="h-8 w-8 text-amber-500" />
+            <div className="flex items-center justify-center gap-3 p-6 rounded-lg bg-status-warning-muted border border-status-warning/20">
+              <Clock className="h-8 w-8 text-status-warning" />
               <div>
-                <p className="font-medium text-amber-600">Edycja zablokowana</p>
+                <p className="font-medium text-status-warning">Edycja zablokowana</p>
                 <p className="text-sm text-muted-foreground mt-1">
                   Nie możesz edytować ćwiczenia podczas weryfikacji. Poczekaj na decyzję weryfikatora.
                 </p>
@@ -550,7 +550,7 @@ export function ExerciseDialog({
           <div className="flex items-center gap-2">
             <DialogTitle>{isFixMode ? 'Popraw ćwiczenie' : 'Edytuj ćwiczenie'}</DialogTitle>
             {isFixMode && (
-              <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20">
+              <Badge variant="outline" className="bg-status-warning-muted text-status-warning border-status-warning/20">
                 Do poprawy
               </Badge>
             )}
@@ -769,7 +769,7 @@ export function ExerciseDialog({
                     onOpenChange(false);
                     onSubmitToGlobal(exercise);
                   }}
-                  className="gap-2 bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90"
+                  className="gap-2 bg-gradient-to-r from-primary to-status-success hover:from-primary/90 hover:to-status-success-muted"
                 >
                   <Rocket className="h-4 w-4" />
                   {verificationCopy.submitGlobal}
@@ -781,7 +781,7 @@ export function ExerciseDialog({
                     onOpenChange(false);
                     onSubmitToOrganizationReview(exercise);
                   }}
-                  className="gap-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-600/90 hover:to-emerald-500/90"
+                  className="gap-2 bg-gradient-to-r from-status-success to-status-success hover:from-status-success-muted hover:to-status-success-muted"
                   data-testid="exercise-dialog-submit-org-review-btn"
                 >
                   <Rocket className="h-4 w-4" />

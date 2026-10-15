@@ -37,9 +37,9 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
             className={cn(
               'flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-all',
               currentStep > step.id
-                ? 'bg-primary text-primary-foreground'
+                ? 'bg-tint-fill text-on-tint'
                 : currentStep === step.id
-                  ? 'bg-primary text-primary-foreground'
+                  ? 'bg-tint-fill text-on-tint'
                   : 'bg-surface-light text-muted-foreground'
             )}
           >

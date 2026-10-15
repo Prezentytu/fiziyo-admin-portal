@@ -35,7 +35,7 @@ export function AccessibilitySettings() {
   return (
     <div className="space-y-6">
       {/* Motyw */}
-      <Card className="rounded-xl border border-border/50 bg-card/30">
+      <Card>
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-semibold tracking-tight">Motyw</CardTitle>
           <CardDescription className="text-sm text-muted-foreground">
@@ -60,8 +60,8 @@ export function AccessibilitySettings() {
               </div>
               <span className="text-sm font-medium">Ciemny</span>
               {preferences.theme === 'dark' && (
-                <div className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary shadow-lg shadow-primary/20">
-                  <Check className="h-3 w-3 text-white" />
+                <div className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-tint-fill shadow-raised">
+                  <Check className="h-3 w-3 text-on-tint" />
                 </div>
               )}
             </button>
@@ -77,13 +77,13 @@ export function AccessibilitySettings() {
               )}
               data-testid="settings-theme-light"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white border border-gray-200">
-                <Sun className="h-6 w-6 text-amber-500" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white border border-separator">
+                <Sun className="h-6 w-6 text-status-warning" />
               </div>
               <span className="text-sm font-medium">Jasny</span>
               {preferences.theme === 'light' && (
-                <div className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary shadow-lg shadow-primary/20">
-                  <Check className="h-3 w-3 text-white" />
+                <div className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-tint-fill shadow-raised">
+                  <Check className="h-3 w-3 text-on-tint" />
                 </div>
               )}
             </button>
@@ -100,12 +100,12 @@ export function AccessibilitySettings() {
               data-testid="settings-theme-system"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-linear-to-br from-white to-[#1a1a1a]">
-                <Monitor className="h-6 w-6 text-gray-500" />
+                <Monitor className="h-6 w-6 text-label-secondary" />
               </div>
               <span className="text-sm font-medium">Systemowy</span>
               {preferences.theme === 'system' && (
-                <div className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary shadow-lg shadow-primary/20">
-                  <Check className="h-3 w-3 text-white" />
+                <div className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-tint-fill shadow-raised">
+                  <Check className="h-3 w-3 text-on-tint" />
                 </div>
               )}
             </button>
@@ -114,7 +114,7 @@ export function AccessibilitySettings() {
       </Card>
 
       {/* Rozmiar czcionki */}
-      <Card className="rounded-xl border border-border/50 bg-card/30">
+      <Card>
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-semibold tracking-tight">Rozmiar czcionki</CardTitle>
           <CardDescription className="text-sm text-muted-foreground">
@@ -147,8 +147,8 @@ export function AccessibilitySettings() {
                   </span>
                   <span className="text-xs text-muted-foreground">{label}</span>
                   {isSelected && (
-                    <div className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary shadow-lg shadow-primary/20">
-                      <Check className="h-2.5 w-2.5 text-white" />
+                    <div className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-tint-fill shadow-raised">
+                      <Check className="h-2.5 w-2.5 text-on-tint" />
                     </div>
                   )}
                 </button>
@@ -171,7 +171,7 @@ export function AccessibilitySettings() {
       </Card>
 
       {/* Opcje dostępności */}
-      <Card className="rounded-xl border border-border/50 bg-card/30">
+      <Card>
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-semibold tracking-tight">Opcje dostępności</CardTitle>
           <CardDescription className="text-sm text-muted-foreground">

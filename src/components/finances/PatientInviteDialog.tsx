@@ -191,7 +191,7 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
         className="max-w-[95vw] sm:max-w-xl overflow-hidden"
         data-testid="invite-dialog"
       >
-        <div className="flex items-start gap-4 rounded-xl border border-border/50 bg-linear-to-r from-primary/5 via-emerald-500/5 to-primary/5 p-5">
+        <div className="flex items-start gap-4 rounded-xl border border-border/50 bg-linear-to-r from-primary/5 via-status-success-muted to-primary/5 p-5">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm">
             <Ticket className="h-6 w-6" />
           </div>

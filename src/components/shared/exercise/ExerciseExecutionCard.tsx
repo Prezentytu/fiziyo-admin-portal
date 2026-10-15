@@ -710,7 +710,7 @@ export function ExerciseExecutionCard({
                     Instrukcje dla pacjenta
                     {enrichmentDirtyPaths.length > 0 ? (
                       <span
-                        className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300"
+                        className="rounded-full bg-status-warning-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-status-warning"
                         data-testid={`${testId}-instructions-dirty-badge`}
                       >
                         zmienione
@@ -747,7 +747,7 @@ export function ExerciseExecutionCard({
 
         {readOnlyReason && (
           <div className="px-3 pb-2 pt-1 bg-surface-light/10 border-t border-border/30">
-            <p className="text-[10px] text-amber-600 dark:text-amber-400 flex items-center gap-1">
+            <p className="text-[10px] text-status-warning flex items-center gap-1">
               <Clock className="h-3 w-3 shrink-0" />
               {readOnlyReason}
             </p>
