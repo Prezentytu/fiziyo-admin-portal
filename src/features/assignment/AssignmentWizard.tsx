@@ -26,7 +26,7 @@ import { ScheduleStep } from './ScheduleStep';
 import { SummaryStep } from './SummaryStep';
 import { AssignmentSuccessDialog } from './AssignmentSuccessDialog';
 import type { ExerciseInstance, ExerciseParams } from '@/components/shared/ExerciseSetBuilder';
-import { canProceedFromStep } from './utils/assignmentWizardUtils';
+import { canProceedFromStep, wizardEnterAdvances, wizardEnterSubmits } from './utils/assignmentWizardUtils';
 import { decideAssignmentPlanMode, type AssignmentExecutionMode } from './utils/assignmentPlanDecision';
 import {
   buildAssignmentOverrideDeltasFromBuilder,
@@ -96,6 +96,7 @@ import type {
   PatientAssignmentsByUserQueryData,
 } from '@/graphql/types/operation-responses';
 import { isTemplateSet } from '@/features/exercise-sets/utils/setKind';
+import { polishPlural } from '@/utils/polishPlural';
 
 // Success dialog data type
 interface SuccessDialogData {
@@ -957,12 +958,7 @@ function AssignmentWizardContent({
         case 'schedule':
           return {
             title: 'Harmonogram planu',
-            description: 'Zmień okres i częstotliwość wykonywania ćwiczeń',
-          };
-        case 'summary':
-          return {
-            title: 'Podsumowanie zmian',
-            description: 'Sprawdź i zapisz aktualizację planu pacjenta',
+            description: 'Zmień okres i częstotliwość, sprawdź zmiany po prawej',
           };
         default:
           return { title: '', description: '' };
@@ -1000,12 +996,7 @@ function AssignmentWizardContent({
       case 'schedule':
         return {
           title: 'Harmonogram',
-          description: 'Ustal okres i częstotliwość wykonywania ćwiczeń',
-        };
-      case 'summary':
-        return {
-          title: 'Podsumowanie',
-          description: 'Sprawdź i potwierdź utworzenie planu oraz przypisanie',
+          description: 'Ustal okres i częstotliwość, sprawdź podsumowanie po prawej',
         };
       default:
         return { title: '', description: '' };
@@ -1530,7 +1521,7 @@ function AssignmentWizardContent({
 
   const isLoading = loadingSets || loadingPatients || assigning || removing || isSubmitting;
   const isFirstStep = steps.length > 0 && currentStep === steps[0].id;
-  const isLastStep = currentStep === 'summary';
+  const isLastStep = steps.length > 0 && currentStep === steps[steps.length - 1].id;
   const handleFinalSubmit = isEditMode ? handleEditSubmit : handleSubmit;
   const handleSubmitRef = useRef(handleFinalSubmit);
 
@@ -1540,9 +1531,6 @@ function AssignmentWizardContent({
 
   // Get contextual next button text
   const getNextButtonText = () => {
-    const currentIndex = steps.findIndex((s) => s.id === currentStep);
-    const nextStep = steps[currentIndex + 1];
-
     if (isLastStep) {
       if (isSubmitting) {
         return isEditMode ? 'Zapisywanie zmian...' : 'Tworzenie planu...';
@@ -1550,8 +1538,8 @@ function AssignmentWizardContent({
       return isEditMode ? 'Zapisz zmiany' : 'Utwórz plan i przypisz';
     }
 
-    if (nextStep) {
-      return `Dalej: ${nextStep.label}`;
+    if (currentStep === 'select-patients' && selectedPatients.length > 0) {
+      return `Dalej · ${selectedPatients.length} ${polishPlural(selectedPatients.length, 'wybrany', 'wybranych', 'wybranych')}`;
     }
 
     return 'Dalej';
@@ -1565,11 +1553,23 @@ function AssignmentWizardContent({
         return;
       }
 
-      if (e.key === 'Enter' && !e.shiftKey && canProceed()) {
-        e.preventDefault();
-        if (isLastStep) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        const proceed = canProceed();
+        if (
+          wizardEnterSubmits({
+            isLastStep,
+            canProceed: proceed,
+            shiftKey: e.shiftKey,
+            metaKey: e.metaKey,
+            ctrlKey: e.ctrlKey,
+          })
+        ) {
+          e.preventDefault();
           handleSubmitRef.current();
-        } else {
+          return;
+        }
+        if (wizardEnterAdvances({ isLastStep, canProceed: proceed, shiftKey: e.shiftKey })) {
+          e.preventDefault();
           goNext();
         }
       }
@@ -1639,56 +1639,64 @@ function AssignmentWizardContent({
           />
         );
 
-      case 'schedule':
+      case 'schedule': {
         // When creating new set, we use builderInstances instead of selectedSet
-        if (!isCreatingNewSet && !selectedSet) return null;
-        return (
-          <ScheduleStep
-            startDate={startDate}
-            endDate={endDate}
-            frequency={frequency}
-            estimatedSessionDurationSeconds={estimatedSessionDurationSeconds}
-            onStartDateChange={setStartDate}
-            onEndDateChange={setEndDate}
-            onFrequencyChange={setFrequency}
-          />
-        );
+        if (!isCreatingNewSet && !selectedSet && !isEditMode) return null;
 
-      case 'summary': {
-        // Need either a selected set (customized) or creating new set
-        if (builderInstances.length === 0) return null;
-
-        // Always build exercise set from builder state (it's always customized in customize-set step)
-        const summaryExerciseSet: ExerciseSet = buildExerciseSetFromBuilder({
-          setId: isCreatingNewSet ? 'new-set' : selectedSet?.id || 'customized-set',
-          setName: planName,
-          description: selectedSet?.description,
-          builderInstances,
-          builderParams,
-          availableExercises,
-        });
+        const summaryExerciseSet: ExerciseSet | null =
+          builderInstances.length > 0
+            ? buildExerciseSetFromBuilder({
+                setId: isCreatingNewSet ? 'new-set' : selectedSet?.id || 'customized-set',
+                setName: planName,
+                description: selectedSet?.description,
+                builderInstances,
+                builderParams,
+                availableExercises,
+              })
+            : null;
 
         const summaryLocalExercises =
-          summaryExerciseSet.exerciseMappings?.map((m) => ({
+          summaryExerciseSet?.exerciseMappings?.map((m) => ({
             ...m,
             isNew: isCreatingNewSet,
           })) || [];
 
         return (
-          <SummaryStep
-            exerciseSet={summaryExerciseSet}
-            localExercises={summaryLocalExercises}
-            selectedPatients={selectedPatients}
-            startDate={startDate}
-            endDate={endDate}
-            frequency={frequency}
-            overrides={summaryOverrides}
-            excludedExercises={excludedExercises}
-            saveAsTemplate={saveAsOrganizationSet}
-            onSaveAsTemplateChange={setSaveAsOrganizationSet}
-            onGoToStep={goToStep}
-              editMode={isEditMode}
-          />
+          <div className="grid min-h-full lg:grid-cols-[minmax(0,1fr)_minmax(320px,400px)]">
+            <div className="min-w-0">
+              <ScheduleStep
+                startDate={startDate}
+                endDate={endDate}
+                frequency={frequency}
+                estimatedSessionDurationSeconds={estimatedSessionDurationSeconds}
+                onStartDateChange={setStartDate}
+                onEndDateChange={setEndDate}
+                onFrequencyChange={setFrequency}
+              />
+            </div>
+            {summaryExerciseSet && (
+              <aside
+                aria-label="Podsumowanie"
+                className="min-w-0 border-t-[0.5px] border-separator bg-grouped-tertiary/60 lg:border-l-[0.5px] lg:border-t-0"
+              >
+                <SummaryStep
+                  exerciseSet={summaryExerciseSet}
+                  localExercises={summaryLocalExercises}
+                  selectedPatients={selectedPatients}
+                  startDate={startDate}
+                  endDate={endDate}
+                  frequency={frequency}
+                  overrides={summaryOverrides}
+                  excludedExercises={excludedExercises}
+                  saveAsTemplate={saveAsOrganizationSet}
+                  onSaveAsTemplateChange={setSaveAsOrganizationSet}
+                  onGoToStep={goToStep}
+                  editMode={isEditMode}
+                  layout="aside"
+                />
+              </aside>
+            )}
+          </div>
         );
       }
 
@@ -1710,14 +1718,14 @@ function AssignmentWizardContent({
         data-testid="assign-wizard"
       >
         <VisuallyHidden.Root>
-          <DialogTitle>{isEditMode ? 'Edycja planu pacjenta' : 'Personalizacja i przypisanie'} – {stepInfo.title}</DialogTitle>
+          <DialogTitle>{isEditMode ? 'Edytuj plan pacjenta' : 'Przypisz zestaw'} – {stepInfo.title}</DialogTitle>
         </VisuallyHidden.Root>
         {/* Toolbar: row-1 = eyebrow (h-7), row-2 = input + stepper + X (h-9). All on same grid → perfect alignment */}
         <div className="shrink-0 bg-surface/95 backdrop-blur-sm border-b border-border px-6">
           {/* Row 1: eyebrow — fixed height with padding */}
           <div className="h-7 flex items-end pb-1">
             <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 leading-none">
-              {isEditMode ? 'Edycja planu pacjenta' : 'Personalizacja i przypisanie'}
+              {isEditMode ? 'Edytuj plan pacjenta' : 'Przypisz zestaw'}
             </span>
           </div>
           {/* Row 2: input (left) + stepper + X (right) — all h-9, same row → centers aligned by definition */}
@@ -1763,7 +1771,7 @@ function AssignmentWizardContent({
             </div>
             {/* Right: context chip + stepper + X — all h-9, centered in the same row */}
             <div className="flex-1 flex items-center gap-3 min-w-0 pl-3">
-              {selectedPatients.length > 0 || currentStep === 'schedule' || currentStep === 'summary' ? (
+              {selectedPatients.length > 0 || currentStep === 'schedule' ? (
                 <div className="hidden sm:flex items-center gap-2 px-2 py-1 rounded-md bg-surface-light/40 text-[10px] text-muted-foreground shrink-0">
                   {selectedPatients.length > 0 && (
                     <div className="flex items-center gap-1">
@@ -1771,10 +1779,10 @@ function AssignmentWizardContent({
                       <span className="font-medium">{selectedPatients.length} {selectedPatients.length === 1 ? 'pacjent' : 'pacjentów'}</span>
                     </div>
                   )}
-                  {selectedPatients.length > 0 && (currentStep === 'schedule' || currentStep === 'summary') && (
+                  {selectedPatients.length > 0 && currentStep === 'schedule' && (
                     <span className="text-border">·</span>
                   )}
-                  {(currentStep === 'schedule' || currentStep === 'summary') && (
+                  {currentStep === 'schedule' && (
                     <ScheduleSummary
                       startDate={startDate}
                       endDate={endDate}
@@ -1871,11 +1879,7 @@ function AssignmentWizardContent({
             <Button
               onClick={isLastStep ? handleFinalSubmit : goNext}
               disabled={isLoading || !canProceed()}
-              className={cn(
-                'shadow-lg shadow-primary/20 min-w-[160px] transition-all duration-300',
-                isLastStep &&
-                  'bg-linear-to-r from-primary to-primary hover:from-primary-dark hover:to-primary-dark'
-              )}
+              className="min-w-[160px]"
               data-testid={isLastStep ? 'assign-summary-submit-btn' : 'assign-wizard-next-btn'}
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

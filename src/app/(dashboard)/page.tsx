@@ -300,7 +300,7 @@ export default function DashboardPage() {
           type="button"
           onClick={() => setIsAssignWizardOpen(true)}
           disabled={!organizationId || !therapistId}
-          aria-label="Personalizuj i przypisz zestaw ćwiczeń pacjentowi"
+          aria-label="Przypisz zestaw pacjentowi"
           data-testid="dashboard-hero-assign-set-btn"
           className={`${QUICK_ACTION_CLASS} flex-[1_1_240px] bg-tint-fill text-on-tint hover:bg-tint-fill-hover`}
         >

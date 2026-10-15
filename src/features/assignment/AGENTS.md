@@ -8,9 +8,11 @@ Wizard personalizacji i przypisania zestawu pacjentowi. Flow działa w trybie al
 
 Kroki są dynamiczne zależnie od punktu wejścia:
 
-- `from-set` (detal zestawu): `customize-set -> select-patients -> schedule -> summary`
-- `from-patient` z preselected pacjentem i bez preselected zestawu: `select-set -> customize-set -> schedule -> summary`
-- `from-patient` bez preselected pacjenta (dashboard): `select-set -> customize-set -> select-patients -> schedule -> summary`
+- `from-set` (detal zestawu): `customize-set -> select-patients -> schedule`
+- `from-patient` z preselected pacjentem i bez preselected zestawu: `select-set -> customize-set -> schedule`
+- `from-patient` bez preselected pacjenta (dashboard): `select-set -> customize-set -> select-patients -> schedule`
+- Edycja planu: `customize-set -> schedule`.
+- Etykiety kroków (design v4): Zestaw, Plan, Pacjenci, Harmonogram. Podsumowanie (`SummaryStep layout="aside"`) jest boczną kolumną kroku `schedule`, nie osobnym krokiem. Przyciski: „Dalej”, na kroku pacjentów „Dalej · N wybranych”, na końcu „Utwórz plan i przypisz” / „Zapisz zmiany”.
 
 `customize-set` jest zawsze obecny i nie jest opcjonalny.
 
@@ -46,11 +48,11 @@ Wyszukiwarka + Enter dodaje ćwiczenia do planu pacjenta.
 
 ## Punkty wejścia
 
-| Miejsce                                     | Tryb         | Predefiniowane |
-| ------------------------------------------- | ------------ | -------------- |
-| Strona pacjenta → "Personalizuj i przypisz" | from-patient | Pacjent        |
-| Strona zestawu → "Personalizuj i przypisz"  | from-set     | Zestaw         |
-| Dashboard → "Personalizuj i przypisz"       | from-patient | Nic            |
+| Miejsce                                | Tryb         | Predefiniowane |
+| -------------------------------------- | ------------ | -------------- |
+| Strona pacjenta → "Przypisz zestaw"    | from-patient | Pacjent        |
+| Strona zestawu → "Przypisz pacjentowi" | from-set     | Zestaw         |
+| Dashboard → "Przypisz zestaw"          | from-patient | Nic            |
 
 ## Struktura folderu
 
@@ -75,7 +77,13 @@ Wyszukiwarka + Enter dodaje ćwiczenia do planu pacjenta.
 - Dokumentacja: `docs/assignment-wizard-overview.md`
 - Mapa data-testid: `docs/testing/data-testid-map.md`
 
+Skrót zapisu na ostatnim kroku (`schedule`) to `Cmd`/`Ctrl`+`Enter`. Sam `Enter` zostaje przy kontrolkach Harmonogramu (dni, +/− sesji, przełącznik szablonu).
+
 ## Konwencje data-testid
 
 Prefiks: `assignment-`, `set-`
 Przykłady: `assign-wizard`, `assign-summary-submit-btn`, `wizard-plan-name-input`, `set-rapid-builder-search`
+
+## Teksty a E2E
+
+Nazwy przycisków kreatora są lokatorami w `fiziyo-tests` (`PatientAssignmentPage`, specy MTB). Zmiana etykiety = równoległy PR w `fiziyo-tests`, który najpierw akceptuje obie wersje (`.ai/lessons.md`, 2026-10-15).

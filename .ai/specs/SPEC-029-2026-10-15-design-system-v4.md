@@ -77,3 +77,9 @@ Bez zmian. Prymitywy przekazują `data-testid` dalej.
 - Wspólny status aktywności (0–1 / 2–3 / 4+ dni), kolejka „Bez aktywnego Premium”, kolumna Dostęp i sortowanie listy, z testami.
 - 684 klasy surowych palet zmigrowane na tokeny statusów; nowe `status-warning-fill`, `status-info-fill`. Baza długu: 10 (fallback `global-error`, domyślny kolor tagu).
 - Teksty wymagane przez E2E (`fiziyo-tests`) zostają w dostępnych nazwach; zmiana etykiet zakładek i kroków kreatora wymaga równoległego PR w `fiziyo-tests`.
+
+### 2026-10-15 (etap 5: teksty i kreator z canvasu)
+
+- Teksty z canvasu: zakładki „Wymaga uwagi”, „Bez dostępu”; filtry „Wszystkie szablony”, „Szablony FiziYo/organizacji”, „Plany pacjentów”; „Utwórz zestaw”, „Utwórz ćwiczenie”, „Przypisz zestaw”, „Przypisz pacjentowi”; tytuły „Finanse”, „Zespół”; „Dziennik pacjenta”, „Dodaj notatkę”; badge zestawów „Szablon …” / „Plan pacjenta”.
+- Kreator: 4 kroki (Zestaw, Plan, Pacjenci, Harmonogram), podsumowanie jako boczna kolumna harmonogramu, „Dalej” / „Dalej · N wybranych”; edycja 2 kroki. Przycisk końcowy bez miętowego gradientu (biel na `#4BB894` = 2.45:1).
+- E2E: `fiziyo-tests#19` akceptuje obie wersje przed merge portalu; porządek w osobnym PR po merge.

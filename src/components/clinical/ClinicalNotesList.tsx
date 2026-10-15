@@ -151,7 +151,7 @@ export function ClinicalNotesList({
             </CardTitle>
             <Button size="sm" variant="tinted" onClick={handleNewNote} className="gap-1.5" data-testid="clinical-notes-new-note-btn">
               <Plus className="h-3.5 w-3.5" />
-              Nowa notatka
+              Dodaj notatkę
             </Button>
           </div>
         </CardHeader>

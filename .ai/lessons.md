@@ -22,6 +22,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-10-15 - Enter na ostatnim kroku kreatora nie zapisuje planu
+
+- **Kategoria**: `UI/UX`
+- **Problem**: Po złożeniu podsumowania w krok Harmonogram `isLastStep` jest true, więc globalny listener `Enter` wołał `handleSubmit` przy przycisku dnia albo +/− sesji.
+- **Przyczyna**: Listener ignorował tylko `input`/`textarea`; dni i `NumberControl` to `button type="button"`. `canProceedFromStep('schedule')` jest true przy elastycznej częstotliwości.
+- **Rozwiązanie**: Submit z klawiatury tylko `Cmd`/`Ctrl`+`Enter` (`wizardEnterSubmits`). Zwykły Enter na Harmonogramie zostaje lokalny.
+- **Reguła**: Jeśli krok z przyciskami dnia/+− staje się ostatni, globalny Enter nie może wołać submit.
+
 ### 2026-10-15 - Etykiety UI to kontrakt z E2E
 
 - **Kategoria**: `Testing`

@@ -28,6 +28,8 @@ interface SummaryStepProps {
   onSaveAsTemplateChange: (value: boolean) => void;
   onGoToStep?: (step: 'select-set' | 'customize-set' | 'select-patients' | 'schedule') => void;
   editMode?: boolean;
+  /** `aside`: single column next to the schedule step (v4 wizard), without the schedule and template cards */
+  layout?: 'page' | 'aside';
 }
 
 // Helper: Oblicz łączny czas zestawu
@@ -78,7 +80,9 @@ export function SummaryStep({
   onSaveAsTemplateChange,
   onGoToStep,
   editMode = false,
+  layout = 'page',
 }: SummaryStepProps) {
+  const isAside = layout === 'aside';
   const { user } = useUser();
   const { currentOrganization } = useOrganization();
   const [showConcierge, setShowConcierge] = useState(false);
@@ -166,16 +170,24 @@ export function SummaryStep({
 
   return (
     <div
-      className="max-w-5xl mx-auto grid grid-cols-12 gap-4 sm:gap-6 animate-in fade-in slide-in-from-bottom-4 p-4 sm:p-6 lg:p-8 items-start lg:items-stretch"
+      className={cn(
+        'grid grid-cols-12 items-start',
+        isAside
+          ? 'gap-3 p-4 sm:p-5'
+          : 'max-w-5xl mx-auto gap-4 sm:gap-6 animate-in fade-in slide-in-from-bottom-4 p-4 sm:p-6 lg:p-8 lg:items-stretch'
+      )}
       data-testid="summary-step"
     >
       {/* ══════════════════════════════════════════════════════════════ */}
       {/* KOLUMNA LEWA: WSAD MERYTORYCZNY (8/12)                         */}
       {/* ══════════════════════════════════════════════════════════════ */}
-      <div className="col-span-12 lg:col-span-8 flex flex-col gap-3 sm:gap-4">
+      <div className={cn('col-span-12 flex flex-col gap-3 sm:gap-4', !isAside && 'lg:col-span-8')}>
         {/* KARTA 1: ĆWICZENIA (Zawsze rozwinięte!) */}
         <div
-          className="bg-surface border border-border/60 rounded-xl overflow-hidden flex flex-col min-h-[200px] sm:min-h-[280px] lg:min-h-0 lg:flex-1"
+          className={cn(
+            'bg-surface border border-border/60 rounded-xl overflow-hidden flex flex-col',
+            isAside ? 'max-h-[320px]' : 'min-h-[200px] sm:min-h-[280px] lg:min-h-0 lg:flex-1'
+          )}
           data-testid="summary-exercises-card"
         >
           {/* Header */}
@@ -334,7 +346,7 @@ export function SummaryStep({
       {/* ══════════════════════════════════════════════════════════════ */}
       {/* KOLUMNA PRAWA: KONTEKST I AKCJA (4/12)                         */}
       {/* ══════════════════════════════════════════════════════════════ */}
-      <div className="col-span-12 lg:col-span-4 flex flex-col gap-3 sm:gap-4">
+      <div className={cn('col-span-12 flex flex-col gap-3 sm:gap-4', !isAside && 'lg:col-span-4')}>
         {/* KARTA 3: PACJENT(CI) */}
         {!editMode && (
           <div className="bg-surface border border-border/60 rounded-xl p-4 sm:p-5" data-testid="summary-patients-card">
@@ -408,7 +420,8 @@ export function SummaryStep({
           </div>
         )}
 
-        {/* KARTA 4: HARMONOGRAM */}
+        {/* KARTA 4: HARMONOGRAM (w trybie aside harmonogram jest obok) */}
+        {!isAside && (
         <div className="bg-surface border border-border/60 rounded-xl p-4 sm:p-5" data-testid="summary-schedule-card">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs uppercase text-muted-foreground font-bold flex items-center gap-2">
@@ -442,8 +455,9 @@ export function SummaryStep({
             </div>
           )}
         </div>
+        )}
 
-        {!editMode && (
+        {!editMode && !isAside && (
           <div className="bg-surface border border-border/60 rounded-xl p-4 sm:p-5" data-testid="summary-template-save-card">
             <div className="mb-3 rounded-lg border border-border/50 bg-surface-light/30 px-3 py-2 text-xs text-muted-foreground">
               W tym flow zawsze tworzymy nowy, spersonalizowany plan ćwiczeń dla pacjenta.
@@ -465,7 +479,7 @@ export function SummaryStep({
         )}
 
         {/* Spacer - wypycha compliance na dół (tylko na desktop) */}
-        <div className="hidden lg:flex lg:flex-1" />
+        {!isAside && <div className="hidden lg:flex lg:flex-1" />}
 
         {/* Compliance Shield - "Pieczątka prawna" */}
         <div className="p-3 sm:p-4 rounded-xl bg-surface border border-border/40">

@@ -281,10 +281,10 @@ export default function ExerciseSetsPage() {
   }
 
   const filterTabs: ReadonlyArray<{ id: typeof filter; label: string; count: number; testId: string }> = [
-    { id: 'all-templates', label: 'Wszystkie zestawy źródłowe', count: allTemplatesCount, testId: 'set-filter-all-templates-btn' },
-    { id: 'fiziyo-templates', label: 'Zestawy FiziYo', count: fiziyoTemplatesCount, testId: 'set-filter-fiziyo-templates-btn' },
-    { id: 'my-templates', label: 'Zestawy organizacji', count: myTemplatesCount, testId: 'set-filter-my-templates-btn' },
-    { id: 'patient-plans', label: 'Zestawy spersonalizowane', count: patientPlansCount, testId: 'set-filter-patient-plans-btn' },
+    { id: 'all-templates', label: 'Wszystkie szablony', count: allTemplatesCount, testId: 'set-filter-all-templates-btn' },
+    { id: 'fiziyo-templates', label: 'Szablony FiziYo', count: fiziyoTemplatesCount, testId: 'set-filter-fiziyo-templates-btn' },
+    { id: 'my-templates', label: 'Szablony organizacji', count: myTemplatesCount, testId: 'set-filter-my-templates-btn' },
+    { id: 'patient-plans', label: 'Plany pacjentów', count: patientPlansCount, testId: 'set-filter-patient-plans-btn' },
   ];
 
   return (
@@ -366,7 +366,6 @@ export default function ExerciseSetsPage() {
             <Button
               onClick={() => setIsCreateWizardOpen(true)}
               disabled={!organizationId}
-              aria-label="Utwórz zestaw. Utwórz program ćwiczeń"
               data-testid="set-create-wizard-btn"
             >
               <Plus aria-hidden="true" />
@@ -439,7 +438,7 @@ export default function ExerciseSetsPage() {
           )}
           {filter !== 'all-templates' && (
             <Button variant="ghost" size="sm" onClick={() => applyFilter('all-templates')} data-testid="set-filter-reset-btn">
-              Pokaż wszystkie zestawy źródłowe
+              Pokaż wszystkie szablony
             </Button>
           )}
           {!HIDE_EXERCISE_TAGS && selectedTags.length > 0 && (
@@ -473,7 +472,7 @@ export default function ExerciseSetsPage() {
                 ? 'Zmień wyszukiwanie albo wybierz inny rodzaj zestawów.'
                 : 'Szablon to zestaw, który przypiszesz wielu pacjentom.'
             }
-            actionLabel={!searchQuery && filter === 'all-templates' ? 'Nowy zestaw' : undefined}
+            actionLabel={!searchQuery && filter === 'all-templates' ? 'Utwórz zestaw' : undefined}
             onAction={!searchQuery && filter === 'all-templates' ? () => setIsCreateWizardOpen(true) : undefined}
           />
         </div>

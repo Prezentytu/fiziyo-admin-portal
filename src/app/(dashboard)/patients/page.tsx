@@ -49,8 +49,8 @@ const hasSubscriptionIssue = (patient: Patient): boolean => {
 const FILTER_TABS: ReadonlyArray<{ id: TherapyFilterType; label: string; testId: string; countClass: string }> = [
   { id: 'my', label: 'Moi pacjenci', testId: 'patient-filter-my-btn', countClass: 'text-label-secondary' },
   { id: 'all', label: 'Wszyscy', testId: 'patient-filter-all-btn', countClass: 'text-label-secondary' },
-  { id: 'needs_attention', label: 'Brak aktywności', testId: 'patient-filter-attention-btn', countClass: 'text-status-warning' },
-  { id: 'subscription', label: 'Subskrypcja', testId: 'patient-filter-subscription-btn', countClass: 'text-status-danger' },
+  { id: 'needs_attention', label: 'Wymaga uwagi', testId: 'patient-filter-attention-btn', countClass: 'text-status-warning' },
+  { id: 'subscription', label: 'Bez dostępu', testId: 'patient-filter-subscription-btn', countClass: 'text-status-danger' },
 ];
 
 export default function PatientsPage() {
@@ -304,7 +304,6 @@ export default function PatientsPage() {
             <Button
               onClick={() => setIsDialogOpen(true)}
               disabled={!organizationId}
-              aria-label="Dodaj pacjenta. Nowy pacjent w systemie"
               data-testid="patient-create-btn"
             >
               <Plus aria-hidden="true" />

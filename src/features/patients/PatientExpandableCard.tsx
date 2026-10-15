@@ -220,7 +220,7 @@ export function PatientExpandableCard({
               variant="tinted"
               size="sm"
               onClick={(e) => handleAction(e, () => onAssignSet(patient))}
-              aria-label={`Personalizuj i przypisz zestaw: ${displayName}`}
+              aria-label={`Przypisz zestaw: ${displayName}`}
               data-testid={`patient-expandable-${patient.id}-assign-btn`}
             >
               Przypisz zestaw

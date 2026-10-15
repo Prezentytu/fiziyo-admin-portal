@@ -114,21 +114,21 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
   const setTypeBadge = useMemo(() => {
     if (isPlan) {
       return {
-        label: 'Spersonalizowany zestaw ćwiczeń',
+        label: 'Plan pacjenta',
         className: 'border-transparent bg-status-info-muted text-status-info',
       };
     }
 
     if (isTemplate && set.templateSource === 'FIZIYO_VERIFIED') {
       return {
-        label: 'Zestaw FiziYo',
+        label: 'Szablon FiziYo',
         className: 'border-transparent bg-tint-muted text-tint',
       };
     }
 
     if (isTemplate) {
       return {
-        label: 'Zestaw organizacji',
+        label: 'Szablon organizacji',
         className: 'border-transparent bg-status-info-muted text-status-info',
       };
     }
@@ -389,7 +389,7 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
                 size="sm"
                 className="shadow-floating"
                 onClick={(e) => handleAction(e, () => onAssign(set))}
-                aria-label={`Personalizuj i przypisz: ${set.name}`}
+                aria-label={`Przypisz pacjentowi: ${set.name}`}
                 data-testid={`set-card-${set.id}-assign-btn`}
               >
                 <Send aria-hidden="true" />

@@ -522,7 +522,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
               variant="secondary"
               size="icon"
               className="h-11 w-11"
-              aria-label="Opcje"
+              aria-label="Więcej: pobierz PDF, edytuj zestaw, usuń zestaw"
               data-testid="set-detail-menu-trigger"
             >
               <MoreHorizontal className="h-[18px] w-[18px]" />
@@ -565,7 +565,6 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
           type="button"
           data-testid="set-detail-assign-btn"
           onClick={() => setIsAssignDialogOpen(true)}
-          aria-label="Personalizuj i przypisz zestaw pacjentowi"
           className="flex min-h-16 flex-[1_1_240px] items-center gap-3.5 rounded-[13px] bg-tint-fill px-[18px] text-left text-on-tint transition-colors hover:bg-tint-fill-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <UserPlus className="h-5 w-5 shrink-0" aria-hidden="true" />
