@@ -1,24 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import {
-  Mail,
-  Phone,
-  FolderKanban,
-  Wrench,
-  MoreHorizontal,
-  UserX,
-  Tag,
-  UserPlus,
-  Trash2,
-  Settings,
-  Sparkles,
-  Activity,
-  QrCode,
-} from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
+import { FolderKanban, MoreHorizontal, UserX, Tag, UserPlus, Trash2, Settings, Sparkles, QrCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -27,46 +12,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ActivityStatusLabel, InitialsAvatar } from '@/components/shared/page';
 import { cn } from '@/lib/utils';
+import { getPatientActivityStatus } from './utils/patientActivityStatus';
+import { getPatientAccess } from './utils/patientList';
 
-// Helper: Format activity status
-function formatActivityStatus(lastActivity: string | undefined): {
-  text: string;
-  color: 'green' | 'yellow' | 'red' | 'gray';
-  isActive: boolean;
-} {
-  if (!lastActivity) {
-    return { text: 'Brak aktywności', color: 'gray', isActive: false };
-  }
+/** Shared with the list header so columns line up (v4 design, table from 1180px). */
+export const PATIENT_ROW_GRID =
+  'min-[1180px]:grid min-[1180px]:grid-cols-[minmax(0,2fr)_minmax(150px,1.1fr)_190px_236px] min-[1180px]:gap-4';
 
-  const lastDate = new Date(lastActivity);
-  const now = new Date();
-  const diffMs = now.getTime() - lastDate.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-
-  if (diffDays === 0) {
-    if (diffHours < 1) {
-      return { text: 'Ćwiczył przed chwilą', color: 'green', isActive: true };
-    }
-    return { text: 'Ćwiczył dzisiaj', color: 'green', isActive: true };
-  }
-  if (diffDays === 1) {
-    return { text: 'Ćwiczył wczoraj', color: 'green', isActive: true };
-  }
-  if (diffDays <= 3) {
-    return { text: `${diffDays} dni temu`, color: 'yellow', isActive: true };
-  }
-  if (diffDays <= 7) {
-    return { text: `${diffDays} dni temu`, color: 'yellow', isActive: false };
-  }
-  return { text: `Nieaktywny ${diffDays} dni`, color: 'red', isActive: false };
-}
 import { EditContextLabelDialog } from './EditContextLabelDialog';
 import { EditPatientDialog } from './EditPatientDialog';
-import { TherapistBadge } from './TherapistBadge';
-import { PremiumStatusBadge } from './PremiumStatusBadge';
 import { ActivatePremiumDialog } from './ActivatePremiumDialog';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
 import { usePatientPremium } from '@/hooks/usePatientPremium';
@@ -117,8 +73,10 @@ interface PatientExpandableCardProps {
   readonly onTakeOver?: (patient: Patient) => void;
   readonly organizationId: string;
   readonly therapistId: string;
-  /** Show therapist badge (Collaborative Care mode) */
+  /** Show the assigned therapist next to the therapy goal (Collaborative Care mode) */
   readonly showTherapistBadge?: boolean;
+  /** Dense rows without the therapy goal line */
+  readonly compact?: boolean;
 }
 
 export function PatientExpandableCard({
@@ -131,6 +89,7 @@ export function PatientExpandableCard({
   organizationId,
   therapistId,
   showTherapistBadge = false,
+  compact = false,
 }: PatientExpandableCardProps) {
   const router = useRouter();
   const [isEditLabelOpen, setIsEditLabelOpen] = useState(false);
@@ -153,12 +112,14 @@ export function PatientExpandableCard({
     `${patient.personalData?.firstName || ''} ${patient.personalData?.lastName || ''}`.trim() ||
     'Nieznany pacjent';
 
-  const initials = displayName
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
+  const activity = getPatientActivityStatus(patient.lastActivity);
+  const access = getPatientAccess(patient);
+  const goal =
+    patient.contextLabel && patient.contextLabel !== 'Leczenie podstawowe' ? patient.contextLabel : 'Brak celu terapii';
+  const goalLine =
+    showTherapistBadge && !isMyPatient
+      ? `${goal} · ${patient.therapist?.fullname ?? 'Bez fizjoterapeuty'}`
+      : goal;
 
   const handleCardClick = () => {
     router.push(`/patients/${patient.id}`);
@@ -173,292 +134,189 @@ export function PatientExpandableCard({
     <>
       <div
         onClick={handleCardClick}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            handleCardClick();
-          }
-        }}
-        role="button"
-        tabIndex={0}
         className={cn(
-          'group rounded-xl border border-border/60 bg-surface transition-all cursor-pointer',
-          'hover:bg-surface-light hover:border-primary/30 hover:shadow-md'
+          'group flex cursor-pointer flex-wrap items-center gap-x-3 gap-y-2 border-t-[0.5px] border-separator px-3 py-3 transition-colors hover:bg-fill-quaternary min-[1180px]:py-0',
+          PATIENT_ROW_GRID,
+          compact ? 'min-[1180px]:min-h-[52px]' : 'min-[1180px]:min-h-[68px]'
         )}
         data-testid={`patient-expandable-${patient.id}`}
       >
-        <div className="flex items-center gap-4 p-4">
-          {/* Avatar with Contact Tooltip */}
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="relative shrink-0 cursor-help">
-                  <Avatar
-                    className={cn(
-                      'h-11 w-11 ring-2 transition-all',
-                      patient.isShadowUser
-                        ? 'ring-muted-foreground/20 group-hover:ring-muted-foreground/30'
-                        : 'ring-border/30 group-hover:ring-primary/30'
-                    )}
-                  >
-                    <AvatarImage src={patient.image} alt={displayName} />
-                    <AvatarFallback
-                      className={cn(
-                        'font-semibold text-sm',
-                        patient.isShadowUser
-                          ? 'bg-muted-foreground/60 text-white'
-                          : 'bg-linear-to-br from-info to-blue-600 text-white'
-                      )}
-                    >
-                      {initials}
-                    </AvatarFallback>
-                  </Avatar>
-                  {patient.isShadowUser && (
-                    <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-muted-foreground/80 flex items-center justify-center ring-2 ring-surface">
-                      <Wrench className="h-2.5 w-2.5 text-white" />
-                    </div>
-                  )}
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="right" className="max-w-xs">
-                <div className="space-y-1.5">
-                  <p className="font-medium">{displayName}</p>
-                  {patient.email && (
-                    <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <Mail className="h-3 w-3" />
-                      {patient.email}
-                    </p>
-                  )}
-                  {patient.contactData?.phone && (
-                    <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <Phone className="h-3 w-3" />
-                      {patient.contactData.phone}
-                    </p>
-                  )}
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
-          {/* Main Content - Name + Diagnosis/Goal */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-0.5">
-              <h3 className="font-semibold text-sm text-foreground truncate group-hover:text-primary transition-colors">
+        <span className="flex min-w-0 flex-[1_1_100%] items-center gap-3 min-[1180px]:flex-auto">
+          <InitialsAvatar
+            name={displayName}
+            imageUrl={patient.image}
+            muted={patient.isShadowUser}
+            className={compact ? 'h-8 w-8' : 'h-10 w-10'}
+          />
+          <span className="flex min-w-0 flex-col">
+            <span className="flex min-w-0 items-center gap-2">
+              <Link
+                href={`/patients/${patient.id}`}
+                onClick={(event) => event.stopPropagation()}
+                className="truncate rounded-sm text-[15px] font-semibold leading-5 text-foreground hover:text-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
                 {displayName}
-              </h3>
+              </Link>
               {patient.isShadowUser && (
-                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0">
-                  Tymczasowy
-                </Badge>
+                <span className="inline-flex h-[22px] shrink-0 items-center rounded-full bg-fill-tertiary px-2 text-[12px] font-semibold text-label-secondary">
+                  Bez konta
+                </span>
               )}
-            </div>
-            {/* Diagnosis/Treatment Goal instead of email */}
-            <p className="text-xs text-muted-foreground truncate">
-              {patient.contextLabel && patient.contextLabel !== 'Leczenie podstawowe'
-                ? patient.contextLabel
-                : 'Brak celu terapii'}
-            </p>
-          </div>
+            </span>
+            {!compact && <span className="truncate text-[13px] leading-[18px] text-label-secondary">{goalLine}</span>}
+          </span>
+        </span>
 
-          {/* Activity Indicator (only for my patients) */}
-          {isMyPatient &&
-            (() => {
-              const activity = formatActivityStatus(patient.lastActivity);
-              return (
-                <div className="hidden sm:flex flex-col items-end shrink-0 min-w-[100px]">
-                  <div className="flex items-center gap-1.5">
-                    <Activity
-                      className={cn(
-                        'h-3.5 w-3.5',
-                        activity.color === 'green' && 'text-green-500',
-                        activity.color === 'yellow' && 'text-yellow-500',
-                        activity.color === 'red' && 'text-red-500',
-                        activity.color === 'gray' && 'text-muted-foreground'
-                      )}
-                    />
-                    <span
-                      className={cn(
-                        'text-xs font-medium',
-                        activity.color === 'green' && 'text-green-500',
-                        activity.color === 'yellow' && 'text-yellow-500',
-                        activity.color === 'red' && 'text-red-500',
-                        activity.color === 'gray' && 'text-muted-foreground'
-                      )}
-                    >
-                      {activity.text}
-                    </span>
-                  </div>
-                </div>
-              );
-            })()}
+        <ActivityStatusLabel tone={activity.tone} label={activity.label} className="pl-[52px] min-[1180px]:pl-0" />
 
-          {/* Therapist Badge (Collaborative Care) */}
-          {showTherapistBadge && (
-            <TherapistBadge therapist={patient.therapist} isCurrentUser={isMyPatient} showUnassigned={true} />
+        <span className="flex items-center">
+          {access.kind === 'premium' && (
+            <span className="inline-flex h-8 items-center whitespace-nowrap rounded-full bg-status-success-muted px-3 text-[13px] font-semibold text-status-success">
+              {access.label}
+            </span>
           )}
-
-          {/* Premium Status Badge (only for my patients) */}
-          {isMyPatient && (
-            <PremiumStatusBadge
-              premiumActiveUntil={patient.premiumValidUntil}
-              patientId={patient.id}
-              onActivate={() => initiateActivation(patient.id, displayName, patient.premiumValidUntil)}
-              isShadowUser={patient.isShadowUser}
-              isActivating={isActivating && activationTarget?.patientId === patient.id}
-              showActivateButton={true}
-              size="sm"
-            />
-          )}
-
-          {/* Edit Diagnosis button (on hover, only for my patients) */}
-          {isMyPatient && (
-            <button
-              type="button"
-              onMouseDown={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                setIsEditLabelOpen(true);
-              }}
-              className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-              title="Edytuj cel terapii"
-            >
-              <Badge variant="outline" className="text-[10px] px-2 py-0.5 gap-1 hover:bg-surface-light">
-                <Tag className="h-3 w-3" />
-                Cel terapii
-              </Badge>
-            </button>
-          )}
-
-          {/* Hover Actions */}
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-            {/* Take Over button (only for patients not mine) */}
-            {!isMyPatient && onTakeOver && (
+          {access.kind === 'locked' &&
+            (isMyPatient ? (
               <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
-                onClick={(e) => handleAction(e, () => onTakeOver(patient))}
-                title={isUnassigned ? 'Przypisz do mnie' : 'Przejmij opiekę'}
-                data-testid={`patient-takeover-btn`}
+                variant="tinted"
+                size="sm"
+                onClick={(e) => handleAction(e, () => initiateActivation(patient.id, displayName, patient.premiumValidUntil))}
+                disabled={isActivating && activationTarget?.patientId === patient.id}
+                data-testid={`patient-expandable-${patient.id}-premium-btn`}
               >
-                <UserPlus className="h-4 w-4" />
+                {access.label}
               </Button>
-            )}
-
-            {/* Quick Assign (only for my patients) */}
-            {isMyPatient && (
+            ) : (
+              <span className="text-[13px] font-semibold text-label-secondary">Bez Premium</span>
+            ))}
+          {access.kind === 'shadow' &&
+            (isMyPatient && onShowQR ? (
               <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
-                onClick={(e) => handleAction(e, () => onAssignSet(patient))}
-                title="Personalizuj i przypisz"
-                data-testid={`patient-expandable-${patient.id}-assign-btn`}
-              >
-                <FolderKanban className="h-4 w-4" />
-              </Button>
-            )}
-
-            {/* QR Code(only for my patients) */}
-            {isMyPatient && onShowQR && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+                variant="secondary"
+                size="sm"
                 onClick={(e) => handleAction(e, () => onShowQR(patient))}
-                title="Pokaż zalecenia (QR)"
-                data-testid={`patient-expandable-${patient.id}-qr-btn`}
+                data-testid={`patient-expandable-${patient.id}-connect-btn`}
               >
-                <QrCode className="h-4 w-4" />
+                {access.label}
               </Button>
-            )}
+            ) : (
+              <span className="text-[13px] font-semibold text-label-secondary">Bez konta w aplikacji</span>
+            ))}
+        </span>
 
-            {/* More Options Menu */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={(e) => e.stopPropagation()}
-                  data-testid={`patient-expandable-${patient.id}-menu-trigger`}
-                >
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                {/* Take Over option */}
-                {!isMyPatient && onTakeOver && (
-                  <>
-                    <DropdownMenuItem onClick={() => onTakeOver(patient)}>
-                      <UserPlus className="mr-2 h-4 w-4" />
-                      {isUnassigned ? 'Przypisz do mnie' : 'Przejmij opiekę'}
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                  </>
-                )}
+        <span className="ml-auto flex items-center justify-end gap-1">
+          {!isMyPatient && onTakeOver && (
+            <Button
+              variant="tinted"
+              size="sm"
+              onClick={(e) => handleAction(e, () => onTakeOver(patient))}
+              data-testid="patient-takeover-btn"
+            >
+              {isUnassigned ? 'Przypisz do mnie' : 'Przejmij opiekę'}
+            </Button>
+          )}
+          {isMyPatient && (
+            <Button
+              variant="tinted"
+              size="sm"
+              onClick={(e) => handleAction(e, () => onAssignSet(patient))}
+              aria-label={`Personalizuj i przypisz zestaw: ${displayName}`}
+              data-testid={`patient-expandable-${patient.id}-assign-btn`}
+            >
+              Przypisz zestaw
+            </Button>
+          )}
+          {isMyPatient && onShowQR && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={(e) => handleAction(e, () => onShowQR(patient))}
+              aria-label={`Kod QR do aplikacji: ${displayName}`}
+              data-testid={`patient-expandable-${patient.id}-qr-btn`}
+            >
+              Kod QR
+            </Button>
+          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`Więcej opcji: ${displayName}`}
+                onClick={(e) => e.stopPropagation()}
+                data-testid={`patient-expandable-${patient.id}-menu-trigger`}
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+              {/* Take Over option */}
+              {!isMyPatient && onTakeOver && (
+                <>
+                  <DropdownMenuItem onClick={() => onTakeOver(patient)}>
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    {isUnassigned ? 'Przypisz do mnie' : 'Przejmij opiekę'}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
 
-                {/* Actions for my patients */}
-                {isMyPatient && (
-                  <>
-                    <DropdownMenuItem onClick={() => onAssignSet(patient)}>
-                      <FolderKanban className="mr-2 h-4 w-4" />
-                      Personalizuj i przypisz
+              {/* Actions for my patients */}
+              {isMyPatient && (
+                <>
+                  <DropdownMenuItem onClick={() => onAssignSet(patient)}>
+                    <FolderKanban className="mr-2 h-4 w-4" />
+                    Personalizuj i przypisz
+                  </DropdownMenuItem>
+                  {onShowQR && (
+                    <DropdownMenuItem onClick={() => onShowQR(patient)}>
+                      <QrCode className="mr-2 h-4 w-4" />
+                      Pokaż zalecenia (QR)
                     </DropdownMenuItem>
-                    {onShowQR && (
-                      <DropdownMenuItem onClick={() => onShowQR(patient)}>
-                        <QrCode className="mr-2 h-4 w-4" />
-                        Pokaż zalecenia (QR)
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuItem
-                      onClick={() => initiateActivation(patient.id, displayName, patient.premiumValidUntil)}
-                    >
-                      <Sparkles className="mr-2 h-4 w-4" />
-                      {patient.premiumValidUntil && new Date(patient.premiumValidUntil) > new Date()
-                        ? 'Zarządzaj Premium'
-                        : 'Aktywuj Premium'}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setIsEditLabelOpen(true)}>
-                      <Tag className="mr-2 h-4 w-4" />
-                      Edytuj cel terapii
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setIsEditPatientOpen(true)}>
-                      <Settings className="mr-2 h-4 w-4" />
-                      Ustawienia pacjenta
-                    </DropdownMenuItem>
-                  </>
-                )}
+                  )}
+                  <DropdownMenuItem
+                    onClick={() => initiateActivation(patient.id, displayName, patient.premiumValidUntil)}
+                  >
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    {patient.premiumValidUntil && new Date(patient.premiumValidUntil) > new Date()
+                      ? 'Zarządzaj Premium'
+                      : 'Aktywuj Premium'}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setIsEditLabelOpen(true)}>
+                    <Tag className="mr-2 h-4 w-4" />
+                    Edytuj cel terapii
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setIsEditPatientOpen(true)}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    Ustawienia pacjenta
+                  </DropdownMenuItem>
+                </>
+              )}
 
-                {/* Admin/Owner actions */}
-                {canManageTeam && (
-                  <>
-                    <DropdownMenuSeparator />
-                    {/* Unassign from therapist - only if patient has a therapist */}
-                    {hasTherapist && (
-                      <DropdownMenuItem onClick={() => onUnassign(patient)} className="text-warning focus:text-warning">
-                        <UserX className="mr-2 h-4 w-4" />
-                        Odepnij od fizjoterapeuty
-                      </DropdownMenuItem>
-                    )}
-                    {/* Remove from organization */}
-                    <DropdownMenuItem
-                      onClick={() => onRemoveFromOrganization(patient)}
-                      className="text-destructive focus:text-destructive"
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Usuń z organizacji
+              {/* Admin/Owner actions */}
+              {canManageTeam && (
+                <>
+                  <DropdownMenuSeparator />
+                  {/* Unassign from therapist - only if patient has a therapist */}
+                  {hasTherapist && (
+                    <DropdownMenuItem onClick={() => onUnassign(patient)} className="text-warning focus:text-warning">
+                      <UserX className="mr-2 h-4 w-4" />
+                      Odepnij od fizjoterapeuty
                     </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
+                  )}
+                  {/* Remove from organization */}
+                  <DropdownMenuItem
+                    onClick={() => onRemoveFromOrganization(patient)}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Usuń z organizacji
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </span>
       </div>
 
       {/* Edit Context Label Dialog - OUTSIDE the clickable card to prevent event issues */}

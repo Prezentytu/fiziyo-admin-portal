@@ -7,19 +7,26 @@ import { cn } from '@/lib/utils';
 
 const Tabs = TabsPrimitive.Root;
 
-const TabsList = React.forwardRef<
-  React.ElementRef<typeof TabsPrimitive.List>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
->(({ className, ...props }, ref) => (
-  <TabsPrimitive.List
-    ref={ref}
-    className={cn(
-      'inline-flex h-9 items-center justify-center gap-0.5 rounded-[10px] bg-fill-tertiary p-0.5 text-label-secondary',
-      className
-    )}
-    {...props}
-  />
-));
+const tabsListVariants = cva('inline-flex items-center text-label-secondary', {
+  variants: {
+    variant: {
+      segmented: 'h-9 justify-center gap-0.5 rounded-[10px] bg-fill-tertiary p-0.5',
+      underline: 'h-11 justify-start gap-6 overflow-x-auto',
+    },
+  },
+  defaultVariants: {
+    variant: 'segmented',
+  },
+});
+
+type TabsListProps = React.ComponentPropsWithoutRef<typeof TabsPrimitive.List> &
+  VariantProps<typeof tabsListVariants>;
+
+const TabsList = React.forwardRef<React.ElementRef<typeof TabsPrimitive.List>, TabsListProps>(
+  ({ className, variant, ...props }, ref) => (
+    <TabsPrimitive.List ref={ref} className={cn(tabsListVariants({ variant }), className)} {...props} />
+  )
+);
 TabsList.displayName = TabsPrimitive.List.displayName;
 
 const tabsTriggerVariants = cva(
@@ -37,6 +44,8 @@ const tabsTriggerVariants = cva(
           'data-[state=active]:bg-status-warning-muted data-[state=active]:text-status-warning data-[state=active]:shadow-none',
         destructive:
           'data-[state=active]:bg-status-danger-muted data-[state=active]:text-status-danger data-[state=active]:shadow-none',
+        underline:
+          'h-11 rounded-none px-0 text-[15px] hover:text-foreground data-[state=active]:text-foreground data-[state=active]:shadow-[inset_0_-2px_0_var(--tint)]',
       },
     },
     defaultVariants: {
