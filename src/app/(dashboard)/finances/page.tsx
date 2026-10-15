@@ -118,7 +118,7 @@ export default function FinancesPage() {
         {/* Header */}
         <div className="flex items-center gap-3">
           <div>
-            <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground">Twoje finanse</h1>
+            <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground">Finanse</h1>
             <p className="mt-1 text-[15px] text-label-secondary">Przychody, poziom partnerski i rozliczenia.</p>
           </div>
         </div>

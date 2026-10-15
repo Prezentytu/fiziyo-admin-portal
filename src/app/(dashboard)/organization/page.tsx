@@ -225,7 +225,7 @@ export default function OrganizationPage() {
           <div className="w-64 border-r-[0.5px] border-separator bg-transparent flex flex-col shrink-0">
             <div className="p-6">
               <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground mb-6" data-testid="org-page-title">
-                Mój Zespół
+                Zespół
               </h1>
 
               <TabsList className="flex flex-col h-auto bg-transparent p-0 items-stretch gap-1">

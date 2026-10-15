@@ -325,11 +325,10 @@ export default function ExercisesPage() {
                 <Button
                   onClick={() => setIsDialogOpen(true)}
                   disabled={!organizationId}
-                  aria-label="Dodaj ćwiczenie. Utwórz własne"
                   data-testid="exercise-create-btn"
                 >
                   <Plus aria-hidden="true" />
-                  Dodaj ćwiczenie
+                  Utwórz ćwiczenie
                 </Button>
               </>
             }

@@ -59,8 +59,5 @@ describe('canProceedFromStep', () => {
       expect(canProceedFromStep('schedule', ctx({ frequency: { isFlexible: false, monday: true } }))).toBe(true);
     });
 
-    it('always allows the summary step', () => {
-      expect(canProceedFromStep('summary', ctx())).toBe(true);
-    });
   });
 });

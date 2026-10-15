@@ -22,8 +22,6 @@ export function canProceedFromStep(step: WizardStep, context: CanProceedContext)
       return context.selectedPatientsCount > 0;
     case 'schedule':
       return context.frequency.isFlexible !== false || hasSelectedScheduleDays(context.frequency);
-    case 'summary':
-      return true;
     default:
       return false;
   }

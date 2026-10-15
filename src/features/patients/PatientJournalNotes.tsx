@@ -67,7 +67,7 @@ export function PatientJournalNotes({ patientId, organizationId }: PatientJourna
       <CardHeader className="px-0 pb-2 pt-0">
         <div className="flex min-h-11 items-center justify-between">
           <CardTitle className="flex items-center gap-2">
-            Notatki pacjenta
+            Dziennik pacjenta
             {entries.length > 0 && (
               <Badge variant="secondary" className="ml-1">
                 {entries.length}

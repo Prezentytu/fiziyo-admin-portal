@@ -344,7 +344,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
             icon={FolderKanban}
             title="Pacjent nie ma jeszcze planu"
             description="Przypisz zestaw, żeby pacjent zobaczył ćwiczenia w aplikacji."
-            actionLabel="Personalizuj i przypisz"
+            actionLabel="Przypisz zestaw"
             onAction={() => setIsAssignDialogOpen(true)}
           />
         </div>
@@ -485,7 +485,6 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
           type="button"
           onClick={() => setIsAssignDialogOpen(true)}
           disabled={!organizationId || !therapistId}
-          aria-label="Personalizuj i przypisz zestaw ćwiczeń"
           className="group flex min-h-16 flex-[1_1_240px] items-center gap-3.5 rounded-[13px] bg-tint-fill px-[18px] text-left text-on-tint transition-colors hover:bg-tint-fill-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-40"
           data-testid="patient-detail-assign-btn"
         >
