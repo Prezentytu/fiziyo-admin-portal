@@ -769,6 +769,7 @@ export function PatientAssignmentCard({
                           variant="link"
                           size="sm"
                           className="h-auto p-0 text-xs text-primary"
+                          data-testid={`patient-assignment-${assignment.id}-show-all-btn`}
                           onClick={() => {
                             // Show all hidden exercises
                             exercises.forEach((m) => {
