@@ -2064,7 +2064,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
             onClick={handleSave}
             disabled={isSaving || !isValid}
             className={cn(
-              'px-8 bg-primary hover:bg-primary-dark text-primary-foreground font-semibold',
+              'px-8 bg-tint-fill hover:bg-tint-fill-hover text-on-tint font-semibold',
               'disabled:opacity-50 disabled:cursor-not-allowed'
             )}
             data-testid="exercise-create-save-btn"

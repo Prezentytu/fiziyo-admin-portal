@@ -473,7 +473,7 @@ export default function ExerciseSetsPage() {
                 ? 'Zmień wyszukiwanie albo wybierz inny rodzaj zestawów.'
                 : 'Szablon to zestaw, który przypiszesz wielu pacjentom.'
             }
-            actionLabel={!searchQuery && filter === 'all-templates' ? 'Utwórz zestaw' : undefined}
+            actionLabel={!searchQuery && filter === 'all-templates' ? 'Nowy zestaw' : undefined}
             onAction={!searchQuery && filter === 'all-templates' ? () => setIsCreateWizardOpen(true) : undefined}
           />
         </div>

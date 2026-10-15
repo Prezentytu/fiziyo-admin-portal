@@ -171,7 +171,7 @@ export function StripeAlertBanner({ organizationId, className }: Readonly<Stripe
             onClick={handleConfigure}
             disabled={isLoading}
             size="sm"
-            className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
+            className="gap-2 bg-tint-fill text-on-tint hover:bg-tint-fill-hover shadow-sm"
             data-testid="finance-alert-configure-btn"
           >
             {isLoading ? (

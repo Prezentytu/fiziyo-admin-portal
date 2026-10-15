@@ -344,7 +344,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
             icon={FolderKanban}
             title="Pacjent nie ma jeszcze planu"
             description="Przypisz zestaw, żeby pacjent zobaczył ćwiczenia w aplikacji."
-            actionLabel="Przypisz zestaw"
+            actionLabel="Personalizuj i przypisz"
             onAction={() => setIsAssignDialogOpen(true)}
           />
         </div>

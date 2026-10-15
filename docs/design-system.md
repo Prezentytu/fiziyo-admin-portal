@@ -10,34 +10,35 @@ Spec: `.ai/specs/SPEC-029-2026-10-15-design-system-v4.md`. Rodzic: design system
 2. **Najpierw prymityw.** `Button`, `Card`, `Input`, `Textarea`, `Select`, `Badge`, `Dialog`, `Tabs`, `Switch`, `Checkbox` z `@/components/ui`. Nie nadpisuj im koloru, promienia ani wysokości w `className`; potrzebny nowy wariant → dodaj go w prymitywie.
 3. **Hierarchia tłem, nie ramką.** Szare tło ekranu (`bg-grouped`) → biała karta (`bg-card`) → element w karcie (`bg-grouped-tertiary` albo `bg-fill-tertiary`). Ramka tylko dla pól i kart na tym samym tle. Separator wiersza: `border-t border-separator` (0.5 px: `border-t-[0.5px]`).
 4. **Jeden kolor akcji.** Zielony (`tint`) tylko na tym, co się klika albo jest zaznaczone. Statusy zawsze z tekstem, nigdy sam kolor.
-5. **Oba motywy od pierwszej wersji.** Ciemny = grafit `#111113`, nie czerń.
+5. **Oba motywy od pierwszej wersji.** Ciemny = grafit `#111113`, nie czerń. Tryb „Wysoki kontrast” (`.high-contrast`) nadpisuje tokeny DS (`tint*`, `label*`, `grouped*`, `separator`), nie tylko stare aliasy.
 
 ## Tokeny kolorów
 
 Utility Tailwind = `bg-*`, `text-*`, `border-*` z nazwą tokenu.
 
-| Token                                  | Jasny                 | Ciemny                     | Do czego                            |
-| -------------------------------------- | --------------------- | -------------------------- | ----------------------------------- |
-| `grouped`                              | `#F2F2F7`             | `#111113`                  | Tło ekranu, sidebar                 |
-| `grouped-secondary` = `card`           | `#FFFFFF`             | `#1F1F22`                  | Karta, sekcja, dialog               |
-| `grouped-tertiary`                     | `#F2F2F7`             | `#2B2B2F`                  | Element w karcie, popover           |
-| `elevated`                             | `#FFFFFF`             | `#38383D`                  | Aktywny segment `Tabs`              |
-| `label` = `foreground`                 | `#000000`             | `#FFFFFF`                  | Tekst główny                        |
-| `label-secondary` = `muted-foreground` | `#636366`             | `#A1A1A8`                  | Podtytuł, metadane, nagłówek sekcji |
-| `label-tertiary`                       | `#86868B`             | `#97979D`                  | Placeholder, chevron, wyłączone     |
-| `fill-tertiary`                        | 12% szarości          | 24% szarości               | Pole formularza, przycisk wtórny    |
-| `fill-quaternary`                      | 8%                    | 18%                        | Hover wiersza i przycisku ghost     |
-| `separator`                            | `rgba(60,60,67,.29)`  | `rgba(84,84,88,.65)`       | Linia między wierszami              |
-| `hairline` = `border`                  | 12%                   | 8% bieli                   | Cicha ramka                         |
-| `scrim`                                | 32% czerni            | 56% czerni                 | Tło pod dialogiem                   |
-| `tint`                                 | `#266B54`             | `#4BB894`                  | Link, ikona aktywna, tekst akcji    |
-| `tint-fill` / `on-tint`                | `#266B54` / biały     | `#307F65` / biały          | Główny przycisk, hero               |
-| `tint-muted`                           | 10% tint              | 16% tint                   | Zaznaczenie, przycisk `tinted`      |
-| `status-success` / `-muted`            | `#266B54`             | `#6BCBA9`                  | Trening dziś, aktywny               |
-| `status-warning` / `-muted`            | `#B53A00`             | `#FFB340`                  | Bez treningu 2–3 dni, wygasa        |
-| `status-danger` / `-muted` / `-fill`   | `#D70015`             | `#FF7A72` / fill `#D93636` | Bez treningu 4+ dni, usuwanie       |
-| `status-info` / `-muted`               | `#0062CC`             | `#4DA3FF`                  | W weryfikacji, informacja           |
-| `avatar` / `avatar-label`              | `#D7F5E8` / `#1C5341` | 16% tint / `#91DDC0`       | Inicjały                            |
+| Token                                  | Jasny                 | Ciemny                     | Do czego                                     |
+| -------------------------------------- | --------------------- | -------------------------- | -------------------------------------------- |
+| `grouped`                              | `#F2F2F7`             | `#111113`                  | Tło ekranu, sidebar                          |
+| `grouped-secondary` = `card`           | `#FFFFFF`             | `#1F1F22`                  | Karta, sekcja, dialog                        |
+| `grouped-tertiary`                     | `#F2F2F7`             | `#2B2B2F`                  | Element w karcie, popover                    |
+| `elevated`                             | `#FFFFFF`             | `#38383D`                  | Aktywny segment `Tabs`                       |
+| `label` = `foreground`                 | `#000000`             | `#FFFFFF`                  | Tekst główny                                 |
+| `label-secondary` = `muted-foreground` | `#636366`             | `#A1A1A8`                  | Podtytuł, metadane, nagłówek sekcji          |
+| `label-tertiary`                       | `#86868B`             | `#97979D`                  | Placeholder, chevron, wyłączone              |
+| `fill-tertiary`                        | 12% szarości          | 24% szarości               | Pole formularza, przycisk wtórny             |
+| `fill-quaternary`                      | 8%                    | 18%                        | Hover wiersza i przycisku ghost              |
+| `separator`                            | `rgba(60,60,67,.29)`  | `rgba(84,84,88,.65)`       | Linia między wierszami                       |
+| `switch-track-off`                     | `#8E8E93`             | 32% szarości               | Tor wyłączonego `Switch` (biały kciuk ≥ 3:1) |
+| `hairline` = `border`                  | 12%                   | 8% bieli                   | Cicha ramka                                  |
+| `scrim`                                | 32% czerni            | 56% czerni                 | Tło pod dialogiem                            |
+| `tint`                                 | `#266B54`             | `#4BB894`                  | Link, ikona aktywna, tekst akcji             |
+| `tint-fill` / `on-tint`                | `#266B54` / biały     | `#307F65` / biały          | Główny przycisk, hero                        |
+| `tint-muted`                           | 10% tint              | 16% tint                   | Zaznaczenie, przycisk `tinted`               |
+| `status-success` / `-muted`            | `#266B54`             | `#6BCBA9`                  | Trening dziś, aktywny                        |
+| `status-warning` / `-muted`            | `#B53A00`             | `#FFB340`                  | Bez treningu 2–3 dni, wygasa                 |
+| `status-danger` / `-muted` / `-fill`   | `#D70015`             | `#FF7A72` / fill `#D93636` | Bez treningu 4+ dni, usuwanie                |
+| `status-info` / `-muted`               | `#0062CC`             | `#4DA3FF`                  | W weryfikacji, informacja                    |
+| `avatar` / `avatar-label`              | `#D7F5E8` / `#1C5341` | 16% tint / `#91DDC0`       | Inicjały                                     |
 
 Kontrast (WCAG AA) sprawdzony dla każdej pary tekst/tło powyżej; `label-tertiary` nie jest kolorem tekstu do czytania.
 

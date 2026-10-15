@@ -244,6 +244,8 @@
   --fill-tertiary: rgba(118, 118, 128, 0.24);
   --fill-quaternary: rgba(118, 118, 128, 0.18);
   --separator: rgba(84, 84, 88, 0.65);
+  /* Unchecked switch track: white thumb needs 3:1 against it (WCAG 1.4.11) */
+  --switch-track-off: rgba(118, 118, 128, 0.32);
   --hairline: rgba(255, 255, 255, 0.08);
   --scrim: rgba(0, 0, 0, 0.56);
 
@@ -321,7 +323,8 @@
   --mint-light: var(--tint-muted);
   --mint-dark: var(--tint);
   --accent-green: var(--tint);
-  --dark: var(--grouped);
+  /* Constant dark swatch (theme preview), same in both themes */
+  --dark: #111113;
   --selection: rgba(75, 184, 148, 0.3);
 
   --border: var(--hairline);
@@ -383,6 +386,7 @@
   --color-fill-tertiary: var(--fill-tertiary);
   --color-fill-quaternary: var(--fill-quaternary);
   --color-separator: var(--separator);
+  --color-switch-track-off: var(--switch-track-off);
   --color-hairline: var(--hairline);
   --color-scrim: var(--scrim);
   --color-tint: var(--tint);
@@ -1207,6 +1211,7 @@ input[type="number"] {
   --fill-tertiary: rgba(118, 118, 128, 0.12);
   --fill-quaternary: rgba(116, 116, 128, 0.08);
   --separator: rgba(60, 60, 67, 0.29);
+  --switch-track-off: #8e8e93;
   --hairline: rgba(60, 60, 67, 0.12);
   --scrim: rgba(0, 0, 0, 0.32);
 
@@ -1250,6 +1255,29 @@ input[type="number"] {
 
 /* High contrast mode */
 .high-contrast {
+  --grouped: #000000;
+  --grouped-secondary: #0a0a0a;
+  --grouped-tertiary: #1a1a1a;
+  --elevated: #2a2a2a;
+  --surface-card: var(--grouped-secondary);
+  --label: #ffffff;
+  --label-secondary: #ffffff;
+  --label-tertiary: #cccccc;
+  --separator: #ffffff;
+  --hairline: #ffffff;
+  --fill-tertiary: #2a2a2a;
+  --fill-quaternary: #1a1a1a;
+  --switch-track-off: #5a5a5a;
+  --tint: #00ff7f;
+  --tint-fill: #00ff7f;
+  --tint-fill-hover: #7fff00;
+  --on-tint: #000000;
+  --tint-muted: rgba(0, 255, 127, 0.2);
+  --status-success: #00ff7f;
+  --status-warning: #ffd60a;
+  --status-danger: #ff6b6b;
+  --status-info: #66b3ff;
+
   --background: #000000;
   --foreground: #ffffff;
   --surface: #0a0a0a;
@@ -1257,6 +1285,8 @@ input[type="number"] {
   --surface-hover: #2a2a2a;
   --primary: #00ff7f;
   --primary-light: #7fff00;
+  --primary-dark: #7fff00;
+  --primary-foreground: #000000;
   --border: #ffffff;
   --border-light: #cccccc;
   --muted-foreground: #ffffff;

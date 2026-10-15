@@ -357,7 +357,7 @@ export function ExerciseCard({
               className={cn(
                 'h-8 w-8 shrink-0 transition-all duration-200',
                 isInBuilder
-                  ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                  ? 'bg-tint-fill text-on-tint hover:bg-tint-fill-hover'
                   : 'border-primary/50 text-primary hover:bg-primary/10 hover:border-primary',
                 isBouncing && 'animate-bounce-once'
               )}
@@ -655,7 +655,7 @@ export function ExerciseCard({
                   className={cn(
                     'h-9 w-9 backdrop-blur-md transition-all duration-300 rounded-xl shadow-lg',
                     isInBuilder
-                      ? 'bg-primary text-primary-foreground border-primary/50'
+                      ? 'bg-tint-fill text-on-tint border-primary/50'
                       : 'bg-background/90 dark:bg-black/40 hover:bg-background dark:hover:bg-black/60 text-foreground dark:text-white border border-border/70 dark:border-white/10 hover:scale-105',
                     isBouncing && 'animate-bounce-once'
                   )}

@@ -470,7 +470,7 @@ export function VerdictPanel({
                       className={cn(
                         'w-full gap-2 font-semibold shadow-sm',
                         canApprove
-                          ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                          ? 'bg-tint-fill text-on-tint hover:bg-tint-fill-hover'
                           : 'cursor-not-allowed bg-muted text-muted-foreground'
                       )}
                       data-testid="verdict-approve-btn"

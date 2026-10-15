@@ -41,8 +41,8 @@ export function WizardStepIndicator({
               title={currentStepConfig?.label}
               className={cn(
                 'flex items-center justify-center rounded-full transition-all duration-200',
-                isCurrent && 'h-5 w-5 min-w-5 bg-primary text-primary-foreground',
-                isCompleted && !isCurrent && 'h-3 w-3 min-w-3 bg-primary text-primary-foreground',
+                isCurrent && 'h-5 w-5 min-w-5 bg-tint-fill text-on-tint',
+                isCompleted && !isCurrent && 'h-3 w-3 min-w-3 bg-tint-fill text-on-tint',
                 !isCurrent && !isCompleted && 'h-3 w-3 min-w-3 bg-surface-light border border-border',
                 canClick && !isCurrent && 'hover:scale-110 hover:border-primary cursor-pointer'
               )}
@@ -92,8 +92,8 @@ export function WizardStepIndicator({
                     className={cn(
                       'flex items-center justify-center rounded-full transition-all duration-200',
                       isCurrent &&
-                        'h-4 w-4 min-w-4 bg-primary text-primary-foreground shadow-md ring-2 ring-primary/30',
-                      isCompleted && !isCurrent && 'h-3 w-3 min-w-3 bg-primary text-primary-foreground',
+                        'h-4 w-4 min-w-4 bg-tint-fill text-on-tint shadow-md ring-2 ring-primary/30',
+                      isCompleted && !isCurrent && 'h-3 w-3 min-w-3 bg-tint-fill text-on-tint',
                       !isCurrent && !isCompleted && 'h-2.5 w-2.5 min-w-2.5 bg-surface-light border border-border',
                       canClick && !isCurrent && 'hover:scale-110 hover:border-primary'
                     )}
@@ -146,8 +146,8 @@ export function WizardStepIndicator({
                   className={cn(
                     'flex items-center justify-center rounded-full transition-all duration-300',
                     isCurrent &&
-                      'h-7 w-7 bg-primary text-primary-foreground shadow-lg shadow-primary/40 ring-4 ring-primary/20',
-                    isCompleted && !isCurrent && 'h-5 w-5 bg-primary text-primary-foreground',
+                      'h-7 w-7 bg-tint-fill text-on-tint shadow-lg shadow-primary/40 ring-4 ring-primary/20',
+                    isCompleted && !isCurrent && 'h-5 w-5 bg-tint-fill text-on-tint',
                     !isCurrent && !isCompleted && 'h-4 w-4 bg-surface-light border-2 border-border',
                     canClick && !isCurrent && 'hover:scale-125 hover:border-primary'
                   )}

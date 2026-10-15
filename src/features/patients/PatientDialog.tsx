@@ -281,7 +281,7 @@ export function PatientDialog({
                   <div
                     className={cn(
                       'absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full',
-                      'bg-primary text-primary-foreground shadow-lg ring-4 ring-background',
+                      'bg-tint-fill text-on-tint shadow-lg ring-4 ring-background',
                       'transition-all duration-300 delay-200',
                       showSuccessAnimation && 'animate-in zoom-in-50 duration-300'
                     )}

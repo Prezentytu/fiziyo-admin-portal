@@ -55,7 +55,7 @@ function CardOption({ checked, label, onSelect, name, testId }: CardOptionProps)
       className={cn(
         'flex items-center justify-center p-3.5 border rounded-xl text-sm transition-all cursor-pointer text-center select-none h-full',
         checked
-          ? 'border-primary bg-primary text-primary-foreground font-semibold shadow-md shadow-primary/20' // Mocne wyróżnienie
+          ? 'border-tint-fill bg-tint-fill text-on-tint font-semibold shadow-md shadow-primary/20' // Mocne wyróżnienie
           : 'border-border/80 bg-surface-light/40 text-muted-foreground font-medium hover:text-foreground hover:bg-surface-light hover:border-border' // Bardziej klikalne niż tło
       )}
       data-testid={testId}
@@ -336,7 +336,7 @@ export function ScheduleStep({
                       className={cn(
                         'w-11 h-11 rounded-full border text-sm font-semibold transition-all shadow-sm',
                         isSelected
-                          ? 'border-primary bg-primary text-primary-foreground'
+                          ? 'border-tint-fill bg-tint-fill text-on-tint'
                           : 'border-border/60 bg-surface text-muted-foreground hover:border-border hover:bg-surface-hover hover:text-foreground'
                       )}
                       data-testid={`assign-schedule-day-${day.key}`}
