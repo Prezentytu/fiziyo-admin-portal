@@ -231,6 +231,7 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
       className={cn(
         'group relative flex flex-col rounded-card bg-grouped-tertiary overflow-hidden',
         'transition-colors duration-200 hover:bg-fill-tertiary',
+        'focus-within:ring-2 focus-within:ring-ring',
         'cursor-pointer h-full',
         className
       )}
@@ -429,7 +430,17 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
         {/* Title row - fixed height for 2 lines */}
         <div className="h-12 mt-1">
           <h3 className="text-[17px] font-semibold leading-snug line-clamp-2 text-foreground">
-            {set.name}
+            <button
+              type="button"
+              className="rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              onClick={(event) => {
+                event.stopPropagation();
+                onView?.(set);
+              }}
+              data-testid={`set-card-${set.id}-open-btn`}
+            >
+              {set.name}
+            </button>
           </h3>
         </div>
 

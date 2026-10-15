@@ -204,6 +204,15 @@ export function ExerciseCard({
   const repsValue = exercise.defaultReps ?? exercise.reps;
   const executionTimeValue = exercise.defaultExecutionTime ?? exercise.executionTime;
 
+  const handleOpen = () => {
+    // For CHANGES_REQUESTED, open edit directly to show feedback
+    if (isChangesRequested && onEdit) {
+      onEdit(exercise);
+    } else {
+      onView?.(exercise);
+    }
+  };
+
   // Compact list view
   if (compact) {
     return (
@@ -211,22 +220,15 @@ export function ExerciseCard({
         <div
           data-testid={`exercise-card-${exercise.id}`}
           className={cn(
-            'group relative flex items-center gap-4 rounded-xl border border-border/60 bg-surface p-3',
-            'transition-all duration-200 ease-out cursor-pointer',
-            'hover:bg-surface-light hover:border-primary/30 hover:shadow-md hover:shadow-primary/5',
+            'group relative flex items-center gap-4 rounded-card bg-grouped-tertiary p-3',
+            'transition-colors duration-150 ease-out cursor-pointer hover:bg-fill-tertiary',
+            'focus-within:ring-2 focus-within:ring-ring',
             isInBuilder && 'border-primary bg-primary/5 ring-1 ring-primary/20',
             isPendingReview && 'border-status-warning/30 bg-status-warning-muted opacity-70',
             isChangesRequested && 'border-status-danger/30 bg-status-danger-muted',
             className
           )}
-          onClick={() => {
-            // For CHANGES_REQUESTED, open edit directly to show feedback
-            if (isChangesRequested && onEdit) {
-              onEdit(exercise);
-            } else {
-              onView?.(exercise);
-            }
-          }}
+          onClick={handleOpen}
         >
           {/* Notification dot for CHANGES_REQUESTED in compact mode */}
           {isChangesRequested && (
@@ -249,7 +251,19 @@ export function ExerciseCard({
           {/* Content */}
           <div className="flex-1 min-w-0 space-y-1">
             <div className="flex items-center gap-2">
-              <p className="font-semibold truncate">{exercise.name}</p>
+              <p className="font-semibold truncate">
+                <button
+                  type="button"
+                  className="rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleOpen();
+                  }}
+                  data-testid={`exercise-card-${exercise.id}-open-btn`}
+                >
+                  {exercise.name}
+                </button>
+              </p>
               {/* Status badges in compact view */}
               {isGlobalExercise && (
                 <Tooltip>
@@ -361,7 +375,9 @@ export function ExerciseCard({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                aria-label={`Więcej opcji: ${exercise.name}`}
+                data-testid={`exercise-card-${exercise.id}-menu-trigger`}
+                className="h-8 w-8 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 group-focus-within:opacity-100 transition-opacity"
               >
                 <MoreVertical className="h-4 w-4" />
               </Button>
@@ -470,20 +486,13 @@ export function ExerciseCard({
         <div
           data-testid={`exercise-card-${exercise.id}`}
           className={cn(
-            'group relative flex flex-col rounded-2xl border border-border/70 bg-card overflow-hidden',
-            'transition-all duration-300 ease-out cursor-pointer',
-            'hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/10',
+            'group relative flex flex-col rounded-card bg-grouped-tertiary overflow-hidden',
+            'transition-colors duration-150 ease-out cursor-pointer hover:bg-fill-tertiary',
+            'focus-within:ring-2 focus-within:ring-ring',
             isInBuilder && 'ring-2 ring-primary border-primary/50 shadow-lg shadow-primary/20',
             className
           )}
-          onClick={() => {
-            // For CHANGES_REQUESTED, open edit directly to show feedback
-            if (isChangesRequested && onEdit) {
-              onEdit(exercise);
-            } else {
-              onView?.(exercise);
-            }
-          }}
+          onClick={handleOpen}
         >
           {/* Image section with Atlas pattern (Blurred backdrop + Contain) */}
           <div className="relative aspect-4/3 overflow-hidden bg-muted/60 dark:bg-background">
@@ -515,6 +524,7 @@ export function ExerciseCard({
                 {!isInBuilder && (
                   <button
                     type="button"
+                    data-testid={`exercise-card-${exercise.id}-zoom-btn`}
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -662,7 +672,9 @@ export function ExerciseCard({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-9 w-9 bg-background/90 dark:bg-black/40 hover:bg-background dark:hover:bg-black/60 text-foreground dark:text-white backdrop-blur-sm rounded-xl border border-border/70 dark:border-white/10 shadow-lg"
+                    aria-label={`Więcej opcji: ${exercise.name}`}
+                    data-testid={`exercise-card-${exercise.id}-menu-trigger`}
+                    className="h-9 w-9 bg-background/90 dark:bg-black/40 hover:bg-background dark:hover:bg-black/60 text-foreground dark:text-white backdrop-blur-sm rounded-full border border-border/70 dark:border-white/10 shadow-floating"
                   >
                     <MoreVertical className="h-5 w-5" />
                   </Button>
@@ -751,9 +763,19 @@ export function ExerciseCard({
           </div>
 
           {/* Content section */}
-          <div className="flex flex-col p-4 pt-3 space-y-1 bg-card border-t border-border/50 backdrop-blur-sm">
-            <h3 className="font-bold text-sm sm:text-base leading-tight line-clamp-1 text-foreground">
-              {exercise.name}
+          <div className="flex flex-col p-4 pt-3 space-y-1">
+            <h3 className="font-semibold text-[15px] leading-tight line-clamp-1 text-foreground">
+              <button
+                type="button"
+                className="rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  handleOpen();
+                }}
+                data-testid={`exercise-card-${exercise.id}-open-btn`}
+              >
+                {exercise.name}
+              </button>
             </h3>
 
             {/* List/grid card should stay lightweight; full params are shown in detail views */}

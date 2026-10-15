@@ -166,9 +166,8 @@ export function ClinicalNotesList({
             <EmptyState
               icon={FileText}
               title="Brak notatek"
-              description="Utwórz pierwszą notatkę dla tego pacjenta"
-              actionLabel="Utwórz notatkę"
-              onAction={handleNewNote}
+              description="Zapisz badanie, obserwacje i zalecenia z wizyty. Widzi je tylko zespół."
+              className="py-8"
             />
           ) : (
             <div className="space-y-2.5">

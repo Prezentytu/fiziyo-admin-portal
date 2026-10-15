@@ -33,7 +33,7 @@ import {
   PatientContextPanel,
   ImportReviewDashboard,
 } from '@/features/import';
-import { PageSheet } from '@/components/shared/page';
+import { PageHeader, PageSheet } from '@/components/shared/page';
 
 type StepId = 'upload' | 'processing' | 'review-exercises' | 'review-sets' | 'summary';
 
@@ -122,31 +122,26 @@ export default function ImportPage() {
 
   return (
     <PageSheet contentClassName="gap-6" data-testid="import-page">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-4 mb-2">
-          <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/20">
-            <Sparkles className="h-7 w-7 text-primary" />
-          </div>
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground" data-testid="import-page-title">
-                Import dokumentów
-              </h1>
-              <Badge variant="outline" className="text-xs" data-testid="import-experimental-badge">
-                Eksperymentalne
-              </Badge>
-            </div>
-            <p className="text-muted-foreground">Wybierz źródło i przejdź przez szybkie review.</p>
-          </div>
-        </div>
-        <p className="mt-2 text-xs text-muted-foreground" data-testid="import-experimental-note">
-          Wyniki AI wymagają potwierdzenia przed importem.
-        </p>
-      </div>
+      <PageHeader
+        title={
+          <span className="inline-flex flex-wrap items-center gap-2">
+            Import dokumentów
+            <Badge variant="info" className="text-[12px]" data-testid="import-experimental-badge">
+              Eksperymentalne
+            </Badge>
+          </span>
+        }
+        titleTestId="import-page-title"
+        subtitle={
+          <>
+            Wybierz plik albo wklej tekst. AI zaproponuje ćwiczenia i zestawy.{' '}
+            <span data-testid="import-experimental-note">Wyniki AI wymagają potwierdzenia przed importem.</span>
+          </>
+        }
+      />
 
       {/* Stepper - większy, czytelniejszy */}
-      <div className="mb-10" data-testid="import-step-indicator">
+      <nav aria-label="Kroki importu" data-testid="import-step-indicator">
         <div className="flex items-center">
           {stepConfig.map((s, index) => {
             const Icon = s.icon;
@@ -154,8 +149,8 @@ export default function ImportPage() {
             const isCompleted = index < currentStepIndex;
             const isClickable = isCompleted && !isAnalyzing && !isImporting;
             const stepCircleClass =
-              isActive || isCompleted ? 'bg-primary text-primary-foreground' : 'bg-surface-light text-muted-foreground';
-            const stepLabelClass = isActive || isCompleted ? 'text-foreground' : 'text-muted-foreground';
+              isActive || isCompleted ? 'bg-tint-fill text-on-tint' : 'bg-fill-tertiary text-label-secondary';
+            const stepLabelClass = isActive ? 'text-foreground font-semibold' : isCompleted ? 'text-foreground' : 'text-label-secondary';
 
             return (
               <div
@@ -163,8 +158,8 @@ export default function ImportPage() {
                 className={cn(
                   'flex flex-1 items-center',
                   index < stepConfig.length - 1 &&
-                    'after:mx-3 after:h-0.5 after:flex-1 after:transition-colors after:duration-200',
-                  index < stepConfig.length - 1 && (isCompleted ? 'after:bg-primary' : 'after:bg-border')
+                    'after:mx-2 after:h-px after:flex-1 after:transition-colors after:duration-200',
+                  index < stepConfig.length - 1 && (isCompleted ? 'after:bg-tint' : 'after:bg-separator')
                 )}
               >
                 <button
@@ -173,26 +168,26 @@ export default function ImportPage() {
                   onClick={() => handleStepClick(s.id, index)}
                   disabled={!isClickable}
                   className={cn(
-                    'flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200',
-                    isActive && 'bg-primary/10',
-                    isClickable && 'cursor-pointer hover:bg-surface-light',
+                    'flex items-center gap-2.5 rounded-full py-1.5 pl-1.5 pr-3 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                    isActive && 'bg-tint-muted',
+                    isClickable && 'cursor-pointer hover:bg-fill-quaternary',
                     !isClickable && !isActive && 'cursor-default'
                   )}
                 >
                   {/* Ikona kroku - większa */}
                   <div
                     className={cn(
-                      'flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors duration-200',
+                      'flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors duration-200',
                       stepCircleClass
                     )}
                   >
-                    {isCompleted ? <Check className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
+                    {isCompleted ? <Check className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
                   </div>
 
                   {/* Etykieta - zawsze widoczna */}
                   <span
                     className={cn(
-                      'text-sm font-medium transition-colors duration-200 hidden sm:block',
+                      'text-[13px] transition-colors duration-200 hidden sm:block',
                       stepLabelClass
                     )}
                   >
@@ -203,14 +198,14 @@ export default function ImportPage() {
             );
           })}
         </div>
-      </div>
+      </nav>
 
       {/* Error message */}
       {error && (
-        <Card className="mb-6 border-destructive/40 bg-destructive/5">
-          <CardContent className="flex items-center gap-4 p-5">
-            <X className="h-6 w-6 text-destructive shrink-0" />
-            <p className="text-base text-destructive">{error}</p>
+        <Card className="bg-status-danger-muted">
+          <CardContent className="flex items-center gap-3 p-4">
+            <X className="h-5 w-5 text-status-danger shrink-0" aria-hidden="true" />
+            <p className="text-[15px] text-status-danger" role="alert">{error}</p>
           </CardContent>
         </Card>
       )}

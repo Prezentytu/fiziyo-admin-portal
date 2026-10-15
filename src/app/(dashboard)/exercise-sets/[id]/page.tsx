@@ -11,7 +11,7 @@ import {
   Users,
   Dumbbell,
   Plus,
-  Calendar,
+  ChevronLeft,
   FolderKanban,
   ExternalLink,
   Settings2,
@@ -505,23 +505,27 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
 
   return (
     <PageSheet contentClassName="gap-6">
-      {/* Compact Header */}
-      <div className="flex items-center justify-between">
-        <Button
+      <div className="-mb-2 flex items-center justify-between gap-3">
+        <button
+          type="button"
           data-testid="set-detail-back-btn"
-          variant="ghost"
           onClick={() => router.push(backToListHref)}
-          className="gap-2"
+          className="inline-flex h-8 items-center gap-1 rounded-md text-[15px] font-semibold text-tint hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <ArrowLeft className="h-4 w-4" />
-          Powrót do zestawów
-        </Button>
+          <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+          Zestawy
+        </button>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-2" data-testid="set-detail-menu-trigger">
-              Opcje
-              <MoreHorizontal className="h-4 w-4" />
+            <Button
+              variant="secondary"
+              size="icon"
+              className="h-11 w-11"
+              aria-label="Opcje"
+              data-testid="set-detail-menu-trigger"
+            >
+              <MoreHorizontal className="h-[18px] w-[18px]" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -547,89 +551,65 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
         </DropdownMenu>
       </div>
 
-      {/* Hero Section: Title + Description */}
-      <div className="space-y-2">
+      <header className="flex flex-col gap-1">
         <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground" data-testid="set-detail-name">
           {exerciseSet.name}
         </h1>
-        {exerciseSet.description && <p className="text-muted-foreground">{exerciseSet.description}</p>}
-      </div>
+        {exerciseSet.description && (
+          <p className="max-w-[72ch] text-[15px] leading-[21px] text-label-secondary">{exerciseSet.description}</p>
+        )}
+      </header>
 
-      {/* Hero Action + Quick Stats */}
-      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12">
-        {/* Hero Action - Personalizacja i przypisanie */}
+      <div className="flex flex-wrap items-stretch gap-1.5 rounded-[18px] bg-grouped-tertiary p-1.5">
         <button
+          type="button"
           data-testid="set-detail-assign-btn"
           onClick={() => setIsAssignDialogOpen(true)}
-          className="group relative overflow-hidden rounded-2xl bg-tint-fill hover:bg-tint-fill-hover p-5 text-left transition-all duration-300 cursor-pointer sm:col-span-1 lg:col-span-4"
+          aria-label="Personalizuj i przypisz zestaw pacjentowi"
+          className="flex min-h-16 flex-[1_1_240px] items-center gap-3.5 rounded-[13px] bg-tint-fill px-[18px] text-left text-on-tint transition-colors hover:bg-tint-fill-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <div className="absolute -top-24 -right-24 w-48 h-48 bg-on-tint/10 rounded-full blur-3xl group-hover:bg-on-tint/20 transition-all duration-500" />
-
-          <div className="relative flex items-center gap-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-on-tint/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
-              <UserPlus className="h-5 w-5 text-on-tint" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h3 className="text-base font-bold text-on-tint">Personalizuj i przypisz</h3>
-              <p className="text-sm text-on-tint/70">Dostosuj i przypisz zestaw pacjentowi</p>
-            </div>
-            <Plus className="h-5 w-5 text-on-tint/60 group-hover:text-on-tint transition-colors shrink-0" />
-          </div>
+          <UserPlus className="h-5 w-5 shrink-0" aria-hidden="true" />
+          <span className="flex flex-1 flex-col">
+            <span className="text-[15px] font-semibold">Przypisz pacjentowi</span>
+            <span className="text-[13px] opacity-85">Dopasuj parametry przed wysłaniem</span>
+          </span>
         </button>
-
-        {/* Quick Stats */}
-        <div className="grid grid-cols-3 gap-3 sm:col-span-1 lg:col-span-8">
-          {/* Exercises count */}
-          <div className="rounded-2xl border border-border/40 bg-surface/50 p-4 flex flex-col items-center justify-center text-center">
-            <div className="flex items-center gap-2">
-              <Dumbbell className="h-4 w-4 text-primary" />
-              <span className="text-2xl font-bold text-foreground">{exercises.length}</span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">{pluralize(exercises.length, 'ćwiczenie', false)}</p>
-          </div>
-
-          {/* Patients count */}
-          <div className="rounded-2xl border border-border/40 bg-surface/50 p-4 flex flex-col items-center justify-center text-center">
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-secondary" />
-              <span className="text-2xl font-bold text-foreground">{assignments.length}</span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {pluralize(assignments.length, 'pacjent', false)}
-            </p>
-          </div>
-
-          {/* Frequency */}
-          <div className="rounded-2xl border border-border/40 bg-surface/50 p-4 flex flex-col items-center justify-center text-center">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-info" />
-              <span className="text-lg font-bold text-foreground">
-                {exerciseSet?.frequency?.timesPerWeek ? `${exerciseSet.frequency.timesPerWeek}x` : '—'}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {exerciseSet?.frequency?.timesPerDay ? `${exerciseSet.frequency.timesPerDay}x/dzień` : 'tygodniowo'}
-            </p>
-          </div>
+        <div className="flex flex-[2_1_360px] items-center px-3">
+          {[
+            { value: String(exercises.length), label: pluralize(exercises.length, 'ćwiczenie', false) },
+            { value: String(assignments.length), label: pluralize(assignments.length, 'pacjent', false) },
+            {
+              value: exerciseSet?.frequency?.timesPerWeek ? `${exerciseSet.frequency.timesPerWeek}×` : '—',
+              label: exerciseSet?.frequency?.timesPerDay
+                ? `w tygodniu · ${exerciseSet.frequency.timesPerDay}× dziennie`
+                : 'w tygodniu',
+            },
+          ].map((stat, index) => (
+            <span
+              key={stat.label}
+              className={cn('flex flex-1 flex-col px-3', index > 0 && 'border-l-[0.5px] border-separator')}
+            >
+              <span className="text-[28px] font-bold leading-[34px] tabular-nums text-foreground">{stat.value}</span>
+              <span className="text-[13px] text-label-secondary">{stat.label}</span>
+            </span>
+          ))}
         </div>
       </div>
 
       {/* Exercises Section */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-            <Dumbbell className="h-5 w-5 text-primary" />
-            Ćwiczenia ({exercises.length})
+          <h2 className="text-[20px] font-semibold leading-[25px] text-foreground">
+            Ćwiczenia <span className="ml-1 text-label-secondary">{exercises.length}</span>
           </h2>
-          <Button size="sm" onClick={() => setIsEditSetFullOpen(true)} data-testid="set-detail-edit-set-btn">
+          <Button size="sm" variant="tinted" onClick={() => setIsEditSetFullOpen(true)} data-testid="set-detail-edit-set-btn">
             <Pencil className="mr-2 h-4 w-4" />
             Edytuj zestaw
           </Button>
         </div>
 
         {exercises.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border/60 bg-surface/30 p-12">
+          <div className="rounded-card bg-grouped-tertiary">
             <EmptyState
               icon={Dumbbell}
               title="Brak ćwiczeń"
