@@ -26,3 +26,22 @@ export function canProceedFromStep(step: WizardStep, context: CanProceedContext)
       return false;
   }
 }
+
+export interface WizardEnterKeyInput {
+  isLastStep: boolean;
+  canProceed: boolean;
+  shiftKey: boolean;
+  metaKey: boolean;
+  ctrlKey: boolean;
+}
+
+export function wizardEnterSubmits(input: WizardEnterKeyInput): boolean {
+  if (!input.isLastStep || !input.canProceed || input.shiftKey) {
+    return false;
+  }
+  return input.metaKey || input.ctrlKey;
+}
+
+export function wizardEnterAdvances(input: Pick<WizardEnterKeyInput, 'isLastStep' | 'canProceed' | 'shiftKey'>): boolean {
+  return !input.isLastStep && input.canProceed && !input.shiftKey;
+}

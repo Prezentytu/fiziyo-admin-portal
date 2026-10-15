@@ -77,6 +77,8 @@ Wyszukiwarka + Enter dodaje ćwiczenia do planu pacjenta.
 - Dokumentacja: `docs/assignment-wizard-overview.md`
 - Mapa data-testid: `docs/testing/data-testid-map.md`
 
+Skrót zapisu na ostatnim kroku (`schedule`) to `Cmd`/`Ctrl`+`Enter`. Sam `Enter` zostaje przy kontrolkach Harmonogramu (dni, +/− sesji, przełącznik szablonu).
+
 ## Konwencje data-testid
 
 Prefiks: `assignment-`, `set-`

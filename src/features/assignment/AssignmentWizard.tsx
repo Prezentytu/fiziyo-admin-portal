@@ -26,7 +26,7 @@ import { ScheduleStep } from './ScheduleStep';
 import { SummaryStep } from './SummaryStep';
 import { AssignmentSuccessDialog } from './AssignmentSuccessDialog';
 import type { ExerciseInstance, ExerciseParams } from '@/components/shared/ExerciseSetBuilder';
-import { canProceedFromStep } from './utils/assignmentWizardUtils';
+import { canProceedFromStep, wizardEnterAdvances, wizardEnterSubmits } from './utils/assignmentWizardUtils';
 import { decideAssignmentPlanMode, type AssignmentExecutionMode } from './utils/assignmentPlanDecision';
 import {
   buildAssignmentOverrideDeltasFromBuilder,
@@ -1553,11 +1553,23 @@ function AssignmentWizardContent({
         return;
       }
 
-      if (e.key === 'Enter' && !e.shiftKey && canProceed()) {
-        e.preventDefault();
-        if (isLastStep) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        const proceed = canProceed();
+        if (
+          wizardEnterSubmits({
+            isLastStep,
+            canProceed: proceed,
+            shiftKey: e.shiftKey,
+            metaKey: e.metaKey,
+            ctrlKey: e.ctrlKey,
+          })
+        ) {
+          e.preventDefault();
           handleSubmitRef.current();
-        } else {
+          return;
+        }
+        if (wizardEnterAdvances({ isLastStep, canProceed: proceed, shiftKey: e.shiftKey })) {
+          e.preventDefault();
           goNext();
         }
       }
