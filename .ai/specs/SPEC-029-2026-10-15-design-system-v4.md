@@ -68,3 +68,12 @@ Bez zmian. Prymitywy przekazują `data-testid` dalej.
 ### 2026-10-15
 
 - Utworzenie specyfikacji; etap 1.
+
+### 2026-10-15 (etap 2–4)
+
+- `PageSheet`, `PageHeader`, `SectionHeader`, `ActivityStatusLabel`, `InitialsAvatar` w `src/components/shared/page`.
+- Panel, Pacjenci, Karta pacjenta, Zestawy przebudowane wg canvasu; pozostałe ekrany na arkuszu z tytułem 28 px.
+- Token kontekstowy `--surface-card`: `Card` na arkuszu renderuje się jako kafel.
+- Wspólny status aktywności (0–1 / 2–3 / 4+ dni), kolejka „Bez aktywnego Premium”, kolumna Dostęp i sortowanie listy, z testami.
+- 684 klasy surowych palet zmigrowane na tokeny statusów; nowe `status-warning-fill`, `status-info-fill`. Baza długu: 10 (fallback `global-error`, domyślny kolor tagu).
+- Teksty wymagane przez E2E (`fiziyo-tests`) zostają w dostępnych nazwach; zmiana etykiet zakładek i kroków kreatora wymaga równoległego PR w `fiziyo-tests`.

@@ -92,6 +92,18 @@ Odstępy: siatka 4 px (`gap-1` = 4, `gap-2` = 8, `p-4` = 16, `p-6` = 24).
 | `Tabs`                             | `activeVariant`: `surface` (segment), `subtle`, `accent`, `success`, `warning`, `destructive`                                           | Kontrolka segmentowa                                                                                       |
 | `Switch`, `Checkbox`, `RadioGroup` | —                                                                                                                                       | Zaznaczenie = `tint-fill`                                                                                  |
 
+## Komponenty wzorców (`@/components/shared/page`)
+
+| Komponent                              | Do czego                                                                                                              |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `PageSheet`                            | Biały arkusz ekranu (promień 20, max 1160 px treści). Każdy ekran w nim; `Card` w środku sam staje się szarym kaflem. |
+| `PageHeader`                           | Tytuł 28 px, podtytuł `label-secondary`, akcje po prawej (szukaj, główny przycisk).                                   |
+| `SectionHeader` + `SECTION_LINK_CLASS` | Nagłówek sekcji 17 px z linkiem „Wszystkie…”.                                                                         |
+| `ActivityStatusLabel`                  | Kropka + tekst statusu pacjenta (ton z `getPatientActivityStatus`).                                                   |
+| `InitialsAvatar`                       | Awatar z inicjałem; `muted` dla pacjenta bez konta.                                                                   |
+
+Logika statusów jest w jednym miejscu: `src/features/patients/utils/patientActivityStatus.ts` (progi 0–1 / 2–3 / 4+ dni, kolejność listy), `premiumQueue.ts` (kto bez aktywnego Premium), `patientList.ts` (kolumna Dostęp, sortowanie). Nie licz dni ani statusów w komponencie.
+
 ## Wzorce
 
 - **Ekran:** tytuł 28 px + podtytuł `label-secondary`, akcja główna po prawej; treść w kartach na `bg-grouped`.
