@@ -14,9 +14,10 @@ concurrency:
 jobs:
   pin:
     # Tylko wdrożenia z main: preview innych gałęzi (np. skrzynka/*) nie uruchamiają kroku z tokenem Vercel.
+    # Vercel zapisuje w deployment.ref SHA, nie nazwę gałęzi; gałąź podaje kontekst Actions (github.ref).
     if: >-
       github.event_name == 'workflow_dispatch' ||
-      (github.event.deployment_status.state == 'success' && github.event.deployment.ref == 'main')
+      (github.event.deployment_status.state == 'success' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
