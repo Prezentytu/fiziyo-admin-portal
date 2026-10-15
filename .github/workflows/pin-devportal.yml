@@ -13,7 +13,10 @@ concurrency:
 
 jobs:
   pin:
-    if: github.event_name == 'workflow_dispatch' || github.event.deployment_status.state == 'success'
+    # Tylko wdrożenia z main: preview innych gałęzi (np. skrzynka/*) nie uruchamiają kroku z tokenem Vercel.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.deployment_status.state == 'success' && github.event.deployment.ref == 'main')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
