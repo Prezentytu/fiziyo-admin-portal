@@ -874,3 +874,15 @@ Przy dodawaniu nowych komponentów:
 
 | `patient-detail-premium-btn` | Aktywuj Premium w nagłówku karty | `patients/[id]/page.tsx` |
 | `patient-detail-remove-from-list-btn` | Odepnij ode mnie (menu) | `patients/[id]/page.tsx` |
+
+### Design system v4 (SPEC-029) — nowe identyfikatory
+
+| data-testid                                                                                      | Element                                     | Plik                      |
+| ------------------------------------------------------------------------------------------------ | ------------------------------------------- | ------------------------- |
+| `set-search-clear-btn`, `set-filter-reset-btn`, `set-tags-clear-btn`, `set-tag-filter-clear-btn` | Czyszczenie wyszukiwania i filtrów zestawów | `exercise-sets/page.tsx`  |
+| `exercise-tags-add-btn`, `exercise-tags-tab-tags`, `exercise-tags-tab-categories`                | Tagi i kategorie                            | `exercises/tags/page.tsx` |
+| `appointments-notify-btn`                                                                        | Powiadom mnie (wizyty)                      | `appointments/page.tsx`   |
+| `finances-invite-now-btn`, `finances-invoices-back-btn`, `finances-payouts-back-btn`             | Finanse                                     | `finances/**`             |
+| `import-step-{id}-btn`, `import-back-btn`                                                        | Kroki i powrót importu                      | `import/page.tsx`         |
+| `patient-detail-not-found-back-btn`, `patient-detail-email-link`, `patient-detail-phone-link`    | Karta pacjenta                              | `patients/[id]/page.tsx`  |
+| `clinical-notes-editor-close-btn`                                                                | Zamknij edytor notatki                      | `ClinicalNotesList.tsx`   |

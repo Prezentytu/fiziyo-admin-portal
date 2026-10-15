@@ -169,6 +169,7 @@ export default function ImportPage() {
               >
                 <button
                   type="button"
+                  data-testid={`import-step-${s.id}-btn`}
                   onClick={() => handleStepClick(s.id, index)}
                   disabled={!isClickable}
                   className={cn(
@@ -372,6 +373,7 @@ export default function ImportPage() {
           <Button
             variant="outline"
             size="lg"
+            data-testid="import-back-btn"
             onClick={step === 'upload' ? undefined : goBack}
             disabled={step === 'upload' || isAnalyzing || isImporting}
             className="gap-2 h-12 px-6"

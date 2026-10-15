@@ -56,7 +56,7 @@ export default function AppointmentsPage() {
             z pacjentami.
           </p>
           <div className="flex flex-wrap justify-center gap-3">
-            <Button variant="outline" className="rounded-xl" disabled>
+            <Button variant="secondary" disabled data-testid="appointments-notify-btn">
               <Bell className="mr-2 h-4 w-4" />
               Powiadom mnie
             </Button>

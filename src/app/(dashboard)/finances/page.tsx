@@ -59,7 +59,7 @@ function EmptyStateTeaser({ onInvite }: { onInvite: () => void }) {
         <p className="text-sm text-muted-foreground mb-5 text-center max-w-sm">
           Zaproś pierwszego pacjenta Premium, aby zobaczyć i analizować swoje zarobki.
         </p>
-        <Button onClick={onInvite} className="gap-2 px-6 font-semibold shadow-md shadow-primary/20">
+        <Button onClick={onInvite} className="gap-2 px-6" data-testid="finances-invite-now-btn">
           Zaproś teraz
         </Button>
       </div>

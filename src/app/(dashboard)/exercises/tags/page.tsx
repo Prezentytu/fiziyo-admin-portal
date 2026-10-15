@@ -127,7 +127,7 @@ export default function TagsPage() {
           <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground">Tagi i kategorie</h1>
           <p className="text-muted-foreground">Zarządzaj tagami dla ćwiczeń</p>
         </div>
-        <Button onClick={() => setIsTagDialogOpen(true)} disabled={!organizationId}>
+        <Button onClick={() => setIsTagDialogOpen(true)} disabled={!organizationId} data-testid="exercise-tags-add-btn">
           <Plus className="mr-2 h-4 w-4" />
           Dodaj tag
         </Button>
@@ -139,11 +139,11 @@ export default function TagsPage() {
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'tags' | 'categories')}>
         <TabsList>
-          <TabsTrigger value="tags" className="flex items-center gap-2">
+          <TabsTrigger value="tags" className="flex items-center gap-2" data-testid="exercise-tags-tab-tags">
             <Tag className="h-4 w-4" />
             Tagi ({filteredTags.length})
           </TabsTrigger>
-          <TabsTrigger value="categories" className="flex items-center gap-2">
+          <TabsTrigger value="categories" className="flex items-center gap-2" data-testid="exercise-tags-tab-categories">
             <FolderOpen className="h-4 w-4" />
             Kategorie ({filteredCategories.length})
           </TabsTrigger>

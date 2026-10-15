@@ -68,8 +68,8 @@ export default function PayoutsPage() {
         {/* Header with back button */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" asChild>
-              <Link href="/finances">
+            <Button variant="ghost" size="icon" asChild data-testid="finances-payouts-back-btn">
+              <Link href="/finances" aria-label="Wróć do finansów">
                 <ArrowLeft className="h-5 w-5" />
               </Link>
             </Button>

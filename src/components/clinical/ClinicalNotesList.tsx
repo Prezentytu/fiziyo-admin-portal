@@ -256,6 +256,9 @@ export function ClinicalNotesList({
         >
           {/* Custom close button - always visible */}
           <button
+            type="button"
+            aria-label="Zamknij edytor notatki"
+            data-testid="clinical-notes-editor-close-btn"
             onClick={handleEditorClose}
             className="absolute right-4 top-4 z-20 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
           >

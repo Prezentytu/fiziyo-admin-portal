@@ -329,8 +329,10 @@ export default function ExerciseSetsPage() {
                   {selectedTags.length > 0 && (
                     <>
                       <button
+                        type="button"
                         onClick={() => setSelectedTags([])}
-                        className="w-full px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground text-left"
+                        className="w-full px-2 py-1.5 text-left text-[13px] text-label-secondary hover:text-foreground"
+                        data-testid="set-tag-filter-clear-btn"
                       >
                         Wyczyść filtry ({selectedTags.length})
                       </button>

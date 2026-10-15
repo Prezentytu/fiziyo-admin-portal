@@ -254,7 +254,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
         <p className="text-[15px] text-foreground">
           {userError ? 'Nie udało się pobrać pacjenta. Odśwież stronę.' : 'Nie znaleziono pacjenta'}
         </p>
-        <Button variant="secondary" onClick={() => router.push('/patients')}>
+        <Button variant="secondary" onClick={() => router.push('/patients')} data-testid="patient-detail-not-found-back-btn">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Wróć do listy
         </Button>
@@ -420,13 +420,21 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
           </div>
           <div className="flex flex-wrap gap-x-[18px] gap-y-1 text-[15px]">
             {patient.email && (
-              <a href={`mailto:${patient.email}`} className="inline-flex items-center gap-1.5 text-tint hover:text-foreground">
+              <a
+                href={`mailto:${patient.email}`}
+                className="inline-flex items-center gap-1.5 text-tint hover:text-foreground"
+                data-testid="patient-detail-email-link"
+              >
                 <Mail className="h-[15px] w-[15px] shrink-0" aria-hidden="true" />
                 {patient.email}
               </a>
             )}
             {patient.contactData?.phone && (
-              <a href={`tel:${patient.contactData.phone}`} className="inline-flex items-center gap-1.5 text-tint hover:text-foreground">
+              <a
+                href={`tel:${patient.contactData.phone}`}
+                className="inline-flex items-center gap-1.5 text-tint hover:text-foreground"
+                data-testid="patient-detail-phone-link"
+              >
                 <Phone className="h-[15px] w-[15px] shrink-0" aria-hidden="true" />
                 {patient.contactData.phone}
               </a>
