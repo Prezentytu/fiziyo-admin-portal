@@ -11,7 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { cn } from '@/lib/utils';
 import { getMediaUrl } from '@/utils/mediaUrl';
-import { isVimeoUrl, isYouTubeUrl } from '@/utils/videoEmbed';
+import { getVimeoEmbedUrl, getYouTubeEmbedUrl, isVimeoUrl, isYouTubeUrl } from '@/utils/videoEmbed';
 import { HIDE_EXERCISE_TAGS } from '@/components/shared/exercise';
 import type { AdminExercise, ContentStatus } from '@/graphql/types/adminExercise.types';
 import { formatRelativeTime } from '@/utils/dateUtils';
@@ -88,6 +88,7 @@ export function VerificationTaskCard({
   onSelectionChange,
 }: VerificationTaskCardProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const [isVideoActive, setIsVideoActive] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const imageUrl = getMediaUrl(exercise.thumbnailUrl || exercise.imageUrl || exercise.images?.[0]);
@@ -97,6 +98,11 @@ export function VerificationTaskCard({
   const previewVideoUrl = (gifUrl || isEmbeddedVideo) ? null : videoUrl;
   const hasVideoPreview = gifUrl || previewVideoUrl;
   const hasVideo = gifUrl || videoUrl;
+  const embedUrl = isYouTubeUrl(exercise.videoUrl)
+    ? getYouTubeEmbedUrl(exercise.videoUrl as string)
+    : isVimeoUrl(exercise.videoUrl)
+      ? getVimeoEmbedUrl(exercise.videoUrl as string)
+      : null;
 
   const statusBadge = getStatusBadge(exercise.status);
   const qualityIndicators = getQualityIndicators(exercise);
@@ -123,6 +129,12 @@ export function VerificationTaskCard({
         // Ignore autoplay errors
       });
     }
+  };
+
+  const handleToggleVideo = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsVideoActive((active) => !active);
   };
 
   const handleMouseLeave = () => {
@@ -220,14 +232,53 @@ export function VerificationTaskCard({
               {/* No image fallback */}
               {!imageUrl && <ImagePlaceholder type="exercise" className="h-full" iconClassName="h-12 w-12" />}
 
-              {/* Video indicator badge */}
-              {hasVideo && !isHovered && (
-                <div className="absolute bottom-3 left-3 flex items-center gap-1 rounded-md border border-border/70 bg-background/85 px-2 py-1 backdrop-blur-sm dark:bg-black/45">
+              {/* Quick video view (replaces the image after clicking the video label) */}
+              {isVideoActive && (
+                <div className="absolute inset-0 z-10 bg-black" data-testid={`verification-card-${exercise.id}-video`}>
+                  {gifUrl ? (
+                    <Image
+                      src={gifUrl}
+                      alt={`${exercise.name} preview`}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 33vw"
+                      className="object-contain"
+                    />
+                  ) : embedUrl ? (
+                    <iframe
+                      src={embedUrl}
+                      title={exercise.name}
+                      allow="autoplay; encrypted-media; picture-in-picture"
+                      allowFullScreen
+                      className="h-full w-full border-0"
+                    />
+                  ) : (
+                    <video
+                      src={videoUrl ?? undefined}
+                      controls
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                      className="h-full w-full object-contain"
+                    />
+                  )}
+                </div>
+              )}
+
+              {/* Video label: always visible, click swaps the image for the video */}
+              {hasVideo && (
+                <button
+                  type="button"
+                  onClick={handleToggleVideo}
+                  aria-pressed={isVideoActive}
+                  data-testid={`verification-card-${exercise.id}-video-toggle`}
+                  className="absolute bottom-3 left-3 z-20 flex items-center gap-1 rounded-md border border-border/70 bg-background/85 px-2 py-1 backdrop-blur-sm hover:bg-background dark:bg-black/45"
+                >
                   <Play className="h-3 w-3 fill-foreground text-foreground dark:fill-white dark:text-white" />
                   <span className="text-[10px] font-medium text-foreground dark:text-white">
-                    {gifUrl ? 'GIF' : 'Wideo'}
+                    {isVideoActive ? 'Obraz' : gifUrl ? 'GIF' : 'Wideo'}
                   </span>
-                </div>
+                </button>
               )}
 
               {/* Status badge overlay */}

@@ -77,6 +77,39 @@ describe('VerificationTaskCard', () => {
     expect(container.querySelector('video')).not.toBeNull();
   });
 
+  it('label wideo jest klikalny, zostaje po najechaniu i podmienia obraz na wideo bez otwierania detalu', async () => {
+    const user = userEvent.setup();
+    render(
+      <VerificationTaskCard
+        exercise={{ ...baseExercise, videoUrl: 'https://cdn.example/clip.mp4', imageUrl: 'https://cdn.example/x.jpg' }}
+      />
+    );
+
+    await user.hover(screen.getByTestId('verification-card-exercise-1'));
+    const toggle = screen.getByTestId('verification-card-exercise-1-video-toggle');
+    expect(toggle).toHaveTextContent('Wideo');
+    expect(screen.queryByTestId('verification-card-exercise-1-video')).not.toBeInTheDocument();
+
+    await user.click(toggle);
+
+    const player = screen.getByTestId('verification-card-exercise-1-video');
+    expect(player.querySelector('video')).toHaveAttribute('src', 'https://cdn.example/clip.mp4');
+    expect(toggle).toHaveTextContent('Obraz');
+  });
+
+  it('dla filmu YouTube label wideo pokazuje osadzony odtwarzacz', async () => {
+    const user = userEvent.setup();
+    render(
+      <VerificationTaskCard
+        exercise={{ ...baseExercise, videoUrl: 'https://www.youtube.com/watch?v=7rnlAVhAK-8', imageUrl: 'https://cdn.example/x.jpg' }}
+      />
+    );
+
+    await user.click(screen.getByTestId('verification-card-exercise-1-video-toggle'));
+
+    expect(screen.getByTestId('verification-card-exercise-1-video').querySelector('iframe')).not.toBeNull();
+  });
+
   it('nadal ostrzega „Brak wideo” i „Brak obrazu”, gdy ćwiczenie nie ma mediów', () => {
     render(<VerificationTaskCard exercise={baseExercise} />);
 
