@@ -17,7 +17,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      # deployment_status checkoutuje domyślnie commit wdrożenia (także preview gałęzi skrzynka/* z kodem modelu);
+      # skrypt z tokenem Vercel zawsze z main.
       - uses: actions/checkout@v7
+        with:
+          ref: main
 
       - uses: actions/setup-node@v7
         with:
