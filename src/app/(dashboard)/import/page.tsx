@@ -385,7 +385,7 @@ export default function ImportPage() {
                 size="lg"
                 onClick={() => analyzeInput({ availableExercises: availableExercisesForFallback })}
                 disabled={isUploadAnalyzeDisabled}
-                className="gap-2 h-12 px-8 bg-primary hover:bg-primary-dark"
+                className="gap-2 h-12 px-8"
                 data-testid="import-analyze-btn"
               >
                 {isAnalyzing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
@@ -398,7 +398,7 @@ export default function ImportPage() {
                 size="lg"
                 onClick={executeImport}
                 disabled={isImporting}
-                className="gap-2 h-12 px-8 bg-primary hover:bg-primary-dark"
+                className="gap-2 h-12 px-8"
                 data-testid="import-execute-btn"
               >
                 {isImporting ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle className="h-5 w-5" />}

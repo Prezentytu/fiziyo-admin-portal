@@ -162,7 +162,7 @@ export function ImportSummary({
       <div className="flex flex-col items-center gap-4 pt-4">
         {isSuccess && (result.exercisesCreated > 0 || result.exercisesReused > 0) && (
           <Link href="/exercises">
-            <Button size="lg" className="gap-2 h-12 px-8 text-base bg-primary hover:bg-primary-dark">
+            <Button size="lg" className="gap-2 h-12 px-8 text-base">
               <Dumbbell className="h-5 w-5" />
               Zobacz zaimportowane ćwiczenia
             </Button>

@@ -217,115 +217,186 @@
   animation: success-glow 1.5s ease-in-out;
 }
 
+/* ============================================
+   FiziYo design system v4 (SPEC-029, docs/design-system.md)
+   Values live only here. Dark = :root, light = .light-theme.
+   DS names (grouped, label-*, fill-*, separator, tint*, status-*)
+   are the source; legacy names below are aliases kept for old screens.
+   ============================================ */
 :root {
   color-scheme: dark;
   --base-font-size: 16px;
 
-  /* Base colors — Neutral zinc scale (60-30-10 rule: neutral base, mint accent only on CTA) */
-  --background: #09090b;
-  --foreground: #fafafa;
-  --surface: #18181b;
-  --surface-light: #27272a;
-  --surface-hover: #3f3f46;
-  --surface-elevated: #111113;
+  /* DS: backgrounds */
+  --grouped: #111113;
+  --grouped-secondary: #1f1f22;
+  --grouped-tertiary: #2b2b2f;
+  --elevated: #38383d;
 
-  /* Primary — Mint (used sparingly: CTA, active tabs, focus ring, links) */
-  --primary: #449b80;
-  --primary-light: #5bb89a;
-  --primary-dark: #378570;
-  --primary-foreground: #ffffff;
-  --primary-muted: rgba(68, 155, 128, 0.12);
-  --primary-glow: rgba(91, 184, 154, 0.5);
-  --primary-glow-fade: rgba(91, 184, 154, 0);
-  --primary-glow-soft: rgba(91, 184, 154, 0.2);
-  --primary-glow-medium: rgba(91, 184, 154, 0.4);
+  /* DS: labels */
+  --label: #ffffff;
+  --label-secondary: #a1a1a8;
+  --label-tertiary: #97979d;
 
-  /* Secondary — Violet (AI, premium, FiziYo Global) */
+  /* DS: fills and separator */
+  --fill-tertiary: rgba(118, 118, 128, 0.24);
+  --fill-quaternary: rgba(118, 118, 128, 0.18);
+  --separator: rgba(84, 84, 88, 0.65);
+  --hairline: rgba(255, 255, 255, 0.08);
+  --scrim: rgba(0, 0, 0, 0.56);
+
+  /* DS: brand */
+  --tint: #4bb894;
+  --tint-fill: #307f65;
+  --tint-fill-hover: #2a7059;
+  --on-tint: #ffffff;
+  --tint-muted: rgba(75, 184, 148, 0.16);
+  --avatar: rgba(75, 184, 148, 0.16);
+  --avatar-label: #91ddc0;
+
+  /* DS: status (text on card / muted background) */
+  --status-success: #6bcba9;
+  --status-success-muted: rgba(75, 184, 148, 0.16);
+  --status-warning: #ffb340;
+  --status-warning-muted: rgba(255, 159, 10, 0.16);
+  --status-danger: #ff7a72;
+  --status-danger-muted: rgba(255, 69, 58, 0.16);
+  --status-danger-fill: #d93636;
+  --status-info: #4da3ff;
+  --status-info-muted: rgba(10, 132, 255, 0.16);
+
+  /* DS: elevation */
+  --elevation-raised: 0 1px 3px rgba(0, 0, 0, 0.32);
+  --elevation-floating: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --elevation-dialog: 0 24px 64px rgba(0, 0, 0, 0.5);
+
+  /* Legacy aliases → DS */
+  --background: var(--grouped);
+  --foreground: var(--label);
+  --surface: var(--grouped-secondary);
+  --surface-light: var(--grouped-tertiary);
+  --surface-hover: var(--elevated);
+  --surface-elevated: var(--grouped-secondary);
+
+  /* Legacy primary is text-safe (tint). Solid brand fills use bg-tint-fill + text-on-tint. */
+  --primary: var(--tint);
+  --primary-light: var(--tint);
+  --primary-dark: #5cc7a2;
+  --primary-foreground: #06281d;
+  --primary-muted: var(--tint-muted);
+  --primary-glow: rgba(75, 184, 148, 0.5);
+  --primary-glow-fade: rgba(75, 184, 148, 0);
+  --primary-glow-soft: rgba(75, 184, 148, 0.2);
+  --primary-glow-medium: rgba(75, 184, 148, 0.4);
+
+  /* AI accent (Narzędzia AI) — kept until stage 4 */
   --secondary: #8b5cf6;
   --secondary-foreground: #ffffff;
-  --secondary-muted: rgba(139, 92, 246, 0.12);
-
-  /* Violet accent — explicit AI/premium token */
+  --secondary-muted: rgba(139, 92, 246, 0.14);
   --violet: #8b5cf6;
   --violet-light: #a78bfa;
   --violet-dark: #7c3aed;
   --violet-foreground: #ffffff;
-  --violet-muted: rgba(139, 92, 246, 0.12);
+  --violet-muted: rgba(139, 92, 246, 0.14);
 
-  /* Semantic colors */
-  --success: #22c55e;
-  --success-muted: rgba(34, 197, 94, 0.12);
-  --error: #e05555;
-  --error-muted: rgba(224, 85, 85, 0.12);
-  --warning: #fbbf24;
-  --warning-muted: rgba(251, 191, 36, 0.12);
-  --info: #60a5fa;
-  --info-muted: rgba(96, 165, 250, 0.12);
+  --success: var(--status-success);
+  --success-muted: var(--status-success-muted);
+  --error: var(--status-danger);
+  --error-muted: var(--status-danger-muted);
+  --warning: var(--status-warning);
+  --warning-muted: var(--status-warning-muted);
+  --info: var(--status-info);
+  --info-muted: var(--status-info-muted);
 
-  --destructive: #e05555;
-  --destructive-foreground: #ffffff;
-  --danger: #e05555;
+  /* Legacy destructive is text-safe. Solid danger fills use bg-status-danger-fill + text-on-tint. */
+  --destructive: var(--status-danger);
+  --destructive-foreground: #2a0b09;
+  --danger: var(--status-danger);
 
-  /* Brand tokens */
-  --mint: #5bb89a;
-  --mint-light: rgba(91, 184, 154, 0.12);
-  --mint-dark: #6fcbac;
-  --accent-green: #5bb89a;
-  --dark: #09090b;
-  --selection: rgba(91, 184, 154, 0.25);
+  --mint: var(--tint);
+  --mint-light: var(--tint-muted);
+  --mint-dark: var(--tint);
+  --accent-green: var(--tint);
+  --dark: var(--grouped);
+  --selection: rgba(75, 184, 148, 0.3);
 
-  /* UI colors */
-  --border: rgba(255, 255, 255, 0.08);
-  --border-light: rgba(255, 255, 255, 0.14);
-  --input: #18181b;
-  --ring: #5bb89a;
+  --border: var(--hairline);
+  --border-light: var(--separator);
+  --input: var(--fill-tertiary);
+  --ring: var(--tint);
   --radius: 12px;
 
-  --muted: #27272a;
-  --muted-foreground: #a1a1aa;
+  --muted: var(--grouped-tertiary);
+  --muted-foreground: var(--label-secondary);
 
-  --card: #18181b;
-  --card-foreground: #fafafa;
+  --card: var(--grouped-secondary);
+  --card-foreground: var(--label);
 
-  --popover: #18181b;
-  --popover-foreground: #fafafa;
+  --popover: var(--grouped-tertiary);
+  --popover-foreground: var(--label);
 
-  --accent: #27272a;
-  --accent-foreground: #fafafa;
+  --accent: var(--grouped-tertiary);
+  --accent-foreground: var(--label);
 
-  /* Card interactions */
-  --card-hover-scale: 1.005;
-  --card-hover-shadow: 0 2px 4px rgba(91, 184, 154, 0.1), 0 16px 40px rgba(0, 0, 0, 0.4);
-  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.35);
+  /* Cards are flat (DS elevation-flat); hover lifts only on interactive tiles */
+  --card-hover-scale: 1;
+  --card-hover-shadow: var(--elevation-floating);
+  --card-shadow: none;
 
-  /* Easing */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out-expo: cubic-bezier(0.87, 0, 0.13, 1);
 
-  /* Transitions */
   --transition-fast: 150ms var(--ease-out-expo);
-  --transition-base: 0.3s var(--ease-out-expo);
-  --transition-slow: 0.5s var(--ease-out-expo);
-  --transition-card: all 0.3s var(--ease-out-expo);
+  --transition-base: 0.2s var(--ease-out-expo);
+  --transition-slow: 0.4s var(--ease-out-expo);
+  --transition-card: all 0.2s var(--ease-out-expo);
 
-  /* Gradients */
-  --gradient-primary: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-  --gradient-surface: linear-gradient(180deg, var(--surface-light) 0%, var(--surface) 100%);
+  --gradient-primary: linear-gradient(var(--tint-fill), var(--tint-fill));
+  --gradient-surface: linear-gradient(var(--grouped-secondary), var(--grouped-secondary));
   --gradient-card-overlay: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.7) 100%);
-  --gradient-hero: linear-gradient(135deg, rgba(91, 184, 154, 0.08) 0%, transparent 50%);
+  --gradient-hero: none;
 
-  /* Text hierarchy */
-  --text-primary: #fafafa;
-  --text-secondary: #a1a1aa;
-  --text-tertiary: #71717a;
+  --text-primary: var(--label);
+  --text-secondary: var(--label-secondary);
+  --text-tertiary: var(--label-tertiary);
 }
 
 @theme inline {
   /* Font families */
-  --font-sans: var(--font-sans, "Outfit", system-ui, -apple-system, "Segoe UI", sans-serif);
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: var(--font-mono, "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace);
 
   /* Colors */
+  /* DS v4 colors */
+  --color-grouped: var(--grouped);
+  --color-grouped-secondary: var(--grouped-secondary);
+  --color-grouped-tertiary: var(--grouped-tertiary);
+  --color-elevated: var(--elevated);
+  --color-label: var(--label);
+  --color-label-secondary: var(--label-secondary);
+  --color-label-tertiary: var(--label-tertiary);
+  --color-fill-tertiary: var(--fill-tertiary);
+  --color-fill-quaternary: var(--fill-quaternary);
+  --color-separator: var(--separator);
+  --color-hairline: var(--hairline);
+  --color-scrim: var(--scrim);
+  --color-tint: var(--tint);
+  --color-tint-fill: var(--tint-fill);
+  --color-tint-fill-hover: var(--tint-fill-hover);
+  --color-on-tint: var(--on-tint);
+  --color-tint-muted: var(--tint-muted);
+  --color-avatar: var(--avatar);
+  --color-avatar-label: var(--avatar-label);
+  --color-status-success: var(--status-success);
+  --color-status-success-muted: var(--status-success-muted);
+  --color-status-warning: var(--status-warning);
+  --color-status-warning-muted: var(--status-warning-muted);
+  --color-status-danger: var(--status-danger);
+  --color-status-danger-muted: var(--status-danger-muted);
+  --color-status-danger-fill: var(--status-danger-fill);
+  --color-status-info: var(--status-info);
+  --color-status-info-muted: var(--status-info-muted);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
@@ -386,6 +457,12 @@
   --radius-lg: 20px;
   --radius-xl: 24px;
   --radius-2xl: 28px;
+  /* DS v4 radius roles */
+  --radius-badge: 6px;
+  --radius-control: 12px;
+  --radius-card: 20px;
+  --radius-dialog: 24px;
+  --radius-sheet: 28px;
 
   /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
@@ -393,6 +470,9 @@
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.25), 0 4px 6px -4px rgba(0, 0, 0, 0.2);
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
   --shadow-card: var(--card-shadow);
+  --shadow-raised: var(--elevation-raised);
+  --shadow-floating: var(--elevation-floating);
+  --shadow-dialog: var(--elevation-dialog);
   --shadow-card-hover: var(--card-hover-shadow);
 
   /* Animations */
@@ -424,9 +504,10 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), "Outfit", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: var(--font-sans);
   font-size: 1rem;
-  line-height: 1.6;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -584,20 +665,12 @@ body {
 
 /* Navigation active item styles */
 .nav-item-active {
-  background-color: var(--primary-muted);
-  color: var(--primary-light);
+  background-color: var(--grouped-secondary);
+  color: var(--label);
   font-weight: 600;
 }
 .nav-item-active .nav-icon {
-  color: var(--primary);
-}
-
-.light-theme .nav-item-active {
-  background-color: var(--primary-muted);
-  color: var(--primary-dark);
-}
-.light-theme .nav-item-active .nav-icon {
-  color: var(--primary);
+  color: var(--tint);
 }
 
 /* Stats card icon container */
@@ -1111,55 +1184,61 @@ input[type="number"] {
    Accessibility Styles
    ============================================ */
 
-/* Light theme — neutral zinc scale */
+/* Light theme — FiziYo DS v4 */
 .light-theme {
   color-scheme: light;
-  --background: #fafafa;
-  --foreground: #18181b;
-  --surface: #ffffff;
-  --surface-light: #f4f4f5;
-  --surface-hover: #e4e4e7;
-  --surface-elevated: #ffffff;
 
-  --primary-light: #e8f5f0;
-  --primary-dark: #378570;
+  --grouped: #f2f2f7;
+  --grouped-secondary: #ffffff;
+  --grouped-tertiary: #f2f2f7;
+  --elevated: #ffffff;
+
+  --label: #000000;
+  --label-secondary: #636366;
+  --label-tertiary: #86868b;
+
+  --fill-tertiary: rgba(118, 118, 128, 0.12);
+  --fill-quaternary: rgba(116, 116, 128, 0.08);
+  --separator: rgba(60, 60, 67, 0.29);
+  --hairline: rgba(60, 60, 67, 0.12);
+  --scrim: rgba(0, 0, 0, 0.32);
+
+  --tint: #266b54;
+  --tint-fill: #266b54;
+  --tint-fill-hover: #1f5946;
+  --primary-dark: #1f5946;
+  --primary-foreground: #ffffff;
+  --destructive-foreground: #ffffff;
+  --tint-muted: rgba(38, 107, 84, 0.1);
+  --avatar: #d7f5e8;
+  --avatar-label: #1c5341;
+
+  --status-success: #266b54;
+  --status-success-muted: rgba(61, 153, 123, 0.14);
+  --status-warning: #b53a00;
+  --status-warning-muted: rgba(255, 149, 0, 0.14);
+  --status-danger: #d70015;
+  --status-danger-muted: rgba(255, 59, 48, 0.12);
+  --status-danger-fill: #d70015;
+  --status-info: #0062cc;
+  --status-info-muted: rgba(0, 122, 255, 0.12);
+
+  --elevation-raised: 0 1px 3px rgba(0, 0, 0, 0.12);
+  --elevation-floating: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --elevation-dialog: 0 24px 64px rgba(0, 0, 0, 0.24);
 
   --violet: #7c3aed;
   --violet-light: #8b5cf6;
   --violet-dark: #6d28d9;
-  --violet-muted: rgba(124, 58, 237, 0.10);
+  --violet-muted: rgba(124, 58, 237, 0.1);
+  --secondary: #7c3aed;
+  --secondary-muted: rgba(124, 58, 237, 0.1);
 
-  --error: #c94444;
-  --error-muted: rgba(201, 68, 68, 0.12);
-  --destructive: #c94444;
-  --danger: #c94444;
-  --success: #22c55e;
-  --success-muted: rgba(34, 197, 94, 0.12);
-
-  --mint-light: #e8f5f0;
-  --mint-dark: #378570;
-  --accent-green: #196d59;
-  --dark: #09090b;
-  --selection: #c5e8da;
-
-  --border: rgba(0, 0, 0, 0.08);
-  --border-light: rgba(0, 0, 0, 0.12);
-  --input: #ffffff;
-  --muted: #f4f4f5;
-  --muted-foreground: #71717a;
-  --card: #ffffff;
-  --card-foreground: #18181b;
-  --popover: #ffffff;
-  --popover-foreground: #18181b;
-  --accent: #f4f4f5;
-  --accent-foreground: #18181b;
-
-  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.06);
-  --card-hover-shadow: 0 2px 4px rgba(91, 184, 154, 0.06), 0 12px 32px rgba(0, 0, 0, 0.08);
-
-  --text-primary: #18181b;
-  --text-secondary: #52525b;
-  --text-tertiary: #a1a1aa;
+  --primary-glow: rgba(38, 107, 84, 0.35);
+  --primary-glow-fade: rgba(38, 107, 84, 0);
+  --primary-glow-soft: rgba(38, 107, 84, 0.14);
+  --primary-glow-medium: rgba(38, 107, 84, 0.25);
+  --selection: rgba(38, 107, 84, 0.2);
 }
 
 /* High contrast mode */

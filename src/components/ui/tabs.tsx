@@ -14,7 +14,7 @@ const TabsList = React.forwardRef<
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      'inline-flex h-9 items-center justify-center rounded-lg bg-surface-light p-1 text-muted-foreground',
+      'inline-flex h-9 items-center justify-center gap-0.5 rounded-[10px] bg-fill-tertiary p-0.5 text-label-secondary',
       className
     )}
     {...props}
@@ -23,20 +23,20 @@ const TabsList = React.forwardRef<
 TabsList.displayName = TabsPrimitive.List.displayName;
 
 const tabsTriggerVariants = cva(
-  'inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+  'inline-flex h-8 items-center justify-center whitespace-nowrap rounded-[8px] px-3 text-[13px] font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       activeVariant: {
-        surface: 'data-[state=active]:bg-surface data-[state=active]:text-foreground data-[state=active]:shadow',
-        subtle: 'data-[state=active]:bg-accent/50 data-[state=active]:text-foreground data-[state=active]:shadow-none',
+        surface: 'data-[state=active]:bg-elevated data-[state=active]:text-foreground data-[state=active]:shadow-raised',
+        subtle: 'data-[state=active]:bg-elevated data-[state=active]:text-foreground data-[state=active]:shadow-none',
         accent:
-          'data-[state=active]:bg-primary/15 data-[state=active]:text-primary data-[state=active]:shadow-none',
+          'data-[state=active]:bg-tint-muted data-[state=active]:text-tint data-[state=active]:shadow-none',
         success:
-          'data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-400 data-[state=active]:shadow-none',
+          'data-[state=active]:bg-status-success-muted data-[state=active]:text-status-success data-[state=active]:shadow-none',
         warning:
-          'data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-400 data-[state=active]:shadow-none',
+          'data-[state=active]:bg-status-warning-muted data-[state=active]:text-status-warning data-[state=active]:shadow-none',
         destructive:
-          'data-[state=active]:bg-destructive/20 data-[state=active]:text-destructive data-[state=active]:shadow-none',
+          'data-[state=active]:bg-status-danger-muted data-[state=active]:text-status-danger data-[state=active]:shadow-none',
       },
     },
     defaultVariants: {

@@ -390,22 +390,22 @@ export default function DashboardPage() {
           disabled={!organizationId || !therapistId}
           aria-label="Personalizuj i przypisz zestaw ćwiczeń pacjentowi"
           data-testid="dashboard-hero-assign-set-btn"
-          className="group relative overflow-hidden rounded-xl md:rounded-2xl bg-linear-to-br from-primary via-primary to-primary-dark p-4 md:p-5 text-left transition-all duration-150 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+          className="group relative overflow-hidden rounded-xl md:rounded-2xl bg-tint-fill hover:bg-tint-fill-hover p-4 md:p-5 text-left transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
         >
           <div className="absolute inset-0 bg-linear-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-150" />
-          <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary-foreground/10 rounded-full blur-3xl opacity-30 group-hover:opacity-50 transition-opacity duration-200" />
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-on-tint/10 rounded-full blur-3xl opacity-30 group-hover:opacity-50 transition-opacity duration-200" />
 
           <div className="relative flex items-center gap-3 md:gap-4">
-            <div className="flex h-9 w-9 md:h-11 md:w-11 items-center justify-center rounded-lg md:rounded-xl bg-primary-foreground/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-150">
-              <Send className="h-4 w-4 md:h-5 md:w-5 text-primary-foreground" />
+            <div className="flex h-9 w-9 md:h-11 md:w-11 items-center justify-center rounded-lg md:rounded-xl bg-on-tint/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-150">
+              <Send className="h-4 w-4 md:h-5 md:w-5 text-on-tint" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-sm md:text-base font-bold text-primary-foreground mb-0.5 md:mb-1">
+              <h3 className="text-sm md:text-base font-bold text-on-tint mb-0.5 md:mb-1">
                 Personalizuj i przypisz
               </h3>
-              <p className="text-xs text-primary-foreground/80">Dla obecnych pacjentów</p>
+              <p className="text-xs text-on-tint/80">Dla obecnych pacjentów</p>
             </div>
-            <ArrowRight className="h-4 w-4 md:h-5 md:w-5 text-primary-foreground/60 group-hover:text-primary-foreground group-hover:translate-x-1 transition-all duration-150 shrink-0" />
+            <ArrowRight className="h-4 w-4 md:h-5 md:w-5 text-on-tint/60 group-hover:text-on-tint group-hover:translate-x-1 transition-all duration-150 shrink-0" />
           </div>
         </button>
 

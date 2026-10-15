@@ -16,7 +16,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
 
   return (
     <html lang="pl">
-      <body style={{ margin: 0, fontFamily: '"Outfit", system-ui, -apple-system, "Segoe UI", sans-serif', background: '#0f1a15', color: '#e8ede9' }}>
+      <body style={{ margin: 0, fontFamily: '-apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", sans-serif', background: '#111113', color: '#ffffff' }}>
         <div
           style={{
             display: 'flex',

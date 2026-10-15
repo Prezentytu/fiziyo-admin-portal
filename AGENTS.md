@@ -68,6 +68,7 @@ Przed rozpoczęciem pracy dopasuj zadanie do tabeli i przeczytaj pasujące guide
 | Pipeline E2E / cross-repo CI       | `docs/testing/e2e-cross-repo-pipeline.md`                                                           |
 | Code review                        | `.ai/skills/code-review/`                                                                           |
 | UI/UX / design / accessibility     | `.ai/skills/product-designer/SKILL.md` + `.ai/skills/product-designer/references/cro-psychology.md` |
+| Design system / tokeny / prymitywy | `docs/design-system.md`                                                                             |
 | Ustawienia użytkownika             | `src/components/settings/AGENTS.md`                                                                 |
 | Organizacja i gabinety             | `src/components/organization/AGENTS.md`                                                             |
 | Finanse i billing                  | `src/components/finances/AGENTS.md`                                                                 |
@@ -298,16 +299,25 @@ Prefiksy modułów: `auth-`, `nav-`, `exercise-`, `set-`, `patient-`, `org-`, `s
 └─────────────────────────────────────────────────┘
 ```
 
-### Zmienne CSS (używaj klas Tailwind, nie hardcoded kolorów)
+### Design system (tokeny i prymitywy)
+
+Wygląd bierzesz z `docs/design-system.md` (SPEC-029). Wartości kolorów są tylko w `src/app/globals.css`.
 
 ```typescript
-// ✅ Poprawnie
-<div className="bg-surface text-foreground border-border">
-<Button className="bg-primary text-primary-foreground">
+// ✅ Poprawnie: tokeny DS i prymitywy
+<div className="bg-card text-foreground">
+<p className="text-[13px] text-label-secondary">
+<Button>Zapisz</Button>                      // tint-fill + on-tint
+<Badge variant="warning">Bez treningu od 3 dni</Badge>
 
 // ❌ Źle
 <div style={{ backgroundColor: '#1a1a1a' }}>
+<Button className="bg-primary text-white rounded-lg h-9">
+<span className="text-amber-400">
 ```
+
+- Nowy kolor, promień albo wariant dodajesz w tokenach albo w `src/components/ui/*`, nie lokalnie w feature.
+- `npm run check:design-tokens` (w `validate`) blokuje nowe hexy i palety Tailwinda; baza długu w `.ai/quality/design-token-baseline.json` może tylko maleć.
 
 ### Theme-safe UI (light + dark)
 

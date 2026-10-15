@@ -128,10 +128,7 @@ export function SetReviewCard({
             size="sm"
             onClick={() => onDecisionChange({ action: 'create' })}
             disabled={!hasActiveExercises}
-            className={cn(
-              'gap-2 h-9 px-4',
-              decision.action === 'create' && hasActiveExercises && 'bg-primary hover:bg-primary-dark'
-            )}
+            className="gap-2 h-9 px-4"
             data-testid={`import-set-card-${exerciseSet.tempId}-create-btn`}
           >
             <Check className="h-4 w-4" />

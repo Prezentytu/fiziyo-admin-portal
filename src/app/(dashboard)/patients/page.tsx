@@ -323,21 +323,21 @@ export default function PatientsPage() {
       <button
         onClick={() => setIsDialogOpen(true)}
         disabled={!organizationId}
-        className="group relative overflow-hidden rounded-2xl bg-linear-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 w-full sm:w-auto sm:max-w-md"
+        className="group relative overflow-hidden rounded-2xl bg-tint-fill hover:bg-tint-fill-hover p-5 text-left transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 w-full sm:w-auto sm:max-w-md"
         data-testid="patient-create-btn"
       >
         <div className="absolute inset-0 bg-linear-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary-foreground/10 rounded-full blur-3xl group-hover:bg-primary-foreground/20 transition-all duration-500" />
+        <div className="absolute -top-24 -right-24 w-48 h-48 bg-on-tint/10 rounded-full blur-3xl group-hover:bg-on-tint/20 transition-all duration-500" />
 
         <div className="relative flex items-center gap-4">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-foreground/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
-            <UserPlus className="h-5 w-5 text-primary-foreground" />
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-on-tint/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
+            <UserPlus className="h-5 w-5 text-on-tint" />
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="text-base font-bold text-primary-foreground">Dodaj pacjenta</h3>
-            <p className="text-sm text-primary-foreground/70">Nowy pacjent w systemie</p>
+            <h3 className="text-base font-bold text-on-tint">Dodaj pacjenta</h3>
+            <p className="text-sm text-on-tint/70">Nowy pacjent w systemie</p>
           </div>
-          <Plus className="h-5 w-5 text-primary-foreground/60 group-hover:text-primary-foreground transition-colors shrink-0" />
+          <Plus className="h-5 w-5 text-on-tint/60 group-hover:text-on-tint transition-colors shrink-0" />
         </div>
       </button>
 

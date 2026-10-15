@@ -125,7 +125,7 @@ export function NoteReviewCard({ note, decision, onDecisionChange, disabled = fa
             size="sm"
             onClick={() => onDecisionChange({ action: 'create' })}
             disabled={disabled}
-            className={cn('gap-2 h-9 px-4', effectiveAction === 'create' && 'bg-primary hover:bg-primary-dark')}
+            className="gap-2 h-9 px-4"
             data-testid={`import-note-card-${note.tempId}-create-btn`}
           >
             <Check className="h-4 w-4" />

@@ -715,7 +715,7 @@ export function PatientQRCodeDialog({
                       size="sm"
                       onClick={handlePrintCard}
                       disabled={isGeneratingPDF || !organization}
-                      className="w-full gap-2 bg-primary hover:bg-primary-dark shadow-lg shadow-primary/20"
+                      className="w-full gap-2"
                       data-testid="patient-qr-print-btn"
                     >
                       <Printer className="h-3.5 w-3.5" />
