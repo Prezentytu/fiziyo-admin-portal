@@ -84,7 +84,7 @@ export function OrganizationSwitcher({ isCollapsed = false }: OrganizationSwitch
   // Loading state
   if (isLoading) {
     return (
-      <div className={cn('border-b border-border', isCollapsed ? 'p-2' : 'p-4')}>
+      <div className={cn(isCollapsed ? 'p-2' : 'px-3 py-2')}>
         {isCollapsed ? (
           <Skeleton className="h-10 w-10 rounded-xl mx-auto" />
         ) : (
@@ -112,8 +112,8 @@ export function OrganizationSwitcher({ isCollapsed = false }: OrganizationSwitch
         'group flex items-center rounded-2xl transition-all duration-200',
         hasMultipleOrganizations ? 'cursor-pointer' : 'cursor-default',
         isCollapsed
-          ? cn('h-12 w-12 justify-center', hasMultipleOrganizations && 'hover:bg-surface-light')
-          : cn('gap-4 p-3 w-full', hasMultipleOrganizations && 'hover:bg-surface-light'),
+          ? cn('h-12 w-12 justify-center', hasMultipleOrganizations && 'hover:bg-fill-quaternary')
+          : cn('gap-3 p-2 w-full', hasMultipleOrganizations && 'hover:bg-fill-quaternary'),
         isSwitching && 'opacity-60 pointer-events-none'
       )}
     >
@@ -181,7 +181,7 @@ export function OrganizationSwitcher({ isCollapsed = false }: OrganizationSwitch
 
   // Single organization - no dropdown
   if (!hasMultipleOrganizations) {
-    return <div className={cn('border-b border-border', isCollapsed ? 'p-2' : 'p-4')}>{triggerContent}</div>;
+    return <div className={cn(isCollapsed ? 'p-2' : 'px-3 py-2')}>{triggerContent}</div>;
   }
 
   // Multiple organizations - with dropdown
@@ -272,7 +272,7 @@ export function OrganizationSwitcher({ isCollapsed = false }: OrganizationSwitch
 
   if (isCollapsed) {
     return (
-      <div className="border-b border-border p-2">
+      <div className="p-2">
         <Tooltip>
           <TooltipTrigger asChild>
             <div>{dropdownContent}</div>
@@ -286,5 +286,5 @@ export function OrganizationSwitcher({ isCollapsed = false }: OrganizationSwitch
     );
   }
 
-  return <div className="border-b border-border p-4">{dropdownContent}</div>;
+  return <div className="px-3 py-2">{dropdownContent}</div>;
 }
