@@ -63,11 +63,10 @@ export function PatientJournalNotes({ patientId, organizationId }: PatientJourna
   }
 
   return (
-    <Card className="border-border/60" data-testid="patient-journal-notes-card">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-base font-medium">
-            <BookHeart className="h-4 w-4 text-secondary" />
+    <Card className="rounded-none bg-transparent" data-testid="patient-journal-notes-card">
+      <CardHeader className="px-0 pb-2 pt-0">
+        <div className="flex min-h-11 items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
             Notatki pacjenta
             {entries.length > 0 && (
               <Badge variant="secondary" className="ml-1">
@@ -76,9 +75,9 @@ export function PatientJournalNotes({ patientId, organizationId }: PatientJourna
             )}
           </CardTitle>
         </div>
-        <p className="text-xs text-muted-foreground">Wpisy z dziennika udostępnione przez pacjenta</p>
+        <p className="text-[13px] text-label-secondary">Wpisy, które pacjent Ci udostępnił</p>
       </CardHeader>
-      <CardContent className="pt-0">
+      <CardContent className="px-0 pb-0 pt-0">
         {loading ? (
           <div className="space-y-2">
             {[1, 2].map((i) => (
@@ -101,20 +100,17 @@ export function PatientJournalNotes({ patientId, organizationId }: PatientJourna
               return (
                 <div
                   key={entry.id}
-                  className="rounded-xl border border-border/60 bg-surface p-3.5 transition-colors duration-150 hover:border-secondary/30 hover:bg-surface-elevated"
+                  className="border-t-[0.5px] border-separator py-3"
                   data-testid={`patient-journal-entry-${entry.id}`}
                 >
-                  <div className="grid min-w-0 grid-cols-[auto_1fr] items-start gap-3">
-                    <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary/10">
-                      <BookHeart className="h-4 w-4 text-secondary" />
-                    </div>
+                  <div className="grid min-w-0 grid-cols-[1fr] items-start gap-3">
 
                     <div className="min-w-0 space-y-1.5">
                       <div className="flex items-center gap-2">
                         {entry.title && (
                           <span className="truncate text-sm font-semibold text-foreground">{entry.title}</span>
                         )}
-                        <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border/50 bg-surface-light px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-fill-tertiary px-2 py-0.5 text-[11px] font-semibold text-label-secondary">
                           <Eye className="h-3 w-3" />
                           Udostępniona
                         </span>

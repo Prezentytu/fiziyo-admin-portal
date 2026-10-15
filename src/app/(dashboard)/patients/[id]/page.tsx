@@ -1,31 +1,26 @@
 'use client';
 
 import { use, useCallback, useMemo, useState } from 'react';
-import { useQuery } from '@apollo/client/react';
+import { useMutation, useQuery } from '@apollo/client/react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
+import Link from 'next/link';
+import { toast } from 'sonner';
 import {
   ArrowLeft,
+  ChevronLeft,
   Mail,
   Phone,
   FolderKanban,
-  Activity,
-  Plus,
   Settings,
   MoreHorizontal,
   UserX,
-  Wrench,
-  CheckCircle2,
   Send,
   QrCode,
   User,
 } from 'lucide-react';
 
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,10 +30,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { LoadingState } from '@/components/shared/LoadingState';
 import { EmptyState } from '@/components/shared/EmptyState';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { PageSheet, SectionHeader, InitialsAvatar } from '@/components/shared/page';
 import { ActivityReport } from '@/features/patients/ActivityReport';
 import { PatientAssignmentCard } from '@/features/patients/PatientAssignmentCard';
 import { PatientDetailSkeleton } from '@/features/patients/PatientDetailSkeleton';
-import { PremiumStatusBadge } from '@/features/patients/PremiumStatusBadge';
+import { getPatientAccess } from '@/features/patients/utils/patientList';
 import { ActivatePremiumDialog } from '@/features/patients/ActivatePremiumDialog';
 import { ClinicalNotesList } from '@/components/clinical/ClinicalNotesList';
 import { PatientJournalNotes } from '@/features/patients/PatientJournalNotes';
@@ -48,6 +45,7 @@ import { GET_USER_BY_ID_QUERY, GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/quer
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import { GET_ORGANIZATION_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
+import { REMOVE_PATIENT_FROM_THERAPIST_MUTATION } from '@/graphql/mutations/therapists.mutations';
 import { usePatientPremium } from '@/hooks/usePatientPremium';
 import { resolveAssignmentDisplayStatus } from '@/features/patients/utils/assignmentDisplayStatus';
 import { usePatientTherapyActions } from '@/features/patients/hooks/usePatientTherapyActions';
@@ -94,6 +92,8 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
     override?: ExerciseOverride;
   } | null>(null);
   const [extendingAssignment, setExtendingAssignment] = useState<PatientAssignment | null>(null);
+  const [isRemoveFromListOpen, setIsRemoveFromListOpen] = useState(false);
+  const [removeFromMyList, { loading: removingFromList }] = useMutation(REMOVE_PATIENT_FROM_THERAPIST_MUTATION);
 
   // Get organization ID from context (changes when user switches organization)
   const organizationId = currentOrganization?.organizationId;
@@ -248,11 +248,13 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   if (userError || !patient) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4 py-16">
-        <div className="h-16 w-16 rounded-2xl bg-surface-light flex items-center justify-center">
-          <User className="h-8 w-8 text-muted-foreground" />
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-fill-tertiary">
+          <User className="h-6 w-6 text-label-secondary" />
         </div>
-        <p className="text-destructive">{userError ? `Błąd: ${userError.message}` : 'Nie znaleziono pacjenta'}</p>
-        <Button variant="outline" onClick={() => router.push('/patients')}>
+        <p className="text-[15px] text-foreground">
+          {userError ? 'Nie udało się pobrać pacjenta. Odśwież stronę.' : 'Nie znaleziono pacjenta'}
+        </p>
+        <Button variant="secondary" onClick={() => router.push('/patients')}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Wróć do listy
         </Button>
@@ -265,12 +267,28 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
     `${patient.personalData?.firstName || ''} ${patient.personalData?.lastName || ''}`.trim() ||
     'Nieznany pacjent';
 
-  const initials = displayName
-    .split(' ')
-    .map((n: string) => n[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
+  const access = getPatientAccess({
+    isShadowUser: patient.isShadowUser,
+    premiumValidUntil: patientPremiumValidUntil,
+    premiumStatus: organizationPatient?.premiumStatus,
+  });
+  const isMyPatient = !!therapistId && organizationPatient?.therapist?.id === therapistId;
+  const therapyGoal =
+    organizationPatient?.contextLabel && organizationPatient.contextLabel !== 'Leczenie podstawowe'
+      ? organizationPatient.contextLabel
+      : null;
+
+  const handleRemoveFromMyList = async () => {
+    if (!therapistId || !organizationId) return;
+    try {
+      await removeFromMyList({ variables: { therapistId, patientId: patient.id, organizationId } });
+      toast.success('Pacjent nie jest już na Twojej liście');
+      setIsRemoveFromListOpen(false);
+      router.push('/patients');
+    } catch {
+      toast.error('Nie udało się odpiąć pacjenta');
+    }
+  };
 
   const activeAssignments = setAssignments.filter((assignment) => {
     return (
@@ -321,17 +339,15 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
 
     if (setAssignments.length === 0) {
       return (
-        <Card className="border-dashed border-border/60">
-          <CardContent className="py-12">
-            <EmptyState
-              icon={FolderKanban}
-              title="Brak przypisanych zestawów"
-              description="Personalizuj i przypisz zestaw ćwiczeń, aby pacjent mógł rozpocząć rehabilitację"
-              actionLabel="Personalizuj i przypisz"
-              onAction={() => setIsAssignDialogOpen(true)}
-            />
-          </CardContent>
-        </Card>
+        <div className="rounded-card bg-grouped-tertiary">
+          <EmptyState
+            icon={FolderKanban}
+            title="Pacjent nie ma jeszcze planu"
+            description="Przypisz zestaw, żeby pacjent zobaczył ćwiczenia w aplikacji."
+            actionLabel="Przypisz zestaw"
+            onAction={() => setIsAssignDialogOpen(true)}
+          />
+        </div>
       );
     }
 
@@ -358,233 +374,200 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   })();
 
   return (
-    <div className="space-y-6">
-      {/* Patient Header — back, info & menu in one row */}
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => router.push('/patients')}
-          className="h-9 w-9 shrink-0 text-muted-foreground hover:text-foreground"
-          data-testid="patient-detail-back-btn"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
+    <PageSheet contentClassName="gap-7">
+      <Link
+        href="/patients"
+        data-testid="patient-detail-back-btn"
+        className="-mb-2 inline-flex h-8 items-center gap-1 self-start rounded-md text-[15px] font-semibold text-tint hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+        Pacjenci
+      </Link>
 
-        <div className="relative shrink-0">
-          <Avatar
-            className={cn(
-              'h-11 w-11 ring-2 transition-all',
-              patient.isShadowUser ? 'ring-muted-foreground/20' : 'ring-primary/20'
-            )}
-          >
-            <AvatarImage src={patient.image} alt={displayName} />
-            <AvatarFallback
-              className={cn(
-                'text-sm font-semibold',
-                patient.isShadowUser
-                  ? 'bg-muted-foreground/60 text-white'
-                  : 'bg-linear-to-br from-primary to-primary-dark text-primary-foreground'
-              )}
-            >
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-          {patient.isShadowUser && (
-            <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-muted-foreground/80 flex items-center justify-center ring-2 ring-background">
-              <Wrench className="h-2.5 w-2.5 text-white" />
-            </div>
-          )}
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <h1 className="text-lg font-bold text-foreground truncate" data-testid="patient-detail-name">
+      <header className="flex flex-wrap items-center gap-x-5 gap-y-4">
+        <InitialsAvatar
+          name={displayName}
+          imageUrl={patient.image}
+          muted={patient.isShadowUser}
+          className="h-16 w-16 [&>span]:text-[24px]"
+        />
+        <div className="flex min-w-0 flex-[1_1_320px] flex-col gap-1.5">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground" data-testid="patient-detail-name">
               {displayName}
             </h1>
-            {patient.isShadowUser && (
-              <Badge variant="secondary" className="text-[10px] shrink-0">
-                Tymczasowe
-              </Badge>
+            {access.kind === 'premium' && (
+              <span className="inline-flex h-6 items-center rounded-full bg-status-success-muted px-2.5 text-[12px] font-semibold text-status-success">
+                {access.label}
+              </span>
             )}
-            {organizationId && (
-              <PremiumStatusBadge
-                premiumActiveUntil={patientPremiumValidUntil}
-                patientId={patient.id}
-                onActivate={() => initiateActivation(patient.id, displayName, patientPremiumValidUntil)}
-                onGenerateQR={() => setIsQRCodeDialogOpen(true)}
-                isShadowUser={patient.isShadowUser}
-                isActivating={isActivating && activationTarget?.patientId === patient.id}
-                showActivateButton={true}
+            {access.kind === 'locked' && organizationId && (
+              <Button
+                variant="tinted"
                 size="sm"
-                className="ml-1"
-              />
+                onClick={() => initiateActivation(patient.id, displayName, patientPremiumValidUntil)}
+                disabled={isActivating && activationTarget?.patientId === patient.id}
+                data-testid="patient-detail-premium-btn"
+              >
+                Aktywuj Premium
+              </Button>
+            )}
+            {access.kind === 'shadow' && (
+              <span className="inline-flex h-6 items-center rounded-full bg-fill-tertiary px-2.5 text-[12px] font-semibold text-label-secondary">
+                Bez konta
+              </span>
             )}
           </div>
-          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+          <div className="flex flex-wrap gap-x-[18px] gap-y-1 text-[15px]">
             {patient.email && (
-              <a
-                href={`mailto:${patient.email}`}
-                className="flex items-center gap-1 hover:text-foreground transition-colors"
-              >
-                <Mail className="h-3.5 w-3.5 shrink-0" />
+              <a href={`mailto:${patient.email}`} className="inline-flex items-center gap-1.5 text-tint hover:text-foreground">
+                <Mail className="h-[15px] w-[15px] shrink-0" aria-hidden="true" />
                 {patient.email}
               </a>
             )}
             {patient.contactData?.phone && (
-              <a
-                href={`tel:${patient.contactData.phone}`}
-                className="flex items-center gap-1 hover:text-foreground transition-colors"
-              >
-                <Phone className="h-3.5 w-3.5 shrink-0" />
+              <a href={`tel:${patient.contactData.phone}`} className="inline-flex items-center gap-1.5 text-tint hover:text-foreground">
+                <Phone className="h-[15px] w-[15px] shrink-0" aria-hidden="true" />
                 {patient.contactData.phone}
               </a>
             )}
+            {therapyGoal && <span className="text-label-secondary">{therapyGoal}</span>}
           </div>
         </div>
-
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" data-testid="patient-detail-menu-trigger">
-              <MoreHorizontal className="h-4 w-4" />
+            <Button
+              variant="secondary"
+              size="icon"
+              className="h-11 w-11"
+              aria-label="Więcej: kod QR, ustawienia pacjenta, odepnij ode mnie"
+              data-testid="patient-detail-menu-trigger"
+            >
+              <MoreHorizontal className="h-[18px] w-[18px]" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => setIsQRCodeDialogOpen(true)} data-testid="patient-detail-qr-btn">
               <QrCode className="mr-2 h-4 w-4" />
-              Pokaż QR kod
+              Kod QR do aplikacji
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setIsEditPatientOpen(true)} data-testid="patient-detail-settings-btn">
               <Settings className="mr-2 h-4 w-4" />
               Ustawienia pacjenta
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive focus:text-destructive">
-              <UserX className="mr-2 h-4 w-4" />
-              Usuń z mojej listy
-            </DropdownMenuItem>
+            {isMyPatient && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => setIsRemoveFromListOpen(true)}
+                  className="text-status-danger focus:text-status-danger"
+                  data-testid="patient-detail-remove-from-list-btn"
+                >
+                  <UserX className="mr-2 h-4 w-4" />
+                  Odepnij ode mnie
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
-      </div>
+      </header>
 
-      {/* Hero Actions + Quick Stats */}
-      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12">
+      <div className="flex flex-wrap items-stretch gap-1.5 rounded-[18px] bg-grouped-tertiary p-1.5">
         <button
+          type="button"
           onClick={() => setIsAssignDialogOpen(true)}
           disabled={!organizationId || !therapistId}
-          className="group relative overflow-hidden rounded-2xl bg-linear-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 sm:col-span-1 lg:col-span-4"
+          aria-label="Personalizuj i przypisz zestaw ćwiczeń"
+          className="group flex min-h-16 flex-[1_1_240px] items-center gap-3.5 rounded-[13px] bg-tint-fill px-[18px] text-left text-on-tint transition-colors hover:bg-tint-fill-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-40"
           data-testid="patient-detail-assign-btn"
         >
-          <div className="absolute inset-0 bg-linear-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
-          <div className="relative flex items-center gap-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
-              <Send className="h-5 w-5 text-white" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h3 className="text-base font-bold text-white">Personalizuj i przypisz</h3>
-              <p className="text-sm text-white/70">Program ćwiczeń</p>
-            </div>
-            <Plus className="h-5 w-5 text-white/60 group-hover:text-white transition-colors shrink-0" />
-          </div>
+          <Send className="h-5 w-5 shrink-0" aria-hidden="true" />
+          <span className="flex flex-1 flex-col">
+            <span className="text-[15px] font-semibold">Przypisz zestaw</span>
+            <span className="text-[13px] opacity-85">Dopasuj ćwiczenia do pacjenta</span>
+          </span>
         </button>
-
         <button
+          type="button"
           onClick={() => setIsQRCodeDialogOpen(true)}
           disabled={!organizationId || !therapistId}
-          className="group relative overflow-hidden rounded-2xl border border-border/20 bg-surface-elevated p-5 text-left transition-all duration-150 hover:border-info/30 hover:bg-surface hover:shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed sm:col-span-1 lg:col-span-4"
+          className="flex min-h-16 flex-[1_1_200px] items-center gap-3.5 rounded-[13px] px-[18px] text-left text-foreground transition-colors hover:bg-fill-quaternary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-40"
           data-testid="patient-detail-qr-btn-hero"
         >
-          <div className="relative flex items-center gap-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-info/10 shrink-0 group-hover:bg-info/20 group-hover:scale-110 transition-all duration-150">
-              <QrCode className="h-5 w-5 text-info" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h3 className="text-base font-semibold text-foreground group-hover:text-info transition-colors duration-150">QR kod</h3>
-              <p className="text-sm text-muted-foreground">Połącz z aplikacją</p>
-            </div>
-          </div>
+          <QrCode className="h-5 w-5 shrink-0 text-tint" aria-hidden="true" />
+          <span className="flex flex-1 flex-col">
+            <span className="text-[15px] font-semibold">Kod QR</span>
+            <span className="text-[13px] text-label-secondary">Połącz pacjenta z aplikacją</span>
+          </span>
         </button>
-
-        <div className="grid grid-cols-2 gap-3 sm:col-span-2 lg:col-span-4">
-          <div className="rounded-2xl border border-border/40 bg-surface/50 p-4 flex items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-              <FolderKanban className="h-4 w-4 text-primary" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xl font-bold leading-tight text-foreground">{activeAssignments.length}</p>
-              <p className="truncate text-xs text-muted-foreground">Aktywnych zestawów</p>
-            </div>
-          </div>
-          <div className="rounded-2xl border border-border/40 bg-surface/50 p-4 flex items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-secondary/10">
-              <CheckCircle2 className="h-4 w-4 text-secondary" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xl font-bold leading-tight text-foreground">{totalCompletions}</p>
-              <p className="truncate text-xs text-muted-foreground">Wykonań łącznie</p>
-            </div>
-          </div>
+        <div className="flex flex-[1_1_280px] items-center px-3">
+          <span className="flex flex-1 flex-col px-3">
+            <span className="text-[28px] font-bold leading-[34px] tabular-nums text-foreground">{activeAssignments.length}</span>
+            <span className="text-[13px] text-label-secondary">Aktywne plany</span>
+          </span>
+          <span className="flex flex-1 flex-col border-l-[0.5px] border-separator px-3">
+            <span className="text-[28px] font-bold leading-[34px] tabular-nums text-foreground">{totalCompletions}</span>
+            <span className="text-[13px] text-label-secondary">Wykonane treningi</span>
+          </span>
         </div>
       </div>
 
-      {/* Main Content - Bento grid */}
-      <div className="grid gap-4 md:gap-5 lg:grid-cols-12">
-        {/* Row 1: Assignments + Documentation */}
-        <Card className={cn(
-          'bg-surface border-border shadow-md overflow-hidden rounded-xl md:rounded-2xl',
-          therapistId && organizationId ? 'lg:col-span-8' : 'lg:col-span-12'
-        )}>
-          <CardHeader className="p-4 md:px-6 md:pt-6 md:pb-4">
-            <CardTitle className="flex items-center gap-2 md:gap-3 text-sm md:text-base font-semibold">
-              <div className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg md:rounded-xl bg-primary/10">
-                <FolderKanban className="h-4 w-4 text-primary" />
-              </div>
-              Przypisane zestawy
-              <Badge variant="secondary" className="ml-1 text-xs">
-                {setAssignments.length}
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            {assignmentsSectionContent}
-          </CardContent>
-        </Card>
+      <div className="flex flex-wrap items-stretch">
+        <section
+          aria-labelledby="patient-plans-heading"
+          className={
+            therapistId && organizationId
+              ? 'flex min-w-0 flex-[2_1_520px] flex-col gap-4 lg:pr-9'
+              : 'flex min-w-0 flex-[1_1_100%] flex-col gap-4'
+          }
+        >
+          <SectionHeader
+            id="patient-plans-heading"
+            title={
+              <>
+                Plany ćwiczeń <span className="ml-1 text-label-secondary">{setAssignments.length}</span>
+              </>
+            }
+            className="[&>h2]:text-[20px] [&>h2]:leading-[25px]"
+          />
+          {assignmentsSectionContent}
+        </section>
 
         {therapistId && organizationId && (
-          <div className="lg:col-span-4 space-y-4">
-            <ClinicalNotesList
-              patientId={id}
-              therapistId={therapistId}
-              organizationId={organizationId}
-            />
+          <aside className="mt-7 flex min-w-0 flex-[1_1_300px] flex-col gap-7 border-t-[0.5px] border-separator pt-7 lg:mt-0 lg:border-l-[0.5px] lg:border-t-0 lg:pl-9 lg:pt-0">
+            <ClinicalNotesList patientId={id} therapistId={therapistId} organizationId={organizationId} />
             <PatientJournalNotes patientId={id} organizationId={organizationId} />
-          </div>
+          </aside>
         )}
-
-        {/* Row 2: Activity - full width */}
-        <Card className="bg-surface border-border shadow-md overflow-hidden rounded-xl md:rounded-2xl lg:col-span-12">
-          <CardHeader className="p-4 md:px-6 md:pt-6 md:pb-4">
-            <CardTitle className="flex items-center gap-2 md:gap-3 text-sm md:text-base font-semibold">
-              <div className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg md:rounded-xl bg-info/10">
-                <Activity className="h-4 w-4 text-info" />
-              </div>
-              Aktywność i postępy
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <ActivityReport
-              patientId={id}
-              heatmapDays={21}
-              journalDays={3}
-              onCall={therapyActions.handleCall}
-              onEditPlan={therapyActions.handleEditPlan}
-              onSendMessage={therapyActions.handleSendMessage}
-              onSendPraise={therapyActions.handleSendPraise}
-            />
-          </CardContent>
-        </Card>
       </div>
+
+      <section aria-labelledby="patient-activity-heading" className="flex flex-col gap-2 border-t-[0.5px] border-separator pt-7">
+        <SectionHeader
+          id="patient-activity-heading"
+          title="Raport aktywności"
+          className="[&>h2]:text-[20px] [&>h2]:leading-[25px]"
+        />
+        <ActivityReport
+          patientId={id}
+          heatmapDays={21}
+          journalDays={3}
+          onCall={therapyActions.handleCall}
+          onEditPlan={therapyActions.handleEditPlan}
+          onSendMessage={therapyActions.handleSendMessage}
+          onSendPraise={therapyActions.handleSendPraise}
+        />
+      </section>
+
+      <ConfirmDialog
+        open={isRemoveFromListOpen}
+        onOpenChange={setIsRemoveFromListOpen}
+        title="Odepnąć pacjenta od Ciebie?"
+        description={`${displayName} zostanie w organizacji bez przypisanego fizjoterapeuty. Plany i historia zostają.`}
+        confirmText="Odepnij"
+        variant="destructive"
+        onConfirm={handleRemoveFromMyList}
+        isLoading={removingFromList}
+      />
 
       {/* Assignment Wizard */}
       {organizationId && therapistId && patient && (
@@ -722,6 +705,6 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
           isLoading={isActivating}
         />
       )}
-    </div>
+    </PageSheet>
   );
 }

@@ -416,21 +416,21 @@ export function PatientAssignmentCard({
       <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
         <Card
           className={cn(
-            'transition-all duration-200 border-border/60 overflow-hidden',
-            isExpanded && 'ring-1 ring-primary/20 border-primary/30'
+            'overflow-hidden rounded-[16px] bg-grouped-tertiary transition-colors duration-200',
+            isExpanded && 'ring-1 ring-tint/30'
           )}
           data-testid={`patient-assignment-${assignment.id}`}
         >
           {/* Header - always visible */}
           <CollapsibleTrigger asChild>
-            <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-surface-light/50 transition-colors">
+            <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-fill-quaternary transition-colors">
               {/* Expand icon */}
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-light text-muted-foreground">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-fill-tertiary text-label-secondary">
                 {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
               </div>
 
               {/* Set thumbnail */}
-              <div className="relative h-12 w-12 rounded-lg overflow-hidden shrink-0 bg-surface-light">
+              <div className="relative h-12 w-12 rounded-[8px] overflow-hidden shrink-0 bg-card">
                 {getMediaUrl(exercises[0]?.exercise?.imageUrl || exercises[0]?.exercise?.images?.[0]) ? (
                   <Image
                     src={getMediaUrl(exercises[0]?.exercise?.imageUrl || exercises[0]?.exercise?.images?.[0]) || ''}
@@ -581,7 +581,7 @@ export function PatientAssignmentCard({
           {/* Expanded content */}
           <CollapsibleContent>
             <CardContent className="space-y-4 pt-0 pb-4">
-              <div className="rounded-xl border border-border/50 bg-surface-light/30 p-3.5">
+              <div className="rounded-control bg-card p-3.5">
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-1.5">
                     <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Plan pacjenta</p>
@@ -661,7 +661,7 @@ export function PatientAssignmentCard({
                         return (
                           <div
                             key={mapping.id}
-                            className="overflow-hidden rounded-xl border border-border/40 bg-surface/30"
+                            className="overflow-hidden rounded-control bg-card"
                             data-testid={`patient-assignment-exercise-${mapping.id}`}
                           >
                             <div className="flex items-stretch gap-1">
@@ -787,7 +787,7 @@ export function PatientAssignmentCard({
 
               {/* Stats */}
               {assignment.completionCount !== undefined && assignment.completionCount > 0 && (
-                <div className="mt-4 pt-3 border-t border-border/40">
+                <div className="mt-4 pt-3 border-t-[0.5px] border-separator">
                   <p className="text-xs text-muted-foreground">
                     Wykonano: <span className="font-medium text-foreground">{assignment.completionCount}</span> razy
                     {assignment.lastCompletedAt && (

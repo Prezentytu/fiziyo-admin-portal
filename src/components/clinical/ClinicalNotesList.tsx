@@ -138,25 +138,24 @@ export function ClinicalNotesList({
 
   return (
     <>
-      <Card className="border-border/60">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-base font-medium">
-              <FileText className="h-4 w-4 text-info" />
-              Notatki
+      <Card className="rounded-none bg-transparent">
+        <CardHeader className="px-0 pb-2 pt-0">
+          <div className="flex min-h-11 items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              Notatki kliniczne
               {notes.length > 0 && (
                 <Badge variant="secondary" className="ml-1">
                   {notes.length}
                 </Badge>
               )}
             </CardTitle>
-            <Button size="sm" onClick={handleNewNote} className="gap-1.5" data-testid="clinical-notes-new-note-btn">
+            <Button size="sm" variant="tinted" onClick={handleNewNote} className="gap-1.5" data-testid="clinical-notes-new-note-btn">
               <Plus className="h-3.5 w-3.5" />
               Nowa notatka
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="pt-0">
+        <CardContent className="px-0 pb-0 pt-0">
           {loading ? (
             <div className="space-y-2">
               {[1, 2, 3].map((i) => (
@@ -176,24 +175,21 @@ export function ClinicalNotesList({
               {notes.map((note) => (
                 <div
                   key={note.id}
-                  className="group grid grid-cols-[1fr_auto] items-start gap-3 rounded-xl border border-border/60 bg-surface p-3.5 transition-all duration-150 hover:border-primary/30 hover:bg-surface-elevated hover:shadow-sm"
+                  className="group -mx-2 grid grid-cols-[1fr_auto] items-start gap-3 rounded-control border-t-[0.5px] border-separator px-2 py-3 transition-colors duration-150 hover:bg-fill-quaternary"
                 >
                   <button
                     type="button"
-                    className="grid min-w-0 grid-cols-[auto_1fr] items-start gap-3 text-left"
+                    className="grid min-w-0 grid-cols-[1fr] items-start gap-3 text-left"
                     data-testid={`clinical-note-card-btn-${note.id}`}
                     onClick={() => handleEditNote(note)}
                   >
-                    <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-                      <FileText className="h-4 w-4 text-primary" />
-                    </div>
 
                     <div className="min-w-0 space-y-1.5">
                       <div className="flex items-center gap-2">
                         <span className="truncate text-sm font-semibold text-foreground">
                           {note.title || VISIT_TYPE_LABELS[note.visitType]}
                         </span>
-                        <span className="shrink-0 rounded-md border border-border/50 bg-surface-light px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                        <span className="shrink-0 rounded-full bg-fill-tertiary px-2 py-0.5 text-[11px] font-semibold text-label-secondary">
                           {VISIT_TYPE_LABELS[note.visitType]}
                         </span>
                       </div>

@@ -871,3 +871,6 @@ Przy dodawaniu nowych komponentów:
 2. Dodaj `data-testid` do interaktywnych elementów
 3. Zaktualizuj tę dokumentację
 4. Sprawdź unikalność identyfikatorów
+
+| `patient-detail-premium-btn` | Aktywuj Premium w nagłówku karty | `patients/[id]/page.tsx` |
+| `patient-detail-remove-from-list-btn` | Odepnij ode mnie (menu) | `patients/[id]/page.tsx` |
