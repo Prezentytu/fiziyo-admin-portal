@@ -97,13 +97,13 @@ export function getLoadBadgeColor(load: ExerciseLoad | undefined | null): string
 
   switch (load.type) {
     case 'weight':
-      return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
+      return 'bg-status-success-muted text-status-success';
     case 'band':
-      return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400';
+      return 'bg-violet-muted text-violet';
     case 'bodyweight':
-      return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
+      return 'bg-status-info-muted text-status-info';
     default:
-      return 'bg-gray-100 text-gray-800 dark:bg-gray-800/30 dark:text-gray-400';
+      return 'bg-fill-tertiary text-foreground dark:text-label-tertiary';
   }
 }
 

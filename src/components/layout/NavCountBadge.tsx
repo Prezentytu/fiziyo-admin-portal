@@ -17,7 +17,7 @@ export function NavCountBadge({ count, className }: Readonly<NavCountBadgeProps>
     <span
       className={cn(
         'inline-flex shrink-0 items-center justify-center rounded-full',
-        'border border-amber-500/30 bg-amber-500/15 text-amber-600 dark:text-amber-400',
+        'border border-status-warning/30 bg-status-warning-muted text-status-warning',
         'text-[10px] font-semibold tabular-nums leading-none',
         isWide ? 'h-5 min-w-5 px-1' : 'size-5',
         className

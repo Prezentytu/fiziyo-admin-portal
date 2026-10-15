@@ -109,17 +109,17 @@ export function StripeConnectCard({ organizationId, className }: StripeConnectCa
   // Not connected - show onboarding prompt
   if (!status?.hasConnectedAccount || !status?.onboardingComplete) {
     return (
-      <Card className={cn('border-amber-500/30 bg-gradient-to-br from-surface to-amber-500/5', className)}>
+      <Card className={cn('border-status-warning/30 bg-gradient-to-br from-surface to-status-warning-muted', className)}>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
-            <CreditCard className="h-5 w-5 text-amber-500" />
+            <CreditCard className="h-5 w-5 text-status-warning" />
             Konto Wypłat
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Warning message */}
-          <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
-            <AlertCircle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+          <div className="flex items-start gap-3 p-4 rounded-xl bg-status-warning-muted border border-status-warning/20">
+            <AlertCircle className="h-5 w-5 text-status-warning shrink-0 mt-0.5" />
             <div>
               <p className="font-medium text-foreground mb-1">Skonfiguruj wypłaty</p>
               <p className="text-sm text-muted-foreground">
@@ -144,7 +144,7 @@ export function StripeConnectCard({ organizationId, className }: StripeConnectCa
           <Button
             onClick={handleStartOnboarding}
             disabled={onboardingLoading || isRedirecting}
-            className="w-full gap-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700"
+            className="w-full gap-2 bg-gradient-to-r from-status-warning to-status-warning hover:from-status-warning hover:to-status-warning"
           >
             {onboardingLoading || isRedirecting ? (
               <>
@@ -171,10 +171,10 @@ export function StripeConnectCard({ organizationId, className }: StripeConnectCa
 
   // Connected - show status
   return (
-    <Card className={cn('border-emerald-500/30 bg-gradient-to-br from-surface to-emerald-500/5', className)}>
+    <Card className={cn('border-status-success/30 bg-gradient-to-br from-surface to-status-success-muted', className)}>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
-          <CreditCard className="h-5 w-5 text-emerald-500" />
+          <CreditCard className="h-5 w-5 text-status-success" />
           Konto Wypłat
         </CardTitle>
       </CardHeader>
@@ -182,15 +182,15 @@ export function StripeConnectCard({ organizationId, className }: StripeConnectCa
         {/* Connected status */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/20">
-              <CheckCircle className="h-5 w-5 text-emerald-500" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-status-success-muted">
+              <CheckCircle className="h-5 w-5 text-status-success" />
             </div>
             <div>
               <p className="font-medium text-foreground">Stripe Connect</p>
               <p className="text-xs text-muted-foreground">Konto aktywne</p>
             </div>
           </div>
-          <Badge className="bg-emerald-500/20 text-emerald-500 border-0">Połączono</Badge>
+          <Badge className="bg-status-success-muted text-status-success border-0">Połączono</Badge>
         </div>
 
         {/* Balance info */}
@@ -198,7 +198,7 @@ export function StripeConnectCard({ organizationId, className }: StripeConnectCa
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-lg bg-surface-light p-3">
               <p className="text-xs text-muted-foreground mb-1">Dostępne</p>
-              <p className="text-lg font-bold text-emerald-500 tabular-nums">
+              <p className="text-lg font-bold text-status-success tabular-nums">
                 {formatCurrency(status.availableBalance)}
               </p>
             </div>
@@ -212,14 +212,14 @@ export function StripeConnectCard({ organizationId, className }: StripeConnectCa
         {/* Status badges */}
         <div className="flex flex-wrap gap-2">
           {status.chargesEnabled && (
-            <Badge variant="outline" className="text-xs border-emerald-500/30">
-              <CheckCircle className="h-3 w-3 mr-1 text-emerald-500" />
+            <Badge variant="outline" className="text-xs border-status-success/30">
+              <CheckCircle className="h-3 w-3 mr-1 text-status-success" />
               Płatności aktywne
             </Badge>
           )}
           {status.payoutsEnabled && (
-            <Badge variant="outline" className="text-xs border-emerald-500/30">
-              <CheckCircle className="h-3 w-3 mr-1 text-emerald-500" />
+            <Badge variant="outline" className="text-xs border-status-success/30">
+              <CheckCircle className="h-3 w-3 mr-1 text-status-success" />
               Wypłaty aktywne
             </Badge>
           )}

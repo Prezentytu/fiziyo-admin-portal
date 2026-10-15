@@ -44,12 +44,12 @@ const roleLabels: Record<string, string> = {
 };
 
 const roleColors: Record<string, string> = {
-  OWNER: 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/20',
-  owner: 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/20',
+  OWNER: 'bg-status-info-muted text-status-info border-status-info/20',
+  owner: 'bg-status-info-muted text-status-info border-status-info/20',
   ADMIN: 'bg-primary/20 text-primary-dark dark:text-primary border-primary/30',
   admin: 'bg-primary/20 text-primary-dark dark:text-primary border-primary/30',
-  THERAPIST: 'bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/30',
-  therapist: 'bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/30',
+  THERAPIST: 'bg-status-info-muted text-status-info border-status-info/30',
+  therapist: 'bg-status-info-muted text-status-info border-status-info/30',
   MEMBER: 'bg-muted text-muted-foreground border-border',
   member: 'bg-muted text-muted-foreground border-border',
   STAFF: 'bg-muted text-muted-foreground border-border',

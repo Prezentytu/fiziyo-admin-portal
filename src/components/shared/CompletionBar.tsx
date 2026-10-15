@@ -42,13 +42,13 @@ export function CompletionBar({
   const barColorClass = useMemo(() => {
     switch (colorStatus) {
       case 'critical':
-        return 'bg-red-500';
+        return 'bg-status-danger-fill';
       case 'draft':
-        return 'bg-amber-500';
+        return 'bg-status-warning-fill';
       case 'ready':
-        return 'bg-emerald-500';
+        return 'bg-tint-fill';
       default:
-        return 'bg-amber-500';
+        return 'bg-status-warning-fill';
     }
   }, [colorStatus]);
 
@@ -58,20 +58,20 @@ export function CompletionBar({
       return {
         text: 'Gotowe do publikacji',
         icon: Check,
-        textClass: 'text-emerald-500',
+        textClass: 'text-status-success',
       };
     }
     if (percentage >= 40) {
       return {
         text: 'Szkic',
         icon: FileEdit,
-        textClass: 'text-amber-500',
+        textClass: 'text-status-warning',
       };
     }
     return {
       text: 'Uzupełnij dane',
       icon: AlertCircle,
-      textClass: 'text-red-500',
+      textClass: 'text-status-danger',
     };
   }, [percentage]);
 
@@ -124,7 +124,7 @@ export function CompletionBar({
                   <div
                     className={cn(
                       'absolute top-1/2 -translate-y-1/2 w-0.5 h-3 rounded-full transition-colors duration-300',
-                      percentage >= 40 ? 'bg-amber-500/50' : 'bg-border'
+                      percentage >= 40 ? 'bg-status-warning-muted' : 'bg-border'
                     )}
                     style={{ left: '40%' }}
                   />
@@ -132,7 +132,7 @@ export function CompletionBar({
                   <div
                     className={cn(
                       'absolute top-1/2 -translate-y-1/2 right-0 w-0.5 h-3 rounded-full transition-colors duration-300',
-                      percentage >= 100 ? 'bg-emerald-500' : 'bg-border'
+                      percentage >= 100 ? 'bg-tint-fill' : 'bg-border'
                     )}
                   />
                 </>
@@ -145,7 +145,7 @@ export function CompletionBar({
                 <span
                   className={cn(
                     'absolute text-[10px] -translate-x-1/2 transition-colors duration-300',
-                    percentage >= 40 ? 'text-amber-500/70' : 'text-muted-foreground/50'
+                    percentage >= 40 ? 'text-status-warning' : 'text-muted-foreground/50'
                   )}
                   style={{ left: '40%' }}
                 >
@@ -154,7 +154,7 @@ export function CompletionBar({
                 <span
                   className={cn(
                     'absolute right-0 text-[10px] transition-colors duration-300',
-                    percentage >= 100 ? 'text-emerald-500' : 'text-muted-foreground/50'
+                    percentage >= 100 ? 'text-status-success' : 'text-muted-foreground/50'
                   )}
                 >
                   Publikuj

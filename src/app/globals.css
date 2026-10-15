@@ -264,6 +264,8 @@
   --status-danger: #ff7a72;
   --status-danger-muted: rgba(255, 69, 58, 0.16);
   --status-danger-fill: #d93636;
+  --status-warning-fill: #b45309;
+  --status-info-fill: #0062cc;
   --status-info: #4da3ff;
   --status-info-muted: rgba(10, 132, 255, 0.16);
 
@@ -397,6 +399,8 @@
   --color-status-danger: var(--status-danger);
   --color-status-danger-muted: var(--status-danger-muted);
   --color-status-danger-fill: var(--status-danger-fill);
+  --color-status-warning-fill: var(--status-warning-fill);
+  --color-status-info-fill: var(--status-info-fill);
   --color-status-info: var(--status-info);
   --color-status-info-muted: var(--status-info-muted);
 

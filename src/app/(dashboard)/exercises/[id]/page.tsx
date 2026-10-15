@@ -629,7 +629,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={() => setIsSubmitToOrganizationDialogOpen(true)}
-                    className="text-emerald-600 focus:text-emerald-600"
+                    className="text-status-success focus:text-status-success"
                     data-testid="exercise-detail-submit-org-btn"
                   >
                     <Rocket className="mr-2 h-4 w-4" />
@@ -655,7 +655,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
               <DropdownMenuItem
                 onClick={() => setIsReportDialogOpen(true)}
                 data-testid="exercise-detail-report-btn"
-                className="text-amber-500 focus:text-amber-500 focus:bg-amber-500/10"
+                className="text-status-warning focus:text-status-warning focus:bg-status-warning-muted"
               >
                 <Flag className="mr-2 h-4 w-4" />
                 Zgłoś do poprawki
@@ -689,7 +689,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
           {isSubmittedToGlobal && !isPendingReview && !isChangesRequested && !isGlobalExercise && (
             <Badge
               variant="outline"
-              className="text-[10px] uppercase font-bold tracking-wider bg-blue-500/10 text-blue-600 border-blue-500/20"
+              className="text-[10px] uppercase font-bold tracking-wider bg-status-info-muted text-status-info border-status-info/20"
             >
               <Globe className="mr-1 h-3 w-3" />W FiziYo
             </Badge>
@@ -697,7 +697,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
           {isPendingReview && (
             <Badge
               variant="outline"
-              className="text-[10px] uppercase font-bold tracking-wider bg-amber-500/10 text-amber-600 border-amber-500/20"
+              className="text-[10px] uppercase font-bold tracking-wider bg-status-warning-muted text-status-warning border-status-warning/20"
             >
               <Clock className="mr-1 h-3 w-3" />
               Weryfikacja
@@ -706,7 +706,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
           {isChangesRequested && (
             <Badge
               variant="outline"
-              className="text-[10px] uppercase font-bold tracking-wider bg-orange-500/10 text-orange-600 border-orange-500/20"
+              className="text-[10px] uppercase font-bold tracking-wider bg-status-warning-muted text-status-warning border-status-warning/20"
             >
               <AlertCircle className="mr-1 h-3 w-3" />
               Do poprawy
@@ -760,12 +760,12 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
           data-testid="exercise-detail-report-hero-btn"
           onClick={() => setIsReportDialogOpen(true)}
           className={cn(
-            'group relative overflow-hidden rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5 text-left transition-all duration-300 hover:shadow-lg hover:shadow-amber-500/20 hover:scale-[1.01] cursor-pointer sm:col-span-1',
+            'group relative overflow-hidden rounded-2xl border border-status-warning/30 bg-status-warning-muted p-5 text-left transition-all duration-300 hover:shadow-lg hover:shadow-status-warning/20 hover:scale-[1.01] cursor-pointer sm:col-span-1',
             isLocked ? 'lg:col-span-6' : 'lg:col-span-4'
           )}
         >
           <div className="relative flex items-center gap-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/20 text-amber-600 shrink-0 group-hover:scale-110 transition-transform duration-300">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-status-warning-muted text-status-warning shrink-0 group-hover:scale-110 transition-transform duration-300">
               <Flag className="h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1">
@@ -781,7 +781,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
             className={cn(
               'group relative overflow-hidden rounded-2xl border p-5 text-left transition-all duration-300 hover:shadow-lg hover:scale-[1.01] cursor-pointer sm:col-span-2 lg:col-span-4',
               isEditing
-                ? 'border-emerald-500/30 bg-emerald-500/10 hover:shadow-emerald-500/20'
+                ? 'border-status-success/30 bg-status-success-muted hover:shadow-status-success/20'
                 : 'border-border/40 bg-surface/50 hover:shadow-primary/10'
             )}
             data-testid="exercise-detail-edit-btn"
@@ -790,7 +790,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
               <div
                 className={cn(
                   'flex h-11 w-11 items-center justify-center rounded-xl shrink-0 group-hover:scale-110 transition-transform duration-300',
-                  isEditing ? 'bg-emerald-500/20 text-emerald-600' : 'bg-primary/10 text-primary'
+                  isEditing ? 'bg-status-success-muted text-status-success' : 'bg-primary/10 text-primary'
                 )}
               >
                 {isEditing ? <Check className="h-5 w-5" /> : <Pencil className="h-5 w-5" />}
@@ -807,9 +807,9 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
       </div>
 
       {hasMissingCoreInformation && !isEditing && (
-        <div className="rounded-2xl border border-sky-500/20 bg-sky-50/50 p-4 dark:bg-sky-500/5">
+        <div className="rounded-2xl border border-status-info/20 bg-status-info-muted p-4">
           <div className="flex items-start gap-3">
-            <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-sky-500" />
+            <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-status-info" />
             <div>
               <p className="text-sm font-semibold text-foreground">To ćwiczenie może być jeszcze lepsze</p>
               <p className="text-sm text-muted-foreground">
@@ -1016,17 +1016,17 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                 </span>
               ) : saveBarKind === 'dirty' ? (
                 <span className="flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-amber-500" />
+                  <span className="h-2 w-2 rounded-full bg-status-warning-fill" />
                   Masz niezapisane zmiany
                 </span>
               ) : saveBarKind === 'media-persisted' ? (
                 <span className="flex items-center gap-1.5" data-testid="exercise-detail-save-media-notice">
-                  <Check className="h-4 w-4 text-emerald-600" />
+                  <Check className="h-4 w-4 text-status-success" />
                   {mediaPersistNotice}
                 </span>
               ) : (
                 <span className="flex items-center gap-1.5">
-                  <Check className="h-4 w-4 text-emerald-600" />
+                  <Check className="h-4 w-4 text-status-success" />
                   Wszystko zapisane
                 </span>
               )}

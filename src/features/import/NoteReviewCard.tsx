@@ -42,13 +42,13 @@ export function NoteReviewCard({ note, decision, onDecisionChange, disabled = fa
   const getNoteTypeColor = (type: string) => {
     switch (type) {
       case 'interview':
-        return 'bg-blue-500/20 text-blue-600';
+        return 'bg-status-info-muted text-status-info';
       case 'examination':
         return 'bg-violet/20 text-violet';
       case 'diagnosis':
-        return 'bg-orange-500/20 text-orange-600';
+        return 'bg-status-warning-muted text-status-warning';
       case 'procedure':
-        return 'bg-green-500/20 text-green-600';
+        return 'bg-status-success-muted text-status-success';
       default:
         return 'bg-surface-light text-muted-foreground';
     }

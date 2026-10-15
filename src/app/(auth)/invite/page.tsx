@@ -315,7 +315,7 @@ function InvitePageContent() {
       <PageWrapper>
         <Card
           className={cn(
-            'w-full max-w-md border-amber-500/30 backdrop-blur-sm bg-surface/95',
+            'w-full max-w-md border-status-warning/30 backdrop-blur-sm bg-surface/95',
             'transition-all duration-700',
             isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'
           )}
@@ -323,12 +323,12 @@ function InvitePageContent() {
           <CardHeader className="text-center pb-4">
             <div
               className={cn(
-                'flex h-16 w-16 items-center justify-center rounded-full bg-amber-500/20 mx-auto mb-4',
+                'flex h-16 w-16 items-center justify-center rounded-full bg-status-warning-muted mx-auto mb-4',
                 'transition-all duration-500 delay-200',
                 isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-50'
               )}
             >
-              <AlertTriangle className="h-8 w-8 text-amber-500" />
+              <AlertTriangle className="h-8 w-8 text-status-warning" />
             </div>
             <CardTitle className="text-xl">Niezgodność adresu email</CardTitle>
           </CardHeader>

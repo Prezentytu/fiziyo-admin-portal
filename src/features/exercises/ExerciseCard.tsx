@@ -215,8 +215,8 @@ export function ExerciseCard({
             'transition-all duration-200 ease-out cursor-pointer',
             'hover:bg-surface-light hover:border-primary/30 hover:shadow-md hover:shadow-primary/5',
             isInBuilder && 'border-primary bg-primary/5 ring-1 ring-primary/20',
-            isPendingReview && 'border-yellow-500/30 bg-yellow-500/5 opacity-70',
-            isChangesRequested && 'border-red-500/30 bg-red-500/5',
+            isPendingReview && 'border-status-warning/30 bg-status-warning-muted opacity-70',
+            isChangesRequested && 'border-status-danger/30 bg-status-danger-muted',
             className
           )}
           onClick={() => {
@@ -232,8 +232,8 @@ export function ExerciseCard({
           {isChangesRequested && (
             <div className="absolute -top-1 -right-1 z-10">
               <span className="flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500" />
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-status-danger-fill opacity-75" />
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-status-danger-fill" />
               </span>
             </div>
           )}
@@ -272,7 +272,7 @@ export function ExerciseCard({
                   <TooltipTrigger asChild>
                     <Badge
                       variant="outline"
-                      className="text-[9px] bg-blue-500/10 text-blue-600 border-blue-500/20 shrink-0"
+                      className="text-[9px] bg-status-info-muted text-status-info border-status-info/20 shrink-0"
                     >
                       <Globe className="h-2.5 w-2.5 mr-0.5" />W FiziYo
                     </Badge>
@@ -287,7 +287,7 @@ export function ExerciseCard({
                   <TooltipTrigger asChild>
                     <Badge
                       variant="outline"
-                      className="text-[9px] bg-yellow-500/10 text-yellow-600 border-yellow-500/20 shrink-0"
+                      className="text-[9px] bg-status-warning-muted text-status-warning border-status-warning/20 shrink-0"
                     >
                       <Clock className="h-2.5 w-2.5 mr-0.5" />
                       Weryfikacja
@@ -303,7 +303,7 @@ export function ExerciseCard({
                   <TooltipTrigger asChild>
                     <Badge
                       variant="outline"
-                      className="text-[9px] bg-red-500/10 text-red-600 border-red-500/20 shrink-0"
+                      className="text-[9px] bg-status-danger-muted text-status-danger border-status-danger/20 shrink-0"
                     >
                       <AlertCircle className="h-2.5 w-2.5 mr-0.5" />
                       Do poprawy
@@ -402,7 +402,7 @@ export function ExerciseCard({
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={(event) => runMenuAction(event, () => onSubmitToOrganizationReview?.(exercise))}
-                    className="text-emerald-600 focus:text-emerald-600"
+                    className="text-status-success focus:text-status-success"
                     data-testid={`exercise-card-${exercise.id}-submit-org-review-btn`}
                   >
                     <Rocket className="mr-2 h-4 w-4" />
@@ -414,7 +414,7 @@ export function ExerciseCard({
                 <DropdownMenuItem
                   onClick={(event) => runMenuAction(event, () => onReportIssue(exercise))}
                   data-testid={`exercise-card-${exercise.id}-report-btn`}
-                  className="text-amber-500 focus:text-amber-500 focus:bg-amber-500/10"
+                  className="text-status-warning focus:text-status-warning focus:bg-status-warning-muted"
                 >
                   <Flag className="mr-2 h-4 w-4" />
                   Zgłoś do poprawki
@@ -427,19 +427,19 @@ export function ExerciseCard({
                 </div>
               )}
               {isSubmittedToGlobal && (
-                <div className="px-2 py-1.5 text-xs text-blue-600 flex items-center gap-1">
+                <div className="px-2 py-1.5 text-xs text-status-info flex items-center gap-1">
                   <Globe className="h-3 w-3" />
                   Zgłoszono do FiziYo
                 </div>
               )}
               {isPendingReview && (
-                <div className="px-2 py-1.5 text-xs text-amber-600 flex items-center gap-1">
+                <div className="px-2 py-1.5 text-xs text-status-warning flex items-center gap-1">
                   <Globe className="h-3 w-3" />
                   Oczekuje na weryfikację
                 </div>
               )}
               {isPendingOrganizationReview && (
-                <div className="px-2 py-1.5 text-xs text-amber-700 flex items-center gap-1">
+                <div className="px-2 py-1.5 text-xs text-status-warning flex items-center gap-1">
                   <Clock className="h-3 w-3" />
                   Oczekuje na weryfikację org
                 </div>
@@ -557,12 +557,12 @@ export function ExerciseCard({
                           !isPendingReview &&
                           !isChangesRequested &&
                           !isGlobalExercise &&
-                          'bg-blue-500/80 text-white border-blue-600',
-                        isPendingReview && 'bg-yellow-500/90 text-black border-yellow-600',
-                        isChangesRequested && 'bg-red-500/90 text-white border-red-600',
-                        isPendingOrganizationReview && 'bg-amber-600/90 text-white border-amber-700',
-                        isOrganizationChangesRequested && 'bg-rose-500/90 text-white border-rose-600',
-                        isOrganizationVerified && 'bg-emerald-500/90 text-white border-emerald-600'
+                          'bg-status-info-muted text-white border-status-info',
+                        isPendingReview && 'bg-status-warning-muted text-black border-status-warning',
+                        isChangesRequested && 'bg-status-danger-muted text-white border-status-danger',
+                        isPendingOrganizationReview && 'bg-status-warning-muted text-white border-status-warning',
+                        isOrganizationChangesRequested && 'bg-status-danger-muted text-white border-status-danger',
+                        isOrganizationVerified && 'bg-status-success-muted text-white border-status-success'
                       )}
                     >
                       {isGlobalExercise && (
@@ -629,8 +629,8 @@ export function ExerciseCard({
             {isChangesRequested && (
               <div className="absolute top-0 right-0 z-20 -translate-y-1 translate-x-1">
                 <span className="flex h-4 w-4">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 border-2 border-background" />
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-status-danger-fill opacity-75" />
+                  <span className="relative inline-flex rounded-full h-4 w-4 bg-status-danger-fill border-2 border-background" />
                 </span>
               </div>
             )}
@@ -697,7 +697,7 @@ export function ExerciseCard({
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={(event) => runMenuAction(event, () => onSubmitToOrganizationReview?.(exercise))}
-                        className="text-emerald-600 focus:text-emerald-600"
+                        className="text-status-success focus:text-status-success"
                         data-testid={`exercise-card-${exercise.id}-submit-org-review-btn`}
                       >
                         <Rocket className="mr-2 h-4 w-4" />
@@ -709,7 +709,7 @@ export function ExerciseCard({
                     <DropdownMenuItem
                       onClick={(event) => runMenuAction(event, () => onReportIssue(exercise))}
                       data-testid={`exercise-card-${exercise.id}-report-btn`}
-                      className="text-amber-500 focus:text-amber-500 focus:bg-amber-500/10"
+                      className="text-status-warning focus:text-status-warning focus:bg-status-warning-muted"
                     >
                       <Flag className="mr-2 h-4 w-4" />
                       Zgłoś do poprawki
@@ -722,13 +722,13 @@ export function ExerciseCard({
                     </div>
                   )}
                   {isSubmittedToGlobal && !isGlobalExercise && (
-                    <div className="px-2 py-1.5 text-xs text-blue-600 flex items-center gap-1">
+                    <div className="px-2 py-1.5 text-xs text-status-info flex items-center gap-1">
                       <Globe className="h-3 w-3" />
                       Zgłoszono do FiziYo
                     </div>
                   )}
                   {isPendingReview && (
-                    <div className="px-2 py-1.5 text-xs text-amber-600 flex items-center gap-1">
+                    <div className="px-2 py-1.5 text-xs text-status-warning flex items-center gap-1">
                       <Globe className="h-3 w-3" />
                       Oczekuje na weryfikację
                     </div>

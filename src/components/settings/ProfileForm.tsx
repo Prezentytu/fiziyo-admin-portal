@@ -331,7 +331,7 @@ export function ProfileForm({ user, clerkId, onSuccess }: Readonly<ProfileFormPr
               onChange={handlePhotoSelect}
             />
             <div className="flex items-center gap-6">
-              <Avatar className="h-24 w-24 ring-4 ring-zinc-100 dark:ring-zinc-800">
+              <Avatar className="h-24 w-24 ring-4 ring-separator">
                 <AvatarImage
                   src={clerkUser?.imageUrl ?? user.image}
                   alt={displayName}

@@ -114,10 +114,10 @@ export function VerificationStatsCards({
           label="Oczekujące"
           value={organizationStats.pendingOrgReview}
           icon={Clock}
-          color="text-amber-500"
-          bgColor="bg-amber-500/20"
-          activeBgColor="bg-amber-500/10"
-          activeBorderColor="border-amber-500/40"
+          color="text-status-warning"
+          bgColor="bg-status-warning-muted"
+          activeBgColor="bg-status-warning-muted"
+          activeBorderColor="border-status-warning/40"
           isActive={activeFilter === 'pending'}
           onClick={() => onFilterChange('pending')}
         />
@@ -126,10 +126,10 @@ export function VerificationStatsCards({
           label="Do poprawy"
           value={organizationStats.orgChangesRequested}
           icon={AlertTriangle}
-          color="text-orange-500"
-          bgColor="bg-orange-500/20"
-          activeBgColor="bg-orange-500/10"
-          activeBorderColor="border-orange-500/40"
+          color="text-status-warning"
+          bgColor="bg-status-warning-muted"
+          activeBgColor="bg-status-warning-muted"
+          activeBorderColor="border-status-warning/40"
           isActive={activeFilter === 'changes'}
           onClick={() => onFilterChange('changes')}
         />
@@ -168,10 +168,10 @@ export function VerificationStatsCards({
         label="Oczekujące"
         value={stats?.pendingReview ?? 0}
         icon={Clock}
-        color="text-amber-500"
-        bgColor="bg-amber-500/20"
-        activeBgColor="bg-amber-500/10"
-        activeBorderColor="border-amber-500/40"
+        color="text-status-warning"
+        bgColor="bg-status-warning-muted"
+        activeBgColor="bg-status-warning-muted"
+        activeBorderColor="border-status-warning/40"
         isActive={activeFilter === 'pending'}
         onClick={() => onFilterChange('pending')}
       />
@@ -180,10 +180,10 @@ export function VerificationStatsCards({
         label="Do poprawy"
         value={stats?.changesRequested ?? 0}
         icon={AlertTriangle}
-        color="text-orange-500"
-        bgColor="bg-orange-500/20"
-        activeBgColor="bg-orange-500/10"
-        activeBorderColor="border-orange-500/40"
+        color="text-status-warning"
+        bgColor="bg-status-warning-muted"
+        activeBgColor="bg-status-warning-muted"
+        activeBorderColor="border-status-warning/40"
         isActive={activeFilter === 'changes'}
         onClick={() => onFilterChange('changes')}
       />
@@ -204,10 +204,10 @@ export function VerificationStatsCards({
         label="Zgłoszone"
         value={reportedCount}
         icon={Flag}
-        color="text-amber-500"
-        bgColor="bg-amber-500/20"
-        activeBgColor="bg-amber-500/10"
-        activeBorderColor="border-amber-500/40"
+        color="text-status-warning"
+        bgColor="bg-status-warning-muted"
+        activeBgColor="bg-status-warning-muted"
+        activeBorderColor="border-status-warning/40"
         isActive={activeFilter === 'reported'}
         onClick={() => onFilterChange('reported')}
       />

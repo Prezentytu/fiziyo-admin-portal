@@ -247,7 +247,7 @@ export function RejectReasonDialog({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={5}
-              className={cn('resize-none', notes.length > 0 && notes.length < 10 && 'border-amber-500/50')}
+              className={cn('resize-none', notes.length > 0 && notes.length < 10 && 'border-status-warning/50')}
               data-testid="verification-reject-notes-input"
             />
             <div className="flex items-center justify-between text-xs">
@@ -255,7 +255,7 @@ export function RejectReasonDialog({
                 <HelpCircle className="h-3 w-3" />
                 Ta wiadomość zostanie wysłana do autora
               </span>
-              <span className={cn('text-muted-foreground', notes.length > 0 && notes.length < 10 && 'text-amber-600')}>
+              <span className={cn('text-muted-foreground', notes.length > 0 && notes.length < 10 && 'text-status-warning')}>
                 {notes.length} znaków
               </span>
             </div>

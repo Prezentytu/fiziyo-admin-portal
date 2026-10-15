@@ -13,7 +13,7 @@ export function DirtyDot({ active, className }: Readonly<DirtyDotProps>) {
   if (!active) return null;
   return (
     <span
-      className={cn('inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500', className)}
+      className={cn('inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-status-warning-fill', className)}
       role="img"
       aria-label="Niezapisana zmiana"
       title="Niezapisana zmiana"

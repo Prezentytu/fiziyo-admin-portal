@@ -39,8 +39,8 @@ export function ApproveDialog({ open, onOpenChange, onConfirm, isLoading, exerci
 
         {/* Icon */}
         <div className="flex justify-center mb-4">
-          <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
-            <Check className="h-6 w-6 text-emerald-500" />
+          <div className="w-12 h-12 rounded-full bg-status-success-muted flex items-center justify-center border border-status-success/20">
+            <Check className="h-6 w-6 text-status-success" />
           </div>
         </div>
 
@@ -73,7 +73,7 @@ export function ApproveDialog({ open, onOpenChange, onConfirm, isLoading, exerci
           <Button
             onClick={handleConfirm}
             disabled={isLoading}
-            className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+            className="flex-1 bg-tint-fill hover:bg-tint-fill-hover text-white shadow-[0_0_15px_rgba(16,185,129,0.3)]"
             data-testid="verification-approve-confirm-btn"
           >
             {isLoading ? (

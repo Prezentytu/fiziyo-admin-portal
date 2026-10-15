@@ -78,8 +78,8 @@ export function ImportSummary({
 
               {result.exercisesReused > 0 && (
                 <li className="flex items-center gap-3 text-foreground">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/20">
-                    <Link2 className="h-5 w-5 text-blue-500" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-status-info-muted">
+                    <Link2 className="h-5 w-5 text-status-info" />
                   </div>
                   <span className="text-base">
                     Użyto <strong>{result.exercisesReused}</strong> istniejących ćwiczeń
@@ -101,8 +101,8 @@ export function ImportSummary({
 
               {result.clinicalNotesCreated > 0 && (
                 <li className="flex items-center gap-3 text-foreground">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500/20">
-                    <FileText className="h-5 w-5 text-orange-500" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-status-warning-muted">
+                    <FileText className="h-5 w-5 text-status-warning" />
                   </div>
                   <span className="text-base">
                     Zapisano <strong>{result.clinicalNotesCreated}</strong>{' '}

@@ -616,7 +616,7 @@ export function PatientQRCodeDialog({
                 )}
 
                 <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-1">
-                  <Smartphone className="h-4 w-4 text-blue-400" />
+                  <Smartphone className="h-4 w-4 text-status-info" />
                   Aplikacja Mobilna
                 </h3>
                 <p className="text-xs text-muted-foreground text-center max-w-[180px]">

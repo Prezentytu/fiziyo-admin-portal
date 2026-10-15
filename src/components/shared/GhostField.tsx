@@ -117,10 +117,10 @@ export function GhostField({
       className={cn(
         'group relative w-full rounded-xl border-2 border-dashed p-4 text-left',
         'transition-all duration-300 ease-out',
-        'border-amber-300/40 bg-amber-500/5',
-        'hover:border-amber-400 hover:bg-amber-500/10',
-        'hover:shadow-lg hover:shadow-amber-500/10',
-        'focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:ring-offset-2 focus:ring-offset-background',
+        'border-status-warning/40 bg-status-warning-muted',
+        'hover:border-status-warning hover:bg-status-warning-muted',
+        'hover:shadow-lg hover:shadow-status-warning/10',
+        'focus:outline-none focus:ring-2 focus:ring-status-warning/30 focus:ring-offset-2 focus:ring-offset-background',
         'disabled:opacity-70 disabled:cursor-wait',
         className
       )}
@@ -131,27 +131,27 @@ export function GhostField({
         <div
           className={cn(
             'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg',
-            'bg-amber-500/10 transition-all duration-300',
-            'group-hover:bg-amber-500/20 group-hover:scale-110'
+            'bg-status-warning-muted transition-all duration-300',
+            'group-hover:bg-status-warning-muted group-hover:scale-110'
           )}
         >
           {isAILoading ? (
-            <Loader2 className="h-5 w-5 text-amber-500 animate-spin" />
+            <Loader2 className="h-5 w-5 text-status-warning animate-spin" />
           ) : hasAI && onAIGenerate ? (
-            <Wand2 className="h-5 w-5 text-amber-500 transition-transform duration-300 group-hover:rotate-12" />
+            <Wand2 className="h-5 w-5 text-status-warning transition-transform duration-300 group-hover:rotate-12" />
           ) : (
-            <Icon className="h-5 w-5 text-amber-500" />
+            <Icon className="h-5 w-5 text-status-warning" />
           )}
         </div>
 
         {/* Text content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-amber-600 group-hover:text-amber-500 transition-colors">
+            <span className="text-sm font-medium text-status-warning group-hover:text-status-warning transition-colors">
               {isAILoading ? 'Generowanie...' : displayLabel}
             </span>
             {hasAI && onAIGenerate && !isAILoading && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500/70">AI</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-status-warning-muted text-status-warning">AI</span>
             )}
           </div>
           {displayDescription && <p className="text-xs text-muted-foreground mt-0.5 truncate">{displayDescription}</p>}
@@ -178,8 +178,8 @@ export function GhostField({
         {!isAILoading && (
           <div
             className={cn(
-              'shrink-0 text-amber-500/50 transition-all duration-300',
-              'group-hover:text-amber-500 group-hover:translate-x-1'
+              'shrink-0 text-status-warning transition-all duration-300',
+              'group-hover:text-status-warning group-hover:translate-x-1'
             )}
           >
             <Plus className="h-4 w-4" />
@@ -190,7 +190,7 @@ export function GhostField({
       {/* Loading progress bar */}
       {isAILoading && (
         <div className="absolute bottom-0 left-0 right-0 h-1 overflow-hidden rounded-b-xl">
-          <div className="h-full w-full bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400 animate-shimmer" />
+          <div className="h-full w-full bg-gradient-to-r from-status-warning via-status-warning to-status-warning animate-shimmer" />
         </div>
       )}
     </button>

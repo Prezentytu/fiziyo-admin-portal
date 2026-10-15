@@ -600,7 +600,7 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
                 </div>
                 <div className="h-1.5 w-16 overflow-hidden rounded-full bg-muted">
                   <div
-                    className="h-full rounded-full bg-emerald-500 transition-all duration-300"
+                    className="h-full rounded-full bg-tint-fill transition-all duration-300"
                     style={{ width: `${queueProgress.progressPercent}%` }}
                   />
                 </div>
@@ -623,12 +623,12 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
           <div className="flex-1 p-4 pr-5 lg:p-5 lg:pr-6 flex flex-col min-h-0 overflow-y-auto">
             {/* Previous review notes (if any) */}
             {exercise.adminReviewNotes && (
-              <Card className="border-amber-500/30 bg-amber-500/5 mb-4 shrink-0">
+              <Card className="border-status-warning/30 bg-status-warning-muted mb-4 shrink-0">
                 <CardContent className="p-3">
                   <div className="flex items-start gap-2">
-                    <FileText className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                    <FileText className="h-4 w-4 text-status-warning shrink-0 mt-0.5" />
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-amber-600">Poprzednie uwagi:</p>
+                      <p className="text-sm font-medium text-status-warning">Poprzednie uwagi:</p>
                       <p className="text-sm text-foreground mt-1">{exercise.adminReviewNotes}</p>
                     </div>
                   </div>

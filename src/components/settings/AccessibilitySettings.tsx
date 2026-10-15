@@ -77,8 +77,8 @@ export function AccessibilitySettings() {
               )}
               data-testid="settings-theme-light"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white border border-gray-200">
-                <Sun className="h-6 w-6 text-amber-500" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white border border-separator">
+                <Sun className="h-6 w-6 text-status-warning" />
               </div>
               <span className="text-sm font-medium">Jasny</span>
               {preferences.theme === 'light' && (
@@ -100,7 +100,7 @@ export function AccessibilitySettings() {
               data-testid="settings-theme-system"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-linear-to-br from-white to-[#1a1a1a]">
-                <Monitor className="h-6 w-6 text-gray-500" />
+                <Monitor className="h-6 w-6 text-label-secondary" />
               </div>
               <span className="text-sm font-medium">Systemowy</span>
               {preferences.theme === 'system' && (

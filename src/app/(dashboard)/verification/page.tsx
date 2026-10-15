@@ -84,8 +84,8 @@ function VerificationTaskRow({
   const imageUrl = getMediaUrl(exercise.thumbnailUrl || exercise.imageUrl || exercise.images?.[0]);
 
   const statusConfig: Record<string, { label: string; className: string }> = {
-    PENDING_REVIEW: { label: 'Oczekuje', className: 'bg-amber-500/10 text-amber-600 border-amber-500/20' },
-    CHANGES_REQUESTED: { label: 'Do poprawy', className: 'bg-orange-500/10 text-orange-600 border-orange-500/20' },
+    PENDING_REVIEW: { label: 'Oczekuje', className: 'bg-status-warning-muted text-status-warning border-status-warning/20' },
+    CHANGES_REQUESTED: { label: 'Do poprawy', className: 'bg-status-warning-muted text-status-warning border-status-warning/20' },
     PUBLISHED: { label: 'Opublikowany', className: 'bg-primary/10 text-primary border-primary/20' },
   };
   const status = statusConfig[exercise.status] || { label: 'Szkic', className: 'bg-muted text-muted-foreground' };
@@ -155,7 +155,7 @@ function VerificationTaskRow({
             </div>
             {exercise.latestReport && (
               <p
-                className="mt-1 text-[11px] text-amber-600 line-clamp-1"
+                className="mt-1 text-[11px] text-status-warning line-clamp-1"
                 data-testid={`verification-row-${exercise.id}-report-context`}
               >
                 {exercise.latestReport.reasonCategory}: {exercise.latestReport.description}
@@ -168,7 +168,7 @@ function VerificationTaskRow({
             {exercise.hasOpenReport && (
               <Badge
                 variant="outline"
-                className="text-[10px] border-amber-500/30 bg-amber-500/10 text-amber-600"
+                className="text-[10px] border-status-warning/30 bg-status-warning-muted text-status-warning"
                 data-testid={`verification-row-${exercise.id}-reported-badge`}
               >
                 Zgłoszenia ({exercise.openReportCount ?? 1})

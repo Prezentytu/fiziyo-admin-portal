@@ -59,13 +59,13 @@ const roleConfig: Record<
     label: 'Właściciel',
     icon: Crown,
     variant: 'default',
-    color: 'text-amber-500',
+    color: 'text-status-warning',
   },
   admin: {
     label: 'Administrator',
     icon: ShieldCheck,
     variant: 'secondary',
-    color: 'text-blue-500',
+    color: 'text-status-info',
   },
   therapist: {
     label: 'Fizjoterapeuta',
@@ -225,7 +225,7 @@ export function MemberCard({
                     className={cn(
                       'gap-1.5 text-[10px] uppercase font-bold tracking-wider px-1.5 py-0 h-5 border shadow-xs',
                       assignedPatientsCount > 0
-                        ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                        ? 'bg-status-success-muted text-status-success border-status-success/20'
                         : 'bg-surface-light/50 text-muted-foreground border-border'
                     )}
                   >
@@ -259,7 +259,7 @@ export function MemberCard({
                           className="rounded-lg"
                           data-testid={`org-member-set-admin-${member.id}`}
                         >
-                          <ShieldCheck className="mr-2 h-4 w-4 text-blue-500" />
+                          <ShieldCheck className="mr-2 h-4 w-4 text-status-info" />
                           Ustaw jako Administrator
                         </DropdownMenuItem>
                       )}

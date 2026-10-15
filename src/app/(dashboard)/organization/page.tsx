@@ -261,7 +261,7 @@ export default function OrganizationPage() {
                     <Mail className="h-4 w-4" />
                     <span>Zaproszenia</span>
                     {pendingInvitations > 0 && (
-                      <Badge className="ml-auto bg-amber-500/10 text-amber-500 border-amber-500/20 text-[10px] px-1.5 h-4">
+                      <Badge className="ml-auto bg-status-warning-muted text-status-warning border-status-warning/20 text-[10px] px-1.5 h-4">
                         {pendingInvitations}
                       </Badge>
                     )}

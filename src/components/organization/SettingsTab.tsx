@@ -191,7 +191,7 @@ export function SettingsTab({ organization, currentUserRole, isLoading = false, 
         <CardContent className="space-y-6">
             {/* Logo section */}
             <div className="flex items-start gap-6">
-              <Avatar className="h-20 w-20 ring-4 ring-zinc-100 dark:ring-zinc-800">
+              <Avatar className="h-20 w-20 ring-4 ring-separator">
                 <AvatarImage src={organization.logoUrl} alt={organization.name} />
               <AvatarFallback className="bg-linear-to-br from-primary/80 to-primary-dark/80 text-primary-foreground text-2xl font-bold">
                   {organization.name?.slice(0, 2).toUpperCase()}

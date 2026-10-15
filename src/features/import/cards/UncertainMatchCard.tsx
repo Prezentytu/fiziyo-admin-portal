@@ -54,7 +54,7 @@ export function UncertainMatchCard({
         onClick={() => handleActionChange('reuse', match.existingExerciseId)}
         className={cn(
           'flex w-full items-center gap-3 rounded-lg border p-2.5 text-left transition-colors',
-          isSelected ? 'border-yellow-500/40 bg-yellow-500/10' : 'border-border bg-surface hover:bg-surface-light'
+          isSelected ? 'border-status-warning/40 bg-status-warning-muted' : 'border-border bg-surface hover:bg-surface-light'
         )}
         data-testid={`import-uncertain-card-${exercise.tempId}-match-${match.existingExerciseId}`}
       >
@@ -82,7 +82,7 @@ export function UncertainMatchCard({
         'rounded-xl border transition-all duration-200',
         isSkipped
           ? 'border-border/40 bg-muted/20 opacity-60'
-          : 'border-yellow-500/30 bg-yellow-500/5 hover:border-yellow-500/50',
+          : 'border-status-warning/30 bg-status-warning-muted hover:border-status-warning/50',
         className
       )}
       data-testid={`import-uncertain-card-${exercise.tempId}`}
@@ -92,10 +92,10 @@ export function UncertainMatchCard({
           <div
             className={cn(
               'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
-              isSkipped ? 'bg-muted' : 'bg-yellow-500/20'
+              isSkipped ? 'bg-muted' : 'bg-status-warning-muted'
             )}
           >
-            <AlertTriangle className={cn('h-4 w-4', isSkipped ? 'text-muted-foreground' : 'text-yellow-500')} />
+            <AlertTriangle className={cn('h-4 w-4', isSkipped ? 'text-muted-foreground' : 'text-status-warning')} />
           </div>
 
           <div className="min-w-0 flex-1">

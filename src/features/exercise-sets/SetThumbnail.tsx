@@ -59,7 +59,7 @@ export function SetThumbnail({ exerciseMappings, size = 'sm', className = '' }: 
   if (!images || images.length === 0) {
     return (
       <div
-        className={`${gridSize} flex items-center justify-center rounded-xl bg-gradient-to-br from-secondary/80 to-teal-600/80 shadow-sm ${className}`}
+        className={`${gridSize} flex items-center justify-center rounded-xl bg-gradient-to-br from-secondary/80 to-status-success-muted shadow-sm ${className}`}
       >
         <Dumbbell className="h-5 w-5 text-white" />
       </div>

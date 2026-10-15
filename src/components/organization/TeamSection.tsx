@@ -27,8 +27,8 @@ interface TeamSectionProps {
 }
 
 const roleConfig = {
-  owner: { label: 'Właściciel', icon: Crown, color: 'text-amber-500', priority: 0 },
-  admin: { label: 'Administratorzy', icon: ShieldCheck, color: 'text-blue-500', priority: 1 },
+  owner: { label: 'Właściciel', icon: Crown, color: 'text-status-warning', priority: 0 },
+  admin: { label: 'Administratorzy', icon: ShieldCheck, color: 'text-status-info', priority: 1 },
   therapist: { label: 'Fizjoterapeuci', icon: User, color: 'text-primary', priority: 2 },
   member: { label: 'Członkowie', icon: User, color: 'text-muted-foreground', priority: 3 },
 };

@@ -85,7 +85,7 @@ function EditableTextBlock({
           disabled={disabled}
           className={cn(
             `${minHeight} text-sm transition-colors`,
-            dirty && 'border-amber-400/70 bg-amber-50/40 dark:border-amber-500/40 dark:bg-amber-500/5'
+            dirty && 'border-status-warning/70 bg-status-warning-muted dark:border-status-warning/40'
           )}
           onChange={(event) => onChange(event.target.value)}
         />
@@ -434,7 +434,7 @@ export function SafetySection({
             className={cn(
               'flex items-center gap-3 rounded-xl border p-3 transition-colors',
               isPathDirty('safety.requires_supervision')
-                ? 'border-amber-400/70 bg-amber-50/40 dark:border-amber-500/40 dark:bg-amber-500/5'
+                ? 'border-status-warning/70 bg-status-warning-muted dark:border-status-warning/40'
                 : 'border-border/50'
             )}
           >
@@ -451,7 +451,7 @@ export function SafetySection({
       ) : (
         <div className="space-y-2">
           {requiresSupervision && (
-            <p className="text-sm font-medium text-amber-700 dark:text-amber-400">Wymaga nadzoru fizjoterapeuty</p>
+            <p className="text-sm font-medium text-status-warning">Wymaga nadzoru fizjoterapeuty</p>
           )}
           {hasText(stopIf) && (
             <p className="text-sm text-muted-foreground">
@@ -647,7 +647,7 @@ export function MetadataSection({
               disabled={disabled}
               className={cn(
                 'h-9 text-sm transition-colors',
-                videoUrlDirty && 'border-amber-400/70 bg-amber-50/40 dark:border-amber-500/40 dark:bg-amber-500/5'
+                videoUrlDirty && 'border-status-warning/70 bg-status-warning-muted dark:border-status-warning/40'
               )}
             />
           </div>

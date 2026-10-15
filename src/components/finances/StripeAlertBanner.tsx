@@ -118,9 +118,9 @@ export function StripeAlertBanner({ organizationId, className }: Readonly<Stripe
     : 'Wymagane do automatycznych wypłat.';
   const bannerStepLabel = shouldShowBillingSetup ? 'Krok 1 z 2: dane do faktury' : 'Krok 2 z 2: wypłaty Stripe';
   const icon = shouldShowBillingSetup ? (
-    <Building2 className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+    <Building2 className="h-4 w-4 text-status-warning" />
   ) : (
-    <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+    <AlertTriangle className="h-4 w-4 text-status-warning" />
   );
 
   return (
@@ -135,7 +135,7 @@ export function StripeAlertBanner({ organizationId, className }: Readonly<Stripe
         data-testid="finance-alert-banner"
       >
         <div className="flex items-start gap-3.5">
-          <div className="mt-0.5 p-2.5 rounded-xl shadow-sm border border-amber-200/50 bg-amber-500/10 dark:bg-amber-900/20 dark:border-amber-800/30">
+          <div className="mt-0.5 p-2.5 rounded-xl shadow-sm border border-status-warning/50 bg-status-warning-muted dark:border-status-warning/30">
             {icon}
           </div>
           <div className="space-y-1">

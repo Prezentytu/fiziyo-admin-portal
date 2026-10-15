@@ -708,7 +708,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
                             'text-sm font-semibold',
                             assignment.user?.isShadowUser
                               ? 'bg-muted-foreground/60 text-white'
-                              : 'bg-gradient-to-br from-info to-blue-600 text-white'
+                              : 'bg-gradient-to-br from-info to-status-info text-white'
                           )}
                         >
                           {assignment.user?.fullname?.[0] || '?'}

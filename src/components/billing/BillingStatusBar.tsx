@@ -64,7 +64,7 @@ export function BillingStatusBar({ organizationId, className }: Readonly<Billing
   const hasActivity = activeCount > 0;
   let amountClassName = 'text-muted-foreground group-hover:text-foreground';
   if (!isPilotMode && hasActivity) {
-    amountClassName = 'text-emerald-500 group-hover:text-emerald-400';
+    amountClassName = 'text-status-success group-hover:text-status-success';
   }
 
   // W pilot mode zawsze 0 PLN
@@ -89,11 +89,11 @@ export function BillingStatusBar({ organizationId, className }: Readonly<Billing
             className={cn(
               'flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-300',
               hasActivity
-                ? 'bg-emerald-500/10 group-hover:bg-emerald-500/20'
+                ? 'bg-status-success-muted group-hover:bg-status-success-muted'
                 : 'bg-muted-foreground/10 group-hover:bg-muted-foreground/15'
             )}
           >
-            <Wallet className={cn('h-4.5 w-4.5', hasActivity ? 'text-emerald-500' : 'text-muted-foreground')} />
+            <Wallet className={cn('h-4.5 w-4.5', hasActivity ? 'text-status-success' : 'text-muted-foreground')} />
           </div>
           <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
             Bieżące rozliczenie
@@ -140,7 +140,7 @@ export function BillingStatusBar({ organizationId, className }: Readonly<Billing
             className={cn(
               'h-4 w-4 transition-all group-hover:translate-x-0.5',
               hasActivity
-                ? 'text-emerald-500/40 group-hover:text-emerald-500'
+                ? 'text-status-success group-hover:text-status-success'
                 : 'text-muted-foreground/40 group-hover:text-muted-foreground'
             )}
           />

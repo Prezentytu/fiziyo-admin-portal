@@ -167,7 +167,7 @@ export function PayoutScheduleCard({ organizationId, className }: PayoutSchedule
             variant="outline"
             className={cn(
               'text-xs',
-              payoutInfo.daysUntil <= 2 ? 'border-emerald-500/30 text-emerald-500' : 'border-border'
+              payoutInfo.daysUntil <= 2 ? 'border-status-success/30 text-status-success' : 'border-border'
             )}
           >
             <Clock className="h-3 w-3 mr-1" />
@@ -182,12 +182,12 @@ export function PayoutScheduleCard({ organizationId, className }: PayoutSchedule
         {/* Amount breakdown */}
         <div className="grid grid-cols-2 gap-3">
           {/* Available now */}
-          <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 p-3">
+          <div className="rounded-lg bg-status-success-muted border border-status-success/20 p-3">
             <div className="flex items-center gap-1.5 mb-1">
-              <Banknote className="h-3.5 w-3.5 text-emerald-500" />
-              <span className="text-xs text-emerald-600 dark:text-emerald-400">Gotowe do wypłaty</span>
+              <Banknote className="h-3.5 w-3.5 text-status-success" />
+              <span className="text-xs text-status-success">Gotowe do wypłaty</span>
             </div>
-            <p className="text-lg font-bold text-emerald-500 tabular-nums">
+            <p className="text-lg font-bold text-status-success tabular-nums">
               {formatCurrency(payoutInfo.availableBalance)}
             </p>
           </div>
@@ -195,7 +195,7 @@ export function PayoutScheduleCard({ organizationId, className }: PayoutSchedule
           {/* Pending */}
           <div className="rounded-lg bg-surface-light border border-border/40 p-3">
             <div className="flex items-center gap-1.5 mb-1">
-              <Clock className="h-3.5 w-3.5 text-amber-500" />
+              <Clock className="h-3.5 w-3.5 text-status-warning" />
               <span className="text-xs text-muted-foreground">W drodze</span>
             </div>
             <p className="text-lg font-bold text-foreground tabular-nums">

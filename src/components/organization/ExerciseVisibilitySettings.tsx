@@ -108,8 +108,8 @@ export function ExerciseVisibilitySettings({
           className={cn(
             'flex items-start gap-4 p-4 rounded-xl border transition-all',
             requireOrganizationVerification
-              ? 'border-emerald-500/30 bg-emerald-500/5 ring-1 ring-emerald-500/10'
-              : 'border-border/50 bg-background/50 hover:bg-background hover:border-emerald-500/30'
+              ? 'border-status-success/30 bg-status-success-muted ring-1 ring-status-success/10'
+              : 'border-border/50 bg-background/50 hover:bg-background hover:border-status-success/30'
           )}
         >
           <Checkbox

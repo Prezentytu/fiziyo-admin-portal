@@ -105,8 +105,8 @@ export default function PayoutsPage() {
           <Card>
             <CardContent className="p-5">
               <div className="flex items-center gap-3 mb-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/20">
-                  <Clock className="h-5 w-5 text-amber-500" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-status-warning-muted">
+                  <Clock className="h-5 w-5 text-status-warning" />
                 </div>
                 <span className="text-sm text-muted-foreground">Oczekujące</span>
               </div>
@@ -124,14 +124,14 @@ export default function PayoutsPage() {
           <Card>
             <CardContent className="p-5">
               <div className="flex items-center gap-3 mb-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/20">
-                  <TrendingUp className="h-5 w-5 text-emerald-500" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-status-success-muted">
+                  <TrendingUp className="h-5 w-5 text-status-success" />
                 </div>
                 <span className="text-sm text-muted-foreground">Status konta</span>
               </div>
               {stripeLoading && <Skeleton className="h-6 w-24" />}
               {!stripeLoading && stripeStatus?.payoutsEnabled && (
-                <Badge className="bg-emerald-500/20 text-emerald-500 border-0">
+                <Badge className="bg-status-success-muted text-status-success border-0">
                   <CheckCircle className="h-3 w-3 mr-1" />
                   Wypłaty aktywne
                 </Badge>
@@ -184,13 +184,13 @@ export default function PayoutsPage() {
                       <div
                         className={cn(
                           'flex h-10 w-10 items-center justify-center rounded-full',
-                          payout.status === 'completed' ? 'bg-emerald-500/20' : 'bg-amber-500/20'
+                          payout.status === 'completed' ? 'bg-status-success-muted' : 'bg-status-warning-muted'
                         )}
                       >
                         {payout.status === 'completed' ? (
-                          <CheckCircle className="h-5 w-5 text-emerald-500" />
+                          <CheckCircle className="h-5 w-5 text-status-success" />
                         ) : (
-                          <Clock className="h-5 w-5 text-amber-500" />
+                          <Clock className="h-5 w-5 text-status-warning" />
                         )}
                       </div>
                       <div>
@@ -206,7 +206,7 @@ export default function PayoutsPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-lg font-bold text-emerald-500 tabular-nums">
+                      <p className="text-lg font-bold text-status-success tabular-nums">
                         +{formatCurrency(payout.netAmount, payout.currency)}
                       </p>
                       <Badge variant={payout.status === 'completed' ? 'default' : 'secondary'} className="text-xs">

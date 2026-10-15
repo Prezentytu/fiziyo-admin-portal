@@ -223,7 +223,7 @@ function NumberField({
             'text-sm tabular-nums transition-colors',
             density === 'comfortable' ? 'h-11' : 'h-9',
             config.suffix && 'pr-10',
-            dirty && 'border-amber-400/70 bg-amber-50/40 dark:border-amber-500/40 dark:bg-amber-500/5'
+            dirty && 'border-status-warning/70 bg-status-warning-muted dark:border-status-warning/40'
           )}
         />
         {config.suffix ? (
@@ -286,7 +286,7 @@ function TextField({
         className={cn(
           'text-sm transition-colors',
           density === 'comfortable' ? 'h-11' : 'h-9',
-          dirty && 'border-amber-400/70 bg-amber-50/40 dark:border-amber-500/40 dark:bg-amber-500/5'
+          dirty && 'border-status-warning/70 bg-status-warning-muted dark:border-status-warning/40'
         )}
       />
     </div>
@@ -335,7 +335,7 @@ function TextAreaField({
         disabled={disabled}
         className={cn(
           'min-h-[60px] resize-none text-sm transition-colors',
-          dirty && 'border-amber-400/70 bg-amber-50/40 dark:border-amber-500/40 dark:bg-amber-500/5'
+          dirty && 'border-status-warning/70 bg-status-warning-muted dark:border-status-warning/40'
         )}
       />
     </div>
@@ -381,7 +381,7 @@ function SelectField({
           className={cn(
             'text-sm transition-colors',
             density === 'comfortable' ? 'h-11' : 'h-9',
-            dirty && 'border-amber-400/70 bg-amber-50/40 dark:border-amber-500/40 dark:bg-amber-500/5'
+            dirty && 'border-status-warning/70 bg-status-warning-muted dark:border-status-warning/40'
           )}
         >
           <SelectValue />
