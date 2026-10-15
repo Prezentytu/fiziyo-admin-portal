@@ -212,19 +212,22 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 
 ### 3. Dashboard (dashboard-)
 
-| data-testid                     | Element                                        | Plik       |
-| ------------------------------- | ---------------------------------------------- | ---------- |
-| `dashboard-greeting`            | Powitanie                                      | `page.tsx` |
-| `dashboard-hero-assign-set-btn` | Personalizuj i przypisz (główna akcja)         | `page.tsx` |
-| `dashboard-create-set-btn`      | Utwórz zestaw                                  | `page.tsx` |
-| `dashboard-add-patient-btn`     | Dodaj pacjenta                                 | `page.tsx` |
-| `dashboard-activity-section`    | Sekcja "Wymagają uwagi"                        | `page.tsx` |
-| `dashboard-patients-view-all`   | Link: Wszyscy pacjenci                         | `page.tsx` |
-| `dashboard-patient-item-{id}`   | Element listy pacjentów z aktywnością          | `page.tsx` |
-| `dashboard-sets-section`        | Sekcja "Szybki wybór"                          | `page.tsx` |
-| `dashboard-sets-view-all`       | Link: Wszystkie zestawy                        | `page.tsx` |
-| `dashboard-set-item-{id}`       | Element listy zestawów                         | `page.tsx` |
-| `dashboard-quick-assign-{id}`   | Przycisk szybkiej personalizacji i przypisania | `page.tsx` |
+| data-testid                       | Element                                        | Plik       |
+| --------------------------------- | ---------------------------------------------- | ---------- |
+| `dashboard-greeting`              | Powitanie                                      | `page.tsx` |
+| `dashboard-hero-assign-set-btn`   | Personalizuj i przypisz (główna akcja)         | `page.tsx` |
+| `dashboard-create-set-btn`        | Utwórz zestaw                                  | `page.tsx` |
+| `dashboard-add-patient-btn`       | Dodaj pacjenta                                 | `page.tsx` |
+| `dashboard-activity-section`      | Sekcja "Pacjenci do sprawdzenia"               | `page.tsx` |
+| `dashboard-patients-view-all`     | Link: Wszyscy pacjenci                         | `page.tsx` |
+| `dashboard-patient-item-{id}`     | Element listy pacjentów z aktywnością          | `page.tsx` |
+| `dashboard-sets-section`          | Sekcja "Szybkie przypisanie"                   | `page.tsx` |
+| `dashboard-sets-view-all`         | Link: Wszystkie zestawy                        | `page.tsx` |
+| `dashboard-set-item-{id}`         | Element listy zestawów                         | `page.tsx` |
+| `dashboard-quick-assign-{id}`     | Przycisk szybkiej personalizacji i przypisania | `page.tsx` |
+| `dashboard-premium-view-all`      | Link: Wszyscy bez dostępu (kolejka Premium)    | `page.tsx` |
+| `dashboard-premium-item-{id}`     | Pacjent bez aktywnego Premium                  | `page.tsx` |
+| `dashboard-premium-activate-{id}` | Aktywuj Premium z kolejki                      | `page.tsx` |
 
 ### 4. Ćwiczenia (exercise-)
 
