@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from 'react';
 import { useQuery } from '@apollo/client/react';
-import { Wallet, Lock, BarChart3, History, Settings, CircleHelp } from 'lucide-react';
+import { Lock, BarChart3, History, Settings, CircleHelp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -25,6 +25,7 @@ import {
 } from '@/components/finances';
 import { GET_ORGANIZATION_EARNINGS_QUERY } from '@/graphql/queries';
 import type { GetOrganizationEarningsResponse } from '@/types/apollo';
+import { PageSheet } from '@/components/shared/page';
 
 // ========================================
 // Empty State Component (Blurred Teaser)
@@ -113,15 +114,12 @@ export default function FinancesPage() {
       )}
 
       <TooltipProvider>
-        <div className="mx-auto w-full max-w-screen-2xl space-y-5 md:space-y-6" data-testid="finances-dashboard-page">
+        <PageSheet contentClassName="gap-6" data-testid="finances-dashboard-page">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
-            <Wallet className="h-5 w-5 text-primary" />
-          </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">Twoje Finanse</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">Przychody, poziom partnerski i rozliczenia.</p>
+            <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground">Twoje finanse</h1>
+            <p className="mt-1 text-[15px] text-label-secondary">Przychody, poziom partnerski i rozliczenia.</p>
           </div>
         </div>
 
@@ -246,7 +244,7 @@ export default function FinancesPage() {
             </TabsContent>
           )}
         </Tabs>
-        </div>
+        </PageSheet>
       </TooltipProvider>
 
       {/* Invite Dialog */}

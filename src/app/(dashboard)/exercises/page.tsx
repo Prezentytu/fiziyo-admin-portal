@@ -277,13 +277,13 @@ export default function ExercisesPage() {
   }
 
   return (
-    <div className="flex overflow-hidden -m-4 lg:-m-6 2xl:-m-8 h-[calc(100%+2rem)] lg:h-[calc(100%+3rem)] 2xl:h-[calc(100%+4rem)]">
+    <div className="flex h-full overflow-hidden rounded-card bg-card">
       {/* Left Panel: Strefa Inspiracji (Grid) */}
       <div className="flex-1 overflow-y-auto p-4 lg:p-6 scroll-smooth custom-scrollbar">
         <div className="max-w-screen-2xl mx-auto space-y-6">
           {/* Compact Header with Search + View Toggle */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <h1 data-testid="exercise-page-title" className="text-2xl font-bold text-foreground">
+            <h1 data-testid="exercise-page-title" className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground">
               Ćwiczenia
             </h1>
             <div className="flex items-center gap-2">

@@ -58,6 +58,7 @@ import type {
 import type { ExerciseReport } from '@/types/exercise-report.types';
 import { useVerificationSelection } from '@/features/verification/utils/verificationSelection';
 import { formatRelativeTime } from '@/utils/dateUtils';
+import { PageSheet } from '@/components/shared/page';
 
 type GlobalVerificationFilter = 'pending' | 'changes' | 'published' | 'archived' | 'reported';
 type VerificationStatsFilter = GlobalVerificationFilter | 'verified';
@@ -735,11 +736,11 @@ export default function VerificationPage() {
 
   // FULL VIEW: There are tasks to verify
   return (
-    <div className="space-y-6">
+    <PageSheet contentClassName="gap-6">
       {/* Hero Header with compact achievements */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight">Centrum Weryfikacji</h1>
+          <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground">Centrum weryfikacji</h1>
           <p className="text-muted-foreground mt-1">
             Cześć {userName}, dzięki Tobie baza ćwiczeń jest bezpieczna i profesjonalna.
           </p>
@@ -957,6 +958,6 @@ export default function VerificationPage() {
           </div>
         </div>
       )}
-    </div>
+    </PageSheet>
   );
 }

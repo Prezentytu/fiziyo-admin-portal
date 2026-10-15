@@ -77,6 +77,7 @@ import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { DashboardRouteLoading } from '@/components/layout/DashboardRouteLoading';
 import { isTemplateSet } from '@/features/exercise-sets/utils/setKind';
+import { PageSheet } from '@/components/shared/page';
 
 interface SetDetailPageProps {
   params: Promise<{ id: string }>;
@@ -503,7 +504,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
   const assignments = isTemplate ? [] : exerciseSet?.patientAssignments || [];
 
   return (
-    <div className="space-y-6">
+    <PageSheet contentClassName="gap-6">
       {/* Compact Header */}
       <div className="flex items-center justify-between">
         <Button
@@ -548,7 +549,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
 
       {/* Hero Section: Title + Description */}
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold text-foreground" data-testid="set-detail-name">
+        <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground" data-testid="set-detail-name">
           {exerciseSet.name}
         </h1>
         {exerciseSet.description && <p className="text-muted-foreground">{exerciseSet.description}</p>}
@@ -924,6 +925,6 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
           organizationId={organizationId}
         />
       )}
-    </div>
+    </PageSheet>
   );
 }

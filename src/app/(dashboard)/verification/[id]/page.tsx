@@ -521,7 +521,7 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
   // Loading
   if (loading) {
     return (
-      <div className="-m-4 flex h-full lg:h-[calc(100%+3rem)] 2xl:h-[calc(100%+4rem)] min-h-0 flex-col overflow-y-auto lg:-m-6 lg:overflow-hidden 2xl:-m-8">
+      <div className="flex h-full min-h-0 flex-col overflow-y-auto rounded-card bg-card lg:overflow-hidden">
         <div className="flex-1 flex flex-col lg:flex-row min-h-0">
           {/* Left: Video skeleton (42%) */}
           <div className="lg:w-[42%] bg-card p-3 border-r border-border/30">
@@ -573,7 +573,7 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
   // ============================================
 
   return (
-    <div className="-m-4 flex h-full lg:h-[calc(100%+3rem)] 2xl:h-[calc(100%+4rem)] min-h-0 flex-col overflow-y-auto lg:-m-6 lg:overflow-hidden 2xl:-m-8">
+    <div className="flex h-full min-h-0 flex-col overflow-y-auto rounded-card bg-card lg:overflow-hidden">
       {/* Main content area - 3 column layout 42/fluid/320 */}
       <div className="flex-1 flex flex-col lg:flex-row min-h-0">
         {/* LEFT COLUMN: Media Player (collapsible) */}

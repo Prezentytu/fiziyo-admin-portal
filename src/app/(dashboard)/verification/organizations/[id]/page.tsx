@@ -194,7 +194,7 @@ export default function CrossOrgVerificationDetailPage({ params }: Readonly<Cros
 
   if (loading) {
     return (
-      <div className="-m-4 flex h-full lg:h-[calc(100%+3rem)] 2xl:h-[calc(100%+4rem)] min-h-0 flex-col overflow-y-auto lg:-m-6 lg:overflow-hidden 2xl:-m-8">
+      <div className="flex h-full min-h-0 flex-col overflow-y-auto rounded-card bg-card lg:overflow-hidden">
         <div className="flex-1 flex flex-col lg:flex-row min-h-0">
           <div className="lg:w-[42%] bg-card p-3 border-r border-border/30">
             <Skeleton className="h-8 w-32 mb-3" />
@@ -247,7 +247,7 @@ export default function CrossOrgVerificationDetailPage({ params }: Readonly<Cros
 
   return (
     <div
-      className="-m-4 flex h-full lg:h-[calc(100%+3rem)] 2xl:h-[calc(100%+4rem)] min-h-0 flex-col overflow-y-auto lg:-m-6 lg:overflow-hidden 2xl:-m-8"
+      className="flex h-full min-h-0 flex-col overflow-y-auto rounded-card bg-card lg:overflow-hidden"
       data-testid="cross-org-verification-detail-page"
     >
       <div className="flex-1 flex flex-col lg:flex-row min-h-0">

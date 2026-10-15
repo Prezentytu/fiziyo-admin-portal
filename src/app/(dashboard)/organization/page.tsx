@@ -214,7 +214,7 @@ export default function OrganizationPage() {
 
   return (
     <AccessGuard requiredAccess="admin" fallbackUrl="/">
-      <div className="flex h-full -m-4 lg:-m-6 2xl:-m-8 overflow-hidden bg-background">
+      <div className="flex h-full overflow-hidden rounded-card bg-card">
         <Tabs
           value={activeTab}
           onValueChange={setActiveTab}
@@ -224,7 +224,7 @@ export default function OrganizationPage() {
           {/* Inner Sidebar */}
           <div className="w-64 border-r border-border/40 bg-transparent flex flex-col shrink-0">
             <div className="p-6">
-              <h1 className="text-xl font-bold text-foreground mb-6" data-testid="org-page-title">
+              <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground mb-6" data-testid="org-page-title">
                 Mój Zespół
               </h1>
 

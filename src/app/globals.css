@@ -232,6 +232,8 @@
   --grouped-secondary: #1f1f22;
   --grouped-tertiary: #2b2b2f;
   --elevated: #38383d;
+  /* Card surface by context: white card on grouped, tile inside PageSheet */
+  --surface-card: var(--grouped-secondary);
 
   /* DS: labels */
   --label: #ffffff;
@@ -372,6 +374,7 @@
   --color-grouped-secondary: var(--grouped-secondary);
   --color-grouped-tertiary: var(--grouped-tertiary);
   --color-elevated: var(--elevated);
+  --color-surface-card: var(--surface-card);
   --color-label: var(--label);
   --color-label-secondary: var(--label-secondary);
   --color-label-tertiary: var(--label-tertiary);

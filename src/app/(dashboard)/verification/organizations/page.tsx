@@ -28,6 +28,7 @@ import type {
   CrossOrgVerificationQueuePage,
   GetOrganizationVerificationStatsResponse,
 } from '@/graphql/types/adminExercise.types';
+import { PageSheet } from '@/components/shared/page';
 
 type CrossOrgFilter = 'pending' | 'changes' | 'verified' | 'archived';
 
@@ -173,10 +174,10 @@ export default function CrossOrgVerificationPage() {
   }
 
   return (
-    <div className="space-y-6" data-testid="cross-org-verification-page">
+    <PageSheet contentClassName="gap-6" data-testid="cross-org-verification-page">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Weryfikacja Organizacji</h1>
+          <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground">Weryfikacja organizacji</h1>
           <p className="text-sm text-muted-foreground">Kolejka zgłoszeń organizacyjnych ze wszystkich organizacji.</p>
         </div>
         <Link href="/verification">
@@ -302,6 +303,6 @@ export default function CrossOrgVerificationPage() {
         onOpenChange={setArchiveDialogOpen}
         onConfirm={handleArchiveSelected}
       />
-    </div>
+    </PageSheet>
   );
 }

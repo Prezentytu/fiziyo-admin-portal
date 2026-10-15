@@ -14,6 +14,7 @@ import { GET_STRIPE_CONNECT_STATUS_QUERY, GET_REVENUE_HISTORY_QUERY } from '@/gr
 import type { GetStripeConnectStatusResponse, GetRevenueHistoryResponse } from '@/types/apollo';
 import { formatCurrency } from '@/types/revenue.types';
 import { cn } from '@/lib/utils';
+import { PageSheet } from '@/components/shared/page';
 
 // ========================================
 // Payouts Page - Historia wypłat ze Stripe
@@ -54,7 +55,7 @@ export default function PayoutsPage() {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-foreground">Historia Wypłat</h1>
+          <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground">Historia wypłat</h1>
         </div>
         <LoadingState type="text" count={3} />
       </div>
@@ -63,7 +64,7 @@ export default function PayoutsPage() {
 
   return (
     <AccessGuard requiredAccess="admin" fallbackUrl="/">
-      <div className="space-y-6">
+      <PageSheet contentClassName="gap-6">
         {/* Header with back button */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
@@ -73,7 +74,7 @@ export default function PayoutsPage() {
               </Link>
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Historia Wypłat</h1>
+              <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground">Historia wypłat</h1>
               <p className="text-sm text-muted-foreground">Przelewy ze Stripe Connect na Twoje konto bankowe</p>
             </div>
           </div>
@@ -218,7 +219,7 @@ export default function PayoutsPage() {
             )}
           </CardContent>
         </Card>
-      </div>
+      </PageSheet>
     </AccessGuard>
   );
 }

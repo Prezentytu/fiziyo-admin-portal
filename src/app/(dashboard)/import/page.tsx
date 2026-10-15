@@ -33,6 +33,7 @@ import {
   PatientContextPanel,
   ImportReviewDashboard,
 } from '@/features/import';
+import { PageSheet } from '@/components/shared/page';
 
 type StepId = 'upload' | 'processing' | 'review-exercises' | 'review-sets' | 'summary';
 
@@ -120,7 +121,7 @@ export default function ImportPage() {
   );
 
   return (
-    <div className="min-h-full" data-testid="import-page">
+    <PageSheet contentClassName="gap-6" data-testid="import-page">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-4 mb-2">
@@ -129,7 +130,7 @@ export default function ImportPage() {
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-bold text-foreground" data-testid="import-page-title">
+              <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground" data-testid="import-page-title">
                 Import dokumentów
               </h1>
               <Badge variant="outline" className="text-xs" data-testid="import-experimental-badge">
@@ -408,6 +409,6 @@ export default function ImportPage() {
           </div>
         </div>
       )}
-    </div>
+    </PageSheet>
   );
 }

@@ -94,6 +94,7 @@ import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/e
 import { resolveLoadKg } from '@/utils/exerciseLoadMutation';
 import { verificationCopy } from '@/features/verification/verificationCopy';
 import { ORG_VERIFICATION_REFETCH_QUERIES } from '@/hooks/useOrganizationVerificationRealtime';
+import { PageSheet } from '@/components/shared/page';
 
 interface ExerciseDetailPageProps {
   params: Promise<{ id: string }>;
@@ -572,7 +573,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   });
 
   return (
-    <div className={cn('space-y-6', isEditing && 'pb-24')}>
+    <PageSheet contentClassName="gap-6" className={isEditing ? 'pb-24' : undefined}>
       {/* Compact Header */}
       <div className="flex items-center justify-between">
         <Button
@@ -720,7 +721,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
             onChange={(event) => setCoreField('name', event.target.value)}
           />
         ) : (
-          <h1 className="text-2xl font-bold text-foreground" data-testid="exercise-detail-name">
+          <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground" data-testid="exercise-detail-name">
             {exercise.name}
           </h1>
         )}
@@ -1095,6 +1096,6 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         exercise={exercise}
         organizationId={organizationId}
       />
-    </div>
+    </PageSheet>
   );
 }
