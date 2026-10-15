@@ -4,15 +4,15 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
-import { Plus, FolderKanban, FolderPlus, Search, Sparkles, Filter, X, UserRound } from 'lucide-react';
+import { Plus, FolderKanban, Search, Filter, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { EmptyState } from '@/components/shared/EmptyState';
+import { PageSheet, PageHeader } from '@/components/shared/page';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { SetCard, ExerciseSet } from '@/features/exercise-sets/SetCard';
 import { EditExerciseSetFullDialog } from '@/features/exercise-sets/EditExerciseSetFullDialog';
@@ -280,219 +280,130 @@ export default function ExerciseSetsPage() {
     );
   }
 
+  const filterTabs: ReadonlyArray<{ id: typeof filter; label: string; count: number; testId: string }> = [
+    { id: 'all-templates', label: 'Wszystkie zestawy źródłowe', count: allTemplatesCount, testId: 'set-filter-all-templates-btn' },
+    { id: 'fiziyo-templates', label: 'Zestawy FiziYo', count: fiziyoTemplatesCount, testId: 'set-filter-fiziyo-templates-btn' },
+    { id: 'my-templates', label: 'Zestawy organizacji', count: myTemplatesCount, testId: 'set-filter-my-templates-btn' },
+    { id: 'patient-plans', label: 'Zestawy spersonalizowane', count: patientPlansCount, testId: 'set-filter-patient-plans-btn' },
+  ];
+
   return (
-    <div className="mx-auto w-full max-w-screen-2xl space-y-6">
-      {/* Compact Header with Search and Tag Filter */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-foreground shrink-0" data-testid="set-page-title">
-          Zestawy ćwiczeń
-        </h1>
-
-        <div className="flex items-center gap-3 flex-1 justify-end">
-          {/* Enlarged Search */}
-          <div className="relative w-full sm:w-80 lg:w-96">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Szukaj zestawów po nazwie lub opisie..."
-              className="pl-9 pr-9 bg-surface border-border/60"
-              data-testid="set-search-input"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-
+    <PageSheet contentClassName="gap-6">
+      <PageHeader
+        title="Zestawy ćwiczeń"
+        titleTestId="set-page-title"
+        subtitle="Szablony do wielokrotnego użycia i plany pacjentów"
+        actions={
+          <>
+            <label className="relative w-full sm:w-[340px]">
+              <span className="sr-only">Szukaj zestawów</span>
+              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-label-secondary" aria-hidden="true" />
+              <Input
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Szukaj zestawów po nazwie lub opisie"
+                className="pl-10"
+                data-testid="set-search-input"
+              />
+            </label>
           {/* Tag Filter Dropdown */}
-          {!HIDE_EXERCISE_TAGS && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn('gap-2 shrink-0', selectedTags.length > 0 && 'border-primary/40 bg-primary/5')}
-                  data-testid="set-tag-filter-btn"
-                >
-                  <Filter className="h-4 w-4" />
-                  <span className="hidden sm:inline">Tagi</span>
+            {!HIDE_EXERCISE_TAGS && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn('gap-2 shrink-0', selectedTags.length > 0 && 'border-primary/40 bg-primary/5')}
+                    data-testid="set-tag-filter-btn"
+                  >
+                    <Filter className="h-4 w-4" />
+                    <span className="hidden sm:inline">Tagi</span>
+                    {selectedTags.length > 0 && (
+                      <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-xs">
+                        {selectedTags.length}
+                      </Badge>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64 max-h-80 overflow-auto">
                   {selectedTags.length > 0 && (
-                    <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-xs">
-                      {selectedTags.length}
-                    </Badge>
+                    <>
+                      <button
+                        onClick={() => setSelectedTags([])}
+                        className="w-full px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground text-left"
+                      >
+                        Wyczyść filtry ({selectedTags.length})
+                      </button>
+                      <DropdownMenuSeparator />
+                    </>
                   )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64 max-h-80 overflow-auto">
-                {selectedTags.length > 0 && (
-                  <>
-                    <button
-                      onClick={() => setSelectedTags([])}
-                      className="w-full px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground text-left"
-                    >
-                      Wyczyść filtry ({selectedTags.length})
-                    </button>
-                    <DropdownMenuSeparator />
-                  </>
-                )}
-                {availableTags.length === 0 ? (
-                  <div className="px-2 py-3 text-sm text-muted-foreground text-center">Brak tagów</div>
-                ) : (
-                  availableTags.map((tag) => (
-                    <DropdownMenuCheckboxItem
-                      key={tag.id}
-                      checked={selectedTags.includes(tag.id)}
-                      onCheckedChange={(checked) => {
-                        setSelectedTags((prev) => (checked ? [...prev, tag.id] : prev.filter((id) => id !== tag.id)));
-                      }}
-                    >
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-3 h-3 rounded-full shrink-0"
-                          style={{ backgroundColor: tag.color || '#5bb89a' }}
-                        />
-                        <span className="truncate">{tag.name}</span>
-                      </div>
-                    </DropdownMenuCheckboxItem>
-                  ))
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
-      </div>
-
-      {/* Hero Action + Quick Stats */}
-      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12">
-        {/* Hero Action - Nowy zestaw */}
-        <button
-          onClick={() => setIsCreateWizardOpen(true)}
-          disabled={!organizationId}
-          className="group relative overflow-hidden rounded-2xl bg-tint-fill hover:bg-tint-fill-hover p-5 text-left transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 sm:col-span-1 lg:col-span-4"
-          data-testid="set-create-wizard-btn"
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <div className="absolute -top-24 -right-24 w-48 h-48 bg-on-tint/10 rounded-full blur-3xl group-hover:bg-on-tint/20 transition-all duration-500" />
-
-          <div className="relative flex items-center gap-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-on-tint/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
-              <FolderPlus className="h-5 w-5 text-on-tint" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h3 className="text-base font-bold text-on-tint">Nowy zestaw</h3>
-              <p className="text-sm text-on-tint/70">Utwórz program ćwiczeń</p>
-            </div>
-            <Plus className="h-5 w-5 text-on-tint/60 group-hover:text-on-tint transition-colors shrink-0" />
-          </div>
-        </button>
-
-        {/* Quick Stats - Clickable filters */}
-        <div className="grid grid-cols-2 gap-3 sm:col-span-1 lg:col-span-8 lg:grid-cols-4">
-          <button
-            onClick={() => applyFilter('all-templates')}
-            className={cn(
-              'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
-              filter === 'all-templates'
-                ? 'border-primary/40 bg-primary/10 ring-1 ring-primary/20'
-                : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
+                  {availableTags.length === 0 ? (
+                    <div className="px-2 py-3 text-sm text-muted-foreground text-center">Brak tagów</div>
+                  ) : (
+                    availableTags.map((tag) => (
+                      <DropdownMenuCheckboxItem
+                        key={tag.id}
+                        checked={selectedTags.includes(tag.id)}
+                        onCheckedChange={(checked) => {
+                          setSelectedTags((prev) => (checked ? [...prev, tag.id] : prev.filter((id) => id !== tag.id)));
+                        }}
+                      >
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-3 h-3 rounded-full shrink-0"
+                            style={{ backgroundColor: tag.color || '#5bb89a' }}
+                          />
+                          <span className="truncate">{tag.name}</span>
+                        </div>
+                      </DropdownMenuCheckboxItem>
+                    ))
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
-            data-testid="set-filter-all-templates-btn"
-          >
-            <div className="flex items-center gap-2">
-              <FolderKanban
-                className={cn('h-4 w-4', filter === 'all-templates' ? 'text-primary' : 'text-muted-foreground')}
-              />
-              <span
-                className={cn('text-2xl font-bold', filter === 'all-templates' ? 'text-primary' : 'text-foreground')}
-              >
-                {allTemplatesCount}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Wszystkie zestawy źródłowe</p>
-          </button>
+            <Button
+              onClick={() => setIsCreateWizardOpen(true)}
+              disabled={!organizationId}
+              aria-label="Utwórz zestaw. Utwórz program ćwiczeń"
+              data-testid="set-create-wizard-btn"
+            >
+              <Plus aria-hidden="true" />
+              Utwórz zestaw
+            </Button>
+          </>
+        }
+      />
 
-          <button
-            onClick={() => applyFilter('fiziyo-templates')}
-            className={cn(
-              'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
-              filter === 'fiziyo-templates'
-                ? 'border-info/40 bg-info/10 ring-1 ring-info/20'
-                : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
-            )}
-            data-testid="set-filter-fiziyo-templates-btn"
-          >
-            <div className="flex items-center gap-2">
-              <Sparkles
-                className={cn('h-4 w-4', filter === 'fiziyo-templates' ? 'text-info' : 'text-muted-foreground')}
-              />
-              <span
-                className={cn('text-2xl font-bold', filter === 'fiziyo-templates' ? 'text-info' : 'text-foreground')}
-              >
-                {fiziyoTemplatesCount}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Zestawy FiziYo</p>
-          </button>
-
-          <button
-            onClick={() => applyFilter('my-templates')}
-            className={cn(
-              'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
-              filter === 'my-templates'
-                ? 'border-info/40 bg-info/10 ring-1 ring-info/20'
-                : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
-            )}
-            data-testid="set-filter-my-templates-btn"
-          >
-            <div className="flex items-center gap-2">
-              <UserRound
-                className={cn('h-4 w-4', filter === 'my-templates' ? 'text-info' : 'text-muted-foreground')}
-              />
-              <span
-                className={cn('text-2xl font-bold', filter === 'my-templates' ? 'text-info' : 'text-foreground')}
-              >
-                {myTemplatesCount}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Zestawy organizacji</p>
-          </button>
-
-          <button
-            onClick={() => applyFilter('patient-plans')}
-            className={cn(
-              'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
-              filter === 'patient-plans'
-                ? 'border-primary/30 bg-primary/5 ring-1 ring-primary/15'
-                : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
-            )}
-            data-testid="set-filter-patient-plans-btn"
-          >
-            <div className="flex items-center gap-2">
-              <FolderPlus
-                className={cn('h-4 w-4', filter === 'patient-plans' ? 'text-primary' : 'text-muted-foreground')}
-              />
-              <span
-                className={cn('text-2xl font-bold', filter === 'patient-plans' ? 'text-primary' : 'text-foreground')}
-              >
-                {patientPlansCount}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Zestawy spersonalizowane</p>
-          </button>
-        </div>
+      <div role="group" aria-label="Rodzaj zestawów" className="flex gap-6 overflow-x-auto shadow-[inset_0_-0.5px_0_var(--separator)]">
+        {filterTabs.map((tab) => {
+          const isActive = filter === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              aria-pressed={isActive}
+              onClick={() => applyFilter(tab.id)}
+              className={cn(
+                'h-11 shrink-0 whitespace-nowrap text-[15px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
+                isActive
+                  ? 'text-foreground shadow-[inset_0_-2px_0_var(--tint)]'
+                  : 'text-label-secondary hover:text-foreground'
+              )}
+              data-testid={tab.testId}
+            >
+              {tab.label}
+              <span className="ml-1.5 tabular-nums text-label-secondary">{tab.count}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Results info */}
       {(searchQuery || filter !== 'all-templates' || selectedTags.length > 0) && (
-        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-          <span>Wyniki:</span>
-          <Badge variant="secondary" className="text-xs">
-            {filteredSets.length} z {exerciseSets.length}
-          </Badge>
+        <div className="flex flex-wrap items-center gap-2 text-[13px] text-label-secondary">
+          <span aria-live="polite">
+            {filteredSets.length} z {exerciseSets.length} zestawów
+          </span>
 
           {/* Selected tags display */}
           {!HIDE_EXERCISE_TAGS && selectedTags.length > 0 && (
@@ -520,17 +431,17 @@ export default function ExerciseSetsPage() {
           )}
 
           {searchQuery && (
-            <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setSearchQuery('')}>
+            <Button variant="ghost" size="sm" onClick={() => setSearchQuery('')} data-testid="set-search-clear-btn">
               Wyczyść wyszukiwanie
             </Button>
           )}
           {filter !== 'all-templates' && (
-            <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => applyFilter('all-templates')}>
-              Pokaz wszystkie zestawy zrodlowe
+            <Button variant="ghost" size="sm" onClick={() => applyFilter('all-templates')} data-testid="set-filter-reset-btn">
+              Pokaż wszystkie zestawy źródłowe
             </Button>
           )}
           {!HIDE_EXERCISE_TAGS && selectedTags.length > 0 && (
-            <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setSelectedTags([])}>
+            <Button variant="ghost" size="sm" onClick={() => setSelectedTags([])} data-testid="set-tags-clear-btn">
               Wyczyść tagi
             </Button>
           )}
@@ -539,43 +450,39 @@ export default function ExerciseSetsPage() {
 
       {/* Content */}
       {loading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 animate-stagger">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" aria-busy="true">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <Card key={i} className="border-border/40">
-              <Skeleton className="aspect-[4/3] w-full" />
-              <CardContent className="p-4">
-                <Skeleton className="h-5 w-3/4 mb-2" />
-                <Skeleton className="h-4 w-full mb-2" />
+            <div key={i} className="overflow-hidden rounded-card bg-grouped-tertiary">
+              <Skeleton className="aspect-[4/3] w-full rounded-none" />
+              <div className="p-4">
+                <Skeleton className="mb-2 h-5 w-3/4" />
                 <Skeleton className="h-4 w-2/3" />
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ))}
         </div>
       ) : filteredSets.length === 0 ? (
-        <Card className="border-dashed border-border/60">
-          <CardContent className="py-16">
-            <EmptyState
-              icon={FolderKanban}
-              title={searchQuery || filter !== 'all-templates' ? 'Nie znaleziono zestawów' : 'Brak zestawów'}
-              description={
-                searchQuery || filter !== 'all-templates'
-                  ? 'Spróbuj zmienić kryteria wyszukiwania lub filtry'
-                  : 'Utwórz pierwszy zestaw ćwiczeń'
-              }
-              actionLabel={!searchQuery && filter === 'all-templates' ? 'Nowy zestaw' : undefined}
-              onAction={!searchQuery && filter === 'all-templates' ? () => setIsCreateWizardOpen(true) : undefined}
-            />
-          </CardContent>
-        </Card>
+        <div className="rounded-card bg-grouped-tertiary">
+          <EmptyState
+            icon={FolderKanban}
+            title={searchQuery || filter !== 'all-templates' ? 'Brak pasujących zestawów' : 'Nie masz jeszcze zestawów'}
+            description={
+              searchQuery || filter !== 'all-templates'
+                ? 'Zmień wyszukiwanie albo wybierz inny rodzaj zestawów.'
+                : 'Szablon to zestaw, który przypiszesz wielu pacjentom.'
+            }
+            actionLabel={!searchQuery && filter === 'all-templates' ? 'Utwórz zestaw' : undefined}
+            onAction={!searchQuery && filter === 'all-templates' ? () => setIsCreateWizardOpen(true) : undefined}
+          />
+        </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 animate-stagger">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filteredSets.map((set) => (
             <SetCard
               key={set.id}
               set={set}
               className={cn(
-                highlightedSetId === set.id &&
-                  'ring-2 ring-primary/40 shadow-lg shadow-primary/10 transition-shadow duration-300'
+                highlightedSetId === set.id && 'ring-2 ring-tint'
               )}
               tagsMap={tagsMap}
               onView={handleView}
@@ -617,7 +524,7 @@ export default function ExerciseSetsPage() {
         open={!!deletingSet}
         onOpenChange={(open) => !open && setDeletingSet(null)}
         title="Usuń zestaw"
-        description={`Czy na pewno chcesz usunąć zestaw "${deletingSet?.name}"? Ta operacja jest nieodwracalna.`}
+        description={`Zestaw „${deletingSet?.name}” zniknie z listy szablonów. Tej operacji nie można cofnąć.`}
         confirmText="Usuń"
         variant="destructive"
         onConfirm={handleDelete}
@@ -658,6 +565,6 @@ export default function ExerciseSetsPage() {
           onSuccess={() => setAssigningSet(null)}
         />
       )}
-    </div>
+    </PageSheet>
   );
 }
