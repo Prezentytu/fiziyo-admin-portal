@@ -22,6 +22,22 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-10-15 - Etykiety UI to kontrakt z E2E
+
+- **Kategoria**: `Testing`
+- **Problem**: Przebudowa wg canvasu zmieniała widoczne teksty („Przypisz zestaw”, „Wymaga uwagi”), a `fiziyo-tests` szuka przycisków i zakładek po dostępnej nazwie (`getByRole(..., { name })`), nie tylko po `data-testid`.
+- **Przyczyna**: POM-y w `fiziyo-tests/src/pages/*` używają nazw jak „Personalizuj i przypisz zestaw ćwiczeń pacjentowi”, `/Brak aktywności/`, `/Nowy pacjent w systemie/`.
+- **Rozwiązanie**: Nazwy z E2E zostały w `aria-label` (z widocznym tekstem w środku) albo w etykiecie; zmiana tekstów idzie z równoległym PR w `fiziyo-tests`.
+- **Reguła**: Jeśli zmieniasz tekst przycisku, zakładki albo nagłówka, najpierw `git grep` w `fiziyo-tests` na `origin/main`. Zwykły string w Playwright = fragment bez wielkości liter (wielkość liter wolno zmienić), regex i `exact: true` = nie.
+
+### 2026-10-15 - Jeden token koloru nie obsłuży tekstu i wypełnienia w dark
+
+- **Kategoria**: `UI/UX`
+- **Problem**: `@utility text-primary` miał nadpisać kolor tekstu osobno od `bg-primary`; Tailwind v4 pominął go, bo utility z `@theme` wygrywa.
+- **Przyczyna**: W dark zielony, który daje 4.5:1 z białym tekstem (`#307F65`), ma 3.4:1 jako tekst na karcie; nie istnieje jeden odcień spełniający oba warunki.
+- **Rozwiązanie**: `primary` = kolor tekstowy (`tint`), wypełnienia marki = `bg-tint-fill text-on-tint`; analogicznie `status-*` (tekst) i `status-*-fill` (tło pod białym tekstem).
+- **Reguła**: Pełne tło pod białym tekstem zawsze z tokenu `*-fill`, nigdy z tokenu tekstowego. Szczegóły: `docs/design-system.md`.
+
 ### 2026-10-09 - Dokumentacja agentów cytowała usunięte operacje GraphQL
 
 - **Kategoria**: `GraphQL` | `Docs`
