@@ -127,7 +127,7 @@ export function OrganizationsList({
         </button>
 
         {/* Stat Card */}
-        <Card className="rounded-xl border border-border/50 bg-card/30 lg:col-span-4">
+        <Card className="lg:col-span-4">
           <CardContent className="p-4 flex items-center gap-4">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
               <Building2 className="h-5 w-5 text-primary" />
@@ -143,7 +143,7 @@ export function OrganizationsList({
       </div>
 
       {/* Organizations List - Compact with Switch Action */}
-      <Card className="rounded-xl border border-border/50 bg-card/30">
+      <Card>
         <CardContent className="p-4">
           <div className="space-y-3">
             {organizations.map((org) => {

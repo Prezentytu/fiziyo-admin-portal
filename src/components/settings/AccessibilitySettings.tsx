@@ -35,7 +35,7 @@ export function AccessibilitySettings() {
   return (
     <div className="space-y-6">
       {/* Motyw */}
-      <Card className="rounded-xl border border-border/50 bg-card/30">
+      <Card>
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-semibold tracking-tight">Motyw</CardTitle>
           <CardDescription className="text-sm text-muted-foreground">
@@ -114,7 +114,7 @@ export function AccessibilitySettings() {
       </Card>
 
       {/* Rozmiar czcionki */}
-      <Card className="rounded-xl border border-border/50 bg-card/30">
+      <Card>
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-semibold tracking-tight">Rozmiar czcionki</CardTitle>
           <CardDescription className="text-sm text-muted-foreground">
@@ -171,7 +171,7 @@ export function AccessibilitySettings() {
       </Card>
 
       {/* Opcje dostępności */}
-      <Card className="rounded-xl border border-border/50 bg-card/30">
+      <Card>
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-semibold tracking-tight">Opcje dostępności</CardTitle>
           <CardDescription className="text-sm text-muted-foreground">

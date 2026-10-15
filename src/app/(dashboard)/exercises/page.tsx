@@ -3,7 +3,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { useRouter } from 'next/navigation';
-import { Plus, Dumbbell, LayoutGrid, List, Search, Sparkles } from 'lucide-react';
+import { Plus, Dumbbell, LayoutGrid, List, Search } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -40,6 +40,7 @@ import type { AvailableExercisesResponse, ExerciseTagsResponse, TagCategoriesRes
 import { sortExercisesByNewest } from '@/features/exercises/utils/sortExercisesByNewest';
 import { filterExercisesBySearch } from '@/features/exercises/utils/exerciseSearch';
 import { getExerciseDefaultParams } from '@/features/exercise-sets/utils/exerciseDefaults';
+import { PageHeader } from '@/components/shared/page';
 
 // Typ dla filtra źródła ćwiczeń
 type ExerciseSourceFilter = 'all' | 'organization' | 'fiziyo';
@@ -279,163 +280,84 @@ export default function ExercisesPage() {
   return (
     <div className="flex h-full overflow-hidden rounded-card bg-card">
       {/* Left Panel: Strefa Inspiracji (Grid) */}
-      <div className="flex-1 overflow-y-auto p-4 lg:p-6 scroll-smooth custom-scrollbar">
-        <div className="max-w-screen-2xl mx-auto space-y-6">
-          {/* Compact Header with Search + View Toggle */}
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <h1 data-testid="exercise-page-title" className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground">
-              Ćwiczenia
-            </h1>
-            <div className="flex items-center gap-2">
-              {/* Search Input */}
-              <div className="relative w-full sm:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Szukaj ćwiczeń..."
-                  className="pl-9 bg-surface border-border/60"
-                  data-testid="exercise-search-input"
-                />
-              </div>
-              {/* View Toggle - Linear/Figma style */}
-              <div className="flex items-center rounded-lg border border-border/60 bg-surface p-1">
-                <button
-                  onClick={() => setViewMode('grid')}
-                  data-testid="exercise-view-grid-btn"
-                  className={cn(
-                    'p-1.5 rounded-md transition-all duration-200',
-                    viewMode === 'grid'
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-surface-light'
-                  )}
-                  title="Widok siatki"
+      <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-8 sm:py-8 xl:px-11 xl:py-9 scroll-smooth custom-scrollbar [--surface-card:var(--grouped-tertiary)]">
+        <div className="mx-auto flex max-w-[1160px] flex-col gap-6">
+          <PageHeader
+            title="Ćwiczenia"
+            titleTestId="exercise-page-title"
+            subtitle="Twoje ćwiczenia i baza FiziYo"
+            actions={
+              <>
+                <label className="relative w-full sm:w-[280px]">
+                  <span className="sr-only">Szukaj ćwiczeń</span>
+                  <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-label-secondary" aria-hidden="true" />
+                  <Input
+                    type="search"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Szukaj ćwiczeń"
+                    className="pl-10"
+                    data-testid="exercise-search-input"
+                  />
+                </label>
+                <div role="group" aria-label="Widok" className="flex h-9 items-center gap-0.5 rounded-[10px] bg-fill-tertiary p-0.5">
+                  {([
+                    { mode: 'grid', label: 'Widok siatki', Icon: LayoutGrid, testId: 'exercise-view-grid-btn' },
+                    { mode: 'list', label: 'Widok listy', Icon: List, testId: 'exercise-view-list-btn' },
+                  ] as const).map(({ mode, label, Icon, testId }) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => setViewMode(mode)}
+                      aria-pressed={viewMode === mode}
+                      aria-label={label}
+                      title={label}
+                      data-testid={testId}
+                      className={cn(
+                        'flex h-8 w-8 items-center justify-center rounded-[8px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                        viewMode === mode ? 'bg-elevated text-foreground shadow-raised' : 'text-label-secondary hover:text-foreground'
+                      )}
+                    >
+                      <Icon className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                  ))}
+                </div>
+                <Button
+                  onClick={() => setIsDialogOpen(true)}
+                  disabled={!organizationId}
+                  aria-label="Dodaj ćwiczenie. Utwórz własne"
+                  data-testid="exercise-create-btn"
                 >
-                  <LayoutGrid className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => setViewMode('list')}
-                  data-testid="exercise-view-list-btn"
-                  className={cn(
-                    'p-1.5 rounded-md transition-all duration-200',
-                    viewMode === 'list'
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-surface-light'
-                  )}
-                  title="Widok listy"
-                >
-                  <List className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          </div>
+                  <Plus aria-hidden="true" />
+                  Dodaj ćwiczenie
+                </Button>
+              </>
+            }
+          />
 
-          {/* Hero Action + Source Filters */}
-          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12">
-            {/* Hero Action - Dodaj ćwiczenie */}
-            <button
-              onClick={() => setIsDialogOpen(true)}
-              disabled={!organizationId}
-              data-testid="exercise-create-btn"
-              className="group relative overflow-hidden rounded-2xl bg-tint-fill hover:bg-tint-fill-hover p-5 text-left transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 sm:col-span-1 lg:col-span-4"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="absolute -top-24 -right-24 w-48 h-48 bg-on-tint/10 rounded-full blur-3xl group-hover:bg-on-tint/20 transition-all duration-500" />
-
-              <div className="relative flex items-center gap-4">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-on-tint/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
-                  <Plus className="h-5 w-5 text-on-tint" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-base font-bold text-on-tint">Dodaj ćwiczenie</h3>
-                  <p className="text-sm text-on-tint/70">Utwórz własne</p>
-                </div>
-              </div>
-            </button>
-
-            {/* Source Filters - subtelne kafle */}
-            <div className="grid grid-cols-3 gap-3 sm:col-span-1 lg:col-span-8">
-              {/* Wszystkie */}
+          <div role="group" aria-label="Źródło ćwiczeń" className="flex gap-6 overflow-x-auto shadow-[inset_0_-0.5px_0_var(--separator)]">
+            {([
+              { id: 'all', label: 'Wszystkie', count: totalCount, testId: 'exercise-filter-all' },
+              { id: 'organization', label: 'Moje ćwiczenia', count: organizationCount, testId: 'exercise-filter-organization' },
+              { id: 'fiziyo', label: 'Baza FiziYo', count: fiziyoCount, testId: 'exercise-filter-fiziyo' },
+            ] as const).map((tab) => (
               <button
-                onClick={() => setSourceFilter('all')}
-                data-testid="exercise-filter-all"
+                key={tab.id}
+                type="button"
+                aria-pressed={sourceFilter === tab.id}
+                onClick={() => setSourceFilter(tab.id)}
+                data-testid={tab.testId}
                 className={cn(
-                  'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
-                  sourceFilter === 'all'
-                    ? 'border-primary/40 bg-primary/10 ring-1 ring-primary/20'
-                    : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
+                  'h-11 shrink-0 whitespace-nowrap text-[15px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
+                  sourceFilter === tab.id
+                    ? 'text-foreground shadow-[inset_0_-2px_0_var(--tint)]'
+                    : 'text-label-secondary hover:text-foreground'
                 )}
               >
-                <div className="flex items-center gap-2">
-                  <Dumbbell
-                    className={cn('h-4 w-4', sourceFilter === 'all' ? 'text-primary' : 'text-muted-foreground')}
-                  />
-                  <span
-                    className={cn('text-2xl font-bold', sourceFilter === 'all' ? 'text-primary' : 'text-foreground')}
-                  >
-                    {totalCount}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">Wszystkie</p>
+                {tab.label}
+                <span className="ml-1.5 tabular-nums text-label-secondary">{tab.count}</span>
               </button>
-
-              {/* Moje ćwiczenia */}
-              <button
-                onClick={() => setSourceFilter('organization')}
-                data-testid="exercise-filter-organization"
-                className={cn(
-                  'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
-                  sourceFilter === 'organization'
-                    ? 'border-info/40 bg-info/10 ring-1 ring-info/20'
-                    : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
-                )}
-              >
-                <div className="flex items-center gap-2">
-                  <Dumbbell
-                    className={cn(
-                      'h-4 w-4',
-                      sourceFilter === 'organization' ? 'text-info' : 'text-muted-foreground'
-                    )}
-                  />
-                  <span
-                    className={cn(
-                      'text-2xl font-bold',
-                      sourceFilter === 'organization' ? 'text-info' : 'text-foreground'
-                    )}
-                  >
-                    {organizationCount}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">Moje ćwiczenia</p>
-              </button>
-
-              {/* Baza FiziYo */}
-              <button
-                onClick={() => setSourceFilter('fiziyo')}
-                data-testid="exercise-filter-fiziyo"
-                className={cn(
-                  'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
-                  sourceFilter === 'fiziyo'
-                    ? 'border-violet/40 bg-violet/10 ring-1 ring-violet/20'
-                    : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
-                )}
-              >
-                <div className="flex items-center gap-2">
-                  <Sparkles
-                    className={cn('h-4 w-4', sourceFilter === 'fiziyo' ? 'text-violet' : 'text-muted-foreground')}
-                  />
-                  <span
-                    className={cn(
-                      'text-2xl font-bold',
-                      sourceFilter === 'fiziyo' ? 'text-violet' : 'text-foreground'
-                    )}
-                  >
-                    {fiziyoCount}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">Baza FiziYo</p>
-              </button>
-            </div>
+            ))}
           </div>
 
           {/* Results info */}

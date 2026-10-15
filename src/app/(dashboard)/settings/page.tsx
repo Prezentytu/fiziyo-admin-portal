@@ -109,7 +109,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="flex min-h-full overflow-hidden rounded-card bg-card">
+    <div className="flex min-h-full overflow-hidden rounded-card bg-card [--surface-card:var(--grouped-tertiary)]">
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}
@@ -117,7 +117,7 @@ export default function SettingsPage() {
         orientation="vertical"
       >
         {/* Inner Sidebar */}
-        <div className="w-64 border-r border-border/40 bg-transparent flex flex-col shrink-0">
+        <div className="w-64 border-r-[0.5px] border-separator bg-transparent flex flex-col shrink-0">
           <div className="p-6">
             <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground mb-6" data-testid="settings-page-title">
               Ustawienia
@@ -183,7 +183,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 bg-background/30">
+        <div className="flex-1">
           <div className="max-w-4xl mx-auto p-8 lg:p-12 pb-24">
             <TabsContent value="profile" className="mt-0 outline-none">
               <ProfileForm user={userProfile} clerkId={clerkUser?.id || ''} onSuccess={() => refetchUser()} />
@@ -201,7 +201,7 @@ export default function SettingsPage() {
                     onRefresh={() => refetchOrg()}
                   />
                 ) : (
-                  <Card className="rounded-xl border border-border/50 bg-card/30">
+                  <Card>
                     <CardContent className="py-12">
                       <EmptyState
                         icon={Building2}
@@ -219,7 +219,7 @@ export default function SettingsPage() {
                 {organizationId ? (
                   <CatalogBundleImportCard organizationId={organizationId} />
                 ) : (
-                  <Card className="rounded-xl border border-border/50 bg-card/30">
+                  <Card>
                     <CardContent className="py-12">
                       <EmptyState
                         icon={Building2}

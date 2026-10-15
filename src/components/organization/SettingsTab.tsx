@@ -161,7 +161,7 @@ export function SettingsTab({ organization, currentUserRole, isLoading = false, 
 
   return (
     <div className="space-y-6">
-      <Card className="rounded-xl border border-border/50 bg-card/30">
+      <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">

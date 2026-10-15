@@ -13,6 +13,7 @@ import { getMediaUrl } from '@/utils/mediaUrl';
 import { ExerciseDetailsDialog } from './ExerciseDetailsDialog';
 import { filterSetsByQuery, sortSetsForSelection } from './utils/selectSetStepUtils';
 import type { ExerciseSet, AssignedSetInfo, ExerciseMapping } from './types';
+import { formatExerciseCount } from '@/utils/polishPlural';
 
 interface SelectSetStepProps {
   exerciseSets: ExerciseSet[];
@@ -250,7 +251,7 @@ export function SelectSetStep({
                           </Badge>
                         )}
                         <Badge variant="secondary" className="text-[10px] shrink-0">
-                          {exerciseCount} ćw.
+                          {formatExerciseCount(exerciseCount)}
                         </Badge>
                       </div>
                       {set.description && (
@@ -288,7 +289,7 @@ export function SelectSetStep({
               <h3 className="font-semibold text-lg">{previewSet.name}</h3>
               {previewSet.description && <p className="text-sm text-muted-foreground mt-1">{previewSet.description}</p>}
               <div className="flex items-center gap-2 mt-2 flex-wrap">
-                <Badge variant="outline">{previewSet.exerciseMappings?.length || 0} ćwiczeń</Badge>
+                <Badge variant="outline">{formatExerciseCount(previewSet.exerciseMappings?.length || 0)}</Badge>
                 {selectedToUnassign === previewSet.id && <Badge variant="destructive">Wybrany do odpisania</Badge>}
               </div>
               {selectedToUnassign === previewSet.id && onUnassign && (

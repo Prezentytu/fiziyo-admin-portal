@@ -38,7 +38,7 @@ export function BillingStatusBar({ organizationId, className }: Readonly<Billing
   // Loading state
   if (loading) {
     return (
-      <div className={cn('rounded-xl border border-border/40 bg-surface/50 backdrop-blur-sm p-4', className)}>
+      <div className={cn('rounded-[14px] bg-grouped-tertiary px-4 py-3.5', className)}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Skeleton className="h-9 w-9 rounded-lg" />
@@ -76,9 +76,9 @@ export function BillingStatusBar({ organizationId, className }: Readonly<Billing
       href="/finances"
       data-testid="dashboard-billing-status-bar"
       className={cn(
-        'group block rounded-xl border border-border/40 bg-surface/50 backdrop-blur-sm',
-        'p-4 transition-all duration-300',
-        'hover:border-primary/30 hover:bg-surface-light hover:shadow-md',
+        'group block rounded-[14px] bg-grouped-tertiary px-4 py-3.5',
+        'transition-colors duration-150 hover:bg-fill-tertiary',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         className
       )}
     >

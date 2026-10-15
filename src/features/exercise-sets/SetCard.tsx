@@ -20,6 +20,7 @@ import { calculateEstimatedTime } from '@/utils/exerciseTime';
 import { HIDE_EXERCISE_TAGS } from '@/components/shared/exercise';
 import type { ExerciseTag } from '@/types/apollo';
 import { isPatientPlan, isTemplateSet } from '@/features/exercise-sets/utils/setKind';
+import { formatExerciseCount } from '@/utils/polishPlural';
 
 interface ExerciseMapping {
   id: string;
@@ -446,7 +447,7 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
         {/* Metadata: exercise count and estimated time under type (fixed height for grid alignment) */}
         <div className="h-5 flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
           <Dumbbell className="h-3 w-3 shrink-0" />
-          <span>{exerciseCount} ćw</span>
+          <span>{formatExerciseCount(exerciseCount)}</span>
           {estimatedDuration > 0 && (
             <>
               <span className="text-muted-foreground/60">•</span>

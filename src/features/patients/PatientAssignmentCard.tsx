@@ -61,6 +61,7 @@ import {
 } from '@/graphql/mutations/exercises.mutations';
 import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
+import { formatExerciseCount } from '@/utils/polishPlural';
 
 // Types
 export interface Frequency {
@@ -484,7 +485,7 @@ export function PatientAssignmentCard({
                 <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <Dumbbell className="h-3.5 w-3.5" />
-                    {visibleExercises.length} ćwiczeń
+                    {formatExerciseCount(visibleExercises.length)}
                   </span>
                 </div>
                 {assignment.startDate && assignment.endDate && assignment.frequency && (

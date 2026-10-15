@@ -13,6 +13,7 @@ import { calculateEstimatedTime, formatEstimatedTime } from '@/utils/exerciseTim
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { sendExerciseReport } from '@/services/exerciseReportService';
 import type { ExerciseSet, Patient, Frequency, ExerciseOverride, ExerciseMapping, LocalExerciseMapping } from './types';
+import { formatExerciseCount } from '@/utils/polishPlural';
 
 interface SummaryStepProps {
   exerciseSet: ExerciseSet;
@@ -184,7 +185,7 @@ export function SummaryStep({
               <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5 flex-wrap">
                 <span>&ldquo;{exerciseSet.name}&rdquo;</span>
                 <span>•</span>
-                <span>{exerciseCount} ćwiczeń</span>
+                <span>{formatExerciseCount(exerciseCount)}</span>
                 <span>•</span>
                 <span className="inline-flex items-center gap-1 text-primary font-semibold bg-primary/10 px-1.5 py-0.5 rounded">
                   <Clock className="h-3 w-3" />

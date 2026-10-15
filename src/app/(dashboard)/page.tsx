@@ -50,6 +50,7 @@ import {
   type PatientActivityStatus,
 } from '@/features/patients/utils/patientActivityStatus';
 import { getPremiumQueue } from '@/features/patients/utils/premiumQueue';
+import { formatExerciseCount } from '@/utils/polishPlural';
 
 interface ExerciseSetItem {
   id: string;
@@ -494,7 +495,7 @@ export default function DashboardPage() {
                   <SetThumbnail exerciseMappings={set.exerciseMappings} size="sm" />
                   <span className="flex min-w-0 flex-1 flex-col">
                     <span className="truncate text-[15px] font-semibold text-foreground">{set.name}</span>
-                    <span className="text-[13px] text-label-secondary">{set.exerciseMappings?.length || 0} ćwiczeń</span>
+                    <span className="text-[13px] text-label-secondary">{formatExerciseCount(set.exerciseMappings?.length || 0)}</span>
                   </span>
                 </Link>
                 <Button
