@@ -359,7 +359,7 @@ export function ClinicalNoteEditor({
         <Button
           onClick={handleSave}
           disabled={isLoading}
-          className="gap-2 bg-tint-fill text-on-tint hover:bg-primary-dark"
+          className="gap-2"
           data-testid="clinical-note-save-btn"
         >
           {saveStatus === 'saving' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}

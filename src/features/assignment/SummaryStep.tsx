@@ -292,7 +292,7 @@ export function SummaryStep({
               </div>
               <textarea
                 data-testid="summary-concierge-textarea"
-                className="w-full bg-black/40 border border-status-warning/30 rounded-lg p-2.5 sm:p-3 text-sm text-on-tint placeholder-status-warning focus:border-status-warning outline-none resize-none min-h-[80px] max-h-[120px]"
+                className="w-full bg-fill-tertiary border border-status-warning/30 rounded-control p-2.5 sm:p-3 text-sm text-foreground placeholder:text-label-tertiary focus:border-status-warning outline-none resize-none min-h-[80px] max-h-[120px]"
                 placeholder="Np. 'W ćwiczeniu Bird Dog zdjęcie jest niewyraźne, proszę o poprawę'..."
                 value={feedback}
                 onChange={(e) => setFeedback(e.target.value)}

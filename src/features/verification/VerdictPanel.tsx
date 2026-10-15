@@ -362,7 +362,7 @@ export function VerdictPanel({
                 Zgłoszone ({reportContext.count})
               </p>
               <p className="mt-1 text-xs text-status-warning">{reportContext.reasonCategory}</p>
-              <p className="mt-1 text-xs text-on-tint">{reportContext.description}</p>
+              <p className="mt-1 text-xs text-foreground">{reportContext.description}</p>
               <p className="mt-1 text-[10px] text-status-warning">
                 {reportContext.reporterName || 'Terapeuta'} • {reportContext.routingTarget}
               </p>

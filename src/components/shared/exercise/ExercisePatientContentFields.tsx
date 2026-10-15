@@ -73,7 +73,7 @@ export function ExercisePatientContentFields({
           className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-status-warning/30 bg-status-warning-muted px-3 py-2"
           data-testid={`${testIdPrefix}-personalized-banner`}
         >
-          <p className="text-[11px] text-status-warning dark:text-on-tint">
+          <p className="text-[11px] text-status-warning">
             Zmienione dla tego planu ({overriddenPaths.length})
           </p>
           <Button

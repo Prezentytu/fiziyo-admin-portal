@@ -177,7 +177,7 @@ export function ReviewerAchievements({
         {stats.currentStreak >= 3 && (
           <div className="mt-4 flex items-center gap-2 p-2 rounded-lg bg-status-warning-muted border border-status-warning/20">
             <Flame className="h-4 w-4 text-status-warning shrink-0" />
-            <p className="text-xs text-on-tint">🔥 Świetna passa! {stats.currentStreak} dni aktywnej weryfikacji!</p>
+            <p className="text-xs text-foreground">🔥 Świetna passa! {stats.currentStreak} dni aktywnej weryfikacji!</p>
           </div>
         )}
       </CardContent>
