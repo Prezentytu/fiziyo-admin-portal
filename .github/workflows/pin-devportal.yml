@@ -12,12 +12,40 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Vercel zapisuje w deployment.ref SHA, a github.ref jest wtedy puste, więc żadne z nich nie podaje gałęzi.
+  # Bramka bez sekretów sprawdza w API, czy wdrożony commit jest w main (jak e2e-trigger.yml).
+  czy-main:
+    if: github.event_name == 'deployment_status' && github.event.deployment_status.state == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      w-main: ${{ steps.porownanie.outputs.w-main }}
+    steps:
+      - id: porownanie
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.event.deployment.sha }}
+        run: |
+          [[ "$SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "w-main=false" >> "$GITHUB_OUTPUT"; exit 0; }
+          status=$(gh api "repos/${GITHUB_REPOSITORY}/compare/${SHA}...main" --jq .status)
+          if [[ "$status" == "ahead" || "$status" == "identical" ]]; then w=true; else w=false; fi
+          echo "compare ${SHA:0:7}...main: $status"
+          echo "w-main=$w" >> "$GITHUB_OUTPUT"
+
   pin:
-    if: github.event_name == 'workflow_dispatch' || github.event.deployment_status.state == 'success'
+    needs: czy-main
+    # Tylko wdrożenia z main: preview innych gałęzi (np. skrzynka/*) nie uruchamiają kroku z tokenem Vercel.
+    if: >-
+      always() &&
+      (github.event_name == 'workflow_dispatch' || needs.czy-main.outputs.w-main == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      # deployment_status checkoutuje domyślnie commit wdrożenia (także preview gałęzi skrzynka/* z kodem modelu);
+      # skrypt z tokenem Vercel zawsze z main.
       - uses: actions/checkout@v7
+        with:
+          ref: main
 
       - uses: actions/setup-node@v7
         with:
