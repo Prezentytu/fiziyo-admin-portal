@@ -40,9 +40,9 @@ Pięć etapów w stałej kolejności: **Materiał → Parametry → Instrukcja �
 | Czas utrzymania        | 300 s | 10–60 s  | 30 s    |
 | Przerwa między seriami | 600 s | 30–120 s | 60 s    |
 
-Czas ćwiczenia = serie × praca × (2 przy „Na każdą stronę”) + (serie − 1) × przerwa, gdzie praca = powtórzenia × czas powtórzenia (pusty = 3 s) albo czas utrzymania. Powyżej 15 min ostrzeżenie, powyżej 60 min blokada.
+Czas ćwiczenia liczy `calculateExerciseTotalSeconds` (`src/utils/exerciseTime.ts`), ten sam wzór co katalog i player: czas powtórzenia → `duration` jako czas serii → tempo → 3 s, plus mikroprzerwy między powtórzeniami, przerwy między seriami, czas przygotowania i ×2 przy „Na każdą stronę”. Powyżej 15 min ostrzeżenie („Tak ma być” wiąże się z liczbą sekund; każda zmiana czasu otwiera je ponownie), powyżej 60 min blokada.
 
-Poziomy: powyżej limitu albo brak wymaganej wartości = „Do poprawy” (blokuje, bez „Tak ma być”); poza typowym zakresem = „Sprawdź” (popraw albo „Tak ma być”, potwierdzenie żyje w sesji). Tryb „Utrzymanie pozycji” = 1 powtórzenie + `executionTime` jako czas utrzymania.
+Poziomy: powyżej limitu albo brak wymaganej wartości = „Do poprawy” (blokuje, bez „Tak ma być”); poza typowym zakresem = „Sprawdź” (popraw albo „Tak ma być”, potwierdzenie żyje w sesji). Tryb „Utrzymanie pozycji” = 1 powtórzenie + `executionTime` jako czas utrzymania (albo legacy `duration` bez `executionTime`); puste powtórzenia z czasem powtórzenia to tryb powtórzeń. Przełączenie trybu nie zapisuje połowicznych wartości i da się je cofnąć.
 
 ### Decyzje
 
