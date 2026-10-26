@@ -1,3 +1,5 @@
+import type { ContentStatus } from '@/graphql/types/adminExercise.types';
+
 import type { ParameterEvaluation } from './parameterRules';
 
 export const VERIFICATION_STAGES = ['material', 'parameters', 'instruction', 'safety', 'decision'] as const;
@@ -140,4 +142,11 @@ export function pluralizePl(count: number, one: string, few: string, many: strin
 
 export function formatStageCount(count: number): string {
   return pluralizePl(count, 'etap', 'etapy', 'etapów');
+}
+
+const DECIDED_STATUSES: ReadonlySet<ContentStatus> = new Set(['PUBLISHED', 'ARCHIVED_GLOBAL']);
+
+/** Publish and „To duplikat” only make sense before the exercise is in (or withdrawn from) the database. */
+export function canDecideOnExercise(status: ContentStatus): boolean {
+  return !DECIDED_STATUSES.has(status);
 }

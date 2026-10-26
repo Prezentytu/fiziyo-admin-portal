@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { evaluateParameters } from '../parameterRules';
 import {
+  canDecideOnExercise,
   computeVerificationStages,
   formatStageCount,
   parseStopIf,
@@ -84,5 +85,36 @@ describe('formatStageCount', () => {
     expect(formatStageCount(5)).toBe('5 etapów');
     expect(formatStageCount(12)).toBe('12 etapów');
     expect(formatStageCount(22)).toBe('22 etapy');
+  });
+});
+
+describe('długie ćwiczenie potwierdzone „Tak ma być”', () => {
+  it('nie blokuje publikacji po potwierdzeniu', () => {
+    const longExercise = { sets: 5, reps: 20, repTime: 6, hold: null, rest: 120 };
+    const open = computeVerificationStages({
+      ...readyInput,
+      parameters: evaluateParameters({ values: longExercise, mode: 'reps', side: 'both' }),
+    });
+    expect(open.canPublish).toBe(false);
+
+    const acknowledged = computeVerificationStages({
+      ...readyInput,
+      parameters: evaluateParameters({
+        values: longExercise,
+        mode: 'reps',
+        side: 'both',
+        acknowledged: new Set(['session']),
+      }),
+    });
+    expect(acknowledged.canPublish).toBe(true);
+  });
+});
+
+describe('canDecideOnExercise', () => {
+  it('nie pozwala publikować ani oznaczać duplikatu ćwiczenia, które jest już w bazie', () => {
+    expect(canDecideOnExercise('PUBLISHED')).toBe(false);
+    expect(canDecideOnExercise('ARCHIVED_GLOBAL')).toBe(false);
+    expect(canDecideOnExercise('PENDING_REVIEW')).toBe(true);
+    expect(canDecideOnExercise('CHANGES_REQUESTED')).toBe(true);
   });
 });

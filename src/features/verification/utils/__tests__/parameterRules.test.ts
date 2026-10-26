@@ -78,7 +78,28 @@ describe('evaluateParameters', () => {
 
     expect(result.sessionSeconds).toBe(5 * 20 * 6 * 2 + 4 * 120);
     expect(result.sessionLevel).toBe('warning');
-    expect(result.findings.at(-1)).toMatchObject({ key: 'session', canAcknowledge: false });
+    expect(result.findings.at(-1)).toMatchObject({ key: 'session', canAcknowledge: true });
+    expect(result.blockingCount).toBe(0);
+
+    const acknowledged = evaluateParameters({
+      values: { sets: 5, reps: 20, repTime: 6, hold: null, rest: 120 },
+      mode: 'reps',
+      side: 'both',
+      acknowledged: new Set(['session']),
+    });
+    expect(acknowledged.findings).toEqual([]);
+  });
+
+  it('ćwiczenia ponad godzinę nie da się potwierdzić „Tak ma być”', () => {
+    const result = evaluateParameters({
+      values: { sets: 20, reps: 20, repTime: 10, hold: null, rest: 120 },
+      mode: 'reps',
+      side: 'none',
+      acknowledged: new Set(['session']),
+    });
+
+    expect(result.sessionLevel).toBe('limit');
+    expect(result.findings.at(-1)).toMatchObject({ key: 'session', level: 'limit', canAcknowledge: false });
   });
 });
 

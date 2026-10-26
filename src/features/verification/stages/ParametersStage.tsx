@@ -19,6 +19,7 @@ import {
   buildPatientParameterLine,
   formatSessionDuration,
   sideFactor,
+  type AcknowledgeKey,
   type ExecutionMode,
   type ParameterEvaluation,
   type ParameterFieldState,
@@ -35,7 +36,7 @@ interface ParametersStageProps {
   descriptionNumbers: string[];
   onModeChange: (mode: ExecutionMode) => void;
   onValueChange: (key: ParameterKey, value: number | null) => void;
-  onAcknowledge: (key: ParameterKey) => void;
+  onAcknowledge: (key: AcknowledgeKey) => void;
   onFixDescription: () => void;
   onAcknowledgeDescription: () => void;
   onCoreFieldChange: <K extends keyof ExerciseCoreDraft>(field: K, value: ExerciseCoreDraft[K]) => void;
@@ -191,13 +192,13 @@ export function ParametersStage({
                     Ustaw {withUnit(finding.suggested, unit)}
                   </Button>
                 )}
-                {suggestedKey && finding.canAcknowledge && (
+                {finding.canAcknowledge && (
                   <Button
                     type="button"
                     size="sm"
                     variant="ghost"
-                    onClick={() => onAcknowledge(suggestedKey)}
-                    data-testid={`verification-param-${suggestedKey}-ack-btn`}
+                    onClick={() => onAcknowledge(finding.key)}
+                    data-testid={`verification-param-${finding.key}-ack-btn`}
                   >
                     Tak ma być
                   </Button>

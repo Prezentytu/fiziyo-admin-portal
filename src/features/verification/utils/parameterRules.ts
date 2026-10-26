@@ -6,6 +6,9 @@ export type ParameterLevel = 'ok' | 'empty' | 'default' | 'warning' | 'acknowled
 
 export type FindingLevel = 'limit' | 'warning';
 
+/** What the therapist can confirm with „Tak ma być”: an unusual field or a long (not over-limit) exercise. */
+export type AcknowledgeKey = ParameterKey | 'session';
+
 export interface ParameterRule {
   label: string;
   unit: string;
@@ -152,7 +155,7 @@ function isEmpty(key: ParameterKey, value: number | null): boolean {
 function evaluateField(
   key: ParameterKey,
   values: ParameterValues,
-  acknowledged: ReadonlySet<ParameterKey>
+  acknowledged: ReadonlySet<AcknowledgeKey>
 ): { field: ParameterFieldState; finding: ParameterFinding | null } {
   const rule = PARAMETER_RULES[key];
   const value = values[key];
@@ -211,14 +214,14 @@ export interface EvaluateParametersInput {
   values: ParameterValues;
   mode: ExecutionMode;
   side: string;
-  acknowledged?: ReadonlySet<ParameterKey>;
+  acknowledged?: ReadonlySet<AcknowledgeKey>;
 }
 
 export function evaluateParameters({
   values,
   mode,
   side,
-  acknowledged = new Set<ParameterKey>(),
+  acknowledged = new Set<AcknowledgeKey>(),
 }: EvaluateParametersInput): ParameterEvaluation {
   const fields: ParameterFieldState[] = [];
   const findings: ParameterFinding[] = [];
@@ -234,12 +237,13 @@ export function evaluateParameters({
   if (sessionSeconds > SESSION_LIMIT_SECONDS) sessionLevel = 'limit';
   else if (sessionSeconds > SESSION_WARNING_SECONDS) sessionLevel = 'warning';
 
-  if (sessionLevel !== 'ok') {
+  const isSessionAcknowledged = sessionLevel === 'warning' && acknowledged.has('session');
+  if (sessionLevel !== 'ok' && !isSessionAcknowledged) {
     findings.push({
       key: 'session',
       level: sessionLevel,
       text: `Całe ćwiczenie trwałoby około ${formatSessionDuration(sessionSeconds)}. W planie to zwykle 3–10 min.`,
-      canAcknowledge: false,
+      canAcknowledge: sessionLevel === 'warning',
     });
   }
 

@@ -62,13 +62,16 @@ import {
   formatSessionDuration,
   replaceHardcodedNumbers,
   toParameterValues,
+  type AcknowledgeKey,
   type ExecutionMode,
   type ParameterKey,
 } from './utils/parameterRules';
+import { validatePhotoFile } from './utils/photoValidation';
 import { keepExistingImages, replaceLinkedImage } from './utils/stepMedia';
 import {
   STAGE_TITLES,
   VERIFICATION_STAGES,
+  canDecideOnExercise,
   computeVerificationStages,
   formatStageCount,
   parseStopIf,
@@ -77,7 +80,6 @@ import {
 } from './utils/verificationStages';
 
 const MAX_PHOTOS = 5;
-const MAX_PHOTO_SIZE = 10 * 1024 * 1024;
 const HOLD_MIN_SECONDS = 10;
 
 const PRIMARY_LABELS: Record<VerificationStageKey, string> = {
@@ -221,7 +223,7 @@ export function VerificationWorkspace({
   const [stage, setStage] = useState<VerificationStageKey>('material');
   const [visited, setVisited] = useState<ReadonlySet<VerificationStageKey>>(() => new Set(['material']));
   const [mode, setMode] = useState<ExecutionMode>(() => deriveExecutionMode(core));
-  const [acknowledged, setAcknowledged] = useState<ReadonlySet<ParameterKey>>(() => new Set());
+  const [acknowledged, setAcknowledged] = useState<ReadonlySet<AcknowledgeKey>>(() => new Set());
   const [descriptionAcknowledged, setDescriptionAcknowledged] = useState(false);
   const [proposal, setProposal] = useState<InstructionProposal | null>(null);
   const [isGeneratingProposal, setIsGeneratingProposal] = useState(false);
@@ -390,9 +392,10 @@ export function VerificationWorkspace({
         if (core.reps !== 1) setCoreField('reps', 1);
       }
       setAcknowledged((previous) => {
-        if (!previous.has(key)) return previous;
+        if (!previous.has(key) && !previous.has('session')) return previous;
         const next = new Set(previous);
         next.delete(key);
+        next.delete('session');
         return next;
       });
     },
@@ -493,12 +496,9 @@ export function VerificationWorkspace({
       const index = photoDialogIndex;
       setPhotoDialogIndex(null);
       if (index == null) return;
-      if (!file.type.startsWith('image/')) {
-        toast.error(`Plik ${file.name} nie jest obrazem`);
-        return;
-      }
-      if (file.size > MAX_PHOTO_SIZE) {
-        toast.error(`Plik ${file.name} przekracza limit 10 MB`);
+      const photoError = validatePhotoFile(file);
+      if (photoError) {
+        toast.error(photoError);
         return;
       }
       await replacePhotoAt(index, await fileToDataUrl(file));
@@ -511,15 +511,9 @@ export function VerificationWorkspace({
       const slots = Math.max(0, MAX_PHOTOS - photos.length);
       const accepted = Array.from(fileList)
         .filter((file) => {
-          if (!file.type.startsWith('image/')) {
-            toast.error(`Plik ${file.name} nie jest obrazem`);
-            return false;
-          }
-          if (file.size > MAX_PHOTO_SIZE) {
-            toast.error(`Plik ${file.name} przekracza limit 10 MB`);
-            return false;
-          }
-          return true;
+          const photoError = validatePhotoFile(file);
+          if (photoError) toast.error(photoError);
+          return photoError === null;
         })
         .slice(0, slots);
       if (accepted.length === 0) return;
@@ -593,8 +587,10 @@ export function VerificationWorkspace({
   // HANDLERS: decisions
   // ============================================
 
+  const canDecide = canDecideOnExercise(exercise.status);
+
   const handlePublish = useCallback(async () => {
-    if (!stages.canPublish) return;
+    if (!canDecide || !stages.canPublish) return;
     setIsLeaving(true);
     try {
       await flush();
@@ -607,10 +603,11 @@ export function VerificationWorkspace({
       toast.error('Nie udało się zatwierdzić ćwiczenia');
       setIsLeaving(false);
     }
-  }, [approveExercise, exercise.id, flush, leaveToNext, resolveReports, stages.canPublish]);
+  }, [approveExercise, canDecide, exercise.id, flush, leaveToNext, resolveReports, stages.canPublish]);
 
   const handleMarkDuplicate = useCallback(
     async (target: DuplicateTarget) => {
+      if (!canDecide) return;
       setIsLeaving(true);
       const notes = `To ćwiczenie jest już w bazie jako „${target.name}” (ID: ${target.id}).`;
       try {
@@ -628,7 +625,7 @@ export function VerificationWorkspace({
         setIsLeaving(false);
       }
     },
-    [exercise.id, flush, leaveToNext, rejectExercise, resolveReports]
+    [canDecide, exercise.id, flush, leaveToNext, rejectExercise, resolveReports]
   );
 
   const handleSkip = useCallback(() => {
@@ -640,17 +637,18 @@ export function VerificationWorkspace({
   }, [flush]);
 
   const currentIssues = stages.issues[stage];
-  const isPrimaryBlocked = stage === 'decision' ? !stages.canPublish : currentIssues.length > 0;
+  const isPrimaryBlocked = stage === 'decision' ? canDecide && !stages.canPublish : currentIssues.length > 0;
 
   const handlePrimary = useCallback(() => {
     if (isPrimaryBlocked || isLeaving) return;
     if (stage === 'decision') {
-      void handlePublish();
+      if (canDecide) void handlePublish();
+      else handleSkip();
       return;
     }
     const nextStage = VERIFICATION_STAGES[VERIFICATION_STAGES.indexOf(stage) + 1];
     if (nextStage) goToStage(nextStage);
-  }, [goToStage, handlePublish, isLeaving, isPrimaryBlocked, stage]);
+  }, [canDecide, goToStage, handlePublish, handleSkip, isLeaving, isPrimaryBlocked, stage]);
 
   const isDialogOpen = photoDialogIndex !== null || isDuplicateOpen;
 
@@ -696,11 +694,15 @@ export function VerificationWorkspace({
           ? 'Brak objawów przerwania'
           : `Do poprawy: ${stages.issues.safety.length}`
         : pluralizePl(stopIfCount, 'objaw przerwania', 'objawy przerwania', 'objawów przerwania'),
-    decision: stages.canPublish ? 'Zatwierdź' : `Do poprawy: ${formatStageCount(stages.openStages.length)}`,
+    decision: !canDecide
+      ? 'Już w bazie'
+      : stages.canPublish
+        ? 'Zatwierdź'
+        : `Do poprawy: ${formatStageCount(stages.openStages.length)}`,
   };
 
   const navItems: StageNavItem[] = VERIFICATION_STAGES.map((key) => {
-    const hasIssues = key === 'decision' ? !stages.canPublish : stages.issues[key].length > 0;
+    const hasIssues = key === 'decision' ? canDecide && !stages.canPublish : stages.issues[key].length > 0;
     let state: StageNavState = 'todo';
     if (key === stage) state = 'current';
     else if (visited.has(key)) state = hasIssues ? 'problem' : 'done';
@@ -727,9 +729,11 @@ export function VerificationWorkspace({
       ? 'Wstaw propozycję agenta albo ją pomiń.'
       : (stages.issues.instruction[0]?.text ?? 'Przeczytaj opis oczami pacjenta.'),
     safety: stages.issues.safety[0]?.text ?? 'Sprawdź objawy i przeciwwskazania.',
-    decision: stages.canPublish
-      ? `Trafi do bazy z podpisem: ${user?.fullName ?? 'Twoje konto'}.`
-      : `Najpierw popraw: ${stages.openStages.map((key) => STAGE_TITLES[key]).join(', ')}.`,
+    decision: !canDecide
+      ? 'Ćwiczenie jest już w bazie. Poprawki zapisują się od razu.'
+      : stages.canPublish
+        ? `Trafi do bazy z podpisem: ${user?.fullName ?? 'Twoje konto'}.`
+        : `Najpierw popraw: ${stages.openStages.map((key) => STAGE_TITLES[key]).join(', ')}.`,
   };
 
   const decisionRows: DecisionRow[] = [
@@ -962,11 +966,11 @@ export function VerificationWorkspace({
       <VerificationFloatingBar
         hint={hints[stage]}
         isBlocked={isPrimaryBlocked}
-        primaryLabel={PRIMARY_LABELS[stage]}
+        primaryLabel={stage === 'decision' && !canDecide ? 'Gotowe, dalej' : PRIMARY_LABELS[stage]}
         onPrimary={handlePrimary}
         isBusy={isLeaving || approving || rejecting}
-        secondaryLabel="To duplikat"
-        onSecondary={() => setIsDuplicateOpen(true)}
+        secondaryLabel={canDecide ? 'To duplikat' : undefined}
+        onSecondary={canDecide ? () => setIsDuplicateOpen(true) : undefined}
       />
 
       <PhotoReplaceDialog
