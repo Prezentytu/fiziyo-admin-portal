@@ -48,7 +48,7 @@ import { PhotoReplaceDialog } from './stages/PhotoReplaceDialog';
 import { SafetyStage } from './stages/SafetyStage';
 import { VerificationFloatingBar } from './stages/VerificationFloatingBar';
 import { VerificationStageNav, type StageNavItem, type StageNavState } from './stages/VerificationStageNav';
-import { summarizeChanges, type ChangeSnapshot } from './utils/changeSummary';
+import { summarizeChanges, toChangeSnapshot } from './utils/changeSummary';
 import {
   applyInstructionProposal,
   buildInstructionProposal,
@@ -335,39 +335,10 @@ export function VerificationWorkspace({
     ]
   );
 
-  const [initialSnapshot] = useState<ChangeSnapshot>(() => ({
-    name: core.name,
-    patientDescription: core.patientDescription,
-    therapistDescription: core.clinicalDescription,
-    sets: core.sets,
-    reps: core.reps,
-    executionTime: core.executionTime,
-    restSets: core.restSets,
-    side: core.side,
-    videoUrl: core.videoUrl,
-    imageCount: photos.length,
-    enrichment,
-  }));
+  const [initialSnapshot] = useState(() => toChangeSnapshot(core, photos.length, enrichment));
 
   const changes = useMemo(
-    () =>
-      summarizeChanges(
-        initialSnapshot,
-        {
-          name: core.name,
-          patientDescription: core.patientDescription,
-          therapistDescription: core.clinicalDescription,
-          sets: core.sets,
-          reps: core.reps,
-          executionTime: core.executionTime,
-          restSets: core.restSets,
-          side: core.side,
-          videoUrl: core.videoUrl,
-          imageCount: photos.length,
-          enrichment,
-        },
-        replacedPhotoCount
-      ),
+    () => summarizeChanges(initialSnapshot, toChangeSnapshot(core, photos.length, enrichment), replacedPhotoCount),
     [initialSnapshot, core, photos.length, enrichment, replacedPhotoCount]
   );
 
@@ -640,7 +611,7 @@ export function VerificationWorkspace({
       await flush();
       await approveExercise({ variables: { exerciseId: exercise.id, reviewNotes: null } });
       toast.success('Ćwiczenie zatwierdzone i opublikowane');
-      await resolveReports('Poprawione i opublikowane w weryfikacji');
+      void resolveReports('Poprawione i opublikowane w weryfikacji');
       leaveToNext();
     } catch (error) {
       console.error('Błąd zatwierdzania:', error);
@@ -660,7 +631,7 @@ export function VerificationWorkspace({
           variables: { exerciseId: exercise.id, rejectionReason: 'POTENTIAL_DUPLICATE', notes },
         });
         toast.success(`Oznaczono jako duplikat „${target.name}”`);
-        await resolveReports(notes);
+        void resolveReports(notes);
         setIsDuplicateOpen(false);
         leaveToNext();
       } catch (error) {
@@ -680,8 +651,9 @@ export function VerificationWorkspace({
     void flush().then(() => toast.success('Zmiany zapisane'));
   }, [flush]);
 
-  const currentIssues = stages.issues[stage];
-  const isPrimaryBlocked = stage === 'decision' ? canDecide && !stages.canPublish : currentIssues.length > 0;
+  const stageHasIssues = (key: VerificationStageKey) =>
+    key === 'decision' ? canDecide && !stages.canPublish : stages.issues[key].length > 0;
+  const isPrimaryBlocked = stageHasIssues(stage);
 
   const handlePrimary = useCallback(() => {
     if (isPrimaryBlocked || isLeaving) return;
@@ -699,7 +671,6 @@ export function VerificationWorkspace({
   useVerificationHotkeys({
     onApproveAndNext: handlePrimary,
     onSaveDraft: handleSave,
-    canApprove: !isPrimaryBlocked,
     enabled: !isDialogOpen,
   });
 
@@ -746,7 +717,7 @@ export function VerificationWorkspace({
   };
 
   const navItems: StageNavItem[] = VERIFICATION_STAGES.map((key) => {
-    const hasIssues = key === 'decision' ? canDecide && !stages.canPublish : stages.issues[key].length > 0;
+    const hasIssues = stageHasIssues(key);
     let state: StageNavState = 'todo';
     if (key === stage) state = 'current';
     else if (visited.has(key)) state = hasIssues ? 'problem' : 'done';

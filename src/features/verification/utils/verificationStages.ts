@@ -1,4 +1,5 @@
 import type { ContentStatus } from '@/graphql/types/adminExercise.types';
+import { polishPlural } from '@/utils/polishPlural';
 
 import type { ParameterEvaluation } from './parameterRules';
 
@@ -131,13 +132,9 @@ export function serializeStopIf(entries: string[]): string {
     .join('\n');
 }
 
-/** Polish plural: 1 etap, 2–4 etapy, 5+ etapów (12–14 use the "many" form). */
+/** Count with its Polish noun form, e.g. „3 etapy”. */
 export function pluralizePl(count: number, one: string, few: string, many: string): string {
-  const lastDigit = count % 10;
-  const lastTwoDigits = count % 100;
-  if (count === 1) return `${count} ${one}`;
-  if (lastDigit >= 2 && lastDigit <= 4 && (lastTwoDigits < 12 || lastTwoDigits > 14)) return `${count} ${few}`;
-  return `${count} ${many}`;
+  return `${count} ${polishPlural(count, one, few, many)}`;
 }
 
 export function formatStageCount(count: number): string {

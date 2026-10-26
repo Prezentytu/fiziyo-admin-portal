@@ -34,7 +34,6 @@ describe('evaluateParameters', () => {
     const result = evaluateParameters({ values: typicalReps, mode: 'reps', side: 'none' });
 
     expect(result.findings).toEqual([]);
-    expect(result.openCount).toBe(0);
     expect(result.fields.map((field) => field.level)).toEqual(['ok', 'ok', 'ok', 'ok']);
   });
 

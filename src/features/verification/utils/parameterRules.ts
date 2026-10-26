@@ -81,8 +81,6 @@ export interface ParameterEvaluation {
   sessionLevel: 'ok' | FindingLevel;
   /** Findings that must be fixed (cannot be acknowledged). */
   blockingCount: number;
-  /** Findings still open: blocking ones plus unacknowledged warnings. */
-  openCount: number;
 }
 
 function positive(value: number | null | undefined): number | null {
@@ -213,7 +211,7 @@ export function formatSessionDuration(seconds: number): string {
   return `${Math.max(1, Math.round(seconds / 60))} min`;
 }
 
-function formatWithUnit(value: number, unit: string): string {
+export function formatWithUnit(value: number, unit: string): string {
   return unit ? `${value} ${unit}` : String(value);
 }
 
@@ -336,7 +334,6 @@ export function evaluateParameters({
     sessionSeconds,
     sessionLevel,
     blockingCount,
-    openCount: findings.length,
   };
 }
 

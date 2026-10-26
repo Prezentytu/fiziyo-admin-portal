@@ -1,4 +1,4 @@
-import { SIDE_OPTIONS } from '@/components/shared/exercise/fieldContract';
+import { formatExerciseSideLabel } from '@/utils/exerciseSideLabels';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import { parseStopIf, type VerificationStageKey } from './verificationStages';
 
@@ -16,6 +16,38 @@ export interface ChangeSnapshot {
   enrichment: ExerciseEnrichmentData;
 }
 
+export interface ChangeSnapshotSource {
+  name: string;
+  patientDescription: string;
+  clinicalDescription: string;
+  sets: number | null;
+  reps: number | null;
+  executionTime: number | null;
+  restSets: number | null;
+  side: string;
+  videoUrl: string;
+}
+
+export function toChangeSnapshot(
+  core: ChangeSnapshotSource,
+  imageCount: number,
+  enrichment: ExerciseEnrichmentData
+): ChangeSnapshot {
+  return {
+    name: core.name,
+    patientDescription: core.patientDescription,
+    therapistDescription: core.clinicalDescription,
+    sets: core.sets,
+    reps: core.reps,
+    executionTime: core.executionTime,
+    restSets: core.restSets,
+    side: core.side,
+    videoUrl: core.videoUrl,
+    imageCount,
+    enrichment,
+  };
+}
+
 type ChangeStage = Exclude<VerificationStageKey, 'decision'>;
 
 const NUMBER_LABELS: Array<{ key: 'sets' | 'reps' | 'executionTime' | 'restSets'; label: string; unit: string }> = [
@@ -27,10 +59,6 @@ const NUMBER_LABELS: Array<{ key: 'sets' | 'reps' | 'executionTime' | 'restSets'
 
 function formatNumber(value: number | null, unit: string): string {
   return value == null ? 'puste' : `${value}${unit}`;
-}
-
-function sideLabel(value: string): string {
-  return SIDE_OPTIONS.find((option) => option.value === value)?.label ?? value;
 }
 
 function countChange(label: string, before: number, after: number): string | null {
@@ -58,7 +86,8 @@ export function summarizeChanges(
   const parameters = NUMBER_LABELS.filter(({ key }) => initial[key] !== current[key]).map(
     ({ key, label, unit }) => `${label} ${formatNumber(initial[key], unit)} → ${formatNumber(current[key], unit)}`
   );
-  if (initial.side !== current.side) parameters.push(`strona: ${sideLabel(initial.side)} → ${sideLabel(current.side)}`);
+  if (initial.side !== current.side)
+    parameters.push(`strona: ${formatExerciseSideLabel(initial.side)} → ${formatExerciseSideLabel(current.side)}`);
 
   const initialPatient = initial.enrichment.patient;
   const currentPatient = current.enrichment.patient;

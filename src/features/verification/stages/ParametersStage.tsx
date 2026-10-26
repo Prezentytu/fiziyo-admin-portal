@@ -18,6 +18,7 @@ import {
   PARAMETER_RULES,
   buildPatientParameterLine,
   formatSessionDuration,
+  formatWithUnit,
   sideFactor,
   type AcknowledgeKey,
   type ExecutionMode,
@@ -52,10 +53,6 @@ function parseNumber(raw: string): number | null {
   if (normalized === '') return null;
   const parsed = Number(normalized);
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
-}
-
-function withUnit(value: number, unit: string): string {
-  return unit ? `${value} ${unit}` : String(value);
 }
 
 function statusFor(field: ParameterFieldState): { text: string; className: string } {
@@ -128,7 +125,7 @@ function ParameterRow({
           )}
         </div>
         <span className="text-[12px] text-label-secondary">
-          zwykle {rule.typicalMin}–{withUnit(rule.typicalMax, rule.unit)}
+          zwykle {rule.typicalMin}–{formatWithUnit(rule.typicalMax, rule.unit)}
         </span>
       </div>
       <span
@@ -189,7 +186,7 @@ export function ParametersStage({
                     onClick={() => onValueChange(suggestedKey, finding.suggested ?? null)}
                     data-testid={`verification-param-${suggestedKey}-fix-btn`}
                   >
-                    Ustaw {withUnit(finding.suggested, unit)}
+                    Ustaw {formatWithUnit(finding.suggested, unit)}
                   </Button>
                 )}
                 {finding.canAcknowledge && (

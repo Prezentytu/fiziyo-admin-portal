@@ -16,7 +16,7 @@ import { ExerciseContentSections } from './ExerciseContentSections';
 import type { UseExerciseEditorFormResult } from './useExerciseEditorForm';
 
 import { aiService } from '@/services/aiService';
-import { cleanupEnrichment, parseEnrichmentJson, toFullShapeJson } from '@/features/verification/utils/enrichment';
+import { compactEnrichment, parseEnrichmentJson, toFullShapeJson } from '@/features/verification/utils/enrichment';
 import { toV3 } from '@/features/verification/utils/enrichmentToV3';
 import { computeCompleteness } from '@/features/verification/utils/enrichmentSkeleton';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
@@ -124,7 +124,7 @@ function AiFillBar({
 
     const aiData = toV3(response.enrichmentData as ExerciseEnrichmentData);
     const merged = deepMergeFillGaps(enrichment, aiData) as ExerciseEnrichmentData;
-    const cleanedMerged = (cleanupEnrichment(merged) ?? {}) as ExerciseEnrichmentData;
+    const cleanedMerged = compactEnrichment(merged) ?? {};
 
     const beforeFilled = computeCompleteness(enrichment).filled;
     const afterFilled = computeCompleteness(cleanedMerged).filled;
@@ -199,7 +199,7 @@ function AdvancedJsonSection({
   const handleApply = () => {
     try {
       const parsed = parseEnrichmentJson(rawJson);
-      const cleaned = (cleanupEnrichment(toV3(parsed)) ?? {}) as ExerciseEnrichmentData;
+      const cleaned = compactEnrichment(toV3(parsed)) ?? {};
       onApply(cleaned);
       setError(null);
       toast.success('Dane JSON zostały zastosowane.');
