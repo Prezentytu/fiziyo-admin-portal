@@ -103,7 +103,7 @@ describe('długie ćwiczenie potwierdzone „Tak ma być”', () => {
         values: longExercise,
         mode: 'reps',
         side: 'both',
-        acknowledged: new Set(['session']),
+        acknowledgedSessionSeconds: 5 * 20 * 6 * 2 + 4 * 120,
       }),
     });
     expect(acknowledged.canPublish).toBe(true);

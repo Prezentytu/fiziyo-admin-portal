@@ -1,4 +1,4 @@
-import { parseTempo } from '@/utils/exerciseTime';
+import { calculateExerciseTotalSeconds } from '@/utils/exerciseTime';
 
 export type ExecutionMode = 'reps' | 'hold';
 
@@ -170,18 +170,11 @@ export function planModeSwitch({
 export interface SessionTiming {
   tempo?: string | null;
   duration?: number | null;
+  restReps?: number | null;
+  preparationTime?: number | null;
 }
 
-function repsWorkPerSet(values: ParameterValues, timing: SessionTiming): number {
-  const reps = positive(values.reps) ?? 0;
-  const repTime = positive(values.repTime);
-  if (repTime) return reps * repTime;
-  const durationOverride = positive(timing.duration);
-  if (durationOverride) return durationOverride;
-  return reps * (parseTempo(timing.tempo ?? undefined) ?? DEFAULT_REP_SECONDS);
-}
-
-/** Same precedence as the catalog and player: repetition time → set duration → tempo → 3 s. */
+/** Delegates to the catalog/player formula so the gate sees exactly what the patient will do. */
 export function computeSessionSeconds(
   values: ParameterValues,
   mode: ExecutionMode,
@@ -189,9 +182,23 @@ export function computeSessionSeconds(
   timing: SessionTiming = {}
 ): number {
   const sets = positive(values.sets) ?? 0;
-  const rest = Math.max(0, values.rest ?? 0);
-  const workPerSet = mode === 'reps' ? repsWorkPerSet(values, timing) : (positive(values.hold) ?? 0);
-  return sets * workPerSet * sideFactor(side) + Math.max(0, sets - 1) * rest;
+  const shared = {
+    sets,
+    restSets: values.rest ?? undefined,
+    preparationTime: timing.preparationTime ?? undefined,
+    side,
+  };
+  if (mode === 'hold') {
+    return calculateExerciseTotalSeconds({ ...shared, reps: 1, executionTime: positive(values.hold) ?? 0 }).seconds;
+  }
+  return calculateExerciseTotalSeconds({
+    ...shared,
+    reps: positive(values.reps) ?? 0,
+    executionTime: positive(values.repTime) ?? undefined,
+    duration: timing.duration ?? undefined,
+    tempo: timing.tempo ?? undefined,
+    restReps: timing.restReps ?? undefined,
+  }).seconds;
 }
 
 export function formatSessionDuration(seconds: number): string {
@@ -221,7 +228,7 @@ function isEmpty(key: ParameterKey, value: number | null): boolean {
 function evaluateField(
   key: ParameterKey,
   values: ParameterValues,
-  acknowledged: ReadonlySet<AcknowledgeKey>
+  acknowledged: ReadonlySet<ParameterKey>
 ): { field: ParameterFieldState; finding: ParameterFinding | null } {
   const rule = PARAMETER_RULES[key];
   const value = values[key];
@@ -280,7 +287,9 @@ export interface EvaluateParametersInput {
   values: ParameterValues;
   mode: ExecutionMode;
   side: string;
-  acknowledged?: ReadonlySet<AcknowledgeKey>;
+  acknowledged?: ReadonlySet<ParameterKey>;
+  /** Session length the therapist confirmed with „Tak ma być”; any change in seconds reopens it. */
+  acknowledgedSessionSeconds?: number | null;
   timing?: SessionTiming;
 }
 
@@ -288,7 +297,8 @@ export function evaluateParameters({
   values,
   mode,
   side,
-  acknowledged = new Set<AcknowledgeKey>(),
+  acknowledged = new Set<ParameterKey>(),
+  acknowledgedSessionSeconds = null,
   timing,
 }: EvaluateParametersInput): ParameterEvaluation {
   const fields: ParameterFieldState[] = [];
@@ -305,7 +315,7 @@ export function evaluateParameters({
   if (sessionSeconds > SESSION_LIMIT_SECONDS) sessionLevel = 'limit';
   else if (sessionSeconds > SESSION_WARNING_SECONDS) sessionLevel = 'warning';
 
-  const isSessionAcknowledged = sessionLevel === 'warning' && acknowledged.has('session');
+  const isSessionAcknowledged = sessionLevel === 'warning' && acknowledgedSessionSeconds === sessionSeconds;
   if (sessionLevel !== 'ok' && !isSessionAcknowledged) {
     findings.push({
       key: 'session',

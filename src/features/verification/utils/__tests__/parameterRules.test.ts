@@ -86,9 +86,18 @@ describe('evaluateParameters', () => {
       values: { sets: 5, reps: 20, repTime: 6, hold: null, rest: 120 },
       mode: 'reps',
       side: 'both',
-      acknowledged: new Set(['session']),
+      acknowledgedSessionSeconds: result.sessionSeconds,
     });
     expect(acknowledged.findings).toEqual([]);
+
+    const changedAfterAck = evaluateParameters({
+      values: { sets: 5, reps: 20, repTime: 6, hold: null, rest: 120 },
+      mode: 'reps',
+      side: 'both',
+      acknowledgedSessionSeconds: result.sessionSeconds,
+      timing: { restReps: 2 },
+    });
+    expect(changedAfterAck.findings.at(-1)).toMatchObject({ key: 'session', canAcknowledge: true });
   });
 
   it('ćwiczenia ponad godzinę nie da się potwierdzić „Tak ma być”', () => {
@@ -96,7 +105,7 @@ describe('evaluateParameters', () => {
       values: { sets: 20, reps: 20, repTime: 10, hold: null, rest: 120 },
       mode: 'reps',
       side: 'none',
-      acknowledged: new Set(['session']),
+      acknowledgedSessionSeconds: 20 * 20 * 10 + 19 * 120,
     });
 
     expect(result.sessionLevel).toBe('limit');
@@ -105,6 +114,20 @@ describe('evaluateParameters', () => {
 });
 
 describe('computeSessionSeconds', () => {
+  it('dolicza mikroprzerwy między powtórzeniami i czas przygotowania jak katalog', () => {
+    const values = { sets: 5, reps: 20, repTime: 7, hold: null, rest: 120 };
+    const seconds = computeSessionSeconds(values, 'reps', 'both', { restReps: 10, preparationTime: 5 });
+    expect(seconds).toBe(5 + 5 * (20 * 7 + 19 * 10) * 2 + 4 * 120);
+
+    const result = evaluateParameters({
+      values,
+      mode: 'reps',
+      side: 'both',
+      timing: { restReps: 10, preparationTime: 5 },
+    });
+    expect(result.sessionLevel).toBe('limit');
+  });
+
   it('przy pustym czasie powtórzenia liczy tempo i legacy duration jak katalog', () => {
     const values = { sets: 5, reps: 20, repTime: null, hold: null, rest: 60 };
     expect(computeSessionSeconds(values, 'reps', 'both', { tempo: '10-0-10-0' })).toBe(5 * 20 * 20 * 2 + 4 * 60);

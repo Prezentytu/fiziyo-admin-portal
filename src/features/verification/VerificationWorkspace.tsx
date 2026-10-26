@@ -222,7 +222,8 @@ export function VerificationWorkspace({
   const [mode, setMode] = useState<ExecutionMode>(() => deriveExecutionMode(core));
   const [modeStash, setModeStash] = useState<ModeStash>({});
   const [isHoldPending, setIsHoldPending] = useState(false);
-  const [acknowledged, setAcknowledged] = useState<ReadonlySet<AcknowledgeKey>>(() => new Set());
+  const [acknowledged, setAcknowledged] = useState<ReadonlySet<ParameterKey>>(() => new Set());
+  const [acknowledgedSessionSeconds, setAcknowledgedSessionSeconds] = useState<number | null>(null);
   const [descriptionAcknowledged, setDescriptionAcknowledged] = useState(false);
   const [proposal, setProposal] = useState<InstructionProposal | null>(null);
   const [isGeneratingProposal, setIsGeneratingProposal] = useState(false);
@@ -280,9 +281,25 @@ export function VerificationWorkspace({
         mode,
         side: core.side,
         acknowledged,
-        timing: { tempo: core.tempo, duration: core.duration },
+        acknowledgedSessionSeconds,
+        timing: {
+          tempo: core.tempo,
+          duration: core.duration,
+          restReps: core.restReps,
+          preparationTime: core.preparationTime,
+        },
       }),
-    [parameterValues, mode, core.side, core.tempo, core.duration, acknowledged]
+    [
+      parameterValues,
+      mode,
+      core.side,
+      core.tempo,
+      core.duration,
+      core.restReps,
+      core.preparationTime,
+      acknowledged,
+      acknowledgedSessionSeconds,
+    ]
   );
   const descriptionNumbers = useMemo(
     () => (descriptionAcknowledged ? [] : findHardcodedNumbers(core.patientDescription)),
@@ -402,14 +419,24 @@ export function VerificationWorkspace({
         setIsHoldPending(false);
       }
       setAcknowledged((previous) => {
-        if (!previous.has(key) && !previous.has('session')) return previous;
+        if (!previous.has(key)) return previous;
         const next = new Set(previous);
         next.delete(key);
-        next.delete('session');
         return next;
       });
     },
     [core.reps, setCoreField]
+  );
+
+  const handleAcknowledge = useCallback(
+    (key: AcknowledgeKey) => {
+      if (key === 'session') {
+        setAcknowledgedSessionSeconds(evaluation.sessionSeconds);
+        return;
+      }
+      setAcknowledged((previous) => new Set([...previous, key]));
+    },
+    [evaluation.sessionSeconds]
   );
 
   const handleModeChange = useCallback(
@@ -432,6 +459,7 @@ export function VerificationWorkspace({
       setIsHoldPending(nextMode === 'hold' && plan.values === null);
       setMode(nextMode);
       setAcknowledged(new Set());
+      setAcknowledgedSessionSeconds(null);
     },
     [core, isHoldPending, mode, modeStash, setCoreField]
   );
@@ -937,7 +965,7 @@ export function VerificationWorkspace({
               descriptionNumbers={descriptionNumbers}
               onModeChange={handleModeChange}
               onValueChange={handleParameterChange}
-              onAcknowledge={(key) => setAcknowledged((previous) => new Set([...previous, key]))}
+              onAcknowledge={handleAcknowledge}
               onFixDescription={() =>
                 setCoreField('patientDescription', replaceHardcodedNumbers(core.patientDescription))
               }
