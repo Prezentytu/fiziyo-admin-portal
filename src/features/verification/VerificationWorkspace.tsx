@@ -68,7 +68,7 @@ import {
   type ModeStash,
   type ParameterKey,
 } from './utils/parameterRules';
-import { validatePhotoFile } from './utils/photoValidation';
+import { MAX_PHOTOS, validatePhotoFile } from './utils/photoValidation';
 import { keepExistingImages, replaceLinkedImage } from './utils/stepMedia';
 import {
   STAGE_TITLES,
@@ -81,7 +81,6 @@ import {
   type VerificationStageKey,
 } from './utils/verificationStages';
 
-const MAX_PHOTOS = 5;
 
 const PRIMARY_LABELS: Record<VerificationStageKey, string> = {
   material: 'Materiał gotowy, dalej',

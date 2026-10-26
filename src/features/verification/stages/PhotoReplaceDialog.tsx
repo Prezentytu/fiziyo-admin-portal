@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 
-export const PHOTO_PROBLEM_OPTIONS = [
+const PHOTO_PROBLEM_OPTIONS = [
   'Dłonie i palce',
   'Napis w tle',
   'Inna osoba lub strój',
@@ -45,11 +45,13 @@ export function PhotoReplaceDialog({
   const [note, setNote] = useState('');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  const resetSelection = () => {
+    setProblems([]);
+    setNote('');
+  };
+
   const handleOpenChange = (nextOpen: boolean) => {
-    if (!nextOpen) {
-      setProblems([]);
-      setNote('');
-    }
+    if (!nextOpen) resetSelection();
     onOpenChange(nextOpen);
   };
 
@@ -59,7 +61,9 @@ export function PhotoReplaceDialog({
     );
 
   const handleGenerate = () => {
-    if (!isGenerating) onGenerate(problems, note.trim());
+    if (isGenerating) return;
+    onGenerate(problems, note.trim());
+    resetSelection();
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -80,7 +84,7 @@ export function PhotoReplaceDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-wrap gap-1.5" role="group" aria-label="Co jest nie tak">
-          {PHOTO_PROBLEM_OPTIONS.map((problem) => {
+          {PHOTO_PROBLEM_OPTIONS.map((problem, problemIndex) => {
             const selected = problems.includes(problem);
             return (
               <button
@@ -92,7 +96,7 @@ export function PhotoReplaceDialog({
                   'h-8 rounded-full px-3 text-[14px] font-semibold transition-colors',
                   selected ? 'bg-tint-muted text-tint' : 'bg-fill-tertiary text-foreground hover:bg-fill-quaternary'
                 )}
-                data-testid={`verification-photo-problem-${PHOTO_PROBLEM_OPTIONS.indexOf(problem)}-btn`}
+                data-testid={`verification-photo-problem-${problemIndex}-btn`}
               >
                 {problem}
               </button>
@@ -119,7 +123,10 @@ export function PhotoReplaceDialog({
           className="hidden"
           onChange={(event) => {
             const file = event.target.files?.[0];
-            if (file) onUploadOwn(file);
+            if (file) {
+              onUploadOwn(file);
+              resetSelection();
+            }
             event.target.value = '';
           }}
           data-testid="verification-photo-replace-file-input"

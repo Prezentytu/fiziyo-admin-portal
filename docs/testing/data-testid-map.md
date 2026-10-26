@@ -706,28 +706,21 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 
 #### Widok pełny (z zadaniami)
 
-| data-testid                           | Element                              | Plik                         |
-| ------------------------------------- | ------------------------------------ | ---------------------------- |
-| `nav-link-verification`               | Link: Weryfikacja ćwiczeń            | `Sidebar.tsx`                |
-| `nav-link-verification-organizations` | Link: Weryfikacja Organizacji        | `Sidebar.tsx`                |
-| `verification-search-input`           | Wyszukiwarka ćwiczeń                 | `verification/page.tsx`      |
-| `verification-stats-pending`          | Karta statystyk: Oczekujące          | `VerificationStatsCards.tsx` |
-| `verification-stats-changes`          | Karta statystyk: Do poprawy          | `VerificationStatsCards.tsx` |
-| `verification-stats-approved`         | Karta statystyk: Zatwierdzone        | `VerificationStatsCards.tsx` |
-| `verification-stats-published`        | Karta statystyk: Opublikowane        | `VerificationStatsCards.tsx` |
-| `verification-card-{id}`              | Karta zadania weryfikacji            | `VerificationTaskCard.tsx`   |
-| `verification-card-{id}-start-btn`    | Przycisk rozpoczęcia weryfikacji     | `VerificationTaskCard.tsx`   |
-| `verification-reject-dialog`          | Dialog odrzucenia                    | `RejectReasonDialog.tsx`     |
-| `verification-reject-reason-select`   | Dropdown wyboru powodu               | `RejectReasonDialog.tsx`     |
-| `verification-reject-notes-input`     | Textarea notatki (wymagana)          | `RejectReasonDialog.tsx`     |
-| `verification-reject-confirm-btn`     | Przycisk potwierdzenia odrzucenia    | `RejectReasonDialog.tsx`     |
-| `verification-approve-dialog`         | Dialog zatwierdzenia                 | `ApproveDialog.tsx`          |
-| `verification-approve-notes-input`    | Textarea notatki (opcjonalna)        | `ApproveDialog.tsx`          |
-| `verification-approve-confirm-btn`    | Przycisk potwierdzenia zatwierdzenia | `ApproveDialog.tsx`          |
+| data-testid                           | Element                          | Plik                         |
+| ------------------------------------- | -------------------------------- | ---------------------------- |
+| `nav-link-verification`               | Link: Weryfikacja ćwiczeń        | `Sidebar.tsx`                |
+| `nav-link-verification-organizations` | Link: Weryfikacja Organizacji    | `Sidebar.tsx`                |
+| `verification-search-input`           | Wyszukiwarka ćwiczeń             | `verification/page.tsx`      |
+| `verification-stats-pending`          | Karta statystyk: Oczekujące      | `VerificationStatsCards.tsx` |
+| `verification-stats-changes`          | Karta statystyk: Do poprawy      | `VerificationStatsCards.tsx` |
+| `verification-stats-approved`         | Karta statystyk: Zatwierdzone    | `VerificationStatsCards.tsx` |
+| `verification-stats-published`        | Karta statystyk: Opublikowane    | `VerificationStatsCards.tsx` |
+| `verification-card-{id}`              | Karta zadania weryfikacji        | `VerificationTaskCard.tsx`   |
+| `verification-card-{id}-start-btn`    | Przycisk rozpoczęcia weryfikacji | `VerificationTaskCard.tsx`   |
 
 #### Etapy weryfikacji globalnej (`verification/[id]`, SPEC-030)
 
-Dialogi `verification-approve-*` i `verification-reject-*` zostają w ścieżkach organizacji; ekran globalny publikuje z paska, a jedyne wyjście bez publikacji to „To duplikat”.
+Ekran globalny publikuje z paska, a jedyne wyjście bez publikacji to „To duplikat”; osobnych dialogów zatwierdzenia i odrzucenia już nie ma.
 
 | data-testid                                                                     | Element                                     | Plik                          |
 | ------------------------------------------------------------------------------- | ------------------------------------------- | ----------------------------- |
@@ -787,12 +780,6 @@ Dialogi `verification-approve-*` i `verification-reject-*` zostają w ścieżkac
 | `verification-details-audiocue`        | Inline edit: Audio cue      | `ExerciseDetailsPanel.tsx` |
 | `verification-details-media-toggle`    | Toggle: Media               | `ExerciseDetailsPanel.tsx` |
 | `verification-details-advanced-toggle` | Toggle: Zaawansowane        | `ExerciseDetailsPanel.tsx` |
-
-#### Publish Guardrails (NEW)
-
-| data-testid               | Element         | Plik                    |
-| ------------------------- | --------------- | ----------------------- |
-| `verification-guardrails` | Panel walidacji | `PublishGuardrails.tsx` |
 
 ### 16. Smart Validation (common-completion-, ghost-field-, smart-accordion-)
 

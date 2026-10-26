@@ -6,8 +6,7 @@ import { getMediaUrls } from '@/utils/mediaUrl';
 import type { AdminExercise } from '@/graphql/types/adminExercise.types';
 import type { ImageStyle } from '@/types/ai.types';
 
-const MAX_IMAGES = 5;
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
+import { MAX_PHOTOS, validatePhotoFile } from './utils/photoValidation';
 
 interface UseExerciseMediaManagerOptions {
   exercise: AdminExercise;
@@ -40,7 +39,7 @@ export function useExerciseMediaManager({
     [exercise.thumbnailUrl, exercise.imageUrl, exercise.images]
   );
 
-  const remainingSlots = Math.max(0, MAX_IMAGES - existingImages.length);
+  const remainingSlots = Math.max(0, MAX_PHOTOS - existingImages.length);
   const canManageMedia = Boolean(onUploadImage && onDeleteImage);
 
   const openFilePicker = () => {
@@ -59,18 +58,14 @@ export function useExerciseMediaManager({
     const acceptedFiles: File[] = [];
 
     for (const file of incomingFiles) {
-      if (!file.type.startsWith('image/')) {
-        toast.error(`Plik ${file.name} nie jest obrazem`);
-        continue;
-      }
-
-      if (file.size > MAX_FILE_SIZE) {
-        toast.error(`Plik ${file.name} przekracza limit 10MB`);
+      const photoError = validatePhotoFile(file);
+      if (photoError) {
+        toast.error(photoError);
         continue;
       }
 
       if (acceptedFiles.length >= remainingSlots) {
-        toast.error(`Maksymalna liczba zdjęć to ${MAX_IMAGES}`);
+        toast.error(`Maksymalna liczba zdjęć to ${MAX_PHOTOS}`);
         break;
       }
 
@@ -103,8 +98,8 @@ export function useExerciseMediaManager({
       return;
     }
 
-    if (existingImages.length >= MAX_IMAGES) {
-      toast.error(`Maksymalna liczba zdjęć to ${MAX_IMAGES}`);
+    if (existingImages.length >= MAX_PHOTOS) {
+      toast.error(`Maksymalna liczba zdjęć to ${MAX_PHOTOS}`);
       return;
     }
 

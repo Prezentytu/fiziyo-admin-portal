@@ -186,10 +186,8 @@
     "src/features/patients/PatientForm.tsx:329:button",
     "src/features/patients/__tests__/ActivatePremiumDialog.test.tsx:20:button",
     "src/features/patients/__tests__/ActivatePremiumDialog.test.tsx:29:button",
-    "src/features/verification/ApproveDialog.tsx:70:Button",
     "src/features/verification/MasterVideoPlayer.tsx:128:Button",
     "src/features/verification/MasterVideoPlayer.tsx:151:input",
-    "src/features/verification/RejectReasonDialog.tsx:266:Button",
     "src/features/verification/VerdictPanel.tsx:378:Textarea",
     "src/features/verification/VerdictPanel.tsx:411:button",
     "src/features/verification/VerificationTaskCard.test.tsx:10:a"
