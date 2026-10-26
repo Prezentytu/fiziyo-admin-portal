@@ -96,9 +96,12 @@ export function sideFactor(side: string): number {
 export function deriveExecutionMode(
   source: Pick<ParameterSource, 'reps' | 'executionTime' | 'duration'>
 ): ExecutionMode {
-  const reps = source.reps ?? 0;
-  const holdSeconds = positive(source.executionTime) ?? positive(source.duration) ?? 0;
-  return reps <= 1 && holdSeconds >= HOLD_MODE_MIN_SECONDS ? 'hold' : 'reps';
+  // Mirrors the catalog: executionTime is per repetition (empty reps count as 10 there),
+  // while a legacy duration replaces the whole set. Only those two shapes are a hold.
+  const executionTime = positive(source.executionTime);
+  if (executionTime) return source.reps === 1 && executionTime >= HOLD_MODE_MIN_SECONDS ? 'hold' : 'reps';
+  const isSingleOrEmpty = source.reps == null || source.reps <= 1;
+  return isSingleOrEmpty && (positive(source.duration) ?? 0) >= HOLD_MODE_MIN_SECONDS ? 'hold' : 'reps';
 }
 
 export function toParameterValues(source: ParameterSource, mode: ExecutionMode): ParameterValues {

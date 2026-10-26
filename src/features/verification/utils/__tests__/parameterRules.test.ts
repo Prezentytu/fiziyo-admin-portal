@@ -166,6 +166,17 @@ describe('deriveExecutionMode / toParameterValues', () => {
     expect(deriveExecutionMode({ reps: 12, executionTime: 3 })).toBe('reps');
   });
 
+  it('puste powtórzenia z czasem powtórzenia to tryb powtórzeń, jak w katalogu', () => {
+    expect(deriveExecutionMode({ reps: null, executionTime: 45 })).toBe('reps');
+
+    const result = evaluateParameters({
+      values: toParameterValues({ sets: 5, reps: null, executionTime: 45, restSets: 120, side: 'both' }, 'reps'),
+      mode: 'reps',
+      side: 'both',
+    });
+    expect(result.findings[0]).toMatchObject({ key: 'reps', level: 'limit' });
+  });
+
   it('mapuje czas utrzymania z executionTime', () => {
     const values = toParameterValues({ sets: 3, reps: 1, executionTime: 30, restSets: 60, side: 'none' }, 'hold');
     expect(values).toEqual({ sets: 3, reps: null, repTime: null, hold: 30, rest: 60 });
