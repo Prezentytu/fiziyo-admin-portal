@@ -16,14 +16,14 @@ const readyInput: VerificationStagesInput = {
   therapistDescription: 'Wzmacnia mięśnie czworogłowe ud.',
   hasVideo: true,
   imageCount: 3,
-  pendingPhotoCount: 0,
+  hasPendingPhoto: false,
   parameters: evaluateParameters({
     values: { sets: 3, reps: 12, repTime: 3, hold: null, rest: 60 },
     mode: 'reps',
     side: 'none',
   }),
   descriptionNumberCount: 0,
-  pendingProposalCount: 0,
+  hasPendingProposal: false,
   stopIfCount: 1,
 };
 
@@ -59,7 +59,7 @@ describe('computeVerificationStages', () => {
   });
 
   it('nieprzyjęte zdjęcie i propozycja agenta zostawiają etap otwarty', () => {
-    const result = computeVerificationStages({ ...readyInput, pendingPhotoCount: 1, pendingProposalCount: 1 });
+    const result = computeVerificationStages({ ...readyInput, hasPendingPhoto: true, hasPendingProposal: true });
     expect(result.openStages).toEqual(['material', 'instruction']);
   });
 

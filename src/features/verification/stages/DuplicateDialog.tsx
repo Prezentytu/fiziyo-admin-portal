@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { ExerciseThumbnail } from '@/components/shared/exercise';
 import { cn } from '@/lib/utils';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { GET_VERIFICATION_QUEUE_PAGE_QUERY } from '@/graphql/queries/adminExercises.queries';
@@ -127,7 +128,6 @@ export function DuplicateDialog({
           )}
           {candidates.map((candidate) => {
             const isSelected = selected?.id === candidate.id;
-            const thumbnail = thumbnailOf(candidate);
             return (
               <button
                 key={candidate.id}
@@ -141,12 +141,7 @@ export function DuplicateDialog({
                 )}
                 data-testid={`verification-duplicate-candidate-${candidate.id}`}
               >
-                <span className="h-11 w-11 shrink-0 overflow-hidden rounded-control bg-fill-tertiary">
-                  {thumbnail && (
-                    // eslint-disable-next-line @next/next/no-img-element -- remote CDN thumbnail
-                    <img src={thumbnail} alt="" className="h-full w-full object-cover" />
-                  )}
-                </span>
+                <ExerciseThumbnail src={thumbnailOf(candidate)} sizeClass="h-11 w-11" />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[15px] font-semibold text-foreground">{candidate.name}</span>
                   {candidate.patientDescription && (

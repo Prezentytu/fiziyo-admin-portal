@@ -30,11 +30,11 @@ export interface VerificationStagesInput {
   therapistDescription: string;
   hasVideo: boolean;
   imageCount: number;
-  pendingPhotoCount: number;
+  hasPendingPhoto: boolean;
   parameters: ParameterEvaluation;
   /** Numbers in the patient description that were not fixed or acknowledged. */
   descriptionNumberCount: number;
-  pendingProposalCount: number;
+  hasPendingProposal: boolean;
   stopIfCount: number;
 }
 
@@ -49,7 +49,7 @@ function materialIssues(input: VerificationStagesInput): StageIssue[] {
   if (!input.hasVideo && input.imageCount === 0) {
     issues.push({ stage: 'material', text: 'Dodaj nagranie albo zdjęcie.' });
   }
-  if (input.pendingPhotoCount > 0) {
+  if (input.hasPendingPhoto) {
     issues.push({ stage: 'material', text: 'Przyjmij albo odrzuć nowe zdjęcie.' });
   }
   return issues;
@@ -77,7 +77,7 @@ function instructionIssues(input: VerificationStagesInput): StageIssue[] {
       text: `Opis dla pacjenta: co najmniej ${MIN_PATIENT_DESCRIPTION_LENGTH} znaków.`,
     });
   }
-  if (input.pendingProposalCount > 0) {
+  if (input.hasPendingProposal) {
     issues.push({ stage: 'instruction', text: 'Wstaw propozycję agenta albo ją pomiń.' });
   }
   return issues;

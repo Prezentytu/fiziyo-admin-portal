@@ -3,10 +3,10 @@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { cn } from '@/lib/utils';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import { MIN_THERAPIST_DESCRIPTION_LENGTH, parseStopIf, serializeStopIf } from '../utils/verificationStages';
 import { ChipListEditor } from './ChipListEditor';
+import { LengthHint } from './LengthHint';
 import { StageSection } from './StageSection';
 
 interface SafetyStageProps {
@@ -64,17 +64,12 @@ export function SafetyStage({
             aria-describedby="verification-safety-therapist-description-count"
             data-testid="verification-safety-therapist-description-input"
           />
-          <p
+          <LengthHint
             id="verification-safety-therapist-description-count"
-            className={cn(
-              'text-[12px]',
-              descriptionLength < MIN_THERAPIST_DESCRIPTION_LENGTH ? 'text-status-warning' : 'text-label-secondary'
-            )}
-          >
-            {descriptionLength < MIN_THERAPIST_DESCRIPTION_LENGTH
-              ? `Wymagane: ${descriptionLength} z co najmniej ${MIN_THERAPIST_DESCRIPTION_LENGTH} znaków`
-              : `${descriptionLength} znaków`}
-          </p>
+            length={descriptionLength}
+            min={MIN_THERAPIST_DESCRIPTION_LENGTH}
+            shortPrefix="Wymagane: "
+          />
         </div>
         <div className="flex flex-col gap-1.5">
           <p className="text-[13px] text-label-secondary">Wskazania</p>

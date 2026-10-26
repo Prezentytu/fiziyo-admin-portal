@@ -55,32 +55,34 @@ import {
   type InstructionProposal,
 } from './utils/instructionProposal';
 import {
+  acknowledgeFinding,
   buildPatientParameterLine,
-  deriveExecutionMode,
+  createParameterReview,
   evaluateParameters,
   findHardcodedNumbers,
   formatSessionDuration,
-  planModeSwitch,
+  markParameterEdited,
   replaceHardcodedNumbers,
-  toParameterValues,
+  reviewValues,
+  switchExecutionMode,
+  toCoreUpdates,
   type AcknowledgeKey,
+  type CoreParameterUpdates,
   type ExecutionMode,
-  type ModeStash,
   type ParameterKey,
 } from './utils/parameterRules';
 import { MAX_PHOTOS, validatePhotoFile } from './utils/photoValidation';
+import { buildStageCopy } from './utils/stageCopy';
 import { keepExistingImages, replaceLinkedImage } from './utils/stepMedia';
 import {
   STAGE_TITLES,
   VERIFICATION_STAGES,
   canDecideOnExercise,
   computeVerificationStages,
-  formatStageCount,
   parseStopIf,
   pluralizePl,
   type VerificationStageKey,
 } from './utils/verificationStages';
-
 
 const PRIMARY_LABELS: Record<VerificationStageKey, string> = {
   material: 'Materiał gotowy, dalej',
@@ -218,11 +220,7 @@ export function VerificationWorkspace({
 
   const [stage, setStage] = useState<VerificationStageKey>('material');
   const [visited, setVisited] = useState<ReadonlySet<VerificationStageKey>>(() => new Set(['material']));
-  const [mode, setMode] = useState<ExecutionMode>(() => deriveExecutionMode(core));
-  const [modeStash, setModeStash] = useState<ModeStash>({});
-  const [isHoldPending, setIsHoldPending] = useState(false);
-  const [acknowledged, setAcknowledged] = useState<ReadonlySet<ParameterKey>>(() => new Set());
-  const [acknowledgedSessionSeconds, setAcknowledgedSessionSeconds] = useState<number | null>(null);
+  const [parameterReview, setParameterReview] = useState(() => createParameterReview(core));
   const [descriptionAcknowledged, setDescriptionAcknowledged] = useState(false);
   const [proposal, setProposal] = useState<InstructionProposal | null>(null);
   const [isGeneratingProposal, setIsGeneratingProposal] = useState(false);
@@ -269,18 +267,16 @@ export function VerificationWorkspace({
     ]
   );
 
-  const parameterValues = useMemo(() => {
-    const values = toParameterValues(core, mode);
-    return isHoldPending ? { ...values, hold: null } : values;
-  }, [core, isHoldPending, mode]);
+  const { mode } = parameterReview;
+  const parameterValues = useMemo(() => reviewValues(core, parameterReview), [core, parameterReview]);
   const evaluation = useMemo(
     () =>
       evaluateParameters({
         values: parameterValues,
         mode,
         side: core.side,
-        acknowledged,
-        acknowledgedSessionSeconds,
+        acknowledged: parameterReview.acknowledged,
+        acknowledgedSessionSeconds: parameterReview.acknowledgedSessionSeconds,
         timing: {
           tempo: core.tempo,
           duration: core.duration,
@@ -296,8 +292,8 @@ export function VerificationWorkspace({
       core.duration,
       core.restReps,
       core.preparationTime,
-      acknowledged,
-      acknowledgedSessionSeconds,
+      parameterReview.acknowledged,
+      parameterReview.acknowledgedSessionSeconds,
     ]
   );
   const descriptionNumbers = useMemo(
@@ -314,10 +310,10 @@ export function VerificationWorkspace({
         therapistDescription: core.clinicalDescription,
         hasVideo,
         imageCount: allMediaUrls.length,
-        pendingPhotoCount: pendingPhoto ? 1 : 0,
+        hasPendingPhoto: pendingPhoto !== null,
         parameters: evaluation,
         descriptionNumberCount: descriptionNumbers.length,
-        pendingProposalCount: proposal ? 1 : 0,
+        hasPendingProposal: proposal !== null,
         stopIfCount,
       }),
     [
@@ -377,61 +373,37 @@ export function VerificationWorkspace({
   // HANDLERS: parameters
   // ============================================
 
+  const applyCoreUpdates = useCallback(
+    (updates: CoreParameterUpdates) => {
+      for (const [field, value] of Object.entries(updates) as [keyof CoreParameterUpdates, number | null][]) {
+        setCoreField(field, value);
+      }
+    },
+    [setCoreField]
+  );
+
   const handleParameterChange = useCallback(
     (key: ParameterKey, value: number | null) => {
-      if (key === 'sets') setCoreField('sets', value);
-      if (key === 'reps') setCoreField('reps', value);
-      if (key === 'repTime') setCoreField('executionTime', value);
-      if (key === 'rest') setCoreField('restSets', value);
-      if (key === 'hold') {
-        setCoreField('executionTime', value);
-        if (core.reps !== 1) setCoreField('reps', 1);
-        setIsHoldPending(false);
-      }
-      setAcknowledged((previous) => {
-        if (!previous.has(key)) return previous;
-        const next = new Set(previous);
-        next.delete(key);
-        return next;
-      });
+      applyCoreUpdates(toCoreUpdates(key, value, core));
+      setParameterReview((previous) => markParameterEdited(previous, key));
     },
-    [core.reps, setCoreField]
+    [applyCoreUpdates, core]
   );
 
   const handleAcknowledge = useCallback(
     (key: AcknowledgeKey) => {
-      if (key === 'session') {
-        setAcknowledgedSessionSeconds(evaluation.sessionSeconds);
-        return;
-      }
-      setAcknowledged((previous) => new Set([...previous, key]));
+      setParameterReview((previous) => acknowledgeFinding(previous, key, evaluation.sessionSeconds));
     },
     [evaluation.sessionSeconds]
   );
 
   const handleModeChange = useCallback(
     (nextMode: ExecutionMode) => {
-      if (nextMode === mode) return;
-      const plan = planModeSwitch({
-        current: core,
-        from: mode,
-        to: nextMode,
-        stash: modeStash,
-        isCurrentPending: isHoldPending,
-      });
-      if (plan.values) {
-        if (plan.values.reps !== core.reps) setCoreField('reps', plan.values.reps);
-        if (plan.values.executionTime !== core.executionTime) {
-          setCoreField('executionTime', plan.values.executionTime);
-        }
-      }
-      setModeStash(plan.stash);
-      setIsHoldPending(nextMode === 'hold' && plan.values === null);
-      setMode(nextMode);
-      setAcknowledged(new Set());
-      setAcknowledgedSessionSeconds(null);
+      const { review, updates } = switchExecutionMode(parameterReview, core, nextMode);
+      applyCoreUpdates(updates);
+      setParameterReview(review);
     },
-    [core, isHoldPending, mode, modeStash, setCoreField]
+    [applyCoreUpdates, core, parameterReview]
   );
 
   // ============================================
@@ -677,43 +649,23 @@ export function VerificationWorkspace({
   // VIEW MODEL
   // ============================================
 
-  const blockingFieldCount = evaluation.findings.filter(
-    (finding) => finding.level === 'limit' && finding.key !== 'session'
-  ).length;
   const sessionLine = `${parameterValues.sets ?? '–'} × ${
     mode === 'reps' ? (parameterValues.reps ?? '–') : `${parameterValues.hold ?? '–'} s`
   } · ≈ ${formatSessionDuration(evaluation.sessionSeconds)}`;
   const photoLabel = pluralizePl(allMediaUrls.length, 'zdjęcie', 'zdjęcia', 'zdjęć');
 
-  const subs: Record<VerificationStageKey, string> = {
-    material: pendingPhoto
-      ? 'Nowe zdjęcie do przyjęcia'
-      : stages.issues.material.length > 0
-        ? 'Brak materiału'
-        : `${photoLabel}${hasVideo ? ' · nagranie' : ' · bez nagrania'}`,
-    parameters:
-      stages.issues.parameters.length === 0
-        ? sessionLine
-        : evaluation.blockingCount > 0
-          ? `Do poprawy: ${evaluation.blockingCount}`
-          : `Sprawdź: ${stages.issues.parameters.length}`,
-    instruction: proposal
-      ? 'Propozycja do decyzji'
-      : stages.issues.instruction.length > 0
-        ? `Do poprawy: ${stages.issues.instruction.length}`
-        : 'Opis, kroki, wskazówki',
-    safety:
-      stages.issues.safety.length > 0
-        ? stopIfCount === 0
-          ? 'Brak objawów przerwania'
-          : `Do poprawy: ${stages.issues.safety.length}`
-        : pluralizePl(stopIfCount, 'objaw przerwania', 'objawy przerwania', 'objawów przerwania'),
-    decision: !canDecide
-      ? 'Już w bazie'
-      : stages.canPublish
-        ? 'Zatwierdź'
-        : `Do poprawy: ${formatStageCount(stages.openStages.length)}`,
-  };
+  const { subs, hints } = buildStageCopy({
+    stages,
+    parameters: evaluation,
+    hasPendingPhoto: pendingPhoto !== null,
+    hasPendingProposal: proposal !== null,
+    hasVideo,
+    photoLabel,
+    sessionLine,
+    stopIfCount,
+    canDecide,
+    signerName: user?.fullName ?? 'Twoje konto',
+  });
 
   const navItems: StageNavItem[] = VERIFICATION_STAGES.map((key) => {
     const hasIssues = stageHasIssues(key);
@@ -722,33 +674,6 @@ export function VerificationWorkspace({
     else if (visited.has(key)) state = hasIssues ? 'problem' : 'done';
     return { key, title: STAGE_TITLES[key], sub: subs[key], state, hasIssues };
   });
-
-  const hints: Record<VerificationStageKey, string> = {
-    material: pendingPhoto
-      ? 'Przyjmij nowe zdjęcie albo zostaw stare.'
-      : stages.issues.material.length > 0
-        ? 'Dodaj nagranie albo zdjęcie.'
-        : hasVideo
-          ? 'Obejrzyj nagranie i zdjęcia.'
-          : 'Sprawdź zdjęcia krok po kroku.',
-    parameters:
-      blockingFieldCount > 0
-        ? `Popraw zaznaczone parametry: ${blockingFieldCount}.`
-        : evaluation.sessionLevel === 'limit'
-          ? 'Za długie ćwiczenie: zmniejsz serie, powtórzenia albo przerwę.'
-          : stages.issues.parameters.length > 0
-            ? 'Popraw albo potwierdź „Tak ma być”.'
-            : 'Porównaj parametry z nagraniem.',
-    instruction: proposal
-      ? 'Wstaw propozycję agenta albo ją pomiń.'
-      : (stages.issues.instruction[0]?.text ?? 'Przeczytaj opis oczami pacjenta.'),
-    safety: stages.issues.safety[0]?.text ?? 'Sprawdź objawy i przeciwwskazania.',
-    decision: !canDecide
-      ? 'Ćwiczenie jest już w bazie. Poprawki zapisują się od razu.'
-      : stages.canPublish
-        ? `Trafi do bazy z podpisem: ${user?.fullName ?? 'Twoje konto'}.`
-        : `Najpierw popraw: ${stages.openStages.map((key) => STAGE_TITLES[key]).join(', ')}.`,
-  };
 
   const decisionRows: DecisionRow[] = [
     {
@@ -802,7 +727,7 @@ export function VerificationWorkspace({
     },
   ];
 
-  const reportStage = latestReport ? (REPORT_STAGE[latestReport.reasonCategory] ?? 'parameters') : null;
+  const reportStage = latestReport ? REPORT_STAGE[latestReport.reasonCategory] : null;
 
   return (
     <PageSheet contentClassName="gap-5" data-testid="verification-workspace">

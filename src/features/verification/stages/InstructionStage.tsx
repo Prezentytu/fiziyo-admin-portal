@@ -21,6 +21,8 @@ import {
   setCuePhase,
 } from '../utils/stepMedia';
 import { MIN_NAME_LENGTH, MIN_PATIENT_DESCRIPTION_LENGTH } from '../utils/verificationStages';
+import { LengthHint } from './LengthHint';
+import { SegmentedControl } from './SegmentedControl';
 import { StageSection } from './StageSection';
 
 interface InstructionStageProps {
@@ -214,17 +216,11 @@ export function InstructionStage({
             aria-describedby="verification-instruction-description-count"
             data-testid="verification-instruction-description-input"
           />
-          <p
+          <LengthHint
             id="verification-instruction-description-count"
-            className={cn(
-              'text-[12px]',
-              descriptionLength < MIN_PATIENT_DESCRIPTION_LENGTH ? 'text-status-warning' : 'text-label-secondary'
-            )}
-          >
-            {descriptionLength < MIN_PATIENT_DESCRIPTION_LENGTH
-              ? `${descriptionLength} z co najmniej ${MIN_PATIENT_DESCRIPTION_LENGTH} znaków`
-              : `${descriptionLength} znaków`}
-          </p>
+            length={descriptionLength}
+            min={MIN_PATIENT_DESCRIPTION_LENGTH}
+          />
         </div>
       </StageSection>
 
@@ -299,30 +295,15 @@ export function InstructionStage({
                   className="h-10 min-w-[200px] flex-1"
                   data-testid={`verification-cue-${index + 1}-input`}
                 />
-                <div
-                  role="radiogroup"
-                  aria-label={`Faza wskazówki ${index + 1}`}
-                  className="flex gap-0.5 rounded-full bg-fill-tertiary p-0.5"
-                >
-                  {CUE_PHASE_OPTIONS.map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      role="radio"
-                      aria-checked={phase === option.value}
-                      onClick={() =>
-                        updatePatient({ cue_phases: setCuePhase(patient.cue_phases, index, option.value) })
-                      }
-                      className={cn(
-                        'h-7 rounded-full px-3 text-[13px] font-semibold transition-colors',
-                        phase === option.value ? 'bg-elevated text-foreground shadow-raised' : 'text-label-secondary'
-                      )}
-                      data-testid={`verification-cue-${index + 1}-phase-${option.value}-btn`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
+                <SegmentedControl
+                  label={`Faza wskazówki ${index + 1}`}
+                  options={CUE_PHASE_OPTIONS}
+                  value={phase}
+                  onChange={(nextPhase) =>
+                    updatePatient({ cue_phases: setCuePhase(patient.cue_phases, index, nextPhase) })
+                  }
+                  testIdPrefix={`verification-cue-${index + 1}-phase`}
+                />
                 <Button
                   type="button"
                   variant="ghost"

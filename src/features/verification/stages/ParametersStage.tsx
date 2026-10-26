@@ -27,6 +27,7 @@ import {
   type ParameterKey,
   type ParameterValues,
 } from '../utils/parameterRules';
+import { SegmentedControl } from './SegmentedControl';
 import { StageSection } from './StageSection';
 
 interface ParametersStageProps {
@@ -239,28 +240,14 @@ export function ParametersStage({
       )}
 
       <StageSection title="Podstawowe parametry" data-testid="verification-param-section">
-        <div
-          role="radiogroup"
-          aria-label="Sposób wykonania"
-          className="flex w-fit gap-0.5 rounded-full bg-fill-tertiary p-0.5"
-        >
-          {MODE_OPTIONS.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              role="radio"
-              aria-checked={mode === option.value}
-              onClick={() => onModeChange(option.value)}
-              className={cn(
-                'h-7 rounded-full px-3 text-[13px] font-semibold transition-colors',
-                mode === option.value ? 'bg-elevated text-foreground shadow-raised' : 'text-label-secondary'
-              )}
-              data-testid={`verification-param-mode-${option.value}-btn`}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          label="Sposób wykonania"
+          options={MODE_OPTIONS}
+          value={mode}
+          onChange={onModeChange}
+          testIdPrefix="verification-param-mode"
+          className="w-fit"
+        />
 
         <div className="flex flex-col">
           {MODE_PARAMETERS[mode].map((key) => {

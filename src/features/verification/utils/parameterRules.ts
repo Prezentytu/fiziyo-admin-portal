@@ -4,14 +4,14 @@ export type ExecutionMode = 'reps' | 'hold';
 
 export type ParameterKey = 'sets' | 'reps' | 'repTime' | 'hold' | 'rest';
 
-export type ParameterLevel = 'ok' | 'empty' | 'default' | 'warning' | 'acknowledged' | 'limit';
+type ParameterLevel = 'ok' | 'empty' | 'default' | 'warning' | 'acknowledged' | 'limit';
 
-export type FindingLevel = 'limit' | 'warning';
+type FindingLevel = 'limit' | 'warning';
 
 /** What the therapist can confirm with „Tak ma być”: an unusual field or a long (not over-limit) exercise. */
 export type AcknowledgeKey = ParameterKey | 'session';
 
-export interface ParameterRule {
+interface ParameterRule {
   label: string;
   unit: string;
   hardMax: number;
@@ -38,11 +38,11 @@ export const MODE_PARAMETERS: Record<ExecutionMode, ParameterKey[]> = {
 };
 
 export const DEFAULT_REP_SECONDS = 3;
-export const SESSION_WARNING_SECONDS = 15 * 60;
-export const SESSION_LIMIT_SECONDS = 60 * 60;
+const SESSION_WARNING_SECONDS = 15 * 60;
+const SESSION_LIMIT_SECONDS = 60 * 60;
 const HOLD_MODE_MIN_SECONDS = 10;
 
-export interface ParameterSource {
+interface ParameterSource {
   sets: number | null;
   reps: number | null;
   executionTime: number | null;
@@ -65,7 +65,7 @@ export interface ParameterFieldState {
   level: ParameterLevel;
 }
 
-export interface ParameterFinding {
+interface ParameterFinding {
   key: ParameterKey | 'session';
   level: FindingLevel;
   text: string;
@@ -121,14 +121,14 @@ export function toParameterValues(source: ParameterSource, mode: ExecutionMode):
   };
 }
 
-export interface ModeCoreValues {
+interface ModeCoreValues {
   reps: number | null;
   executionTime: number | null;
 }
 
-export type ModeStash = Partial<Record<ExecutionMode, ModeCoreValues>>;
+type ModeStash = Partial<Record<ExecutionMode, ModeCoreValues>>;
 
-export interface PlanModeSwitchInput {
+interface PlanModeSwitchInput {
   current: ModeCoreValues & { duration?: number | null };
   from: ExecutionMode;
   to: ExecutionMode;
@@ -137,7 +137,7 @@ export interface PlanModeSwitchInput {
   isCurrentPending?: boolean;
 }
 
-export interface ModeSwitchPlan {
+interface ModeSwitchPlan {
   /** Values to write; null means nothing is saved until the therapist enters the hold time. */
   values: ModeCoreValues | null;
   stash: ModeStash;
@@ -167,8 +167,113 @@ export function planModeSwitch({
   return { values: { reps: null, executionTime: DEFAULT_REP_SECONDS }, stash: nextStash };
 }
 
+export interface CoreParameterUpdates {
+  sets?: number | null;
+  reps?: number | null;
+  executionTime?: number | null;
+  restSets?: number | null;
+}
+
+/** Maps a tile field to the exercise fields it writes; a hold is stored as one long repetition. */
+export function toCoreUpdates(key: ParameterKey, value: number | null, current: ModeCoreValues): CoreParameterUpdates {
+  switch (key) {
+    case 'sets':
+      return { sets: value };
+    case 'reps':
+      return { reps: value };
+    case 'repTime':
+      return { executionTime: value };
+    case 'rest':
+      return { restSets: value };
+    case 'hold':
+      return current.reps === 1 ? { executionTime: value } : { executionTime: value, reps: 1 };
+  }
+}
+
+/** Everything the therapist decided on the parameter tile that is not stored on the exercise. */
+interface ParameterReviewState {
+  mode: ExecutionMode;
+  stash: ModeStash;
+  /** Hold picked but its seconds not entered yet, so nothing was saved. */
+  isHoldPending: boolean;
+  acknowledged: ReadonlySet<ParameterKey>;
+  acknowledgedSessionSeconds: number | null;
+}
+
+export function createParameterReview(
+  source: Pick<ParameterSource, 'reps' | 'executionTime' | 'duration'>
+): ParameterReviewState {
+  return {
+    mode: deriveExecutionMode(source),
+    stash: {},
+    isHoldPending: false,
+    acknowledged: new Set(),
+    acknowledgedSessionSeconds: null,
+  };
+}
+
+export function reviewValues(source: ParameterSource, review: ParameterReviewState): ParameterValues {
+  const values = toParameterValues(source, review.mode);
+  return review.isHoldPending ? { ...values, hold: null } : values;
+}
+
+/** An edited field needs a fresh look, so its „Tak ma być” no longer applies. */
+export function markParameterEdited(review: ParameterReviewState, key: ParameterKey): ParameterReviewState {
+  const isHoldPending = key === 'hold' ? false : review.isHoldPending;
+  if (!review.acknowledged.has(key)) {
+    return isHoldPending === review.isHoldPending ? review : { ...review, isHoldPending };
+  }
+  const acknowledged = new Set(review.acknowledged);
+  acknowledged.delete(key);
+  return { ...review, isHoldPending, acknowledged };
+}
+
+export function acknowledgeFinding(
+  review: ParameterReviewState,
+  key: AcknowledgeKey,
+  sessionSeconds: number
+): ParameterReviewState {
+  if (key === 'session') return { ...review, acknowledgedSessionSeconds: sessionSeconds };
+  return { ...review, acknowledged: new Set([...review.acknowledged, key]) };
+}
+
+interface ModeSwitchResult {
+  review: ParameterReviewState;
+  updates: CoreParameterUpdates;
+}
+
+export function switchExecutionMode(
+  review: ParameterReviewState,
+  current: ModeCoreValues & { duration?: number | null },
+  to: ExecutionMode
+): ModeSwitchResult {
+  if (to === review.mode) return { review, updates: {} };
+  const plan = planModeSwitch({
+    current,
+    from: review.mode,
+    to,
+    stash: review.stash,
+    isCurrentPending: review.isHoldPending,
+  });
+  const updates: CoreParameterUpdates = {};
+  if (plan.values && plan.values.reps !== current.reps) updates.reps = plan.values.reps;
+  if (plan.values && plan.values.executionTime !== current.executionTime) {
+    updates.executionTime = plan.values.executionTime;
+  }
+  return {
+    review: {
+      mode: to,
+      stash: plan.stash,
+      isHoldPending: to === 'hold' && plan.values === null,
+      acknowledged: new Set(),
+      acknowledgedSessionSeconds: null,
+    },
+    updates,
+  };
+}
+
 /** Fields outside the parameter tile that still drive the patient timer. */
-export interface SessionTiming {
+interface SessionTiming {
   tempo?: string | null;
   duration?: number | null;
   restReps?: number | null;
@@ -284,7 +389,7 @@ function evaluateField(
   return { field: { key, value: numeric, level: 'ok' }, finding: null };
 }
 
-export interface EvaluateParametersInput {
+interface EvaluateParametersInput {
   values: ParameterValues;
   mode: ExecutionMode;
   side: string;

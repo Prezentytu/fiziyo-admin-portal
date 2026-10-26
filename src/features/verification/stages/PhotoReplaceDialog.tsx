@@ -66,6 +66,15 @@ export function PhotoReplaceDialog({
     resetSelection();
   };
 
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      onUploadOwn(file);
+      resetSelection();
+    }
+    event.target.value = '';
+  };
+
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
       event.preventDefault();
@@ -121,14 +130,7 @@ export function PhotoReplaceDialog({
           type="file"
           accept="image/*"
           className="hidden"
-          onChange={(event) => {
-            const file = event.target.files?.[0];
-            if (file) {
-              onUploadOwn(file);
-              resetSelection();
-            }
-            event.target.value = '';
-          }}
+          onChange={handleFileChange}
           data-testid="verification-photo-replace-file-input"
         />
         <DialogFooter className="flex-row items-center justify-between gap-2 sm:justify-between">

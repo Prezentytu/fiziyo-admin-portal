@@ -16,7 +16,7 @@ export interface ChangeSnapshot {
   enrichment: ExerciseEnrichmentData;
 }
 
-export interface ChangeSnapshotSource {
+interface ChangeSnapshotSource {
   name: string;
   patientDescription: string;
   clinicalDescription: string;

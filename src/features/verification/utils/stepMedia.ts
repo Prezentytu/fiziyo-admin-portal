@@ -21,7 +21,7 @@ export function getStepImage(links: EnrichmentStepImageV3[] | undefined, stepInd
   return links?.find((link) => link.step === stepIndex + 1)?.url ?? null;
 }
 
-export function setStepImage(
+function setStepImage(
   links: EnrichmentStepImageV3[] | undefined,
   stepIndex: number,
   url: string | null

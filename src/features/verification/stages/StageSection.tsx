@@ -11,14 +11,14 @@ interface StageSectionProps {
 }
 
 /** Grey tile inside the verification sheet. Fields inside use the card colour so they stand out from the tile. */
-export function StageSection({ title, hint, required, className, children, ...props }: StageSectionProps) {
+export function StageSection({ title, hint, required, className, children, 'data-testid': testId }: StageSectionProps) {
   return (
     <section
       className={cn(
         'flex flex-col gap-3 rounded-card bg-grouped-tertiary p-4 [--input:var(--grouped-secondary)]',
         className
       )}
-      data-testid={props['data-testid']}
+      data-testid={testId}
     >
       <header className="flex flex-col gap-1">
         <div className="flex items-center gap-2">

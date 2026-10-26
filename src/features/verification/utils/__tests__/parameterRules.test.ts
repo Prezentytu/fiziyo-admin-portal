@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  acknowledgeFinding,
   buildPatientParameterLine,
+  createParameterReview,
+  markParameterEdited,
+  reviewValues,
+  switchExecutionMode,
+  toCoreUpdates,
   computeSessionSeconds,
   deriveExecutionMode,
   evaluateParameters,
@@ -250,5 +256,66 @@ describe('planModeSwitch', () => {
 
     expect(plan.values).toEqual({ reps: null, executionTime: 3 });
     expect(plan.stash.hold).toEqual({ reps: 1, executionTime: 30 });
+  });
+});
+
+describe('toCoreUpdates', () => {
+  it('maps tile fields to exercise fields', () => {
+    const current = { reps: 12, executionTime: 3 };
+    expect(toCoreUpdates('sets', 4, current)).toEqual({ sets: 4 });
+    expect(toCoreUpdates('repTime', 5, current)).toEqual({ executionTime: 5 });
+    expect(toCoreUpdates('rest', 90, current)).toEqual({ restSets: 90 });
+  });
+
+  it('stores a hold as one long repetition', () => {
+    expect(toCoreUpdates('hold', 30, { reps: 12, executionTime: 3 })).toEqual({ executionTime: 30, reps: 1 });
+    expect(toCoreUpdates('hold', 45, { reps: 1, executionTime: 30 })).toEqual({ executionTime: 45 });
+  });
+});
+
+describe('parameter review state', () => {
+  const source = { sets: 3, reps: 12, executionTime: 3, restSets: 60, side: 'none' };
+
+  it('starts from the mode derived from the exercise', () => {
+    expect(createParameterReview({ reps: 1, executionTime: 30 }).mode).toBe('hold');
+    expect(createParameterReview(source).mode).toBe('reps');
+  });
+
+  it('reopens an acknowledged field after it is edited', () => {
+    const review = acknowledgeFinding(createParameterReview(source), 'reps', 0);
+    expect(review.acknowledged.has('reps')).toBe(true);
+    expect(markParameterEdited(review, 'reps').acknowledged.has('reps')).toBe(false);
+  });
+
+  it('keeps the same object when an edit changes nothing in the review', () => {
+    const review = createParameterReview(source);
+    expect(markParameterEdited(review, 'sets')).toBe(review);
+  });
+
+  it('remembers the confirmed session length', () => {
+    expect(acknowledgeFinding(createParameterReview(source), 'session', 1200).acknowledgedSessionSeconds).toBe(1200);
+  });
+
+  it('switches to hold without saving until seconds are entered', () => {
+    const { review, updates } = switchExecutionMode(createParameterReview(source), source, 'hold');
+    expect(updates).toEqual({});
+    expect(review.isHoldPending).toBe(true);
+    expect(reviewValues(source, review).hold).toBeNull();
+    expect(markParameterEdited(review, 'hold').isHoldPending).toBe(false);
+  });
+
+  it('restores the previous values when switching back and clears acknowledgements', () => {
+    const held = { reps: 1, executionTime: 30, sets: 3, restSets: 60, side: 'none' };
+    const start = acknowledgeFinding(createParameterReview(held), 'session', 900);
+    const toReps = switchExecutionMode(start, held, 'reps');
+    expect(toReps.updates).toEqual({ reps: null, executionTime: 3 });
+    expect(toReps.review.acknowledgedSessionSeconds).toBeNull();
+    const back = switchExecutionMode(toReps.review, { ...held, reps: null, executionTime: 3 }, 'hold');
+    expect(back.updates).toEqual({ reps: 1, executionTime: 30 });
+  });
+
+  it('does nothing when the mode is already selected', () => {
+    const review = createParameterReview(source);
+    expect(switchExecutionMode(review, source, 'reps')).toEqual({ review, updates: {} });
   });
 });
