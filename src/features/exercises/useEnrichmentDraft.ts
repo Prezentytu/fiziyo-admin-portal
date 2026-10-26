@@ -5,6 +5,7 @@ import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.
 import { cleanupEnrichment } from '@/features/verification/utils/enrichment';
 import { ENRICHMENT_SCHEMA_V3, toV3 } from '@/features/verification/utils/enrichmentToV3';
 import { computeCompleteness } from '@/features/verification/utils/enrichmentSkeleton';
+import { realignMediaForBlankEntries } from '@/features/verification/utils/stepMedia';
 
 export function deepCloneEnrichment<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
@@ -27,7 +28,8 @@ export function setEnrichmentAtPath(target: Record<string, unknown>, path: strin
 }
 
 export function composeEnrichmentPayload(draft: ExerciseEnrichmentData): ExerciseEnrichmentData {
-  const cleaned = cleanupEnrichment(draft) as ExerciseEnrichmentData | undefined;
+  const aligned = draft.patient ? { ...draft, patient: realignMediaForBlankEntries(draft.patient) } : draft;
+  const cleaned = cleanupEnrichment(aligned) as ExerciseEnrichmentData | undefined;
   return { ...cleaned, $schema: ENRICHMENT_SCHEMA_V3 };
 }
 

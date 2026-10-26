@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  realignMediaForBlankEntries,
   cycleStepImage,
   getCuePhase,
   keepExistingImages,
@@ -64,5 +65,29 @@ describe('cue phases', () => {
       { cue: 2, phase: 'rest' },
     ]);
     expect(removeCuePhaseAt(links, 0)).toEqual([{ cue: 1, phase: 'rest' }]);
+  });
+});
+
+describe('realignMediaForBlankEntries', () => {
+  it('przesuwa zdjęcia i fazy za wyczyszczonym krokiem i wskazówką', () => {
+    const result = realignMediaForBlankEntries({
+      steps: ['Stań', '  ', 'Wstań'],
+      step_images: [
+        { step: 1, url: 'a' },
+        { step: 2, url: 'b' },
+        { step: 3, url: 'c' },
+      ],
+      cues: ['', 'Oddychaj'],
+      cue_phases: [
+        { cue: 0, phase: 'preparation' },
+        { cue: 1, phase: 'rest' },
+      ],
+    });
+
+    expect(result.step_images).toEqual([
+      { step: 1, url: 'a' },
+      { step: 2, url: 'c' },
+    ]);
+    expect(result.cue_phases).toEqual([{ cue: 0, phase: 'rest' }]);
   });
 });

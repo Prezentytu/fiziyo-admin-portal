@@ -2,6 +2,7 @@ import type {
   EnrichmentCuePhaseLinkV3,
   EnrichmentCuePhaseV3,
   EnrichmentStepImageV3,
+  ExerciseEnrichmentPatientV3,
 } from '@/graphql/types/exerciseEnrichment.types';
 
 export const CUE_PHASE_OPTIONS: ReadonlyArray<{ value: EnrichmentCuePhaseV3; label: string }> = [
@@ -91,4 +92,30 @@ export function removeCuePhaseAt(
   return (links ?? [])
     .filter((link) => link.cue !== cueIndex)
     .map((link) => (link.cue > cueIndex ? { ...link, cue: link.cue - 1 } : link));
+}
+
+function blankIndexesDescending(values: string[] | undefined): number[] {
+  return (values ?? [])
+    .map((value, index) => (value.trim().length === 0 ? index : -1))
+    .filter((index) => index >= 0)
+    .reverse();
+}
+
+/**
+ * Saving drops blank steps and cues, so photo and phase links must shift with them;
+ * otherwise a cleared middle step hands its photo to the next one.
+ */
+export function realignMediaForBlankEntries(patient: ExerciseEnrichmentPatientV3): ExerciseEnrichmentPatientV3 {
+  const blankSteps = blankIndexesDescending(patient.steps);
+  const blankCues = blankIndexesDescending(patient.cues);
+  if (blankSteps.length === 0 && blankCues.length === 0) return patient;
+
+  const next = { ...patient };
+  if (blankSteps.length > 0 && patient.step_images) {
+    next.step_images = blankSteps.reduce((links, index) => removeStepImageAt(links, index), patient.step_images);
+  }
+  if (blankCues.length > 0 && patient.cue_phases) {
+    next.cue_phases = blankCues.reduce((links, index) => removeCuePhaseAt(links, index), patient.cue_phases);
+  }
+  return next;
 }
