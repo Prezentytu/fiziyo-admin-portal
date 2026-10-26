@@ -1,3 +1,5 @@
+import { parseTempo } from '@/utils/exerciseTime';
+
 export type ExecutionMode = 'reps' | 'hold';
 
 export type ParameterKey = 'sets' | 'reps' | 'repTime' | 'hold' | 'rest';
@@ -164,13 +166,31 @@ export function planModeSwitch({
   return { values: { reps: null, executionTime: DEFAULT_REP_SECONDS }, stash: nextStash };
 }
 
-export function computeSessionSeconds(values: ParameterValues, mode: ExecutionMode, side: string): number {
+/** Fields outside the parameter tile that still drive the patient timer. */
+export interface SessionTiming {
+  tempo?: string | null;
+  duration?: number | null;
+}
+
+function repsWorkPerSet(values: ParameterValues, timing: SessionTiming): number {
+  const reps = positive(values.reps) ?? 0;
+  const repTime = positive(values.repTime);
+  if (repTime) return reps * repTime;
+  const durationOverride = positive(timing.duration);
+  if (durationOverride) return durationOverride;
+  return reps * (parseTempo(timing.tempo ?? undefined) ?? DEFAULT_REP_SECONDS);
+}
+
+/** Same precedence as the catalog and player: repetition time → set duration → tempo → 3 s. */
+export function computeSessionSeconds(
+  values: ParameterValues,
+  mode: ExecutionMode,
+  side: string,
+  timing: SessionTiming = {}
+): number {
   const sets = positive(values.sets) ?? 0;
   const rest = Math.max(0, values.rest ?? 0);
-  const workPerSet =
-    mode === 'reps'
-      ? (positive(values.reps) ?? 0) * (positive(values.repTime) ?? DEFAULT_REP_SECONDS)
-      : (positive(values.hold) ?? 0);
+  const workPerSet = mode === 'reps' ? repsWorkPerSet(values, timing) : (positive(values.hold) ?? 0);
   return sets * workPerSet * sideFactor(side) + Math.max(0, sets - 1) * rest;
 }
 
@@ -261,6 +281,7 @@ export interface EvaluateParametersInput {
   mode: ExecutionMode;
   side: string;
   acknowledged?: ReadonlySet<AcknowledgeKey>;
+  timing?: SessionTiming;
 }
 
 export function evaluateParameters({
@@ -268,6 +289,7 @@ export function evaluateParameters({
   mode,
   side,
   acknowledged = new Set<AcknowledgeKey>(),
+  timing,
 }: EvaluateParametersInput): ParameterEvaluation {
   const fields: ParameterFieldState[] = [];
   const findings: ParameterFinding[] = [];
@@ -278,7 +300,7 @@ export function evaluateParameters({
     if (finding) findings.push(finding);
   }
 
-  const sessionSeconds = computeSessionSeconds(values, mode, side);
+  const sessionSeconds = computeSessionSeconds(values, mode, side, timing);
   let sessionLevel: ParameterEvaluation['sessionLevel'] = 'ok';
   if (sessionSeconds > SESSION_LIMIT_SECONDS) sessionLevel = 'limit';
   else if (sessionSeconds > SESSION_WARNING_SECONDS) sessionLevel = 'warning';

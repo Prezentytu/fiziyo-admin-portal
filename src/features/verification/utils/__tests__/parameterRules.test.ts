@@ -105,6 +105,27 @@ describe('evaluateParameters', () => {
 });
 
 describe('computeSessionSeconds', () => {
+  it('przy pustym czasie powtórzenia liczy tempo i legacy duration jak katalog', () => {
+    const values = { sets: 5, reps: 20, repTime: null, hold: null, rest: 60 };
+    expect(computeSessionSeconds(values, 'reps', 'both', { tempo: '10-0-10-0' })).toBe(5 * 20 * 20 * 2 + 4 * 60);
+    expect(
+      computeSessionSeconds({ sets: 6, reps: 10, repTime: null, hold: null, rest: 60 }, 'reps', 'none', {
+        duration: 180,
+      })
+    ).toBe(6 * 180 + 5 * 60);
+  });
+
+  it('tempo 20 s na powtórzenie blokuje ćwiczenie ponad godzinę', () => {
+    const result = evaluateParameters({
+      values: { sets: 5, reps: 20, repTime: null, hold: null, rest: 60 },
+      mode: 'reps',
+      side: 'both',
+      timing: { tempo: '10-0-10-0' },
+    });
+    expect(result.sessionLevel).toBe('limit');
+    expect(result.blockingCount).toBeGreaterThan(0);
+  });
+
   it('liczy każdą stronę osobno podwójnie', () => {
     expect(computeSessionSeconds(typicalReps, 'reps', 'none')).toBe(3 * 36 + 2 * 60);
     expect(computeSessionSeconds(typicalReps, 'reps', 'both')).toBe(3 * 72 + 2 * 60);

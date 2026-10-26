@@ -274,8 +274,15 @@ export function VerificationWorkspace({
     return isHoldPending ? { ...values, hold: null } : values;
   }, [core, isHoldPending, mode]);
   const evaluation = useMemo(
-    () => evaluateParameters({ values: parameterValues, mode, side: core.side, acknowledged }),
-    [parameterValues, mode, core.side, acknowledged]
+    () =>
+      evaluateParameters({
+        values: parameterValues,
+        mode,
+        side: core.side,
+        acknowledged,
+        timing: { tempo: core.tempo, duration: core.duration },
+      }),
+    [parameterValues, mode, core.side, core.tempo, core.duration, acknowledged]
   );
   const descriptionNumbers = useMemo(
     () => (descriptionAcknowledged ? [] : findHardcodedNumbers(core.patientDescription)),
