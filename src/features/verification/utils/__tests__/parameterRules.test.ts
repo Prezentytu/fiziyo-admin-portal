@@ -6,6 +6,7 @@ import {
   deriveExecutionMode,
   evaluateParameters,
   findHardcodedNumbers,
+  planModeSwitch,
   replaceHardcodedNumbers,
   sideFactor,
   toParameterValues,
@@ -152,5 +153,48 @@ describe('hardcoded numbers in patient description', () => {
 
   it('nie rusza liczb niezwiązanych z parametrami', () => {
     expect(findHardcodedNumbers('Ugnij kolano do 90 stopni.')).toEqual([]);
+  });
+});
+
+describe('planModeSwitch', () => {
+  const repsExercise = { reps: 12, executionTime: 3, duration: null };
+
+  it('nie zapisuje 1 powtórzenia, dopóki nie ma czasu utrzymania', () => {
+    const plan = planModeSwitch({ current: repsExercise, from: 'reps', to: 'hold', stash: {} });
+
+    expect(plan.values).toBeNull();
+    expect(plan.stash.reps).toEqual({ reps: 12, executionTime: 3 });
+  });
+
+  it('pomyłkowe przełączenie i powrót przywraca oryginalne parametry', () => {
+    const toHold = planModeSwitch({ current: repsExercise, from: 'reps', to: 'hold', stash: {} });
+    const back = planModeSwitch({
+      current: repsExercise,
+      from: 'hold',
+      to: 'reps',
+      stash: toHold.stash,
+      isCurrentPending: true,
+    });
+
+    expect(back.values).toEqual({ reps: 12, executionTime: 3 });
+    expect(back.stash.hold).toBeUndefined();
+  });
+
+  it('bierze czas utrzymania z legacy duration', () => {
+    const plan = planModeSwitch({ current: { ...repsExercise, duration: 30 }, from: 'reps', to: 'hold', stash: {} });
+
+    expect(plan.values).toEqual({ reps: 1, executionTime: 30 });
+  });
+
+  it('z utrzymania bez zapamiętanych powtórzeń ustawia domyślny czas powtórzenia, nie zero', () => {
+    const plan = planModeSwitch({
+      current: { reps: 1, executionTime: 30, duration: null },
+      from: 'hold',
+      to: 'reps',
+      stash: {},
+    });
+
+    expect(plan.values).toEqual({ reps: null, executionTime: 3 });
+    expect(plan.stash.hold).toEqual({ reps: 1, executionTime: 30 });
   });
 });

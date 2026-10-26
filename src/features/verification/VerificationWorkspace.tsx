@@ -60,10 +60,12 @@ import {
   evaluateParameters,
   findHardcodedNumbers,
   formatSessionDuration,
+  planModeSwitch,
   replaceHardcodedNumbers,
   toParameterValues,
   type AcknowledgeKey,
   type ExecutionMode,
+  type ModeStash,
   type ParameterKey,
 } from './utils/parameterRules';
 import { validatePhotoFile } from './utils/photoValidation';
@@ -80,7 +82,6 @@ import {
 } from './utils/verificationStages';
 
 const MAX_PHOTOS = 5;
-const HOLD_MIN_SECONDS = 10;
 
 const PRIMARY_LABELS: Record<VerificationStageKey, string> = {
   material: 'Materiał gotowy, dalej',
@@ -118,10 +119,6 @@ function fileToDataUrl(file: File): Promise<string> {
     reader.onerror = () => reject(reader.error ?? new Error('Nie udało się odczytać pliku'));
     reader.readAsDataURL(file);
   });
-}
-
-function positiveOrNull(value: number | null): number | null {
-  return value != null && value > 0 ? value : null;
 }
 
 function SaveStatus({ status }: Readonly<{ status: 'idle' | 'saving' | 'success' | 'error' }>) {
@@ -223,6 +220,8 @@ export function VerificationWorkspace({
   const [stage, setStage] = useState<VerificationStageKey>('material');
   const [visited, setVisited] = useState<ReadonlySet<VerificationStageKey>>(() => new Set(['material']));
   const [mode, setMode] = useState<ExecutionMode>(() => deriveExecutionMode(core));
+  const [modeStash, setModeStash] = useState<ModeStash>({});
+  const [isHoldPending, setIsHoldPending] = useState(false);
   const [acknowledged, setAcknowledged] = useState<ReadonlySet<AcknowledgeKey>>(() => new Set());
   const [descriptionAcknowledged, setDescriptionAcknowledged] = useState(false);
   const [proposal, setProposal] = useState<InstructionProposal | null>(null);
@@ -270,7 +269,10 @@ export function VerificationWorkspace({
     ]
   );
 
-  const parameterValues = useMemo(() => toParameterValues(core, mode), [core, mode]);
+  const parameterValues = useMemo(() => {
+    const values = toParameterValues(core, mode);
+    return isHoldPending ? { ...values, hold: null } : values;
+  }, [core, isHoldPending, mode]);
   const evaluation = useMemo(
     () => evaluateParameters({ values: parameterValues, mode, side: core.side, acknowledged }),
     [parameterValues, mode, core.side, acknowledged]
@@ -390,6 +392,7 @@ export function VerificationWorkspace({
       if (key === 'hold') {
         setCoreField('executionTime', value);
         if (core.reps !== 1) setCoreField('reps', 1);
+        setIsHoldPending(false);
       }
       setAcknowledged((previous) => {
         if (!previous.has(key) && !previous.has('session')) return previous;
@@ -405,19 +408,25 @@ export function VerificationWorkspace({
   const handleModeChange = useCallback(
     (nextMode: ExecutionMode) => {
       if (nextMode === mode) return;
-      if (nextMode === 'hold') {
-        setCoreField('reps', 1);
-        if ((core.executionTime ?? 0) < HOLD_MIN_SECONDS) {
-          setCoreField('executionTime', positiveOrNull(core.duration));
+      const plan = planModeSwitch({
+        current: core,
+        from: mode,
+        to: nextMode,
+        stash: modeStash,
+        isCurrentPending: isHoldPending,
+      });
+      if (plan.values) {
+        if (plan.values.reps !== core.reps) setCoreField('reps', plan.values.reps);
+        if (plan.values.executionTime !== core.executionTime) {
+          setCoreField('executionTime', plan.values.executionTime);
         }
-      } else {
-        setCoreField('reps', null);
-        setCoreField('executionTime', 0);
       }
+      setModeStash(plan.stash);
+      setIsHoldPending(nextMode === 'hold' && plan.values === null);
       setMode(nextMode);
       setAcknowledged(new Set());
     },
-    [core.duration, core.executionTime, mode, setCoreField]
+    [core, isHoldPending, mode, modeStash, setCoreField]
   );
 
   // ============================================

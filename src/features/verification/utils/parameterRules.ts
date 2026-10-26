@@ -118,6 +118,52 @@ export function toParameterValues(source: ParameterSource, mode: ExecutionMode):
   };
 }
 
+export interface ModeCoreValues {
+  reps: number | null;
+  executionTime: number | null;
+}
+
+export type ModeStash = Partial<Record<ExecutionMode, ModeCoreValues>>;
+
+export interface PlanModeSwitchInput {
+  current: ModeCoreValues & { duration?: number | null };
+  from: ExecutionMode;
+  to: ExecutionMode;
+  stash: ModeStash;
+  /** The current mode has no saved values yet (hold picked, seconds not entered). */
+  isCurrentPending?: boolean;
+}
+
+export interface ModeSwitchPlan {
+  /** Values to write; null means nothing is saved until the therapist enters the hold time. */
+  values: ModeCoreValues | null;
+  stash: ModeStash;
+}
+
+/**
+ * Switching modes must never autosave a half-filled record (e.g. reps: 1 with the old 3 s)
+ * and a mistaken click must be reversible, so each mode remembers its last values.
+ */
+export function planModeSwitch({
+  current,
+  from,
+  to,
+  stash,
+  isCurrentPending = false,
+}: PlanModeSwitchInput): ModeSwitchPlan {
+  const nextStash: ModeStash = isCurrentPending
+    ? stash
+    : { ...stash, [from]: { reps: current.reps, executionTime: current.executionTime } };
+  const remembered = stash[to];
+  if (remembered) return { values: remembered, stash: nextStash };
+  if (to === 'hold') {
+    const holdSeconds =
+      (current.executionTime ?? 0) >= HOLD_MODE_MIN_SECONDS ? current.executionTime : positive(current.duration);
+    return { values: holdSeconds ? { reps: 1, executionTime: holdSeconds } : null, stash: nextStash };
+  }
+  return { values: { reps: null, executionTime: DEFAULT_REP_SECONDS }, stash: nextStash };
+}
+
 export function computeSessionSeconds(values: ParameterValues, mode: ExecutionMode, side: string): number {
   const sets = positive(values.sets) ?? 0;
   const rest = Math.max(0, values.rest ?? 0);
