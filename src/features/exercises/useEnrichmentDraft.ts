@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
-import { cleanupEnrichment } from '@/features/verification/utils/enrichment';
+import { compactEnrichment } from '@/features/verification/utils/enrichment';
 import { ENRICHMENT_SCHEMA_V3, toV3 } from '@/features/verification/utils/enrichmentToV3';
 import { computeCompleteness } from '@/features/verification/utils/enrichmentSkeleton';
 
@@ -27,8 +27,7 @@ export function setEnrichmentAtPath(target: Record<string, unknown>, path: strin
 }
 
 export function composeEnrichmentPayload(draft: ExerciseEnrichmentData): ExerciseEnrichmentData {
-  const cleaned = cleanupEnrichment(draft) as ExerciseEnrichmentData | undefined;
-  return { ...cleaned, $schema: ENRICHMENT_SCHEMA_V3 };
+  return { ...compactEnrichment(draft), $schema: ENRICHMENT_SCHEMA_V3 };
 }
 
 export function isEnrichmentPayloadEmpty(payload: ExerciseEnrichmentData): boolean {

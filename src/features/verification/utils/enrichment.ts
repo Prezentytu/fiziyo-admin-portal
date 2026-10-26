@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import { mergeWithSkeleton } from './enrichmentSkeleton';
+import { realignMediaForBlankEntries } from './stepMedia';
 
 const patientMistakeSchema = z.object({
   mistake: z.string().optional(),
@@ -72,6 +73,15 @@ export function parseEnrichmentJson(rawJson: string): ExerciseEnrichmentData {
   }
 
   return parsed.data as ExerciseEnrichmentData;
+}
+
+/**
+ * Cleanup for enrichment data: blank steps and cues are dropped, so the index-keyed
+ * photo and phase links are shifted with them first.
+ */
+export function compactEnrichment(data: ExerciseEnrichmentData): ExerciseEnrichmentData | undefined {
+  const aligned = data.patient ? { ...data, patient: realignMediaForBlankEntries(data.patient) } : data;
+  return cleanupEnrichment(aligned) as ExerciseEnrichmentData | undefined;
 }
 
 export function cleanupEnrichment(value: unknown): unknown {

@@ -22,6 +22,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-10-26 - Obecność pola to nie poprawność parametru
+
+- **Kategoria**: `Exercise` | `UI/UX` | `Verification`
+- **Problem**: Ekran weryfikacji świecił na zielono „Przysiad 100 serii × 1000 powtórzeń”, bo reguły publikacji sprawdzały tylko, czy serie i powtórzenia są większe od zera.
+- **Przyczyna**: `computeVerificationCompletion` liczy kompletność, a nie wiarygodność; żadna warstwa nie znała limitów ani typowych zakresów, ani czasu całego ćwiczenia.
+- **Rozwiązanie**: `utils/parameterRules.ts` ocenia każde pole (limit = blokada, poza typowym zakresem = „Sprawdź” z „Tak ma być”) i czas całego ćwiczenia (strona ciała ×2), a `verificationStages.ts` blokuje publikację, dopóki etap ma uwagi (SPEC-030).
+- **Reguła**: Jeśli UI ocenia dane domenowe kolorem „gotowe”, zawsze sprawdzaj wiarygodność wartości (limit, typowy zakres, wynik złożony jak czas sesji), a nie tylko obecność — i trzymaj te reguły w czystej funkcji z testem przypadku absurdalnego.
+
 ### 2026-10-15 - Enter na ostatnim kroku kreatora nie zapisuje planu
 
 - **Kategoria**: `UI/UX`

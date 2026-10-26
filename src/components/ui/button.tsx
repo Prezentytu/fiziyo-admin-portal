@@ -14,6 +14,7 @@ const buttonVariants = cva(
         outline: 'border border-separator bg-transparent text-foreground hover:bg-fill-quaternary',
         secondary: 'bg-fill-tertiary text-foreground hover:bg-fill-tertiary/70',
         ghost: 'text-foreground hover:bg-fill-quaternary',
+        plain: 'text-tint hover:bg-tint-muted',
         link: 'text-tint underline-offset-4 hover:underline',
       },
       size: {
