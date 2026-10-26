@@ -28,7 +28,7 @@ export interface VerificationCompletion {
 
 /**
  * Liczy gotowość ćwiczenia do publikacji na podstawie tych samych kryteriów krytycznych,
- * które wcześniej liczył `VerificationEditorPanel` (opis pacjenta/kliniczny, podstawowe parametry, nazwa, media, tagi).
+ * które wcześniej liczył `VerificationEditorPanel` (opis pacjenta/dla fizjoterapeuty, podstawowe parametry, nazwa, media, tagi).
  * Czysta funkcja — łatwa do przetestowania i reużycia we wszystkich trzech widokach weryfikacji.
  */
 export function computeVerificationCompletion(input: VerificationCompletionInput): VerificationCompletion {
@@ -45,7 +45,8 @@ export function computeVerificationCompletion(input: VerificationCompletionInput
 
   const missingFields: string[] = [];
   if (!isPatientDescValid) missingFields.push(`Opis pacjenta (min. ${MIN_PATIENT_DESCRIPTION_LENGTH} znaków)`);
-  if (!isClinicalDescValid) missingFields.push(`Opis kliniczny (min. ${MIN_CLINICAL_DESCRIPTION_LENGTH} znaków)`);
+  if (!isClinicalDescValid)
+    missingFields.push(`Opis dla fizjoterapeuty (min. ${MIN_CLINICAL_DESCRIPTION_LENGTH} znaków)`);
   if (!hasSets) missingFields.push('Liczba serii');
   if (!hasVolume) missingFields.push('Powtórzenia lub czas');
   if (!HIDE_EXERCISE_TAGS && !hasTags) missingFields.push('Tagi główne');

@@ -61,7 +61,7 @@ export function VerificationIntro({
       </div>
 
       {/* Header */}
-      <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-4 text-foreground">Centrum Weryfikacji FiziYo</h1>
+      <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-4 text-foreground">Weryfikacja ćwiczeń FiziYo</h1>
 
       <p className="text-lg text-muted-foreground mb-8 leading-relaxed max-w-lg">
         Witaj w strefie eksperta, {userName}. Twój wkład pomaga budować najwyższy standard rehabilitacji. Zadbajmy o to,

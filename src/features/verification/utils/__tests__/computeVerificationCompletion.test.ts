@@ -40,7 +40,7 @@ describe('computeVerificationCompletion', () => {
     const result = computeVerificationCompletion({ ...validInput, clinicalDescription: 'krótko' });
 
     expect(result.isValid).toBe(false);
-    expect(result.missingFields).toContain('Opis kliniczny (min. 20 znaków)');
+    expect(result.missingFields).toContain('Opis dla fizjoterapeuty (min. 20 znaków)');
   });
 
   it('flags missing sets', () => {

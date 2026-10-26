@@ -18,7 +18,7 @@
 - `billing-` - Rozliczenia Pay-as-you-go
 - `finance-` / `finances-` - Dashboard finansów i konfiguracja wypłat
 - `settings-` - Ustawienia
-- `verification-` - Centrum weryfikacji ćwiczeń (ContentManager)
+- `verification-` - Weryfikacja ćwiczeń (ContentManager)
 - `common-` - Wspólne komponenty
 
 **Sufiksy:**
@@ -688,7 +688,7 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `clinical-diagnosis-section`       | Sekcja diagnozy            | `DiagnosisSectionForm.tsx`     |
 | `clinical-treatment-section`       | Sekcja leczenia            | `TreatmentPlanSectionForm.tsx` |
 
-### 15. Centrum Weryfikacji (verification-)
+### 15. Weryfikacja ćwiczeń (verification-)
 
 #### Ekran powitalny (Intro)
 
@@ -708,7 +708,7 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 
 | data-testid                           | Element                              | Plik                         |
 | ------------------------------------- | ------------------------------------ | ---------------------------- |
-| `nav-link-verification`               | Link: Centrum Weryfikacji            | `Sidebar.tsx`                |
+| `nav-link-verification`               | Link: Weryfikacja ćwiczeń            | `Sidebar.tsx`                |
 | `nav-link-verification-organizations` | Link: Weryfikacja Organizacji        | `Sidebar.tsx`                |
 | `verification-search-input`           | Wyszukiwarka ćwiczeń                 | `verification/page.tsx`      |
 | `verification-stats-pending`          | Karta statystyk: Oczekujące          | `VerificationStatsCards.tsx` |
@@ -724,6 +724,43 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `verification-approve-dialog`         | Dialog zatwierdzenia                 | `ApproveDialog.tsx`          |
 | `verification-approve-notes-input`    | Textarea notatki (opcjonalna)        | `ApproveDialog.tsx`          |
 | `verification-approve-confirm-btn`    | Przycisk potwierdzenia zatwierdzenia | `ApproveDialog.tsx`          |
+
+#### Etapy weryfikacji globalnej (`verification/[id]`, SPEC-030)
+
+Dialogi `verification-approve-*` i `verification-reject-*` zostają w ścieżkach organizacji; ekran globalny publikuje z paska, a jedyne wyjście bez publikacji to „To duplikat”.
+
+| data-testid                                                                     | Element                                     | Plik                          |
+| ------------------------------------------------------------------------------- | ------------------------------------------- | ----------------------------- |
+| `verification-workspace`                                                        | Arkusz ekranu weryfikacji                   | `VerificationWorkspace.tsx`   |
+| `verification-back-btn`                                                         | Powrót do listy                             | `VerificationWorkspace.tsx`   |
+| `verification-skip-btn`                                                         | Odłóż na później                            | `VerificationWorkspace.tsx`   |
+| `verification-report-banner` / `-report-go-btn`                                 | Baner zgłoszenia / przejście do etapu       | `VerificationWorkspace.tsx`   |
+| `verification-stage-nav`                                                        | Nawigacja etapów                            | `VerificationStageNav.tsx`    |
+| `verification-stage-{material\|parameters\|instruction\|safety\|decision}-btn`  | Przejście do etapu                          | `VerificationStageNav.tsx`    |
+| `verification-stage-{key}`                                                      | Kontener etapu                              | `stages/*Stage.tsx`           |
+| `verification-floating-bar`                                                     | Pływający pasek akcji                       | `VerificationFloatingBar.tsx` |
+| `verification-bar-primary-btn`                                                  | „… gotowe, dalej” / „Zatwierdź i opublikuj” | `VerificationFloatingBar.tsx` |
+| `verification-bar-duplicate-btn`                                                | „To duplikat”                               | `VerificationFloatingBar.tsx` |
+| `verification-media-panel`                                                      | Panel nagrania i zdjęć                      | `VerificationWorkspace.tsx`   |
+| `verification-material-photo-{n}-{replace\|delete\|accept\|retry\|discard}-btn` | Akcje zdjęcia n                             | `MaterialStage.tsx`           |
+| `verification-material-photo-add-btn`                                           | Dodaj zdjęcie                               | `MaterialStage.tsx`           |
+| `verification-material-video-edit-btn` / `-video-url-input`                     | Dodaj / wymień nagranie                     | `MaterialStage.tsx`           |
+| `verification-photo-replace-dialog`                                             | Dialog nowego zdjęcia                       | `PhotoReplaceDialog.tsx`      |
+| `verification-photo-replace-{generate\|upload\|cancel}-btn`                     | Akcje dialogu nowego zdjęcia                | `PhotoReplaceDialog.tsx`      |
+| `verification-param-{sets\|reps\|repTime\|hold\|rest}-input`                    | Pole parametru                              | `ParametersStage.tsx`         |
+| `verification-param-{key}-fix-btn` / `-ack-btn`                                 | „Ustaw X” / „Tak ma być”                    | `ParametersStage.tsx`         |
+| `verification-param-mode-{reps\|hold}-btn`                                      | Powtórzenia / Utrzymanie pozycji            | `ParametersStage.tsx`         |
+| `verification-param-side-select`                                                | Strona ciała                                | `ParametersStage.tsx`         |
+| `verification-param-description-fix-btn`                                        | Zamiana liczby w opisie                     | `ParametersStage.tsx`         |
+| `verification-instruction-description-input`                                    | Opis dla pacjenta                           | `InstructionStage.tsx`        |
+| `verification-step-{n}-{input\|photo-btn\|remove-btn}`                          | Krok n, zdjęcie kroku                       | `InstructionStage.tsx`        |
+| `verification-cue-{n}-phase-{preparation\|work\|rest}-btn`                      | Faza wskazówki głosowej                     | `InstructionStage.tsx`        |
+| `verification-proposal-{request\|insert\|dismiss}-btn`                          | Propozycja agenta                           | `InstructionStage.tsx`        |
+| `verification-safety-stop-if-{add-btn\|input}`                                  | Przerwij, gdy…                              | `SafetyStage.tsx`             |
+| `verification-safety-therapist-description-input`                               | Opis dla fizjoterapeuty                     | `SafetyStage.tsx`             |
+| `verification-safety-supervision-checkbox`                                      | Tylko pod nadzorem                          | `SafetyStage.tsx`             |
+| `verification-decision-{key}-go-btn`                                            | Zmień / Popraw w podsumowaniu               | `DecisionStage.tsx`           |
+| `verification-duplicate-dialog` / `-confirm-btn`                                | Oznacz jako duplikat                        | `DuplicateDialog.tsx`         |
 
 #### Cross-org verification (SiteSuperAdmin)
 

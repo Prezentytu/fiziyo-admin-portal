@@ -51,6 +51,20 @@ export interface EnrichmentPatientMistakeV3 {
   fix?: string;
 }
 
+export type EnrichmentCuePhaseV3 = 'preparation' | 'work' | 'rest';
+
+/** Photo shown next to a step. `step` is 1-based, matching the step number shown to the patient. */
+export interface EnrichmentStepImageV3 {
+  step: number;
+  url: string;
+}
+
+/** Exercise phase in which the voice-over reads a cue. `cue` is the 0-based index in `cues`. */
+export interface EnrichmentCuePhaseLinkV3 {
+  cue: number;
+  phase: EnrichmentCuePhaseV3;
+}
+
 export interface ExerciseEnrichmentPatientV3 {
   summary?: string;
   steps?: string[];
@@ -60,6 +74,10 @@ export interface ExerciseEnrichmentPatientV3 {
   should_not_feel?: string;
   why?: string;
   when_to_do?: string;
+  /** Additive (verification screen). Clients that do not know it ignore it. */
+  step_images?: EnrichmentStepImageV3[];
+  /** Additive (verification screen). Missing entry means the cue is read during work. */
+  cue_phases?: EnrichmentCuePhaseLinkV3[];
 }
 
 export interface ExerciseEnrichmentTherapistV3 {

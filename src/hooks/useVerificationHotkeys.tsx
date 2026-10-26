@@ -3,13 +3,13 @@ import { useEffect, useCallback, useRef } from 'react';
 interface UseVerificationHotkeysOptions {
   /** Callback: Zatwierdź i przejdź do następnego (CMD/CTRL + Enter) */
   onApproveAndNext: () => void;
-  /** Callback: Odrzuć ćwiczenie (CMD/CTRL + Backspace) */
-  onReject: () => void;
+  /** Callback: Odrzuć ćwiczenie (CMD/CTRL + Backspace). Pominięty = skrót wyłączony. */
+  onReject?: () => void;
   /** Callback: Zapisz draft (CMD/CTRL + S) */
   onSaveDraft?: () => void;
   /** Callback: Pomiń ćwiczenie (Escape) */
   onSkip?: () => void;
-  /** Callback: Zaznacz/odznacz checkbox kliniczny (CMD/CTRL + D) */
+  /** Callback: Zaznacz/odznacz checkbox bezpieczeństwa (CMD/CTRL + D) */
   onToggleClinicalCheckbox?: () => void;
   /** Czy można zatwierdzić (np. wszystkie checky przeszły) */
   canApprove: boolean;
@@ -93,17 +93,17 @@ export function useVerificationHotkeys({
     }
 
     // CMD/CTRL + D → Toggle checkbox bezpieczeństwa
-    if (isMod && key === 'd') {
+    if (isMod && key === 'd' && onToggleClinicalCheckboxRef.current) {
       e.preventDefault();
       onToggleClinicalCheckboxRef.current?.();
       return;
     }
 
     // CMD/CTRL + Backspace → Odrzuć
-    if (isMod && key === 'backspace') {
+    if (isMod && key === 'backspace' && onRejectRef.current) {
       e.preventDefault();
       if (!isEditingRef.current) {
-        onRejectRef.current();
+        onRejectRef.current?.();
       }
       return;
     }

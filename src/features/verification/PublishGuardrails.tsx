@@ -96,8 +96,8 @@ const DEFAULT_RULES: ValidationRule[] = [
   },
   {
     id: 'clinical-description',
-    label: 'Opis kliniczny',
-    description: 'Zalecany opis kliniczny dla profesjonalistów (min. 20 znaków)',
+    label: 'Opis dla fizjoterapeuty',
+    description: 'Opis dla fizjoterapeuty (min. 20 znaków)',
     severity: 'info',
     category: 'content',
     check: (e) => !!(e.clinicalDescription && e.clinicalDescription.length >= 20),

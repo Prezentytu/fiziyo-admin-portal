@@ -740,7 +740,7 @@ export default function VerificationPage() {
       {/* Hero Header with compact achievements */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground">Centrum weryfikacji</h1>
+          <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground">Weryfikacja ćwiczeń</h1>
           <p className="text-muted-foreground mt-1">
             Cześć {userName}, dzięki Tobie baza ćwiczeń jest bezpieczna i profesjonalna.
           </p>
@@ -910,7 +910,7 @@ export default function VerificationPage() {
       <VerificationArchiveDialog
         open={archiveDialogOpen}
         count={selection.selectedCount}
-        scopeLabel="globalnym Centrum Weryfikacji"
+        scopeLabel="globalnej weryfikacji ćwiczeń"
         isLoading={archiving}
         onOpenChange={setArchiveDialogOpen}
         onConfirm={handleArchiveSelected}

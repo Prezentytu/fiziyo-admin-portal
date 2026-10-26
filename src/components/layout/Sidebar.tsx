@@ -100,7 +100,7 @@ const navigationGroups: NavigationGroup[] = [
     contentManagerOnly: true,
     items: [
       {
-        name: 'Centrum weryfikacji',
+        name: 'Weryfikacja ćwiczeń',
         href: '/verification',
         icon: ShieldCheck,
         testId: 'nav-link-verification',
