@@ -300,7 +300,7 @@ export function VerificationWorkspace({
   const handleGalleryIndexChange = (index: number) => {
     if (index === galleryIndex) return;
     setMediaIndex(index);
-    setIsMediaFollowingText(false);
+    if (isFollowingText) setIsMediaFollowingText(false);
   };
 
   const { mode } = parameterReview;
@@ -385,6 +385,7 @@ export function VerificationWorkspace({
 
   const goToStage = useCallback((key: VerificationStageKey) => {
     setStage(key);
+    if (key === 'instruction') setIsMediaFollowingText(true);
     setVisited((previous) => new Set([...previous, key]));
     rootRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' });
   }, []);
