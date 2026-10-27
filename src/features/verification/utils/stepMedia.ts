@@ -1,3 +1,5 @@
+import type { MediaItem } from '@/components/shared/media/mediaItems';
+import { getMediaUrl } from '@/utils/mediaUrl';
 import type {
   EnrichmentCuePhaseLinkV3,
   EnrichmentCuePhaseV3,
@@ -163,4 +165,17 @@ export function describeReadingFocus({
     return { label: `Krok ${stepNumber} · bez zdjęcia`, text, photoUrl: null, photoIndex: null };
   }
   return { label: `Krok ${stepNumber} · zdjęcie ${photoIndex + 1}`, text, photoUrl: url, photoIndex };
+}
+
+/**
+ * Gallery item that matches the text being read: the step's pinned photo, or the video for the
+ * description and for a step without a photo. Null means nothing matches, so the gallery should
+ * show its empty state instead of another step's photo.
+ */
+export function findFocusedMediaIndex(items: readonly MediaItem[], photoUrl: string | null): number | null {
+  const photoSrc = photoUrl ? getMediaUrl(photoUrl) : null;
+  const index = photoSrc
+    ? items.findIndex((item) => item.kind === 'image' && item.src === photoSrc)
+    : items.findIndex((item) => item.kind === 'video' || item.kind === 'gif');
+  return index >= 0 ? index : null;
 }

@@ -4,6 +4,7 @@ import {
   realignMediaForBlankEntries,
   cycleStepImage,
   describeReadingFocus,
+  findFocusedMediaIndex,
   getCuePhase,
   keepExistingImages,
   removeCuePhaseAt,
@@ -136,5 +137,44 @@ describe('describeReadingFocus', () => {
 
   it('falls back to the description when the step no longer exists', () => {
     expect(describeReadingFocus({ ...base, focusedStep: 5 }).label).toBe('Opis porównaj z nagraniem');
+  });
+});
+
+describe('findFocusedMediaIndex', () => {
+  const items = [
+    { kind: 'image' as const, src: 'https://cdn/a.jpg' },
+    { kind: 'image' as const, src: 'https://cdn/b.jpg' },
+    { kind: 'video' as const, src: 'https://youtu.be/x' },
+  ];
+
+  it('follows a pin made right now, not the one before', () => {
+    const before = describeReadingFocus({
+      focusedStep: 0,
+      steps: ['Stań prosto'],
+      stepImages: [],
+      photos: images,
+      description: '',
+      hasVideo: true,
+    });
+    expect(findFocusedMediaIndex(items, before.photoUrl)).toBe(2);
+
+    const after = describeReadingFocus({
+      focusedStep: 0,
+      steps: ['Stań prosto'],
+      stepImages: cycleStepImage(cycleStepImage([], 0, images), 0, images),
+      photos: images,
+      description: '',
+      hasVideo: true,
+    });
+    expect(findFocusedMediaIndex(items, after.photoUrl)).toBe(1);
+  });
+
+  it('shows the video for the description and for a step without a photo', () => {
+    expect(findFocusedMediaIndex(items, null)).toBe(2);
+  });
+
+  it('returns null instead of another step photo when nothing matches', () => {
+    expect(findFocusedMediaIndex(items.slice(0, 2), null)).toBeNull();
+    expect(findFocusedMediaIndex(items, 'https://cdn/removed.jpg')).toBeNull();
   });
 });

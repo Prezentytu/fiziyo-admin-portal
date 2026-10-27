@@ -30,7 +30,7 @@ import {
 } from '@/graphql/mutations/exercises.mutations';
 import { GET_VERIFICATION_STATS_QUERY } from '@/graphql/queries/adminExercises.queries';
 
-import { getMediaUrl, getMediaUrls } from '@/utils/mediaUrl';
+import { getMediaUrls } from '@/utils/mediaUrl';
 import type {
   AdminExercise,
   ApproveExerciseResponse,
@@ -73,7 +73,12 @@ import {
 } from './utils/parameterRules';
 import { MAX_PHOTOS, validatePhotoFile } from './utils/photoValidation';
 import { buildStageCopy } from './utils/stageCopy';
-import { describeReadingFocus, keepExistingImages, replaceLinkedImage } from './utils/stepMedia';
+import {
+  describeReadingFocus,
+  findFocusedMediaIndex,
+  keepExistingImages,
+  replaceLinkedImage,
+} from './utils/stepMedia';
 import {
   STAGE_TITLES,
   VERIFICATION_STAGES,
@@ -226,6 +231,7 @@ export function VerificationWorkspace({
   const [isGeneratingProposal, setIsGeneratingProposal] = useState(false);
   const [photoDialogIndex, setPhotoDialogIndex] = useState<number | null>(null);
   const [mediaIndex, setMediaIndex] = useState(0);
+  const [isMediaFollowingText, setIsMediaFollowingText] = useState(false);
   const [focusedStep, setFocusedStep] = useState<number | null>(null);
   const [generatingIndex, setGeneratingIndex] = useState<number | null>(null);
   const [pendingPhoto, setPendingPhoto] = useState<PendingPhoto | null>(null);
@@ -269,23 +275,28 @@ export function VerificationWorkspace({
     ]
   );
 
-  const readingFocusInput = {
+  const readingFocus = describeReadingFocus({
+    focusedStep,
     steps: patient.steps ?? [],
     stepImages: patient.step_images,
     photos,
     description: core.patientDescription,
     hasVideo,
-  };
-  const readingFocus = describeReadingFocus({ ...readingFocusInput, focusedStep });
+  });
+  const isFollowingText = stage === 'instruction' && isMediaFollowingText;
+  const focusedMediaIndex = isFollowingText ? findFocusedMediaIndex(mediaItems, readingFocus.photoUrl) : null;
+  const galleryItems = isFollowingText && focusedMediaIndex === null ? [] : mediaItems;
+  const galleryIndex = isFollowingText ? (focusedMediaIndex ?? 0) : mediaIndex;
 
   const handleFocusStep = (stepIndex: number | null) => {
     setFocusedStep(stepIndex);
-    const focus = describeReadingFocus({ ...readingFocusInput, focusedStep: stepIndex });
-    const photoSrc = focus.photoUrl ? getMediaUrl(focus.photoUrl) : null;
-    const targetIndex = photoSrc
-      ? mediaItems.findIndex((item) => item.kind === 'image' && item.src === photoSrc)
-      : mediaItems.findIndex((item) => item.kind === 'video' || item.kind === 'gif');
-    if (targetIndex >= 0) setMediaIndex(targetIndex);
+    setIsMediaFollowingText(true);
+  };
+
+  const handleGalleryIndexChange = (index: number) => {
+    if (index === galleryIndex) return;
+    setMediaIndex(index);
+    setIsMediaFollowingText(false);
   };
 
   const { mode } = parameterReview;
@@ -838,14 +849,14 @@ export function VerificationWorkspace({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(260px,360px)_minmax(0,1fr)]">
         <aside className="lg:sticky lg:top-[104px] lg:self-start" aria-label="Materiał ćwiczenia">
           <MediaGallery
-            items={mediaItems}
+            items={galleryItems}
             title={core.name}
             layout="stage"
             aspectRatio="portrait"
             rootTestId="verification-media-panel"
             testIdPrefix="verification-media"
-            selectedIndex={mediaIndex}
-            onSelectedIndexChange={setMediaIndex}
+            selectedIndex={galleryIndex}
+            onSelectedIndexChange={handleGalleryIndexChange}
           />
           {stage === 'instruction' && (
             <div
