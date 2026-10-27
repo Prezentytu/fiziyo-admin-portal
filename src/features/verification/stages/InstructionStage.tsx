@@ -14,6 +14,7 @@ import type { InstructionProposal } from '../utils/instructionProposal';
 import {
   CUE_PHASE_OPTIONS,
   cycleStepImage,
+  focusAfterRemovingStep,
   getCuePhase,
   getStepImage,
   removeCuePhaseAt,
@@ -169,11 +170,14 @@ export function InstructionStage({
   const updateStep = (index: number, value: string) =>
     updatePatient({ steps: steps.map((step, stepIndex) => (stepIndex === index ? value : step)) });
 
-  const removeStep = (index: number) =>
+  const removeStep = (index: number) => {
     updatePatient({
       steps: steps.filter((_step, stepIndex) => stepIndex !== index),
       step_images: removeStepImageAt(patient.step_images, index),
     });
+    const nextFocus = focusAfterRemovingStep(focusedStep, index);
+    if (nextFocus !== focusedStep) onFocusStep(nextFocus);
+  };
 
   const updateCue = (index: number, value: string) =>
     updatePatient({ cues: cues.map((cue, cueIndex) => (cueIndex === index ? value : cue)) });

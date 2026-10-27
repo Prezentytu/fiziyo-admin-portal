@@ -4,6 +4,7 @@ import {
   realignMediaForBlankEntries,
   cycleStepImage,
   describeReadingFocus,
+  focusAfterRemovingStep,
   resolveFocusedMedia,
   getCuePhase,
   keepExistingImages,
@@ -179,5 +180,20 @@ describe('resolveFocusedMedia', () => {
     expect(resolveFocusedMedia(items, { isDescription: false, photoUrl: 'https://cdn/removed.jpg' })).toEqual({
       kind: 'empty',
     });
+  });
+});
+
+describe('focusAfterRemovingStep', () => {
+  it('keeps reading the same step when an earlier one is removed', () => {
+    expect(focusAfterRemovingStep(1, 0)).toBe(0);
+  });
+
+  it('leaves the focus alone when a later step is removed', () => {
+    expect(focusAfterRemovingStep(1, 2)).toBe(1);
+    expect(focusAfterRemovingStep(null, 0)).toBeNull();
+  });
+
+  it('returns to the description when the focused step is removed', () => {
+    expect(focusAfterRemovingStep(1, 1)).toBeNull();
   });
 });

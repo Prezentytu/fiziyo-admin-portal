@@ -55,6 +55,12 @@ export function removeStepImageAt(
     .map((link) => (link.step > removedStep ? { ...link, step: link.step - 1 } : link));
 }
 
+/** Keeps the focus on the same step text after another step is removed. */
+export function focusAfterRemovingStep(focusedStep: number | null, removedIndex: number): number | null {
+  if (focusedStep === null || removedIndex > focusedStep) return focusedStep;
+  return removedIndex === focusedStep ? null : focusedStep - 1;
+}
+
 export function stepsForImage(links: EnrichmentStepImageV3[] | undefined, url: string): number[] {
   return sortByStep((links ?? []).filter((link) => link.url === url)).map((link) => link.step);
 }
