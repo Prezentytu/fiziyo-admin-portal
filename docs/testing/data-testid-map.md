@@ -735,6 +735,8 @@ Ekran globalny publikuje z paska, a jedyne wyjście bez publikacji to „To dupl
 | `verification-bar-primary-btn`                                                  | „… gotowe, dalej” / „Zatwierdź i opublikuj” | `VerificationFloatingBar.tsx` |
 | `verification-bar-duplicate-btn`                                                | „To duplikat”                               | `VerificationFloatingBar.tsx` |
 | `verification-media-panel`                                                      | Panel nagrania i zdjęć                      | `VerificationWorkspace.tsx`   |
+| `verification-reading-focus`                                                    | Tekst kroku pod dużym zdjęciem              | `VerificationWorkspace.tsx`   |
+| `verification-reading-focus-flag-btn`                                           | Zdjęcie nie pasuje do opisu                 | `VerificationWorkspace.tsx`   |
 | `verification-material-photo-{n}-{replace\|delete\|accept\|retry\|discard}-btn` | Akcje zdjęcia n                             | `MaterialStage.tsx`           |
 | `verification-material-photo-add-btn`                                           | Dodaj zdjęcie                               | `MaterialStage.tsx`           |
 | `verification-material-video-edit-btn` / `-video-url-input`                     | Dodaj / wymień nagranie                     | `MaterialStage.tsx`           |
@@ -746,7 +748,7 @@ Ekran globalny publikuje z paska, a jedyne wyjście bez publikacji to „To dupl
 | `verification-param-side-select`                                                | Strona ciała                                | `ParametersStage.tsx`         |
 | `verification-param-description-fix-btn`                                        | Zamiana liczby w opisie                     | `ParametersStage.tsx`         |
 | `verification-instruction-description-input`                                    | Opis dla pacjenta                           | `InstructionStage.tsx`        |
-| `verification-step-{n}-{input\|photo-btn\|remove-btn}`                          | Krok n, zdjęcie kroku                       | `InstructionStage.tsx`        |
+| `verification-step-{n}-{input\|photo-btn\|preview-btn\|remove-btn}`             | Krok n, zmiana i podgląd zdjęcia kroku      | `InstructionStage.tsx`        |
 | `verification-cue-{n}-phase-{preparation\|work\|rest}-btn`                      | Faza wskazówki głosowej                     | `InstructionStage.tsx`        |
 | `verification-proposal-{request\|insert\|dismiss}-btn`                          | Propozycja agenta                           | `InstructionStage.tsx`        |
 | `verification-safety-stop-if-{add-btn\|input}`                                  | Przerwij, gdy…                              | `SafetyStage.tsx`             |

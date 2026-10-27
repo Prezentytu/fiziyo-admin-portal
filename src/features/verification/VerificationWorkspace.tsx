@@ -73,7 +73,13 @@ import {
 } from './utils/parameterRules';
 import { MAX_PHOTOS, validatePhotoFile } from './utils/photoValidation';
 import { buildStageCopy } from './utils/stageCopy';
-import { keepExistingImages, replaceLinkedImage } from './utils/stepMedia';
+import {
+  describeReadingFocus,
+  resolveFocusedMedia,
+  type FocusedMedia,
+  keepExistingImages,
+  replaceLinkedImage,
+} from './utils/stepMedia';
 import {
   STAGE_TITLES,
   VERIFICATION_STAGES,
@@ -225,6 +231,9 @@ export function VerificationWorkspace({
   const [proposal, setProposal] = useState<InstructionProposal | null>(null);
   const [isGeneratingProposal, setIsGeneratingProposal] = useState(false);
   const [photoDialogIndex, setPhotoDialogIndex] = useState<number | null>(null);
+  const [mediaIndex, setMediaIndex] = useState(0);
+  const [isMediaFollowingText, setIsMediaFollowingText] = useState(true);
+  const [focusedStep, setFocusedStep] = useState<number | null>(null);
   const [generatingIndex, setGeneratingIndex] = useState<number | null>(null);
   const [pendingPhoto, setPendingPhoto] = useState<PendingPhoto | null>(null);
   const [isSavingPhoto, setIsSavingPhoto] = useState(false);
@@ -266,6 +275,33 @@ export function VerificationWorkspace({
       core.name,
     ]
   );
+
+  const readingFocus = describeReadingFocus({
+    focusedStep,
+    steps: patient.steps ?? [],
+    stepImages: patient.step_images,
+    photos,
+    description: core.patientDescription,
+    hasVideo,
+  });
+  const isFollowingText = stage === 'instruction' && isMediaFollowingText;
+  const focusedMedia: FocusedMedia = isFollowingText
+    ? resolveFocusedMedia(mediaItems, { isDescription: readingFocus.isDescription, photoUrl: readingFocus.photoUrl })
+    : { kind: 'free' };
+  const galleryItems = focusedMedia.kind === 'empty' ? [] : mediaItems;
+  const galleryIndex =
+    focusedMedia.kind === 'item' ? focusedMedia.index : focusedMedia.kind === 'empty' ? 0 : mediaIndex;
+
+  const handleFocusStep = (stepIndex: number | null) => {
+    setFocusedStep(stepIndex);
+    setIsMediaFollowingText(true);
+  };
+
+  const handleGalleryIndexChange = (index: number) => {
+    if (index === galleryIndex) return;
+    setMediaIndex(index);
+    if (isFollowingText) setIsMediaFollowingText(false);
+  };
 
   const { mode } = parameterReview;
   const parameterValues = useMemo(() => reviewValues(core, parameterReview), [core, parameterReview]);
@@ -349,6 +385,7 @@ export function VerificationWorkspace({
 
   const goToStage = useCallback((key: VerificationStageKey) => {
     setStage(key);
+    if (key === 'instruction') setIsMediaFollowingText(true);
     setVisited((previous) => new Set([...previous, key]));
     rootRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' });
   }, []);
@@ -817,13 +854,41 @@ export function VerificationWorkspace({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(260px,360px)_minmax(0,1fr)]">
         <aside className="lg:sticky lg:top-[104px] lg:self-start" aria-label="Materiał ćwiczenia">
           <MediaGallery
-            items={mediaItems}
+            items={galleryItems}
             title={core.name}
             layout="stage"
             aspectRatio="portrait"
             rootTestId="verification-media-panel"
             testIdPrefix="verification-media"
+            selectedIndex={galleryIndex}
+            onSelectedIndexChange={handleGalleryIndexChange}
           />
+          {stage === 'instruction' && (
+            <div
+              aria-live="polite"
+              className="mt-2.5 flex flex-col gap-1 rounded-[16px] bg-grouped-tertiary p-3"
+              data-testid="verification-reading-focus"
+            >
+              <p className="text-[12px] font-semibold leading-4 text-tint">{readingFocus.label}</p>
+              <p className="text-[15px] leading-[21px] text-foreground">{readingFocus.text}</p>
+              {readingFocus.photoIndex !== null && (
+                <Button
+                  type="button"
+                  variant="plain"
+                  size="sm"
+                  className="-ml-3 mt-1 self-start"
+                  onClick={() => {
+                    const photoIndex = readingFocus.photoIndex;
+                    goToStage('material');
+                    setPhotoDialogIndex(photoIndex);
+                  }}
+                  data-testid="verification-reading-focus-flag-btn"
+                >
+                  Zdjęcie nie pasuje do opisu
+                </Button>
+              )}
+            </div>
+          )}
         </aside>
 
         <div className="flex min-w-0 flex-col gap-4">
@@ -886,6 +951,8 @@ export function VerificationWorkspace({
                 setProposal(null);
               }}
               onDismissProposal={() => setProposal(null)}
+              focusedStep={focusedStep}
+              onFocusStep={handleFocusStep}
             />
           )}
 
