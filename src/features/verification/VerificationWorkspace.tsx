@@ -75,7 +75,8 @@ import { MAX_PHOTOS, validatePhotoFile } from './utils/photoValidation';
 import { buildStageCopy } from './utils/stageCopy';
 import {
   describeReadingFocus,
-  findFocusedMediaIndex,
+  resolveFocusedMedia,
+  type FocusedMedia,
   keepExistingImages,
   replaceLinkedImage,
 } from './utils/stepMedia';
@@ -231,7 +232,7 @@ export function VerificationWorkspace({
   const [isGeneratingProposal, setIsGeneratingProposal] = useState(false);
   const [photoDialogIndex, setPhotoDialogIndex] = useState<number | null>(null);
   const [mediaIndex, setMediaIndex] = useState(0);
-  const [isMediaFollowingText, setIsMediaFollowingText] = useState(false);
+  const [isMediaFollowingText, setIsMediaFollowingText] = useState(true);
   const [focusedStep, setFocusedStep] = useState<number | null>(null);
   const [generatingIndex, setGeneratingIndex] = useState<number | null>(null);
   const [pendingPhoto, setPendingPhoto] = useState<PendingPhoto | null>(null);
@@ -284,9 +285,12 @@ export function VerificationWorkspace({
     hasVideo,
   });
   const isFollowingText = stage === 'instruction' && isMediaFollowingText;
-  const focusedMediaIndex = isFollowingText ? findFocusedMediaIndex(mediaItems, readingFocus.photoUrl) : null;
-  const galleryItems = isFollowingText && focusedMediaIndex === null ? [] : mediaItems;
-  const galleryIndex = isFollowingText ? (focusedMediaIndex ?? 0) : mediaIndex;
+  const focusedMedia: FocusedMedia = isFollowingText
+    ? resolveFocusedMedia(mediaItems, { isDescription: readingFocus.isDescription, photoUrl: readingFocus.photoUrl })
+    : { kind: 'free' };
+  const galleryItems = focusedMedia.kind === 'empty' ? [] : mediaItems;
+  const galleryIndex =
+    focusedMedia.kind === 'item' ? focusedMedia.index : focusedMedia.kind === 'empty' ? 0 : mediaIndex;
 
   const handleFocusStep = (stepIndex: number | null) => {
     setFocusedStep(stepIndex);

@@ -4,7 +4,7 @@ import {
   realignMediaForBlankEntries,
   cycleStepImage,
   describeReadingFocus,
-  findFocusedMediaIndex,
+  resolveFocusedMedia,
   getCuePhase,
   keepExistingImages,
   removeCuePhaseAt,
@@ -105,6 +105,7 @@ describe('describeReadingFocus', () => {
 
   it('pairs the description with the video', () => {
     expect(describeReadingFocus({ ...base, focusedStep: null })).toEqual({
+      isDescription: true,
       label: 'Opis porównaj z nagraniem',
       text: 'Przysiad z masą ciała.',
       photoUrl: null,
@@ -117,6 +118,7 @@ describe('describeReadingFocus', () => {
 
   it('shows the photo pinned to the step being read', () => {
     expect(describeReadingFocus({ ...base, focusedStep: 1 })).toEqual({
+      isDescription: false,
       label: 'Krok 2 · zdjęcie 2',
       text: 'Zejdź w dół',
       photoUrl: 'b.jpg',
@@ -140,41 +142,42 @@ describe('describeReadingFocus', () => {
   });
 });
 
-describe('findFocusedMediaIndex', () => {
+describe('resolveFocusedMedia', () => {
   const items = [
     { kind: 'image' as const, src: 'https://cdn/a.jpg' },
     { kind: 'image' as const, src: 'https://cdn/b.jpg' },
     { kind: 'video' as const, src: 'https://youtu.be/x' },
   ];
+  const photosOnly = items.slice(0, 2);
 
   it('follows a pin made right now, not the one before', () => {
-    const before = describeReadingFocus({
-      focusedStep: 0,
-      steps: ['Stań prosto'],
-      stepImages: [],
-      photos: images,
-      description: '',
-      hasVideo: true,
-    });
-    expect(findFocusedMediaIndex(items, before.photoUrl)).toBe(2);
-
-    const after = describeReadingFocus({
-      focusedStep: 0,
-      steps: ['Stań prosto'],
-      stepImages: cycleStepImage(cycleStepImage([], 0, images), 0, images),
-      photos: images,
-      description: '',
-      hasVideo: true,
-    });
-    expect(findFocusedMediaIndex(items, after.photoUrl)).toBe(1);
+    const readStep = (stepImages: Parameters<typeof cycleStepImage>[0]) =>
+      describeReadingFocus({
+        focusedStep: 0,
+        steps: ['Stań prosto'],
+        stepImages,
+        photos: images,
+        description: '',
+        hasVideo: true,
+      });
+    expect(resolveFocusedMedia(items, readStep([]))).toEqual({ kind: 'item', index: 2 });
+    const pinnedTwice = cycleStepImage(cycleStepImage([], 0, images), 0, images);
+    expect(resolveFocusedMedia(items, readStep(pinnedTwice))).toEqual({ kind: 'item', index: 1 });
   });
 
   it('shows the video for the description and for a step without a photo', () => {
-    expect(findFocusedMediaIndex(items, null)).toBe(2);
+    expect(resolveFocusedMedia(items, { isDescription: true, photoUrl: null })).toEqual({ kind: 'item', index: 2 });
+    expect(resolveFocusedMedia(items, { isDescription: false, photoUrl: null })).toEqual({ kind: 'item', index: 2 });
   });
 
-  it('returns null instead of another step photo when nothing matches', () => {
-    expect(findFocusedMediaIndex(items.slice(0, 2), null)).toBeNull();
-    expect(findFocusedMediaIndex(items, 'https://cdn/removed.jpg')).toBeNull();
+  it('keeps the photos browsable for the description when there is no video', () => {
+    expect(resolveFocusedMedia(photosOnly, { isDescription: true, photoUrl: null })).toEqual({ kind: 'free' });
+  });
+
+  it('shows nothing instead of another step photo when nothing matches', () => {
+    expect(resolveFocusedMedia(photosOnly, { isDescription: false, photoUrl: null })).toEqual({ kind: 'empty' });
+    expect(resolveFocusedMedia(items, { isDescription: false, photoUrl: 'https://cdn/removed.jpg' })).toEqual({
+      kind: 'empty',
+    });
   });
 });

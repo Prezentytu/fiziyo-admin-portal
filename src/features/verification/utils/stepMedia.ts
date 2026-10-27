@@ -133,6 +133,8 @@ export interface ReadingFocusInput {
 }
 
 export interface ReadingFocus {
+  /** The description is being read, not a step. */
+  isDescription: boolean;
   label: string;
   text: string;
   /** Pinned photo of the focused step; null shows the video (or nothing) next to the text. */
@@ -151,6 +153,7 @@ export function describeReadingFocus({
 }: ReadingFocusInput): ReadingFocus {
   if (focusedStep === null || focusedStep >= steps.length) {
     return {
+      isDescription: true,
       label: hasVideo ? 'Opis porównaj z nagraniem' : 'Opis porównaj ze zdjęciami',
       text: description.trim() || 'Brak opisu',
       photoUrl: null,
@@ -162,20 +165,35 @@ export function describeReadingFocus({
   const url = getStepImage(stepImages, focusedStep);
   const photoIndex = url ? photos.indexOf(url) : -1;
   if (!url || photoIndex < 0) {
-    return { label: `Krok ${stepNumber} · bez zdjęcia`, text, photoUrl: null, photoIndex: null };
+    return { isDescription: false, label: `Krok ${stepNumber} · bez zdjęcia`, text, photoUrl: null, photoIndex: null };
   }
-  return { label: `Krok ${stepNumber} · zdjęcie ${photoIndex + 1}`, text, photoUrl: url, photoIndex };
+  return {
+    isDescription: false,
+    label: `Krok ${stepNumber} · zdjęcie ${photoIndex + 1}`,
+    text,
+    photoUrl: url,
+    photoIndex,
+  };
 }
 
+/** What the media panel shows next to the text: one item, the therapist's own pick, or nothing. */
+export type FocusedMedia = { kind: 'item'; index: number } | { kind: 'free' } | { kind: 'empty' };
+
 /**
- * Gallery item that matches the text being read: the step's pinned photo, or the video for the
- * description and for a step without a photo. Null means nothing matches, so the gallery should
- * show its empty state instead of another step's photo.
+ * Media that matches the text being read: the step's pinned photo, else the video. The description
+ * without a video leaves the photos browsable; a step without a photo and no video shows nothing
+ * rather than another step's photo.
  */
-export function findFocusedMediaIndex(items: readonly MediaItem[], photoUrl: string | null): number | null {
-  const photoSrc = photoUrl ? getMediaUrl(photoUrl) : null;
-  const index = photoSrc
-    ? items.findIndex((item) => item.kind === 'image' && item.src === photoSrc)
-    : items.findIndex((item) => item.kind === 'video' || item.kind === 'gif');
-  return index >= 0 ? index : null;
+export function resolveFocusedMedia(
+  items: readonly MediaItem[],
+  focus: { isDescription: boolean; photoUrl: string | null }
+): FocusedMedia {
+  const photoSrc = focus.photoUrl ? getMediaUrl(focus.photoUrl) : null;
+  if (photoSrc) {
+    const photoIndex = items.findIndex((item) => item.kind === 'image' && item.src === photoSrc);
+    return photoIndex >= 0 ? { kind: 'item', index: photoIndex } : { kind: 'empty' };
+  }
+  const videoIndex = items.findIndex((item) => item.kind === 'video' || item.kind === 'gif');
+  if (videoIndex >= 0) return { kind: 'item', index: videoIndex };
+  return focus.isDescription ? { kind: 'free' } : { kind: 'empty' };
 }
