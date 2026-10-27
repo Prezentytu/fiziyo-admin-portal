@@ -1,4 +1,6 @@
 name: Promote admin
+# fizjo-app „Release” (SPEC-049) wysyła request_id i znajduje ten przebieg po tytule.
+run-name: "Promote admin${{ inputs.request_id && format(' · {0}', inputs.request_id) || '' }}"
 
 on:
   workflow_dispatch:
@@ -13,6 +15,10 @@ on:
         type: string
       override_reason:
         description: "Break-glass (≥8 znaków) pomija tylko kontrolę live DEV"
+        required: false
+        type: string
+      request_id:
+        description: "Ustawia fizjo-app Release; ręcznie zostaw puste"
         required: false
         type: string
 
