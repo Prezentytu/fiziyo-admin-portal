@@ -119,3 +119,48 @@ export function realignMediaForBlankEntries(patient: ExerciseEnrichmentPatientV3
   }
   return next;
 }
+
+export interface ReadingFocusInput {
+  /** Step the therapist is reading; null means the exercise description. */
+  focusedStep: number | null;
+  steps: string[];
+  stepImages: EnrichmentStepImageV3[] | undefined;
+  photos: string[];
+  description: string;
+  hasVideo: boolean;
+}
+
+export interface ReadingFocus {
+  label: string;
+  text: string;
+  /** Pinned photo of the focused step; null shows the video (or nothing) next to the text. */
+  photoUrl: string | null;
+  photoIndex: number | null;
+}
+
+/** What to show next to the text being read, so the copy and the photo are always checked together. */
+export function describeReadingFocus({
+  focusedStep,
+  steps,
+  stepImages,
+  photos,
+  description,
+  hasVideo,
+}: ReadingFocusInput): ReadingFocus {
+  if (focusedStep === null || focusedStep >= steps.length) {
+    return {
+      label: hasVideo ? 'Opis porównaj z nagraniem' : 'Opis porównaj ze zdjęciami',
+      text: description.trim() || 'Brak opisu',
+      photoUrl: null,
+      photoIndex: null,
+    };
+  }
+  const stepNumber = focusedStep + 1;
+  const text = steps[focusedStep]?.trim() || 'Pusty krok';
+  const url = getStepImage(stepImages, focusedStep);
+  const photoIndex = url ? photos.indexOf(url) : -1;
+  if (!url || photoIndex < 0) {
+    return { label: `Krok ${stepNumber} · bez zdjęcia`, text, photoUrl: null, photoIndex: null };
+  }
+  return { label: `Krok ${stepNumber} · zdjęcie ${photoIndex + 1}`, text, photoUrl: url, photoIndex };
+}

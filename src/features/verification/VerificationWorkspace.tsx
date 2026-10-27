@@ -30,7 +30,7 @@ import {
 } from '@/graphql/mutations/exercises.mutations';
 import { GET_VERIFICATION_STATS_QUERY } from '@/graphql/queries/adminExercises.queries';
 
-import { getMediaUrls } from '@/utils/mediaUrl';
+import { getMediaUrl, getMediaUrls } from '@/utils/mediaUrl';
 import type {
   AdminExercise,
   ApproveExerciseResponse,
@@ -73,7 +73,7 @@ import {
 } from './utils/parameterRules';
 import { MAX_PHOTOS, validatePhotoFile } from './utils/photoValidation';
 import { buildStageCopy } from './utils/stageCopy';
-import { keepExistingImages, replaceLinkedImage } from './utils/stepMedia';
+import { describeReadingFocus, keepExistingImages, replaceLinkedImage } from './utils/stepMedia';
 import {
   STAGE_TITLES,
   VERIFICATION_STAGES,
@@ -225,6 +225,8 @@ export function VerificationWorkspace({
   const [proposal, setProposal] = useState<InstructionProposal | null>(null);
   const [isGeneratingProposal, setIsGeneratingProposal] = useState(false);
   const [photoDialogIndex, setPhotoDialogIndex] = useState<number | null>(null);
+  const [mediaIndex, setMediaIndex] = useState(0);
+  const [focusedStep, setFocusedStep] = useState<number | null>(null);
   const [generatingIndex, setGeneratingIndex] = useState<number | null>(null);
   const [pendingPhoto, setPendingPhoto] = useState<PendingPhoto | null>(null);
   const [isSavingPhoto, setIsSavingPhoto] = useState(false);
@@ -266,6 +268,25 @@ export function VerificationWorkspace({
       core.name,
     ]
   );
+
+  const readingFocusInput = {
+    steps: patient.steps ?? [],
+    stepImages: patient.step_images,
+    photos,
+    description: core.patientDescription,
+    hasVideo,
+  };
+  const readingFocus = describeReadingFocus({ ...readingFocusInput, focusedStep });
+
+  const handleFocusStep = (stepIndex: number | null) => {
+    setFocusedStep(stepIndex);
+    const focus = describeReadingFocus({ ...readingFocusInput, focusedStep: stepIndex });
+    const photoSrc = focus.photoUrl ? getMediaUrl(focus.photoUrl) : null;
+    const targetIndex = photoSrc
+      ? mediaItems.findIndex((item) => item.kind === 'image' && item.src === photoSrc)
+      : mediaItems.findIndex((item) => item.kind === 'video' || item.kind === 'gif');
+    if (targetIndex >= 0) setMediaIndex(targetIndex);
+  };
 
   const { mode } = parameterReview;
   const parameterValues = useMemo(() => reviewValues(core, parameterReview), [core, parameterReview]);
@@ -823,7 +844,35 @@ export function VerificationWorkspace({
             aspectRatio="portrait"
             rootTestId="verification-media-panel"
             testIdPrefix="verification-media"
+            selectedIndex={mediaIndex}
+            onSelectedIndexChange={setMediaIndex}
           />
+          {stage === 'instruction' && (
+            <div
+              aria-live="polite"
+              className="mt-2.5 flex flex-col gap-1 rounded-[16px] bg-grouped-tertiary p-3"
+              data-testid="verification-reading-focus"
+            >
+              <p className="text-[12px] font-semibold leading-4 text-tint">{readingFocus.label}</p>
+              <p className="text-[15px] leading-[21px] text-foreground">{readingFocus.text}</p>
+              {readingFocus.photoIndex !== null && (
+                <Button
+                  type="button"
+                  variant="plain"
+                  size="sm"
+                  className="-ml-3 mt-1 self-start"
+                  onClick={() => {
+                    const photoIndex = readingFocus.photoIndex;
+                    goToStage('material');
+                    setPhotoDialogIndex(photoIndex);
+                  }}
+                  data-testid="verification-reading-focus-flag-btn"
+                >
+                  Zdjęcie nie pasuje do opisu
+                </Button>
+              )}
+            </div>
+          )}
         </aside>
 
         <div className="flex min-w-0 flex-col gap-4">
@@ -886,6 +935,8 @@ export function VerificationWorkspace({
                 setProposal(null);
               }}
               onDismissProposal={() => setProposal(null)}
+              focusedStep={focusedStep}
+              onFocusStep={handleFocusStep}
             />
           )}
 

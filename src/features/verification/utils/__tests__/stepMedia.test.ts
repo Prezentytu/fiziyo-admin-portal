@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   realignMediaForBlankEntries,
   cycleStepImage,
+  describeReadingFocus,
   getCuePhase,
   keepExistingImages,
   removeCuePhaseAt,
@@ -89,5 +90,51 @@ describe('realignMediaForBlankEntries', () => {
       { step: 2, url: 'c' },
     ]);
     expect(result.cue_phases).toEqual([{ cue: 0, phase: 'rest' }]);
+  });
+});
+
+describe('describeReadingFocus', () => {
+  const base = {
+    steps: ['Stań prosto', 'Zejdź w dół', ''],
+    stepImages: [{ step: 2, url: 'b.jpg' }],
+    photos: ['a.jpg', 'b.jpg'],
+    description: 'Przysiad z masą ciała.',
+    hasVideo: true,
+  };
+
+  it('pairs the description with the video', () => {
+    expect(describeReadingFocus({ ...base, focusedStep: null })).toEqual({
+      label: 'Opis porównaj z nagraniem',
+      text: 'Przysiad z masą ciała.',
+      photoUrl: null,
+      photoIndex: null,
+    });
+    expect(describeReadingFocus({ ...base, focusedStep: null, hasVideo: false }).label).toBe(
+      'Opis porównaj ze zdjęciami'
+    );
+  });
+
+  it('shows the photo pinned to the step being read', () => {
+    expect(describeReadingFocus({ ...base, focusedStep: 1 })).toEqual({
+      label: 'Krok 2 · zdjęcie 2',
+      text: 'Zejdź w dół',
+      photoUrl: 'b.jpg',
+      photoIndex: 1,
+    });
+  });
+
+  it('says when a step has no photo or no text', () => {
+    expect(describeReadingFocus({ ...base, focusedStep: 0 }).label).toBe('Krok 1 · bez zdjęcia');
+    expect(describeReadingFocus({ ...base, focusedStep: 2 }).text).toBe('Pusty krok');
+  });
+
+  it('ignores a pin to a photo that was removed', () => {
+    const result = describeReadingFocus({ ...base, focusedStep: 1, photos: ['a.jpg'] });
+    expect(result.photoUrl).toBeNull();
+    expect(result.label).toBe('Krok 2 · bez zdjęcia');
+  });
+
+  it('falls back to the description when the step no longer exists', () => {
+    expect(describeReadingFocus({ ...base, focusedStep: 5 }).label).toBe('Opis porównaj z nagraniem');
   });
 });

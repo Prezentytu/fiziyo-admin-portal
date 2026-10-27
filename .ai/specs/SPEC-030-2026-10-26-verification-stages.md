@@ -20,6 +20,8 @@ Ekran `src/app/(dashboard)/verification/[id]/page.tsx` ładuje dane i adresy kol
 
 Pięć etapów w stałej kolejności: **Materiał → Parametry → Instrukcja → Bezpieczeństwo → Decyzja**. Lewa kolumna to przyklejony panel nagrania i zdjęć (`MediaGallery`), prawa to bieżący etap, na dole pływający pasek z jedną akcją główną (`⌘↵`).
 
+W etapie Instrukcja panel nagrania i zdjęć podąża za czytanym tekstem: fokus lub klik w krok pokazuje duże zdjęcie przypięte do tego kroku, a fokus w opisie wraca do nagrania. Pod panelem stoi tekst kroku i akcja „Zdjęcie nie pasuje do opisu”, która otwiera wymianę tego zdjęcia w etapie Materiał. Krok bez zdjęcia ma widoczny stan „Brak zdjęcia”. Logika: `describeReadingFocus` (`utils/stepMedia.ts`); `MediaGallery` przyjmuje opcjonalne `selectedIndex` / `onSelectedIndexChange`.
+
 ### Logika (czyste funkcje, testy Vitest)
 
 | Plik                           | Co liczy                                                                                                       |

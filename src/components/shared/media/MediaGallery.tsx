@@ -24,6 +24,9 @@ interface MediaGalleryProps {
   testIdPrefix: string;
   rootTestId?: string;
   className?: string;
+  /** Controlled selection; omit both to let the gallery manage it. */
+  selectedIndex?: number;
+  onSelectedIndexChange?: (index: number) => void;
 }
 
 const ASPECT_RATIO_CLASS: Record<MediaGalleryAspectRatio, string> = {
@@ -41,8 +44,19 @@ export function MediaGallery({
   testIdPrefix,
   rootTestId,
   className,
+  selectedIndex: controlledIndex,
+  onSelectedIndexChange,
 }: Readonly<MediaGalleryProps>) {
-  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [internalIndex, setInternalIndex] = useState(0);
+  const isControlled = controlledIndex !== undefined;
+  const selectedIndex = isControlled ? controlledIndex : internalIndex;
+  const setSelectedIndex = useCallback(
+    (index: number) => {
+      if (!isControlled) setInternalIndex(index);
+      onSelectedIndexChange?.(index);
+    },
+    [isControlled, onSelectedIndexChange]
+  );
   const [lightboxOpen, setLightboxOpen] = useState(false);
 
   const hasItems = items.length > 0;
@@ -53,7 +67,7 @@ export function MediaGallery({
     if (selectedIndex !== safeIndex) {
       setSelectedIndex(safeIndex);
     }
-  }, [safeIndex, selectedIndex]);
+  }, [safeIndex, selectedIndex, setSelectedIndex]);
 
   const hasMultiple = items.length > 1;
   const hasPrev = safeIndex > 0;
@@ -69,12 +83,12 @@ export function MediaGallery({
     selectedItem?.kind === 'video' ? selectedItem.poster ?? undefined : selectedItem?.src;
 
   const handlePrev = useCallback(() => {
-    setSelectedIndex((currentIndex) => (currentIndex > 0 ? currentIndex - 1 : currentIndex));
-  }, []);
+    if (safeIndex > 0) setSelectedIndex(safeIndex - 1);
+  }, [safeIndex, setSelectedIndex]);
 
   const handleNext = useCallback(() => {
-    setSelectedIndex((currentIndex) => (currentIndex < items.length - 1 ? currentIndex + 1 : currentIndex));
-  }, [items.length]);
+    if (safeIndex < items.length - 1) setSelectedIndex(safeIndex + 1);
+  }, [items.length, safeIndex, setSelectedIndex]);
 
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLDivElement>) => {
