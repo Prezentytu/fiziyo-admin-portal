@@ -114,9 +114,11 @@ export function calculateExerciseTotalSeconds(params: {
 
   const setsTime = sets * workOneSideOfOneSet * sideMultiplier;
   const interSetRestTime = Math.max(0, sets - 1) * restSets;
+  // BOTH: player mobile odlicza przygotowanie także przed prawą stroną każdej serii (fizjo-app #191).
+  const sideChangePreparationTime = side === 'both' ? preparationTime * sets : 0;
 
   return {
-    seconds: preparationTime + setsTime + interSetRestTime,
+    seconds: preparationTime + sideChangePreparationTime + setsTime + interSetRestTime,
     isEstimate,
   };
 }

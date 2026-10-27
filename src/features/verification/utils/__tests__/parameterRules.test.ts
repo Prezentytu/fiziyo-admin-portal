@@ -122,7 +122,8 @@ describe('computeSessionSeconds', () => {
   it('dolicza mikroprzerwy między powtórzeniami i czas przygotowania jak katalog', () => {
     const values = { sets: 5, reps: 20, repTime: 7, hold: null, rest: 120 };
     const seconds = computeSessionSeconds(values, 'reps', 'both', { restReps: 10, preparationTime: 5 });
-    expect(seconds).toBe(5 + 5 * (20 * 7 + 19 * 10) * 2 + 4 * 120);
+    // Przygotowanie na starcie i przed prawą stroną każdej z 5 serii (jak player mobile).
+    expect(seconds).toBe(5 + 5 * 5 + 5 * (20 * 7 + 19 * 10) * 2 + 4 * 120);
 
     const result = evaluateParameters({
       values,
