@@ -736,6 +736,7 @@ Ekran globalny publikuje z paska, a jedyne wyjście bez publikacji to „To dupl
 | `verification-bar-duplicate-btn`                                                | „To duplikat”                               | `VerificationFloatingBar.tsx` |
 | `verification-media-panel`                                                      | Panel nagrania i zdjęć                      | `VerificationWorkspace.tsx`   |
 | `verification-reading-focus`                                                    | Tekst kroku pod dużym zdjęciem              | `VerificationWorkspace.tsx`   |
+| `verification-media-stage-{image\|video}`                                       | Duże zdjęcie / nagranie w panelu            | `MediaGallery.tsx`            |
 | `verification-reading-focus-flag-btn`                                           | Zdjęcie nie pasuje do opisu                 | `VerificationWorkspace.tsx`   |
 | `verification-material-photo-{n}-{replace\|delete\|accept\|retry\|discard}-btn` | Akcje zdjęcia n                             | `MaterialStage.tsx`           |
 | `verification-material-photo-add-btn`                                           | Dodaj zdjęcie                               | `MaterialStage.tsx`           |

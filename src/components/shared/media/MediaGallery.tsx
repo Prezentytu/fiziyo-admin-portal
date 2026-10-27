@@ -144,9 +144,10 @@ export function MediaGallery({
               className="object-contain"
               sizes={layout === 'fill' ? '(max-width: 1280px) 100vw, 50vw' : '(max-width: 1024px) 100vw, 800px'}
               priority={safeIndex === 0}
+              data-testid={`${testIdPrefix}-stage-image`}
             />
           ) : (
-            <div className="h-full w-full p-2">
+            <div className="h-full w-full p-2" data-testid={`${testIdPrefix}-stage-video`}>
               <VideoEmbed url={selectedItem.src} title={selectedItem.title ?? title} className="h-full w-full" />
             </div>
           )}

@@ -99,6 +99,8 @@ Mobile: do obsługi w `fizjo-app` (handoff), do tego czasu bez zmian dla pacjent
 
 Pełna lista w `docs/testing/data-testid-map.md` (sekcja 15, „Etapy weryfikacji globalnej”). Zachowane: `verification-back-btn`. Ścieżki organizacji (`VerdictPanel`, `MasterVideoPlayer`, dialogi approve/reject) bez zmian.
 
+Zdjęcie przy czytanym kroku ma test integracyjny `VerificationWorkspace.readingFocus.test.tsx` (cały workspace, bez backendu) i E2E VER01–VER04 w `fiziyo-tests` (`tests/logged/verification/step-photos.spec.ts`, tylko odczyt na DEV). Duże medium w panelu ma `verification-media-stage-{image|video}`.
+
 ## Poza zakresem (następne kroki)
 
 - Ekran „Paczka sprawdzona” po ostatnim ćwiczeniu (dziś powrót do listy).
@@ -110,3 +112,4 @@ Pełna lista w `docs/testing/data-testid-map.md` (sekcja 15, „Etapy weryfikacj
 ## Changelog
 
 - 2026-10-26: Pierwsza wersja (etapy, ocena parametrów, zdjęcia przy krokach, fazy wskazówek, duplikat).
+- 2026-10-27: Testy zdjęć przy krokach (integracyjne i E2E), test ID dużego medium w panelu.
