@@ -22,6 +22,14 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 
 ## Wpisy
 
+### 2026-10-27 - Zwrot z weryfikacji FiziYo jest na kopii, nie na oryginale
+
+- **Kategoria**: `GraphQL`
+- **Problem**: Zakładka „Do poprawy” (T-0003) filtrowała po `status === 'CHANGES_REQUESTED'`, więc ćwiczenia zwrócone z centrum weryfikacji nigdy się nie pojawiały.
+- **Przyczyna**: `SubmitToGlobalReview` tworzy kopię globalną i nie zmienia statusu oryginału; `RejectExercise` ustawia `ChangesRequested` na kopii, której `availableExercises` nie zwraca.
+- **Rozwiązanie**: Addytywne pole `Exercise.globalSubmissionStatus` (status kopii) w backendzie i filtr na nim w portalu.
+- **Reguła**: Status weryfikacji globalnej oryginału czytaj z `globalSubmissionStatus`, nigdy z `status`. Test helpera ma odtwarzać kształt z listy (`status: 'DRAFT'` + status kopii), a nie wymyślony.
+
 ### 2026-10-26 - Obecność pola to nie poprawność parametru
 
 - **Kategoria**: `Exercise` | `UI/UX` | `Verification`

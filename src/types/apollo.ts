@@ -187,6 +187,7 @@ export interface Exercise {
 
   // Global submission tracking (nowy model weryfikacji)
   globalSubmissionId?: string;
+  globalSubmissionStatus?: 'DRAFT' | 'PENDING_REVIEW' | 'CHANGES_REQUESTED' | 'PUBLISHED' | 'ARCHIVED_GLOBAL' | 'UPDATE_PENDING' | null;
   sourceOrganizationExerciseId?: string;
   submittedToGlobalAt?: string;
   organizationVerificationStatus?:
