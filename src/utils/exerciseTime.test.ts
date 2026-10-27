@@ -90,7 +90,8 @@ describe('calculateExerciseTotalSeconds', () => {
         preparationTime: 25,
         side: 'BOTH',
       }),
-    ).toEqual({ seconds: 105, isEstimate: false });
+    // Jak player mobile: przygotowanie także przed prawą stroną (25 + 25 + 80).
+    ).toEqual({ seconds: 130, isEstimate: false });
 
     expect(
       calculateExerciseTotalSeconds({
@@ -101,7 +102,7 @@ describe('calculateExerciseTotalSeconds', () => {
         preparationTime: 15,
         side: 'both',
       }),
-    ).toEqual({ seconds: 110, isEstimate: false });
+    ).toEqual({ seconds: 140, isEstimate: false });
 
     expect(
       calculateExerciseTotalSeconds({
@@ -137,7 +138,8 @@ describe('calculateExerciseTotalSeconds', () => {
         preparationTime: 5,
         side: 'both',
       }),
-    ).toBe(155);
+    // 5 start + 2 × 5 przed prawą stroną + praca + 1 przerwa między seriami.
+    ).toBe(165);
   });
 
   it('daje priorytet executionTime nad duration', () => {
