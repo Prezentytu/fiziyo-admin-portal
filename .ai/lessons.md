@@ -100,7 +100,15 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Problem**: PR czasu ćwiczenia mnożył cały `workBlock` (w tym `restSets`) przez `side=both`, więc terapeuta widział 540 s / 11 min 5 s zamiast 420 s / 9 min 35 s z timera pacjenta.
 - **Przyczyna**: Źle zrozumiany SSOT: player liczy `prep + workOneSide * sets * sideMultiplier + restSets * (sets-1)`.
 - **Rozwiązanie**: Wzór z `main` / `computePlannedDurationSec`; test 420 s i fixture 110 s. `overridesJson` przy merge zostaje.
-- **Reguła**: Jeśli liczysz czas dla BOTH, mnoż tylko blok pracy jednej strony; przerwy między seriami i przygotowanie raz.
+- **Reguła**: Jeśli liczysz czas dla BOTH, mnoż tylko blok pracy jednej strony; `restSets` raz. `preparationTime` na starcie oraz przed prawą stroną każdej serii (2026-10-27).
+
+### 2026-10-27 - BOTH dolicza przygotowanie przed prawą stroną
+
+- **Kategoria**: `UI/UX` | `Testing`
+- **Problem**: Player odlicza przygotowanie także przed prawą stroną (`fizjo-app` #191), a kafel w panelu zostawiał `preparationTime` raz — 105 s vs 130 s na tej samej dawce.
+- **Przyczyna**: Lesson 2026-09-24 i `src/features/exercises/AGENTS.md` mówiły „przygotowanie raz”, więc agent egzekwujący kontrakt cofałby `sideChangePreparationTime`.
+- **Rozwiązanie**: `calculateExerciseTotalSeconds` dodaje `preparationTime * sets` przy `side=both` (PR #131). Inne tryby bez zmian.
+- **Reguła**: Jeśli liczysz czas BOTH, dodaj `preparationTime` na starcie i `preparationTime` przed każdą prawą stroną; `restSets` bez mnożnika.
 
 ### 2026-09-21 - QR zaproszenia bez tokenu to niedostępność, nie spinner
 
