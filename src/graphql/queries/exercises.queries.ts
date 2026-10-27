@@ -53,6 +53,7 @@ export const EXERCISE_FULL_FRAGMENT = gql`
     enrichmentData
     # Global submission tracking (nowy model weryfikacji)
     globalSubmissionId
+    globalSubmissionStatus
     sourceOrganizationExerciseId
     submittedToGlobalAt
     # Organization verification tracking

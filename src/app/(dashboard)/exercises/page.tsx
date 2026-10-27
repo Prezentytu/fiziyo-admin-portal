@@ -39,11 +39,12 @@ import { ORG_VERIFICATION_REFETCH_QUERIES } from '@/hooks/useOrganizationVerific
 import type { AvailableExercisesResponse, ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
 import { sortExercisesByNewest } from '@/features/exercises/utils/sortExercisesByNewest';
 import { filterExercisesBySearch } from '@/features/exercises/utils/exerciseSearch';
+import { exerciseNeedsChanges } from '@/features/exercises/utils/exerciseNeedsChanges';
 import { getExerciseDefaultParams } from '@/features/exercise-sets/utils/exerciseDefaults';
 import { PageHeader } from '@/components/shared/page';
 
 // Typ dla filtra źródła ćwiczeń
-type ExerciseSourceFilter = 'all' | 'organization' | 'fiziyo';
+type ExerciseSourceFilter = 'all' | 'organization' | 'fiziyo' | 'needsChanges';
 
 export default function ExercisesPage() {
   const router = useRouter();
@@ -195,6 +196,9 @@ export default function ExercisesPage() {
     if (sourceFilter === 'fiziyo') {
       return exercises.filter((e) => e.scope === 'GLOBAL');
     }
+    if (sourceFilter === 'needsChanges') {
+      return exercises.filter(exerciseNeedsChanges);
+    }
     return exercises;
   }, [exercises, sourceFilter]);
 
@@ -204,6 +208,7 @@ export default function ExercisesPage() {
     [exercises]
   );
   const fiziyoCount = useMemo(() => exercises.filter((e) => e.scope === 'GLOBAL').length, [exercises]);
+  const needsChangesCount = useMemo(() => exercises.filter(exerciseNeedsChanges).length, [exercises]);
 
   // Stats - łączna liczba (po deduplikacji)
   const totalCount = exercises.length;
@@ -339,6 +344,7 @@ export default function ExercisesPage() {
               { id: 'all', label: 'Wszystkie', count: totalCount, testId: 'exercise-filter-all' },
               { id: 'organization', label: 'Moje ćwiczenia', count: organizationCount, testId: 'exercise-filter-organization' },
               { id: 'fiziyo', label: 'Baza FiziYo', count: fiziyoCount, testId: 'exercise-filter-fiziyo' },
+              { id: 'needsChanges', label: 'Do poprawy', count: needsChangesCount, testId: 'exercise-filter-needs-changes' },
             ] as const).map((tab) => (
               <button
                 key={tab.id}
