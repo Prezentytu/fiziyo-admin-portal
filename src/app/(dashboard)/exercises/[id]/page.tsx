@@ -48,6 +48,7 @@ import { CreateSetWizard } from '@/features/exercise-sets';
 import { SubmitToGlobalDialog } from '@/features/exercises/SubmitToGlobalDialog';
 import { SubmitToOrganizationDialog } from '@/features/exercises/SubmitToOrganizationDialog';
 import { FeedbackBanner } from '@/features/exercises/FeedbackBanner';
+import { resolveExerciseReviewFeedback } from '@/features/exercises/utils/resolveExerciseReviewFeedback';
 import { ReportExerciseDialog } from '@/features/exercises/ReportExerciseDialog';
 import { MediaGallery, buildMediaItems } from '@/components/shared';
 import {
@@ -515,6 +516,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const isChangesRequested = exercise.status === 'CHANGES_REQUESTED';
   const isSubmittedToGlobal = hasGlobalSubmission && exercise.scope === 'ORGANIZATION';
   const canResubmit = isChangesRequested && hasGlobalSubmission;
+  const reviewFeedback = resolveExerciseReviewFeedback(exercise);
 
   const normalizedFields = normalizeExerciseFieldValues(exercise);
 
@@ -727,9 +729,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         )}
       </div>
 
-      {isChangesRequested && exercise.adminReviewNotes && (
-        <FeedbackBanner adminReviewNotes={exercise.adminReviewNotes} updatedAt={exercise.updatedAt} />
-      )}
+      {reviewFeedback && <FeedbackBanner adminReviewNotes={reviewFeedback.notes} updatedAt={reviewFeedback.updatedAt} />}
 
       {/* Hero Actions */}
       <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12">
