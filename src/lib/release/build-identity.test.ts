@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildReleaseHeaders } from './build-identity';
+import { buildAppVersionLabel, buildReleaseHeaders } from './build-identity';
 
 const identity = {
   VERCEL_GIT_COMMIT_SHA: 'a'.repeat(40),
@@ -30,5 +30,15 @@ describe('admin build identity', () => {
     { NEXT_PUBLIC_API_URL: 'https://secret@fizjo-app-api.azurewebsites.net' },
   ])('rejects incomplete or untrusted build inputs %j', (overrides) => {
     expect(() => buildReleaseHeaders({ ...identity, ...overrides })).toThrow();
+  });
+});
+
+describe('admin version label', () => {
+  it('names the deployed commit, because package.json version never changes between deploys', () => {
+    expect(buildAppVersionLabel(identity, '0.1.0')).toBe('0.1.0 (sha-aaaaaaa)');
+  });
+  it('keeps the bare version for a local build or an untrusted sha', () => {
+    expect(buildAppVersionLabel({}, '0.1.0')).toBe('0.1.0');
+    expect(buildAppVersionLabel({ VERCEL_GIT_COMMIT_SHA: 'main' }, '0.1.0')).toBe('0.1.0');
   });
 });

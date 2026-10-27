@@ -1,3 +1,12 @@
+/**
+ * Wersja w zgłoszeniu (Discord „Wersja:”). package.json stoi na 0.1.0, więc sama wersja nie mówi,
+ * który deploy ma zgłaszający — commit z Vercela mówi.
+ */
+export function buildAppVersionLabel(env: Record<string, string | undefined>, version: string): string {
+  const sha = env.VERCEL_GIT_COMMIT_SHA;
+  return sha && /^[0-9a-f]{40}$/.test(sha) ? `${version} (sha-${sha.slice(0, 7)})` : version;
+}
+
 type HeaderRule = { source: string; headers: { key: string; value: string }[] };
 
 export function buildReleaseHeaders(env: Record<string, string | undefined>): HeaderRule[] {
