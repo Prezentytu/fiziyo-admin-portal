@@ -36,4 +36,4 @@
 - Następny krok: <jedna konkretna akcja>
 - Blokady: <powód, co odblokuje>
 - Transfer kodu: <ten sam checkout / zatwierdzony commit / patch + nowe pliki>
-- BOARD: <istniejąca pozycja lub proponowana linia do fizjo-app/.ai/BOARD.md>
+- Źródło: <T-00nn ze Skrzynki | BW-FZ-n | spec>

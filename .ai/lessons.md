@@ -20,6 +20,8 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Rozwiązanie**: Co naprawiono
 - **Reguła**: Zasada do zapamiętania na przyszłość
 
+Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint albo check, który łapie ten przypadek (konwencja z `fizjo-app/lessons.md`). Brak markera = tylko tekst. Marker dopisujesz tylko wtedy, gdy wskazany plik istnieje i jego test albo reguła odtwarza ten przypadek.
+
 ## Wpisy
 
 ### 2026-10-27 - Zwrot z weryfikacji FiziYo jest na kopii, nie na oryginale
@@ -28,7 +30,7 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Problem**: Zakładka „Do poprawy” (T-0003) filtrowała po `status === 'CHANGES_REQUESTED'`, więc ćwiczenia zwrócone z centrum weryfikacji nigdy się nie pojawiały.
 - **Przyczyna**: `SubmitToGlobalReview` tworzy kopię globalną i nie zmienia statusu oryginału; `RejectExercise` ustawia `ChangesRequested` na kopii, której `availableExercises` nie zwraca.
 - **Rozwiązanie**: Addytywne pole `Exercise.globalSubmissionStatus` (status kopii) w backendzie i filtr na nim w portalu.
-- **Reguła**: Status weryfikacji globalnej oryginału czytaj z `globalSubmissionStatus`, nigdy z `status`. Test helpera ma odtwarzać kształt z listy (`status: 'DRAFT'` + status kopii), a nie wymyślony.
+- **Reguła**: Status weryfikacji globalnej oryginału czytaj z `globalSubmissionStatus`, nigdy z `status`. Test helpera ma odtwarzać kształt z listy (`status: 'DRAFT'` + status kopii), a nie wymyślony. [egzekwowane: src/features/exercises/utils/__tests__/exerciseNeedsChanges.test.ts]
 
 ### 2026-10-26 - Obecność pola to nie poprawność parametru
 
@@ -36,7 +38,7 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Problem**: Ekran weryfikacji świecił na zielono „Przysiad 100 serii × 1000 powtórzeń”, bo reguły publikacji sprawdzały tylko, czy serie i powtórzenia są większe od zera.
 - **Przyczyna**: `computeVerificationCompletion` liczy kompletność, a nie wiarygodność; żadna warstwa nie znała limitów ani typowych zakresów, ani czasu całego ćwiczenia.
 - **Rozwiązanie**: `utils/parameterRules.ts` ocenia każde pole (limit = blokada, poza typowym zakresem = „Sprawdź” z „Tak ma być”) i czas całego ćwiczenia (strona ciała ×2), a `verificationStages.ts` blokuje publikację, dopóki etap ma uwagi (SPEC-030).
-- **Reguła**: Jeśli UI ocenia dane domenowe kolorem „gotowe”, zawsze sprawdzaj wiarygodność wartości (limit, typowy zakres, wynik złożony jak czas sesji), a nie tylko obecność — i trzymaj te reguły w czystej funkcji z testem przypadku absurdalnego.
+- **Reguła**: Jeśli UI ocenia dane domenowe kolorem „gotowe”, zawsze sprawdzaj wiarygodność wartości (limit, typowy zakres, wynik złożony jak czas sesji), a nie tylko obecność — i trzymaj te reguły w czystej funkcji z testem przypadku absurdalnego. [egzekwowane: src/features/verification/utils/__tests__/parameterRules.test.ts]
 
 ### 2026-10-15 - Enter na ostatnim kroku kreatora nie zapisuje planu
 
@@ -68,7 +70,7 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Problem**: Po usunięciu martwych operacji AGENTS.md, ECOSYSTEM i specy nadal podawały `GET_EXERCISES_QUERY` (w panelu zakazane) i `GET_ADMIN_EXERCISES_QUERY` (nie istnieje), w tym jako wzorzec `useQuery` do kopiowania.
 - **Przyczyna**: Listy API i przykłady w dokumentach były pisane ręcznie i nic nie porównywało ich z eksportami w `src/`.
 - **Rozwiązanie**: Nazwy podmienione na żywe eksporty; `agent:check` uruchamia `scripts/check-agent-docs-graphql.mjs`, który odrzuca w plikach `AGENTS.md` nazwy `*_QUERY/_MUTATION/_SUBSCRIPTION/_FRAGMENT` bez eksportu w `src/`.
-- **Reguła**: Usuwając operację GraphQL albo komponent, przeszukaj `AGENTS.md`, `.ai/` i `docs/` po nazwie w tym samym PR. Nazwy z mobile oznaczaj w dokumentach jako mobile, nie jako listę panelu.
+- **Reguła**: Usuwając operację GraphQL albo komponent, przeszukaj `AGENTS.md`, `.ai/` i `docs/` po nazwie w tym samym PR. Nazwy z mobile oznaczaj w dokumentach jako mobile, nie jako listę panelu. [egzekwowane: scripts/check-agent-docs-graphql.mjs]
 
 ### 2026-10-01 - Cofnięcie Premium nie zapowiada doliczenia 15 PLN
 
@@ -100,7 +102,7 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Problem**: PR czasu ćwiczenia mnożył cały `workBlock` (w tym `restSets`) przez `side=both`, więc terapeuta widział 540 s / 11 min 5 s zamiast 420 s / 9 min 35 s z timera pacjenta.
 - **Przyczyna**: Źle zrozumiany SSOT: player liczy `prep + workOneSide * sets * sideMultiplier + restSets * (sets-1)`.
 - **Rozwiązanie**: Wzór z `main` / `computePlannedDurationSec`; test 420 s i fixture 110 s. `overridesJson` przy merge zostaje.
-- **Reguła**: Jeśli liczysz czas dla BOTH, mnoż tylko blok pracy jednej strony; `restSets` raz. `preparationTime` na starcie oraz przed prawą stroną każdej serii (2026-10-27).
+- **Reguła**: Jeśli liczysz czas dla BOTH, mnoż tylko blok pracy jednej strony; `restSets` raz. `preparationTime` na starcie oraz przed prawą stroną każdej serii (2026-10-27). [egzekwowane: src/utils/exerciseTime.test.ts]
 
 ### 2026-10-27 - BOTH dolicza przygotowanie przed prawą stroną
 
@@ -140,7 +142,7 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Problem**: Portal `#78` po zielonym `validate` nadal nie nadawał się do merge: pin padał na Preview PR, a §6 polityki tłumaczył wyłączenie workera 403 „Upgrade to GitHub Pro”.
 - **Przyczyna**: Workflow pinu jest brany z SHA deploymentu, więc merge `#95` na `main` nie naprawia otwartego PR bez wlania `main`. `GET …/rulesets` na `fiziyo-admin-portal` zwraca 200 `[]`; 403 planu jest historyczny.
 - **Rozwiązanie**: Wlać `main` (pin skip Preview). §6 jak kanon fizjo-app: worker wyłączony bo `enabled: false`. `check-trunk-main` blokuje powrót zdania o 403 Free.
-- **Reguła**: Jeśli GitHub `rulesets` zwraca `[]`, zawsze cytuj ten odczyt. Nie uzasadniaj wyłączenia workera historycznym 403 Pro.
+- **Reguła**: Jeśli GitHub `rulesets` zwraca `[]`, zawsze cytuj ten odczyt. Nie uzasadniaj wyłączenia workera historycznym 403 Pro. [egzekwowane: scripts/check-trunk-main.mjs]
 
 ### 2026-09-20 - Pin DEV nie może padać na Preview PR (wykluczenie Preview z workflow nieaktualne, zob. 2026-10-01)
 
@@ -156,7 +158,7 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Problem**: Dialog „Dodaj ćwiczenia” i fork TEMPLATE w Assignment Wizard pokazywały Razem, ale `addExerciseToExerciseSet` nie dostawał `overridesJson`. Mapping dziedziczył katalogowe Both — pacjent robił objętość ×2.
 - **Przyczyna**: Kreator zestawu i pełna edycja już budują deltę strony; `AddExerciseToSetDialog` i `buildAddExerciseVariables` wysyłały tylko kolumny dawkowania.
 - **Rozwiązanie**: Ten sam `buildMappingOverridesFromParams` co w `CreateSetWizard`. Test strażnik skanuje write-pathy z edytorem strony.
-- **Reguła**: Każdy `addExerciseToExerciseSet` z karty `cardSurface="mapping"` albo zapis TEMPLATE musi wysłać `overridesJson`. Same kolumny dawkowania nie przenoszą strony.
+- **Reguła**: Każdy `addExerciseToExerciseSet` z karty `cardSurface="mapping"` albo zapis TEMPLATE musi wysłać `overridesJson`. Same kolumny dawkowania nie przenoszą strony. [egzekwowane: src/features/exercise-sets/utils/buildMappingOverridesFromParams.test.ts]
 
 ### 2026-09-19 - Wyszukiwanie ćwiczeń: AND tokenów, nie ciągła fraza
 
@@ -164,7 +166,7 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Problem**: Dopisanie słowa w wyszukiwarce gubiło ćwiczenie, bo klient i backend szukały całego ciągu (`przysiad kettlebell` ≠ `Przysiad z kettlebell`).
 - **Przyczyna**: `matchesSearchQuery` / `ToLower().Contains(cała fraza)` bez tokenizacji; e-mail autora w `ApplySearch` dawał szum.
 - **Rozwiązanie**: `matchesExerciseSearch` / `filterExercisesBySearch` (portal `src/features/exercises/utils`) i backend `ExerciseSearchQuery` — token AND, ranking nazwy, bez e-maila.
-- **Reguła**: Jeśli filtrujesz katalog ćwiczeń, zawsze tokenizuj zapytanie (AND, min. 2 znaki) i nie dopasowuj e-maila autora.
+- **Reguła**: Jeśli filtrujesz katalog ćwiczeń, zawsze tokenizuj zapytanie (AND, min. 2 znaki) i nie dopasowuj e-maila autora. [egzekwowane: src/features/exercises/utils/__tests__/exerciseSearch.test.ts]
 
 ### 2026-09-20 - Preview domena nie może mieć gitBranch main (nieaktualne, zob. 2026-10-01)
 
@@ -180,7 +182,7 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Problem**: Skaner telefonu na demo K01 pokazał „brak używalnych danych”, bo QR kodował `fiziyo://connect?...`.
 - **Przyczyna**: Kamera otwiera tylko `http(s):`. Custom URI bez zainstalowanej apki jest dla skanera pustym payloadem. Copy i PDF używały jeszcze innych URL-i.
 - **Rozwiązanie**: `buildPatientJoinUrl` / `buildPatientConnectUrl` w `src/lib/patientJoinUrl.ts`. QR tylko gdy `isHttpsUrl`. Pusty payload = spinner, nie kod.
-- **Reguła**: Jeśli QR ma otworzyć się kamerą, zawsze koduj pełny `https://` na domenie FiziYo; nigdy `fiziyo://`, JSON ani pusty string.
+- **Reguła**: Jeśli QR ma otworzyć się kamerą, zawsze koduj pełny `https://` na domenie FiziYo; nigdy `fiziyo://`, JSON ani pusty string. [egzekwowane: src/lib/__tests__/patientJoinUrl.test.ts]
 
 ### 2026-09-19 - Sidebar create-set musi pisać overridesJson strony
 
@@ -188,7 +190,7 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Problem**: Kreator z listy ćwiczeń pokazywał i liczył zmienioną stronę (Razem vs Na każdą stronę), a `CreateSetDialog` nie wysyłał `overridesJson`. Mapping dziedziczył katalogowe Both → objętość pacjenta ×2.
 - **Przyczyna**: Sidebar i `CreateSetWizard` dzielą `submitCreateTemplateSet`, ale dialog mapował tylko kolumny dawkowania.
 - **Rozwiązanie**: `buildBuilderExerciseMapping` zapisuje deltę strony względem katalogowego `side`; test blokuje powrót inline mapowania w dialogu.
-- **Reguła**: Jeśli karta zestawu edytuje `side`, zawsze wyślij deltę w `overridesJson` na tym samym write-path co wizard, nigdy samego dawkowania.
+- **Reguła**: Jeśli karta zestawu edytuje `side`, zawsze wyślij deltę w `overridesJson` na tym samym write-path co wizard, nigdy samego dawkowania. [egzekwowane: src/components/exercise-builder/buildBuilderExerciseMapping.test.ts]
 
 ### 2026-09-19 - Fragment relacji nie może wołać wycofanych pól ExerciseRelation
 
@@ -252,7 +254,7 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Problem**: W edycji ćwiczenia kosz przy pustych polach „Błąd” / „Jak poprawić” i wskazówkach wyglądał na aktywny, choć nie było treści do usunięcia.
 - **Przyczyna**: Listy enrichment zawsze renderują starterowy pusty wiersz (`items.length ? items : ['']`). Kosz był `disabled` tylko przy locku edycji, więc klik kasował `[]` i ten sam placeholder wracał.
 - **Rozwiązanie**: Wspólne `canRemovePlaceholderRow` — kosz aktywny, gdy wiersz ma treść albo jest więcej niż jeden. Pusty jedyny wiersz: `disabled` + stonowana ikona + `aria-label` „Brak treści do usunięcia”.
-- **Reguła**: Jeśli UI dokłada pusty wiersz-placeholder, przycisk usuwania musi zależeć od treści, nie od samego istnienia wiersza. `data-testid` dawaj jako pierwszy atrybut — skaner testid kończy tag na `=>` w `onClick`.
+- **Reguła**: Jeśli UI dokłada pusty wiersz-placeholder, przycisk usuwania musi zależeć od treści, nie od samego istnienia wiersza. `data-testid` dawaj jako pierwszy atrybut — skaner testid kończy tag na `=>` w `onClick`. [egzekwowane: src/components/shared/enrichment/__tests__/canRemovePlaceholderRow.test.ts]
 
 ### 2026-09-15 - Import nie może przesuwać fałszywego braku testid
 
@@ -260,7 +262,7 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Problem**: PR z importem i formatowaniem `hasParams` wywalił `check:testids` na `chat/ExerciseCard` Button, który już miał `data-testid`.
 - **Przyczyna**: Guard kończył opening tag na pierwszym `>` (`onClick={() =>}`), więc testid w kolejnej linii był niewidoczny; allowlista trzyma numer linii, więc +2 linie dały „nowy” wpis.
 - **Rozwiązanie**: `data-testid` jako pierwszy atrybut; parser pomija `>` wewnątrz `{...}`; regresja w `scripts/check-testid-coverage.test.mjs`.
-- **Reguła**: Nie regeneruj allowlisty po samym przesunięciu linii. Guard ma widzieć testid mimo `=>`; trzymaj `data-testid` przed handlerami z `=>`.
+- **Reguła**: Nie regeneruj allowlisty po samym przesunięciu linii. Guard ma widzieć testid mimo `=>`; trzymaj `data-testid` przed handlerami z `=>`. [egzekwowane: scripts/check-testid-coverage.test.mjs]
 
 ### 2026-09-15 - Czat AI nie może etykietować sekund jako minut
 
@@ -300,7 +302,7 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Problem**: `git push && git log origin/main..HEAD` padało jako „push to main”.
 - **Przyczyna**: Jeden regex na całym łańcuchu poleceń.
 - **Rozwiązanie**: `agent-guard` dzieli po `&&` / `||` / `;` i ocenia segmenty.
-- **Reguła**: Jeśli hook szuka `git push` + `main`, klasyfikuj segment, nie cały string.
+- **Reguła**: Jeśli hook szuka `git push` + `main`, klasyfikuj segment, nie cały string. [egzekwowane: scripts/agent-guard.test.mjs]
 
 ### 2026-09-14 - Polityka cytuje tylko to, co `agent:check` weryfikuje
 
@@ -444,7 +446,7 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Problem**: Create wizard, dialog edycji (`ExerciseForm`) i detal (`ExerciseEditor`) miały różne zestawy pól i etykiet (`Czas powtórzenia` vs `Czas 1 powtórzenia`); mapping/override też dryfowały.
 - **Przyczyna**: Trzy niezależne artefakty formularza z lokalnymi listami pól zamiast jednego field-setu z intencją (Salesforce page-layout tax).
 - **Rozwiązanie**: `fieldContract.ts` jako SSOT (tier, surfaces, zod, options) + etykiety z `displayRegistry`; `ExerciseParametersEditor` / `ExerciseEditor` współdzielone; create = lean subset; usunięto `ExerciseForm` i martwe legacy edytory.
-- **Reguła**: Dla danych domenowych edytowanych w wielu miejscach utrzymuj jeden kontrakt pól. Powierzchnia może różnić layout i podzbiór (create-as-prefix), nigdy etykietę, walidację ani mapowanie na mutację. Guardrail: test kompletności kontraktu + integralność testid.
+- **Reguła**: Dla danych domenowych edytowanych w wielu miejscach utrzymuj jeden kontrakt pól. Powierzchnia może różnić layout i podzbiór (create-as-prefix), nigdy etykietę, walidację ani mapowanie na mutację. Guardrail: test kompletności kontraktu + integralność testid. [egzekwowane: src/components/shared/exercise/__tests__/fieldContract.test.ts]
 
 ### 2026-07-28 - Generowanie obrazów AI wyłącznie przez Image API, nigdy chat/completions z modalities
 
@@ -548,7 +550,7 @@ Nie czytaj całego pliku. `rg` po słowach: `organizationId`, `data-testid`,
 - **Problem**: Skille były rozwijane ręcznie bez jednego źródła prawdy i bez automatycznego wykrywania dryfu między katalogami, frontmatter i warstwą `.cursor/skills`.
 - **Przyczyna**: `skills:sync` kopiował pliki, ale nie walidował manifestu tierów ani obowiązkowych pól (`name`, `description`) i nie miał dedykowanego gate'a CI.
 - **Rozwiązanie**: Dodano `.ai/skills/manifest.json`, walidację frontmatter + dryf manifestu w `scripts/sync-cursor-skills.mjs`, nowy krok `skills:lint` oraz egzekwowanie go w CI.
-- **Reguła**: Jeśli proces opiera się na katalogu instrukcji (skills/rules), zawsze utrzymuj manifest jako source-of-truth i uruchamiaj lint governance w CI; sama synchronizacja plików nie wystarcza.
+- **Reguła**: Jeśli proces opiera się na katalogu instrukcji (skills/rules), zawsze utrzymuj manifest jako source-of-truth i uruchamiaj lint governance w CI; sama synchronizacja plików nie wystarcza. [egzekwowane: .github/workflows/ci.yml `skills:lint`]
 
 ### 2026-06-12 - Reguły procesowe muszą być egzekwowane przez skrypty, nie tylko opisane
 

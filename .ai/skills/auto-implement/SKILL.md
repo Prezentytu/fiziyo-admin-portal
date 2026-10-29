@@ -16,7 +16,7 @@ description: Autonomiczna realizacja wieloetapowego zadania z trwałym runem i d
 4. Dla cross-repo zapisz osobny stan i wyniki każdego potrzebnego repo. Brak
    konsumenta/backendu/E2E oznacz jawnie, nie potwierdzaj ich testami portalu.
 5. Przed zakończeniem dobierz jeden pakiet kontroli według workflow i uzyskaj
-   niezależny review konkretnego kandydata. Zapisz ograniczenia i wskaźnik BOARD.
+   niezależny review konkretnego kandydata. Zapisz ograniczenia i ticket Skrzynki (`T-00nn`) albo `BW-FZ-n`.
 6. Przed przerwą zapisz handoff z następną akcją i tożsamością dirty zmian.
    Zwykłe wznowienie nie odświeża starych wyników testów.
 

@@ -1,4 +1,4 @@
-# 07 — Dryf speców i BOARD
+# 07 — Dryf speców
 
 | Pole          | Wartość                                                           |
 | ------------- | ----------------------------------------------------------------- |
@@ -17,8 +17,8 @@ decyzji w specach i nie edytujesz `VISION.md`.
 1. Uruchom `npm run agent:check`. Każdy brakujący wiersz indeksu albo frontmatter
    to znalezisko, nie zgadywanie statusu.
 2. Sprawdź, czy `prs` w frontmatterze i status w `.ai/specs/README.md` wskazują
-   istniejące pliki. BOARD żyje w `fizjo-app/.ai/BOARD.md` — tu tylko proponujesz
-   linię w opisie PR.
+   istniejące pliki. Status ze słownika nadajesz tylko z dowodem w pliku speca;
+   bez dowodu wypisujesz spec w raporcie.
 3. Draft PR `agent/drift-YYYY-MM-DD` z listą rozjazdów. Jedna zmiana mechaniczna
    na plik indeksu albo frontmatter; bez przepisywania changelogów.
 

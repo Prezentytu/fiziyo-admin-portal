@@ -31,9 +31,9 @@ Ten runbook opisuje docelowy model dla DEV, preview i `prod`, tak aby:
 - `fiziyo-admin` deployuje na Vercel.
 - Po `deployment_status=success` workflow [`e2e-trigger.yml`](../../.github/workflows/e2e-trigger.yml) wysyla `repository_dispatch` do `fiziyo-tests`.
 - `fiziyo-tests`:
-  - [`e2e-dev.yml`](../../../fiziyo-tests/.github/workflows/e2e-dev.yml) obsluguje `e2e-dev-run` (dedykowany DEV; preview nie dostaje E2E),
-  - [`e2e-prod.yml`](../../../fiziyo-tests/.github/workflows/e2e-prod.yml) obsluguje `e2e-prod-run` (production),
-  - oba wrappery uruchamiaja wspolny reusable core [`e2e.yml`](../../../fiziyo-tests/.github/workflows/e2e.yml).
+  - [`e2e-dev.yml`](https://github.com/Prezentytu/fiziyo-tests/blob/main/.github/workflows/e2e-dev.yml) obsluguje `e2e-dev-run` (dedykowany DEV; preview nie dostaje E2E),
+  - [`e2e-prod.yml`](https://github.com/Prezentytu/fiziyo-tests/blob/main/.github/workflows/e2e-prod.yml) obsluguje `e2e-prod-run` (production),
+  - oba wrappery uruchamiaja wspolny reusable core [`e2e.yml`](https://github.com/Prezentytu/fiziyo-tests/blob/main/.github/workflows/e2e.yml).
 - Wynik wraca jako semantyczny commit status do commita w `fiziyo-admin`:
   - `E2E Dev Full`
   - `E2E Prod Smoke`

@@ -201,6 +201,19 @@ describe('stałe kontraktu', () => {
   });
 });
 
+describe('szablon karty w cloud-agent-policy', () => {
+  it('ma unikalne i znane klucze', async () => {
+    const { readFileSync } = await import('node:fs');
+    const policy = readFileSync(new URL('../docs/architecture/cloud-agent-policy.md', import.meta.url), 'utf8');
+    const result = parseTaskCard(policy);
+    assert.doesNotMatch(result.errors.join('\n'), /Brak bloku/);
+    assert.deepEqual(
+      result.errors.filter((error) => /Zduplikowany klucz|Nieznany klucz|Linia bez klucza/.test(error)),
+      [],
+    );
+  });
+});
+
 describe('karta nie jest zgodą', () => {
   it('odmawia niezależnie od etykiety, komentarza i „Adam zaakceptował”', () => {
     const bodies = [
