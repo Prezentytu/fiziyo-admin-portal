@@ -58,7 +58,7 @@ Najczęstszy defekt tutaj to zmiana, która działa w widoku, który sprawdziłe
 - Najpierw test dotkniętego zachowania: `npx vitest run <pliki>`.
 - Zmiana produktu: `npm run validate` raz, na końcu (lint, `check:testids`, `check:design-tokens`, type-check, testy, build). Nie powtarzaj jego składników osobno bez nowej zmiany.
 - Sam workflow agentów albo dokumentacja: `npm run skills:lint`, `skills:test`, `skills:sync`, `skills:check`, `agent:check`, `agent:test`; zmienione skrypty również ESLint z `--max-warnings 0`. Wymagane kontrole CI zostają obowiązkowe.
-- Baza długu `.ai/quality/design-token-baseline.json` może tylko maleć. Przed zakończeniem zmian UI uruchom lint dla zmienionych plików i popraw problemy dodane w tej iteracji.
+- `check:design-tokens` blokuje nowe hexy i palety Tailwinda; baza długu `.ai/quality/design-token-baseline.json` może tylko maleć. Przed zakończeniem zmian UI uruchom lint dla zmienionych plików i popraw problemy dodane w tej iteracji.
 - Testy jednostkowe logiki biznesowej są obowiązkowe: filtry, reguły widoczności, walidacja, mapowanie parametrów. Wyciągnij ją do czystej funkcji w `utils/` modułu i testuj Vitestem (`docs/testing/testing-guidelines.md`); zmiana warunku albo filtra aktualizuje jego testy. Nie testuj tego, co gwarantują typy, samego copy ani mocków, które tylko odbijają wywołania.
 - Rozszerz, zanim dodasz: gdy istniejący test pokrywa zachowanie, dopisz przypadek tam.
 - Dowód poprawki zależy od błędu. Błąd logiki, danych lub stanu: najpierw test, który pada na `main`, potem poprawka. Błąd czysto wizualny: zrzut przed i po w obu motywach, bez testu UI.
@@ -80,7 +80,7 @@ Najczęstszy defekt tutaj to zmiana, która działa w widoku, który sprawdziłe
 
 ## Jak to działa
 
-`src/proxy.ts` (Clerk) przepuszcza tylko trasy publiczne bez logowania. `src/graphql/providers/BackendAuthTokenProvider.ts` wymienia token Clerka na własny JWT backendu z `organization_id` i rolą; do GraphQL nigdy nie idzie token Clerka. Apollo (`src/lib/apollo/provider.tsx`) łączy HTTP z subskrypcjami po WebSocket (`src/graphql/links/wsLink.ts`). Operacje są pisane ręcznie w `src/graphql/`, nie generowane, i trafiają do tych samych resolwerów co mobile. Merge do `main` wdraża `devportal` na Vercel, po nim E2E DEV w `fiziyo-tests`; PROD to ręczny Promote.
+`src/proxy.ts` (Clerk) przepuszcza tylko trasy publiczne bez logowania. `src/graphql/providers/BackendAuthTokenProvider.ts` wymienia token Clerka na własny JWT backendu z `organization_id` i rolą; do GraphQL nigdy nie idzie token Clerka. Apollo (`src/lib/apollo/provider.tsx`) łączy HTTP z subskrypcjami po WebSocket (`src/graphql/links/wsLink.ts`). Operacje są pisane ręcznie w `src/graphql/`, nie generowane, i trafiają do tych samych resolwerów co mobile. Merge do `main` wdraża `devportal` na Vercel, po nim E2E DEV w `fiziyo-tests`; PROD wdraża człowiek (Release w `fizjo-app` albo ręczny Promote).
 
 ## Gdzie leży kod
 
@@ -122,4 +122,4 @@ Przed implementacją dopasuj zadanie i przeczytaj wszystkie pasujące pliki. Gdy
 | Agent w chmurze                                                             | `docs/architecture/cloud-agent-policy.md`                                                                                                                                                                                  |
 | Szczegóły: wizard, billing, mapa test ID                                    | `docs/assignment-wizard-overview.md`, `docs/billing-widget-readme.md`, `docs/testing/data-testid-map.md`                                                                                                                   |
 
-Źródło skilli to `.ai/skills/` z `manifest.json`; `.agents/skills/` i `.cursor/skills/` to generowane, ignorowane kopie (`npm run skills:sync`). Zasady inżynierskie (`.ai/skills/principle-*/`, źródło w `fizjo-app`) cytujesz tylko wtedy, gdy w tej sesji przeczytałeś ich `SKILL.md`. Szczegóły operacyjne: `.ai/docs/agent-rules.md`.
+Źródło skilli to `.ai/skills/` z `manifest.json` (indeks: `.ai/skills/README.md`); `.agents/skills/` i `.cursor/skills/` to generowane, ignorowane kopie (`npm run skills:sync`). Zasady inżynierskie (`.ai/skills/principle-*/`, źródło w `fizjo-app`) cytujesz tylko wtedy, gdy w tej sesji przeczytałeś ich `SKILL.md`. Szczegóły operacyjne: `.ai/docs/agent-rules.md`.
