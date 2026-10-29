@@ -2,7 +2,7 @@
 
 Panel gabinetu FiziYo dla fizjoterapeuty: katalog ćwiczeń z weryfikacją treści, zestawy, pacjenci, przypisania (Assignment Wizard), organizacja i gabinety, finanse i plan gabinetu, import katalogu. Panel jest miejscem, gdzie fizjoterapeuta pracuje szybko i masowo; aplikacja mobilna (`fizjo-app`) to miejsce, gdzie pacjent wykonuje zestaw. Oba klienty wołają ten sam backend `.NET 9 + HotChocolate GraphQL + PostgreSQL` z `fizjo-app/backend` i tę samą bazę. Na produkcji pracują prawdziwe gabinety z prawdziwymi pacjentami.
 
-Kierunek: `.ai/VISION.md` (wyciąg; źródło i wygrywająca wersja to `fizjo-app/.ai/VISION.md`). Priorytety ekosystemu: `fizjo-app/.ai/BOARD.md`; lokalnie leży obok, Cloud Agent dostaje pozycję BOARD w treści zadania. Po zweryfikowanym etapie zaktualizuj linię w BOARD lokalnie albo zaproponuj ją w opisie PR w chmurze.
+Kierunek: `.ai/VISION.md` (wyciąg; źródło i wygrywająca wersja to `fizjo-app/.ai/VISION.md`): fizjoterapeuta nie wpisuje nic ręcznie, a na końcu drogi zestaw powstaje w locie z opisu na wizycie; katalog jest etapem, nie warunkiem. Decyzje zespołu: `baza-wiedzy/spotkania/agenci/decyzje.md`, sekcja Obowiązujące. Priorytety ekosystemu: `fizjo-app/.ai/BOARD.md`; lokalnie leży obok, Cloud Agent dostaje pozycję BOARD w treści zadania. Po zweryfikowanym etapie zaktualizuj linię w BOARD lokalnie albo zaproponuj ją w opisie PR w chmurze.
 
 Next.js 16, React 19 i Apollo Client 4 mogą być nowsze niż twoja wiedza. Przy zadaniach Next.js i React sprawdzaj API w `node_modules/next/dist/docs/`, nie w pamięci. Przykład: middleware w Next 16 nazywa się `src/proxy.ts`.
 
@@ -22,7 +22,8 @@ Najmniejsza zmiana, która usuwa przyczynę, a nie objaw, bez tymczasowych obej�
 - **ty** to agent czytający ten plik. **Adam** decyduje o kierunku, edytuje `VISION.md` i merguje. **Przemek** to wspólnik, przez niego wpadają zgłoszenia fizjoterapeutów.
 - **fizjoterapeuta** to użytkownik panelu; gabinet płaci. **Pacjent** dopłaca w gabinecie za opiekę między wizytami, a gabinet aktywuje mu plan w panelu.
 - **organizacja** to tenant i granica danych; prawie każda operacja potrzebuje `organizationId`. **Gabinet** (`Clinic`) to lokalizacja w organizacji. Role: owner, admin, therapist, staff; backoffice `ContentManager` i `SiteSuperAdmin`.
-- **katalog** to ćwiczenia własne gabinetu i katalog FiziYo. **Weryfikacja** ma dwa tory: organizacyjny i globalny, z osobnymi statusami na tej samej encji `Exercise`.
+- **super admin portal** (podgląd użytkowników, logowań i aktywności ponad tenantami) to osobna aplikacja na osobnej domenie, czytająca `/api/ops` z backendu. Nie budujesz go w tym panelu.
+- **katalog** to ćwiczenia własne gabinetu i katalog FiziYo. **Weryfikacja** ma dwa tory: organizacyjny i globalny, z osobnymi statusami na tej samej encji `Exercise`. Ćwiczenie trafia do zewnętrznego fizjoterapeuty dopiero po naszej weryfikacji, a obrazek z AI slopem (zlepione kończyny, mieszana sylwetka, sprzęt w złej skali) odpada wcześniej. Bazę budujemy etapami: 10 ćwiczeń, potem 100 filarowych.
 - **zestaw** (`ExerciseSet`) składa się z **mappingów** (`ExerciseSetMapping`, z `overridesJson`). **Przypisanie** (`PatientAssignment`) daje zestaw pacjentowi; jego `exerciseOverrides` wygrywa z mappingiem, mapping z kolumnami ćwiczenia.
 - **`executionTime`** to czas jednego powtórzenia, edytowalny. Czas serii i czas całkowity są wyliczeniem tylko do odczytu; `duration` to pole legacy.
 - **DEV** to `devportal.fiziyo.pl`, wdrażany merge'em do `main`. **PROD** to `portal.fiziyo.pl`; wdraża go człowiek: Release w `fizjo-app` uruchamia Promote panelu albo Promote ręczny.
@@ -49,7 +50,7 @@ Najczęstszy defekt tutaj to zmiana, która działa w widoku, który sprawdziłe
 - **Role i tory.** Owner, admin, therapist, staff i backoffice widzą co innego; weryfikacja ma tor organizacyjny i globalny.
 - **Mobile i backend.** Ta sama operacja zwykle istnieje w `fizjo-app`. Typy TS są duplikowane, nie generowane, więc zmiana schematu dotyczy obu klientów. JSONB (`ExerciseLoad`, enrichment) czyta inaczej formularz panelu i player mobile.
 - **E2E.** Każdy element interaktywny ma `data-testid` w formacie `[moduł]-[komponent]-[element]-[akcja?]` z prefiksem `auth-`, `nav-`, `exercise-`, `set-`, `patient-`, `org-`, `settings-` albo `common-`, np. `exercise-form-submit-btn`. Test ID zmieniasz additive-first, z planem deprecacji. Zmiana roli, etykiety lub tekstu oznacza aktualizację Page Objectu i `TEST_PLAN.md` w `fiziyo-tests`.
-- **Motyw i klawiatura.** Jasny i ciemny; dialog obsługuje `Cmd/Ctrl + Enter` dla głównej akcji i `Escape`.
+- **Motyw i klawiatura.** Jasny i ciemny, domyślny jest jasny; dialog obsługuje `Cmd/Ctrl + Enter` dla głównej akcji i `Escape`.
 - **Stany.** Ładowanie, pusto, błąd, paginacja. Selekcja masowa resetuje się przy zmianie filtra, wyszukiwania i strony. Jeśli dodajesz wejście (archiwizuj), dodaj wyjście (przywróć).
 - **Dokumentacja.** Sprawdź, czy zmiana nie czyni nieprawdziwym `.ai/ECOSYSTEM.md`, `.ai/DATA_FLOWS.md`, `.ai/DOMAIN_MODEL.md`, specu albo modułowego `AGENTS.md`.
 
