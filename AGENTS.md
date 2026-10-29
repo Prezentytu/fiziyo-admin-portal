@@ -46,7 +46,7 @@ Zanim zmienisz kontrakt GraphQL, model danych współdzielony z mobile lub backe
 
 Najczęstszy defekt tutaj to zmiana, która działa w widoku, który sprawdziłeś, a brakuje jej gdzie indziej. Zanim powiesz „zrobione”, przejdź listę i napisz, które punkty dotyczyły zmiany:
 
-- **Widoki tej samej encji.** Ćwiczenie edytują strona ćwiczenia, dialog, kreator i workspace weryfikacji; wspólny stan to `src/features/exercises/useExerciseEditorForm.ts`. Poprawka w jednym widoku to nie poprawka funkcji.
+- **Widoki tej samej encji.** Ćwiczenie ma dwie ścieżki z osobnym stanem. Edycja (strona ćwiczenia, dialog, workspace weryfikacji, kolejki weryfikacji organizacji) idzie przez `src/features/exercises/useExerciseEditorForm.ts`. Tworzenie idzie przez `CreateExerciseWizard` z własnym `useState` i `useEnrichmentDraft`; hooka edycji nie woła. Poprawka pola dotyka obu ścieżek; poprawka w jednym widoku to nie poprawka funkcji.
 - **Role i tory.** Owner, admin, therapist, staff i backoffice widzą co innego; weryfikacja ma tor organizacyjny i globalny.
 - **Mobile i backend.** Ta sama operacja zwykle istnieje w `fizjo-app`. Typy TS są duplikowane, nie generowane, więc zmiana schematu dotyczy obu klientów. JSONB (`ExerciseLoad`, enrichment) czyta inaczej formularz panelu i player mobile.
 - **E2E.** Każdy element interaktywny ma `data-testid` w formacie `[moduł]-[komponent]-[element]-[akcja?]` z prefiksem `auth-`, `nav-`, `exercise-`, `set-`, `patient-`, `org-`, `settings-` albo `common-`, np. `exercise-form-submit-btn`. Test ID zmieniasz additive-first, z planem deprecacji. Zmiana roli, etykiety lub tekstu oznacza aktualizację Page Objectu i `TEST_PLAN.md` w `fiziyo-tests`.
@@ -86,7 +86,7 @@ Najczęstszy defekt tutaj to zmiana, która działa w widoku, który sprawdziłe
 ## Gdzie leży kod
 
 - `src/app/` to trasy App Router: `(dashboard)`, `(auth)`, `(blocked)`, `api/`.
-- `src/features/<moduł>/` to obszary funkcjonalne (assignment, exercises, exercise-sets, patients, verification, import, auth) z `utils/` i `utils/__tests__/`, `index.ts` i własnym `AGENTS.md`. Wzorzec: `.ai/STRUCTURE.md`.
+- `src/features/<moduł>/` to obszary funkcjonalne: assignment, exercises, exercise-sets, patients, verification i import mają własny `AGENTS.md`; auth jest mały i guide'a nie ma. `index.ts` mają tylko import i exercise-sets. Logika w `utils/` z `utils/__tests__/`. Wzorzec nowego modułu: `.ai/STRUCTURE.md`.
 - `src/components/ui/` to prymitywy design systemu, `src/components/shared/` komponenty wielokrotnego użytku, a pozostałe katalogi `src/components/` to obszary panelu (organization, settings, finances, clinical, onboarding i inne).
 - `src/graphql/`, `src/types/`, `src/lib/`, `src/hooks/`, `src/services/`, `src/contexts/`, `src/utils/` to reszta.
 
