@@ -6,8 +6,8 @@ delegowaniu i wznowieniu. Proste pytanie lub literówka nie wymagają runu.
 
 ## Źródła i zakres odpowiedzialności
 
-- Kierunek: `.ai/VISION.md`, źródło w `fizjo-app/.ai/VISION.md` (utrzymuje Adam).
-- Priorytety: jedna tablica `fizjo-app/.ai/BOARD.md`; czytaj TRACK, NOW i 3 z NEXT.
+- Kierunek: `.ai/VISION.md`, kopia kanonu `fizjo-app/.ai/VISION.md` (utrzymuje Adam; `npm run docs:sync`).
+- Gdzie jest praca: zgłoszenia w Skrzynce (ticket `T-00nn`), zobowiązania z calli w `baza-wiedzy/spotkania/agenci/zadania.md` (`BW-FZ-n`), większa praca w specu. Pełna lista: `.cursor/rules/00-vision-board.mdc`.
 - Zakres: issue albo istniejący spec; status specu wyłącznie w `.ai/specs/README.md`.
 - Postęp zadania, decyzje, dowody i następny krok: jeden plik `.ai/runs/<date>-<slug>.md`.
   Nie duplikuj treści specu ani historii rozmowy. Wskaż spec i pliki.
@@ -15,8 +15,8 @@ delegowaniu i wznowieniu. Proste pytanie lub literówka nie wymagają runu.
   i `.cursor/skills/` to lokalne, ignorowane przez Git kopie do wykrywania przez klientów.
   Mobile ma własne źródło `.agents/skills/`; nie kopiuj katalogów między repo.
 
-Koordynator utrzymuje zakres i run, przydziela pliki, sprawdza wynik i aktualizuje
-wskaźnik BOARD. Worker realizuje jeden określony wycinek oraz oddaje wynik, testy
+Koordynator utrzymuje zakres i run, przydziela pliki, sprawdza wynik i linkuje
+ticket Skrzynki (`T-00nn`) albo `BW-FZ-n`. Worker realizuje jeden określony wycinek oraz oddaje wynik, testy
 i blokady; nie ogłasza zamknięcia całego zadania cross-repo. Reviewer ocenia
 konkretnego kandydata read-only, ze świeżym kontekstem. Werdykt nie daje zgody na merge.
 Zakończenie procesu agenta z kodem 0 oznacza tylko koniec procesu.
@@ -51,8 +51,8 @@ zmiany dokumentacji workflow nie są zmianą kontraktu API.
 Brak wymaganego repo albo testu = `blocked` / `unverified` dla tego zakresu.
 Wynik testów portalu nie potwierdza mobile ani backendu. Zapisz konkretny brak,
 ukończ niezależny lokalny wycinek i przygotuj handoff do właściwego repo.
-Nie twórz drugiej tablicy. Jeśli BOARD jest niedostępny, zapisz proponowaną linię
-w runie; przenieś ją do PR tylko jeśli tworzenie PR jest upoważnione.
+Nie twórz drugiej kolejki i nie kopiuj zgłoszeń do zadania.md, BOARD ani Issues;
+w runie i PR linkuj ticket Skrzynki albo `BW-FZ-n`.
 Nie oznaczaj prac cross-repo jako PROVEN na podstawie jednego checkoutu.
 
 ## Wznowienie i aktualność dowodów

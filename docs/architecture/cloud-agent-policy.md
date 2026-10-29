@@ -9,7 +9,7 @@ Decyzja 2026-09-10 (D-09-10-a): kod FiziYo w chmurze wyłącznie przez Cursor Cl
 - Czytać całe repo, `AGENTS.md`, `.ai/` (VISION, specs, lessons, runs), `docs/`.
 - Uruchamiać `npm run validate`, `npm run agent:check`, `npm run agent:test`, `npm run skills:lint`, `npm run skills:check`, `npm run skills:test`. Brak narzędzia = `blocked` / `unverified`, nigdy „zielone”. Ten portal nie ma `dotnet` ani `graphql:validate`.
 - Tworzyć branch `agent/<typ>-<issue|YYYY-MM-DD>` (typy: `fix`, `spec`, `docs`, `health`, `drift`, `triage`) i **draft PR** do `main` z opisem wg sekcji 4. Ludzkie PR-y też targetują `main`. Gałąź `dev` nie jest w pociągu.
-- Komentować PR-y (review), tworzyć / komentować issues (`gh`), aktualizować `.ai/specs/*`, `lessons.md`, `docs/` w ramach swojego brancha. BOARD żyje w `fizjo-app/.ai/BOARD.md`; w portalu tylko proponujesz linię w opisie PR.
+- Komentować PR-y (review), tworzyć / komentować issues (`gh`), aktualizować `.ai/specs/*`, `lessons.md`, `docs/` w ramach swojego brancha. Kolejki pracy (Skrzynka, `zadania.md`, spece) opisuje `.cursor/rules/00-vision-board.mdc`; w PR linkujesz ticket albo `BW-FZ-n`, nie edytujesz tych kolejek.
 - Wołać DEV: `https://devportal.fiziyo.pl` — tylko kontami testowymi z `docs/testing/agent-access.md` (wskaźnik do dokumentu w `fizjo-app`).
 
 ## 2. Czego agent w chmurze nigdy nie robi
@@ -40,7 +40,7 @@ Repo: Prezentytu/fizjo-app | Prezentytu/fiziyo-admin-portal | Prezentytu/fiziyo-
 Pierwszy artefakt: <od czego zacząć: failing test | sekcja specu | plik raportu>
 Issue: <owner/repo>#<N>      (obowiązkowe dla fix/spec; dla docs/advise: opcjonalne)
 Spec: .ai/specs/SPEC-0xx-…  (jeśli istnieje; wskaźnik, nie treść)
-BOARD: <ID pozycji>          (jeśli jest)
+Źródło: <T-00nn | BW-FZ-n>    (jeśli jest)
 Zakres: <pliki / moduł; czego NIE ruszać>
 Skill: fiziyo-task → spec | implement → test-and-commit → review
 Stop: gdy validate czerwone po 2 próbach | gdy potrzebny Ask First | po 1 PR
@@ -80,8 +80,8 @@ Tryb `advise` (rola doradcy): agent czyta repo, spec, issue `idea` i pisze rapor
 ## Ask First / blokady
 - <brak | co wymaga decyzji Adama>
 
-## BOARD
-- <ID> | <repo> | <wskaźnik>  (propozycja do fizjo-app/.ai/BOARD.md)
+## Źródło
+- <T-00nn ze Skrzynki | BW-FZ-n z baza-wiedzy | brak>
 
 ## Lesson
 - <1 linia „jeśli X, zawsze Y” albo „brak”>
@@ -98,7 +98,7 @@ Szczegółowe prompty i triggery: `notatki-adam/workflow-agentow/automations.md`
 | 1   | PR review               | PR opened / pushed                   | fizjo-app, portal                      | komentarz review (skill `review`; `sec-report` gdy diff dotyka auth/tenant)                                               | nie edytuje brancha, nie approve/merge                              |
 | 2   | Nocny skan zdrowia kodu | zatwierdzone zadanie w oknie nocnym  | fizjo-app, portal                      | issue z odtwarzalnym problemem; poprawka wyłącznie przez dispatcher                                                       | nie rusza kontraktów, zależności, workflowów                        |
 | 3   | Triage E2E / CI         | checks completed = failure           | fiziyo-tests, fizjo-app, portal        | issue `flaky` albo `bot-finding` z artefaktami i proponowanym repo                                                        | nie naprawia; nie retriguje CI                                      |
-| 4   | Dryf speców i BOARD     | cron niedziela 18:00                 | fizjo-app, portal                      | PR `agent/drift-…`: frontmatter `prs`, status w README, PROVEN → czyszczenie, raport                                      | nie zmienia treści decyzji w specach                                |
+| 4   | Dryf speców             | cron niedziela 18:00                 | fizjo-app, portal                      | PR `agent/drift-…`: frontmatter `prs`, status w README, PROVEN → czyszczenie, raport                                      | nie zmienia treści decyzji w specach                                |
 | 5   | Po merge do main        | PR merged                            | fizjo-app, portal                      | stan zmergowane; verify dopiero po udanym deployment DEV tego SHA                                                         | nie deployuje, nie Promote                                          |
 | 6   | Przyjęcie zgłoszenia    | label `bot-finding` / `from-przemek` | wszystkie cztery                       | walidacja karty (`task-card.mjs check`); poprawna → komentarz przyjęcia, błędna → komentarz z listą braków i `needs-adam` | nie zmienia kodu, nie otwiera PR, nie zgaduje brakujących pól       |
 | 7   | Naprawa z karty         | chroniony dispatch w agent-ops       | allow-lista z `.ai/agent-adapter.json` | draft PR `agent/fix-<N>` z opisem wg §4                                                                                   | nie rusza auth, kontraktu, migracji, workflow; jeden PR na przebieg |
@@ -116,7 +116,7 @@ Reguła nadrzędna: **niezaufane wejście wyklucza trwałą pamięć i MCP.** We
 | 1   | PR review            | własny diff | nie         | tak       | nie          | nie      | nie     |
 | 2   | Nocny skan           | własny kod  | tak         | tak       | nie          | nie      | nie     |
 | 3   | Triage E2E / CI      | log CI      | nie         | tak       | tak          | nie      | nie     |
-| 4   | Dryf speców i BOARD  | własne repo | tak         | nie       | nie          | nie      | nie     |
+| 4   | Dryf speców          | własne repo | tak         | nie       | nie          | nie      | nie     |
 | 5   | Po merge             | własny PR   | tak         | tak       | nie          | nie      | nie     |
 | 6   | Przyjęcie zgłoszenia | cudzy tekst | nie         | tak       | nie          | **nie**  | **nie** |
 | 7   | Naprawa z karty      | cudzy tekst | tak (draft) | tak       | nie          | **nie**  | **nie** |

@@ -1,46 +1,72 @@
-# VISION.md — FiziYo Admin Portal (wyciąg)
+<!-- kopia z Prezentytu/fizjo-app@81d896a28ac39bc94f63f64abb6ae7413d4b7b86:.ai/VISION.md; nie edytuj, odśwież: npm run docs:sync -->
 
-Źródłem prawdy dla kierunku całego ekosystemu jest `fizjo-app/.ai/VISION.md`; tablica priorytetów: `fizjo-app/.ai/BOARD.md`. Ten plik to **wyciąg dla agenta, który widzi tylko to repo** (Cursor Cloud Agent). Utrzymuje Adam; agenci nie edytują (propozycja = issue `idea` albo komentarz w PR). Przy rozjeździe wygrywa wersja w `fizjo-app`.
+# VISION.md — FiziYo: po co i dokąd
 
-## Produkt (z perspektywy panelu)
+Jeden ekran. Definiuje i utrzymuje **Adam**. Agenci czytają przed każdym zadaniem i **nie edytują** bez jego zgody (propozycja zmiany kierunku = issue `idea` albo komentarz w PR, nie edycja tego pliku). Kontekst firmy i decision log: `.ai/BUSINESS.md`. Mapa repo i kontraktu: `.ai/ECOSYSTEM.md`. Co jest teraz w robocie: `.ai/BOARD.md`.
 
-Panel gabinetu dla **fizjoterapeuty**: katalog ćwiczeń (własne gabinetu + katalog FiziYo, weryfikacja treści), zestawy, pacjenci, przypisania (Assignment Wizard), organizacja i gabinety, plan gabinetu / aktywacja usługi premium dla pacjenta. Ten sam backend `.NET 9 + GraphQL` co aplikacja mobilna (`fizjo-app/backend`). Panel jest miejscem, gdzie fizjoterapeuta **pracuje szybko i masowo**; mobile jest miejscem, gdzie pacjent **wykonuje**.
+## Produkt
 
-## Dokąd idziemy
+FiziYo to para aplikacji dla fizjoterapii ambulatoryjnej: **panel gabinetu** (`fiziyo-admin-portal`, Next.js) i **aplikacja mobilna** (ten repo, Expo) dla **fizjoterapeuty** i **pacjenta**, na wspólnym backendzie `.NET 9 + GraphQL + PostgreSQL` (`backend/`). Fizjoterapeuta składa pacjentowi zestaw ćwiczeń z katalogu (własne ćwiczenia gabinetu + katalog FiziYo, media, parametry, notatka). Pacjent wykonuje zestaw w playerze (czas / powtórzenia, tempo, audio, feedback), a fizjoterapeuta widzi historię, dowody wykonania i feedback.
 
-Cel: **fizjoterapeuta nie wpisuje nic ręcznie.** Wizyta prowadzona z FiziYo w tle kończy się gotowym pacjentem, notatką, zestawem i przypisaniem; fizjoterapeuta klika „OK” albo „popraw to i to → OK”. Koniec drogi (pełny opis w `fizjo-app/.ai/VISION.md`): mówi, kto przyszedł i czego potrzebuje, dostaje propozycję zestawu, poprawia głosem („zmień to ćwiczenie”). Ćwiczenie, którego nie ma, powstaje w locie. Katalog jest etapem, nie warunkiem tego końca. Rola panelu w tej wizji: miejsce **przeglądu i korekty** propozycji copilota (kolejka „do zatwierdzenia”), masowa praca na katalogu i zestawach, konfiguracja gabinetu. Miarą funkcji jest liczba minut i kliknięć oszczędzonych fizjoterapeucie oraz regularność ćwiczeń pacjenta.
+## Dokąd idziemy — wizyta, która sama się „wpisuje”
 
-## Kto płaci
+Cel na 12 miesięcy: **fizjoterapeuta nie wpisuje nic ręcznie.** Odpala FiziYo na telefonie w tle, prowadzi wizytę jak zawsze, a na końcu wszystko jest przygotowane w aplikacji: pacjent dodany (albo dopasowany do istniejącego), notatka z wizyty, zestaw ćwiczeń złożony i przypisany z parametrami i harmonogramem, zalecenia gotowe do wysłania. Fizjoterapeuta czyta jedno podsumowanie i klika **„OK”** albo **„popraw to, to i to” → OK**. Nic nie trafia do pacjenta bez tego kliknięcia.
 
-Fizjoterapeuta oferuje pacjentowi **usługę premium** (opieka między wizytami z aplikacją); **pacjent dopłaca w gabinecie**, gabinet aktywuje plan w panelu (`SPEC-028` w fizjo-app; billing po stronie gabinetu). Aplikacja pacjenta jest darmowa w sklepie, bez IAP. Decyzję „budujemy / nie” podejmuje Adam na podstawie specu `draft` — nie ma automatycznego progu czasowego ani finansowego.
+### Jak wygląda apka na końcu
+
+Obraz z calla 2026-09-24 (Przemek, Adam). To jest to, do czego dążymy. Nie jest bieżącym zakresem.
+
+Fizjoterapeuta mówi: przyszedł pan X. Skan albo wpis maila. Mówi, czego potrzebuje — takie ćwiczenia, taki zestaw. Dostaje propozycję. Mówi „zmień to ćwiczenie” i ćwiczenie jest zmienione. Koniec. Pacjent, parametry, sprawdzenie i wysyłka są już zrobione. Nikt nie siada do wpisywania.
+
+Katalog jest etapem po drodze: najpierw „powiedz ćwiczenie, znajdź najbliższe”. Koniec drogi jest dalej. Mówisz, czego potrzebujesz, i ćwiczenie powstaje w locie. Utrzymywanie ogólnej bazy nie jest warunkiem tego końca.
+
+Hipoteza z tego samego calla, nie plan: skrapowanie i ocena materiałów (na przykład z YouTube) oraz agent, który sam leci po źródłach, jako sposób, skąd opis ćwiczenia mógłby się brać.
+
+Etapy (spec `SPEC-029 Ambient Visit Copilot` i kolejne):
+
+1. Nagranie wizyty → szkic notatki i planu (jest w MVP).
+2. Szkic → gotowy zestaw z katalogu, dopasowany do pacjenta, z parametrami; fizjoterapeuta tylko poprawia.
+3. Pacjent, wizyta, przypisanie, przypomnienia — wszystko z jednego przebiegu; „OK” zamyka wizytę.
+4. Pętla zwrotna: wykonanie i feedback pacjenta wracają do fizjoterapeuty przed kolejną wizytą jako gotowa propozycja zmian zestawu.
+5. Zestaw nie zależy od utrzymywanej bazy: ćwiczenie, którego nie ma, powstaje z opisu w tej samej rozmowie.
+
+Miarą każdej funkcji jest: **ile minut i kliknięć oszczędza fizjoterapeucie po wizycie** oraz **czy pacjent wykonuje zestaw regularnie**. Funkcja, która nie rusza żadnej z tych dwóch liczb, jest niżej w kolejce.
+
+## Dla kogo i kto płaci
+
+- Użytkownik pierwszy: **fizjoterapeuta / gabinet**. Panel i aplikacja fizjoterapeuty są jego narzędziem pracy.
+- Model płatności: **fizjoterapeuta oferuje pacjentowi usługę premium** (opieka między wizytami z aplikacją do ćwiczeń). **Pacjent dopłaca za nią w gabinecie**, a gabinet aktywuje mu plan w FiziYo (aktywacja i rozliczenie po stronie gabinetu, `SPEC-028`). Aplikacja pacjenta na iOS jest **darmowa w sklepie**: brak IAP, brak subskrypcji konsumenckiej, brak słów `premium` / `subskrypcja` / `paywall` / `kup` w copy pacjenta (reguła `app-store-positioning`). Gdy plan nie jest aktywny, pacjent widzi „Plan nie jest aktywny — skontaktuj się z fizjoterapeutą”.
+- Stan (2026-09): produkcja dla 23 organizacji, aktywny rozwój + hardening (FREEZE zdjęty 2026-09-06). Budujemy to, co przybliża wizję wyżej; decyzję „budujemy / nie” podejmuje Adam na podstawie specu `draft`, nie automatycznego progu.
 
 ## Co jest ważne w tej kolejności
 
-1. **Izolacja tenantów i autoryzacja** — `organizationId` scoping, token-exchange, role (`SPEC-016`). Zmiana w `auth` / `permission` = skill `sec-report` przed merge.
-2. **Szybkość pracy fizjoterapeuty** — od wizyty do przypisanego zestawu bez wpisywania; wizard, import katalogu (`SPEC-025`), parametry ćwiczeń (`SPEC-022`), przegląd propozycji copilota.
-3. **Jakość danych katalogu** — weryfikacja dual-track (`SPEC-013`), generacja ilustracji AI (`SPEC-020`, wspólna fala z mobile `SPEC-036`). Na obecnym etapie katalog jest tym, z czego copilot składa zestawy. Koniec drogi nie traktuje ogólnej bazy jako warunku.
-4. **Theme-safe, testowalne UI** — `data-testid` obowiązkowe (E2E w `fiziyo-tests`), light + dark od pierwszej wersji.
-5. **Release** — merge do `main` = deploy `devportal.fiziyo.pl`; PROD `portal.fiziyo.pl` = ręczny Promote. Nic na PROD bez człowieka.
+1. **Bezpieczeństwo i izolacja tenantów** — auth / token-exchange / `organizationId` scoping bez regresji. P0 security = fix + test w jednym commicie.
+2. **Codzienna użyteczność pacjenta** — player nie gubi zestawu, pokazuje czas, tempo, feedback; „W trakcie / Dziś” (SPEC-037), fazy tempa (SPEC-038). Pacjent, który ćwiczy, to jedyny dowód, że usługa premium ma sens.
+3. **Automatyzacja pracy fizjoterapeuty** — od wizyty do gotowego zestawu bez wpisywania (SPEC-029 i etapy wyżej). Każdy krok ręczny w tym flow to kandydat do usunięcia.
+4. **Jakość katalogu i danych** — schema v3 (SPEC-022), import paczek (SPEC-026), poprawne ilustracje (SPEC-036). Na obecnym etapie katalog jest tym, z czego copilot składa zestawy. Koniec drogi (wyżej) nie traktuje ogólnej bazy jako warunku.
+5. **Release train** — `main` = API DEV automatycznie (**DEV**); PROD API, panel i TestFlight = ręczny **Release**, sklepy = ręczny **Ship**, bez ręcznych ID, z dowodami (SPEC-030–034, SPEC-049). Nic nie idzie na PROD bez człowieka.
 
 ## Czego nie robimy
 
+- Nie wprowadzamy paywalla / IAP / subskrypcji po stronie pacjenta — płatność jest relacją gabinet ↔ pacjent.
+- Nie wysyłamy pacjentowi niczego, czego fizjoterapeuta nie zatwierdził jednym kliknięciem; copilot proponuje, człowiek zatwierdza.
 - Nie zmieniamy kontraktu GraphQL inaczej niż additive-first (`BACKWARD_COMPATIBILITY.md`); zmiana cross-repo = Ask First.
-- Nie wysyłamy pacjentowi niczego bez zatwierdzenia fizjoterapeuty jednym kliknięciem.
-- Nie używamy słowa „dawkowanie” w UI (→ „podstawowe parametry”).
-- Nie wpuszczamy danych pacjentów poza PROD; DEV = dane syntetyczne; agenci nie dotykają PROD DB, Clerk PROD, Vercel PROD.
+- Nie wpuszczamy danych pacjentów poza produkcję: DEV pracuje na danych syntetycznych; agenci nie dotykają PROD DB, ASC, Clerk PROD; nagrania wizyt nie opuszczają PROD.
+- Nie dublujemy w mobile flow, które ma pełną wersję w panelu, jeśli nie ma parity (por. `ECOSYSTEM.md`).
+- Nie udajemy terapeuty: aplikacja nie diagnozuje i nie zmienia zaleceń bez fizjoterapeuty.
 
 ## Skąd biorą się pomysły
 
-Issues: `from-przemek`, `from-sync` (ludzie), `bot-finding` (testy), `idea` (research branży przez bota — konkurencja, praca gabinetów, potrzeby pacjentów; z dowodem i uzasadnieniem wobec wizji). Agenci mogą proponować; decyduje Adam.
+Trzy wejścia, wszystkie kończą się jako GitHub Issue: (1) fizjoterapeuci i Przemek (`from-przemek`, `from-sync`), (2) dane z produkcji i DEV (`bot-finding`, `.ai/qa/findings/`), (3) **research branży** — bot Badacz Branży czyta, jak pracują gabinety, co robi konkurencja (Physitrack, Exorlive, MedBridge, nowe startupy HEP / ambient scribe), czego chcą pacjenci, i zgłasza propozycje jako issue `idea` z dowodem (źródło, cytat, dlaczego pasuje do wizji). Agenci **mogą i mają** proponować zmiany — decyzja zostaje Adama.
 
 ## Styleguide
 
-`.cursor/rules/*.mdc`, `AGENTS.md` (Always / Ask First / Never), `src/features/*/AGENTS.md`, skill `product-designer` dla UI/UX. Nie ma osobnego pliku styleguide.
+Styleguide to zbiór istniejących reguł, nie osobny plik: `.cursor/rules/*.mdc` (tokeny, komponenty, GraphQL, backend, App Store), skill `mobile-design` (UI mobile), `AGENTS.md` (Always / Ask First / Never / DoD). Portal ma własne w `fiziyo-admin-portal/.cursor/rules` i `AGENTS.md`.
 
-## Agenci
+## Jak pracujemy z agentami
 
-Wąskie zadania, krótkie wątki, dowody. Agent w chmurze: branch `agent/…`, draft PR, nigdy `main`, wg `docs/architecture/cloud-agent-policy.md`. Po zakończonym etapie zaproponuj linię do `fizjo-app/.ai/BOARD.md` w opisie PR.
+Wąskie zadania, krótkie wątki, dowody zamiast deklaracji. Kolejność źródeł prawdy: VISION (kierunek) → `BOARD.md` (priorytety) → GitHub Issues (jednostki pracy) → `SPEC-0xx` (projekt rozwiązania) → PR / `.ai/runs/` / `lessons.md` (dowód). Agent w chmurze działa wg `docs/architecture/cloud-agent-policy.md`: branch `agent/…`, draft PR, nigdy `main`, nigdy Promote. Merguje człowiek.
 
 ---
 
-Ostatnia aktualizacja: 2026-09-24 (Adam) — wyciąg zsynchronizowany z końcem drogi w `fizjo-app/.ai/VISION.md`.
+Ostatnia aktualizacja: 2026-09-24 (Adam) — obraz końca drogi z calla: ćwiczenie powstaje w locie, katalog zostaje etapem.

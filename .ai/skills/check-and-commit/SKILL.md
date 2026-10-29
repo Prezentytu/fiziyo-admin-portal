@@ -16,4 +16,4 @@ description: Quality gate przed commitem z walidacją proporcjonalną do zakresu
 2. Potwierdź brak nowych regresji i linter errors w zmienionych plikach.
 3. Commit przygotuj wyłącznie na polecenie użytkownika; samo domknięcie quality gate nie upoważnia do stagingu, commita, push, PR ani deploy. Jeśli upoważniony, użyj conventional commits.
 4. Przed commitem sprawdź, czy nie dodano sekretów oraz czy `data-testid`/kontrakty nie zostały przypadkowo naruszone.
-5. Dowody w specu: do dotkniętego `SPEC-0xx` dopisz changelog `### YYYY-MM-DD — #PR|hash`; po merge numer PR do frontmattera `prs`. Issue zamykaj przez `Closes #N` w opisie PR. Zaproponuj linię do `fizjo-app/.ai/BOARD.md` (ID, repo, wskaźnik).
+5. Dowody w specu: do dotkniętego `SPEC-0xx` dopisz changelog `### YYYY-MM-DD — #PR|hash`; po merge numer PR do frontmattera `prs`. Issue zamykaj przez `Closes #N` w opisie PR. W opisie PR podaj ticket Skrzynki (`T-00nn`) albo `BW-FZ-n`, jeśli praca z nich wynika.

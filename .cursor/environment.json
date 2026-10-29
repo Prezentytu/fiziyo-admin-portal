@@ -1,4 +1,4 @@
 {
-  "install": "npm ci --no-audit --no-fund",
+  "install": "npm ci --no-audit --no-fund && npm run skills:sync",
   "terminals": []
 }
