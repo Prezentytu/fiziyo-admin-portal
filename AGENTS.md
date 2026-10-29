@@ -8,7 +8,7 @@ Next.js 16, React 19 i Apollo Client 4 mogą być nowsze niż twoja wiedza. Przy
 
 ## Czego nie poświęcamy
 
-1. **Izolacja gabinetów i autoryzacja.** To dane medyczne. Fizjoterapeuta, który zobaczy pacjenta albo ćwiczenie innej organizacji, to najgorszy błąd, jaki możemy wypuścić. Zmiana w `auth`, `token-exchange` albo `permission` przechodzi przez skill `.ai/skills/sec-report/` przed merge'em.
+1. **Izolacja gabinetów i autoryzacja.** To prywatne dane ludzi i gabinetów. Fizjoterapeuta, który zobaczy pacjenta albo ćwiczenie innej organizacji, to najgorszy błąd, jaki możemy wypuścić. Zmiana w `auth`, `token-exchange` albo `permission` przechodzi przez skill `.ai/skills/sec-report/` przed merge'em.
 2. **Czas fizjoterapeuty.** Miarą funkcji jest liczba minut i kliknięć oszczędzonych po wizycie. Akcja główna jest na wierzchu, dialog obsługuje klawiaturę, a masowa praca na katalogu i zestawach nie wymaga klikania rekord po rekordzie.
 3. **Kontrakt, który nie pęka.** Ten sam GraphQL wołają panel i zainstalowane buildy aplikacji mobilnej. Zmiany kontraktu tylko additive-first (`BACKWARD_COMPATIBILITY.md`).
 4. **UI, które da się przetestować i przeczytać.** `data-testid` napędza E2E w `fiziyo-tests`; każdy ekran jest czytelny w jasnym i ciemnym motywie od pierwszej wersji.
@@ -20,7 +20,7 @@ Najmniejsza zmiana, która usuwa przyczynę, a nie objaw, bez tymczasowych obej�
 ## Słownik
 
 - **ty** to agent czytający ten plik. **Adam** decyduje o kierunku, edytuje `VISION.md` i merguje. **Przemek** to wspólnik, przez niego wpadają zgłoszenia fizjoterapeutów.
-- **fizjoterapeuta** to użytkownik panelu; gabinet płaci. **Pacjent** dopłaca w gabinecie za opiekę między wizytami, a gabinet aktywuje mu plan w panelu.
+- **fizjoterapeuta** to użytkownik panelu; gabinet płaci. **Pacjent** dopłaca w gabinecie za plan ćwiczeń między wizytami, a gabinet aktywuje mu plan w panelu.
 - **organizacja** to tenant i granica danych; prawie każda operacja potrzebuje `organizationId`. **Gabinet** (`Clinic`) to lokalizacja w organizacji. Role: owner, admin, therapist, staff; backoffice `ContentManager` i `SiteSuperAdmin`.
 - **super admin portal** (podgląd użytkowników, logowań i aktywności ponad tenantami) to osobna aplikacja na osobnej domenie, czytająca `/api/ops` z backendu. Nie budujesz go w tym panelu.
 - **katalog** to ćwiczenia własne gabinetu i katalog FiziYo. **Weryfikacja** ma dwa tory: organizacyjny i globalny, z osobnymi statusami na tej samej encji `Exercise`. Ćwiczenie trafia do zewnętrznego fizjoterapeuty dopiero po naszej weryfikacji, a obrazek z AI slopem (zlepione kończyny, mieszana sylwetka, sprzęt w złej skali) odpada wcześniej. Bazę budujemy etapami: 10 ćwiczeń, potem 100 filarowych.
