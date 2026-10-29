@@ -12,6 +12,7 @@ test("header round-trips sha and path", () => {
   const text = withHeader("# Vision\n", SHA, ".ai/VISION.md");
   assert.equal(text.split("\n")[0], `<!-- kopia z Prezentytu/fizjo-app@${SHA}:.ai/VISION.md; nie edytuj, odśwież: npm run docs:sync -->`);
   assert.deepEqual(parseHeader(text), { repo: "Prezentytu/fizjo-app", sha: SHA, path: ".ai/VISION.md" });
+  assert.match(text.split("\n")[2], /dotyczą \*\*fizjo-app\*\*/);
   assert.equal(stripHeader(text), "# Vision\n");
   assert.equal(parseHeader("# Vision\n"), null);
 });

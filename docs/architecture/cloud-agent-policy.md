@@ -40,7 +40,6 @@ Repo: Prezentytu/fizjo-app | Prezentytu/fiziyo-admin-portal | Prezentytu/fiziyo-
 Pierwszy artefakt: <od czego zacząć: failing test | sekcja specu | plik raportu>
 Issue: <owner/repo>#<N>      (obowiązkowe dla fix/spec; dla docs/advise: opcjonalne)
 Spec: .ai/specs/SPEC-0xx-…  (jeśli istnieje; wskaźnik, nie treść)
-Źródło: <T-00nn | BW-FZ-n>    (jeśli jest)
 Zakres: <pliki / moduł; czego NIE ruszać>
 Skill: fiziyo-task → spec | implement → test-and-commit → review
 Stop: gdy validate czerwone po 2 próbach | gdy potrzebny Ask First | po 1 PR
@@ -53,6 +52,8 @@ Zlecił: <Adam (głos/czat, data) | automation #k | Szef Sztabu z issue #N>
 **Kształt** mówi, co jest dostarczeniem, zanim agent zacznie zgadywać: `slice` — jedna zmiana na jednym szwie, dostarczeniem jest commit; `repair` — naprawa wymienionych znalezisk, commit; `survey` — rozpoznanie, dostarczeniem jest plik notatek i **żadnego kodu**; `finish` — praca już leży w gałęzi, zostały sprawdzenia i commit; `review` — werdykt z dowodami, zero edycji. Brak pola oznacza `slice`.
 
 **Źródło** jest kluczem deduplikacji: `sha256` znormalizowanej linii źródłowej (NFKC, małe litery, białe znaki zwinięte do pojedynczej spacji), pierwsze 12 znaków hex. Bot najpierw szuka issue z tym kluczem, a dopiero potem tworzy nowe. Bez tego każdy przebieg importu z doca Przemka produkuje komplet duplikatów. Implementacja odniesienia: `sourceId()` w `scripts/task-card.mjs`.
+
+Ticket Skrzynki (`T-00nn`) albo zobowiązanie `BW-FZ-n` podajesz w `Cel` albo `Zakres` i w opisie PR. Karta nie ma na nie osobnego klucza: `Źródło` to wyłącznie source-id, a `BOARD` w parserze to pole legacy, którego nie wypełniasz.
 
 Ticket jest **wskaźnikiem**, nie wklejką: agent czyta issue i spec sam. Cytat z transkryptu / doca Przemka ≤25 słów podaje Szef Sztabu w issue, nie w prompcie. Dobra karta nazywa **wynik i pierwszy artefakt**, nie wycieczkę po repo. Pole `Zlecił` istnieje, bo commity bota identyfikują bota, nie człowieka, który poprosił — ślad decyzji ma być w karcie i w issue.
 

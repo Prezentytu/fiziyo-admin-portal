@@ -1,5 +1,7 @@
 <!-- kopia z Prezentytu/fizjo-app@81d896a28ac39bc94f63f64abb6ae7413d4b7b86:.ai/VISION.md; nie edytuj, odśwież: npm run docs:sync -->
 
+> Kopia z fizjo-app. Numery `SPEC-0xx`, ścieżki (`.ai/BOARD.md`, `.ai/BUSINESS.md`, `app/`…) i „to repo” dotyczą **fizjo-app**, nie tego panelu: `SPEC-028` stąd to nie `.ai/specs/SPEC-028-*` portalu. Spec portalu bierzesz z `.ai/specs/README.md`.
+
 # VISION.md — FiziYo: po co i dokąd
 
 Jeden ekran. Definiuje i utrzymuje **Adam**. Agenci czytają przed każdym zadaniem i **nie edytują** bez jego zgody (propozycja zmiany kierunku = issue `idea` albo komentarz w PR, nie edycja tego pliku). Kontekst firmy i decision log: `.ai/BUSINESS.md`. Mapa repo i kontraktu: `.ai/ECOSYSTEM.md`. Co jest teraz w robocie: `.ai/BOARD.md`.

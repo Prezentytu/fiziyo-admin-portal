@@ -28,8 +28,12 @@ export function header(sha, remotePath, repo = SOURCE_REPO) {
   return `<!-- kopia z ${repo}@${sha}:${remotePath}; nie edytuj, odśwież: npm run docs:sync -->\n`;
 }
 
+// Kopia mówi językiem fizjo-app: jej SPEC-0xx, ścieżki i „to repo” nie są tutejsze.
+export const SCOPE_NOTE =
+  "> Kopia z fizjo-app. Numery `SPEC-0xx`, ścieżki (`.ai/BOARD.md`, `.ai/BUSINESS.md`, `app/`…) i „to repo” dotyczą **fizjo-app**, nie tego panelu: `SPEC-028` stąd to nie `.ai/specs/SPEC-028-*` portalu. Spec portalu bierzesz z `.ai/specs/README.md`.\n";
+
 export function withHeader(content, sha, remotePath, repo = SOURCE_REPO) {
-  return `${header(sha, remotePath, repo)}\n${content.replace(/^﻿/, "")}`;
+  return `${header(sha, remotePath, repo)}\n${SCOPE_NOTE}\n${content.replace(/^﻿/, "")}`;
 }
 
 export function parseHeader(text) {
@@ -39,7 +43,8 @@ export function parseHeader(text) {
 }
 
 export function stripHeader(text) {
-  return text.replace(HEADER_RE, "").replace(/^\n/, "");
+  const body = text.replace(HEADER_RE, "").replace(/^\n/, "");
+  return body.startsWith(SCOPE_NOTE) ? body.slice(SCOPE_NOTE.length).replace(/^\n/, "") : body;
 }
 
 function gh(args) {
