@@ -22,7 +22,7 @@ Preview gate, branch routing i per-SHA concurrency nie sa aktualnym kontraktem.
 
 Ten runbook opisuje docelowy model dla DEV, preview i `prod`, tak aby:
 
-- PR byl blokowany przez smoke E2E,
+- PR byl blokowany przez CI, a E2E certyfikowal DEV po merge'u,
 - release na `prod` przechodzil tylko po zielonym full E2E na `devportal.fiziyo.pl`,
 - preview auth dzialal stabilnie bez oslabiania security produkcji.
 
@@ -31,11 +31,10 @@ Ten runbook opisuje docelowy model dla DEV, preview i `prod`, tak aby:
 - `fiziyo-admin` deployuje na Vercel.
 - Po `deployment_status=success` workflow [`e2e-trigger.yml`](../../.github/workflows/e2e-trigger.yml) wysyla `repository_dispatch` do `fiziyo-tests`.
 - `fiziyo-tests`:
-  - [`e2e-dev.yml`](../../../fiziyo-tests/.github/workflows/e2e-dev.yml) obsluguje `e2e-dev-run` (preview/dev),
+  - [`e2e-dev.yml`](../../../fiziyo-tests/.github/workflows/e2e-dev.yml) obsluguje `e2e-dev-run` (dedykowany DEV; preview nie dostaje E2E),
   - [`e2e-prod.yml`](../../../fiziyo-tests/.github/workflows/e2e-prod.yml) obsluguje `e2e-prod-run` (production),
   - oba wrappery uruchamiaja wspolny reusable core [`e2e.yml`](../../../fiziyo-tests/.github/workflows/e2e.yml).
 - Wynik wraca jako semantyczny commit status do commita w `fiziyo-admin`:
-  - `E2E Preview Smoke`
   - `E2E Dev Full`
   - `E2E Prod Smoke`
 
@@ -115,7 +114,7 @@ W repo prywatnym bez platnego branch protection traktuj statusy jako manualny ga
 
 ## Release policy (super-startup mode)
 
-1. PR -> `CI` + Vercel Preview + `E2E Preview Smoke` musza byc zielone.
+1. PR -> `CI` + Vercel Preview musza byc zielone. Preview nie dostaje E2E (`e2e-trigger.yml`: "Preview is not certified against shared DEV").
 2. Merge do `main`.
 3. Vercel wdraza DEV na `devportal.fiziyo.pl`.
 4. `E2E Dev Full` na `devportal.fiziyo.pl` musi byc zielone.
@@ -162,5 +161,5 @@ Vercel czesto podaje `target_url` jako `*.vercel.app`. Samo environment `Develop
 
 - [ ] Ustaw env vars Vercel dla Preview/Production zgodnie z tym dokumentem
 - [ ] Dodaj sekrety w `fiziyo-admin-portal` i `fiziyo-tests`
-- [ ] Zweryfikuj pierwszy przeplyw: `PR -> Preview -> E2E Preview Smoke -> Merge -> Dev full E2E -> E2E Prod Smoke`
+- [ ] Zweryfikuj pierwszy przeplyw: `PR -> Preview -> Merge -> Dev full E2E -> E2E Prod Smoke`
 - [ ] Przed Promote admin sprawdz zielone `CI` + `E2E Dev Full` na tym samym SHA `main`
