@@ -15,7 +15,7 @@ Next.js 16, React 19 i Apollo Client 4 mogą być nowsze niż twoja wiedza. Przy
 
 ## Jak myślimy
 
-Najmniejsza zmiana, która usuwa przyczynę, a nie objaw, bez tymczasowych obejść (`.ai/skills/principle-laziness-protocol/`). Nie zachowuj złożoności tylko dlatego, że istnieje, i nie dokładaj warstwy, bo wygląda poważnie. Gdy kilka widoków edytuje tę samą encję, mają jeden komponent i jeden hook stanu, a różnią się propsami. Poza sekcjami Never i Ask First ten plik to dobre ustawienia domyślne, które bezpośrednia prośba Adama może nadpisać. Gdy reguła stąd walczy z zadaniem, powiedz to wprost i poproś o decyzję, zanim ją złamiesz.
+Najmniejsza zmiana, która usuwa przyczynę, a nie objaw, bez tymczasowych obejść (`.ai/skills/principle-laziness-protocol/`). Nie zachowuj złożoności tylko dlatego, że istnieje, i nie dokładaj warstwy, bo wygląda poważnie. Gdy kilka widoków edytuje tę samą encję, mają jeden komponent i jeden hook stanu, a różnią się propsami. Twarde są sekcje „Czego nie poświęcamy”, Never i Ask First oraz reguła dowodu poprawki w „Validation Commands”; reszta pliku to dobre ustawienia domyślne, które bezpośrednia prośba Adama może nadpisać. Gdy reguła stąd walczy z zadaniem, powiedz to wprost i poproś o decyzję, zanim ją złamiesz.
 
 ## Słownik
 
@@ -50,7 +50,7 @@ Najczęstszy defekt tutaj to zmiana, która działa w widoku, który sprawdziłe
 - **Role i tory.** Owner, admin, therapist, staff i backoffice widzą co innego; weryfikacja ma tor organizacyjny i globalny.
 - **Mobile i backend.** Ta sama operacja zwykle istnieje w `fizjo-app`. Typy TS są duplikowane, nie generowane, więc zmiana schematu dotyczy obu klientów. JSONB (`ExerciseLoad`, enrichment) czyta inaczej formularz panelu i player mobile.
 - **E2E.** Każdy element interaktywny ma `data-testid` w formacie `[moduł]-[komponent]-[element]-[akcja?]` z prefiksem `auth-`, `nav-`, `exercise-`, `set-`, `patient-`, `org-`, `settings-` albo `common-`, np. `exercise-form-submit-btn`. Test ID zmieniasz additive-first, z planem deprecacji. Zmiana roli, etykiety lub tekstu oznacza aktualizację Page Objectu i `TEST_PLAN.md` w `fiziyo-tests`.
-- **Motyw i klawiatura.** Jasny i ciemny, domyślny jest jasny; dialog obsługuje `Cmd/Ctrl + Enter` dla głównej akcji i `Escape`.
+- **Motyw i klawiatura.** Jasny i ciemny. Domyślny ma być jasny (DEC-20261020-01), ale `src/contexts/AccessibilityContext.tsx` ma jeszcze `theme: 'dark'`; domyślny zmieniasz tylko z osobnego issue. Dialog obsługuje `Cmd/Ctrl + Enter` dla głównej akcji i `Escape`.
 - **Stany.** Ładowanie, pusto, błąd, paginacja. Selekcja masowa resetuje się przy zmianie filtra, wyszukiwania i strony. Jeśli dodajesz wejście (archiwizuj), dodaj wyjście (przywróć).
 - **Dokumentacja.** Sprawdź, czy zmiana nie czyni nieprawdziwym `.ai/ECOSYSTEM.md`, `.ai/DATA_FLOWS.md`, `.ai/DOMAIN_MODEL.md`, specu albo modułowego `AGENTS.md`.
 
@@ -63,7 +63,7 @@ Najczęstszy defekt tutaj to zmiana, która działa w widoku, który sprawdziłe
 - Testy jednostkowe logiki biznesowej są obowiązkowe: filtry, reguły widoczności, walidacja, mapowanie parametrów. Wyciągnij ją do czystej funkcji w `utils/` modułu i testuj Vitestem (`docs/testing/testing-guidelines.md`); zmiana warunku albo filtra aktualizuje jego testy. Nie testuj tego, co gwarantują typy, samego copy ani mocków, które tylko odbijają wywołania.
 - Rozszerz, zanim dodasz: gdy istniejący test pokrywa zachowanie, dopisz przypadek tam.
 - Dowód poprawki zależy od błędu. Błąd logiki, danych lub stanu: najpierw test, który pada na `main`, potem poprawka. Błąd czysto wizualny: zrzut przed i po w obu motywach, bez testu UI.
-- Testy portalu nie potwierdzają backendu ani mobile. Dla zmian UI i flow auth E2E z `fiziyo-tests` jest bramką jakości PR; jedzie po deployu, szczegóły triggerów i sekretów w `docs/testing/e2e-cross-repo-pipeline.md`.
+- Testy portalu nie potwierdzają backendu ani mobile. E2E z `fiziyo-tests` nie jedzie na PR, bo preview nie jest certyfikowany (`.github/workflows/e2e-trigger.yml`). Dla zmian UI i flow auth bramką jest `E2E Dev Full` po merge'u na `devportal`, przed Promote; szczegóły triggerów i sekretów w `docs/testing/e2e-cross-repo-pipeline.md`.
 
 ## PR i commity
 
@@ -97,7 +97,7 @@ Najczęstszy defekt tutaj to zmiana, która działa w widoku, który sprawdziłe
 - Czyste funkcje zamiast klas; minimalna liczba eksportów, wszystkie typowane.
 - Dialog jest zawsze renderowany i przyjmuje `null` jako encję. Stopka: `Anuluj` po lewej, główne CTA po prawej (`flex items-center justify-between`). Pole opcjonalne ma samą nazwę, bez gwiazdki i bez „opcjonalnie”.
 - Layout action-first (styl Linear/Vercel): kompaktowy header z tytułem, wyszukiwaniem i opcjami, pod nim hero action i kilka statystyk, niżej główna treść.
-- Wygląd z `docs/design-system.md`; wartości kolorów tylko w `src/app/globals.css`. Bazy z tokenów semantycznych (`bg-surface`, `bg-card`, `text-foreground`, `text-muted-foreground`, `border-border`), nie z `zinc`, `gray`, `slate`, `white` czy `black`; wyjątki status i media tylko z wariantem `dark:`. Karty z overlayami i pływającymi akcjami mają tła i bordery theme-aware (np. `bg-background/90 dark:bg-black/40`). Nowy kolor, promień albo wariant dodajesz w tokenach albo w `src/components/ui/*`, nie w feature. Hover i focus nie obniżają kontrastu.
+- Wygląd z `docs/design-system.md`; wartości kolorów tylko w `src/app/globals.css`. Bazy z tokenów semantycznych (`bg-surface`, `bg-card`, `text-foreground`, `text-muted-foreground`, `border-border`), nie z `zinc`, `gray`, `slate`, `white` czy `black`; wyjątki status i media tylko z wariantem `dark:`. Karty z overlayami i pływającymi akcjami mają tła i bordery theme-aware (np. `bg-background/90 dark:bg-black/40`). Nowy kolor, promień albo wariant dodajesz w tokenach albo w `src/components/ui/*`, nie w feature. Prymitywu z `src/components/ui/` nie przestylowujesz przez `className` (np. `<Button className="bg-primary text-white rounded-lg h-9">`): wybierz wariant albo dodaj go w komponencie; klasy układu (szerokość, flex, margines) są w porządku. Hover i focus nie obniżają kontrastu.
 - Reużywaj: najpierw `@/components/ui/` i `@/components/shared/`, sprawdź istniejące wzorce przed nowym UI. `src/components/shared/DataTable.tsx` dla tabel, `src/components/shared/exercise/ExerciseExecutionCard.tsx` z adapterami dla kafelków ćwiczeń, bez lokalnych klonów layoutu. Nie pisz „ćwiczenie czasowe/powtórzeniowe”; semantyka wynika z `executionTime`.
 - `unknown` z type guardem zamiast `any`. Bez jednoliterowych nazw poza `i` i `j`. Nazwy: komponenty PascalCase, utils camelCase, stałe i operacje GraphQL UPPER_SNAKE (`GET_ORGANIZATION_EXERCISES_QUERY`), foldery kebab-case. Importy: zewnętrzne, `@/components/ui`, wewnętrzne, GraphQL, utils i typy.
 - Domyślnie bez komentarza w kodzie; gdy potrzebny, po angielsku i tylko o ograniczeniu, którego kod nie pokazuje. Komunikaty błędów auth nie zdradzają, czy e-mail istnieje.
