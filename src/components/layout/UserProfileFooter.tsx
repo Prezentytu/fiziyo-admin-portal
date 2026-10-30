@@ -1,9 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
-import { useUser } from '@clerk/nextjs';
-import { useQuery } from '@apollo/client/react';
 import { useAppSignOut } from '@/lib/auth/useAppSignOut';
 import { Settings, HelpCircle, LogOut, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
@@ -19,11 +16,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useOrganization } from '@/contexts/OrganizationContext';
-import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
-import type { UserByClerkIdResponse } from '@/types/apollo';
-import { getCompactDisplayName, resolveDisplayName } from './userDisplayName';
-import { getInitialsFromName } from '@/utils/textUtils';
+import { OrganizationSwitchMenuItems } from './OrganizationSwitchMenuItems';
+import { useCurrentUserDisplay } from './useCurrentUserDisplay';
 
 // ========================================
 // Types
@@ -42,25 +36,9 @@ interface UserProfileFooterProps {
 // ========================================
 
 export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
-  const { user, isLoaded } = useUser();
   const signOut = useAppSignOut();
-  const { hasMultipleOrganizations, currentOrganization, organizations, switchOrganization, isSwitching } =
-    useOrganization();
   const [isOpen, setIsOpen] = useState(false);
-  const { data } = useQuery<UserByClerkIdResponse>(GET_USER_BY_CLERK_ID_QUERY, {
-    variables: { clerkId: user?.id },
-    skip: !user?.id,
-  });
-
-  const backendUser = data?.userByClerkId;
-  const avatarUrl = user?.imageUrl;
-  const fullName =
-    resolveDisplayName(backendUser?.fullname, backendUser?.personalData?.firstName, backendUser?.personalData?.lastName) ||
-    resolveDisplayName(user?.fullName, user?.firstName, user?.lastName);
-  const email = user?.primaryEmailAddress?.emailAddress || backendUser?.email || '';
-  const displayName = fullName || email.split('@')[0] || 'Brak danych';
-  const compactDisplayName = getCompactDisplayName(displayName);
-  const initials = getInitialsFromName(displayName);
+  const { isLoaded, avatarUrl, email, displayName, compactDisplayName, initials } = useCurrentUserDisplay();
 
   // Loading state
   if (!isLoaded) {
@@ -147,47 +125,7 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
 
         <DropdownMenuSeparator />
 
-        {/* Organization switch - only if multiple orgs */}
-        {hasMultipleOrganizations && (
-          <>
-            <DropdownMenuLabel className="px-3 py-1.5 text-[10px] text-muted-foreground uppercase tracking-wider">
-              Przełącz organizację
-            </DropdownMenuLabel>
-            {organizations.map((org) => {
-              const isActive = org.organizationId === currentOrganization?.organizationId;
-              return (
-                <DropdownMenuItem
-                  key={org.organizationId}
-                  onClick={() => {
-                    if (!isActive && !isSwitching) {
-                      switchOrganization(org.organizationId);
-                      setIsOpen(false);
-                    }
-                  }}
-                  data-testid={`nav-user-footer-org-${org.organizationId}`}
-                  className={cn(
-                    'gap-3 px-3 py-2 cursor-pointer',
-                    isActive && 'bg-primary/10',
-                    isSwitching && 'opacity-50 pointer-events-none'
-                  )}
-                >
-                  {org.logoUrl ? (
-                    <span className="relative block h-6 w-6 rounded-md overflow-hidden shrink-0">
-                      <Image src={org.logoUrl} alt={org.organizationName} fill className="object-cover" sizes="24px" />
-                    </span>
-                  ) : (
-                    <div className="flex h-6 w-6 items-center justify-center rounded-md bg-surface-light text-[10px] font-semibold text-muted-foreground">
-                      {getInitialsFromName(org.organizationName)}
-                    </div>
-                  )}
-                  <span className={cn('flex-1 truncate', isActive && 'font-medium')}>{org.organizationName}</span>
-                  {isActive && <span className="text-[10px] text-primary">Aktywna</span>}
-                </DropdownMenuItem>
-              );
-            })}
-            <DropdownMenuSeparator />
-          </>
-        )}
+        <OrganizationSwitchMenuItems testIdPrefix="nav-user-footer-org" onSwitch={() => setIsOpen(false)} />
 
         {/* Settings link */}
         <DropdownMenuItem asChild className="gap-3 px-3 py-2.5 cursor-pointer">

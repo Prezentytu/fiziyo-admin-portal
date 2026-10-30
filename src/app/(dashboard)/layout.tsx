@@ -8,11 +8,14 @@ import { OrganizationGuard } from '@/components/layout/OrganizationGuard';
 import { OrganizationProvider } from '@/contexts/OrganizationContext';
 import { ExerciseBuilderProvider } from '@/contexts/ExerciseBuilderContext';
 import { useSidebarState } from '@/hooks/useSidebarState';
+import { ChatShell } from '@/features/ai-view/ChatShell';
+import { useChatMode } from '@/features/ai-view/useChatMode';
 
 export default function DashboardLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const pathname = usePathname();
   const isOnboarding = pathname === '/onboarding';
   const { isCollapsed, isMobileOpen, isHydrated, toggleCollapsed, toggleMobile, closeMobile } = useSidebarState();
+  const { preference } = useChatMode();
 
   // Onboarding page - bez sidebar i header
   if (isOnboarding) {
@@ -28,21 +31,36 @@ export default function DashboardLayout({ children }: Readonly<{ children: React
     <OrganizationGuard>
       <OrganizationProvider>
         <ExerciseBuilderProvider>
-          <div className="flex h-dvh bg-grouped">
-            {/* Desktop Sidebar */}
-            <Sidebar isCollapsed={isHydrated ? isCollapsed : false} onToggleCollapse={toggleCollapsed} />
+          {preference.enabled ? (
+            <ChatShell
+              isCollapsed={isHydrated && isCollapsed}
+              isMobileOpen={isMobileOpen}
+              toggleCollapsed={toggleCollapsed}
+              toggleMobile={toggleMobile}
+              closeMobile={closeMobile}
+            >
+              {children}
+            </ChatShell>
+          ) : (
+            <div className="flex h-dvh bg-grouped">
+              {/* Desktop Sidebar */}
+              <Sidebar isCollapsed={isHydrated ? isCollapsed : false} onToggleCollapse={toggleCollapsed} />
 
-            {/* Mobile Sidebar */}
-            <MobileSidebar isOpen={isMobileOpen} onClose={closeMobile} />
+              {/* Mobile Sidebar */}
+              <MobileSidebar isOpen={isMobileOpen} onClose={closeMobile} />
 
-            {/* Main content area */}
-            <div className="flex flex-1 flex-col overflow-hidden min-h-0">
-              <Header onMobileMenuToggle={toggleMobile} />
-              <main className="flex flex-1 flex-col overflow-y-auto min-h-0 bg-grouped p-4 lg:p-6 2xl:p-8" style={{ scrollbarGutter: 'stable' }}>
-                {children}
-              </main>
+              {/* Main content area */}
+              <div className="flex flex-1 flex-col overflow-hidden min-h-0">
+                <Header onMobileMenuToggle={toggleMobile} />
+                <main
+                  className="flex flex-1 flex-col overflow-y-auto min-h-0 bg-grouped p-4 lg:p-6 2xl:p-8"
+                  style={{ scrollbarGutter: 'stable' }}
+                >
+                  {children}
+                </main>
+              </div>
             </div>
-          </div>
+          )}
         </ExerciseBuilderProvider>
       </OrganizationProvider>
     </OrganizationGuard>

@@ -1,0 +1,79 @@
+import type { SchedulePlan } from './schedulePlan';
+import type { SetDraftPayload } from './setDraft';
+import type { ChatViewSpec } from './viewSpec';
+
+/** One position of a document or visit note, matched to the catalog when the import found a match. */
+export interface DocumentItem {
+  name: string;
+  description?: string;
+  sets?: number;
+  reps?: number;
+  duration?: number;
+  matchedExerciseId?: string;
+  matchedName?: string;
+}
+
+/**
+ * Cards the thread adds itself, between the dispatcher's card and the save: they carry the
+ * therapist's decisions (exercise list, schedule) and never come from the model.
+ */
+export type LocalCardSpec =
+  | { component: 'PickPatient'; draft: SetDraftPayload }
+  | { component: 'Schedule'; draft: SetDraftPayload }
+  | { component: 'SendSummary'; draft: SetDraftPayload; plan: SchedulePlan }
+  | { component: 'Sent'; patientId: string; setName: string; planLabel: string }
+  | { component: 'SetSaved'; setId: string; name: string }
+  | { component: 'PatientAdded'; patientId: string; name: string }
+  | { component: 'ExerciseCreated'; exerciseId: string; name: string; patientId?: string }
+  | { component: 'ScanVisit'; patientId?: string }
+  | { component: 'DocumentResult'; fileName: string; items: DocumentItem[]; patientId?: string };
+
+export type ChatCardSpec = ChatViewSpec | LocalCardSpec;
+
+// Keyed by the union, so a new card does not compile until stored history accepts it.
+const CARD_COMPONENTS = {
+  SetDraft: true,
+  AssignSummary: true,
+  ExerciseResults: true,
+  PatientPeek: true,
+  Navigate: true,
+  Clarify: true,
+  AddPatient: true,
+  CreateExercise: true,
+  PickPatient: true,
+  Schedule: true,
+  SendSummary: true,
+  Sent: true,
+  SetSaved: true,
+  PatientAdded: true,
+  ExerciseCreated: true,
+  ScanVisit: true,
+  DocumentResult: true,
+} satisfies Record<ChatCardSpec['component'], true>;
+
+export function isCardComponent(component: string): boolean {
+  return Object.hasOwn(CARD_COMPONENTS, component);
+}
+
+/** The patient a card is about; the latest one names the conversation's context chip. */
+export function cardPatientId(spec: ChatCardSpec | undefined): string | undefined {
+  if (!spec) return undefined;
+  switch (spec.component) {
+    case 'SetDraft':
+    case 'ExerciseResults':
+    case 'PatientPeek':
+    case 'AssignSummary':
+    case 'Sent':
+    case 'PatientAdded':
+    case 'ExerciseCreated':
+    case 'ScanVisit':
+    case 'DocumentResult':
+      return spec.patientId;
+    case 'PickPatient':
+    case 'Schedule':
+    case 'SendSummary':
+      return spec.draft.patientId;
+    default:
+      return undefined;
+  }
+}

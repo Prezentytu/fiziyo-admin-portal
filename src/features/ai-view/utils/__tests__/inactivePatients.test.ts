@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { selectInactivePatients } from '../inactivePatients';
+import { pendingReminderIds, selectInactivePatients } from '../inactivePatients';
 
 const NOW = new Date('2026-10-30T12:00:00Z');
 const PATIENTS = [
@@ -16,5 +16,17 @@ describe('selectInactivePatients', () => {
 
   it('shows nothing until the therapist is known', () => {
     expect(selectInactivePatients(PATIENTS, undefined, NOW)).toBeNull();
+  });
+});
+
+describe('pendingReminderIds', () => {
+  it('reminds everyone on the list, not only the rows shown, skipping those already reminded', () => {
+    const attention = Array.from({ length: 8 }, (_, index) => ({ id: `p${index}` }));
+    expect(pendingReminderIds(attention, ['p1'])).toEqual(['p0', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7']);
+  });
+
+  it('stays within what the API accepts in one call (50)', () => {
+    const attention = Array.from({ length: 60 }, (_, index) => ({ id: `p${index}` }));
+    expect(pendingReminderIds(attention, [])).toHaveLength(50);
   });
 });

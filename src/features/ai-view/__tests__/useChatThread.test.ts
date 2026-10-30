@@ -77,6 +77,33 @@ describe('useChatThread', () => {
     });
   });
 
+  it('sends one message when the composer fires twice before the busy state renders', async () => {
+    const { result } = renderHook(() => useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org-a' }));
+
+    await act(() => Promise.all([result.current.send('Pokaż pacjentów'), result.current.send('Pokaż pacjentów')]));
+
+    expect(dispatchMock).toHaveBeenCalledTimes(1);
+    expect(result.current.messages.filter((message) => message.role === 'user')).toHaveLength(1);
+  });
+
+  it('runs one task when a file is picked twice and reports whether it succeeded', async () => {
+    const task = vi.fn().mockResolvedValue({ text: 'Gotowe.' });
+    const { result } = renderHook(() => useChatThread({ useAi: false, context: CONTEXT, ready: true, scopeKey: 'org-a' }));
+
+    let outcomes: boolean[] = [];
+    await act(async () => {
+      outcomes = await Promise.all([result.current.runTask('Dokument', task), result.current.runTask('Dokument', task)]);
+    });
+    expect(task).toHaveBeenCalledTimes(1);
+    expect(outcomes).toEqual([true, false]);
+
+    let failed = true;
+    await act(async () => {
+      failed = await result.current.runTask('Dokument', () => Promise.reject(new Error('Za duży.')));
+    });
+    expect(failed).toBe(false);
+  });
+
   it('starts a new conversation and AI session when the organization changes', async () => {
     const { result, rerender } = renderHook(
       ({ scopeKey }) => useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey }),

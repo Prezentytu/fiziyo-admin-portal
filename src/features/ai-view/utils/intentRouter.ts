@@ -16,6 +16,7 @@ export interface IntentContext {
 
 const INACTIVE_PATTERN = /nie cwicz|nieaktywn|kto nie|bez trening|zaniedbuj/;
 const ADD_PATIENT_PATTERN = /(dodaj|nowy|nowa|nowego|nowej|zaloz)\w* pacjent/;
+const CREATE_EXERCISE_PATTERN = /(utworz|stworz|dodaj|nowe|nowego)\w* (wlasne )?cwiczeni/;
 const SET_PATTERN = /zestaw|plan|przypisz|program/;
 const SEARCH_PATTERN = /znajdz|wyszukaj|szukaj|cwiczeni|cwiczen/;
 const NAVIGATE_VERB_PATTERN = /^(przejdz|otworz|pokaz|idz)\b/;
@@ -145,7 +146,10 @@ function routeCommand(text: string, context: IntentContext, chosen?: { id: strin
   if (!normalized) return UNSUPPORTED_SPEC;
 
   if (INACTIVE_PATTERN.test(normalized)) return { component: 'PatientPeek', filter: 'inactive' };
-  if (ADD_PATIENT_PATTERN.test(normalized)) return { component: 'Navigate', route: 'patient-new' };
+  if (ADD_PATIENT_PATTERN.test(normalized)) return { component: 'AddPatient', name: textAfter(text, /^pacjent/i) };
+  if (CREATE_EXERCISE_PATTERN.test(normalized)) {
+    return { component: 'CreateExercise', name: textAfter(text, /^ćwiczeni/i) };
+  }
 
   const target = navigateTarget(normalized);
   if (target && !SET_PATTERN.test(normalized)) return { component: 'Navigate', route: target[1] };
@@ -177,4 +181,18 @@ function routeCommand(text: string, context: IntentContext, chosen?: { id: strin
 
   if (patientId) return { component: 'PatientPeek', patientId };
   return UNSUPPORTED_SPEC;
+}
+
+/** "Dodaj pacjentkę Anna Nowak, ból lędźwi" → "Anna Nowak": what follows the keyword, up to a comma. */
+function textAfter(text: string, keyword: RegExp): string | undefined {
+  const words = text.trim().split(/\s+/);
+  const index = words.findIndex((word) => keyword.test(word));
+  if (index < 0) return undefined;
+  const rest = words
+    .slice(index + 1)
+    .join(' ')
+    .replace(/^[:\-–,\s]+/, '')
+    .split(',')[0]
+    .trim();
+  return rest || undefined;
 }

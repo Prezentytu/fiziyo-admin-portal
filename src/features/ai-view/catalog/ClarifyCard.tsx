@@ -1,42 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { useChatActions, useChatBusy } from '../ChatSessionContext';
+import type { CardProps } from './cardProps';
+import { QuickReplies } from './QuickReplies';
 
-import { Button } from '@/components/ui/button';
-import { useChatActions } from '../ChatActionsContext';
-import type { ChatViewSpec } from '../utils/viewSpec';
-
-type ClarifySpec = Extract<ChatViewSpec, { component: 'Clarify' }>;
-
-/** A question with ready answers; the chosen answer is sent as the next message. */
-export function ClarifyCard({ spec, testId }: { readonly spec: ClarifySpec; readonly testId: string }) {
-  const { sendMessage } = useChatActions();
-  const [chosen, setChosen] = useState<string | null>(null);
-
-  const handlePick = (option: string) => {
-    setChosen(option);
-    sendMessage(option);
-  };
-
+/** The question itself is the message text; the card is its ready answers, sent as the next message. */
+export function ClarifyCard({ spec, testId, messageId, chosen }: CardProps<'Clarify'>) {
+  const { sendMessage, markChosen } = useChatActions();
+  const isBusy = useChatBusy();
   return (
-    <div data-testid={testId} className="flex flex-col gap-3">
-      <p className="text-[16px] leading-[26px] text-foreground">{spec.question}</p>
-      {spec.options.length > 0 && (
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Odpowiedzi">
-          {spec.options.map((option, index) => (
-            <Button
-              key={option}
-              variant={index === 0 && chosen === null ? 'plain' : 'outline'}
-              size="sm"
-              disabled={chosen !== null}
-              onClick={() => handlePick(option)}
-              data-testid={`${testId}-option-${index}-btn`}
-            >
-              {option}
-            </Button>
-          ))}
-        </div>
-      )}
+    <div data-testid={testId}>
+      <QuickReplies
+        options={spec.options}
+        chosen={chosen}
+        disabled={isBusy}
+        testId={testId}
+        onPick={(option) => {
+          markChosen(messageId, option);
+          sendMessage(option);
+        }}
+      />
     </div>
   );
 }

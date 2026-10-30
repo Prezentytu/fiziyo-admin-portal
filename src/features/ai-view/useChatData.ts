@@ -36,15 +36,27 @@ function toAssignmentSet(set: RawSet): ExerciseSet {
   };
 }
 
-/** Organization patients (everyone sees everyone, collaborative care) and template sets: what chat may reference. */
-export function useChatData(organizationId: string | undefined) {
+/**
+ * `sets` are the catalog the chat offers (templates); `organizationSets` are every set it may be
+ * pointed at by id, a patient's plan included.
+ */
+export function toChatSets(raw: readonly RawSet[]): { sets: ExerciseSet[]; organizationSets: ExerciseSet[] } {
+  const organizationSets = raw.map(toAssignmentSet);
+  return { sets: organizationSets.filter((set) => isTemplateSet(set)), organizationSets };
+}
+
+/**
+ * Organization patients (everyone sees everyone, collaborative care) and template sets: what chat may reference.
+ * Sets are heavy and only the chat home reads them; other pages in chat mode need just the patients.
+ */
+export function useChatData(organizationId: string | undefined, withSets: boolean) {
   const { data: patientsData, loading: patientsLoading } = useQuery<OrganizationPatientsResponse>(
     GET_ORGANIZATION_PATIENTS_QUERY,
     { variables: { organizationId, filter: 'all' }, skip: !organizationId }
   );
   const { data: setsData, loading: setsLoading } = useQuery<OrganizationExerciseSetsResponse>(
     GET_ORGANIZATION_EXERCISE_SETS_QUERY,
-    { variables: { organizationId }, skip: !organizationId }
+    { variables: { organizationId }, skip: !organizationId || !withSets }
   );
 
   const patients = useMemo<ChatPatient[]>(
@@ -62,12 +74,12 @@ export function useChatData(organizationId: string | undefined) {
     [patientsData]
   );
 
-  const sets = useMemo<ExerciseSet[]>(
-    () => (setsData?.exerciseSets ?? []).filter((set) => isTemplateSet(set)).map(toAssignmentSet),
-    [setsData]
-  );
+  const { sets, organizationSets } = useMemo(() => toChatSets(setsData?.exerciseSets ?? []), [setsData]);
 
   const intentContext = useMemo<IntentContext>(() => ({ patients, sets }), [patients, sets]);
 
-  return { patients, sets, intentContext, loading: patientsLoading || setsLoading };
+  // Skipped off the chat home: not loading, but not ready either.
+  const setsReady = withSets && Boolean(organizationId) && !setsLoading;
+
+  return { patients, sets, organizationSets, setsReady, intentContext, loading: patientsLoading || setsLoading };
 }

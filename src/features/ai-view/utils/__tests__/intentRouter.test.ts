@@ -92,9 +92,22 @@ describe('routeIntent', () => {
     expect(routeIntent('Pokaż, kto nie ćwiczy', CONTEXT)).toEqual({ component: 'PatientPeek', filter: 'inactive' });
   });
 
-  it('routes to adding a patient and to closed navigation targets', () => {
-    expect(routeIntent('Dodaj pacjenta', CONTEXT)).toEqual({ component: 'Navigate', route: 'patient-new' });
+  it('adds a patient in the thread and routes to closed navigation targets', () => {
+    expect(routeIntent('Dodaj pacjenta', CONTEXT)).toEqual({ component: 'AddPatient', name: undefined });
+    expect(routeIntent('Dodaj pacjentkę Anna Nowak, ból lędźwi', CONTEXT)).toEqual({
+      component: 'AddPatient',
+      name: 'Anna Nowak',
+    });
     expect(routeIntent('przejdź do ustawień', CONTEXT)).toEqual({ component: 'Navigate', route: 'settings' });
+  });
+
+  it('creates an exercise in the thread', () => {
+    expect(routeIntent('Utwórz ćwiczenie: mostek na jednej nodze', CONTEXT)).toEqual({
+      component: 'CreateExercise',
+      name: 'mostek na jednej nodze',
+    });
+    expect(routeIntent('dodaj nowe ćwiczenie', CONTEXT)).toEqual({ component: 'CreateExercise', name: undefined });
+    expect(routeIntent('znajdź ćwiczenia na bark', CONTEXT).component).toBe('ExerciseResults');
   });
 
   it('says it cannot help with anything else', () => {

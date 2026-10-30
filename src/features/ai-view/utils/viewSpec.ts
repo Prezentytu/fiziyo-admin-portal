@@ -21,7 +21,9 @@ export type ChatViewSpec =
   | { component: 'ExerciseResults'; query: string; exerciseIds: string[]; patientId?: string }
   | { component: 'PatientPeek'; patientId?: string; filter?: 'inactive' }
   | { component: 'Navigate'; route: NavigateRoute }
-  | { component: 'Clarify'; question: string; options: string[] };
+  | { component: 'Clarify'; question: string; options: string[] }
+  | { component: 'AddPatient'; name?: string }
+  | { component: 'CreateExercise'; name?: string; description?: string };
 
 export type ChatViewComponent = ChatViewSpec['component'];
 
@@ -54,8 +56,8 @@ const routeSchema = z.enum(NAVIGATE_ROUTE_KEYS);
 export const UNSUPPORTED_SPEC: ChatViewSpec = {
   component: 'Clarify',
   question:
-    'Tego jeszcze nie umiem. Spróbuj inaczej albo wybierz poniżej. Mogę przypisać zestaw, znaleźć ćwiczenia albo pokazać, kto nie ćwiczy.',
-  options: ['Utwórz zestaw', 'Pokaż, kto nie ćwiczy', 'Znajdź ćwiczenia na kręgosłup'],
+    'Tego jeszcze nie umiem. Mogę ułożyć i wysłać zestaw, dodać pacjenta, utworzyć ćwiczenie, znaleźć ćwiczenia albo pokazać, kto nie ćwiczy.',
+  options: ['Utwórz zestaw', 'Pokaż, kto nie ćwiczy', 'Dodaj pacjenta'],
 };
 
 /**
@@ -98,6 +100,10 @@ export function toChatViewSpec(input: unknown): ChatViewSpec {
       const route = routeSchema.safeParse(raw.route);
       return route.success ? { component: 'Navigate', route: route.data } : UNSUPPORTED_SPEC;
     }
+    case 'AddPatient':
+      return { component: 'AddPatient', name: raw.query };
+    case 'CreateExercise':
+      return { component: 'CreateExercise', name: raw.query, description: raw.note };
     case 'Clarify': {
       const options = (raw.options ?? [])
         .map((option) => option.trim())
@@ -108,4 +114,24 @@ export function toChatViewSpec(input: unknown): ChatViewSpec {
     default:
       return UNSUPPORTED_SPEC;
   }
+}
+
+export const MAX_REPLY_LENGTH = 1200;
+
+export interface DispatchReply {
+  /** Plain text under which the card renders; React escapes it, so model text never becomes markup. */
+  text?: string;
+  spec?: ChatViewSpec;
+}
+
+/**
+ * Whole answer from `POST /api/chat/dispatch`: a sentence like in a conversation, then a card.
+ * `Message` is an answer without a card ("co umiesz?"); a Clarify question moves into the text.
+ */
+export function parseDispatchReply(rawSpec: unknown, rawText: unknown): DispatchReply {
+  const text = typeof rawText === 'string' ? rawText.trim().slice(0, MAX_REPLY_LENGTH) || undefined : undefined;
+  const component =
+    typeof rawSpec === 'object' && rawSpec !== null ? (rawSpec as { component?: unknown }).component : undefined;
+  if (component === 'Message') return text ? { text } : { spec: UNSUPPORTED_SPEC };
+  return { text, spec: toChatViewSpec(rawSpec) };
 }

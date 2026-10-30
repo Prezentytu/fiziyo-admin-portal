@@ -26,3 +26,15 @@ export function selectInactivePatients<T extends PeekablePatient>(
     .filter((patient) => needsAttention(patient.activity))
     .sort(comparePatientsByAttention);
 }
+
+// sendExerciseReminders takes at most 50 patients per call (MaxTherapistReminderPatients).
+const MAX_REMINDERS_PER_CALL = 50;
+
+/** "Przypomnij wszystkim": everyone on the list, not only the rows the card shows. */
+export function pendingReminderIds(attention: ReadonlyArray<{ id: string }>, remindedIds: readonly string[]): string[] {
+  const reminded = new Set(remindedIds);
+  return attention
+    .filter((patient) => !reminded.has(patient.id))
+    .slice(0, MAX_REMINDERS_PER_CALL)
+    .map((patient) => patient.id);
+}
