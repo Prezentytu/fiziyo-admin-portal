@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useUser } from '@clerk/nextjs';
 import {
   Building2,
   Dumbbell,
@@ -29,9 +28,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { Logo } from '@/components/shared/Logo';
+import { OrganizationSwitchMenuItems } from '@/components/layout/OrganizationSwitchMenuItems';
+import { useCurrentUserDisplay } from '@/components/layout/useCurrentUserDisplay';
 import { useAppSignOut } from '@/lib/auth/useAppSignOut';
 import { cn } from '@/lib/utils';
-import { getInitialsFromName } from '@/utils/textUtils';
 import { useChatSession } from './ChatSessionContext';
 import { useChatShortcuts } from './useChatShortcuts';
 import { useChatMode } from './useChatMode';
@@ -68,7 +68,7 @@ function SidebarBody({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user } = useUser();
+  const account = useCurrentUserDisplay();
   const signOut = useAppSignOut();
   const { update } = useChatMode();
   const {
@@ -82,7 +82,6 @@ function SidebarBody({
     deleteConversation,
   } = useChatSession();
   const shortcuts = useChatShortcuts();
-  const displayName = user?.fullName || user?.primaryEmailAddress?.emailAddress || 'Konto';
   const creditsPercent =
     credits && credits.limit > 0 ? Math.min(100, Math.round((credits.remaining / credits.limit) * 100)) : 0;
 
@@ -209,16 +208,19 @@ function SidebarBody({
         <DropdownMenuTrigger asChild>
           <button type="button" className={cn(ROW_CLASS, 'h-11')} data-testid="nav-chat-user-menu-btn">
             <Avatar className="h-7 w-7">
-              <AvatarImage src={user?.imageUrl} alt="" />
+              <AvatarImage src={account.avatarUrl} alt="" />
               <AvatarFallback className="bg-avatar text-[11px] font-semibold text-avatar-label">
-                {getInitialsFromName(displayName)}
+                {account.initials}
               </AvatarFallback>
             </Avatar>
-            <span className="min-w-0 flex-1 truncate">{displayName}</span>
+            <span className="min-w-0 flex-1 truncate" title={account.displayName}>
+              {account.compactDisplayName}
+            </span>
             <MoreHorizontal aria-hidden="true" />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent side="top" align="start" className="w-60">
+        <DropdownMenuContent side="top" align="start" className="w-64">
+          <OrganizationSwitchMenuItems testIdPrefix="nav-chat-org" onSwitch={onNavigate} />
           <DropdownMenuItem asChild data-testid="nav-chat-settings-link">
             <Link href="/settings" onClick={onNavigate}>
               <Settings aria-hidden="true" />

@@ -1,4 +1,9 @@
+import {
+  daysUntilAssignmentEnd,
+  resolveAssignmentDisplayStatus,
+} from '@/features/patients/utils/assignmentDisplayStatus';
 import { getPatientActivityStatus } from '@/features/patients/utils/patientActivityStatus';
+import { pluralize } from '@/utils/textUtils';
 
 interface AgendaPatient {
   id: string;
@@ -35,11 +40,8 @@ export interface TodayAgenda {
   issues: AgendaIssue[];
 }
 
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
-export const ENDING_WITHIN_DAYS = 3;
 export const INACTIVE_FROM_DAYS = 4;
 const MAX_ISSUES = 6;
-const CLOSED_STATUSES = new Set(['completed', 'cancelled', 'expired', 'paused']);
 
 function isSameLocalDay(left: Date, right: Date): boolean {
   return (
@@ -49,15 +51,11 @@ function isSameLocalDay(left: Date, right: Date): boolean {
   );
 }
 
-function startOfLocalDay(date: Date): number {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
-}
-
 const TIME_FORMAT = new Intl.DateTimeFormat('pl-PL', { hour: '2-digit', minute: '2-digit' });
 
 /**
  * "Dziś N wizyty · N sprawy" on the chat home: today's visits (clinical notes dated today) and the
- * signed-in therapist's patients who need a word (not exercising, plan ending within 3 days).
+ * signed-in therapist's patients who need a word (not exercising, plan expiring soon).
  */
 export function buildTodayAgenda(input: {
   therapistId: string | undefined;
@@ -90,12 +88,11 @@ export function buildTodayAgenda(input: {
   for (const assignment of input.assignments) {
     const patient = byId.get(assignment.userId);
     if (!patient || !assignment.endDate || seenEnding.has(patient.id)) continue;
-    if (assignment.status && CLOSED_STATUSES.has(assignment.status.toLowerCase())) continue;
-    const end = new Date(assignment.endDate);
-    if (Number.isNaN(end.getTime())) continue;
-    const daysLeft = Math.round((startOfLocalDay(end) - startOfLocalDay(now)) / MS_PER_DAY);
-    if (daysLeft < 0 || daysLeft > ENDING_WITHIN_DAYS) continue;
+    // The same "expiring soon" the patients list shows, so both views flag the same plans.
+    const { primary } = resolveAssignmentDisplayStatus({ status: assignment.status, endDate: assignment.endDate, now });
+    if (primary.kind !== 'expiring_soon') continue;
     seenEnding.add(patient.id);
+    const daysLeft = daysUntilAssignmentEnd(new Date(assignment.endDate), now);
     ending.push({ kind: 'ending', patientId: patient.id, name: patient.name, daysLeft });
   }
 
@@ -118,7 +115,5 @@ export function buildTodayAgenda(input: {
 
 export function describeIssue(issue: AgendaIssue): string {
   if (issue.kind === 'inactive') return `Nie ćwiczy od ${issue.days} dni`;
-  if (issue.daysLeft === 0) return 'Plan kończy się dziś';
-  if (issue.daysLeft === 1) return 'Plan kończy się jutro';
-  return `Plan kończy się za ${issue.daysLeft} dni`;
+  return `Plan wygasa za ${pluralize(issue.daysLeft, 'dzień')}`;
 }

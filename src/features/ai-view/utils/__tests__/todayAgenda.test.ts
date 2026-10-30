@@ -44,7 +44,7 @@ describe('buildTodayAgenda', () => {
     expect(agenda.visits[1]).toMatchObject({ time: '14:30', title: 'Kontrola' });
   });
 
-  it("raises only the signed-in therapist's patients: not exercising, plan ending soon", () => {
+  it("raises only the signed-in therapist's patients: not exercising, plan ending soon (the patients list rule)", () => {
     const agenda = buildTodayAgenda({
       therapistId: 't1',
       patients: PATIENTS,
@@ -53,13 +53,15 @@ describe('buildTodayAgenda', () => {
         { userId: 'p-own-active', endDate: new Date(2026, 9, 31, 23, 59).toISOString(), status: 'active' },
         { userId: 'p-own-active', endDate: new Date(2026, 10, 1).toISOString(), status: 'active' },
         { userId: 'p-own-idle', endDate: new Date(2026, 9, 30).toISOString(), status: 'Completed' },
+        { userId: 'p-own-idle', endDate: new Date(2026, 9, 31).toISOString(), status: 'done' },
+        { userId: 'p-own-idle', endDate: new Date(2026, 9, 30, 7, 0).toISOString(), status: 'active' },
         { userId: 'p-other', endDate: new Date(2026, 9, 30).toISOString(), status: 'active' },
       ],
       now: NOW,
     });
     expect(agenda.issues).toEqual([
       { kind: 'inactive', patientId: 'p-own-idle', name: 'Jan Kowalski', days: 6 },
-      { kind: 'ending', patientId: 'p-own-active', name: 'Anna Nowak', daysLeft: 1 },
+      { kind: 'ending', patientId: 'p-own-active', name: 'Anna Nowak', daysLeft: 2 },
     ]);
   });
 
@@ -76,8 +78,7 @@ describe('buildTodayAgenda', () => {
 describe('describeIssue', () => {
   it('words each issue without gendered forms', () => {
     expect(describeIssue({ kind: 'inactive', patientId: 'p', name: 'X', days: 5 })).toBe('Nie ćwiczy od 5 dni');
-    expect(describeIssue({ kind: 'ending', patientId: 'p', name: 'X', daysLeft: 0 })).toBe('Plan kończy się dziś');
-    expect(describeIssue({ kind: 'ending', patientId: 'p', name: 'X', daysLeft: 1 })).toBe('Plan kończy się jutro');
-    expect(describeIssue({ kind: 'ending', patientId: 'p', name: 'X', daysLeft: 3 })).toBe('Plan kończy się za 3 dni');
+    expect(describeIssue({ kind: 'ending', patientId: 'p', name: 'X', daysLeft: 1 })).toBe('Plan wygasa za 1 dzień');
+    expect(describeIssue({ kind: 'ending', patientId: 'p', name: 'X', daysLeft: 3 })).toBe('Plan wygasa za 3 dni');
   });
 });

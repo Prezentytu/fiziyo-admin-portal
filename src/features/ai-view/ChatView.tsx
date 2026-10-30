@@ -73,7 +73,7 @@ function TodayAgenda() {
       });
       return;
     }
-    appendExchange(`Plan kończy się: ${issue.name}`, {
+    appendExchange(`Plan wygasa: ${issue.name}`, {
       text: `${describeIssue(issue)}. Możesz ułożyć kolejny zestaw.`,
       spec: { component: 'PatientPeek', patientId: issue.patientId },
     });

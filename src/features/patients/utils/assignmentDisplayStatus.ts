@@ -27,6 +27,11 @@ export interface ResolveAssignmentDisplayStatusInput {
 const EXPIRING_SOON_DAYS = 3;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/** Whole days left, rounded up: what "Wygasa za N dni" counts. */
+export function daysUntilAssignmentEnd(end: Date, now: Date): number {
+  return Math.ceil((end.getTime() - now.getTime()) / DAY_MS);
+}
+
 function normalizeStatus(status?: string | null): string {
   return (status ?? '').trim().toLowerCase();
 }
@@ -72,7 +77,7 @@ export function resolveAssignmentDisplayStatus({
   } else if (normalizedStatus === 'cancelled' || normalizedStatus === 'canceled') {
     primary = { label: 'Anulowany', variant: 'destructive', kind: 'cancelled' };
   } else if (end) {
-    const daysToEnd = Math.ceil((end.getTime() - now.getTime()) / DAY_MS);
+    const daysToEnd = daysUntilAssignmentEnd(end, now);
     if (daysToEnd > 0 && daysToEnd <= EXPIRING_SOON_DAYS) {
       primary = { label: `Wygasa za ${pluralize(daysToEnd, 'dzień')}`, variant: 'warning', kind: 'expiring_soon' };
     } else {

@@ -27,7 +27,7 @@ describe('resolvePlanDates', () => {
 });
 
 describe('planFrequency', () => {
-  it('maps the rhythm to fixed weekdays, once a day', () => {
+  it('maps the rhythm to fixed weekdays, once a day, the same days as the Assignment Wizard', () => {
     expect(planFrequency({ start: 'today', weeks: 2, rhythm: 'daily' })).toMatchObject({
       timesPerWeek: 7,
       sunday: true,
@@ -43,9 +43,10 @@ describe('planFrequency', () => {
     });
     expect(planFrequency({ start: 'today', weeks: 2, rhythm: 'two' })).toMatchObject({
       timesPerWeek: 2,
-      tuesday: true,
-      friday: true,
-      monday: false,
+      monday: true,
+      thursday: true,
+      tuesday: false,
+      friday: false,
     });
   });
 });

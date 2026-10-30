@@ -30,23 +30,23 @@ Wygląd: canvas „Czat v2 AJ” (https://claude.ai/artifact/QGoTcDeTx2JX2yDq86R
 
 ### Logika (czyste funkcje, testy Vitest)
 
-| Plik                            | Co liczy                                                                                |
-| ------------------------------- | --------------------------------------------------------------------------------------- |
-| `utils/textMatch.ts`            | Normalizacja i dopasowanie słów z odmianą (Kowalskiemu → Kowalski)                      |
-| `utils/patientMatch.ts`         | Pacjent z tekstu: brak, jeden, kilku                                                    |
-| `utils/intentRouter.ts`         | Reguły: polecenie → karta                                                               |
-| `utils/viewSpec.ts`             | Zamknięty katalog kart, `parseDispatchReply` (tekst + karta, limit 1200 znaków)         |
-| `utils/replyText.ts`            | Zdanie nad kartą, gdy nie ma tekstu modelu; bez form rodzajowych                        |
-| `utils/resolveReply.ts`         | AI najpierw, reguły jako zapas z powodem; pytanie `Clarify` dopisane do tekstu          |
-| `utils/setDraft.ts`             | Szkic zestawu: parametry z mappingu albo domyślne, minuty dziennie, nazwa               |
-| `utils/schedulePlan.ts`         | Start, liczba tygodni, rytm → daty i `Frequency`                                        |
-| `utils/sendPlan.ts`             | Kolejność zapisów przy wysyłce planu                                                    |
-| `utils/conversationStore.ts`    | Historia rozmów: odczyt, tytuł, limity, czyszczenie przy wylogowaniu                    |
-| `utils/todayAgenda.ts`          | „Dziś”: wizyty z notatek z dzisiejszą datą, nieaktywni (≥4 dni), plan kończy się ≤3 dni |
-| `utils/exerciseAlternatives.ts` | Zamienniki ćwiczenia po wspólnych tagach                                                |
-| `utils/documentItems.ts`        | Ćwiczenia z dokumentu albo notatki z wizyty i ich pewne dopasowania w katalogu          |
-| `utils/exerciseLookup.ts`       | Wyszukiwanie ćwiczeń w puli organizacji                                                 |
-| `utils/chatModePreference.ts`   | Odczyt i walidacja preferencji                                                          |
+| Plik                            | Co liczy                                                                                                                                  |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `utils/textMatch.ts`            | Normalizacja i dopasowanie słów z odmianą (Kowalskiemu → Kowalski)                                                                        |
+| `utils/patientMatch.ts`         | Pacjent z tekstu: brak, jeden, kilku                                                                                                      |
+| `utils/intentRouter.ts`         | Reguły: polecenie → karta                                                                                                                 |
+| `utils/viewSpec.ts`             | Zamknięty katalog kart, `parseDispatchReply` (tekst + karta, limit 1200 znaków)                                                           |
+| `utils/replyText.ts`            | Zdanie nad kartą, gdy nie ma tekstu modelu; bez form rodzajowych                                                                          |
+| `utils/resolveReply.ts`         | AI najpierw, reguły jako zapas z powodem; pytanie `Clarify` dopisane do tekstu                                                            |
+| `utils/setDraft.ts`             | Szkic zestawu: parametry z mappingu albo domyślne, minuty dziennie, nazwa                                                                 |
+| `utils/schedulePlan.ts`         | Start, liczba tygodni, rytm → daty i `Frequency`                                                                                          |
+| `utils/sendPlan.ts`             | Kolejność zapisów przy wysyłce planu                                                                                                      |
+| `utils/conversationStore.ts`    | Historia rozmów: odczyt, tytuł, limity, czyszczenie przy wylogowaniu                                                                      |
+| `utils/todayAgenda.ts`          | „Dziś”: wizyty z notatek z dzisiejszą datą, nieaktywni (≥4 dni), plan wygasa wg reguły listy pacjentów (`resolveAssignmentDisplayStatus`) |
+| `utils/exerciseAlternatives.ts` | Zamienniki ćwiczenia po wspólnych tagach                                                                                                  |
+| `utils/documentItems.ts`        | Ćwiczenia z dokumentu albo notatki z wizyty i ich pewne dopasowania w katalogu                                                            |
+| `utils/exerciseLookup.ts`       | Wyszukiwanie ćwiczeń w puli organizacji                                                                                                   |
+| `utils/chatModePreference.ts`   | Odczyt i walidacja preferencji                                                                                                            |
 
 ### Decyzje
 
