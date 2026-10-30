@@ -529,6 +529,7 @@ function AddExerciseToPatientDialogContent({
 
               <ExerciseParametersFields
                 surface="patientOverride"
+                exerciseType={selectedExercise?.type}
                 values={parameterValues}
                 onChange={handleParametersChange}
                 showContentSection

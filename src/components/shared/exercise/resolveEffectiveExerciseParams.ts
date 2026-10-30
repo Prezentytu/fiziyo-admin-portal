@@ -282,18 +282,19 @@ export function resolveEffectiveExerciseParams(
 
 /**
  * Szacowany czas ćwiczenia (sekundy) z rozwiązanych parametrów.
- * REPS nie używa pozostałego `duration` jako czasu serii (tak samo jak player mobile).
+ * Reguła typu żyje w `calculateExerciseTotalSeconds` (REPS bez pozostałego `duration`, jak player).
  */
 export function estimateEffectiveExerciseSeconds(effective: EffectiveExerciseParams): number {
   return calculateEstimatedTime({
     sets: effective.sets,
     reps: effective.reps,
-    duration: effective.isTimeBased ? effective.duration : undefined,
+    duration: effective.duration,
     executionTime: effective.executionTime,
     rest: effective.restSets,
     restReps: effective.restReps,
     side: effective.side,
     preparationTime: effective.preparationTime,
     tempo: effective.tempo,
+    type: effective.isTimeBased ? 'time' : 'reps',
   });
 }

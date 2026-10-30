@@ -166,8 +166,10 @@ export function ExerciseExecutionCard({
         preparationTime: exercise.preparationTime,
         tempo: exercise.tempo,
         side: exercise.side,
+        type: exercise.isTimeBased ? 'time' : 'reps',
       }),
     [
+      exercise.isTimeBased,
       exercise.duration,
       exercise.executionTime,
       exercise.preparationTime,
@@ -686,6 +688,7 @@ export function ExerciseExecutionCard({
             <div className="w-full border-t border-border bg-surface/50 px-3 py-4 @[460px]:px-4 space-y-3">
               <ExerciseParametersFields
                 surface={cardSurface === 'patientPlan' ? 'patientPlan' : 'mapping'}
+                exerciseType={exercise.isTimeBased ? 'time' : 'reps'}
                 values={parameterValues}
                 onChange={handleParametersChange}
                 omitFields={omitFields}

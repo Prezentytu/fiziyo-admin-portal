@@ -304,6 +304,7 @@ export function computeSessionSeconds(
     duration: timing.duration ?? undefined,
     tempo: timing.tempo ?? undefined,
     restReps: timing.restReps ?? undefined,
+    type: 'reps',
   }).seconds;
 }
 

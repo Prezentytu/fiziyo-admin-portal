@@ -1,4 +1,5 @@
 import { formatExerciseSideLabel } from './exerciseSideLabels';
+import { normalizeExerciseType } from './exerciseEnums';
 
 /**
  * Oblicza szacowany czas wykonania ćwiczenia w sekundach.
@@ -6,6 +7,7 @@ import { formatExerciseSideLabel } from './exerciseSideLabels';
  * Priorytet:
  * 1) executionTime > 0: seria = reps * executionTime + mikroprzerwy
  * 2) duration > 0: duration traktujemy jako override czasu jednej serii
+ *    (nie dla zapisanego REPS: tak jak player, pozostałe `duration` nie liczy się do czasu)
  * 3) fallback: 3 sekundy na powtórzenie
  */
 export function calculateEstimatedTime(params: {
@@ -18,8 +20,10 @@ export function calculateEstimatedTime(params: {
   side?: string;
   preparationTime?: number;
   tempo?: string;
+  type?: string;
 }): number {
-  const { sets, reps, duration, executionTime, rest = 60, restReps = 0, side, preparationTime, tempo } = params;
+  const { sets, reps, duration, executionTime, rest = 60, restReps = 0, side, preparationTime, tempo, type } =
+    params;
   return calculateExerciseTotalSeconds({
     sets,
     reps,
@@ -30,6 +34,7 @@ export function calculateEstimatedTime(params: {
     side,
     preparationTime,
     tempo,
+    type,
   }).seconds;
 }
 
@@ -84,6 +89,8 @@ export function calculateExerciseTotalSeconds(params: {
   preparationTime?: number;
   tempo?: string;
   side?: string;
+  /** Zapisany typ ćwiczenia. REPS ignoruje `duration` (player mobile). Brak typu: szkic, `duration` działa. */
+  type?: string;
 }): { seconds: number; isEstimate: boolean } {
   const sets = Math.max(0, Math.floor(params.sets));
   if (sets <= 0) {
@@ -97,7 +104,8 @@ export function calculateExerciseTotalSeconds(params: {
   const preparationTime = normalizePositiveNumber(params.preparationTime);
   const restSets = normalizePositiveNumber(params.restSets);
   const restReps = normalizePositiveNumber(params.restReps);
-  const durationOverride = normalizePositiveNumber(params.duration);
+  const durationOverride =
+    normalizeExerciseType(params.type) === 'reps' ? 0 : normalizePositiveNumber(params.duration);
   const executionTime = normalizePositiveNumber(params.executionTime);
   const tempoExecutionTime = parseTempo(params.tempo);
 

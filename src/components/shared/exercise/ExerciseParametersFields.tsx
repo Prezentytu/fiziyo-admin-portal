@@ -58,6 +58,8 @@ export type ParameterTestIdKind = 'input' | 'select' | 'info';
 
 export interface ExerciseParametersFieldsProps {
   surface: ExerciseFieldSurface;
+  /** Zapisany typ ćwiczenia (REPS/TIME); bez niego czas liczony jak dla szkicu. */
+  exerciseType?: string;
   values: ExerciseParameterValues;
   onChange: (patch: Partial<ExerciseParameterValues>) => void;
   inheritedValues?: Partial<ExerciseParameterValues>;
@@ -461,6 +463,7 @@ function isInheritedMatch(
 
 export function ExerciseParametersFields({
   surface,
+  exerciseType,
   values,
   onChange,
   inheritedValues,
@@ -513,6 +516,7 @@ export function ExerciseParametersFields({
     preparationTime: 0,
     tempo: values.tempo || undefined,
     side: values.side || undefined,
+    type: exerciseType,
   });
 
   const totalSeconds = calculateExerciseTotalSeconds({
@@ -525,6 +529,7 @@ export function ExerciseParametersFields({
     preparationTime: values.preparationTime ?? undefined,
     tempo: values.tempo || undefined,
     side: values.side || undefined,
+    type: exerciseType,
   });
 
   const dirty = (key: ExerciseFieldKey) => Boolean(isDirtyField?.(key));

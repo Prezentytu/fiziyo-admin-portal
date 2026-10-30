@@ -681,6 +681,7 @@ function EditExerciseOverrideDialogContent({
               </Button>
             </div>
             <ExerciseParametersFields
+              exerciseType={exercise?.type}
               surface="patientOverride"
               values={parameterValues}
               onChange={handleParametersChange}
