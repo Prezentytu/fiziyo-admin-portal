@@ -105,7 +105,7 @@ Każda specyfikacja powinna mieć sekcję Changelog na końcu:
 | 028 | [Promote admin](SPEC-028-2026-09-15-promote-admin.md)                                                 | Ręczny Promote PROD z GitHub Actions, nie z UI Vercel          | in-progress |
 | 029 | [Design system v4](SPEC-029-2026-10-15-design-system-v4.md)                                           | Tokeny, prymitywy i powłoka panelu wg design systemu FiziYo    | in-progress |
 | 030 | [Verification stages](SPEC-030-2026-10-26-verification-stages.md)                                     | Weryfikacja ćwiczeń w 5 etapach z oceną poprawności parametrów | in-progress |
-| 031 | [Chat view](SPEC-031-2026-10-30-chat-view.md)                                                         | Eksperymentalny widok czatu: karty z ID, AI albo reguły        | in-progress |
+| 031 | [Chat view](SPEC-031-2026-10-30-chat-view.md)                                                         | Czat jak w designie Czat v2: rozmowa z kartami akcji panelu    | in-progress |
 | 032 | [Patient name forms](SPEC-032-2026-10-30-patient-name-forms.md)                                       | Formy imion pacjentów ze słownika zamiast reguł końcówek       | draft       |
 
 ## Numery bez specu
