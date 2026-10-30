@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  applyParameterPatch,
   draftItemFromMapping,
   draftMinutes,
   formatDraftParams,
   scheduleQuestion,
+  toMappingInput,
   proposeDraftName,
   type DraftItem,
 } from '../setDraft';
@@ -28,6 +30,11 @@ describe('draftItemFromMapping', () => {
     );
     expect(item.sets).toBe(4);
     expect(item.reps).toBe(12);
+  });
+  it("keeps the catalog set's tempo, notes and load", () => {
+    expect(
+      draftItemFromMapping({ exerciseId: 'e1', tempo: '2-0-2', notes: 'Bez bólu', load: { loadWeightKg: 3 } })
+    ).toMatchObject({ tempo: '2-0-2', notes: 'Bez bólu', loadKg: 3 });
   });
 });
 
@@ -68,5 +75,30 @@ describe('scheduleQuestion', () => {
     expect(scheduleQuestion([ITEM])).toBe(
       `Od kiedy i jak często? Proponuję od jutra, przez 4 tygodnie, codziennie (ok. ${draftMinutes([ITEM])} min dziennie).`
     );
+  });
+});
+
+describe('applyParameterPatch', () => {
+  it('takes the shared parameter editor\'s patch, cleared numbers become 0', () => {
+    expect(applyParameterPatch(ITEM, { reps: 12, restSets: null, tempo: '3-1-1', loadKg: 5, notes: 'Wolno' })).toEqual({
+      ...ITEM,
+      reps: 12,
+      restSets: 0,
+      tempo: '3-1-1',
+      loadKg: 5,
+      notes: 'Wolno',
+    });
+  });
+});
+
+describe('toMappingInput', () => {
+  it('sends tempo, load and notes with the numbers', () => {
+    expect(toMappingInput({ ...ITEM, tempo: '3-1-1', loadKg: 5, notes: 'Wolno' })).toMatchObject({
+      exerciseId: 'e1',
+      reps: 10,
+      tempo: '3-1-1',
+      loadWeightKg: 5,
+      notes: 'Wolno',
+    });
   });
 });

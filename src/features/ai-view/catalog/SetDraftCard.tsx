@@ -6,10 +6,16 @@ import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ExerciseThumbnail } from '@/components/shared/exercise/ExerciseThumbnail';
 import { buildExerciseImageUrls } from '@/components/shared/exercise/adapters';
+import {
+  ExerciseParametersFields,
+  type ExerciseParameterValues,
+} from '@/components/shared/exercise/ExerciseParametersFields';
 import { sortMappingsByOrder } from '@/features/assignment/utils/sortMappingsByOrder';
+import { normalizeExerciseType } from '@/utils/exerciseEnums';
 import { formatExerciseCount } from '@/utils/polishPlural';
 import { toWizardPatient, useChatActions } from '../ChatSessionContext';
 import { useAvailableExercises, type ChatCatalogExercise } from '../useAvailableExercises';
@@ -17,27 +23,23 @@ import { findAlternatives } from '../utils/exerciseAlternatives';
 import { pickExercisesById, searchExercises } from '../utils/exerciseLookup';
 import {
   draftItemFromExercise,
+  applyParameterPatch,
   draftItemFromMapping,
+  draftParameterValues,
   draftMinutes,
   scheduleQuestion,
   formatDraftParams,
   itemMinutes,
   proposeDraftName,
   type DraftItem,
-  type DraftParamKey,
   type SetDraftPayload,
 } from '../utils/setDraft';
 import type { CardProps } from './cardProps';
 import { ChatCard, ChatCardEmpty, ChatCardNote } from './ChatCard';
 import { useSaveTemplateSet } from './useChatWrites';
 
-const PARAM_FIELDS: ReadonlyArray<{ key: DraftParamKey; label: string; unit?: string }> = [
-  { key: 'sets', label: 'Serie' },
-  { key: 'reps', label: 'Powtórzenia' },
-  { key: 'executionTime', label: 'Czas powtórzenia', unit: 's' },
-  { key: 'duration', label: 'Czas serii', unit: 's' },
-  { key: 'restSets', label: 'Przerwa', unit: 's' },
-];
+// A chat draft becomes a plan's mappings: fields a mapping does not keep are not offered.
+const UNSAVED_FIELDS = ['side', 'rangeOfMotion', 'difficultyLevel'] as const;
 
 interface RowProps {
   readonly item: DraftItem;
@@ -47,7 +49,7 @@ interface RowProps {
   readonly testId: string;
   readonly onRemove: () => void;
   readonly onSwap: (exercise: ChatCatalogExercise) => void;
-  readonly onChange: (key: DraftParamKey, value: number) => void;
+  readonly onChange: (patch: Partial<ExerciseParameterValues>) => void;
 }
 
 function DraftRow({ item, exercise, alternatives, locked, testId, onRemove, onSwap, onChange }: RowProps) {
@@ -56,7 +58,10 @@ function DraftRow({ item, exercise, alternatives, locked, testId, onRemove, onSw
   const toggle = (next: 'swap' | 'edit') => setPanel((current) => (current === next ? 'none' : next));
 
   return (
-    <li data-testid={`${testId}-item-${item.exerciseId}`} className="group border-t-[0.5px] border-hairline pt-2 first:border-t-0 first:pt-0">
+    <li
+      data-testid={`${testId}-item-${item.exerciseId}`}
+      className="group border-t-[0.5px] border-hairline pt-2 first:border-t-0 first:pt-0"
+    >
       <div className="flex min-h-14 items-center gap-3">
         <ExerciseThumbnail
           src={exercise ? (buildExerciseImageUrls(exercise)[0] ?? null) : null}
@@ -130,21 +135,19 @@ function DraftRow({ item, exercise, alternatives, locked, testId, onRemove, onSw
         </div>
       )}
       {panel === 'edit' && !locked && (
-        <div className="mb-1 ml-[52px] grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-2 rounded-[12px] bg-fill-quaternary p-3">
-          {PARAM_FIELDS.map((field) => (
-            <label key={field.key} className="flex flex-col gap-1 text-[12px] text-label-secondary">
-              {field.unit ? `${field.label} (${field.unit})` : field.label}
-              <Input
-                type="number"
-                inputMode="numeric"
-                min={0}
-                value={item[field.key]}
-                onChange={(event) => onChange(field.key, Math.max(0, Number(event.target.value) || 0))}
-                className="h-9 bg-card tabular-nums"
-                data-testid={`${testId}-param-${item.exerciseId}-${field.key}-input`}
-              />
-            </label>
-          ))}
+        <div className="mb-1 ml-[52px] rounded-[12px] bg-fill-quaternary p-3">
+          <TooltipProvider>
+            <ExerciseParametersFields
+              surface="mapping"
+              exerciseType={normalizeExerciseType(exercise?.type) ?? 'draft'}
+              values={draftParameterValues(item)}
+              onChange={onChange}
+              omitFields={UNSAVED_FIELDS}
+              density="compact"
+              testIdFor={(key, kind) => `${testId}-param-${item.exerciseId}-${key}-${kind}`}
+              structuralTestIdPrefix={`${testId}-param-${item.exerciseId}`}
+            />
+          </TooltipProvider>
         </div>
       )}
     </li>
@@ -170,7 +173,9 @@ export function SetDraftCard({ spec, testId, messageId, chosen }: CardProps<'Set
   // Seeded once the catalog is here: defaults come from the exercise, a catalog set's mapping wins.
   if (items === null && !loading) {
     const seeded = set
-      ? sortMappingsByOrder(set.exerciseMappings ?? []).map((mapping) => draftItemFromMapping(mapping, byId.get(mapping.exerciseId)))
+      ? sortMappingsByOrder(set.exerciseMappings ?? []).map((mapping) =>
+          draftItemFromMapping(mapping, byId.get(mapping.exerciseId))
+        )
       : pickExercisesById(exercises, spec.exerciseIds).map((exercise) => draftItemFromExercise(exercise));
     setItems(seeded);
   }
@@ -226,7 +231,10 @@ export function SetDraftCard({ spec, testId, messageId, chosen }: CardProps<'Set
       });
       return;
     }
-    appendExchange('Wybierz pacjenta', { text: 'Dla kogo jest ten zestaw?', spec: { component: 'PickPatient', draft } });
+    appendExchange('Wybierz pacjenta', {
+      text: 'Dla kogo jest ten zestaw?',
+      spec: { component: 'PickPatient', draft },
+    });
   };
 
   const handleSaveTemplate = async () => {
@@ -298,7 +306,13 @@ export function SetDraftCard({ spec, testId, messageId, chosen }: CardProps<'Set
                 testId={testId}
                 onRemove={() => removeItem(index)}
                 onSwap={(alternative) => updateItem(index, draftItemFromExercise(alternative))}
-                onChange={(key, value) => updateItem(index, { [key]: value })}
+                onChange={(patch) =>
+                  setItems((current) =>
+                    (current ?? []).map((entry, position) =>
+                      position === index ? applyParameterPatch(entry, patch) : entry
+                    )
+                  )
+                }
               />
             );
           })}

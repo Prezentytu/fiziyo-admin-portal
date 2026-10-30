@@ -3,6 +3,7 @@ import {
   type ExerciseLikeForDefaults,
 } from '@/features/exercise-sets/utils/exerciseDefaults';
 import type { ExerciseMappingSubmitInput } from '@/features/exercise-sets/utils/createSetSubmit';
+import type { ExerciseParameterValues } from '@/components/shared/exercise/ExerciseParametersFields';
 import { calculateEstimatedTime } from '@/utils/exerciseTime';
 
 /** One exercise of a set being composed in chat; the numbers are what the patient will get. */
@@ -16,6 +17,9 @@ export interface DraftItem {
   restReps: number;
   preparationTime: number;
   side?: string;
+  tempo?: string;
+  loadKg?: number;
+  notes?: string;
 }
 
 /** A set the therapist is composing in the thread; JSON-safe, so it survives a reload of the conversation. */
@@ -27,7 +31,35 @@ export interface SetDraftPayload {
   items: DraftItem[];
 }
 
-export type DraftParamKey = 'sets' | 'reps' | 'duration' | 'executionTime' | 'restSets';
+const NUMERIC_KEYS = ['sets', 'reps', 'duration', 'executionTime', 'restSets', 'restReps', 'preparationTime'] as const;
+
+/** What the shared parameter editor (`ExerciseParametersFields`) shows for a draft row. */
+export function draftParameterValues(item: DraftItem): ExerciseParameterValues {
+  return {
+    sets: item.sets,
+    reps: item.reps,
+    duration: item.duration,
+    executionTime: item.executionTime,
+    restSets: item.restSets,
+    restReps: item.restReps,
+    preparationTime: item.preparationTime,
+    tempo: item.tempo ?? '',
+    loadKg: item.loadKg ?? null,
+    notes: item.notes ?? '',
+  };
+}
+
+/** The editor's patch on a draft row; a cleared number means none of it (0). */
+export function applyParameterPatch(item: DraftItem, patch: Partial<ExerciseParameterValues>): DraftItem {
+  const next: DraftItem = { ...item };
+  for (const key of NUMERIC_KEYS) {
+    if (key in patch) next[key] = Math.max(0, patch[key] ?? 0);
+  }
+  if ('tempo' in patch) next.tempo = patch.tempo || undefined;
+  if ('loadKg' in patch) next.loadKg = patch.loadKg ?? undefined;
+  if ('notes' in patch) next.notes = patch.notes || undefined;
+  return next;
+}
 
 export function draftItemFromExercise(exercise: ExerciseLikeForDefaults & { id: string }): DraftItem {
   const params = getExerciseDefaultParams(exercise);
@@ -53,6 +85,9 @@ interface MappingLike {
   restSets?: number | null;
   restReps?: number | null;
   preparationTime?: number | null;
+  tempo?: string | null;
+  notes?: string | null;
+  load?: { loadWeightKg?: number | null } | null;
 }
 
 /** A catalog set's mapping wins over the exercise defaults, as in the assignment wizard. */
@@ -70,6 +105,9 @@ export function draftItemFromMapping(
     restSets: mapping.restSets ?? base.restSets,
     restReps: mapping.restReps ?? base.restReps,
     preparationTime: mapping.preparationTime ?? base.preparationTime,
+    tempo: mapping.tempo || undefined,
+    notes: mapping.notes || undefined,
+    loadKg: mapping.load?.loadWeightKg ?? undefined,
   };
 }
 
@@ -121,6 +159,9 @@ export function toMappingInput(item: DraftItem): ExerciseMappingSubmitInput {
     restSets: item.restSets,
     restReps: item.restReps,
     preparationTime: item.preparationTime,
+    tempo: item.tempo ?? null,
+    loadWeightKg: item.loadKg ?? null,
+    notes: item.notes ?? null,
   };
 }
 
