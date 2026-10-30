@@ -43,6 +43,8 @@ export interface ChatSession {
   setUseAi: (useAi: boolean) => void;
   patients: readonly ChatPatient[];
   sets: readonly ExerciseSet[];
+  /** Every set of the organization, a patient's plan included: what a card may name by id. */
+  organizationSets: readonly ExerciseSet[];
   /** The catalog sets have loaded (they load only on the chat home). */
   setsReady: boolean;
   inactiveCount: number;
@@ -82,6 +84,7 @@ export type ChatActions = Pick<
   | 'therapistId'
   | 'patients'
   | 'sets'
+  | 'organizationSets'
   | 'setsReady'
   | 'contextPatient'
   | 'sendMessage'
@@ -155,7 +158,10 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
   const router = useRouter();
   const pathname = usePathname();
   const { preference, update } = useChatMode();
-  const { patients, sets, setsReady, intentContext, loading } = useChatData(organizationId || undefined, pathname === '/');
+  const { patients, sets, organizationSets, setsReady, intentContext, loading } = useChatData(
+    organizationId || undefined,
+    pathname === '/'
+  );
   const isReady = Boolean(organizationId) && !loading;
 
   const { data: userData } = useQuery<UserByClerkIdResponse>(GET_USER_BY_CLERK_ID_QUERY, {
@@ -310,6 +316,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       therapistId,
       patients,
       sets,
+      organizationSets,
       setsReady,
       contextPatient,
       sendMessage,
@@ -326,6 +333,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       therapistId,
       patients,
       sets,
+      organizationSets,
       setsReady,
       contextPatient,
       sendMessage,
@@ -350,6 +358,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       setUseAi,
       patients,
       sets,
+      organizationSets,
       setsReady,
       inactiveCount,
       credits,
@@ -383,6 +392,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       setUseAi,
       patients,
       sets,
+      organizationSets,
       setsReady,
       inactiveCount,
       credits,

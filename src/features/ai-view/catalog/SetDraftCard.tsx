@@ -158,9 +158,10 @@ function DraftRow({ item, exercise, alternatives, locked, testId, onRemove, onSw
  * the catalog. Nothing is saved here; the next step asks for the schedule and the summary sends.
  */
 export function SetDraftCard({ spec, testId, messageId, chosen }: CardProps<'SetDraft'>) {
-  const { organizationId, patients, sets, setsReady, appendExchange, markChosen, openCreateSet } = useChatActions();
+  const { organizationId, patients, organizationSets, setsReady, appendExchange, markChosen, openCreateSet } =
+    useChatActions();
   const { exercises, loading } = useAvailableExercises(organizationId, true);
-  const set = spec.setId ? sets.find((candidate) => candidate.id === spec.setId) : undefined;
+  const set = spec.setId ? organizationSets.find((candidate) => candidate.id === spec.setId) : undefined;
   const patient = spec.patientId ? patients.find((candidate) => candidate.id === spec.patientId) : undefined;
   const byId = useMemo(() => new Map(exercises.map((exercise) => [exercise.id, exercise])), [exercises]);
 
@@ -175,7 +176,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen }: CardProps<'Set
     const seed = seedDraftItems({
       setId: spec.setId,
       exerciseIds: spec.exerciseIds,
-      sets,
+      sets: organizationSets,
       setsReady,
       exercises,
       exercisesReady: !loading,

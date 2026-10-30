@@ -85,4 +85,25 @@ describe('useCreatePatient', () => {
     await expect(first).resolves.toEqual({ id: 'p-new', name: 'Anna Nowak' });
     expect(createSetMock).toHaveBeenCalledTimes(1);
   });
+
+  it('reports the patient as added when only refreshing the lists fails afterwards', async () => {
+    createSetMock.mockReset();
+    // Apollo rejects the mutation itself when it awaits refetchQueries and one of them fails.
+    createSetMock.mockImplementation(async (options?: { awaitRefetchQueries?: boolean }) => {
+      if (options?.awaitRefetchQueries) throw new Error('refetch failed');
+      return { data: { createShadowPatient: { id: 'p-new', fullname: 'Anna Nowak' } } };
+    });
+    const { result } = renderHook(() => useCreatePatient());
+
+    let created: unknown;
+    await act(async () => {
+      created = await result.current.create('org-1', {
+        firstName: 'Anna',
+        lastName: 'Nowak',
+        sendActivationSms: false,
+      });
+    });
+
+    expect(created).toEqual({ id: 'p-new', name: 'Anna Nowak' });
+  });
 });

@@ -139,15 +139,15 @@ export function useCreatePatient() {
   const [createPatient] = useMutation<{ createShadowPatient?: { id: string; fullname?: string } }>(
     CREATE_SHADOW_PATIENT_MUTATION
   );
+  const apolloClient = useApolloClient();
 
   const { run: create, pending: creating } = useSingleFlight(
     async (organizationId: string, input: NewPatientInput, therapistId?: string) => {
       try {
         const phone = formatPatientPhone(input.phone);
         const result = await createPatient({
-          // Awaited, so the chat's patient list already has the new patient when the next card asks.
+          // Not awaited: a failed refresh would reject a create that already happened.
           refetchQueries: patientCreateRefetchQueries(organizationId, therapistId),
-          awaitRefetchQueries: true,
           variables: {
             firstName: input.firstName.trim(),
             lastName: input.lastName.trim(),
@@ -160,6 +160,14 @@ export function useCreatePatient() {
         });
         const patient = result.data?.createShadowPatient;
         if (!patient) throw new Error('Nie udało się dodać pacjenta');
+        // The chat's own list must have the new patient before the next card asks for it.
+        await apolloClient
+          .query({
+            query: GET_ORGANIZATION_PATIENTS_QUERY,
+            variables: { organizationId, filter: 'all' },
+            fetchPolicy: 'network-only',
+          })
+          .catch(() => undefined);
         return { id: patient.id, name: patient.fullname || `${input.firstName} ${input.lastName}`.trim() };
       } catch (error) {
         toast.error(errorText(error, 'Nie udało się dodać pacjenta'));
