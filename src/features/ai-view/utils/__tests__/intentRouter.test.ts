@@ -48,6 +48,11 @@ describe('routeIntent', () => {
       patientId: 'p-jan',
       setId: 's-back',
     });
+    expect(routeIntent('plan dla Jana na lędźwie', CONTEXT, 'zestaw dla Ewy na kolano')).toMatchObject({
+      component: 'SetDraft',
+      patientId: 'p-jan',
+      setId: 's-back',
+    });
     expect(routeIntent('kto nie ćwiczy', CONTEXT, 'Utwórz zestaw')).toEqual({
       component: 'PatientPeek',
       filter: 'inactive',

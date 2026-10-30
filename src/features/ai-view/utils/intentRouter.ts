@@ -126,16 +126,18 @@ function navigateTarget(normalized: string): [RegExp, NavigateRoute] | null {
 /**
  * Rule-based dispatcher used without AI (organization opted out, no credits, model down).
  * Produces the same specs as the model, so both paths share one renderer. `pendingCommand` is the
- * message a rules question ("O kogo chodzi?") answered: a reply naming one patient finishes that command.
+ * message a question ("O kogo chodzi?") was about: a reply that only names one patient finishes that command.
  */
 export function routeIntent(text: string, context: IntentContext, pendingCommand?: string): ChatViewSpec {
-  if (pendingCommand) {
+  const own = routeCommand(text, context);
+  // Only a bare answer ("Ewa Nowicka", "Jan na lędźwie") finishes the pending command; a new request wins.
+  if (pendingCommand && own.component === 'PatientPeek' && own.patientId) {
     const answer = matchPatients(text, context.patients);
     if (answer.kind === 'one') {
       return routeCommand(`${pendingCommand} ${text}`, context, { id: answer.patient.id, words: answer.consumedWords });
     }
   }
-  return routeCommand(text, context);
+  return own;
 }
 
 function routeCommand(text: string, context: IntentContext, chosen?: { id: string; words: string[] }): ChatViewSpec {

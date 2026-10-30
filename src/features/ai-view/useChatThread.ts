@@ -74,7 +74,9 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
         // AI questions count too: if the next dispatch fails, rules finish the command.
         const asksForPatient = reply.spec.component === 'Clarify' && reply.spec !== UNSUPPORTED_SPEC;
         const previousCommand = pendingCommandRef.current;
-        pendingCommandRef.current = asksForPatient ? [previousCommand, trimmed].filter(Boolean).join(' ') : undefined;
+        // "Tego jeszcze nie umiem" after a typo keeps the question open, so its options still finish it.
+        if (asksForPatient) pendingCommandRef.current = [previousCommand, trimmed].filter(Boolean).join(' ');
+        else if (reply.spec !== UNSUPPORTED_SPEC) pendingCommandRef.current = undefined;
         if (reply.sessionId) sessionRef.current = { scopeKey, id: reply.sessionId };
         const showFallback = reply.fallbackReason !== undefined && !hasNotifiedFallbackRef.current;
         if (showFallback) hasNotifiedFallbackRef.current = true;

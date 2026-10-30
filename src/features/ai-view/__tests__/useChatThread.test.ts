@@ -45,6 +45,7 @@ describe('useChatThread', () => {
     await act(() => result.current.send('zestaw dla Ewy na kolano'));
     expect(result.current.messages.at(-1)).toMatchObject({ spec: { component: 'Clarify' } });
 
+    await act(() => result.current.send('nie wiem'));
     await act(() => result.current.send('Ewa Nowicka'));
     expect(result.current.messages.at(-1)).toMatchObject({
       spec: { component: 'SetDraft', patientId: 'p-ewa-n', setId: 's-knee' },
