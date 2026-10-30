@@ -57,6 +57,7 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
 
   // Whatever is in flight belongs to the previous conversation from now on.
   const startOver = useCallback(() => {
+    abortRef.current?.abort();
     threadEpochRef.current += 1;
     inFlightRef.current = false;
     sessionRef.current = undefined;

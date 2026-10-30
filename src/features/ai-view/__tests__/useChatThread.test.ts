@@ -140,6 +140,7 @@ describe('useChatThread', () => {
       pending = result.current.send('zestaw dla Kowalskiego');
     });
     rerender({ scopeKey: 'org-b' });
+    expect((dispatchMock.mock.calls[0][2] as AbortSignal).aborted).toBe(true);
     await act(async () => {
       resolveDispatch({ sessionId: 'session-a', spec: { component: 'Navigate', route: 'patients' }, creditsUsed: 1 });
       await pending;
@@ -163,6 +164,7 @@ describe('useChatThread', () => {
       pending = result.current.send('zestaw dla Kowalskiego');
     });
     act(() => result.current.reset());
+    expect((dispatchMock.mock.calls[0][2] as AbortSignal).aborted).toBe(true);
     await act(async () => {
       resolveDispatch({ sessionId: 'session-a', spec: { component: 'Navigate', route: 'patients' }, creditsUsed: 1 });
       await pending;

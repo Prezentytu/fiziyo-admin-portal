@@ -188,14 +188,12 @@ export function ChatComposer({
       return;
     }
     if (event.key === 'Escape') {
-      if (isListening) {
-        voice.stopListening();
-        return;
-      }
+      if (isListening) voice.stopListening();
       if (busy && onStop) {
         onStop();
         return;
       }
+      if (isListening) return;
       setValue('');
       requestAnimationFrame(resize);
     }
@@ -331,7 +329,7 @@ export function ChatComposer({
               data-testid="common-chat-composer-mic-btn"
               className={ICON_BUTTON}
               onClick={toggleDictation}
-              disabled={disabled || !voice.isSupported}
+              disabled={disabled || busy || !voice.isSupported}
               aria-pressed="false"
               aria-label={voice.isSupported ? 'Dyktuj' : 'Dyktuj (niedostępne w tej przeglądarce)'}
             >
