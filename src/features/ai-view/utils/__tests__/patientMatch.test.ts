@@ -63,6 +63,20 @@ describe('matchPatients', () => {
     expect(matchPatients('ustal z Nowakiem plan', patients)).toMatchObject({ kind: 'one', patient: { id: 'p-karol' } });
   });
 
+  it('does not turn a name into another name with a feminine ending', () => {
+    const patients = [
+      { id: 'p-wiktor', name: 'Wiktor Nowak' },
+      { id: 'p-kamil', name: 'Kamil Lis' },
+      { id: 'p-antoni', name: 'Antoni Kot' },
+    ];
+    for (const text of ['zestaw dla Wiktoria', 'dla Kamili', 'plan Antonia']) {
+      expect(matchPatients(text, patients).kind).toBe('none');
+    }
+    expect(matchPatients('o Wiktorze', patients)).toMatchObject({ kind: 'one', patient: { id: 'p-wiktor' } });
+    expect(matchPatients('dla Kamila', patients)).toMatchObject({ kind: 'one', patient: { id: 'p-kamil' } });
+    expect(matchPatients('dla Antoniego', patients)).toMatchObject({ kind: 'one', patient: { id: 'p-antoni' } });
+  });
+
   it('does not treat common words as names', () => {
     expect(matchPatients('jak ewentualnie ćwiczyć kolano', PATIENTS).kind).toBe('none');
   });

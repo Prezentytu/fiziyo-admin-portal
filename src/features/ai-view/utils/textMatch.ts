@@ -30,12 +30,12 @@ export function wordMatches(candidate: string, word: string): boolean {
 
 const SHORT_NAME_LENGTH = 4;
 const SHORT_NAME_ENDINGS = ['a', 'e', 'i', 'o', 'u', 'y', 'ie', 'em', 'om', 'owi'];
-const NAME_ENDINGS = [
+// Endings per name ending: a consonant-final name is masculine (Karol → Karola, Wiktorze), so it never
+// takes feminine endings that would make it another name (Kamili, Wiktoria).
+const CONSONANT_NAME_ENDINGS = ['', 'a', 'e', 'ie', 'u', 'owi', 'em', 'iem', 'om', 'ze', 'owie', 'ow', 'ach', 'ami'];
+const VOWEL_NAME_ENDINGS = [
   '',
   ...SHORT_NAME_ENDINGS,
-  'ia',
-  'iem',
-  'iowi',
   'ego',
   'emu',
   'ej',
@@ -44,7 +44,6 @@ const NAME_ENDINGS = [
   'iego',
   'iemu',
   'iej',
-  'ze',
   'owie',
   'ow',
   'ach',
@@ -60,7 +59,8 @@ function nameForms(nameWord: string): string[] {
     if (stem.endsWith('j')) forms.push(`${stem.slice(0, -1)}i`);
     return forms;
   }
-  return wordStems(nameWord).flatMap((stem) => NAME_ENDINGS.map((ending) => stem + ending));
+  const endings = TRAILING_VOWEL.test(nameWord) ? VOWEL_NAME_ENDINGS : CONSONANT_NAME_ENDINGS;
+  return wordStems(nameWord).flatMap((stem) => endings.map((ending) => stem + ending));
 }
 
 /**
