@@ -118,10 +118,9 @@ function askWhichPatient(patients: readonly MatchablePatient[], question: string
   };
 }
 
-function navigateTarget(normalized: string): NavigateRoute | null {
+function navigateTarget(normalized: string): [RegExp, NavigateRoute] | null {
   if (!NAVIGATE_VERB_PATTERN.test(normalized)) return null;
-  const hit = NAVIGATE_TARGETS.find(([pattern]) => pattern.test(normalized));
-  return hit ? hit[1] : null;
+  return NAVIGATE_TARGETS.find(([pattern]) => pattern.test(normalized)) ?? null;
 }
 
 /**
@@ -135,8 +134,8 @@ export function routeIntent(text: string, context: IntentContext): ChatViewSpec 
   if (INACTIVE_PATTERN.test(normalized)) return { component: 'PatientPeek', filter: 'inactive' };
   if (ADD_PATIENT_PATTERN.test(normalized)) return { component: 'Navigate', route: 'patient-new' };
 
-  const route = navigateTarget(normalized);
-  if (route && !SET_PATTERN.test(normalized)) return { component: 'Navigate', route };
+  const target = navigateTarget(normalized);
+  if (target && !SET_PATTERN.test(normalized)) return { component: 'Navigate', route: target[1] };
 
   const patientMatch = matchPatients(text, context.patients);
   if (patientMatch.kind === 'many') {
@@ -144,6 +143,11 @@ export function routeIntent(text: string, context: IntentContext): ChatViewSpec 
   }
   const patientId = patientMatch.kind === 'one' ? patientMatch.patient.id : undefined;
   const topic = topicWords(text, patientMatch.consumedWords);
+
+  // "przejdź do zestawów" names only the screen; anything more ("pokaż zestaw na kolano") is a request.
+  if (target && !patientId && topic.every((word) => target[0].test(word) || NAVIGATE_VERB_PATTERN.test(word))) {
+    return { component: 'Navigate', route: target[1] };
+  }
 
   if (SET_PATTERN.test(normalized)) {
     const set = topic.length > 0 ? findBestSet(context.sets, topic) : null;

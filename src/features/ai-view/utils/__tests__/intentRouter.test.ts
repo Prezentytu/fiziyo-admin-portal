@@ -79,6 +79,12 @@ describe('routeIntent', () => {
     expect(routeIntent('   ', CONTEXT)).toEqual(UNSUPPORTED_SPEC);
   });
 
+  it('navigates to sets when the message names only the screen', () => {
+    expect(routeIntent('przejdź do zestawów', CONTEXT)).toEqual({ component: 'Navigate', route: 'exercise-sets' });
+    expect(routeIntent('pokaż zestawy', CONTEXT)).toEqual({ component: 'Navigate', route: 'exercise-sets' });
+    expect(routeIntent('pokaż zestaw na kolano', CONTEXT).component).not.toBe('Navigate');
+  });
+
   it('suggests adding a patient when asked for a set with no patients', () => {
     expect(routeIntent('utwórz zestaw', { patients: [], sets: [] })).toEqual({
       component: 'Navigate',
