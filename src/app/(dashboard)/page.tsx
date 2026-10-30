@@ -51,6 +51,8 @@ import {
 } from '@/features/patients/utils/patientActivityStatus';
 import { getPremiumQueue } from '@/features/patients/utils/premiumQueue';
 import { formatExerciseCount } from '@/utils/polishPlural';
+import { ChatView } from '@/features/ai-view/ChatView';
+import { useChatMode } from '@/features/ai-view/useChatMode';
 
 interface ExerciseSetItem {
   id: string;
@@ -149,7 +151,7 @@ const QUICK_ACTION_CLASS =
 const ROW_CLASS =
   '-mx-3 flex min-h-[60px] items-center gap-3.5 border-t-[0.5px] border-separator px-3 transition-colors hover:bg-fill-quaternary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring';
 
-export default function DashboardPage() {
+function ClassicDashboard() {
   const { user } = useUser();
   const { currentOrganization } = useOrganization();
   const { canViewBilling } = useRoleAccess();
@@ -220,30 +222,27 @@ export default function DashboardPage() {
     [exerciseSets]
   );
 
-  const patients = useMemo<PatientAssignmentData[]>(
-    () => {
-      const organizationPatients = (patientsData as OrganizationPatientsResponse | undefined)?.organizationPatients ?? [];
+  const patients = useMemo<PatientAssignmentData[]>(() => {
+    const organizationPatients = (patientsData as OrganizationPatientsResponse | undefined)?.organizationPatients ?? [];
 
-      return organizationPatients.map((item: OrganizationPatientDto) => ({
-        id: item.assignmentId ?? item.patient.id,
-        assignmentId: item.assignmentId,
-        assignmentStatus: item.assignmentStatus,
-        assignedAt: item.assignedAt,
-        contextLabel: item.contextLabel,
-        patient: {
-          id: item.patient.id,
-          fullname: item.patient.fullname,
-          email: item.patient.email,
-          image: item.patient.image,
-          isShadowUser: item.patient.isShadowUser,
-        },
-        lastActivity: item.lastActivity,
-        premiumStatus: item.premiumStatus,
-        premiumValidUntil: item.premiumValidUntil,
-      }));
-    },
-    [patientsData]
-  );
+    return organizationPatients.map((item: OrganizationPatientDto) => ({
+      id: item.assignmentId ?? item.patient.id,
+      assignmentId: item.assignmentId,
+      assignmentStatus: item.assignmentStatus,
+      assignedAt: item.assignedAt,
+      contextLabel: item.contextLabel,
+      patient: {
+        id: item.patient.id,
+        fullname: item.patient.fullname,
+        email: item.patient.email,
+        image: item.patient.image,
+        isShadowUser: item.patient.isShadowUser,
+      },
+      lastActivity: item.lastActivity,
+      premiumStatus: item.premiumStatus,
+      premiumValidUntil: item.premiumValidUntil,
+    }));
+  }, [patientsData]);
   const patientsCount = patients.length;
 
   // Get assignments with activity data
@@ -295,7 +294,11 @@ export default function DashboardPage() {
         assignmentsCount={therapistAssignmentsCount}
       />
 
-      <div role="group" aria-label="Szybkie akcje" className="flex flex-wrap gap-1.5 rounded-[18px] bg-grouped-tertiary p-1.5">
+      <div
+        role="group"
+        aria-label="Szybkie akcje"
+        className="flex flex-wrap gap-1.5 rounded-[18px] bg-grouped-tertiary p-1.5"
+      >
         <button
           type="button"
           onClick={() => setIsAssignWizardOpen(true)}
@@ -309,7 +312,10 @@ export default function DashboardPage() {
             <span className="text-[15px] font-semibold">Przypisz zestaw</span>
             <span className="text-[13px] opacity-85">Dopasuj ćwiczenia do pacjenta</span>
           </span>
-          <ArrowRight className="h-4 w-4 shrink-0 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+          <ArrowRight
+            className="h-4 w-4 shrink-0 transition-transform group-hover:translate-x-0.5"
+            aria-hidden="true"
+          />
         </button>
         <button
           type="button"
@@ -376,7 +382,11 @@ export default function DashboardPage() {
                   data-testid={`dashboard-patient-item-${assignment.patient?.id}`}
                   className={`${ROW_CLASS} flex-wrap py-2.5 sm:flex-nowrap sm:py-0`}
                 >
-                  <InitialsAvatar name={assignment.patient?.fullname} imageUrl={assignment.patient?.image} muted={isShadow} />
+                  <InitialsAvatar
+                    name={assignment.patient?.fullname}
+                    imageUrl={assignment.patient?.image}
+                    muted={isShadow}
+                  />
                   <span className="flex min-w-0 flex-1 items-center gap-2">
                     <span className="truncate text-[15px] font-semibold text-foreground">
                       {assignment.patient?.fullname || 'Nieznany'}
@@ -392,7 +402,10 @@ export default function DashboardPage() {
                     label={assignment.activity.label}
                     className="order-3 basis-full pl-[50px] sm:order-none sm:basis-auto sm:pl-0"
                   />
-                  <ChevronRight className="hidden h-3.5 w-3.5 shrink-0 text-label-tertiary sm:block" aria-hidden="true" />
+                  <ChevronRight
+                    className="hidden h-3.5 w-3.5 shrink-0 text-label-tertiary sm:block"
+                    aria-hidden="true"
+                  />
                 </Link>
               );
             })
@@ -495,7 +508,9 @@ export default function DashboardPage() {
                   <SetThumbnail exerciseMappings={set.exerciseMappings} size="sm" />
                   <span className="flex min-w-0 flex-1 flex-col">
                     <span className="truncate text-[15px] font-semibold text-foreground">{set.name}</span>
-                    <span className="text-[13px] text-label-secondary">{formatExerciseCount(set.exerciseMappings?.length || 0)}</span>
+                    <span className="text-[13px] text-label-secondary">
+                      {formatExerciseCount(set.exerciseMappings?.length || 0)}
+                    </span>
                   </span>
                 </Link>
                 <Button
@@ -593,4 +608,10 @@ export default function DashboardPage() {
       )}
     </PageSheet>
   );
+}
+
+/** Experimental chat view replaces the classic dashboard when enabled (DEC-20261030-01). */
+export default function DashboardPage() {
+  const { preference } = useChatMode();
+  return preference.enabled ? <ChatView /> : <ClassicDashboard />;
 }
