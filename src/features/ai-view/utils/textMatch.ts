@@ -30,13 +30,25 @@ export function wordMatches(candidate: string, word: string): boolean {
 
 const SHORT_NAME_LENGTH = 4;
 const SHORT_NAME_ENDINGS = ['a', 'e', 'i', 'o', 'u', 'y', 'ie', 'em', 'om', 'owi'];
-// A consonant-final name is masculine (Karol → Karola, Wiktorze) and a vowel-final one mostly feminine
-// (Kamila → Kamili, Kowalska → Kowalskiej), so neither takes endings that would make it the other name
-// (Wiktor → Wiktoria, Kamila → Kamilowi).
+// Endings follow how the name declines, so no form of one name is a form of another: a consonant-final
+// name is masculine (Karol → Karola, never Karoliny), -i/-y declines like an adjective (Kowalski →
+// Kowalskiego, Antoni → Antoniemu), -ska/-cka like a feminine adjective (Kowalska → Kowalskiej) and any
+// other vowel like a feminine noun (Kamila → Kamili, never Kamilowi).
 const CONSONANT_NAME_ENDINGS = ['', 'a', 'e', 'ie', 'u', 'owi', 'em', 'iem', 'om', 'ze', 'owie', 'ow', 'ach', 'ami'];
-const VOWEL_NAME_ENDINGS = ['a', 'e', 'i', 'o', 'y', 'ie', 'ego', 'emu', 'ej', 'im', 'ym', 'iego', 'iemu', 'iej'];
+const MASCULINE_ADJECTIVE_ENDINGS = ['i', 'y', 'ego', 'emu', 'im', 'ym', 'iego', 'iemu'];
+const FEMININE_ADJECTIVE_ENDINGS = ['a', 'iej'];
+const FEMININE_NOUN_ENDINGS = ['a', 'e', 'i', 'o', 'y', 'ie'];
 // Kasia → Kasi, Kasiu: a stem ending in i also stands bare or takes u.
 const SOFT_STEM_ENDINGS = ['', 'u'];
+const ADJECTIVE_STEM = /(sk|ck|dzk)$/;
+
+function longNameEndings(nameWord: string, stem: string): string[] {
+  if (!TRAILING_VOWEL.test(nameWord)) return CONSONANT_NAME_ENDINGS;
+  if (/[iy]$/.test(nameWord)) return MASCULINE_ADJECTIVE_ENDINGS;
+  if (ADJECTIVE_STEM.test(stem)) return FEMININE_ADJECTIVE_ENDINGS;
+  return stem.endsWith('i') ? [...FEMININE_NOUN_ENDINGS, ...SOFT_STEM_ENDINGS] : FEMININE_NOUN_ENDINGS;
+}
+
 const COMMON_WORDS = new Set(['ale']);
 
 function nameForms(nameWord: string): string[] {
@@ -47,13 +59,7 @@ function nameForms(nameWord: string): string[] {
     if (stem.endsWith('j')) forms.push(`${stem.slice(0, -1)}i`);
     return forms;
   }
-  if (!TRAILING_VOWEL.test(nameWord)) {
-    return wordStems(nameWord).flatMap((stem) => CONSONANT_NAME_ENDINGS.map((ending) => stem + ending));
-  }
-  return wordStems(nameWord).flatMap((stem) => {
-    const endings = stem.endsWith('i') ? [...VOWEL_NAME_ENDINGS, ...SOFT_STEM_ENDINGS] : VOWEL_NAME_ENDINGS;
-    return endings.map((ending) => stem + ending);
-  });
+  return wordStems(nameWord).flatMap((stem) => longNameEndings(nameWord, stem).map((ending) => stem + ending));
 }
 
 /**

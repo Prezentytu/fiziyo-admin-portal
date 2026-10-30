@@ -87,6 +87,20 @@ describe('matchPatients', () => {
     }
   });
 
+  it('keeps masculine and feminine forms of i-stem names and adjectival surnames apart', () => {
+    const antonia = [{ id: 'p-antonia', name: 'Antonia Kot' }];
+    expect(matchPatients('dla Antoniego', antonia).kind).toBe('none');
+    expect(matchPatients('dla Antonii', antonia)).toMatchObject({ kind: 'one', patient: { id: 'p-antonia' } });
+
+    const anna = [{ id: 'p-anna', name: 'Anna Kowalska' }];
+    expect(matchPatients('plan Kowalskiego', anna).kind).toBe('none');
+    expect(matchPatients('plan Kowalskiej', anna)).toMatchObject({ kind: 'one', patient: { id: 'p-anna' } });
+
+    const jan = [{ id: 'p-jan', name: 'Jan Kowalski' }];
+    expect(matchPatients('plan Kowalskiej', jan).kind).toBe('none');
+    expect(matchPatients('plan Kowalskiemu', jan)).toMatchObject({ kind: 'one', patient: { id: 'p-jan' } });
+  });
+
   it('does not treat common words as names', () => {
     expect(matchPatients('jak ewentualnie ćwiczyć kolano', PATIENTS).kind).toBe('none');
   });
