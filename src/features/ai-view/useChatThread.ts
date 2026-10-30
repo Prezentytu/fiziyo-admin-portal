@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { dispatchChatMessage } from './chatDispatchClient';
 import type { IntentContext } from './utils/intentRouter';
@@ -38,11 +38,18 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
   const [threadScope, setThreadScope] = useState(scopeKey);
   const sessionRef = useRef<{ scopeKey: string; id: string } | undefined>(undefined);
   const hasNotifiedFallbackRef = useRef(false);
+  const activeScopeRef = useRef(scopeKey);
 
   if (threadScope !== scopeKey) {
     setThreadScope(scopeKey);
     setMessages([]);
+    setIsBusy(false);
   }
+
+  useEffect(() => {
+    activeScopeRef.current = scopeKey;
+    hasNotifiedFallbackRef.current = false;
+  }, [scopeKey]);
 
   const send = useCallback(
     async (text: string) => {
@@ -57,6 +64,8 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
           context,
           dispatch: dispatchChatMessage,
         });
+        // The organization changed while the reply was in flight: it belongs to the old thread.
+        if (activeScopeRef.current !== scopeKey) return;
         if (reply.sessionId) sessionRef.current = { scopeKey, id: reply.sessionId };
         const showFallback = reply.fallbackReason !== undefined && !hasNotifiedFallbackRef.current;
         if (showFallback) hasNotifiedFallbackRef.current = true;
@@ -72,7 +81,7 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
           },
         ]);
       } finally {
-        setIsBusy(false);
+        if (activeScopeRef.current === scopeKey) setIsBusy(false);
       }
     },
     [context, isBusy, ready, scopeKey, useAi]

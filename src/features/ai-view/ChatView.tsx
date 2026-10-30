@@ -55,9 +55,14 @@ function AssistantFoot({ message }: { readonly message: Extract<ChatThreadMessag
 
 /** Chat-first home (DEC-20261029-02, DEC-20261030-01): one conversation, cards instead of free text. */
 export function ChatView() {
-  const { user } = useUser();
   const { currentOrganization } = useOrganization();
   const organizationId = currentOrganization?.organizationId ?? '';
+  // A new organization starts from scratch: thread, open wizards and dialogs never carry over.
+  return <ChatConversation key={organizationId} organizationId={organizationId} />;
+}
+
+function ChatConversation({ organizationId }: { readonly organizationId: string }) {
+  const { user } = useUser();
   const { preference, update } = useChatMode();
   const { patients, sets, intentContext, loading } = useChatData(organizationId || undefined);
   const isReady = Boolean(organizationId) && !loading;
@@ -94,7 +99,9 @@ export function ChatView() {
       sets,
       openAssign: (set, patient) => setAssignRequest({ set, patient }),
       openCreateSet: (exerciseIds, patient) => setCreateSetRequest({ exerciseIds, patient }),
-      openAddPatient: () => setIsPatientDialogOpen(true),
+      openAddPatient: () => {
+        if (therapistId) setIsPatientDialogOpen(true);
+      },
       sendMessage,
       appendSpec,
     }),
@@ -127,6 +134,7 @@ export function ChatView() {
         variant="outline"
         size="sm"
         onClick={() => setIsPatientDialogOpen(true)}
+        disabled={!isReady || !therapistId}
         data-testid="common-chat-shortcut-patient-btn"
       >
         <UserPlus aria-hidden="true" />

@@ -47,4 +47,28 @@ describe('useChatThread', () => {
     await act(() => result.current.send('kto nie ćwiczy'));
     expect(dispatchMock).toHaveBeenLastCalledWith('kto nie ćwiczy', undefined);
   });
+
+  it('drops a reply that arrives after the organization changed', async () => {
+    let resolveDispatch: (value: unknown) => void = () => undefined;
+    dispatchMock.mockReturnValueOnce(new Promise((resolve) => (resolveDispatch = resolve)));
+    const { result, rerender } = renderHook(
+      ({ scopeKey }) => useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey }),
+      { initialProps: { scopeKey: 'org-a' } }
+    );
+
+    let pending: Promise<void> = Promise.resolve();
+    act(() => {
+      pending = result.current.send('zestaw dla Kowalskiego');
+    });
+    rerender({ scopeKey: 'org-b' });
+    await act(async () => {
+      resolveDispatch({ sessionId: 'session-a', spec: { component: 'Navigate', route: 'patients' }, creditsUsed: 1 });
+      await pending;
+    });
+
+    expect(result.current.messages).toEqual([]);
+    expect(result.current.isBusy).toBe(false);
+    await act(() => result.current.send('kto nie ćwiczy'));
+    expect(dispatchMock).toHaveBeenLastCalledWith('kto nie ćwiczy', undefined);
+  });
 });
