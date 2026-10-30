@@ -72,5 +72,8 @@ export function useChatData(organizationId: string | undefined, withSets: boolea
 
   const intentContext = useMemo<IntentContext>(() => ({ patients, sets }), [patients, sets]);
 
-  return { patients, sets, intentContext, loading: patientsLoading || setsLoading };
+  // Skipped off the chat home: not loading, but not ready either.
+  const setsReady = withSets && Boolean(organizationId) && !setsLoading;
+
+  return { patients, sets, setsReady, intentContext, loading: patientsLoading || setsLoading };
 }

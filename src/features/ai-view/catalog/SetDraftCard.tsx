@@ -14,17 +14,16 @@ import {
   ExerciseParametersFields,
   type ExerciseParameterValues,
 } from '@/components/shared/exercise/ExerciseParametersFields';
-import { sortMappingsByOrder } from '@/features/assignment/utils/sortMappingsByOrder';
 import { normalizeExerciseType } from '@/utils/exerciseEnums';
 import { formatExerciseCount } from '@/utils/polishPlural';
 import { toWizardPatient, useChatActions } from '../ChatSessionContext';
 import { useAvailableExercises, type ChatCatalogExercise } from '../useAvailableExercises';
 import { findAlternatives } from '../utils/exerciseAlternatives';
-import { pickExercisesById, searchExercises } from '../utils/exerciseLookup';
+import { searchExercises } from '../utils/exerciseLookup';
+import { seedDraftItems } from '../utils/seedDraft';
 import {
   draftItemFromExercise,
   applyParameterPatch,
-  draftItemFromMapping,
   draftParameterValues,
   draftMinutes,
   scheduleQuestion,
@@ -159,25 +158,32 @@ function DraftRow({ item, exercise, alternatives, locked, testId, onRemove, onSw
  * the catalog. Nothing is saved here; the next step asks for the schedule and the summary sends.
  */
 export function SetDraftCard({ spec, testId, messageId, chosen }: CardProps<'SetDraft'>) {
-  const { organizationId, patients, sets, appendExchange, markChosen, openCreateSet } = useChatActions();
+  const { organizationId, patients, sets, setsReady, appendExchange, markChosen, openCreateSet } = useChatActions();
   const { exercises, loading } = useAvailableExercises(organizationId, true);
   const set = spec.setId ? sets.find((candidate) => candidate.id === spec.setId) : undefined;
   const patient = spec.patientId ? patients.find((candidate) => candidate.id === spec.patientId) : undefined;
   const byId = useMemo(() => new Map(exercises.map((exercise) => [exercise.id, exercise])), [exercises]);
 
   const [items, setItems] = useState<DraftItem[] | null>(null);
+  const [missingSet, setMissingSet] = useState(false);
   const [search, setSearch] = useState<string | null>(null);
   const { saveTemplateSet, saving } = useSaveTemplateSet();
   const locked = chosen !== undefined;
 
-  // Seeded once the catalog is here: defaults come from the exercise, a catalog set's mapping wins.
-  if (items === null && !loading) {
-    const seeded = set
-      ? sortMappingsByOrder(set.exerciseMappings ?? []).map((mapping) =>
-          draftItemFromMapping(mapping, byId.get(mapping.exerciseId))
-        )
-      : pickExercisesById(exercises, spec.exerciseIds).map((exercise) => draftItemFromExercise(exercise));
-    setItems(seeded);
+  // Seeded once what it comes from is here: defaults come from the exercise, a catalog set's mapping wins.
+  if (items === null) {
+    const seed = seedDraftItems({
+      setId: spec.setId,
+      exerciseIds: spec.exerciseIds,
+      sets,
+      setsReady,
+      exercises,
+      exercisesReady: !loading,
+    });
+    if (seed) {
+      setItems(seed.items);
+      setMissingSet(seed.missingSet);
+    }
   }
 
   const draftIds = (items ?? []).map((item) => item.exerciseId);
@@ -318,7 +324,11 @@ export function SetDraftCard({ spec, testId, messageId, chosen }: CardProps<'Set
           })}
         </ul>
       ) : (
-        <ChatCardEmpty testId={`${testId}-empty`}>Zestaw jest pusty. Dodaj ćwiczenia z katalogu.</ChatCardEmpty>
+        <ChatCardEmpty testId={`${testId}-empty`}>
+          {missingSet
+            ? 'Nie znalazłem tego zestawu w katalogu gabinetu. Dodaj ćwiczenia z katalogu.'
+            : 'Zestaw jest pusty. Dodaj ćwiczenia z katalogu.'}
+        </ChatCardEmpty>
       )}
 
       {!locked &&

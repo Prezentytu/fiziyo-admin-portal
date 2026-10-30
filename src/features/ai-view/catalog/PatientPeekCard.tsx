@@ -14,7 +14,7 @@ import { getPatientActivityStatus } from '@/features/patients/utils/patientActiv
 import { SEND_EXERCISE_REMINDERS_MUTATION } from '@/graphql/mutations/users.mutations';
 import { polishPlural } from '@/utils/polishPlural';
 import { useChatActions } from '../ChatSessionContext';
-import { selectInactivePatients } from '../utils/inactivePatients';
+import { pendingReminderIds, selectInactivePatients } from '../utils/inactivePatients';
 import type { CardProps } from './cardProps';
 import { ChatCard, ChatCardEmpty } from './ChatCard';
 
@@ -72,7 +72,7 @@ function InactivePatients({ testId }: { readonly testId: string }) {
   }
 
   const shown = attention.slice(0, MAX_ROWS);
-  const pending = shown.filter((patient) => !remindedIds.includes(patient.id)).map((patient) => patient.id);
+  const pending = pendingReminderIds(attention, remindedIds);
 
   return (
     <ChatCard

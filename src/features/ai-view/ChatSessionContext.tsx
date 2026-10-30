@@ -43,6 +43,8 @@ export interface ChatSession {
   setUseAi: (useAi: boolean) => void;
   patients: readonly ChatPatient[];
   sets: readonly ExerciseSet[];
+  /** The catalog sets have loaded (they load only on the chat home). */
+  setsReady: boolean;
   inactiveCount: number;
   credits?: AiCredits;
   refetchCredits: () => void;
@@ -80,6 +82,7 @@ export type ChatActions = Pick<
   | 'therapistId'
   | 'patients'
   | 'sets'
+  | 'setsReady'
   | 'contextPatient'
   | 'sendMessage'
   | 'appendAssistant'
@@ -152,7 +155,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
   const router = useRouter();
   const pathname = usePathname();
   const { preference, update } = useChatMode();
-  const { patients, sets, intentContext, loading } = useChatData(organizationId || undefined, pathname === '/');
+  const { patients, sets, setsReady, intentContext, loading } = useChatData(organizationId || undefined, pathname === '/');
   const isReady = Boolean(organizationId) && !loading;
 
   const { data: userData } = useQuery<UserByClerkIdResponse>(GET_USER_BY_CLERK_ID_QUERY, {
@@ -307,6 +310,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       therapistId,
       patients,
       sets,
+      setsReady,
       contextPatient,
       sendMessage,
       appendAssistant,
@@ -322,6 +326,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       therapistId,
       patients,
       sets,
+      setsReady,
       contextPatient,
       sendMessage,
       appendAssistant,
@@ -345,6 +350,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       setUseAi,
       patients,
       sets,
+      setsReady,
       inactiveCount,
       credits,
       refetchCredits,
@@ -377,6 +383,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       setUseAi,
       patients,
       sets,
+      setsReady,
       inactiveCount,
       credits,
       refetchCredits,
