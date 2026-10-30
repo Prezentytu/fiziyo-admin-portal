@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { MobileOrgIndicator } from '@/components/layout/MobileOrgIndicator';
 import { FeedbackButton } from '@/components/shared/FeedbackButton';
+import { ChatModeToggle } from '@/features/ai-view/ChatModeToggle';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 
 // Route name mappings
@@ -54,7 +55,10 @@ function Breadcrumbs() {
         <div key={crumb.href} className="flex items-center gap-1.5">
           <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
           {crumb.isLast ? (
-            <span data-testid={`nav-breadcrumb-item-${index}`} className="inline-flex items-center font-medium text-foreground">
+            <span
+              data-testid={`nav-breadcrumb-item-${index}`}
+              className="inline-flex items-center font-medium text-foreground"
+            >
               {crumb.label}
             </span>
           ) : (
@@ -116,6 +120,8 @@ export function Header({ onMobileMenuToggle }: HeaderProps) {
 
         {/* Right side - Notifications & Feedback (kontekst "tu i teraz") */}
         <div className="flex items-center gap-1 sm:gap-2">
+          <ChatModeToggle />
+
           {/* Notifications - KLUCZOWE dla engagement */}
           <Tooltip>
             <TooltipTrigger asChild>

@@ -12,6 +12,7 @@ import { EmptyState } from '@/components/shared/EmptyState';
 import { ProfileForm, UserProfile } from '@/components/settings/ProfileForm';
 import { OrganizationsList, UserOrganization } from '@/components/settings/OrganizationsList';
 import { AccessibilitySettings } from '@/components/settings/AccessibilitySettings';
+import { ChatModeSettings } from '@/features/ai-view/ChatModeSettings';
 import { CatalogBundleImportCard } from '@/components/organization/CatalogBundleImportCard';
 import { SettingsTab } from '@/components/organization/SettingsTab';
 
@@ -119,7 +120,10 @@ export default function SettingsPage() {
         {/* Inner Sidebar */}
         <div className="w-64 border-r-[0.5px] border-separator bg-transparent flex flex-col shrink-0">
           <div className="p-6">
-            <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground mb-6" data-testid="settings-page-title">
+            <h1
+              className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground mb-6"
+              data-testid="settings-page-title"
+            >
               Ustawienia
             </h1>
 
@@ -245,7 +249,8 @@ export default function SettingsPage() {
               )}
             </TabsContent>
 
-            <TabsContent value="accessibility" className="mt-0 outline-none">
+            <TabsContent value="accessibility" className="mt-0 space-y-6 outline-none">
+              <ChatModeSettings />
               <AccessibilitySettings />
             </TabsContent>
           </div>

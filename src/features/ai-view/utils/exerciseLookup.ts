@@ -1,0 +1,49 @@
+import { tokenizeWords, wordMatches } from './textMatch';
+
+export interface SearchableExercise {
+  id: string;
+  name: string;
+  description?: string | null;
+  patientDescription?: string | null;
+  mainTags?: ReadonlyArray<{ name?: string | null } | string> | null;
+}
+
+function exerciseWords(exercise: SearchableExercise): { name: string[]; rest: string[] } {
+  const tagNames = (exercise.mainTags ?? []).map((tag) => (typeof tag === 'string' ? tag : (tag.name ?? '')));
+  return {
+    name: tokenizeWords(exercise.name),
+    rest: tokenizeWords([exercise.description, exercise.patientDescription, ...tagNames].filter(Boolean).join(' ')),
+  };
+}
+
+/**
+ * Inflection-tolerant search for the non-AI path: every query word hits the name first,
+ * then tags and descriptions; exercises matching only some words come last.
+ */
+export function searchExercises<T extends SearchableExercise>(exercises: readonly T[], query: string, limit = 8): T[] {
+  const queryWords = tokenizeWords(query).filter((word) => word.length >= 3);
+  if (queryWords.length === 0) return [];
+
+  const ranked = exercises
+    .map((exercise) => {
+      const words = exerciseWords(exercise);
+      let nameHits = 0;
+      let otherHits = 0;
+      for (const queryWord of queryWords) {
+        if (words.name.some((word) => wordMatches(word, queryWord))) nameHits += 1;
+        else if (words.rest.some((word) => wordMatches(word, queryWord))) otherHits += 1;
+      }
+      const hits = nameHits + otherHits;
+      const allHit = hits === queryWords.length;
+      return { exercise, score: (allHit ? 100 : 0) + nameHits * 2 + otherHits, hits };
+    })
+    .filter((entry) => entry.hits > 0)
+    .sort((left, right) => right.score - left.score || left.exercise.name.localeCompare(right.exercise.name, 'pl'));
+
+  return ranked.slice(0, limit).map((entry) => entry.exercise);
+}
+
+export function pickExercisesById<T extends { id: string }>(exercises: readonly T[], ids: readonly string[]): T[] {
+  const byId = new Map(exercises.map((exercise) => [exercise.id, exercise]));
+  return ids.map((id) => byId.get(id)).filter((exercise): exercise is T => exercise !== undefined);
+}
