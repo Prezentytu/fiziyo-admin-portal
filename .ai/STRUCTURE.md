@@ -11,7 +11,7 @@ Dokument opisuje, jak układać pliki w modułach funkcyjnych (np. Assignment Wi
 
 ## Struktura src/ (po restrukturyzacji)
 
-- **src/features/** — assignment, exercises, exercise-sets, patients, verification, import, auth. Wzorzec: `utils/`, `index.ts`, `AGENTS.md`. `auth` jest mały i nie ma własnego guide'a.
+- **src/features/** — assignment, exercises, exercise-sets, patients, verification, import, ai-view (widok czatu), auth. Wzorzec: `utils/`, `index.ts`, `AGENTS.md`. `auth` jest mały i nie ma własnego guide'a.
 - **src/components/** — komponenty współdzielone: shared, ui, layout oraz auth, organization, settings, finances, clinical, chat, pdf, exercise-builder.
 - **src/graphql/**, **src/lib/**, **src/hooks/**, **src/services/**, **src/types/**, **src/contexts/**, **src/utils/** — bez zmian.
 
