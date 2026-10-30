@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LoadingState } from '@/components/shared/LoadingState';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
@@ -40,6 +41,11 @@ import type { AvailableExercisesResponse, ExerciseTagsResponse, TagCategoriesRes
 import { sortExercisesByNewest } from '@/features/exercises/utils/sortExercisesByNewest';
 import { filterExercisesBySearch } from '@/features/exercises/utils/exerciseSearch';
 import { exerciseNeedsChanges } from '@/features/exercises/utils/exerciseNeedsChanges';
+import {
+  DEFAULT_EXERCISES_PAGE_SIZE,
+  EXERCISES_PAGE_SIZE_OPTIONS,
+  paginateExercises,
+} from '@/features/exercises/utils/paginateExercises';
 import { getExerciseDefaultParams } from '@/features/exercise-sets/utils/exerciseDefaults';
 import { PageHeader } from '@/components/shared/page';
 
@@ -53,6 +59,8 @@ export default function ExercisesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sourceFilter, setSourceFilter] = useState<ExerciseSourceFilter>('all');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<number>(DEFAULT_EXERCISES_PAGE_SIZE);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
   const [deletingExercise, setDeletingExercise] = useState<Exercise | null>(null);
@@ -219,6 +227,27 @@ export default function ExercisesPage() {
     [sortedExercises, searchQuery]
   );
 
+  const exercisesPage = useMemo(
+    () => paginateExercises(filteredExercises, page, pageSize),
+    [filteredExercises, page, pageSize]
+  );
+  const visibleExercises = exercisesPage.items;
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setPage(1);
+  };
+
+  const handleSourceFilterChange = (filter: ExerciseSourceFilter) => {
+    setSourceFilter(filter);
+    setPage(1);
+  };
+
+  const handlePageSizeChange = (nextPageSize: number) => {
+    setPageSize(nextPageSize);
+    setPage(1);
+  };
+
   const handleView = (exercise: Exercise) => {
     router.push(`/exercises/${exercise.id}`);
   };
@@ -299,7 +328,7 @@ export default function ExercisesPage() {
                   <Input
                     type="search"
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => handleSearchChange(e.target.value)}
                     placeholder="Szukaj ćwiczeń"
                     className="pl-10"
                     data-testid="exercise-search-input"
@@ -350,7 +379,7 @@ export default function ExercisesPage() {
                 key={tab.id}
                 type="button"
                 aria-pressed={sourceFilter === tab.id}
-                onClick={() => setSourceFilter(tab.id)}
+                onClick={() => handleSourceFilterChange(tab.id)}
                 data-testid={tab.testId}
                 className={cn(
                   'h-11 shrink-0 whitespace-nowrap text-[15px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
@@ -376,7 +405,7 @@ export default function ExercisesPage() {
                 variant="ghost"
                 size="sm"
                 className="h-6 px-2 text-xs"
-                onClick={() => setSearchQuery('')}
+                onClick={() => handleSearchChange('')}
                 data-testid="exercise-search-clear-btn"
               >
                 Wyczyść wyszukiwanie
@@ -415,7 +444,7 @@ export default function ExercisesPage() {
             </Card>
           ) : viewMode === 'grid' ? (
             <div className={cn('grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 animate-stagger')}>
-              {filteredExercises.map((exercise) => (
+              {visibleExercises.map((exercise) => (
                 <ExerciseCard
                   key={exercise.id}
                   exercise={exercise}
@@ -433,7 +462,7 @@ export default function ExercisesPage() {
             </div>
           ) : (
             <div className="space-y-2 animate-stagger">
-              {filteredExercises.map((exercise) => (
+              {visibleExercises.map((exercise) => (
                 <ExerciseCard
                   key={exercise.id}
                   exercise={exercise}
@@ -449,6 +478,49 @@ export default function ExercisesPage() {
                   onToggleBuilder={handleToggleBuilder}
                 />
               ))}
+            </div>
+          )}
+
+          {!loading && filteredExercises.length > 0 && (
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-muted-foreground">
+                Wyświetlono {visibleExercises.length} z {exercisesPage.totalCount}
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <Select value={String(exercisesPage.pageSize)} onValueChange={(value) => handlePageSizeChange(Number(value))}>
+                  <SelectTrigger className="h-8 w-[86px]" data-testid="exercise-page-size-select">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {EXERCISES_PAGE_SIZE_OPTIONS.map((option) => (
+                      <SelectItem key={option} value={String(option)}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(exercisesPage.page - 1)}
+                  disabled={!exercisesPage.hasPreviousPage}
+                  data-testid="exercise-pagination-prev"
+                >
+                  Poprzednia
+                </Button>
+                <span className="text-sm text-muted-foreground" data-testid="exercise-pagination-indicator">
+                  Strona {exercisesPage.page} z {exercisesPage.totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(exercisesPage.page + 1)}
+                  disabled={!exercisesPage.hasNextPage}
+                  data-testid="exercise-pagination-next"
+                >
+                  Następna
+                </Button>
+              </div>
             </div>
           )}
         </div>
