@@ -32,7 +32,8 @@ function useReminders(organizationId: string) {
       const result = await sendReminders({ variables: { organizationId, patientIds } });
       const sent = result.data?.sendExerciseReminders?.sent ?? 0;
       const skipped = result.data?.sendExerciseReminders?.skipped ?? 0;
-      setRemindedIds((previous) => [...new Set([...previous, ...patientIds])]);
+      // The API counts but does not name who was skipped: mark as reminded only when nobody was.
+      if (sent > 0 && skipped === 0) setRemindedIds((previous) => [...new Set([...previous, ...patientIds])]);
       if (sent > 0) toast.success(`Wysłano ${sent} ${polishPlural(sent, 'przypomnienie', 'przypomnienia', 'przypomnień')}`);
       if (skipped > 0) {
         toast.info(`Pominięto: ${skipped}. Przypomnienie było już dziś albo pacjent nie ma jeszcze aplikacji.`);

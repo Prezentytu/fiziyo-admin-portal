@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useApolloClient, useMutation } from '@apollo/client/react';
 import { toast } from 'sonner';
 
@@ -47,9 +47,13 @@ export function useSaveTemplateSet() {
   const [addExercise] = useMutation(ADD_EXERCISE_TO_EXERCISE_SET_MUTATION);
   const apolloClient = useApolloClient();
   const [saving, setSaving] = useState(false);
+  const inFlightRef = useRef(false);
 
   const saveTemplateSet = useCallback(
     async (organizationId: string, name: string, items: readonly DraftItem[]) => {
+      // A double click lands before the disabled state renders; the ref drops the second call.
+      if (inFlightRef.current) return null;
+      inFlightRef.current = true;
       setSaving(true);
       try {
         const setId = await submitCreateTemplateSet(
@@ -66,6 +70,7 @@ export function useSaveTemplateSet() {
         toast.error(errorText(error, 'Nie udało się zapisać zestawu'));
         return null;
       } finally {
+        inFlightRef.current = false;
         setSaving(false);
       }
     },
@@ -82,9 +87,12 @@ export function useSendPlan() {
   const [assign] = useMutation<AssignedSet>(ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION);
   const apolloClient = useApolloClient();
   const [sending, setSending] = useState(false);
+  const inFlightRef = useRef(false);
 
   const send = useCallback(
     async (organizationId: string, patientId: string, draft: SetDraftPayload, plan: SchedulePlan) => {
+      if (inFlightRef.current) return null;
+      inFlightRef.current = true;
       setSending(true);
       try {
         const result = await sendPlan(
@@ -124,6 +132,7 @@ export function useSendPlan() {
         toast.error(errorText(error, 'Nie udało się wysłać zestawu'));
         return null;
       } finally {
+        inFlightRef.current = false;
         setSending(false);
       }
     },

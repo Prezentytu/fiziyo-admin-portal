@@ -49,7 +49,7 @@ interface NewPatientFormProps {
 export function NewPatientForm({ defaultName, submitLabel, busy, onSubmit, onCancel, testId }: NewPatientFormProps) {
   const form = useForm<NewPatientValues>({
     resolver: zodResolver(NEW_PATIENT_SCHEMA),
-    defaultValues: { ...splitName(defaultName), phone: '', email: '', contextLabel: '', sendActivationSms: true },
+    defaultValues: { ...splitName(defaultName), phone: '', email: '', contextLabel: '', sendActivationSms: false },
   });
   const { errors } = form.formState;
   const sendSms = useWatch({ control: form.control, name: 'sendActivationSms' });

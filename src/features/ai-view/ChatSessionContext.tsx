@@ -238,14 +238,15 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+      // Only on the chat home: elsewhere ⌘K must not throw away work in a form or editor.
+      if (pathname === '/' && (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
         startConversation();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [startConversation]);
+  }, [pathname, startConversation]);
 
   const [createSetRequest, setCreateSetRequest] = useState<CreateSetRequest | null>(null);
 
