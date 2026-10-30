@@ -36,7 +36,14 @@ export interface ResolvedReply {
  */
 export async function resolveReply(
   text: string,
-  options: { useAi: boolean; sessionId?: string; context: IntentContext; dispatch: Dispatcher }
+  options: {
+    useAi: boolean;
+    sessionId?: string;
+    context: IntentContext;
+    dispatch: Dispatcher;
+    /** The command a previous rules question was about; the model keeps its own history instead. */
+    pendingCommand?: string;
+  }
 ): Promise<ResolvedReply> {
   if (options.useAi) {
     try {
@@ -44,8 +51,13 @@ export async function resolveReply(
       return { spec: result.spec, source: 'ai', sessionId: result.sessionId, creditsUsed: result.creditsUsed };
     } catch (error) {
       const fallbackReason = error instanceof ChatDispatchError ? error.reason : 'unavailable';
-      return { spec: routeIntent(text, options.context), source: 'rules', creditsUsed: 0, fallbackReason };
+      return {
+        spec: routeIntent(text, options.context, options.pendingCommand),
+        source: 'rules',
+        creditsUsed: 0,
+        fallbackReason,
+      };
     }
   }
-  return { spec: routeIntent(text, options.context), source: 'rules', creditsUsed: 0 };
+  return { spec: routeIntent(text, options.context, options.pendingCommand), source: 'rules', creditsUsed: 0 };
 }

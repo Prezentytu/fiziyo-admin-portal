@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { dispatchChatMessage } from './chatDispatchClient';
 import type { IntentContext } from './utils/intentRouter';
 import { resolveReply, type DispatchFailure } from './utils/resolveReply';
-import type { ChatViewSpec } from './utils/viewSpec';
+import { UNSUPPORTED_SPEC, type ChatViewSpec } from './utils/viewSpec';
 
 export type ChatThreadMessage =
   | { id: string; role: 'user'; text: string }
@@ -38,6 +38,8 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
   const [threadScope, setThreadScope] = useState(scopeKey);
   const sessionRef = useRef<{ scopeKey: string; id: string } | undefined>(undefined);
   const hasNotifiedFallbackRef = useRef(false);
+  // The command behind the last rules question ("O kogo chodzi?"), so the answer finishes it.
+  const pendingCommandRef = useRef<string | undefined>(undefined);
   // Bumped by a new conversation or organization: a reply still in flight belongs to the old one.
   const threadEpochRef = useRef(0);
 
@@ -50,6 +52,7 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
   useEffect(() => {
     threadEpochRef.current += 1;
     hasNotifiedFallbackRef.current = false;
+    pendingCommandRef.current = undefined;
   }, [scopeKey]);
 
   const send = useCallback(
@@ -65,8 +68,13 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
           sessionId: sessionRef.current?.scopeKey === scopeKey ? sessionRef.current.id : undefined,
           context,
           dispatch: dispatchChatMessage,
+          pendingCommand: pendingCommandRef.current,
         });
         if (threadEpochRef.current !== epoch) return;
+        const asksForPatient =
+          reply.source === 'rules' && reply.spec.component === 'Clarify' && reply.spec !== UNSUPPORTED_SPEC;
+        const previousCommand = pendingCommandRef.current;
+        pendingCommandRef.current = asksForPatient ? [previousCommand, trimmed].filter(Boolean).join(' ') : undefined;
         if (reply.sessionId) sessionRef.current = { scopeKey, id: reply.sessionId };
         const showFallback = reply.fallbackReason !== undefined && !hasNotifiedFallbackRef.current;
         if (showFallback) hasNotifiedFallbackRef.current = true;
@@ -99,6 +107,7 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
     setIsBusy(false);
     sessionRef.current = undefined;
     hasNotifiedFallbackRef.current = false;
+    pendingCommandRef.current = undefined;
   }, []);
 
   return { messages, isBusy, send, appendSpec, reset };

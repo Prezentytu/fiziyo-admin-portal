@@ -36,6 +36,24 @@ describe('routeIntent', () => {
     expect(spec).toMatchObject({ component: 'Clarify', options: ['Ewa Wiśniewska', 'Ewa Nowicka'] });
   });
 
+  it('keeps the set request when the therapist answers which patient', () => {
+    expect(routeIntent('Ewa Wiśniewska', CONTEXT, 'zestaw dla Ewy na kolano')).toEqual({
+      component: 'SetDraft',
+      patientId: 'p-ewa-w',
+      setId: 's-knee',
+      exerciseIds: [],
+    });
+    expect(routeIntent('Jan Kowalski na lędźwie', CONTEXT, 'Utwórz zestaw')).toMatchObject({
+      component: 'SetDraft',
+      patientId: 'p-jan',
+      setId: 's-back',
+    });
+    expect(routeIntent('kto nie ćwiczy', CONTEXT, 'Utwórz zestaw')).toEqual({
+      component: 'PatientPeek',
+      filter: 'inactive',
+    });
+  });
+
   it('asks for whom when a set request names no patient and no topic', () => {
     const spec = routeIntent('Utwórz zestaw', CONTEXT);
     expect(spec.component).toBe('Clarify');
