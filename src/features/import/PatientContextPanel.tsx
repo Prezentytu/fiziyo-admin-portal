@@ -18,6 +18,7 @@ import { GET_ALL_THERAPIST_PATIENTS_QUERY } from '@/graphql/queries/therapists.q
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import type { UserByClerkIdResponse, TherapistPatientsResponse } from '@/types/apollo';
+import { polishPlural } from '@/utils/polishPlural';
 
 interface PatientOption {
   id: string;
@@ -221,7 +222,7 @@ export function PatientContextPanel({
 
             {showWarning ? (
               <p className="mt-1 text-sm text-warning">
-                {notesToCreateCount} {notesToCreateCount === 1 ? 'notatka wymaga' : 'notatki wymagają'} powiązania z
+                {notesToCreateCount} {polishPlural(notesToCreateCount, 'notatka wymaga', 'notatki wymagają', 'notatek wymaga')} powiązania z
                 pacjentem
               </p>
             ) : (
