@@ -156,14 +156,20 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
    * Resolves true only when the task's reply reached the thread.
    */
   const runTask = useCallback(
-    async (userText: string, task: () => Promise<AssistantReply>, attachmentName?: string): Promise<boolean> => {
+    async (
+      userText: string,
+      task: (signal: AbortSignal) => Promise<AssistantReply>,
+      attachmentName?: string
+    ): Promise<boolean> => {
       if (inFlightRef.current) return false;
       inFlightRef.current = true;
       pushUser(userText, attachmentName);
       setIsBusy(true);
       const epoch = threadEpochRef.current;
+      const controller = new AbortController();
+      abortRef.current = controller;
       try {
-        const reply = await task();
+        const reply = await task(controller.signal);
         if (threadEpochRef.current !== epoch) return false;
         appendAssistant(reply);
         return true;

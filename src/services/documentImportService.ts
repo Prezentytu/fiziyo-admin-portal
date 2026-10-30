@@ -30,7 +30,12 @@ class DocumentImportService {
   /**
    * Analizuje plik dokumentu (PDF, Excel, CSV, TXT)
    */
-  async analyzeDocument(file: File, patientId?: string, additionalContext?: string): Promise<DocumentAnalysisResult> {
+  async analyzeDocument(
+    file: File,
+    patientId?: string,
+    additionalContext?: string,
+    signal?: AbortSignal
+  ): Promise<DocumentAnalysisResult> {
     const url = `${this.baseUrl}/api/ai/document-analyze`;
 
     const formData = new FormData();
@@ -56,6 +61,7 @@ class DocumentImportService {
         method: 'POST',
         headers: this.getAuthHeaders(),
         body: formData,
+        signal,
       });
 
       if (!response.ok) {
@@ -92,7 +98,12 @@ class DocumentImportService {
   /**
    * Analizuje tekst bezpośrednio (bez pliku)
    */
-  async analyzeText(text: string, patientId?: string, additionalContext?: string): Promise<DocumentAnalysisResult> {
+  async analyzeText(
+    text: string,
+    patientId?: string,
+    additionalContext?: string,
+    signal?: AbortSignal
+  ): Promise<DocumentAnalysisResult> {
     const url = `${this.baseUrl}/api/ai/document-analyze-text`;
 
     if (isDev) {
@@ -114,6 +125,7 @@ class DocumentImportService {
           patientId,
           additionalContext,
         }),
+        signal,
       });
 
       if (!response.ok) {

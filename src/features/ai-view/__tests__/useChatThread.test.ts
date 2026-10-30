@@ -203,4 +203,32 @@ describe('useChatThread', () => {
     expect(dispatchMock).toHaveBeenLastCalledWith('kto nie ćwiczy', undefined, expect.any(AbortSignal));
     expect(result.current.messages).toHaveLength(6);
   });
+
+  it('stops a document task: its request is aborted, no card lands and the next send works', async () => {
+    let resolveTask: (value: { text: string }) => void = () => undefined;
+    let taskSignal: AbortSignal | undefined;
+    const { result } = renderHook(() =>
+      useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org-a' })
+    );
+
+    let pending: Promise<boolean> = Promise.resolve(false);
+    act(() => {
+      pending = result.current.runTask('Przeanalizuj dokument', (signal) => {
+        taskSignal = signal;
+        return new Promise((resolve) => (resolveTask = resolve));
+      });
+    });
+    act(() => result.current.stop());
+    expect(taskSignal?.aborted).toBe(true);
+    let landed = true;
+    await act(async () => {
+      resolveTask({ text: 'Znalazłem 3 ćwiczenia.' });
+      landed = await pending;
+    });
+
+    expect(landed).toBe(false);
+    expect(result.current.messages.map((message) => message.text)).toEqual(['Przeanalizuj dokument', STOPPED_TEXT]);
+    await act(() => result.current.send('kto nie ćwiczy'));
+    expect(result.current.messages).toHaveLength(4);
+  });
 });
