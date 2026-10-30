@@ -1,6 +1,11 @@
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { preloadPdfImages } from './pdfImagePreloader';
 import type { PDFExercise } from './types';
+import {
+  resolveEffectiveExerciseParams,
+  type EffectiveMappingSource,
+} from '@/components/shared/exercise/resolveEffectiveExerciseParams';
+import { normalizeExerciseSide, normalizeExerciseType } from '@/utils/exerciseEnums';
 
 export interface ExerciseImageSource {
   thumbnailUrl?: string;
@@ -40,4 +45,40 @@ export async function preloadPdfExerciseImages(exercises: PDFExercise[]): Promis
   }
 
   return stats;
+}
+
+export interface PdfMappingSource extends EffectiveMappingSource {
+  order?: number;
+  exercise?: EffectiveMappingSource['exercise'] & {
+    images?: string[];
+  };
+}
+
+/**
+ * Jedno mapowanie mappingu zestawu na ćwiczenie w PDF.
+ * Parametry, typ i strona idą przez `resolveEffectiveExerciseParams`, więc PDF pokazuje
+ * te same liczby co karta zestawu, kreator przypisania i podsumowanie.
+ */
+export function toPdfExercise(mapping: PdfMappingSource): PDFExercise {
+  const exercise = mapping.exercise;
+  const effective = resolveEffectiveExerciseParams(mapping);
+  return {
+    id: mapping.id,
+    name: exercise?.name || 'Nieznane ćwiczenie',
+    description: exercise?.patientDescription || exercise?.description,
+    type: normalizeExerciseType(exercise?.type),
+    exerciseSide: normalizeExerciseSide(effective.side),
+    imageUrl: resolvePdfExerciseImageUrl(exercise),
+    images: exercise?.images,
+    notes: mapping.notes || exercise?.notes,
+    sets: effective.sets,
+    reps: effective.reps,
+    duration: effective.duration,
+    executionTime: effective.executionTime,
+    restSets: effective.restSets,
+    restReps: effective.restReps,
+    order: mapping.order,
+    customName: mapping.customName,
+    customDescription: mapping.customDescription,
+  };
 }

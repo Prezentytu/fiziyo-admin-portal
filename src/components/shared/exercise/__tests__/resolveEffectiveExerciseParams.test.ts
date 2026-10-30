@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { hasExerciseOverrideContent } from '../exerciseOverride';
-import { resolveEffectiveExerciseParams } from '../resolveEffectiveExerciseParams';
+import {
+  estimateEffectiveExerciseSeconds,
+  resolveEffectiveExerciseParams,
+} from '../resolveEffectiveExerciseParams';
 
 const baseMapping = {
   id: 'mapping-1',
@@ -229,5 +232,75 @@ describe('hasExerciseOverrideContent', () => {
     expect(hasExerciseOverrideContent({})).toBe(false);
     expect(hasExerciseOverrideContent({ hidden: false })).toBe(false);
     expect(hasExerciseOverrideContent({ customImages: [] })).toBe(false);
+  });
+});
+
+describe('resolveEffectiveExerciseParams: kanon i enumy', () => {
+  it('bez wartości w mappingu i ćwiczeniu daje kanon: serie 3, przerwa 60, przerwa między powtórzeniami 0, przygotowanie 5', () => {
+    const result = resolveEffectiveExerciseParams({ id: 'm-empty', exercise: { name: 'Mostek' } });
+    expect(result.sets).toBe(3);
+    expect(result.restSets).toBe(60);
+    expect(result.restReps).toBe(0);
+    expect(result.preparationTime).toBe(5);
+  });
+
+  it('bierze przerwę z ćwiczenia, gdy mapping jej nie ma, i szanuje 0 z mappingu', () => {
+    const exercise = { name: 'Mostek', defaultRestBetweenSets: 90, defaultRestBetweenReps: 2 };
+    expect(resolveEffectiveExerciseParams({ id: 'm1', exercise }).restSets).toBe(90);
+    expect(resolveEffectiveExerciseParams({ id: 'm2', restSets: 0, exercise }).restSets).toBe(0);
+    expect(resolveEffectiveExerciseParams({ id: 'm3', exercise }).restReps).toBe(2);
+  });
+
+  it('zapisany REPS z executionTime > 0 zostaje powtórzeniowy', () => {
+    const result = resolveEffectiveExerciseParams({
+      id: 'm-reps',
+      exercise: { name: 'Wspięcia', type: 'REPS', defaultExecutionTime: 3 },
+    });
+    expect(result.isTimeBased).toBe(false);
+    expect(result.executionTime).toBe(3);
+  });
+
+  it('zapisany TIME z GraphQL (wielkie litery) jest czasowy', () => {
+    const result = resolveEffectiveExerciseParams({
+      id: 'm-time',
+      exercise: { name: 'Deska', type: 'TIME', defaultDuration: 30 },
+    });
+    expect(result.isTimeBased).toBe(true);
+  });
+
+  it('normalizuje stronę z GraphQL i nadpisania', () => {
+    expect(
+      resolveEffectiveExerciseParams({ id: 'm-side', exercise: { name: 'Wykrok', side: 'ALTERNATING' } }).side
+    ).toBe('alternating');
+    expect(
+      resolveEffectiveExerciseParams(
+        { id: 'm-side', exercise: { name: 'Wykrok', side: 'BOTH' } },
+        { exerciseSide: 'LEFT' }
+      ).side
+    ).toBe('left');
+  });
+});
+
+describe('estimateEffectiveExerciseSeconds', () => {
+  it('REPS nie liczy pozostałego duration jako czasu serii; TIME liczy', () => {
+    const reps = resolveEffectiveExerciseParams({
+      id: 'r',
+      sets: 1,
+      reps: 10,
+      duration: 300,
+      preparationTime: 0,
+      exercise: { name: 'A', type: 'REPS' },
+    });
+    const time = resolveEffectiveExerciseParams({
+      id: 't',
+      sets: 1,
+      reps: 1,
+      duration: 300,
+      preparationTime: 0,
+      exercise: { name: 'B', type: 'TIME' },
+    });
+    // 10 powtórzeń × 3 s domyślnie
+    expect(estimateEffectiveExerciseSeconds(reps)).toBe(30);
+    expect(estimateEffectiveExerciseSeconds(time)).toBe(300);
   });
 });

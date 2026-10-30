@@ -2,6 +2,8 @@ import type { ExerciseExecutionCardData } from './types';
 import type { ExerciseMapping, ExerciseLoad } from '@/features/assignment/types';
 import type { ExerciseOverrideFields } from './exerciseOverride';
 import { resolveEffectiveExerciseParams } from './resolveEffectiveExerciseParams';
+import { readExerciseTemplateParams } from './exerciseParamDefaults';
+import { normalizeExerciseSide, normalizeExerciseType } from '@/utils/exerciseEnums';
 import { applyEnrichmentOverride } from './enrichmentOverride';
 import { toV3 } from '@/features/verification/utils/enrichmentToV3';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
@@ -229,7 +231,8 @@ export function fromBuilderExercise(
     };
   }
 ): ExerciseExecutionCardData {
-  const isTimeBased = exercise.type?.toLowerCase() === 'time';
+  const isTimeBased = normalizeExerciseType(exercise.type) === 'time';
+  const template = readExerciseTemplateParams(exercise);
   const load =
     params.load ??
     buildLoadFromScalars({
@@ -253,13 +256,13 @@ export function fromBuilderExercise(
     thumbnailUrl: thumb ?? undefined,
     imageUrls: buildImageUrls(exercise.thumbnailUrl, exercise.imageUrl, exercise.images),
     videoUrl: exercise.videoUrl,
-    sets: params.sets ?? exercise.defaultSets ?? 3,
-    reps: params.reps ?? exercise.defaultReps ?? 10,
-    duration: params.duration ?? exercise.defaultDuration,
-    executionTime: params.executionTime ?? exercise.defaultExecutionTime,
-    restSets: params.restSets ?? exercise.defaultRestBetweenSets ?? 60,
-    restReps: params.restReps ?? exercise.defaultRestBetweenReps,
-    preparationTime: params.preparationTime ?? exercise.preparationTime,
+    sets: params.sets ?? template.sets,
+    reps: params.reps ?? template.reps,
+    duration: params.duration ?? template.duration,
+    executionTime: params.executionTime ?? template.executionTime,
+    restSets: params.restSets ?? template.restSets,
+    restReps: params.restReps ?? template.restReps,
+    preparationTime: params.preparationTime ?? template.preparationTime,
     tempo: params.tempo,
     loadKg,
     loadDisplayText: loadDisplayText ?? (loadKg == null ? undefined : `${loadKg} kg`),
@@ -278,7 +281,10 @@ export function fromBuilderExercise(
       .filter((tag): tag is string => Boolean(tag)),
     customName: params.customName,
     customDescription: params.customDescription,
-    side: (params.exerciseSide ?? exercise.side ?? exercise.exerciseSide ?? 'both')?.toLowerCase(),
+    side:
+      normalizeExerciseSide(params.exerciseSide) ??
+      normalizeExerciseSide(exercise.side ?? exercise.exerciseSide) ??
+      'both',
     isTimeBased,
     enrichment: params.enrichment ?? applyEnrichmentOverride(exercise.enrichmentData, null),
     templateEnrichment: toV3(exercise.enrichmentData),

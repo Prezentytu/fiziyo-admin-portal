@@ -1,4 +1,6 @@
 import { resolveLoadKg } from '@/utils/exerciseLoadMutation';
+import { calculateEstimatedTime } from '@/utils/exerciseTime';
+import { normalizeExerciseSide, normalizeExerciseType } from '@/utils/exerciseEnums';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import type { ExerciseOverrideFields } from './exerciseOverride';
 import { applyEnrichmentOverride, hasEnrichmentOverrideContent } from './enrichmentOverride';
@@ -6,6 +8,7 @@ import {
   mergeOverrideLayers,
   parseMappingOverridesJson,
 } from './mappingOverrides';
+import { readExerciseTemplateParams } from './exerciseParamDefaults';
 
 export interface EffectiveTemplateSource {
   name?: string;
@@ -47,9 +50,6 @@ export interface EffectiveTemplateSource {
   loadValue?: number;
   loadUnit?: string;
   loadText?: string;
-  sets?: number;
-  reps?: number;
-  duration?: number;
 }
 
 export interface EffectiveMappingSource {
@@ -90,9 +90,9 @@ export interface EffectiveExerciseParams {
   reps: number;
   duration?: number;
   executionTime?: number;
-  restSets?: number;
-  restReps?: number;
-  preparationTime?: number;
+  restSets: number;
+  restReps: number;
+  preparationTime: number;
   tempo?: string;
   loadKg?: number;
   loadDisplayText?: string;
@@ -168,10 +168,11 @@ function resolveSide(
   layered?: ExerciseOverrideFields,
   exercise?: EffectiveTemplateSource
 ): string {
-  const fromOverride = layered?.exerciseSide?.toString().toLowerCase();
-  if (fromOverride) return fromOverride;
-  const fromExercise = (exercise?.side ?? exercise?.exerciseSide)?.toString().toLowerCase();
-  return fromExercise || 'none';
+  return (
+    normalizeExerciseSide(layered?.exerciseSide?.toString()) ??
+    normalizeExerciseSide(exercise?.side ?? exercise?.exerciseSide) ??
+    'none'
+  );
 }
 
 /**
@@ -196,31 +197,19 @@ export function resolveEffectiveExerciseParams(
   });
   const effectiveEnrichment = applyEnrichmentOverride(exercise?.enrichmentData, layered?.enrichment);
 
-  const sets = pickDefined(layered?.sets, mapping.sets, exercise?.defaultSets, exercise?.sets) ?? 3;
-  const reps = pickDefined(layered?.reps, mapping.reps, exercise?.defaultReps, exercise?.reps) ?? 10;
-  const duration = pickDefined(
-    layered?.duration,
-    mapping.duration,
-    exercise?.defaultDuration,
-    exercise?.duration
-  );
+  const template = readExerciseTemplateParams(exercise);
+  const sets = pickDefined(layered?.sets, mapping.sets) ?? template.sets;
+  const reps = pickDefined(layered?.reps, mapping.reps) ?? template.reps;
+  const duration = pickDefined(layered?.duration, mapping.duration, template.duration);
   const executionTime = pickDefined(
     layered?.executionTime,
     mapping.executionTime,
-    exercise?.defaultExecutionTime
+    template.executionTime
   );
-  const restSets =
-    pickDefined(layered?.restSets, mapping.restSets, exercise?.defaultRestBetweenSets) ?? 60;
-  const restReps = pickDefined(
-    layered?.restReps,
-    mapping.restReps,
-    exercise?.defaultRestBetweenReps
-  );
-  const preparationTime = pickDefined(
-    layered?.preparationTime,
-    mapping.preparationTime,
-    exercise?.preparationTime
-  );
+  const restSets = pickDefined(layered?.restSets, mapping.restSets) ?? template.restSets;
+  const restReps = pickDefined(layered?.restReps, mapping.restReps) ?? template.restReps;
+  const preparationTime =
+    pickDefined(layered?.preparationTime, mapping.preparationTime) ?? template.preparationTime;
   const tempo = pickDefined(layered?.tempo, mapping.tempo, exercise?.tempo);
   const loadKg = pickDefined(
     resolveOverrideLoadKg(layered),
@@ -255,8 +244,7 @@ export function resolveEffectiveExerciseParams(
   );
   const audioCue = pickDefined(layered?.audioCue, exercise?.audioCue);
   const displayName = (customName?.trim() || exercise?.name?.trim() || 'Ćwiczenie') as string;
-  const exerciseType = exercise?.type?.toLowerCase();
-  const isTimeBased = exerciseType === 'time';
+  const isTimeBased = normalizeExerciseType(exercise?.type) === 'time';
 
   return {
     mappingId: mapping.id,
@@ -290,4 +278,22 @@ export function resolveEffectiveExerciseParams(
     overriddenKeys,
     effectiveEnrichment,
   };
+}
+
+/**
+ * Szacowany czas ćwiczenia (sekundy) z rozwiązanych parametrów.
+ * REPS nie używa pozostałego `duration` jako czasu serii (tak samo jak player mobile).
+ */
+export function estimateEffectiveExerciseSeconds(effective: EffectiveExerciseParams): number {
+  return calculateEstimatedTime({
+    sets: effective.sets,
+    reps: effective.reps,
+    duration: effective.isTimeBased ? effective.duration : undefined,
+    executionTime: effective.executionTime,
+    rest: effective.restSets,
+    restReps: effective.restReps,
+    side: effective.side,
+    preparationTime: effective.preparationTime,
+    tempo: effective.tempo,
+  });
 }

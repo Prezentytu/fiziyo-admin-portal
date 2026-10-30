@@ -1,14 +1,9 @@
+import { normalizeExerciseSide } from '@/utils/exerciseEnums';
 import { formatLoad } from '@/utils/loadParser';
 import type { ExerciseLoad } from '@/features/assignment/types';
 import type { ExerciseFieldValueSource } from './displayRegistry';
 
 interface ExerciseSourceLike {
-  sets?: number | null;
-  reps?: number | null;
-  duration?: number | null;
-  executionTime?: number | null;
-  restSets?: number | null;
-  restReps?: number | null;
   side?: string | null;
   exerciseSide?: string | null;
   preparationTime?: number | null;
@@ -90,16 +85,17 @@ export function resolveLoadDisplayText(source: ExerciseSourceLike): string | und
 
 export function normalizeExerciseFieldValues(source: ExerciseDefaultSourceLike): ExerciseFieldValueSource {
   return {
-    sets: toOptionalNumber(source.defaultSets ?? source.sets),
-    reps: toOptionalNumber(source.defaultReps ?? source.reps),
-    duration: toOptionalNumber(source.defaultDuration ?? source.duration),
-    executionTime: toOptionalNumber(source.defaultExecutionTime ?? source.executionTime),
-    restSets: toOptionalNumber(source.defaultRestBetweenSets ?? source.restSets),
-    restReps: toOptionalNumber(source.defaultRestBetweenReps ?? source.restReps),
+    // GraphQL `Exercise` ma tylko pola `default*` (bez `sets`/`restSets`).
+    sets: toOptionalNumber(source.defaultSets),
+    reps: toOptionalNumber(source.defaultReps),
+    duration: toOptionalNumber(source.defaultDuration),
+    executionTime: toOptionalNumber(source.defaultExecutionTime),
+    restSets: toOptionalNumber(source.defaultRestBetweenSets),
+    restReps: toOptionalNumber(source.defaultRestBetweenReps),
     preparationTime: toOptionalNumber(source.preparationTime),
     tempo: toOptionalString(source.tempo),
     loadDisplayText: resolveLoadDisplayText(source),
-    side: toOptionalString(source.side ?? source.exerciseSide),
+    side: normalizeExerciseSide(source.side ?? source.exerciseSide),
     rangeOfMotion: toOptionalString(source.rangeOfMotion),
     difficultyLevel: toOptionalString(source.difficultyLevel),
     patientDescription: toOptionalString(source.patientDescription ?? source.description),
