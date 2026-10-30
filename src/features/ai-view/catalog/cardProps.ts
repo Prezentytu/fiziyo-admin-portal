@@ -1,6 +1,6 @@
 import type { ChatCardSpec } from '../utils/chatCards';
 
-export type CardSpec<C extends ChatCardSpec['component']> = Extract<ChatCardSpec, { component: C }>;
+type CardSpec<C extends ChatCardSpec['component']> = Extract<ChatCardSpec, { component: C }>;
 
 export interface CardProps<C extends ChatCardSpec['component']> {
   readonly spec: CardSpec<C>;

@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { InitialsAvatar } from '@/components/shared/page';
 import { normalizeSearchText } from '@/features/exercises/utils/exerciseSearch';
 import { useChatActions } from '../ChatSessionContext';
-import { draftMinutes, proposeDraftName, type SetDraftPayload } from '../utils/setDraft';
+import { proposeDraftName, scheduleQuestion, type SetDraftPayload } from '../utils/setDraft';
 import type { CardProps } from './cardProps';
 import { ChatCard } from './ChatCard';
 import { NewPatientForm } from './NewPatientForm';
@@ -23,16 +23,18 @@ export function PickPatientCard({ spec, testId, messageId, chosen }: CardProps<'
   const [isAdding, setIsAdding] = useState(false);
   const { create, creating } = useCreatePatient();
 
+  const ordered = useMemo(
+    () =>
+      [...patients]
+        .sort((left, right) => Number(right.therapistId === therapistId) - Number(left.therapistId === therapistId))
+        .map((patient) => ({ patient, searchName: normalizeSearchText(patient.name) })),
+    [patients, therapistId]
+  );
   const matches = useMemo(() => {
     const needle = normalizeSearchText(query).trim();
-    const own = [...patients].sort(
-      (left, right) => Number(right.therapistId === therapistId) - Number(left.therapistId === therapistId)
-    );
-    return (needle ? own.filter((patient) => normalizeSearchText(patient.name).includes(needle)) : own).slice(
-      0,
-      MAX_PATIENTS
-    );
-  }, [patients, query, therapistId]);
+    const found = needle ? ordered.filter((entry) => entry.searchName.includes(needle)) : ordered;
+    return found.slice(0, MAX_PATIENTS).map((entry) => entry.patient);
+  }, [ordered, query]);
 
   const continueWith = (patientId: string, name: string) => {
     markChosen(messageId, name);
@@ -42,7 +44,7 @@ export function PickPatientCard({ spec, testId, messageId, chosen }: CardProps<'
       name: proposeDraftName({ setName: spec.draft.name.split(' · ')[0], patientName: name }),
     };
     appendExchange(name, {
-      text: `Od kiedy i jak często? Proponuję od jutra, przez 4 tygodnie, codziennie (ok. ${draftMinutes(draft.items)} min dziennie).`,
+      text: scheduleQuestion(draft.items),
       spec: { component: 'Schedule', draft },
     });
   };

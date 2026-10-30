@@ -6,7 +6,7 @@ import { FileUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useChatActions } from '../ChatSessionContext';
-import { DOCUMENT_ACCEPT, useDocumentAnalysis } from '../useDocumentAnalysis';
+import { DOCUMENT_ACCEPT, MIN_NOTE_LENGTH, useDocumentAnalysis } from '../useDocumentAnalysis';
 import type { CardProps } from './cardProps';
 import { ChatCard, ChatCardNote } from './ChatCard';
 
@@ -53,7 +53,7 @@ export function ScanVisitCard({ spec, testId, messageId, chosen }: CardProps<'Sc
           </Button>
           <Button
             onClick={() => void submitNote()}
-            disabled={isBusy || note.trim().length < 20}
+            disabled={isBusy || note.trim().length < MIN_NOTE_LENGTH}
             data-testid={`${testId}-primary-btn`}
           >
             Wyłuskaj zalecenia

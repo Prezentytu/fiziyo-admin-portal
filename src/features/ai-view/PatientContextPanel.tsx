@@ -13,6 +13,7 @@ import { GET_PATIENT_ACTIVITY_REPORT_QUERY } from '@/graphql/queries/therapists.
 import { GET_PATIENT_WEEKLY_ADHERENCE_QUERY } from '@/graphql/queries/workoutSessions.queries';
 import { useChatSession } from './ChatSessionContext';
 import type { ChatPatient } from './useChatData';
+import { formatPlanDate } from './utils/schedulePlan';
 
 interface AdherenceResponse {
   patientWeeklyAdherence?: Array<{ targetSessions: number; completedSessions: number }>;
@@ -27,8 +28,6 @@ interface ActivityReportResponse {
 interface LastVisitResponse {
   patientClinicalNotes?: Array<{ id: string; visitDate: string; title?: string | null }>;
 }
-
-const DATE_FORMAT = new Intl.DateTimeFormat('pl-PL', { day: 'numeric', month: 'long' });
 
 function Fact({ label, value, testId }: { readonly label: string; readonly value: string; readonly testId: string }) {
   return (
@@ -105,7 +104,7 @@ function PatientFacts({ patient }: { readonly patient: ChatPatient }) {
         <Fact label="Zestaw" value={sets[0]?.name ?? 'brak aktywnego'} testId="common-chat-context-set" />
         <Fact
           label="Ostatnia wizyta"
-          value={visit ? DATE_FORMAT.format(new Date(visit.visitDate)) : 'brak notatki'}
+          value={visit ? formatPlanDate(new Date(visit.visitDate)) : 'brak notatki'}
           testId="common-chat-context-visit"
         />
       </div>

@@ -119,7 +119,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
   const router = useRouter();
   const pathname = usePathname();
   const { preference, update } = useChatMode();
-  const { patients, sets, intentContext, loading } = useChatData(organizationId || undefined);
+  const { patients, sets, intentContext, loading } = useChatData(organizationId || undefined, pathname === '/');
   const isReady = Boolean(organizationId) && !loading;
 
   const { data: userData } = useQuery<UserByClerkIdResponse>(GET_USER_BY_CLERK_ID_QUERY, {

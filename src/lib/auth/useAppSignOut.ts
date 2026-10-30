@@ -19,11 +19,7 @@ export function useAppSignOut() {
   return useCallback(
     async (redirectUrl: string = '/sign-in') => {
       clearBackendToken();
-      try {
-        clearStoredConversations(window.localStorage);
-      } catch {
-        // Storage can be blocked; sign-out must still happen.
-      }
+      clearStoredConversations();
       await signOut({ redirectUrl });
     },
     [signOut]

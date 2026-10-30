@@ -4,7 +4,7 @@ import {
   draftItemFromMapping,
   draftMinutes,
   formatDraftParams,
-  moveItem,
+  scheduleQuestion,
   proposeDraftName,
   type DraftItem,
 } from '../setDraft';
@@ -63,10 +63,10 @@ describe('proposeDraftName', () => {
   });
 });
 
-describe('moveItem', () => {
-  it('moves one row and ignores out-of-range moves', () => {
-    const items = [ITEM, { ...ITEM, exerciseId: 'e2' }, { ...ITEM, exerciseId: 'e3' }];
-    expect(moveItem(items, 2, 0).map((item) => item.exerciseId)).toEqual(['e3', 'e1', 'e2']);
-    expect(moveItem(items, 0, 5).map((item) => item.exerciseId)).toEqual(['e1', 'e2', 'e3']);
+describe('scheduleQuestion', () => {
+  it('proposes the default plan with the set\'s daily minutes', () => {
+    expect(scheduleQuestion([ITEM])).toBe(
+      `Od kiedy i jak często? Proponuję od jutra, przez 4 tygodnie, codziennie (ok. ${draftMinutes([ITEM])} min dziennie).`
+    );
   });
 });

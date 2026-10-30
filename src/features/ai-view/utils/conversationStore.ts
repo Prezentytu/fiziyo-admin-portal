@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { LOCAL_CARD_COMPONENTS, type ChatCardSpec } from './chatCards';
+import { isCardComponent, type ChatCardSpec } from './chatCards';
 import type { DispatchFailure } from './resolveReply';
 
 export type ChatThreadMessage =
@@ -30,21 +30,10 @@ export const MAX_CONVERSATIONS = 20;
 export const MAX_STORED_MESSAGES = 80;
 const MAX_TITLE_LENGTH = 60;
 
-const WIRE_COMPONENTS = new Set([
-  'SetDraft',
-  'AssignSummary',
-  'ExerciseResults',
-  'PatientPeek',
-  'Navigate',
-  'Clarify',
-  'AddPatient',
-  'CreateExercise',
-]);
-
 const specSchema = z
   .object({ component: z.string() })
   .passthrough()
-  .refine((spec) => WIRE_COMPONENTS.has(spec.component) || LOCAL_CARD_COMPONENTS.has(spec.component));
+  .refine((spec) => isCardComponent(spec.component));
 
 const messageSchema = z.discriminatedUnion('role', [
   z.object({
@@ -82,13 +71,18 @@ export function conversationStorageKey(userId: string, organizationId: string): 
 export const CONVERSATION_KEY_PREFIX = 'fiziyo-chat-conversations:';
 
 /** Sign-out wipes every stored chat history in this browser; patient names live in it. */
-export function clearStoredConversations(storage: Pick<Storage, 'length' | 'key' | 'removeItem'>): void {
-  const keys: string[] = [];
-  for (let index = 0; index < storage.length; index += 1) {
-    const key = storage.key(index);
-    if (key?.startsWith(CONVERSATION_KEY_PREFIX)) keys.push(key);
+export function clearStoredConversations(storage?: Pick<Storage, 'length' | 'key' | 'removeItem'>): void {
+  try {
+    const target = storage ?? window.localStorage;
+    const keys: string[] = [];
+    for (let index = 0; index < target.length; index += 1) {
+      const key = target.key(index);
+      if (key?.startsWith(CONVERSATION_KEY_PREFIX)) keys.push(key);
+    }
+    keys.forEach((key) => target.removeItem(key));
+  } catch {
+    // Storage can be blocked; sign-out must still happen.
   }
-  keys.forEach((key) => storage.removeItem(key));
 }
 
 /** Invalid entries are dropped one by one; a broken message never takes the whole history with it. */

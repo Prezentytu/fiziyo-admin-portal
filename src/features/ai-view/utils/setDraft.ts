@@ -96,6 +96,11 @@ export function draftMinutes(items: readonly DraftItem[]): number {
   return Math.max(1, Math.ceil(items.reduce((sum, item) => sum + itemSeconds(item), 0) / 60));
 }
 
+/** The question that opens the schedule step; it proposes the default plan (DEFAULT_SCHEDULE_PLAN). */
+export function scheduleQuestion(items: readonly DraftItem[]): string {
+  return `Od kiedy i jak często? Proponuję od jutra, przez 4 tygodnie, codziennie (ok. ${draftMinutes(items)} min dziennie).`;
+}
+
 /** "3 × 10 · 5 s powtórzenie" or "3 × 30 s" when a series is held for a time. */
 export function formatDraftParams(item: DraftItem): string {
   const series =
@@ -131,12 +136,4 @@ export function proposeDraftName(options: { setName?: string; topic?: string; pa
 function capitalize(value: string | undefined): string {
   if (!value) return '';
   return value.charAt(0).toLocaleUpperCase('pl-PL') + value.slice(1);
-}
-
-export function moveItem(items: readonly DraftItem[], from: number, to: number): DraftItem[] {
-  if (from === to || from < 0 || to < 0 || from >= items.length || to >= items.length) return [...items];
-  const next = [...items];
-  const [moved] = next.splice(from, 1);
-  next.splice(to, 0, moved);
-  return next;
 }

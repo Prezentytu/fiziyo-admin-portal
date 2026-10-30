@@ -19,6 +19,7 @@ import {
   draftItemFromExercise,
   draftItemFromMapping,
   draftMinutes,
+  scheduleQuestion,
   formatDraftParams,
   itemMinutes,
   proposeDraftName,
@@ -175,11 +176,11 @@ export function SetDraftCard({ spec, testId, messageId, chosen }: CardProps<'Set
   }
 
   const draftIds = (items ?? []).map((item) => item.exerciseId);
-  const searchResults = useMemo(
-    () => (search && search.trim().length >= 3 ? searchExercises(exercises, search, 6).filter((exercise) => !draftIds.includes(exercise.id)) : []),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- draftIds is derived from items
-    [exercises, search, items]
-  );
+  const searchResults = useMemo(() => {
+    if (!search || search.trim().length < 3) return [];
+    const inDraft = new Set((items ?? []).map((item) => item.exerciseId));
+    return searchExercises(exercises, search, 6).filter((exercise) => !inDraft.has(exercise.id));
+  }, [exercises, search, items]);
 
   if (items === null) {
     return (
@@ -220,7 +221,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen }: CardProps<'Set
     markChosen(messageId, 'next');
     if (patient) {
       appendExchange('Dalej: harmonogram', {
-        text: `Od kiedy i jak często? Proponuję od jutra, przez 4 tygodnie, codziennie (ok. ${minutes} min dziennie).`,
+        text: scheduleQuestion(items),
         spec: { component: 'Schedule', draft },
       });
       return;
@@ -296,7 +297,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen }: CardProps<'Set
                 locked={locked}
                 testId={testId}
                 onRemove={() => removeItem(index)}
-                onSwap={(alternative) => updateItem(index, { ...draftItemFromExercise(alternative) })}
+                onSwap={(alternative) => updateItem(index, draftItemFromExercise(alternative))}
                 onChange={(key, value) => updateItem(index, { [key]: value })}
               />
             );

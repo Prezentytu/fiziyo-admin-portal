@@ -8,8 +8,8 @@ import type { AssistantReply } from './useChatThread';
 import { toDocumentItems } from './utils/documentItems';
 import type { DocumentItem } from './utils/chatCards';
 
-export const DOCUMENT_ACCEPT = '.pdf,.xlsx,.xls,.csv,.txt,.md';
-const MIN_NOTE_LENGTH = 20;
+export const DOCUMENT_ACCEPT = documentImportService.getSupportedFormats().join(',');
+export const MIN_NOTE_LENGTH = 20;
 
 function describeResult(items: readonly DocumentItem[]): string {
   if (items.length === 0) return 'Nie widzę w tym ćwiczeń. Napisz, co pacjent ma ćwiczyć, a ułożę zestaw.';

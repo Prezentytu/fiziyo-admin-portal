@@ -52,17 +52,22 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
     setIsBusy(false);
   }
 
-  useEffect(() => {
+  // Whatever is in flight belongs to the previous conversation from now on.
+  const startOver = useCallback(() => {
     threadEpochRef.current += 1;
     inFlightRef.current = false;
+    sessionRef.current = undefined;
     hasNotifiedFallbackRef.current = false;
     pendingCommandRef.current = undefined;
-  }, [scopeKey]);
+  }, []);
 
-  const pushAssistant = useCallback((reply: AssistantReply, source: 'ai' | 'rules' | 'local' = 'local') => {
+  useEffect(startOver, [scopeKey, startOver]);
+
+  /** A step of a flow (schedule, summary, sent) without a model call. */
+  const appendAssistant = useCallback((reply: AssistantReply) => {
     setMessages((previous) => [
       ...previous,
-      { id: newChatId(), role: 'assistant', text: reply.text, spec: reply.spec, source, creditsUsed: 0, createdAt: Date.now() },
+      { id: newChatId(), role: 'assistant', text: reply.text, spec: reply.spec, source: 'local', creditsUsed: 0, createdAt: Date.now() },
     ]);
   }, []);
 
@@ -123,16 +128,13 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
     [context, pushUser, ready, scopeKey, useAi]
   );
 
-  /** A step of a flow (schedule, summary, sent) without a model call. */
-  const appendAssistant = useCallback((reply: AssistantReply) => pushAssistant(reply), [pushAssistant]);
-
   /** What the therapist chose (a shortcut, a quick reply) and the thread's answer to it, both local. */
   const appendExchange = useCallback(
     (userText: string, reply: AssistantReply, attachmentName?: string) => {
       pushUser(userText, attachmentName);
-      pushAssistant(reply);
+      appendAssistant(reply);
     },
-    [pushAssistant, pushUser]
+    [appendAssistant, pushUser]
   );
 
   /**
@@ -149,12 +151,12 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
       try {
         const reply = await task();
         if (threadEpochRef.current !== epoch) return false;
-        pushAssistant(reply);
+        appendAssistant(reply);
         return true;
       } catch (error) {
         if (threadEpochRef.current !== epoch) return false;
         const message = error instanceof Error && error.message ? error.message : 'Nie udało się tego zrobić.';
-        pushAssistant({ text: `${message} Spróbuj jeszcze raz albo napisz, co zrobić.` });
+        appendAssistant({ text: `${message} Spróbuj jeszcze raz albo napisz, co zrobić.` });
         return false;
       } finally {
         if (threadEpochRef.current === epoch) {
@@ -163,7 +165,7 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
         }
       }
     },
-    [pushAssistant, pushUser]
+    [appendAssistant, pushUser]
   );
 
   const markChosen = useCallback((messageId: string, chosen: string) => {
@@ -174,15 +176,14 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
     );
   }, []);
 
-  const reset = useCallback((nextMessages: ChatThreadMessage[] = []) => {
-    threadEpochRef.current += 1;
-    inFlightRef.current = false;
-    setMessages(nextMessages);
-    setIsBusy(false);
-    sessionRef.current = undefined;
-    hasNotifiedFallbackRef.current = false;
-    pendingCommandRef.current = undefined;
-  }, []);
+  const reset = useCallback(
+    (nextMessages: ChatThreadMessage[] = []) => {
+      startOver();
+      setMessages(nextMessages);
+      setIsBusy(false);
+    },
+    [startOver]
+  );
 
   return { messages, isBusy, send, appendAssistant, appendExchange, runTask, markChosen, reset };
 }

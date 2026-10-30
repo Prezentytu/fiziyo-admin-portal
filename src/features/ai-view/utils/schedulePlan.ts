@@ -90,12 +90,8 @@ export function formatPlanDate(date: Date): string {
   return DATE_FORMAT.format(date);
 }
 
-function weeksLabel(weeks: number): string {
-  return `${weeks} ${polishPlural(weeks, 'tydzień', 'tygodnie', 'tygodni')}`;
-}
-
 export function planWeeksLabel(weeks: number): string {
-  return weeksLabel(weeks);
+  return `${weeks} ${polishPlural(weeks, 'tydzień', 'tygodnie', 'tygodni')}`;
 }
 
 export function planRhythmLabel(rhythm: PlanRhythm): string {
@@ -106,5 +102,5 @@ export function planRhythmLabel(rhythm: PlanRhythm): string {
 export function describePlan(plan: SchedulePlan, now: Date = new Date()): string {
   const { startDate } = resolvePlanDates(plan, now);
   const startLabel = plan.start === 'today' ? 'od dziś' : plan.start === 'tomorrow' ? 'od jutra' : 'od poniedziałku';
-  return `${startLabel}, ${formatPlanDate(startDate)} · ${weeksLabel(plan.weeks)} · ${planRhythmLabel(plan.rhythm).toLowerCase()}`;
+  return `${startLabel}, ${formatPlanDate(startDate)} · ${planWeeksLabel(plan.weeks)} · ${planRhythmLabel(plan.rhythm).toLowerCase()}`;
 }

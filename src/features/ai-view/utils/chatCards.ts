@@ -30,17 +30,30 @@ export type LocalCardSpec =
 
 export type ChatCardSpec = ChatViewSpec | LocalCardSpec;
 
-export const LOCAL_CARD_COMPONENTS: ReadonlySet<string> = new Set([
-  'PickPatient',
-  'Schedule',
-  'SendSummary',
-  'Sent',
-  'SetSaved',
-  'PatientAdded',
-  'ExerciseCreated',
-  'ScanVisit',
-  'DocumentResult',
-]);
+// Keyed by the union, so a new card does not compile until stored history accepts it.
+const CARD_COMPONENTS = {
+  SetDraft: true,
+  AssignSummary: true,
+  ExerciseResults: true,
+  PatientPeek: true,
+  Navigate: true,
+  Clarify: true,
+  AddPatient: true,
+  CreateExercise: true,
+  PickPatient: true,
+  Schedule: true,
+  SendSummary: true,
+  Sent: true,
+  SetSaved: true,
+  PatientAdded: true,
+  ExerciseCreated: true,
+  ScanVisit: true,
+  DocumentResult: true,
+} satisfies Record<ChatCardSpec['component'], true>;
+
+export function isCardComponent(component: string): boolean {
+  return Object.hasOwn(CARD_COMPONENTS, component);
+}
 
 /** The patient a card is about; the latest one names the conversation's context chip. */
 export function cardPatientId(spec: ChatCardSpec | undefined): string | undefined {
@@ -49,19 +62,17 @@ export function cardPatientId(spec: ChatCardSpec | undefined): string | undefine
     case 'SetDraft':
     case 'ExerciseResults':
     case 'PatientPeek':
-      return spec.patientId;
     case 'AssignSummary':
     case 'Sent':
     case 'PatientAdded':
     case 'ExerciseCreated':
+    case 'ScanVisit':
+    case 'DocumentResult':
       return spec.patientId;
     case 'PickPatient':
     case 'Schedule':
     case 'SendSummary':
       return spec.draft.patientId;
-    case 'ScanVisit':
-    case 'DocumentResult':
-      return spec.patientId;
     default:
       return undefined;
   }
