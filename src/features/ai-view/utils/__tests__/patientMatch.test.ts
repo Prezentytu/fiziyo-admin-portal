@@ -95,6 +95,13 @@ describe('matchPatients', () => {
       expect(matchPatients(text, antonia).kind).toBe('none');
     }
     expect(matchPatients('dla Mario', [{ id: 'p-maria', name: 'Maria Lis' }]).kind).toBe('none');
+    const short = [
+      { id: 'p-julia', name: 'Julia Nowak' },
+      { id: 'p-hania', name: 'Hania Lis' },
+    ];
+    expect(matchPatients('zestaw dla Juli', short)).toMatchObject({ kind: 'one', patient: { id: 'p-julia' } });
+    expect(matchPatients('dla Hani', short)).toMatchObject({ kind: 'one', patient: { id: 'p-hania' } });
+    expect(matchPatients('Haniu, plan', short)).toMatchObject({ kind: 'one', patient: { id: 'p-hania' } });
     const basia = [{ id: 'p-basia', name: 'Basia Nowak' }];
     for (const text of ['dla Basi', 'Basiu', 'z Basią']) {
       expect(matchPatients(text, basia)).toMatchObject({ kind: 'one', patient: { id: 'p-basia' } });
