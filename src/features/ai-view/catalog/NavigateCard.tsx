@@ -11,7 +11,7 @@ import { ChatCard } from './ChatCard';
 type NavigateSpec = Extract<ChatViewSpec, { component: 'Navigate' }>;
 
 export function NavigateCard({ spec, testId }: { readonly spec: NavigateSpec; readonly testId: string }) {
-  const { openAddPatient } = useChatActions();
+  const { openAddPatient, therapistId } = useChatActions();
   const target = NAVIGATE_ROUTES[spec.route];
 
   if (spec.route === 'patient-new') {
@@ -22,7 +22,7 @@ export function NavigateCard({ spec, testId }: { readonly spec: NavigateSpec; re
         footer={
           <>
             <span className="text-[13px] text-label-secondary">Imię, nazwisko i telefon wystarczą na start</span>
-            <Button onClick={openAddPatient} data-testid={`${testId}-primary-btn`}>
+            <Button onClick={openAddPatient} disabled={!therapistId} data-testid={`${testId}-primary-btn`}>
               Dodaj pacjenta
             </Button>
           </>
