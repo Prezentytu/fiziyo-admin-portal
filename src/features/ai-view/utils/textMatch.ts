@@ -38,15 +38,19 @@ const CONSONANT_NAME_ENDINGS = ['', 'a', 'e', 'ie', 'u', 'owi', 'em', 'iem', 'om
 const MASCULINE_ADJECTIVE_ENDINGS = ['i', 'y', 'ego', 'emu', 'im', 'ym', 'iego', 'iemu'];
 const FEMININE_ADJECTIVE_ENDINGS = ['a', 'iej'];
 const FEMININE_NOUN_ENDINGS = ['a', 'e', 'i', 'o', 'y', 'ie'];
-// Kasia → Kasi, Kasiu: a stem ending in i also stands bare or takes u.
-const SOFT_STEM_ENDINGS = ['', 'u'];
+// -ia names take only a, e, i (Maria → Marii, Marię), so Antonia never yields Antoni or Antonio; the
+// diminutives Kasia, Basia, Madzia also stand bare or take u (Kasi, Kasiu).
+const I_STEM_ENDINGS = ['a', 'e', 'i'];
+const DIMINUTIVE_STEM = /(s|c|z)i$/;
+const DIMINUTIVE_ENDINGS = ['', 'u'];
 const ADJECTIVE_STEM = /(sk|ck|dzk)$/;
 
 function longNameEndings(nameWord: string, stem: string): string[] {
   if (!TRAILING_VOWEL.test(nameWord)) return CONSONANT_NAME_ENDINGS;
   if (/[iy]$/.test(nameWord)) return MASCULINE_ADJECTIVE_ENDINGS;
   if (ADJECTIVE_STEM.test(stem)) return FEMININE_ADJECTIVE_ENDINGS;
-  return stem.endsWith('i') ? [...FEMININE_NOUN_ENDINGS, ...SOFT_STEM_ENDINGS] : FEMININE_NOUN_ENDINGS;
+  if (DIMINUTIVE_STEM.test(stem)) return [...I_STEM_ENDINGS, ...DIMINUTIVE_ENDINGS];
+  return stem.endsWith('i') ? I_STEM_ENDINGS : FEMININE_NOUN_ENDINGS;
 }
 
 const COMMON_WORDS = new Set(['ale']);
