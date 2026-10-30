@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import type { DocumentImportResult } from '@/types/import.types';
 import Link from 'next/link';
+import { polishPlural } from '@/utils/polishPlural';
 
 interface ImportSummaryProps {
   result: DocumentImportResult | null;
@@ -94,7 +95,7 @@ export function ImportSummary({
                   </div>
                   <span className="text-base">
                     Utworzono <strong>{result.exerciseSetsCreated}</strong>{' '}
-                    {result.exerciseSetsCreated === 1 ? 'zestaw' : 'zestawy'}
+                    {polishPlural(result.exerciseSetsCreated, 'zestaw', 'zestawy', 'zestawów')}
                   </span>
                 </li>
               )}
@@ -106,7 +107,7 @@ export function ImportSummary({
                   </div>
                   <span className="text-base">
                     Zapisano <strong>{result.clinicalNotesCreated}</strong>{' '}
-                    {result.clinicalNotesCreated === 1 ? 'notatkę' : 'notatki'}
+                    {polishPlural(result.clinicalNotesCreated, 'notatkę', 'notatki', 'notatek')}
                   </span>
                 </li>
               )}
@@ -130,7 +131,7 @@ export function ImportSummary({
             <AlertTriangle className="h-6 w-6 text-warning shrink-0 mt-0.5" />
             <div>
               <p className="font-medium text-foreground">
-                {skippedNotesCount} {skippedNotesCount === 1 ? 'notatka pominięta' : 'notatki pominięte'}
+                {skippedNotesCount} {polishPlural(skippedNotesCount, 'notatka pominięta', 'notatki pominięte', 'notatek pominiętych')}
               </p>
               <p className="text-sm text-muted-foreground mt-1">
                 Notatki nie zostały zaimportowane, ponieważ nie wybrano pacjenta. Następnym razem wybierz pacjenta, aby

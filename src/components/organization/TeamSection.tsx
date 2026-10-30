@@ -12,6 +12,7 @@ import { MemberCard, OrganizationMember } from './MemberCard';
 import { passesRoleFilter, isStaffRole, type RoleFilter } from './teamSectionUtils';
 import { matchesSearchQuery } from '@/utils/textUtils';
 import { cn } from '@/lib/utils';
+import { polishPlural } from '@/utils/polishPlural';
 
 interface TeamSectionProps {
   members: OrganizationMember[];
@@ -116,7 +117,7 @@ export function TeamSection({
           <div>
             <h3 className="text-lg font-semibold text-foreground">Twój Zespół</h3>
             <p className="text-sm text-muted-foreground">
-              {staffMembers.length} {staffMembers.length === 1 ? 'osoba' : 'osób'} w organizacji
+              {staffMembers.length} {polishPlural(staffMembers.length, 'osoba', 'osoby', 'osób')} w organizacji
             </p>
           </div>
         </div>
