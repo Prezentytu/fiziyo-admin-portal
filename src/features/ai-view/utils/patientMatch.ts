@@ -1,4 +1,4 @@
-import { tokenizeWords, wordMatches } from './textMatch';
+import { nameWordMatches, tokenizeWords } from './textMatch';
 
 export interface MatchablePatient {
   id: string;
@@ -21,7 +21,7 @@ function scorePatient(patient: MatchablePatient, words: string[]): Scored {
   const nameWords = tokenizeWords(patient.name).filter((word) => word.length >= 2);
   const consumed: string[] = [];
   for (const nameWord of nameWords) {
-    const hit = words.find((word) => wordMatches(word, nameWord));
+    const hit = words.find((word) => nameWordMatches(word, nameWord));
     if (hit) consumed.push(hit);
   }
   return {

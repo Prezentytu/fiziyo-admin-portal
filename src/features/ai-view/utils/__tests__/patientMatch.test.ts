@@ -33,6 +33,15 @@ describe('matchPatients', () => {
     expect(match.kind === 'many' && match.patients.map((patient) => patient.id)).toEqual(['p-ewa-w', 'p-ewa-n']);
   });
 
+  it('does not let a short first name swallow common words', () => {
+    const patients = [
+      { id: 'p-ola', name: 'Ola Lis' },
+      { id: 'p-ala', name: 'Ala Kot' },
+    ];
+    expect(matchPatients('zestaw z olejem na bliznę, ale bez alergii', patients).kind).toBe('none');
+    expect(matchPatients('plan dla Oli', patients)).toMatchObject({ kind: 'one', patient: { id: 'p-ola' } });
+  });
+
   it('does not treat common words as names', () => {
     expect(matchPatients('jak ewentualnie ćwiczyć kolano', PATIENTS).kind).toBe('none');
   });
