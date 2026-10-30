@@ -62,17 +62,20 @@ export interface PdfMappingSource extends EffectiveMappingSource {
 export function toPdfExercise(mapping: PdfMappingSource): PDFExercise {
   const exercise = mapping.exercise;
   const effective = resolveEffectiveExerciseParams(mapping);
+  const type = normalizeExerciseType(exercise?.type);
+  // TIME: serie × czas utrzymania; powtórzenia tylko jawne (mapping albo ćwiczenie), bez kanonu 10.
+  const reps = type === 'time' ? (mapping.reps ?? exercise?.defaultReps ?? undefined) : effective.reps;
   return {
     id: mapping.id,
     name: exercise?.name || 'Nieznane ćwiczenie',
     description: exercise?.patientDescription || exercise?.description,
-    type: normalizeExerciseType(exercise?.type),
+    type,
     exerciseSide: normalizeExerciseSide(effective.side),
     imageUrl: resolvePdfExerciseImageUrl(exercise),
     images: exercise?.images,
     notes: mapping.notes || exercise?.notes,
     sets: effective.sets,
-    reps: effective.reps,
+    reps,
     duration: effective.duration,
     executionTime: effective.executionTime,
     restSets: effective.restSets,
