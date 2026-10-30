@@ -1,4 +1,5 @@
 import { routeIntent, type IntentContext } from './intentRouter';
+import { describeSpec } from './replyText';
 import type { ChatViewSpec } from './viewSpec';
 
 export type DispatchFailure = 'unavailable' | 'insufficient_credits' | 'unauthorized';
@@ -15,14 +16,18 @@ export class ChatDispatchError extends Error {
 
 export interface DispatchResult {
   sessionId: string;
-  spec: ChatViewSpec;
+  /** Model's sentence; absent from older backends, then the rules sentence stands in. */
+  text?: string;
+  /** Absent when the model answered in words only. */
+  spec?: ChatViewSpec;
   creditsUsed: number;
 }
 
 export type Dispatcher = (message: string, sessionId?: string) => Promise<DispatchResult>;
 
 export interface ResolvedReply {
-  spec: ChatViewSpec;
+  text: string;
+  spec?: ChatViewSpec;
   source: 'ai' | 'rules';
   sessionId?: string;
   creditsUsed: number;
@@ -48,16 +53,36 @@ export async function resolveReply(
   if (options.useAi) {
     try {
       const result = await options.dispatch(text, options.sessionId);
-      return { spec: result.spec, source: 'ai', sessionId: result.sessionId, creditsUsed: result.creditsUsed };
+      return {
+        text: replyText(result.text, result.spec, options.context),
+        spec: result.spec,
+        source: 'ai',
+        sessionId: result.sessionId,
+        creditsUsed: result.creditsUsed,
+      };
     } catch (error) {
       const fallbackReason = error instanceof ChatDispatchError ? error.reason : 'unavailable';
-      return {
-        spec: routeIntent(text, options.context, options.pendingCommand),
-        source: 'rules',
-        creditsUsed: 0,
-        fallbackReason,
-      };
+      const spec = routeIntent(text, options.context, options.pendingCommand);
+      return { text: replyText(undefined, spec, options.context), spec, source: 'rules', creditsUsed: 0, fallbackReason };
     }
   }
-  return { spec: routeIntent(text, options.context, options.pendingCommand), source: 'rules', creditsUsed: 0 };
+  const spec = routeIntent(text, options.context, options.pendingCommand);
+  return { text: replyText(undefined, spec, options.context), spec, source: 'rules', creditsUsed: 0 };
+}
+
+/**
+ * Sentence shown above the card. A question (Clarify) always reaches the therapist, even when the
+ * model wrote a lead-in that does not repeat it.
+ */
+export function replyText(modelText: string | undefined, spec: ChatViewSpec | undefined, context: IntentContext): string {
+  const fallback = spec
+    ? describeSpec(spec, {
+        patientName: (patientId) => context.patients.find((patient) => patient.id === patientId)?.name,
+        setName: (setId) => context.sets.find((set) => set.id === setId)?.name,
+      })
+    : '';
+  const text = modelText?.trim();
+  if (!text) return fallback;
+  if (spec?.component === 'Clarify' && !text.includes(spec.question)) return `${text}\n\n${spec.question}`;
+  return text;
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { toChatViewSpec, UNSUPPORTED_SPEC } from '../viewSpec';
+import { MAX_REPLY_LENGTH, parseDispatchReply, toChatViewSpec, UNSUPPORTED_SPEC } from '../viewSpec';
 
 describe('toChatViewSpec', () => {
   it('reads a flat dispatcher spec with nulls', () => {
@@ -52,5 +52,27 @@ describe('toChatViewSpec', () => {
     expect(toChatViewSpec({ component: 'Html', html: '<script>' })).toEqual(UNSUPPORTED_SPEC);
     expect(toChatViewSpec('SetDraft')).toEqual(UNSUPPORTED_SPEC);
     expect(toChatViewSpec(null)).toEqual(UNSUPPORTED_SPEC);
+  });
+});
+
+describe('parseDispatchReply', () => {
+  it('reads the new add-patient and create-exercise cards from the flat wire fields', () => {
+    expect(parseDispatchReply({ component: 'AddPatient', query: 'Anna Nowak' }, 'Dodaję.')).toEqual({
+      text: 'Dodaję.',
+      spec: { component: 'AddPatient', name: 'Anna Nowak' },
+    });
+    expect(
+      parseDispatchReply({ component: 'CreateExercise', query: 'Mostek', note: 'Na jednej nodze' }, null)
+    ).toEqual({ text: undefined, spec: { component: 'CreateExercise', name: 'Mostek', description: 'Na jednej nodze' } });
+  });
+
+  it('answers a message with text only, and with the fallback card when text is missing', () => {
+    expect(parseDispatchReply({ component: 'Message' }, ' Umiem ułożyć zestaw. ')).toEqual({ text: 'Umiem ułożyć zestaw.' });
+    expect(parseDispatchReply({ component: 'Message' }, '')).toEqual({ spec: UNSUPPORTED_SPEC });
+  });
+
+  it('caps the text length', () => {
+    const reply = parseDispatchReply({ component: 'Message' }, 'a'.repeat(MAX_REPLY_LENGTH + 50));
+    expect(reply.text).toHaveLength(MAX_REPLY_LENGTH);
   });
 });

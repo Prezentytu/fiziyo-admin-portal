@@ -210,3 +210,13 @@ export const UPDATE_PATIENT_PREMIUM_ACCESS_MUTATION = gql`
     }
   }
 `;
+
+/** Push "Przypomnienie z gabinetu" to patients who do not exercise (chat "Przypomnij"). */
+export const SEND_EXERCISE_REMINDERS_MUTATION = gql`
+  mutation SendExerciseReminders($organizationId: String!, $patientIds: [String!]!) {
+    sendExerciseReminders(organizationId: $organizationId, patientIds: $patientIds) {
+      sent
+      skipped
+    }
+  }
+`;
