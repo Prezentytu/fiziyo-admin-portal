@@ -34,6 +34,7 @@ import { useDocumentAnalysis } from './useDocumentAnalysis';
 import { useTodayAgenda } from './useTodayAgenda';
 import type { ChatThreadMessage } from './utils/conversationStore';
 import { nextRevealMarker, revealSegments, thinkingLabel, type RevealMarker } from './utils/replyMotion';
+import { shouldTypeIntoComposer } from './utils/typeToComposer';
 import { describeIssue, type AgendaIssue } from './utils/todayAgenda';
 import type { DispatchFailure } from './utils/resolveReply';
 
@@ -468,8 +469,6 @@ function TopBar() {
   );
 }
 
-const TYPING_TARGETS = 'input, textarea, select, [contenteditable="true"], [role="dialog"], [role="menu"]';
-
 function hasDraggedFile(event: DragEvent): boolean {
   return Array.from(event.dataTransfer.types).includes('Files');
 }
@@ -497,10 +496,7 @@ export function ChatView() {
   // Typing anywhere in the chat lands in the composer, as in Claude.
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.metaKey || event.ctrlKey || event.altKey || event.key.length !== 1) return;
-      const target = event.target instanceof Element ? event.target : null;
-      if (target?.closest(TYPING_TARGETS)) return;
-      composerRef.current?.focus();
+      if (shouldTypeIntoComposer(event)) composerRef.current?.focus();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
