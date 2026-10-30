@@ -5,7 +5,7 @@ import { FileUp } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { useChatActions } from '../ChatSessionContext';
+import { useChatActions, useChatBusy } from '../ChatSessionContext';
 import { DOCUMENT_ACCEPT, MIN_NOTE_LENGTH, useDocumentAnalysis } from '../useDocumentAnalysis';
 import type { CardProps } from './cardProps';
 import { ChatCard, ChatCardNote } from './ChatCard';
@@ -15,7 +15,8 @@ import { ChatCard, ChatCardNote } from './ChatCard';
  * visit itself is not built yet; the card says so instead of pretending.
  */
 export function ScanVisitCard({ spec, testId, messageId, chosen }: CardProps<'ScanVisit'>) {
-  const { markChosen, isBusy } = useChatActions();
+  const { markChosen } = useChatActions();
+  const isBusy = useChatBusy();
   const { analyzeFile, analyzeNote } = useDocumentAnalysis();
   const [note, setNote] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);

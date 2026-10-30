@@ -1,3 +1,5 @@
+import { isSameDay } from 'date-fns';
+
 import {
   daysUntilAssignmentEnd,
   resolveAssignmentDisplayStatus,
@@ -43,14 +45,6 @@ export interface TodayAgenda {
 export const INACTIVE_FROM_DAYS = 4;
 const MAX_ISSUES = 6;
 
-function isSameLocalDay(left: Date, right: Date): boolean {
-  return (
-    left.getFullYear() === right.getFullYear() &&
-    left.getMonth() === right.getMonth() &&
-    left.getDate() === right.getDate()
-  );
-}
-
 const TIME_FORMAT = new Intl.DateTimeFormat('pl-PL', { hour: '2-digit', minute: '2-digit' });
 
 /**
@@ -73,7 +67,7 @@ export function buildTodayAgenda(input: {
   const visits = input.notes
     .filter((note) => {
       const date = new Date(note.visitDate);
-      return !Number.isNaN(date.getTime()) && isSameLocalDay(date, now) && allById.has(note.patientId);
+      return !Number.isNaN(date.getTime()) && isSameDay(date, now) && allById.has(note.patientId);
     })
     .sort((left, right) => new Date(left.visitDate).getTime() - new Date(right.visitDate).getTime())
     .map((note) => ({

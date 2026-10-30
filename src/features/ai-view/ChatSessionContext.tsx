@@ -57,6 +57,8 @@ export interface ChatSession {
   activeConversationId: string;
   title: string;
   startConversation: () => void;
+  /** Back to the chat home (`/`) from any page of the shell. */
+  goHome: () => void;
   openConversation: (id: string) => void;
   deleteConversation: (id: string) => void;
   /** Patient the conversation is about (latest card), for the header chip and the context panel. */
@@ -68,7 +70,30 @@ export interface ChatSession {
   openCreateSet: (exerciseIds: string[], patient?: Patient) => void;
 }
 
+/**
+ * What a card may read and do in the thread. Kept apart from the session so a new message or the
+ * busy flag does not re-render every card already in the thread.
+ */
+export type ChatActions = Pick<
+  ChatSession,
+  | 'organizationId'
+  | 'therapistId'
+  | 'patients'
+  | 'sets'
+  | 'contextPatient'
+  | 'sendMessage'
+  | 'appendAssistant'
+  | 'appendExchange'
+  | 'markChosen'
+  | 'runTask'
+  | 'refetchCredits'
+  | 'showPatient'
+  | 'openCreateSet'
+>;
+
 const ChatSessionContext = createContext<ChatSession | null>(null);
+const ChatActionsContext = createContext<ChatActions | null>(null);
+const ChatBusyContext = createContext(false);
 
 export function useChatSession(): ChatSession {
   const session = useContext(ChatSessionContext);
@@ -76,8 +101,16 @@ export function useChatSession(): ChatSession {
   return session;
 }
 
-/** Same as `useChatSession` for cards: one name for what a card may do in the thread. */
-export const useChatActions = useChatSession;
+export function useChatActions(): ChatActions {
+  const actions = useContext(ChatActionsContext);
+  if (!actions) throw new Error('useChatActions must be used inside ChatSessionProvider');
+  return actions;
+}
+
+/** A dispatch or a document analysis is running; cards disable their actions meanwhile. */
+export function useChatBusy(): boolean {
+  return useContext(ChatBusyContext);
+}
 
 function readConversations(key: string | undefined): StoredConversation[] {
   if (!key) return [];
@@ -155,7 +188,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
     ready: isReady,
     scopeKey: organizationId,
   });
-  const { messages, reset } = thread;
+  const { messages, reset, isBusy } = thread;
 
   const storageKey = user?.id && organizationId ? conversationStorageKey(user.id, organizationId) : undefined;
   const [conversations, setConversations] = useState<StoredConversation[]>([]);
@@ -170,8 +203,9 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
   }
 
   const lastSavedRef = useRef<readonly ChatThreadMessage[] | null>(null);
+  // Saved once an exchange settles, not on each step of it: the whole history is serialized.
   useEffect(() => {
-    if (!storageKey || messages === lastSavedRef.current) return;
+    if (!storageKey || isBusy || messages === lastSavedRef.current) return;
     lastSavedRef.current = messages;
     if (messages.length === 0) return;
     setConversations((previous) => {
@@ -179,7 +213,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       writeConversations(storageKey, next);
       return next;
     });
-  }, [activeConversationId, messages, storageKey]);
+  }, [activeConversationId, isBusy, messages, storageKey]);
 
   const [isContextOpen, setContextOpen] = useState(false);
   const [pinnedPatientId, setPinnedPatientId] = useState<string | undefined>(undefined);
@@ -260,8 +294,45 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
     [patients, therapistId]
   );
   const title = conversations.find((conversation) => conversation.id === activeConversationId)?.title ?? 'Nowa rozmowa';
-  const { send, appendAssistant, appendExchange, runTask, markChosen, isBusy } = thread;
+  const { send, appendAssistant, appendExchange, runTask, markChosen } = thread;
   const sendMessage = useCallback((text: string) => void send(text), [send]);
+  const openCreateSet = useCallback(
+    (exerciseIds: string[], patient?: Patient) => setCreateSetRequest({ exerciseIds, patient }),
+    []
+  );
+
+  const actions = useMemo<ChatActions>(
+    () => ({
+      organizationId,
+      therapistId,
+      patients,
+      sets,
+      contextPatient,
+      sendMessage,
+      appendAssistant,
+      appendExchange,
+      markChosen,
+      runTask,
+      refetchCredits,
+      showPatient,
+      openCreateSet,
+    }),
+    [
+      organizationId,
+      therapistId,
+      patients,
+      sets,
+      contextPatient,
+      sendMessage,
+      appendAssistant,
+      appendExchange,
+      markChosen,
+      runTask,
+      refetchCredits,
+      showPatient,
+      openCreateSet,
+    ]
+  );
   const setUseAi = useCallback((useAi: boolean) => update({ useAi }), [update]);
 
   const session = useMemo<ChatSession>(
@@ -288,13 +359,14 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       activeConversationId,
       title,
       startConversation,
+      goHome,
       openConversation,
       deleteConversation,
       contextPatient,
       isContextOpen,
       setContextOpen,
       showPatient,
-      openCreateSet: (exerciseIds, patient) => setCreateSetRequest({ exerciseIds, patient }),
+      openCreateSet,
     }),
     [
       organizationId,
@@ -319,17 +391,21 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       activeConversationId,
       title,
       startConversation,
+      goHome,
       openConversation,
       deleteConversation,
       contextPatient,
       isContextOpen,
       showPatient,
+      openCreateSet,
     ]
   );
 
   return (
     <ChatSessionContext.Provider value={session}>
-      {children}
+      <ChatActionsContext.Provider value={actions}>
+        <ChatBusyContext.Provider value={isBusy}>{children}</ChatBusyContext.Provider>
+      </ChatActionsContext.Provider>
       {organizationId && (
         <CreateSetWizard
           open={createSetRequest !== null}

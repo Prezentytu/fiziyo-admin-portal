@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
 import { useApolloClient, useMutation } from '@apollo/client/react';
 import { toast } from 'sonner';
+
+import { useSingleFlight } from '@/hooks/useSingleFlight';
 
 import {
   ADD_EXERCISE_TO_EXERCISE_SET_MUTATION,
@@ -47,15 +48,9 @@ export function useSaveTemplateSet() {
   const [createSet] = useMutation(CREATE_EXERCISE_SET_MUTATION);
   const [addExercise] = useMutation(ADD_EXERCISE_TO_EXERCISE_SET_MUTATION);
   const apolloClient = useApolloClient();
-  const [saving, setSaving] = useState(false);
-  const inFlightRef = useRef(false);
 
-  const saveTemplateSet = useCallback(
+  const { run: saveTemplateSet, pending: saving } = useSingleFlight(
     async (organizationId: string, name: string, items: readonly DraftItem[]) => {
-      // A double click lands before the disabled state renders; the ref drops the second call.
-      if (inFlightRef.current) return null;
-      inFlightRef.current = true;
-      setSaving(true);
       try {
         const setId = await submitCreateTemplateSet(
           {
@@ -70,12 +65,8 @@ export function useSaveTemplateSet() {
       } catch (error) {
         toast.error(errorText(error, 'Nie udało się zapisać zestawu'));
         return null;
-      } finally {
-        inFlightRef.current = false;
-        setSaving(false);
       }
-    },
-    [addExercise, apolloClient, createSet]
+    }
   );
 
   return { saveTemplateSet, saving };
@@ -87,14 +78,9 @@ export function useSendPlan() {
   const [addExercise] = useMutation(ADD_EXERCISE_TO_EXERCISE_SET_MUTATION);
   const [assign] = useMutation<AssignedSet>(ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION);
   const apolloClient = useApolloClient();
-  const [sending, setSending] = useState(false);
-  const inFlightRef = useRef(false);
 
-  const send = useCallback(
+  const { run: send, pending: sending } = useSingleFlight(
     async (organizationId: string, patientId: string, draft: SetDraftPayload, plan: SchedulePlan) => {
-      if (inFlightRef.current) return null;
-      inFlightRef.current = true;
-      setSending(true);
       try {
         const result = await sendPlan(
           { organizationId, patientId, draft, plan },
@@ -132,12 +118,8 @@ export function useSendPlan() {
       } catch (error) {
         toast.error(errorText(error, 'Nie udało się wysłać zestawu'));
         return null;
-      } finally {
-        inFlightRef.current = false;
-        setSending(false);
       }
-    },
-    [addExercise, apolloClient, assign, createSet]
+    }
   );
 
   return { send, sending };
@@ -154,15 +136,12 @@ export interface NewPatientInput {
 
 /** Shadow patient (user + organization + therapist in one step), as in the patient dialog. */
 export function useCreatePatient() {
-  const [createPatient, { loading }] = useMutation<{ createShadowPatient?: { id: string; fullname?: string } }>(
+  const [createPatient] = useMutation<{ createShadowPatient?: { id: string; fullname?: string } }>(
     CREATE_SHADOW_PATIENT_MUTATION
   );
-  const inFlightRef = useRef(false);
 
-  const create = useCallback(
+  const { run: create, pending: creating } = useSingleFlight(
     async (organizationId: string, input: NewPatientInput, therapistId?: string) => {
-      if (inFlightRef.current) return null;
-      inFlightRef.current = true;
       try {
         const phone = formatPatientPhone(input.phone);
         const result = await createPatient({
@@ -185,28 +164,20 @@ export function useCreatePatient() {
       } catch (error) {
         toast.error(errorText(error, 'Nie udało się dodać pacjenta'));
         return null;
-      } finally {
-        inFlightRef.current = false;
       }
-    },
-    [createPatient]
+    }
   );
 
-  return { create, creating: loading };
+  return { create, creating };
 }
 
 /** Organization exercise through the single create write path (`buildCreateExerciseVariables`). */
 export function useCreateExercise() {
-  const [createExercise, { loading }] = useMutation<CreateExerciseMutationResult, CreateExerciseVariables>(
-    CREATE_EXERCISE_MUTATION
-  );
+  const [createExercise] = useMutation<CreateExerciseMutationResult, CreateExerciseVariables>(CREATE_EXERCISE_MUTATION);
   const apolloClient = useApolloClient();
-  const inFlightRef = useRef(false);
 
-  const create = useCallback(
+  const { run: create, pending: creating } = useSingleFlight(
     async (organizationId: string, draft: CreateExerciseDraft) => {
-      if (inFlightRef.current) return null;
-      inFlightRef.current = true;
       try {
         const result = await createExercise({ variables: buildCreateExerciseVariables({ organizationId, draft }) });
         const exercise = result.data?.createExercise;
@@ -218,12 +189,9 @@ export function useCreateExercise() {
       } catch (error) {
         toast.error(errorText(error, 'Nie udało się utworzyć ćwiczenia'));
         return null;
-      } finally {
-        inFlightRef.current = false;
       }
-    },
-    [apolloClient, createExercise]
+    }
   );
 
-  return { create, creating: loading };
+  return { create, creating };
 }

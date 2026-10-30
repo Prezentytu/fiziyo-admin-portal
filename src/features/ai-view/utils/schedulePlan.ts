@@ -1,3 +1,5 @@
+import { addDays, startOfDay } from 'date-fns';
+
 import type { Frequency } from '@/features/assignment/types';
 import { normalizeFrequencySeed } from '@/features/assignment/utils/scheduleFrequencyUtils';
 import { getDefaultDaysForFrequency, type WeekDays } from '@/features/assignment/utils/scheduleUtils';
@@ -47,16 +49,6 @@ const EVERY_DAY: WeekDays = {
   saturday: true,
   sunday: true,
 };
-
-function startOfDay(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-}
-
-function addDays(date: Date, days: number): Date {
-  const next = new Date(date);
-  next.setDate(next.getDate() + days);
-  return next;
-}
 
 export function planStartDate(start: PlanStart, now: Date = new Date()): Date {
   const today = startOfDay(now);

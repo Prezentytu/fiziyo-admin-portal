@@ -6,6 +6,8 @@ import { useMutation } from '@apollo/client/react';
 import { Bell, Check } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { useSingleFlight } from '@/hooks/useSingleFlight';
+
 import { Button } from '@/components/ui/button';
 import { ActivityStatusLabel, InitialsAvatar } from '@/components/shared/page';
 import { getPatientActivityStatus } from '@/features/patients/utils/patientActivityStatus';
@@ -17,33 +19,35 @@ import type { CardProps } from './cardProps';
 import { ChatCard, ChatCardEmpty } from './ChatCard';
 
 const MAX_ROWS = 6;
-const ROW_CLASS = 'flex min-h-14 flex-wrap items-center gap-3 border-t-[0.5px] border-hairline pt-2 first:border-t-0 first:pt-0';
+const ROW_CLASS =
+  'flex min-h-14 flex-wrap items-center gap-3 border-t-[0.5px] border-hairline pt-2 first:border-t-0 first:pt-0';
 
 interface ReminderResult {
   sendExerciseReminders?: { sent: number; skipped: number };
 }
 
 function useReminders(organizationId: string) {
-  const [sendReminders, { loading }] = useMutation<ReminderResult>(SEND_EXERCISE_REMINDERS_MUTATION);
+  const [sendReminders] = useMutation<ReminderResult>(SEND_EXERCISE_REMINDERS_MUTATION);
   const [remindedIds, setRemindedIds] = useState<string[]>([]);
 
-  const remind = async (patientIds: string[]) => {
+  const { run: remind, pending: sending } = useSingleFlight(async (patientIds: string[]) => {
     try {
       const result = await sendReminders({ variables: { organizationId, patientIds } });
       const sent = result.data?.sendExerciseReminders?.sent ?? 0;
       const skipped = result.data?.sendExerciseReminders?.skipped ?? 0;
       // The API counts but does not name who was skipped: mark as reminded only when nobody was.
       if (sent > 0 && skipped === 0) setRemindedIds((previous) => [...new Set([...previous, ...patientIds])]);
-      if (sent > 0) toast.success(`Wysłano ${sent} ${polishPlural(sent, 'przypomnienie', 'przypomnienia', 'przypomnień')}`);
+      if (sent > 0)
+        toast.success(`Wysłano ${sent} ${polishPlural(sent, 'przypomnienie', 'przypomnienia', 'przypomnień')}`);
       if (skipped > 0) {
         toast.info(`Pominięto: ${skipped}. Przypomnienie było już dziś albo pacjent nie ma jeszcze aplikacji.`);
       }
     } catch {
       toast.error('Nie udało się wysłać przypomnienia');
     }
-  };
+  });
 
-  return { remind, sending: loading, remindedIds };
+  return { remind, sending, remindedIds };
 }
 
 function InactivePatients({ testId }: { readonly testId: string }) {
@@ -81,7 +85,9 @@ function InactivePatients({ testId }: { readonly testId: string }) {
               Wszyscy pacjenci
             </Link>
           ) : (
-            <span className="text-[13px] text-label-secondary">Przypomnienie przyjdzie jako powiadomienie w aplikacji</span>
+            <span className="text-[13px] text-label-secondary">
+              Przypomnienie przyjdzie jako powiadomienie w aplikacji
+            </span>
           )}
           <Button
             onClick={() => void remind(pending)}
@@ -146,7 +152,12 @@ export function PatientPeekCard({ spec, testId }: CardProps<'PatientPeek'>) {
       testId={testId}
       footer={
         <>
-          <Button variant="ghost" size="sm" onClick={() => showPatient(patient.id)} data-testid={`${testId}-context-btn`}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => showPatient(patient.id)}
+            data-testid={`${testId}-context-btn`}
+          >
             Kontekst
           </Button>
           <div className="flex flex-wrap gap-2">

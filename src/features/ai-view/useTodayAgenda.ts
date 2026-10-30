@@ -1,5 +1,6 @@
 'use client';
 
+import { addDays, startOfDay } from 'date-fns';
 import { useMemo } from 'react';
 import { useQuery } from '@apollo/client/react';
 
@@ -17,9 +18,8 @@ interface AssignmentsResponse {
 }
 
 function todayRange(now: Date): { from: string; to: string } {
-  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const end = new Date(start);
-  end.setDate(end.getDate() + 1);
+  const start = startOfDay(now);
+  const end = addDays(start, 1);
   return { from: start.toISOString(), to: end.toISOString() };
 }
 

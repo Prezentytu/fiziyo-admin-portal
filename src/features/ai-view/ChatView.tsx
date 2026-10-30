@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { CalendarDays, ChevronDown, FileText, FolderPlus, Menu, Sparkles, SquarePen, UserPlus } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -34,7 +34,12 @@ function greeting(now: Date): string {
   return 'Dzień dobry';
 }
 
-function AssistantMessage({ message }: { readonly message: Extract<ChatThreadMessage, { role: 'assistant' }> }) {
+// Memoized: a new message leaves the cards above it alone (a spent card keeps its message object).
+const AssistantMessage = memo(function AssistantMessage({
+  message,
+}: {
+  readonly message: Extract<ChatThreadMessage, { role: 'assistant' }>;
+}) {
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-3.5">
       {message.text && (
@@ -57,7 +62,7 @@ function AssistantMessage({ message }: { readonly message: Extract<ChatThreadMes
       ) : null}
     </div>
   );
-}
+});
 
 function TodayAgenda() {
   const { visits, issues } = useTodayAgenda();
@@ -94,7 +99,8 @@ function TodayAgenda() {
         </span>
         <span className="h-[3px] w-[3px] rounded-full bg-label-tertiary" aria-hidden="true" />
         <span>
-          <b className="font-semibold text-foreground">{issues.length}</b> {polishPlural(issues.length, 'sprawa', 'sprawy', 'spraw')}
+          <b className="font-semibold text-foreground">{issues.length}</b>{' '}
+          {polishPlural(issues.length, 'sprawa', 'sprawy', 'spraw')}
         </span>
         <ChevronDown className={cn('h-4 w-4 transition-transform', isOpen && 'rotate-180')} aria-hidden="true" />
       </button>
@@ -104,7 +110,10 @@ function TodayAgenda() {
           className="w-full animate-chat-rise rounded-[18px] border-[0.5px] border-separator px-4 py-1"
         >
           {visits.map((visit) => (
-            <li key={`visit-${visit.patientId}-${visit.time}`} className="border-t-[0.5px] border-hairline first:border-t-0">
+            <li
+              key={`visit-${visit.patientId}-${visit.time}`}
+              className="border-t-[0.5px] border-hairline first:border-t-0"
+            >
               <button
                 type="button"
                 onClick={() =>
@@ -116,11 +125,15 @@ function TodayAgenda() {
                 data-testid={`common-chat-today-visit-${visit.patientId}-btn`}
                 className="flex min-h-14 w-full items-center gap-3 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <span className="w-11 shrink-0 text-[14px] font-semibold tabular-nums text-foreground">{visit.time}</span>
+                <span className="w-11 shrink-0 text-[14px] font-semibold tabular-nums text-foreground">
+                  {visit.time}
+                </span>
                 <CalendarDays className="h-4 w-4 shrink-0 text-tint" aria-hidden="true" />
                 <span className="min-w-0 flex-1">
                   <b className="block truncate text-[15px] font-medium text-foreground">{visit.name}</b>
-                  {visit.title && <span className="block truncate text-[13px] text-label-secondary">{visit.title}</span>}
+                  {visit.title && (
+                    <span className="block truncate text-[13px] text-label-secondary">{visit.title}</span>
+                  )}
                 </span>
               </button>
             </li>
@@ -153,7 +166,13 @@ function TodayAgenda() {
   );
 }
 
-function ChatHome({ onSend, onAttach }: { readonly onSend: (text: string) => void; readonly onAttach: (file: File) => void }) {
+function ChatHome({
+  onSend,
+  onAttach,
+}: {
+  readonly onSend: (text: string) => void;
+  readonly onAttach: (file: File) => void;
+}) {
   const { firstName, isBusy, isReady } = useChatSession();
   const shortcuts = useChatShortcuts();
   const [now] = useState(() => new Date());
@@ -248,7 +267,11 @@ function TopBar() {
             isContextOpen ? 'border-transparent bg-fill-tertiary' : 'border-hairline bg-card hover:bg-fill-quaternary'
           )}
         >
-          <InitialsAvatar name={contextPatient.name} imageUrl={contextPatient.image} className="h-[26px] w-[26px] [&_span]:text-[10px]" />
+          <InitialsAvatar
+            name={contextPatient.name}
+            imageUrl={contextPatient.image}
+            className="h-[26px] w-[26px] [&_span]:text-[10px]"
+          />
           <span className="truncate">{contextPatient.name}</span>
         </button>
       )}
@@ -283,7 +306,10 @@ export function ChatView() {
   return (
     <div
       data-testid="common-chat-view"
-      className={cn('grid min-h-0 flex-1 bg-card', isContextOpen && isWide ? 'grid-cols-[minmax(0,1fr)_340px]' : 'grid-cols-1')}
+      className={cn(
+        'grid min-h-0 flex-1 bg-card',
+        isContextOpen && isWide ? 'grid-cols-[minmax(0,1fr)_340px]' : 'grid-cols-1'
+      )}
     >
       <section className="flex min-h-0 min-w-0 flex-col">
         <TopBar />
@@ -321,7 +347,10 @@ export function ChatView() {
                 )}
                 {isBusy && (
                   <li className="flex items-center gap-2.5 text-[15px]" data-testid="common-chat-thinking">
-                    <Sparkles className="h-[18px] w-[18px] animate-spin text-tint [animation-duration:2.4s]" aria-hidden="true" />
+                    <Sparkles
+                      className="h-[18px] w-[18px] animate-spin text-tint [animation-duration:2.4s]"
+                      aria-hidden="true"
+                    />
                     <span className="text-chat-shimmer">Sprawdzam pacjentów i katalog…</span>
                   </li>
                 )}

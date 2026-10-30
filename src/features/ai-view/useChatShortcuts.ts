@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
 
 import { useChatSession } from './ChatSessionContext';
 
@@ -10,13 +9,7 @@ import { useChatSession } from './ChatSessionContext';
  * answers in the thread right away, without a model call, and brings the therapist back to chat.
  */
 export function useChatShortcuts() {
-  const { appendExchange, isReady } = useChatSession();
-  const router = useRouter();
-  const pathname = usePathname();
-
-  const goHome = useCallback(() => {
-    if (pathname !== '/') router.push('/');
-  }, [pathname, router]);
+  const { appendExchange, isReady, goHome } = useChatSession();
 
   const createSet = useCallback(() => {
     appendExchange('Utwórz zestaw', {
