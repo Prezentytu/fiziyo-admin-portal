@@ -30,25 +30,13 @@ export function wordMatches(candidate: string, word: string): boolean {
 
 const SHORT_NAME_LENGTH = 4;
 const SHORT_NAME_ENDINGS = ['a', 'e', 'i', 'o', 'u', 'y', 'ie', 'em', 'om', 'owi'];
-// Endings per name ending: a consonant-final name is masculine (Karol → Karola, Wiktorze), so it never
-// takes feminine endings that would make it another name (Kamili, Wiktoria).
+// A consonant-final name is masculine (Karol → Karola, Wiktorze) and a vowel-final one mostly feminine
+// (Kamila → Kamili, Kowalska → Kowalskiej), so neither takes endings that would make it the other name
+// (Wiktor → Wiktoria, Kamila → Kamilowi).
 const CONSONANT_NAME_ENDINGS = ['', 'a', 'e', 'ie', 'u', 'owi', 'em', 'iem', 'om', 'ze', 'owie', 'ow', 'ach', 'ami'];
-const VOWEL_NAME_ENDINGS = [
-  '',
-  ...SHORT_NAME_ENDINGS,
-  'ego',
-  'emu',
-  'ej',
-  'im',
-  'ym',
-  'iego',
-  'iemu',
-  'iej',
-  'owie',
-  'ow',
-  'ach',
-  'ami',
-];
+const VOWEL_NAME_ENDINGS = ['a', 'e', 'i', 'o', 'y', 'ie', 'ego', 'emu', 'ej', 'im', 'ym', 'iego', 'iemu', 'iej'];
+// Kasia → Kasi, Kasiu: a stem ending in i also stands bare or takes u.
+const SOFT_STEM_ENDINGS = ['', 'u'];
 const COMMON_WORDS = new Set(['ale']);
 
 function nameForms(nameWord: string): string[] {
@@ -59,8 +47,13 @@ function nameForms(nameWord: string): string[] {
     if (stem.endsWith('j')) forms.push(`${stem.slice(0, -1)}i`);
     return forms;
   }
-  const endings = TRAILING_VOWEL.test(nameWord) ? VOWEL_NAME_ENDINGS : CONSONANT_NAME_ENDINGS;
-  return wordStems(nameWord).flatMap((stem) => endings.map((ending) => stem + ending));
+  if (!TRAILING_VOWEL.test(nameWord)) {
+    return wordStems(nameWord).flatMap((stem) => CONSONANT_NAME_ENDINGS.map((ending) => stem + ending));
+  }
+  return wordStems(nameWord).flatMap((stem) => {
+    const endings = stem.endsWith('i') ? [...VOWEL_NAME_ENDINGS, ...SOFT_STEM_ENDINGS] : VOWEL_NAME_ENDINGS;
+    return endings.map((ending) => stem + ending);
+  });
 }
 
 /**

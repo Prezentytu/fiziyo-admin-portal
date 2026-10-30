@@ -77,6 +77,16 @@ describe('matchPatients', () => {
     expect(matchPatients('dla Antoniego', patients)).toMatchObject({ kind: 'one', patient: { id: 'p-antoni' } });
   });
 
+  it('does not let a feminine name swallow the masculine one', () => {
+    const patients = [{ id: 'p-kamila', name: 'Kamila Lis' }];
+    for (const text of ['zestaw dla Kamil', 'przypisz Kamilowi zestaw', 'plan z Kamilem']) {
+      expect(matchPatients(text, patients).kind).toBe('none');
+    }
+    for (const text of ['dla Kamili', 'plan z Kamilą', 'pokaż Kamilę']) {
+      expect(matchPatients(text, patients)).toMatchObject({ kind: 'one', patient: { id: 'p-kamila' } });
+    }
+  });
+
   it('does not treat common words as names', () => {
     expect(matchPatients('jak ewentualnie ćwiczyć kolano', PATIENTS).kind).toBe('none');
   });
