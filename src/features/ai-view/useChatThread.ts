@@ -38,7 +38,7 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
   const [threadScope, setThreadScope] = useState(scopeKey);
   const sessionRef = useRef<{ scopeKey: string; id: string } | undefined>(undefined);
   const hasNotifiedFallbackRef = useRef(false);
-  // The command behind the last rules question ("O kogo chodzi?"), so the answer finishes it.
+  // The command behind the last question ("O kogo chodzi?"), so a rules answer finishes it.
   const pendingCommandRef = useRef<string | undefined>(undefined);
   // Bumped by a new conversation or organization: a reply still in flight belongs to the old one.
   const threadEpochRef = useRef(0);
@@ -71,8 +71,8 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
           pendingCommand: pendingCommandRef.current,
         });
         if (threadEpochRef.current !== epoch) return;
-        const asksForPatient =
-          reply.source === 'rules' && reply.spec.component === 'Clarify' && reply.spec !== UNSUPPORTED_SPEC;
+        // AI questions count too: if the next dispatch fails, rules finish the command.
+        const asksForPatient = reply.spec.component === 'Clarify' && reply.spec !== UNSUPPORTED_SPEC;
         const previousCommand = pendingCommandRef.current;
         pendingCommandRef.current = asksForPatient ? [previousCommand, trimmed].filter(Boolean).join(' ') : undefined;
         if (reply.sessionId) sessionRef.current = { scopeKey, id: reply.sessionId };

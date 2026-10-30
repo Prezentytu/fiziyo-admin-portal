@@ -41,7 +41,7 @@ export async function resolveReply(
     sessionId?: string;
     context: IntentContext;
     dispatch: Dispatcher;
-    /** The command a previous rules question was about; the model keeps its own history instead. */
+    /** The command a previous question was about; only rules use it, the model keeps its own history. */
     pendingCommand?: string;
   }
 ): Promise<ResolvedReply> {

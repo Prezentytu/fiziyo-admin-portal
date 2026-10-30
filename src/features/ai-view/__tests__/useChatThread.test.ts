@@ -51,6 +51,31 @@ describe('useChatThread', () => {
     });
   });
 
+  it('finishes the command behind an AI question when the next dispatch falls back to rules', async () => {
+    const context: IntentContext = {
+      patients: [
+        { id: 'p-ewa-w', name: 'Ewa Wiśniewska' },
+        { id: 'p-ewa-n', name: 'Ewa Nowicka' },
+      ],
+      sets: [{ id: 's-knee', name: 'Kolano · faza 2', description: '' }],
+    };
+    dispatchMock.mockResolvedValueOnce({
+      sessionId: 'session-a',
+      spec: { component: 'Clarify', question: 'O kogo chodzi?', options: ['Ewa Wiśniewska', 'Ewa Nowicka'] },
+      creditsUsed: 0,
+    });
+    dispatchMock.mockRejectedValueOnce(new Error('down'));
+    const { result } = renderHook(() => useChatThread({ useAi: true, context, ready: true, scopeKey: 'org-a' }));
+
+    await act(() => result.current.send('zestaw dla Ewy na kolano'));
+    await act(() => result.current.send('Ewa Nowicka'));
+
+    expect(result.current.messages.at(-1)).toMatchObject({
+      source: 'rules',
+      spec: { component: 'SetDraft', patientId: 'p-ewa-n', setId: 's-knee' },
+    });
+  });
+
   it('starts a new conversation and AI session when the organization changes', async () => {
     const { result, rerender } = renderHook(
       ({ scopeKey }) => useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey }),
