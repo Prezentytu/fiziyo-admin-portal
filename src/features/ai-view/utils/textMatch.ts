@@ -50,12 +50,19 @@ const SHORT_I_STEM_LENGTH = 5;
 const DIMINUTIVE_ENDINGS = ['', 'u'];
 const ADJECTIVE_STEM = /(sk|ck|dzk)$/;
 
+// Jasio, Kazio, Henio, Gienio → Jasia, Henia; Antonio (stem antoni) and Mario (stem mari) never take -a.
+const SHORT_NI_STEM_LENGTH = 5;
+
+function isMasculineDiminutiveStem(stem: string): boolean {
+  return DIMINUTIVE_STEM.test(stem) || (stem.endsWith('ni') && stem.length <= SHORT_NI_STEM_LENGTH);
+}
+
 function longNameEndings(nameWord: string, stem: string): string[] {
   if (!TRAILING_VOWEL.test(nameWord)) return CONSONANT_NAME_ENDINGS;
   if (/[iy]$/.test(nameWord)) return MASCULINE_ADJECTIVE_ENDINGS;
   if (nameWord.endsWith('o')) {
     if (!stem.endsWith('i')) return MASCULINE_O_ENDINGS;
-    return DIMINUTIVE_STEM.test(stem) ? ['a', ...MASCULINE_IO_ENDINGS] : MASCULINE_IO_ENDINGS;
+    return isMasculineDiminutiveStem(stem) ? ['a', ...MASCULINE_IO_ENDINGS] : MASCULINE_IO_ENDINGS;
   }
   if (ADJECTIVE_STEM.test(stem)) return FEMININE_ADJECTIVE_ENDINGS;
   if (stem.endsWith('i') && (DIMINUTIVE_STEM.test(stem) || stem.length <= SHORT_I_STEM_LENGTH)) {
@@ -72,6 +79,8 @@ function nameForms(nameWord: string): string[] {
     if (stem.length < 2) return [];
     const forms = SHORT_NAME_ENDINGS.map((ending) => stem + ending);
     if (stem.endsWith('j')) forms.push(`${stem.slice(0, -1)}i`);
+    // Ania → Ani, Asia → Asi; Maja keeps no bare stem, so "maj" never matches.
+    if (nameWord.endsWith('ia')) forms.push(stem);
     return forms;
   }
   return wordStems(nameWord).flatMap((stem) => longNameEndings(nameWord, stem).map((ending) => stem + ending));
