@@ -319,20 +319,25 @@ export function ChatComposer({
           >
             <Paperclip aria-hidden="true" />
           </button>
-          <button
-            type="button"
-            data-testid="common-chat-composer-mic-btn"
-            className={ICON_BUTTON}
-            onClick={toggleDictation}
-            disabled={disabled || !voice.isSupported}
-            aria-pressed="false"
-            aria-label="Dyktuj"
+          {/* The hint sits on a wrapper: a disabled button gets no hover, so its own title never shows. */}
+          <span
+            className="inline-flex"
             title={
               voice.isSupported ? 'Dyktuj: mów, a tekst wpisze się w pole' : 'Dyktowanie działa w Chrome, Edge i Safari'
             }
           >
-            <Mic aria-hidden="true" />
-          </button>
+            <button
+              type="button"
+              data-testid="common-chat-composer-mic-btn"
+              className={ICON_BUTTON}
+              onClick={toggleDictation}
+              disabled={disabled || !voice.isSupported}
+              aria-pressed="false"
+              aria-label={voice.isSupported ? 'Dyktuj' : 'Dyktuj (niedostępne w tej przeglądarce)'}
+            >
+              <Mic aria-hidden="true" />
+            </button>
+          </span>
           <span className="flex-1" />
           <span
             className={cn(

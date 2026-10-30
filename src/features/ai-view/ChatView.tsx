@@ -33,7 +33,7 @@ import { useChatShortcuts } from './useChatShortcuts';
 import { useDocumentAnalysis } from './useDocumentAnalysis';
 import { useTodayAgenda } from './useTodayAgenda';
 import type { ChatThreadMessage } from './utils/conversationStore';
-import { revealSegments, thinkingLabel } from './utils/replyMotion';
+import { nextRevealMarker, revealSegments, thinkingLabel, type RevealMarker } from './utils/replyMotion';
 import { describeIssue, type AgendaIssue } from './utils/todayAgenda';
 import type { DispatchFailure } from './utils/resolveReply';
 
@@ -476,14 +476,19 @@ function hasDraggedFile(event: DragEvent): boolean {
 
 /** Chat-first home (DEC-20261029-02, design "Czat v2"): one conversation, cards with the app's actions. */
 export function ChatView() {
-  const { messages, isBusy, isReady, sendMessage, stopReply, isContextOpen, setContextOpen } = useChatSession();
+  const { messages, isBusy, isReady, sendMessage, stopReply, isContextOpen, setContextOpen, activeConversationId } =
+    useChatSession();
   const { analyzeFile } = useDocumentAnalysis();
   const scrollRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<ChatComposerHandle>(null);
   const dragDepthRef = useRef(0);
   const [isDragging, setIsDragging] = useState(false);
-  // Replies that arrive while the view is open read in; history opened from the sidebar shows at once.
-  const [openedAt] = useState(() => Date.now());
+  // Replies that arrive in the open conversation read in; one opened from the sidebar shows at once.
+  const [revealMarker, setRevealMarker] = useState<RevealMarker | undefined>(undefined);
+  if (revealMarker?.conversationId !== activeConversationId) {
+    setRevealMarker(nextRevealMarker(revealMarker, activeConversationId, Date.now()));
+  }
+  const revealSince = revealMarker?.since ?? Number.POSITIVE_INFINITY;
   const isWide = useMediaQuery('(min-width: 1280px)');
   const isEmpty = messages.length === 0;
   const { isAway, scrollToBottom } = useStickToBottom(scrollRef, `${messages.length}-${isBusy}`);
@@ -560,7 +565,7 @@ export function ChatView() {
                     </li>
                   ) : (
                     <li key={message.id} className="flex animate-chat-rise">
-                      <AssistantMessage message={message} animate={message.createdAt > openedAt} />
+                      <AssistantMessage message={message} animate={message.createdAt > revealSince} />
                     </li>
                   )
                 )}

@@ -47,6 +47,7 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
   const threadEpochRef = useRef(0);
   // isBusy only blocks after a render; a double click lands before it.
   const inFlightRef = useRef(false);
+  const abortRef = useRef<AbortController | undefined>(undefined);
 
   if (threadScope !== scopeKey) {
     setThreadScope(scopeKey);
@@ -96,8 +97,11 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
       pushUser(trimmed);
       setIsBusy(true);
       const epoch = threadEpochRef.current;
+      const controller = new AbortController();
+      abortRef.current = controller;
       try {
         const reply = await resolveReply(trimmed, {
+          signal: controller.signal,
           useAi,
           sessionId: sessionRef.current?.scopeKey === scopeKey ? sessionRef.current.id : undefined,
           context,
@@ -186,11 +190,15 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
     );
   }, []);
 
-  /** The therapist stopped the reply: the question stays, whatever answers it later is dropped. */
+  /** The therapist stopped the reply: the request is aborted, the question stays, a late answer is dropped. */
+  // The model never saw its own answer, so the next turn starts a new AI session.
   const stop = useCallback(() => {
     if (!inFlightRef.current) return;
+    abortRef.current?.abort();
     threadEpochRef.current += 1;
     inFlightRef.current = false;
+    sessionRef.current = undefined;
+    pendingCommandRef.current = undefined;
     setIsBusy(false);
     appendAssistant({ text: STOPPED_TEXT });
   }, [appendAssistant]);

@@ -39,3 +39,15 @@ export function thinkingLabel(elapsedMs: number, isDocument = false): string {
   for (const step of steps) if (elapsedMs >= step.afterMs) label = step.label;
   return label;
 }
+
+export interface RevealMarker {
+  conversationId: string;
+  /** Replies created after this moment read in; earlier ones, history included, show at once. */
+  since: number;
+}
+
+/** Opening another conversation (new or from history) moves the marker, so its history never animates. */
+export function nextRevealMarker(marker: RevealMarker | undefined, conversationId: string, now: number): RevealMarker {
+  if (marker?.conversationId === conversationId) return marker;
+  return { conversationId, since: now };
+}
