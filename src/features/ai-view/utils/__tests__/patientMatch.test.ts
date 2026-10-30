@@ -113,6 +113,12 @@ describe('matchPatients', () => {
       expect(matchPatients(text, foreign).kind).toBe('none');
     }
     expect(matchPatients('przypisz Mariowi', foreign)).toMatchObject({ kind: 'one', patient: { id: 'p-mario' } });
+    const bruno = [{ id: 'p-bruno', name: 'Bruno Nowak' }];
+    for (const text of ['zestaw dla Bruna', 'notatka o Brunie']) {
+      expect(matchPatients(text, bruno)).toMatchObject({ kind: 'one', patient: { id: 'p-bruno' } });
+    }
+    expect(matchPatients('dla Jasia', [{ id: 'p-jasio', name: 'Jasio Nowak' }]).kind).toBe('one');
+    expect(matchPatients('dla Nicoli', [{ id: 'p-nicole', name: 'Nicole Nowak' }]).kind).toBe('one');
     const basia = [{ id: 'p-basia', name: 'Basia Nowak' }];
     for (const text of ['dla Basi', 'Basiu', 'z Basią']) {
       expect(matchPatients(text, basia)).toMatchObject({ kind: 'one', patient: { id: 'p-basia' } });
