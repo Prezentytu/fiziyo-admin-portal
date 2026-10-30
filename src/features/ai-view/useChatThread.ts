@@ -38,7 +38,8 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
   const [threadScope, setThreadScope] = useState(scopeKey);
   const sessionRef = useRef<{ scopeKey: string; id: string } | undefined>(undefined);
   const hasNotifiedFallbackRef = useRef(false);
-  const activeScopeRef = useRef(scopeKey);
+  // Bumped by a new conversation or organization: a reply still in flight belongs to the old one.
+  const threadEpochRef = useRef(0);
 
   if (threadScope !== scopeKey) {
     setThreadScope(scopeKey);
@@ -47,7 +48,7 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
   }
 
   useEffect(() => {
-    activeScopeRef.current = scopeKey;
+    threadEpochRef.current += 1;
     hasNotifiedFallbackRef.current = false;
   }, [scopeKey]);
 
@@ -57,6 +58,7 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
       if (!trimmed || isBusy || !ready) return;
       setMessages((previous) => [...previous, { id: newId(), role: 'user', text: trimmed }]);
       setIsBusy(true);
+      const epoch = threadEpochRef.current;
       try {
         const reply = await resolveReply(trimmed, {
           useAi,
@@ -64,8 +66,7 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
           context,
           dispatch: dispatchChatMessage,
         });
-        // The organization changed while the reply was in flight: it belongs to the old thread.
-        if (activeScopeRef.current !== scopeKey) return;
+        if (threadEpochRef.current !== epoch) return;
         if (reply.sessionId) sessionRef.current = { scopeKey, id: reply.sessionId };
         const showFallback = reply.fallbackReason !== undefined && !hasNotifiedFallbackRef.current;
         if (showFallback) hasNotifiedFallbackRef.current = true;
@@ -81,7 +82,7 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
           },
         ]);
       } finally {
-        if (activeScopeRef.current === scopeKey) setIsBusy(false);
+        if (threadEpochRef.current === epoch) setIsBusy(false);
       }
     },
     [context, isBusy, ready, scopeKey, useAi]
@@ -93,7 +94,9 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
   }, []);
 
   const reset = useCallback(() => {
+    threadEpochRef.current += 1;
     setMessages([]);
+    setIsBusy(false);
     sessionRef.current = undefined;
     hasNotifiedFallbackRef.current = false;
   }, []);
