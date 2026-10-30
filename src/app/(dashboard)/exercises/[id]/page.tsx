@@ -91,6 +91,7 @@ import {
 } from '@/features/exercises/utils/buildEnrichmentUpdateVariables';
 import { getNextExerciseCopyName } from '@/features/exercises/utils/getNextExerciseCopyName';
 import { buildCreateExerciseVariables } from '@/features/exercises/utils/buildCreateExerciseVariables';
+import { normalizeExerciseType } from '@/utils/exerciseEnums';
 import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
 import { resolveLoadKg } from '@/utils/exerciseLoadMutation';
 import { verificationCopy } from '@/features/verification/verificationCopy';
@@ -329,16 +330,18 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
             audioCue: exercise.audioCue,
             tempo: exercise.tempo,
             rangeOfMotion: exercise.rangeOfMotion,
+            type: exercise.type,
             side: exercise.side || exercise.exerciseSide,
             difficultyLevel: exercise.difficultyLevel,
             videoUrl: exercise.videoUrl,
-            sets: exercise.defaultSets ?? exercise.sets ?? null,
-            reps: exercise.defaultReps ?? exercise.reps ?? null,
-            duration: exercise.defaultDuration ?? exercise.duration ?? null,
-            restSets: exercise.defaultRestBetweenSets ?? exercise.restSets ?? null,
-            restReps: exercise.defaultRestBetweenReps ?? exercise.restReps ?? null,
+            // GraphQL Exercise ma tylko pola default* (bez sets/restSets/executionTime).
+            sets: exercise.defaultSets ?? null,
+            reps: exercise.defaultReps ?? null,
+            duration: exercise.defaultDuration ?? null,
+            restSets: exercise.defaultRestBetweenSets ?? null,
+            restReps: exercise.defaultRestBetweenReps ?? null,
             preparationTime: exercise.preparationTime ?? null,
-            executionTime: exercise.defaultExecutionTime ?? exercise.executionTime ?? null,
+            executionTime: exercise.defaultExecutionTime ?? null,
             loadKg,
             images: exercise.images?.length ? exercise.images : null,
             mainTags: normalizeTagIds(exercise.mainTags),
@@ -446,7 +449,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
     const generatedFile = await generateAiImage({
       exerciseName: exercise.name,
       exerciseDescription: description,
-      exerciseType: exercise.type?.toLowerCase() === 'time' ? 'time' : 'reps',
+      exerciseType: normalizeExerciseType(exercise.type) ?? 'reps',
       style: imageStyle,
     });
 
@@ -530,6 +533,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
     preparationTime: normalizedFields.preparationTime,
     tempo: normalizedFields.tempo ?? undefined,
     side: normalizedFields.side ?? undefined,
+    type: exercise.type,
   });
 
   const exerciseDurationSummary =

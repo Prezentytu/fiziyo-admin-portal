@@ -78,6 +78,7 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { DashboardRouteLoading } from '@/components/layout/DashboardRouteLoading';
 import { isTemplateSet } from '@/features/exercise-sets/utils/setKind';
 import { PageSheet } from '@/components/shared/page';
+import { normalizeExerciseSide } from '@/utils/exerciseEnums';
 
 interface SetDetailPageProps {
   params: Promise<{ id: string }>;
@@ -868,7 +869,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
                       thumbnailUrl: m.exercise.thumbnailUrl,
                       images: m.exercise.images,
                       side: m.exercise.side,
-                      exerciseSide: m.exercise.side?.toLowerCase() || m.exercise.exerciseSide,
+                      exerciseSide: normalizeExerciseSide(m.exercise.side ?? m.exercise.exerciseSide),
                       defaultLoad: m.exercise.defaultLoad ?? undefined,
                     }
                   : undefined,

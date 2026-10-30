@@ -20,6 +20,7 @@ import { compactEnrichment, parseEnrichmentJson, toFullShapeJson } from '@/featu
 import { toV3 } from '@/features/verification/utils/enrichmentToV3';
 import { computeCompleteness } from '@/features/verification/utils/enrichmentSkeleton';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
+import { normalizeExerciseType } from '@/utils/exerciseEnums';
 
 /**
  * Kontekst potrzebny do "Uzupełnij przez AI" — dane wejściowe do wygenerowania treści.
@@ -110,7 +111,7 @@ function AiFillBar({
       exerciseName: context.name,
       patientDescription: context.patientDescription,
       clinicalDescription: context.clinicalDescription,
-      type: context.type?.toLowerCase() === 'time' ? 'time' : 'reps',
+      type: normalizeExerciseType(context.type) ?? 'reps',
       tags,
       existingEnrichmentJson: JSON.stringify(enrichment),
     });
@@ -292,6 +293,7 @@ export function ExerciseEditor({
         </h2>
         <ExerciseParametersEditor
           core={core}
+          exerciseType={form.exerciseType}
           isDirtyField={isCoreFieldDirty}
           disabled={disabled}
           onNumberChange={(field, value) => setCoreField(field, value)}

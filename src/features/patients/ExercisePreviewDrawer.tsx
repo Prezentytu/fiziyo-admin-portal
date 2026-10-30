@@ -13,6 +13,7 @@ import {
   EXERCISE_FIELD_METADATA,
   formatFieldValueWithPlaceholder,
   normalizeExerciseFieldValues,
+  resolveEffectiveExerciseParams,
 } from '@/components/shared/exercise';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import type { ExerciseMapping, ExerciseOverride } from './PatientAssignmentCard';
@@ -96,28 +97,15 @@ export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, o
     setCurrentImageIndex((prev) => (prev === allImages.length - 1 ? 0 : prev + 1));
   };
 
-  // Get effective params (with overrides)
-  const effectiveSets = normalizedOverride?.sets ?? normalizedMapping.sets ?? exercise?.defaultSets ?? exercise?.sets;
-  const effectiveReps = normalizedOverride?.reps ?? normalizedMapping.reps ?? exercise?.defaultReps ?? exercise?.reps;
-  const effectiveDuration =
-    normalizedOverride?.duration ?? normalizedMapping.duration ?? exercise?.defaultDuration ?? exercise?.duration;
-  const effectiveExecutionTime =
-    normalizedOverride?.executionTime ??
-    normalizedMapping.executionTime ??
-    exercise?.defaultExecutionTime ??
-    exercise?.executionTime;
-  const effectiveRestSets =
-    normalizedOverride?.restSets ??
-    normalizedMapping.restSets ??
-    exercise?.defaultRestBetweenSets ??
-    exercise?.restSets;
-  const effectiveRestReps =
-    normalizedOverride?.restReps ??
-    normalizedMapping.restReps ??
-    exercise?.defaultRestBetweenReps ??
-    exercise?.restReps;
-  const effectivePreparationTime =
-    normalizedOverride?.preparationTime ?? normalizedMapping.preparationTime ?? exercise?.preparationTime;
+  // Get effective params (with overrides): ten sam resolver co karta przypisania i dialog nadpisań
+  const effective = resolveEffectiveExerciseParams(normalizedMapping, normalizedOverride);
+  const effectiveSets = effective.sets;
+  const effectiveReps = effective.reps;
+  const effectiveDuration = effective.duration;
+  const effectiveExecutionTime = effective.executionTime;
+  const effectiveRestSets = effective.restSets;
+  const effectiveRestReps = effective.restReps;
+  const effectivePreparationTime = effective.preparationTime;
   const effectiveTempo = normalizedOverride?.tempo ?? normalizedMapping.tempo ?? exercise?.tempo;
   const effectiveLoadDisplayText = normalizedMapping.loadText ?? exercise?.defaultLoad?.text ?? exercise?.loadText;
   const effectiveName = normalizedOverride?.customName ?? normalizedMapping.customName ?? exercise?.name;
@@ -128,7 +116,7 @@ export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, o
     exercise?.description ??
     '';
   const effectiveClinicalDescription = exercise?.clinicalDescription ?? '';
-  const effectiveSide = normalizedOverride?.exerciseSide ?? exercise?.exerciseSide;
+  const effectiveSide = effective.side;
   const normalizedFields = normalizeExerciseFieldValues({
     defaultSets: effectiveSets,
     defaultReps: effectiveReps,

@@ -36,6 +36,7 @@ import { buildEnrichmentUpdateVariables, isExerciseSaveAuthError } from './utils
 import { useExerciseImageGeneration } from './useExerciseImageGeneration';
 import { ImageStylePicker } from './ImageStylePicker';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
+import { normalizeExerciseType } from '@/utils/exerciseEnums';
 
 export type ExerciseDialogSuccessEvent =
   | CreateExerciseWizardSuccessEvent
@@ -311,7 +312,7 @@ export function ExerciseDialog({
     const generatedFile = await generateMediaWithAI({
       exerciseName: sourceName,
       exerciseDescription: description,
-      exerciseType: exercise?.type?.toLowerCase() === 'time' ? 'time' : 'reps',
+      exerciseType: normalizeExerciseType(exercise?.type) ?? 'reps',
       style: imageStyle,
     });
 

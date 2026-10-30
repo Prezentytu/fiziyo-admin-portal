@@ -1940,6 +1940,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
 
               <ExerciseParametersEditor
                 variant="create"
+                exerciseType="draft"
                 core={parametersCore}
                 isDirtyField={() => false}
                 onNumberChange={(field, value) => {

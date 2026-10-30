@@ -134,14 +134,14 @@ describe('computeSessionSeconds', () => {
     expect(result.sessionLevel).toBe('limit');
   });
 
-  it('przy pustym czasie powtórzenia liczy tempo i legacy duration jak katalog', () => {
+  it('przy pustym czasie powtórzenia liczy tempo; tryb powtórzeń (zapis REPS) nie liczy legacy duration, jak player', () => {
     const values = { sets: 5, reps: 20, repTime: null, hold: null, rest: 60 };
     expect(computeSessionSeconds(values, 'reps', 'both', { tempo: '10-0-10-0' })).toBe(5 * 20 * 20 * 2 + 4 * 60);
     expect(
       computeSessionSeconds({ sets: 6, reps: 10, repTime: null, hold: null, rest: 60 }, 'reps', 'none', {
         duration: 180,
       })
-    ).toBe(6 * 180 + 5 * 60);
+    ).toBe(6 * 10 * 3 + 5 * 60);
   });
 
   it('tempo 20 s na powtórzenie blokuje ćwiczenie ponad godzinę', () => {

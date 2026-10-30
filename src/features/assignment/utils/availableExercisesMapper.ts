@@ -1,4 +1,5 @@
 import type { Exercise, ExerciseLoad } from '../types';
+import { normalizeExerciseSide } from '@/utils/exerciseEnums';
 
 interface RawLoadShape {
   loadWeightKg?: number | null;
@@ -108,7 +109,7 @@ export function mapAvailableExercises(rawExercises: RawAvailableExercise[] | und
         audioCue: exercise.audioCue,
         rangeOfMotion: exercise.rangeOfMotion,
         side: exercise.side,
-        exerciseSide: exercise.side?.toLowerCase() ?? exercise.exerciseSide,
+        exerciseSide: normalizeExerciseSide(exercise.side ?? exercise.exerciseSide),
         preparationTime: exercise.preparationTime,
         tempo: exercise.tempo,
         defaultExecutionTime: exercise.defaultExecutionTime,

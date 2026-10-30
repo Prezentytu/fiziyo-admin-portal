@@ -4,6 +4,7 @@ import { useCallback, useMemo } from 'react';
 import {
   ExerciseParametersFields,
   type ExerciseParameterValues,
+  type ExerciseParametersTimingType,
 } from '@/components/shared/exercise/ExerciseParametersFields';
 import { buildParamTestId, type ExerciseFieldKey } from '@/components/shared/exercise';
 import type { ExerciseCoreDraft } from './useExerciseEditorForm';
@@ -23,6 +24,8 @@ export type ExerciseParametersEditorVariant = 'full' | 'create';
 
 interface ExerciseParametersEditorProps {
   core: ExerciseCoreDraft;
+  /** Zapisany typ edytowanego ćwiczenia albo `'draft'` w kreatorze. */
+  exerciseType: ExerciseParametersTimingType;
   isDirtyField: (field: keyof ExerciseCoreDraft) => boolean;
   onNumberChange: (field: NumericDraftField, value: number | null) => void;
   onTextChange: (field: TextDraftField, value: string) => void;
@@ -60,6 +63,7 @@ function coreToValues(core: ExerciseCoreDraft): ExerciseParameterValues {
 
 export function ExerciseParametersEditor({
   core,
+  exerciseType,
   isDirtyField,
   onNumberChange,
   onTextChange,
@@ -100,6 +104,7 @@ export function ExerciseParametersEditor({
 
   return (
     <ExerciseParametersFields
+      exerciseType={exerciseType}
       surface="template"
       values={values}
       onChange={handleChange}

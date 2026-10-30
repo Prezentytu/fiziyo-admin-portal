@@ -41,7 +41,7 @@ describe('parameterSurfaceParity', () => {
       const user = userEvent.setup();
       const onChange = vi.fn();
       render(
-        <ExerciseParametersFields
+        <ExerciseParametersFields exerciseType="draft"
           surface={surface}
           values={EMPTY_VALUES}
           onChange={onChange}
@@ -74,7 +74,7 @@ describe('parameterSurfaceParity', () => {
 
   it('omitFields ukrywa sets/reps na mapping bez usuwania pozostałych pól', () => {
     render(
-      <ExerciseParametersFields
+      <ExerciseParametersFields exerciseType="draft"
         surface="mapping"
         values={EMPTY_VALUES}
         onChange={vi.fn()}

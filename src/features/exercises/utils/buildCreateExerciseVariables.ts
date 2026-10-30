@@ -1,9 +1,12 @@
 import type { CreateExerciseVariables, DifficultyLevel, ExerciseScope } from '@/graphql/types/exercise.types';
 import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
+import { normalizeExerciseType } from '@/utils/exerciseEnums';
 import { inferExerciseType } from './inferExerciseType';
 
 export interface CreateExerciseDraft {
   name: string;
+  /** Zapisany typ (np. duplikacja istniejącego ćwiczenia). Pusty tylko dla szkicu z kreatora. */
+  type?: string | null;
   patientDescription?: string | null;
   description?: string | null;
   clinicalDescription?: string | null;
@@ -66,6 +69,7 @@ function normalizeTags(tags: string[] | null | undefined): string[] | null {
 /**
  * Jedyny write-path create → CREATE_EXERCISE_MUTATION.
  * Używany przez CreateExerciseWizard i duplikację na detalu.
+ * Typ: zapisany `draft.type` wygrywa; zgadywanie z `executionTime` tylko dla szkicu bez typu.
  */
 export function buildCreateExerciseVariables({
   organizationId,
@@ -83,7 +87,7 @@ export function buildCreateExerciseVariables({
     scope,
     name: draft.name.trim(),
     description,
-    type: inferExerciseType(draft.executionTime),
+    type: normalizeExerciseType(draft.type) ?? inferExerciseType(draft.executionTime),
     sets: draft.sets ?? null,
     reps: draft.reps ?? null,
     duration: draft.duration ?? null,

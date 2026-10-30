@@ -94,6 +94,8 @@ export interface ExerciseMapping {
   notes?: string;
   customName?: string;
   customDescription?: string;
+  /** Personalizacja szablonu (SPEC-023); pobierana przez GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY. */
+  overridesJson?: string | null;
   loadType?: string;
   loadValue?: number;
   loadUnit?: string;
@@ -381,6 +383,7 @@ export function PatientAssignmentCard({
         notes: mapping.notes,
         customName: mapping.customName,
         customDescription: mapping.customDescription,
+        overridesJson: mapping.overridesJson,
         load: mapping.load,
         loadType: mapping.loadType,
         loadValue: mapping.loadValue,

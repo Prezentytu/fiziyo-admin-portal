@@ -56,8 +56,16 @@ export interface ExerciseParameterValues {
 
 export type ParameterTestIdKind = 'input' | 'select' | 'info';
 
+/** Zapisany typ ćwiczenia albo `'draft'` dla szkicu bez typu (kreator tworzenia). */
+export type ExerciseParametersTimingType = 'reps' | 'time' | 'draft';
+
 export interface ExerciseParametersFieldsProps {
   surface: ExerciseFieldSurface;
+  /**
+   * Wymagany: REPS nie liczy pozostałego `duration` (jak player), `'draft'` liczy.
+   * Dla zapisanego ćwiczenia podaj `normalizeExerciseType(exercise.type) ?? 'draft'`.
+   */
+  exerciseType: ExerciseParametersTimingType;
   values: ExerciseParameterValues;
   onChange: (patch: Partial<ExerciseParameterValues>) => void;
   inheritedValues?: Partial<ExerciseParameterValues>;
@@ -461,6 +469,7 @@ function isInheritedMatch(
 
 export function ExerciseParametersFields({
   surface,
+  exerciseType,
   values,
   onChange,
   inheritedValues,
@@ -513,6 +522,7 @@ export function ExerciseParametersFields({
     preparationTime: 0,
     tempo: values.tempo || undefined,
     side: values.side || undefined,
+    type: exerciseType === 'draft' ? undefined : exerciseType,
   });
 
   const totalSeconds = calculateExerciseTotalSeconds({
@@ -525,6 +535,7 @@ export function ExerciseParametersFields({
     preparationTime: values.preparationTime ?? undefined,
     tempo: values.tempo || undefined,
     side: values.side || undefined,
+    type: exerciseType === 'draft' ? undefined : exerciseType,
   });
 
   const dirty = (key: ExerciseFieldKey) => Boolean(isDirtyField?.(key));
