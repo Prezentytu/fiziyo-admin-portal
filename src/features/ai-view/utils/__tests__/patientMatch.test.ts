@@ -42,6 +42,12 @@ describe('matchPatients', () => {
     expect(matchPatients('plan dla Oli', patients)).toMatchObject({ kind: 'one', patient: { id: 'p-ola' } });
   });
 
+  it('matches a four-letter first name by its forms, not by prefix', () => {
+    const patients = [{ id: 'p-maja', name: 'Maja Lis' }];
+    expect(matchPatients('zestaw na maj', patients).kind).toBe('none');
+    expect(matchPatients('plan dla Mai', patients)).toMatchObject({ kind: 'one', patient: { id: 'p-maja' } });
+  });
+
   it('does not treat common words as names', () => {
     expect(matchPatients('jak ewentualnie ćwiczyć kolano', PATIENTS).kind).toBe('none');
   });

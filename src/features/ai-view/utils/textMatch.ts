@@ -28,18 +28,24 @@ export function wordMatches(candidate: string, word: string): boolean {
   return wordStems(word).some((stem) => stem.length >= 2 && candidate.startsWith(stem));
 }
 
-const SHORT_NAME_ENDINGS = ['', 'a', 'e', 'i', 'o', 'u', 'y', 'ie', 'em', 'om', 'owi'];
+const SHORT_NAME_LENGTH = 4;
+const SHORT_NAME_ENDINGS = ['a', 'e', 'i', 'o', 'u', 'y', 'ie', 'em', 'om', 'owi'];
 const COMMON_WORDS = new Set(['ale']);
 
+function shortNameForms(nameWord: string): string[] {
+  const stem = TRAILING_VOWEL.test(nameWord) && nameWord.length > 2 ? nameWord.slice(0, -1) : nameWord;
+  if (stem.length < 2) return [];
+  const forms = SHORT_NAME_ENDINGS.map((ending) => stem + ending);
+  if (stem.endsWith('j')) forms.push(`${stem.slice(0, -1)}i`);
+  return forms;
+}
+
 /**
- * Like wordMatches, but a short first name only matches its inflected forms
- * (Jan → Jana, Janowi; Ola → Oli), so "Ola" never swallows "olej". Mirrors the backend pseudonymizer.
+ * Like wordMatches, but a short name only matches its inflected forms (Jan → Jana, Maja → Mai),
+ * never by prefix, so "Ola" never swallows "olej" nor "Maja" "maj". Mirrors the backend pseudonymizer.
  */
 export function nameWordMatches(candidate: string, nameWord: string): boolean {
-  if (nameWord.length > 3) return wordMatches(candidate, nameWord);
   if (candidate === nameWord) return true;
-  if (COMMON_WORDS.has(candidate)) return false;
-  return wordStems(nameWord).some(
-    (stem) => stem.length >= 2 && SHORT_NAME_ENDINGS.some((ending) => candidate === stem + ending)
-  );
+  if (nameWord.length > SHORT_NAME_LENGTH) return wordMatches(candidate, nameWord);
+  return !COMMON_WORDS.has(candidate) && shortNameForms(nameWord).includes(candidate);
 }
