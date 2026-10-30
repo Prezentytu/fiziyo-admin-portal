@@ -41,10 +41,10 @@ const FEMININE_NOUN_ENDINGS = ['a', 'e', 'i', 'o', 'y', 'ie'];
 // Mario, Julio: masculine on -o, never Marii or Juli.
 const OTHER_VOWEL_ENDINGS = ['owi', 'em', 'u'];
 // -ia names take only a, e, i (Maria → Marii, Marię), so Antonia never yields Antoni or Antonio; the
-// diminutives (Kasia, Madzia) and short -ia names (Hania, Julia) also stand bare or take u (Kasi, Haniu).
+// diminutives (Kasia, Madzia) and -ia names with a stem up to five letters (Hania, Ksenia) also stand bare or take u (Kasi, Haniu).
 const I_STEM_ENDINGS = ['a', 'e', 'i'];
 const DIMINUTIVE_STEM = /(s|c|z)i$/;
-const SHORT_I_STEM_LENGTH = 4;
+const SHORT_I_STEM_LENGTH = 5;
 const DIMINUTIVE_ENDINGS = ['', 'u'];
 const ADJECTIVE_STEM = /(sk|ck|dzk)$/;
 

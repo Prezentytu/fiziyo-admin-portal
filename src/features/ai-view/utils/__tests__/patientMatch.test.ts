@@ -102,6 +102,8 @@ describe('matchPatients', () => {
     expect(matchPatients('zestaw dla Juli', short)).toMatchObject({ kind: 'one', patient: { id: 'p-julia' } });
     expect(matchPatients('dla Hani', short)).toMatchObject({ kind: 'one', patient: { id: 'p-hania' } });
     expect(matchPatients('Haniu, plan', short)).toMatchObject({ kind: 'one', patient: { id: 'p-hania' } });
+    expect(matchPatients('dla Kseni', [{ id: 'p-ksenia', name: 'Ksenia Nowak' }]).kind).toBe('one');
+    expect(matchPatients('dla Gieni', [{ id: 'p-gienia', name: 'Gienia Nowak' }]).kind).toBe('one');
     const foreign = [
       { id: 'p-mario', name: 'Mario Rossi' },
       { id: 'p-julio', name: 'Julio Nowak' },
