@@ -4,13 +4,10 @@ import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
 import { ActivityStatusLabel, InitialsAvatar } from '@/components/shared/page';
-import {
-  comparePatientsByAttention,
-  getPatientActivityStatus,
-  needsAttention,
-} from '@/features/patients/utils/patientActivityStatus';
+import { getPatientActivityStatus } from '@/features/patients/utils/patientActivityStatus';
 import { polishPlural } from '@/utils/polishPlural';
 import { toWizardPatient, useChatActions } from '../ChatActionsContext';
+import { selectInactivePatients } from '../utils/inactivePatients';
 import type { ChatViewSpec } from '../utils/viewSpec';
 import { ChatCard, ChatCardEmpty } from './ChatCard';
 
@@ -21,11 +18,15 @@ const ROW_CLASS = 'flex min-h-14 items-center gap-3 border-t-[0.5px] border-sepa
 
 function InactivePatients({ testId }: { readonly testId: string }) {
   const { patients, therapistId } = useChatActions();
-  const attention = patients
-    .filter((patient) => !therapistId || patient.therapistId === therapistId)
-    .map((patient) => ({ ...patient, activity: getPatientActivityStatus(patient.lastActivity) }))
-    .filter((patient) => needsAttention(patient.activity))
-    .sort(comparePatientsByAttention);
+  const attention = selectInactivePatients(patients, therapistId);
+
+  if (!attention) {
+    return (
+      <ChatCard testId={testId} title="Kto nie ćwiczy">
+        <ChatCardEmpty testId={`${testId}-loading`}>Wczytywanie pacjentów…</ChatCardEmpty>
+      </ChatCard>
+    );
+  }
 
   if (attention.length === 0) {
     return (
