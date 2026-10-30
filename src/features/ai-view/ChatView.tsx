@@ -59,10 +59,13 @@ export function ChatView() {
   const { currentOrganization } = useOrganization();
   const organizationId = currentOrganization?.organizationId ?? '';
   const { preference, update } = useChatMode();
-  const { patients, sets, intentContext } = useChatData(organizationId || undefined);
+  const { patients, sets, intentContext, loading } = useChatData(organizationId || undefined);
+  const isReady = Boolean(organizationId) && !loading;
   const { messages, isBusy, send, appendSpec, reset } = useChatThread({
     useAi: preference.useAi,
     context: intentContext,
+    ready: isReady,
+    scopeKey: organizationId,
   });
 
   const [assignRequest, setAssignRequest] = useState<AssignRequest | null>(null);
@@ -114,6 +117,7 @@ export function ChatView() {
         variant="outline"
         size="sm"
         onClick={() => sendMessage('Utwórz zestaw')}
+        disabled={!isReady}
         data-testid="common-chat-shortcut-set-btn"
       >
         <FolderPlus aria-hidden="true" />
@@ -132,6 +136,7 @@ export function ChatView() {
         variant="outline"
         size="sm"
         onClick={() => sendMessage('Pokaż, kto nie ćwiczy')}
+        disabled={!isReady}
         data-testid="common-chat-shortcut-inactive-btn"
       >
         <Users aria-hidden="true" />
@@ -190,7 +195,7 @@ export function ChatView() {
                     Napisz, co zrobić: przypisz zestaw, znajdź ćwiczenia albo sprawdź, kto nie ćwiczy.
                   </p>
                 </div>
-                <ChatComposer onSend={sendMessage} disabled={isBusy || !organizationId} large />
+                <ChatComposer onSend={sendMessage} disabled={isBusy || !isReady} large />
                 {shortcuts}
               </>
             ) : (
@@ -229,7 +234,7 @@ export function ChatView() {
         {!isEmpty && (
           <div className="shrink-0 px-4 pb-4 pt-2 sm:px-6">
             <div className="mx-auto w-full max-w-[760px]">
-              <ChatComposer onSend={sendMessage} disabled={isBusy || !organizationId} />
+              <ChatComposer onSend={sendMessage} disabled={isBusy || !isReady} />
             </div>
           </div>
         )}

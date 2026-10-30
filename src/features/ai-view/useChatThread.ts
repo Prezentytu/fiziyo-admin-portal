@@ -22,27 +22,42 @@ function newId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+interface ChatThreadOptions {
+  useAi: boolean;
+  context: IntentContext;
+  /** False while patients and sets load: rules would answer from an empty context. */
+  ready: boolean;
+  /** Active organization; a new one starts a new conversation and a new AI session. */
+  scopeKey: string;
+}
+
 /** One conversation: user messages and the card the dispatcher (AI or rules) picked for each. */
-export function useChatThread({ useAi, context }: { useAi: boolean; context: IntentContext }) {
+export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOptions) {
   const [messages, setMessages] = useState<ChatThreadMessage[]>([]);
   const [isBusy, setIsBusy] = useState(false);
-  const sessionIdRef = useRef<string | undefined>(undefined);
+  const [threadScope, setThreadScope] = useState(scopeKey);
+  const sessionRef = useRef<{ scopeKey: string; id: string } | undefined>(undefined);
   const hasNotifiedFallbackRef = useRef(false);
+
+  if (threadScope !== scopeKey) {
+    setThreadScope(scopeKey);
+    setMessages([]);
+  }
 
   const send = useCallback(
     async (text: string) => {
       const trimmed = text.trim();
-      if (!trimmed || isBusy) return;
+      if (!trimmed || isBusy || !ready) return;
       setMessages((previous) => [...previous, { id: newId(), role: 'user', text: trimmed }]);
       setIsBusy(true);
       try {
         const reply = await resolveReply(trimmed, {
           useAi,
-          sessionId: sessionIdRef.current,
+          sessionId: sessionRef.current?.scopeKey === scopeKey ? sessionRef.current.id : undefined,
           context,
           dispatch: dispatchChatMessage,
         });
-        if (reply.sessionId) sessionIdRef.current = reply.sessionId;
+        if (reply.sessionId) sessionRef.current = { scopeKey, id: reply.sessionId };
         const showFallback = reply.fallbackReason !== undefined && !hasNotifiedFallbackRef.current;
         if (showFallback) hasNotifiedFallbackRef.current = true;
         setMessages((previous) => [
@@ -60,7 +75,7 @@ export function useChatThread({ useAi, context }: { useAi: boolean; context: Int
         setIsBusy(false);
       }
     },
-    [context, isBusy, useAi]
+    [context, isBusy, ready, scopeKey, useAi]
   );
 
   /** Cards append follow-ups (e.g. a new set ready to assign) without a model call. */
@@ -70,7 +85,7 @@ export function useChatThread({ useAi, context }: { useAi: boolean; context: Int
 
   const reset = useCallback(() => {
     setMessages([]);
-    sessionIdRef.current = undefined;
+    sessionRef.current = undefined;
     hasNotifiedFallbackRef.current = false;
   }, []);
 
