@@ -37,6 +37,7 @@ import {
 } from '@/graphql/mutations/exercises.mutations';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import type { PatientAssignment } from './PatientAssignmentCard';
+import { normalizeExerciseType } from '@/utils/exerciseEnums';
 
 const ADD_FIELD_TESTID_MAP: Record<
   ExerciseFieldKey | MappingOnlyFieldKey,
@@ -529,7 +530,7 @@ function AddExerciseToPatientDialogContent({
 
               <ExerciseParametersFields
                 surface="patientOverride"
-                exerciseType={selectedExercise?.type}
+                exerciseType={normalizeExerciseType(selectedExercise?.type) ?? 'draft'}
                 values={parameterValues}
                 onChange={handleParametersChange}
                 showContentSection

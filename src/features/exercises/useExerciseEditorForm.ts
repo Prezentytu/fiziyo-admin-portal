@@ -10,6 +10,8 @@ import {
   setEnrichmentAtPath,
 } from './useEnrichmentDraft';
 import { shouldRehydrateExerciseEditorDraft } from './utils/shouldRehydrateExerciseEditorDraft';
+import { normalizeExerciseType } from '@/utils/exerciseEnums';
+import type { ExerciseParametersTimingType } from '@/components/shared/exercise/ExerciseParametersFields';
 
 /**
  * Pojedynczy model formularza edytora ćwiczenia (v3).
@@ -69,6 +71,8 @@ function normalizeTagIds(tags: unknown): string[] {
 export interface ExerciseEditorSource {
   id?: string | null;
   name?: string | null;
+  /** Zapisany typ (REPS/TIME); steruje liczeniem czasu w edytorze parametrów. */
+  type?: string | null;
   patientDescription?: string | null;
   description?: string | null;
   clinicalDescription?: string | null;
@@ -436,9 +440,12 @@ export function useExerciseEditorForm({
     };
   }, []);
 
+  const exerciseType: ExerciseParametersTimingType = normalizeExerciseType(source?.type) ?? 'draft';
+
   return useMemo(
     () => ({
       core,
+      exerciseType,
       enrichment,
       setCoreField,
       setEnrichmentPath,
@@ -454,6 +461,7 @@ export function useExerciseEditorForm({
     }),
     [
       core,
+      exerciseType,
       enrichment,
       flush,
       isCoreFieldDirty,

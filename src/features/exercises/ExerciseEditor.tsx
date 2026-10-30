@@ -293,6 +293,7 @@ export function ExerciseEditor({
         </h2>
         <ExerciseParametersEditor
           core={core}
+          exerciseType={form.exerciseType}
           isDirtyField={isCoreFieldDirty}
           disabled={disabled}
           onNumberChange={(field, value) => setCoreField(field, value)}

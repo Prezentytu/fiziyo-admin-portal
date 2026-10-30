@@ -39,6 +39,7 @@ import {
 } from '@/components/shared/exercise';
 import type { PatientAssignment, ExerciseMapping, ExerciseOverride } from './PatientAssignmentCard';
 import { resolveOverrideInheritedParams } from './utils/overrideInheritedParams';
+import { normalizeExerciseType } from '@/utils/exerciseEnums';
 
 const OVERRIDE_FIELD_TESTID_MAP: Record<
   ExerciseFieldKey | MappingOnlyFieldKey,
@@ -681,7 +682,7 @@ function EditExerciseOverrideDialogContent({
               </Button>
             </div>
             <ExerciseParametersFields
-              exerciseType={exercise?.type}
+              exerciseType={normalizeExerciseType(exercise?.type) ?? 'draft'}
               surface="patientOverride"
               values={parameterValues}
               onChange={handleParametersChange}
