@@ -30,22 +30,44 @@ export function wordMatches(candidate: string, word: string): boolean {
 
 const SHORT_NAME_LENGTH = 4;
 const SHORT_NAME_ENDINGS = ['a', 'e', 'i', 'o', 'u', 'y', 'ie', 'em', 'om', 'owi'];
+const NAME_ENDINGS = [
+  '',
+  ...SHORT_NAME_ENDINGS,
+  'ia',
+  'iem',
+  'iowi',
+  'ego',
+  'emu',
+  'ej',
+  'im',
+  'ym',
+  'iego',
+  'iemu',
+  'iej',
+  'ze',
+  'owie',
+  'ow',
+  'ach',
+  'ami',
+];
 const COMMON_WORDS = new Set(['ale']);
 
-function shortNameForms(nameWord: string): string[] {
-  const stem = TRAILING_VOWEL.test(nameWord) && nameWord.length > 2 ? nameWord.slice(0, -1) : nameWord;
-  if (stem.length < 2) return [];
-  const forms = SHORT_NAME_ENDINGS.map((ending) => stem + ending);
-  if (stem.endsWith('j')) forms.push(`${stem.slice(0, -1)}i`);
-  return forms;
+function nameForms(nameWord: string): string[] {
+  if (nameWord.length <= SHORT_NAME_LENGTH) {
+    const stem = TRAILING_VOWEL.test(nameWord) && nameWord.length > 2 ? nameWord.slice(0, -1) : nameWord;
+    if (stem.length < 2) return [];
+    const forms = SHORT_NAME_ENDINGS.map((ending) => stem + ending);
+    if (stem.endsWith('j')) forms.push(`${stem.slice(0, -1)}i`);
+    return forms;
+  }
+  return wordStems(nameWord).flatMap((stem) => NAME_ENDINGS.map((ending) => stem + ending));
 }
 
 /**
- * Like wordMatches, but a short name only matches its inflected forms (Jan → Jana, Maja → Mai),
- * never by prefix, so "Ola" never swallows "olej" nor "Maja" "maj". Mirrors the backend pseudonymizer.
+ * A name matches only its inflected forms (Jan → Jana, Maja → Mai, Kowalski → Kowalskiego), never by
+ * prefix, so "Ola" never swallows "olej" nor "Karol" "Karoliny". Mirrors the backend pseudonymizer.
  */
 export function nameWordMatches(candidate: string, nameWord: string): boolean {
   if (candidate === nameWord) return true;
-  if (nameWord.length > SHORT_NAME_LENGTH) return wordMatches(candidate, nameWord);
-  return !COMMON_WORDS.has(candidate) && shortNameForms(nameWord).includes(candidate);
+  return !COMMON_WORDS.has(candidate) && nameForms(nameWord).includes(candidate);
 }

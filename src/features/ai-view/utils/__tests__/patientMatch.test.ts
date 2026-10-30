@@ -48,6 +48,21 @@ describe('matchPatients', () => {
     expect(matchPatients('plan dla Mai', patients)).toMatchObject({ kind: 'one', patient: { id: 'p-maja' } });
   });
 
+  it('does not match a longer first name by prefix', () => {
+    const patients = [
+      { id: 'p-karol', name: 'Karol Nowak' },
+      { id: 'p-maria', name: 'Maria Lis' },
+      { id: 'p-magda', name: 'Magda Kot' },
+    ];
+    for (const text of ['zestaw dla Karoliny', 'dla Mariana', 'dla Mariusza', 'plan Magdaleny']) {
+      expect(matchPatients(text, patients).kind).toBe('none');
+    }
+    expect(matchPatients('zestaw dla Karola', patients)).toMatchObject({ kind: 'one', patient: { id: 'p-karol' } });
+    expect(matchPatients('plan dla Marii', patients)).toMatchObject({ kind: 'one', patient: { id: 'p-maria' } });
+    expect(matchPatients('plan Magdy', patients)).toMatchObject({ kind: 'one', patient: { id: 'p-magda' } });
+    expect(matchPatients('ustal z Nowakiem plan', patients)).toMatchObject({ kind: 'one', patient: { id: 'p-karol' } });
+  });
+
   it('does not treat common words as names', () => {
     expect(matchPatients('jak ewentualnie ćwiczyć kolano', PATIENTS).kind).toBe('none');
   });
