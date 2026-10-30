@@ -712,10 +712,13 @@ body {
   background: var(--gradient-hero);
 }
 
-/* Focus styles - wyrazne dla dostepnosci */
-:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
+/* Focus styles - wyrazne dla dostepnosci.
+   In the base layer so a component's own focus utilities (outline-none, ring) can replace it. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
 }
 
 /* ============================================
@@ -1366,6 +1369,36 @@ input[type="number"] {
   border: 1.5px solid var(--tint);
   opacity: 0;
   animation: chat-breathe 3.6s ease-out infinite;
+}
+
+@keyframes chat-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes chat-word-in {
+  from {
+    opacity: 0;
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    filter: none;
+  }
+}
+
+.animate-chat-pop {
+  animation: chat-pop 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.chat-word {
+  animation: chat-word-in 0.32s ease-out both;
 }
 
 .text-chat-shimmer {

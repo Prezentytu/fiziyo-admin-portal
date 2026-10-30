@@ -24,6 +24,14 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 
 ## Wpisy
 
+### 2026-10-30 - Globalny styl poza warstwą przykrywa utility Tailwinda
+
+- **Kategoria**: `UI`
+- **Problem**: Pole czatu miało `focus:outline-none`, a i tak rysowało prostokątny obrys w zaokrąglonym kompozytorze, co wyglądało tanio.
+- **Przyczyna**: W Tailwind 4 utility żyją w `@layer utilities`, a reguła `:focus-visible` w `globals.css` była poza warstwą; styl bez warstwy wygrywa z każdą warstwą niezależnie od specyficzności.
+- **Rozwiązanie**: Globalny obrys `:focus-visible` przeniesiony do `@layer base`; komponenty nadpisują go własnym `focus-visible:*`.
+- **Reguła**: Globalne style elementów i pseudoklas w `globals.css` trzymaj w `@layer base`, inaczej żadna klasa komponentu ich nie nadpisze.
+
 ### 2026-10-27 - Zwrot z weryfikacji FiziYo jest na kopii, nie na oryginale
 
 - **Kategoria**: `GraphQL`

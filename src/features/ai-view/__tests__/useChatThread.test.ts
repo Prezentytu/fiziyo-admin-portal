@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useChatThread } from '../useChatThread';
+import { STOPPED_TEXT, useChatThread } from '../useChatThread';
 import type { IntentContext } from '../utils/intentRouter';
 
 const { dispatchMock } = vi.hoisted(() => ({ dispatchMock: vi.fn() }));
@@ -78,7 +78,9 @@ describe('useChatThread', () => {
   });
 
   it('sends one message when the composer fires twice before the busy state renders', async () => {
-    const { result } = renderHook(() => useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org-a' }));
+    const { result } = renderHook(() =>
+      useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org-a' })
+    );
 
     await act(() => Promise.all([result.current.send('Pokaż pacjentów'), result.current.send('Pokaż pacjentów')]));
 
@@ -88,11 +90,16 @@ describe('useChatThread', () => {
 
   it('runs one task when a file is picked twice and reports whether it succeeded', async () => {
     const task = vi.fn().mockResolvedValue({ text: 'Gotowe.' });
-    const { result } = renderHook(() => useChatThread({ useAi: false, context: CONTEXT, ready: true, scopeKey: 'org-a' }));
+    const { result } = renderHook(() =>
+      useChatThread({ useAi: false, context: CONTEXT, ready: true, scopeKey: 'org-a' })
+    );
 
     let outcomes: boolean[] = [];
     await act(async () => {
-      outcomes = await Promise.all([result.current.runTask('Dokument', task), result.current.runTask('Dokument', task)]);
+      outcomes = await Promise.all([
+        result.current.runTask('Dokument', task),
+        result.current.runTask('Dokument', task),
+      ]);
     });
     expect(task).toHaveBeenCalledTimes(1);
     expect(outcomes).toEqual([true, false]);
@@ -117,7 +124,7 @@ describe('useChatThread', () => {
     expect(result.current.messages).toEqual([]);
 
     await act(() => result.current.send('kto nie ćwiczy'));
-    expect(dispatchMock).toHaveBeenLastCalledWith('kto nie ćwiczy', undefined);
+    expect(dispatchMock).toHaveBeenLastCalledWith('kto nie ćwiczy', undefined, expect.any(AbortSignal));
   });
 
   it('drops a reply that arrives after the organization changed', async () => {
@@ -133,6 +140,7 @@ describe('useChatThread', () => {
       pending = result.current.send('zestaw dla Kowalskiego');
     });
     rerender({ scopeKey: 'org-b' });
+    expect((dispatchMock.mock.calls[0][2] as AbortSignal).aborted).toBe(true);
     await act(async () => {
       resolveDispatch({ sessionId: 'session-a', spec: { component: 'Navigate', route: 'patients' }, creditsUsed: 1 });
       await pending;
@@ -141,7 +149,7 @@ describe('useChatThread', () => {
     expect(result.current.messages).toEqual([]);
     expect(result.current.isBusy).toBe(false);
     await act(() => result.current.send('kto nie ćwiczy'));
-    expect(dispatchMock).toHaveBeenLastCalledWith('kto nie ćwiczy', undefined);
+    expect(dispatchMock).toHaveBeenLastCalledWith('kto nie ćwiczy', undefined, expect.any(AbortSignal));
   });
 
   it('drops a reply that arrives after a new conversation was started', async () => {
@@ -156,6 +164,7 @@ describe('useChatThread', () => {
       pending = result.current.send('zestaw dla Kowalskiego');
     });
     act(() => result.current.reset());
+    expect((dispatchMock.mock.calls[0][2] as AbortSignal).aborted).toBe(true);
     await act(async () => {
       resolveDispatch({ sessionId: 'session-a', spec: { component: 'Navigate', route: 'patients' }, creditsUsed: 1 });
       await pending;
@@ -164,6 +173,64 @@ describe('useChatThread', () => {
     expect(result.current.messages).toEqual([]);
     expect(result.current.isBusy).toBe(false);
     await act(() => result.current.send('kto nie ćwiczy'));
-    expect(dispatchMock).toHaveBeenLastCalledWith('kto nie ćwiczy', undefined);
+    expect(dispatchMock).toHaveBeenLastCalledWith('kto nie ćwiczy', undefined, expect.any(AbortSignal));
+  });
+
+  it('stops a reply in flight: the request is aborted, the question stays and the next turn starts a new AI session', async () => {
+    let resolveDispatch: (value: unknown) => void = () => undefined;
+    const { result } = renderHook(() =>
+      useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org-a' })
+    );
+    await act(() => result.current.send('kto nie ćwiczy'));
+    dispatchMock.mockReturnValueOnce(new Promise((resolve) => (resolveDispatch = resolve)));
+
+    let pending: Promise<void> = Promise.resolve();
+    act(() => {
+      pending = result.current.send('zestaw dla Kowalskiego');
+    });
+    const signal = dispatchMock.mock.lastCall?.[2] as AbortSignal;
+    expect(dispatchMock).toHaveBeenLastCalledWith('zestaw dla Kowalskiego', 'session-a', expect.any(AbortSignal));
+    act(() => result.current.stop());
+    expect(signal.aborted).toBe(true);
+    await act(async () => {
+      resolveDispatch({ sessionId: 'session-a', spec: { component: 'Navigate', route: 'patients' }, creditsUsed: 1 });
+      await pending;
+    });
+
+    expect(result.current.isBusy).toBe(false);
+    expect(result.current.messages).toHaveLength(4);
+    expect(result.current.messages[2]).toMatchObject({ role: 'user', text: 'zestaw dla Kowalskiego' });
+    expect(result.current.messages[3]).toMatchObject({ role: 'assistant', text: STOPPED_TEXT, spec: undefined });
+    await act(() => result.current.send('kto nie ćwiczy'));
+    expect(dispatchMock).toHaveBeenLastCalledWith('kto nie ćwiczy', undefined, expect.any(AbortSignal));
+    expect(result.current.messages).toHaveLength(6);
+  });
+
+  it('stops a document task: its request is aborted, no card lands and the next send works', async () => {
+    let resolveTask: (value: { text: string }) => void = () => undefined;
+    let taskSignal: AbortSignal | undefined;
+    const { result } = renderHook(() =>
+      useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org-a' })
+    );
+
+    let pending: Promise<boolean> = Promise.resolve(false);
+    act(() => {
+      pending = result.current.runTask('Przeanalizuj dokument', (signal) => {
+        taskSignal = signal;
+        return new Promise((resolve) => (resolveTask = resolve));
+      });
+    });
+    act(() => result.current.stop());
+    expect(taskSignal?.aborted).toBe(true);
+    let landed = true;
+    await act(async () => {
+      resolveTask({ text: 'Znalazłem 3 ćwiczenia.' });
+      landed = await pending;
+    });
+
+    expect(landed).toBe(false);
+    expect(result.current.messages.map((message) => message.text)).toEqual(['Przeanalizuj dokument', STOPPED_TEXT]);
+    await act(() => result.current.send('kto nie ćwiczy'));
+    expect(result.current.messages).toHaveLength(4);
   });
 });

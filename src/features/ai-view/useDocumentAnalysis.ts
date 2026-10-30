@@ -29,14 +29,16 @@ export function useDocumentAnalysis() {
     (file: File, patientId?: string) =>
       runTask(
         'Przeanalizuj dokument',
-        async (): Promise<AssistantReply> => {
+        async (signal): Promise<AssistantReply> => {
           if (!documentImportService.isFormatSupported(file)) {
             throw new Error('Tego formatu nie odczytam. Obsługuję PDF, Excel, CSV i TXT.');
           }
           if (!documentImportService.isFileSizeValid(file)) {
             throw new Error(`Plik jest za duży (limit ${documentImportService.getMaxFileSizeMB()} MB).`);
           }
-          const items = toDocumentItems(await documentImportService.analyzeDocument(file, patientId));
+          const items = toDocumentItems(
+            await documentImportService.analyzeDocument(file, patientId, undefined, signal)
+          );
           refetchCredits();
           return {
             text: describeResult(items),
@@ -52,8 +54,8 @@ export function useDocumentAnalysis() {
     (note: string, patientId?: string) => {
       const text = note.trim();
       if (text.length < MIN_NOTE_LENGTH) return Promise.resolve(false);
-      return runTask(text.length > 160 ? `${text.slice(0, 157)}…` : text, async (): Promise<AssistantReply> => {
-        const items = toDocumentItems(await documentImportService.analyzeText(text, patientId));
+      return runTask(text.length > 160 ? `${text.slice(0, 157)}…` : text, async (signal): Promise<AssistantReply> => {
+        const items = toDocumentItems(await documentImportService.analyzeText(text, patientId, undefined, signal));
         refetchCredits();
         return {
           text: describeResult(items),

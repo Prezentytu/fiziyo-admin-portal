@@ -141,3 +141,45 @@ export function upsertConversation(
 export function removeConversation(conversations: readonly StoredConversation[], id: string): StoredConversation[] {
   return conversations.filter((conversation) => conversation.id !== id);
 }
+
+/** Puts back a conversation deleted a moment ago (undo), in its place by date. */
+export function restoreConversation(
+  conversations: readonly StoredConversation[],
+  conversation: StoredConversation
+): StoredConversation[] {
+  const others = conversations.filter((existing) => existing.id !== conversation.id);
+  return sortConversations([conversation, ...others]).slice(0, MAX_CONVERSATIONS);
+}
+
+export interface ConversationGroup {
+  label: string;
+  conversations: StoredConversation[];
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Sidebar sections by the local day of the last message: today, yesterday, this week, older. */
+export function groupConversationsByDay(
+  conversations: readonly StoredConversation[],
+  now: Date = new Date()
+): ConversationGroup[] {
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const buckets: ConversationGroup[] = [
+    { label: 'Dzisiaj', conversations: [] },
+    { label: 'Wczoraj', conversations: [] },
+    { label: 'Ostatnie 7 dni', conversations: [] },
+    { label: 'Wcześniej', conversations: [] },
+  ];
+  for (const conversation of conversations) {
+    const index =
+      conversation.updatedAt >= startOfToday
+        ? 0
+        : conversation.updatedAt >= startOfToday - DAY_MS
+          ? 1
+          : conversation.updatedAt >= startOfToday - 6 * DAY_MS
+            ? 2
+            : 3;
+    buckets[index].conversations.push(conversation);
+  }
+  return buckets.filter((bucket) => bucket.conversations.length > 0);
+}

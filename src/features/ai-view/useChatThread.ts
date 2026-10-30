@@ -29,6 +29,8 @@ interface ChatThreadOptions {
   scopeKey: string;
 }
 
+export const STOPPED_TEXT = 'Zatrzymane. Napisz, co zrobić inaczej.';
+
 /**
  * One conversation: what the therapist wrote and what came back (a sentence and a card from the
  * dispatcher, AI or rules, or the next step of a flow the thread runs itself).
@@ -45,6 +47,7 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
   const threadEpochRef = useRef(0);
   // isBusy only blocks after a render; a double click lands before it.
   const inFlightRef = useRef(false);
+  const abortRef = useRef<AbortController | undefined>(undefined);
 
   if (threadScope !== scopeKey) {
     setThreadScope(scopeKey);
@@ -54,6 +57,7 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
 
   // Whatever is in flight belongs to the previous conversation from now on.
   const startOver = useCallback(() => {
+    abortRef.current?.abort();
     threadEpochRef.current += 1;
     inFlightRef.current = false;
     sessionRef.current = undefined;
@@ -67,7 +71,15 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
   const appendAssistant = useCallback((reply: AssistantReply) => {
     setMessages((previous) => [
       ...previous,
-      { id: newChatId(), role: 'assistant', text: reply.text, spec: reply.spec, source: 'local', creditsUsed: 0, createdAt: Date.now() },
+      {
+        id: newChatId(),
+        role: 'assistant',
+        text: reply.text,
+        spec: reply.spec,
+        source: 'local',
+        creditsUsed: 0,
+        createdAt: Date.now(),
+      },
     ]);
   }, []);
 
@@ -86,8 +98,11 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
       pushUser(trimmed);
       setIsBusy(true);
       const epoch = threadEpochRef.current;
+      const controller = new AbortController();
+      abortRef.current = controller;
       try {
         const reply = await resolveReply(trimmed, {
+          signal: controller.signal,
           useAi,
           sessionId: sessionRef.current?.scopeKey === scopeKey ? sessionRef.current.id : undefined,
           context,
@@ -142,14 +157,20 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
    * Resolves true only when the task's reply reached the thread.
    */
   const runTask = useCallback(
-    async (userText: string, task: () => Promise<AssistantReply>, attachmentName?: string): Promise<boolean> => {
+    async (
+      userText: string,
+      task: (signal: AbortSignal) => Promise<AssistantReply>,
+      attachmentName?: string
+    ): Promise<boolean> => {
       if (inFlightRef.current) return false;
       inFlightRef.current = true;
       pushUser(userText, attachmentName);
       setIsBusy(true);
       const epoch = threadEpochRef.current;
+      const controller = new AbortController();
+      abortRef.current = controller;
       try {
-        const reply = await task();
+        const reply = await task(controller.signal);
         if (threadEpochRef.current !== epoch) return false;
         appendAssistant(reply);
         return true;
@@ -176,6 +197,19 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
     );
   }, []);
 
+  /** The therapist stopped the reply: the request is aborted, the question stays, a late answer is dropped. */
+  // The model never saw its own answer, so the next turn starts a new AI session.
+  const stop = useCallback(() => {
+    if (!inFlightRef.current) return;
+    abortRef.current?.abort();
+    threadEpochRef.current += 1;
+    inFlightRef.current = false;
+    sessionRef.current = undefined;
+    pendingCommandRef.current = undefined;
+    setIsBusy(false);
+    appendAssistant({ text: STOPPED_TEXT });
+  }, [appendAssistant]);
+
   const reset = useCallback(
     (nextMessages: ChatThreadMessage[] = []) => {
       startOver();
@@ -185,5 +219,5 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
     [startOver]
   );
 
-  return { messages, isBusy, send, appendAssistant, appendExchange, runTask, markChosen, reset };
+  return { messages, isBusy, send, stop, appendAssistant, appendExchange, runTask, markChosen, reset };
 }

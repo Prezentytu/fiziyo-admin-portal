@@ -23,7 +23,7 @@ export interface DispatchResult {
   creditsUsed: number;
 }
 
-export type Dispatcher = (message: string, sessionId?: string) => Promise<DispatchResult>;
+export type Dispatcher = (message: string, sessionId?: string, signal?: AbortSignal) => Promise<DispatchResult>;
 
 export interface ResolvedReply {
   text: string;
@@ -46,13 +46,15 @@ export async function resolveReply(
     sessionId?: string;
     context: IntentContext;
     dispatch: Dispatcher;
+    /** Aborts the dispatcher call when the therapist stops the reply. */
+    signal?: AbortSignal;
     /** The command a previous question was about; only rules use it, the model keeps its own history. */
     pendingCommand?: string;
   }
 ): Promise<ResolvedReply> {
   if (options.useAi) {
     try {
-      const result = await options.dispatch(text, options.sessionId);
+      const result = await options.dispatch(text, options.sessionId, options.signal);
       return {
         text: replyText(result.text, result.spec, options.context),
         spec: result.spec,
@@ -63,7 +65,13 @@ export async function resolveReply(
     } catch (error) {
       const fallbackReason = error instanceof ChatDispatchError ? error.reason : 'unavailable';
       const spec = routeIntent(text, options.context, options.pendingCommand);
-      return { text: replyText(undefined, spec, options.context), spec, source: 'rules', creditsUsed: 0, fallbackReason };
+      return {
+        text: replyText(undefined, spec, options.context),
+        spec,
+        source: 'rules',
+        creditsUsed: 0,
+        fallbackReason,
+      };
     }
   }
   const spec = routeIntent(text, options.context, options.pendingCommand);
@@ -74,7 +82,11 @@ export async function resolveReply(
  * Sentence shown above the card. A question (Clarify) always reaches the therapist, even when the
  * model wrote a lead-in that does not repeat it.
  */
-export function replyText(modelText: string | undefined, spec: ChatViewSpec | undefined, context: IntentContext): string {
+export function replyText(
+  modelText: string | undefined,
+  spec: ChatViewSpec | undefined,
+  context: IntentContext
+): string {
   const fallback = spec
     ? describeSpec(spec, {
         patientName: (patientId) => context.patients.find((patient) => patient.id === patientId)?.name,

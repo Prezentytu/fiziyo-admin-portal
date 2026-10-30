@@ -7,7 +7,9 @@ import {
   MAX_CONVERSATIONS,
   MAX_STORED_MESSAGES,
   parseConversations,
+  groupConversationsByDay,
   removeConversation,
+  restoreConversation,
   upsertConversation,
   type ChatThreadMessage,
 } from '../conversationStore';
@@ -121,5 +123,49 @@ describe('clearStoredConversations', () => {
     expect(window.localStorage.getItem(conversationStorageKey('u1', 'org-a'))).toBeNull();
     expect(window.localStorage.getItem(conversationStorageKey('u2', 'org-b'))).toBeNull();
     expect(window.localStorage.getItem('fiziyo-chat-mode')).toBe('{"enabled":true}');
+  });
+});
+
+describe('restoreConversation', () => {
+  it('puts a deleted conversation back in its place by date', () => {
+    const older = { id: 'c1', title: 'Starsza', updatedAt: 1, messages: [] };
+    const deleted = { id: 'c2', title: 'Usunięta', updatedAt: 2, messages: [] };
+    const newer = { id: 'c3', title: 'Nowsza', updatedAt: 3, messages: [] };
+
+    const restored = restoreConversation(removeConversation([newer, deleted, older], 'c2'), deleted);
+
+    expect(restored.map((conversation) => conversation.id)).toEqual(['c3', 'c2', 'c1']);
+  });
+});
+
+describe('groupConversationsByDay', () => {
+  it('sorts conversations into today, yesterday, this week and older by local day', () => {
+    const now = new Date(2026, 9, 30, 9, 0);
+    const at = (day: number, hour: number) => new Date(2026, 9, day, hour).getTime();
+    const conversation = (id: string, updatedAt: number) => ({ id, title: id, updatedAt, messages: [] });
+
+    const groups = groupConversationsByDay(
+      [
+        conversation('today', at(30, 0)),
+        conversation('yesterday-late', at(29, 23)),
+        conversation('week', at(24, 8)),
+        conversation('older', at(23, 23)),
+      ],
+      now
+    );
+
+    expect(groups.map((group) => [group.label, group.conversations.map((item) => item.id)])).toEqual([
+      ['Dzisiaj', ['today']],
+      ['Wczoraj', ['yesterday-late']],
+      ['Ostatnie 7 dni', ['week']],
+      ['Wcześniej', ['older']],
+    ]);
+  });
+
+  it('leaves out empty sections', () => {
+    const now = new Date(2026, 9, 30, 9, 0);
+    expect(groupConversationsByDay([{ id: 'c1', title: 'c1', updatedAt: now.getTime(), messages: [] }], now)).toEqual([
+      { label: 'Dzisiaj', conversations: [{ id: 'c1', title: 'c1', updatedAt: now.getTime(), messages: [] }] },
+    ]);
   });
 });

@@ -19,6 +19,7 @@ import {
   conversationStorageKey,
   parseConversations,
   removeConversation,
+  restoreConversation,
   upsertConversation,
   type StoredConversation,
 } from './utils/conversationStore';
@@ -53,10 +54,16 @@ export interface ChatSession {
   messages: readonly ChatThreadMessage[];
   isBusy: boolean;
   sendMessage: (text: string) => void;
+  /** Stops the reply in flight; the question stays in the thread. */
+  stopReply: () => void;
   appendAssistant: (reply: AssistantReply) => void;
   appendExchange: (userText: string, reply: AssistantReply, attachmentName?: string) => void;
   markChosen: (messageId: string, chosen: string) => void;
-  runTask: (userText: string, task: () => Promise<AssistantReply>, attachmentName?: string) => Promise<boolean>;
+  runTask: (
+    userText: string,
+    task: (signal: AbortSignal) => Promise<AssistantReply>,
+    attachmentName?: string
+  ) => Promise<boolean>;
   conversations: readonly StoredConversation[];
   activeConversationId: string;
   title: string;
@@ -65,6 +72,8 @@ export interface ChatSession {
   goHome: () => void;
   openConversation: (id: string) => void;
   deleteConversation: (id: string) => void;
+  /** Undo of a delete: the conversation comes back to the list. */
+  restoreDeletedConversation: (conversation: StoredConversation) => void;
   /** Patient the conversation is about (latest card), for the header chip and the context panel. */
   contextPatient?: ChatPatient;
   isContextOpen: boolean;
@@ -279,6 +288,17 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
     [activeConversationId, reset, storageKey]
   );
 
+  const restoreDeletedConversation = useCallback(
+    (conversation: StoredConversation) => {
+      setConversations((previous) => {
+        const next = restoreConversation(previous, conversation);
+        if (storageKey) writeConversations(storageKey, next);
+        return next;
+      });
+    },
+    [storageKey]
+  );
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       // Only on the chat home: elsewhere ⌘K must not throw away work in a form or editor.
@@ -303,7 +323,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
     [patients, therapistId]
   );
   const title = conversations.find((conversation) => conversation.id === activeConversationId)?.title ?? 'Nowa rozmowa';
-  const { send, appendAssistant, appendExchange, runTask, markChosen } = thread;
+  const { send, stop: stopReply, appendAssistant, appendExchange, runTask, markChosen } = thread;
   const sendMessage = useCallback((text: string) => void send(text), [send]);
   const openCreateSet = useCallback(
     (exerciseIds: string[], patient?: Patient) => setCreateSetRequest({ exerciseIds, patient }),
@@ -366,6 +386,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       messages,
       isBusy,
       sendMessage,
+      stopReply,
       appendAssistant,
       appendExchange,
       markChosen,
@@ -377,6 +398,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       goHome,
       openConversation,
       deleteConversation,
+      restoreDeletedConversation,
       contextPatient,
       isContextOpen,
       setContextOpen,
@@ -400,6 +422,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       messages,
       isBusy,
       sendMessage,
+      stopReply,
       appendAssistant,
       appendExchange,
       markChosen,
@@ -411,6 +434,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       goHome,
       openConversation,
       deleteConversation,
+      restoreDeletedConversation,
       contextPatient,
       isContextOpen,
       showPatient,

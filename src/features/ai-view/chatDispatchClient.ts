@@ -13,7 +13,11 @@ const DISPATCH_RESPONSE_SCHEMA = z.object({
 });
 
 /** REST `POST /api/chat/dispatch` (fizjo-app backend). The model returns a sentence and a card spec, never HTML. */
-export async function dispatchChatMessage(message: string, sessionId?: string): Promise<DispatchResult> {
+export async function dispatchChatMessage(
+  message: string,
+  sessionId?: string,
+  signal?: AbortSignal
+): Promise<DispatchResult> {
   const token = getBackendToken();
   if (!token) throw new ChatDispatchError('unauthorized', 'Brak tokenu autoryzacji.');
 
@@ -23,6 +27,7 @@ export async function dispatchChatMessage(message: string, sessionId?: string): 
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ message, sessionId }),
+      signal,
     });
   } catch {
     throw new ChatDispatchError('unavailable', 'Asystent AI jest niedostępny.');
