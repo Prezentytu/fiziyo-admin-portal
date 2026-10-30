@@ -1,7 +1,5 @@
 'use client';
 
-import { useState } from 'react';
-import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -12,7 +10,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { useChatActions } from '../ChatSessionContext';
 import type { CardProps } from './cardProps';
 import { ChatCard } from './ChatCard';
-import { QuickReplies } from './QuickReplies';
 import { useCreateExercise } from './useChatWrites';
 
 const numberField = z.number({ message: 'Podaj liczbę' }).int().min(0).max(3600);
@@ -35,13 +32,10 @@ const PARAM_FIELDS: ReadonlyArray<{ name: 'sets' | 'reps' | 'executionTime' | 'r
   { name: 'restSets', label: 'Przerwa (s)' },
 ];
 
-const NEXT_STEPS = ['Dodaj do zestawu', 'Gotowe'] as const;
-
 /** Exercise for the organization's catalog, written in the thread (DEC-20261029-01 left this to the design). */
 export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProps<'CreateExercise'>) {
-  const { organizationId, contextPatient, appendExchange, markChosen } = useChatActions();
+  const { organizationId, contextPatient, appendAssistant, markChosen } = useChatActions();
   const { create, creating } = useCreateExercise();
-  const [created, setCreated] = useState<{ id: string; name: string } | null>(null);
   const form = useForm<NewExerciseValues>({
     resolver: zodResolver(NEW_EXERCISE_SCHEMA),
     defaultValues: {
@@ -64,45 +58,18 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
       executionTime: values.executionTime || null,
       restSets: values.restSets,
     });
-    if (exercise) setCreated(exercise);
+    if (!exercise) return;
+    markChosen(messageId, 'created');
+    appendAssistant({
+      spec: { component: 'ExerciseCreated', exerciseId: exercise.id, name: exercise.name, patientId: contextPatient?.id },
+    });
   });
 
-  if (created || chosen !== undefined) {
+  if (chosen !== undefined) {
     return (
-      <div data-testid={testId} className="flex flex-col gap-3">
-        <p className="text-[16px] leading-[26px] text-foreground">
-          {created ? (
-            <>
-              Ćwiczenie <b className="font-semibold">{created.name}</b> jest w katalogu gabinetu. Zdjęcie i szczegóły
-              dodasz na{' '}
-              <Link href={`/exercises/${created.id}`} className="text-tint" data-testid={`${testId}-open-link`}>
-                stronie ćwiczenia
-              </Link>
-              .
-            </>
-          ) : (
-            'Ćwiczenie jest w katalogu gabinetu.'
-          )}
-        </p>
-        {created && (
-          <QuickReplies
-            options={NEXT_STEPS}
-            chosen={chosen}
-            testId={testId}
-            onPick={(option) => {
-              markChosen(messageId, option);
-              if (option === 'Dodaj do zestawu') {
-                appendExchange(option, {
-                  text: 'Zestaw z nowym ćwiczeniem. Dodaj kolejne z katalogu albo przejdź dalej.',
-                  spec: { component: 'SetDraft', patientId: contextPatient?.id, exerciseIds: [created.id] },
-                });
-              } else {
-                appendExchange(option, { text: 'Dobrze. Ćwiczenie znajdziesz w katalogu.' });
-              }
-            }}
-          />
-        )}
-      </div>
+      <p data-testid={testId} className="text-[14px] text-label-secondary">
+        Ćwiczenie utworzone.
+      </p>
     );
   }
 

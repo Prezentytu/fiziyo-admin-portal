@@ -157,9 +157,12 @@ export function useCreatePatient() {
     CREATE_SHADOW_PATIENT_MUTATION
   );
   const apolloClient = useApolloClient();
+  const inFlightRef = useRef(false);
 
   const create = useCallback(
     async (organizationId: string, input: NewPatientInput) => {
+      if (inFlightRef.current) return null;
+      inFlightRef.current = true;
       try {
         const phone = input.phone?.trim();
         const result = await createPatient({
@@ -186,6 +189,8 @@ export function useCreatePatient() {
       } catch (error) {
         toast.error(errorText(error, 'Nie udało się dodać pacjenta'));
         return null;
+      } finally {
+        inFlightRef.current = false;
       }
     },
     [apolloClient, createPatient]
@@ -200,9 +205,12 @@ export function useCreateExercise() {
     CREATE_EXERCISE_MUTATION
   );
   const apolloClient = useApolloClient();
+  const inFlightRef = useRef(false);
 
   const create = useCallback(
     async (organizationId: string, draft: CreateExerciseDraft) => {
+      if (inFlightRef.current) return null;
+      inFlightRef.current = true;
       try {
         const result = await createExercise({ variables: buildCreateExerciseVariables({ organizationId, draft }) });
         const exercise = result.data?.createExercise;
@@ -214,6 +222,8 @@ export function useCreateExercise() {
       } catch (error) {
         toast.error(errorText(error, 'Nie udało się utworzyć ćwiczenia'));
         return null;
+      } finally {
+        inFlightRef.current = false;
       }
     },
     [apolloClient, createExercise]

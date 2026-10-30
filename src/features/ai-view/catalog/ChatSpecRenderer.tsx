@@ -15,6 +15,8 @@ import { SendSummaryCard } from './SendSummaryCard';
 import { SentCard } from './SentCard';
 import { SetDraftCard } from './SetDraftCard';
 import { SetSavedCard } from './SetSavedCard';
+import { PatientAddedCard } from './PatientAddedCard';
+import { ExerciseCreatedCard } from './ExerciseCreatedCard';
 
 interface ChatSpecRendererProps {
   readonly spec: ChatCardSpec;
@@ -63,6 +65,10 @@ export function ChatSpecRenderer({ spec, testId, messageId, chosen }: ChatSpecRe
       return <SentCard spec={spec} testId={`${testId}-sent`} {...common} />;
     case 'SetSaved':
       return <SetSavedCard spec={spec} testId={`${testId}-set-saved`} {...common} />;
+    case 'PatientAdded':
+      return <PatientAddedCard spec={spec} testId={`${testId}-patient-added`} {...common} />;
+    case 'ExerciseCreated':
+      return <ExerciseCreatedCard spec={spec} testId={`${testId}-exercise-created`} {...common} />;
     case 'ScanVisit':
       return <ScanVisitCard spec={spec} testId={`${testId}-scan-visit`} {...common} />;
     case 'DocumentResult':

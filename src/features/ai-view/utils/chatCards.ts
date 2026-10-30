@@ -23,6 +23,8 @@ export type LocalCardSpec =
   | { component: 'SendSummary'; draft: SetDraftPayload; plan: SchedulePlan }
   | { component: 'Sent'; patientId: string; setName: string; planLabel: string }
   | { component: 'SetSaved'; setId: string; name: string }
+  | { component: 'PatientAdded'; patientId: string; name: string }
+  | { component: 'ExerciseCreated'; exerciseId: string; name: string; patientId?: string }
   | { component: 'ScanVisit'; patientId?: string }
   | { component: 'DocumentResult'; fileName: string; items: DocumentItem[]; patientId?: string };
 
@@ -34,6 +36,8 @@ export const LOCAL_CARD_COMPONENTS: ReadonlySet<string> = new Set([
   'SendSummary',
   'Sent',
   'SetSaved',
+  'PatientAdded',
+  'ExerciseCreated',
   'ScanVisit',
   'DocumentResult',
 ]);
@@ -48,6 +52,8 @@ export function cardPatientId(spec: ChatCardSpec | undefined): string | undefine
       return spec.patientId;
     case 'AssignSummary':
     case 'Sent':
+    case 'PatientAdded':
+    case 'ExerciseCreated':
       return spec.patientId;
     case 'PickPatient':
     case 'Schedule':

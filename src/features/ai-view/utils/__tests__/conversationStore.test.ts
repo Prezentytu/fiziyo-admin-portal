@@ -55,6 +55,19 @@ describe('parseConversations', () => {
     expect(conversations[0].messages.map((message) => message.id)).toEqual(['m1', 'a1']);
   });
 
+  it('keeps the result cards of saved forms, so a reload never shows the form again', () => {
+    const added: ChatThreadMessage = {
+      id: 'a2',
+      role: 'assistant',
+      spec: { component: 'PatientAdded', patientId: 'p-new', name: 'Anna Nowak' },
+      source: 'local',
+      creditsUsed: 0,
+      createdAt: 3,
+    };
+    const raw = JSON.stringify(upsertConversation([], 'c1', [userMessage('m1', 'dodaj pacjenta'), added]));
+    expect(parseConversations(raw)[0].messages.at(-1)).toEqual(added);
+  });
+
   it('survives invalid JSON and non-arrays', () => {
     expect(parseConversations('{')).toEqual([]);
     expect(parseConversations('{"a":1}')).toEqual([]);
