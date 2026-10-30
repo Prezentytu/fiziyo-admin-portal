@@ -3,15 +3,16 @@ import { z } from 'zod';
 import { getBackendToken } from '@/lib/tokenCache';
 import { triggerCreditsRefresh } from '@/lib/aiCreditsRefresh';
 import { ChatDispatchError, type DispatchResult } from './utils/resolveReply';
-import { toChatViewSpec } from './utils/viewSpec';
+import { parseDispatchReply } from './utils/viewSpec';
 
 const DISPATCH_RESPONSE_SCHEMA = z.object({
   sessionId: z.string(),
   spec: z.unknown(),
+  reply: z.string().nullish(),
   creditsUsed: z.number().nullish(),
 });
 
-/** REST `POST /api/chat/dispatch` (fizjo-app backend). The model returns a card spec, never HTML. */
+/** REST `POST /api/chat/dispatch` (fizjo-app backend). The model returns a sentence and a card spec, never HTML. */
 export async function dispatchChatMessage(message: string, sessionId?: string): Promise<DispatchResult> {
   const token = getBackendToken();
   if (!token) throw new ChatDispatchError('unauthorized', 'Brak tokenu autoryzacji.');
@@ -42,5 +43,6 @@ export async function dispatchChatMessage(message: string, sessionId?: string): 
 
   const creditsUsed = parsed.data.creditsUsed ?? 0;
   if (creditsUsed > 0) triggerCreditsRefresh();
-  return { sessionId: parsed.data.sessionId, spec: toChatViewSpec(parsed.data.spec), creditsUsed };
+  const reply = parseDispatchReply(parsed.data.spec, parsed.data.reply);
+  return { sessionId: parsed.data.sessionId, text: reply.text, spec: reply.spec, creditsUsed };
 }
