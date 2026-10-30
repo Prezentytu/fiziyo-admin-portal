@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { LoadingState } from '@/components/shared/LoadingState';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { ShowMoreTrigger } from '@/components/shared/ShowMoreTrigger';
 import { ExerciseCard, Exercise } from '@/features/exercises/ExerciseCard';
 import { ExerciseDialog } from '@/features/exercises/ExerciseDialog';
 import { SubmitToGlobalDialog } from '@/features/exercises/SubmitToGlobalDialog';
@@ -23,6 +24,7 @@ import { ExerciseBuilderFAB } from '@/components/exercise-builder/ExerciseBuilde
 import { cn } from '@/lib/utils';
 
 import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
+import { useIncrementalList } from '@/hooks/useIncrementalList';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
 import {
@@ -218,6 +220,11 @@ export default function ExercisesPage() {
     () => filterExercisesBySearch(sortedExercises, searchQuery),
     [sortedExercises, searchQuery]
   );
+  const {
+    visibleItems: visibleExercises,
+    remaining: remainingExercises,
+    showMore: showMoreExercises,
+  } = useIncrementalList(filteredExercises, `${sourceFilter}|${searchQuery}`);
 
   const handleView = (exercise: Exercise) => {
     router.push(`/exercises/${exercise.id}`);
@@ -415,7 +422,7 @@ export default function ExercisesPage() {
             </Card>
           ) : viewMode === 'grid' ? (
             <div className={cn('grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 animate-stagger')}>
-              {filteredExercises.map((exercise) => (
+              {visibleExercises.map((exercise) => (
                 <ExerciseCard
                   key={exercise.id}
                   exercise={exercise}
@@ -433,7 +440,7 @@ export default function ExercisesPage() {
             </div>
           ) : (
             <div className="space-y-2 animate-stagger">
-              {filteredExercises.map((exercise) => (
+              {visibleExercises.map((exercise) => (
                 <ExerciseCard
                   key={exercise.id}
                   exercise={exercise}
@@ -450,6 +457,13 @@ export default function ExercisesPage() {
                 />
               ))}
             </div>
+          )}
+          {!loading && (
+            <ShowMoreTrigger
+              remaining={remainingExercises}
+              onShowMore={showMoreExercises}
+              dataTestId="exercise-show-more-btn"
+            />
           )}
         </div>
       </div>
