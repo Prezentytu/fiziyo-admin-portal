@@ -38,6 +38,7 @@ import {
   type ParameterTestIdKind,
 } from '@/components/shared/exercise';
 import type { PatientAssignment, ExerciseMapping, ExerciseOverride } from './PatientAssignmentCard';
+import { resolveOverrideInheritedParams } from './utils/overrideInheritedParams';
 
 const OVERRIDE_FIELD_TESTID_MAP: Record<
   ExerciseFieldKey | MappingOnlyFieldKey,
@@ -206,19 +207,19 @@ function EditExerciseOverrideDialogContent({
   const exercise = mapping.exercise;
 
   // Initial values for change detection
-  const inheritedSets = mapping.sets ?? exercise?.sets ?? 0;
-  const inheritedReps = mapping.reps ?? exercise?.reps ?? 0;
-  const inheritedDuration = mapping.duration ?? exercise?.duration ?? 0;
-  const inheritedExecutionTime = mapping.executionTime ?? exercise?.defaultExecutionTime ?? 0;
-  const inheritedRestSets = mapping.restSets ?? 0;
-  const inheritedRestReps = mapping.restReps ?? 0;
-  const inheritedPreparationTime = mapping.preparationTime ?? exercise?.preparationTime ?? 0;
+  const inherited = resolveOverrideInheritedParams(mapping);
+  const inheritedSets = inherited.sets;
+  const inheritedReps = inherited.reps;
+  const inheritedDuration = inherited.duration;
+  const inheritedExecutionTime = inherited.executionTime;
+  const inheritedRestSets = inherited.restSets;
+  const inheritedRestReps = inherited.restReps;
+  const inheritedPreparationTime = inherited.preparationTime;
   const inheritedTempo = mapping.tempo ?? '';
   const inheritedLoadKg =
     mapping.loadUnit === 'kg' && mapping.loadValue != null ? mapping.loadValue : null;
   const inheritedRom = exercise?.rangeOfMotion ?? '';
-  const exerciseSideValue = exercise?.side?.toLowerCase() || exercise?.exerciseSide;
-  const inheritedExerciseSide = exerciseSideValue ?? 'none';
+  const inheritedExerciseSide = inherited.exerciseSide;
   const inheritedDifficulty = exercise?.difficultyLevel ?? 'UNKNOWN';
   const inheritedPatientDescription =
     exercise?.patientDescription ?? exercise?.description ?? '';

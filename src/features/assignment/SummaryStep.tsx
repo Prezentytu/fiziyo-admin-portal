@@ -7,9 +7,14 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
-import { ExerciseExecutionCard, fromExerciseMapping } from '@/components/shared/exercise';
+import {
+  ExerciseExecutionCard,
+  estimateEffectiveExerciseSeconds,
+  fromExerciseMapping,
+  resolveEffectiveExerciseParams,
+} from '@/components/shared/exercise';
 import { ScheduleSummary } from '@/components/shared';
-import { calculateEstimatedTime, formatEstimatedTime } from '@/utils/exerciseTime';
+import { formatEstimatedTime } from '@/utils/exerciseTime';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { sendExerciseReport } from '@/services/exerciseReportService';
 import type { ExerciseSet, Patient, Frequency, ExerciseOverride, ExerciseMapping, LocalExerciseMapping } from './types';
@@ -34,37 +39,11 @@ interface SummaryStepProps {
 
 // Helper: Oblicz łączny czas zestawu
 function calculateTotalTime(mappings: ExerciseMapping[], overrides: Map<string, ExerciseOverride>): number {
-  return mappings.reduce((total, mapping) => {
-    const exercise = mapping.exercise;
-    const override = overrides.get(mapping.id);
-    const exerciseType = exercise?.type?.toLowerCase();
-    const isTimeBased = exerciseType === 'time';
-
-    const sets = override?.sets ?? mapping.sets ?? exercise?.defaultSets ?? 3;
-    const reps = override?.reps ?? mapping.reps ?? exercise?.defaultReps ?? 10;
-    const executionTime = override?.executionTime ?? mapping.executionTime ?? exercise?.defaultExecutionTime;
-    const rest = override?.restSets ?? mapping.restSets ?? exercise?.defaultRestBetweenSets ?? 60;
-
-    // Duration służy do kalkulacji czasu serii; w pozostałych przypadkach używamy executionTime.
-    const duration = isTimeBased ? (override?.duration ?? mapping.duration ?? exercise?.defaultDuration) : undefined;
-    const side = override?.exerciseSide ?? mapping.exercise?.side ?? exercise?.side ?? exercise?.exerciseSide;
-    const preparationTime = override?.preparationTime ?? mapping.preparationTime ?? exercise?.preparationTime;
-
-    return (
-      total +
-      calculateEstimatedTime({
-        sets,
-        reps,
-        duration,
-        executionTime,
-        rest,
-        restReps: override?.restReps ?? mapping.restReps ?? exercise?.defaultRestBetweenReps,
-        side,
-        preparationTime,
-        tempo: override?.tempo ?? mapping.tempo ?? exercise?.tempo,
-      })
-    );
-  }, 0);
+  return mappings.reduce(
+    (total, mapping) =>
+      total + estimateEffectiveExerciseSeconds(resolveEffectiveExerciseParams(mapping, overrides.get(mapping.id))),
+    0
+  );
 }
 
 export function SummaryStep({

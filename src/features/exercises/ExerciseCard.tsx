@@ -199,10 +199,10 @@ export function ExerciseCard({
     .map((img) => getMediaUrl(img))
     .filter((img): img is string => !!img);
 
-  // Lightweight card params for list view only
-  const setsValue = exercise.defaultSets ?? exercise.sets;
-  const repsValue = exercise.defaultReps ?? exercise.reps;
-  const executionTimeValue = exercise.defaultExecutionTime ?? exercise.executionTime;
+  // Lightweight card params for list view only (GraphQL Exercise ma tylko pola default*)
+  const setsValue = exercise.defaultSets;
+  const repsValue = exercise.defaultReps;
+  const executionTimeValue = exercise.defaultExecutionTime;
 
   const handleOpen = () => {
     // For CHANGES_REQUESTED, open edit directly to show feedback

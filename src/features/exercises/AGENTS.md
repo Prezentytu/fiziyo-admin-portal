@@ -55,11 +55,13 @@ UI i mutacje: dual-read/dual-write przez `buildExerciseLoadMutationVars` (`src/u
 ### Enumy
 
 ```
-ExerciseType: Reps = 0, Time = 1  // DEPRECATED - używaj executionTime > 0
+ExerciseType: Reps = 0, Time = 1  // zapisany typ wygrywa; zgadywanie z executionTime tylko dla szkicu bez typu
 ExerciseSide: None = 0, Left = 1, Right = 2, Both = 3, Alternating = 4
 ExerciseScope: Global, Organization, Personal
 DifficultyLevel: Unknown = 0, Easy = 1, Medium = 2, Hard = 3, Expert = 4
 ```
+
+GraphQL zwraca `type`/`side` wielkimi literami (REPS, LEFT), mutacje przyjmują stringi. Normalizuj przez `normalizeExerciseType` / `normalizeExerciseSide` (`src/utils/exerciseEnums.ts`), nie przez lokalne `?.toLowerCase()`. `inferExerciseType` tylko dla szkicu w `CreateExerciseWizard`; duplikacja przekazuje zapisany `type`.
 
 ## Hierarchia pól UI (od najważniejszych)
 

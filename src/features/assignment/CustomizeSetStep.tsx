@@ -169,16 +169,11 @@ export function CustomizeSetStep({
         : 'np. Rehabilitacja kolana - tydzień 1';
 
   const testIdPrefix = isCreatingNew ? 'create-set' : 'customize-set';
+  // Podgląd bez kolumn mappingu: parametry dziedziczy resolver z domyślnych ćwiczenia (kanon).
   const buildMappingForDetails = useCallback((exercise: BuilderExercise): ExerciseMapping => {
     return {
       id: `preview-${exercise.id}`,
       exerciseId: exercise.id,
-      sets: exercise.defaultSets ?? exercise.sets ?? 3,
-      reps: exercise.defaultReps ?? exercise.reps ?? 10,
-      duration: exercise.defaultDuration ?? exercise.duration,
-      restSets: exercise.defaultRestBetweenSets ?? exercise.restSets ?? 60,
-      restReps: exercise.defaultRestBetweenReps ?? exercise.restReps ?? 0,
-      executionTime: exercise.defaultExecutionTime,
       exercise: {
         id: exercise.id,
         name: exercise.name,
@@ -195,6 +190,8 @@ export function CustomizeSetStep({
         defaultExecutionTime: exercise.defaultExecutionTime,
         defaultRestBetweenSets: exercise.defaultRestBetweenSets,
         defaultRestBetweenReps: exercise.defaultRestBetweenReps,
+        preparationTime: exercise.preparationTime,
+        tempo: exercise.tempo,
         mainTags: exercise.mainTags?.map((tag) => tag.name),
         additionalTags: exercise.additionalTags?.map((tag) => tag.name),
         scope: exercise.scope,

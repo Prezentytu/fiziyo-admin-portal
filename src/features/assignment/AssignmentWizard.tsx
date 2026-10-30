@@ -48,7 +48,11 @@ import {
   buildAssignmentFrequencyPayload,
   normalizeFrequencySeed,
 } from './utils/scheduleFrequencyUtils';
-import { calculateEstimatedTime } from '@/utils/exerciseTime';
+import {
+  estimateEffectiveExerciseSeconds,
+  resolveEffectiveExerciseParams,
+} from '@/components/shared/exercise/resolveEffectiveExerciseParams';
+import { normalizeExerciseSide } from '@/utils/exerciseEnums';
 import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
 import { buildMappingOverridesFromParams } from '@/features/exercise-sets/utils/buildMappingOverridesFromParams';
 import {
@@ -555,21 +559,21 @@ function AssignmentWizardContent({
               audioCue: m.exercise.audioCue,
               rangeOfMotion: m.exercise.rangeOfMotion,
               side: m.exercise.side,
-              exerciseSide: m.exercise.side?.toLowerCase() || m.exercise.exerciseSide,
+              exerciseSide: normalizeExerciseSide(m.exercise.side ?? m.exercise.exerciseSide),
               imageUrl: m.exercise.thumbnailUrl || m.exercise.imageUrl,
               thumbnailUrl: m.exercise.thumbnailUrl,
               images: m.exercise.images,
               gifUrl: m.exercise.gifUrl,
               videoUrl: m.exercise.videoUrl,
               notes: m.exercise.notes,
-              // Exercise default values (support both new and legacy names)
-              sets: m.exercise.defaultSets ?? m.exercise.sets,
-              reps: m.exercise.defaultReps ?? m.exercise.reps,
-              duration: m.exercise.defaultDuration ?? m.exercise.duration,
-              restSets: m.exercise.defaultRestBetweenSets ?? m.exercise.restSets,
-              restReps: m.exercise.defaultRestBetweenReps ?? m.exercise.restReps,
+              // GraphQL Exercise ma tylko pola default*; kopie pod starymi nazwami dla czytników legacy.
+              sets: m.exercise.defaultSets,
+              reps: m.exercise.defaultReps,
+              duration: m.exercise.defaultDuration,
+              restSets: m.exercise.defaultRestBetweenSets,
+              restReps: m.exercise.defaultRestBetweenReps,
               preparationTime: m.exercise.preparationTime,
-              executionTime: m.exercise.defaultExecutionTime ?? m.exercise.executionTime,
+              executionTime: m.exercise.defaultExecutionTime,
               tempo: m.exercise.tempo,
               defaultLoad: exerciseLoad,
               loadType: m.exercise.loadType,
@@ -1054,31 +1058,22 @@ function AssignmentWizardContent({
     return builderInstances.reduce((totalSeconds, instance) => {
       const params = builderParams.get(instance.instanceId);
       const exercise = availableExercises.find((item) => item.id === instance.exerciseId);
-      const exerciseType = exercise?.type?.toLowerCase();
-      const isTimeBasedExercise = exerciseType === 'time';
-
-      const sets = params?.sets ?? exercise?.defaultSets ?? 3;
-      const reps = params?.reps ?? exercise?.defaultReps ?? 10;
-      const executionTime = params?.executionTime ?? exercise?.defaultExecutionTime;
-      const restBetweenSets = params?.restSets ?? exercise?.defaultRestBetweenSets ?? 60;
-      const duration = isTimeBasedExercise ? (params?.duration ?? exercise?.defaultDuration) : undefined;
-      const side = params?.exerciseSide ?? exercise?.side ?? exercise?.exerciseSide;
-      const preparationTime = params?.preparationTime ?? exercise?.preparationTime;
-
-      return (
-        totalSeconds +
-        calculateEstimatedTime({
-          sets,
-          reps,
-          duration,
-          executionTime,
-          rest: restBetweenSets,
-          restReps: params?.restReps ?? exercise?.defaultRestBetweenReps,
-          side,
-          preparationTime,
-          tempo: params?.tempo ?? exercise?.tempo,
-        })
+      const effective = resolveEffectiveExerciseParams(
+        {
+          id: instance.instanceId,
+          sets: params?.sets,
+          reps: params?.reps,
+          duration: params?.duration,
+          executionTime: params?.executionTime,
+          restSets: params?.restSets,
+          restReps: params?.restReps,
+          preparationTime: params?.preparationTime,
+          tempo: params?.tempo,
+          exercise,
+        },
+        params?.exerciseSide ? { exerciseSide: params.exerciseSide } : undefined
       );
+      return totalSeconds + estimateEffectiveExerciseSeconds(effective);
     }, 0);
   }, [availableExercises, builderInstances, builderParams]);
 

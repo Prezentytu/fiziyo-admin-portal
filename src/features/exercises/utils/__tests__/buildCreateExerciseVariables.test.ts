@@ -16,6 +16,31 @@ describe('inferExerciseType', () => {
 });
 
 describe('buildCreateExerciseVariables', () => {
+  it('duplikacja: zapisany REPS z executionTime > 0 zostaje reps', () => {
+    const result = buildCreateExerciseVariables({
+      organizationId: 'org-1',
+      draft: { name: 'Wspięcia (kopia)', type: 'REPS', executionTime: 3 },
+    });
+    expect(result.type).toBe('reps');
+  });
+
+  it('duplikacja: zapisany TIME bez executionTime zostaje time', () => {
+    const result = buildCreateExerciseVariables({
+      organizationId: 'org-1',
+      draft: { name: 'Deska (kopia)', type: 'TIME', executionTime: null },
+    });
+    expect(result.type).toBe('time');
+  });
+
+  it('szkic bez typu (kreator) zgaduje typ z executionTime', () => {
+    expect(
+      buildCreateExerciseVariables({ organizationId: 'org-1', draft: { name: 'Szkic', executionTime: 5 } }).type
+    ).toBe('time');
+    expect(
+      buildCreateExerciseVariables({ organizationId: 'org-1', draft: { name: 'Szkic', executionTime: null } }).type
+    ).toBe('reps');
+  });
+
   it('maps full draft to create payload including pro tuning and load dual-write', () => {
     const result = buildCreateExerciseVariables({
       organizationId: 'org-1',

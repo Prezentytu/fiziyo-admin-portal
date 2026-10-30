@@ -1,5 +1,7 @@
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import { toV3 } from '@/features/verification/utils/enrichmentToV3';
+import { EXERCISE_PARAM_DEFAULTS } from '@/components/shared/exercise/exerciseParamDefaults';
+import { normalizeExerciseSide } from '@/utils/exerciseEnums';
 
 export interface ExerciseParams {
   sets: number;
@@ -56,11 +58,11 @@ export interface ExerciseLikeForDefaults {
 }
 
 export const EMPTY_EXERCISE_PARAMS: ExerciseParams = {
-  sets: 3,
-  reps: 10,
+  sets: EXERCISE_PARAM_DEFAULTS.sets,
+  reps: EXERCISE_PARAM_DEFAULTS.reps,
   duration: 0,
-  restSets: 60,
-  restReps: 0,
+  restSets: EXERCISE_PARAM_DEFAULTS.restSets,
+  restReps: EXERCISE_PARAM_DEFAULTS.restReps,
   preparationTime: 0,
   executionTime: 0,
   notes: '',
@@ -76,27 +78,29 @@ export const EMPTY_EXERCISE_PARAMS: ExerciseParams = {
   loadSource: undefined,
   rangeOfMotion: '',
   difficultyLevel: 'UNKNOWN',
-    patientDescription: '',
+  patientDescription: '',
   clinicalDescription: '',
   audioCue: '',
   customImages: undefined,
   enrichment: toV3(null),
 };
 
+/**
+ * Parametry startowe nowego mappingu w kreatorze zestawu. Wynik trafia do mutacji
+ * dodania ćwiczenia, więc legacy `sets`/`restSets` z lokalnych obiektów buildera zostają
+ * jako fallback, a `preparationTime` i strona zachowują dotychczasowe wartości zapisu.
+ */
 export function getExerciseDefaultParams(exercise: ExerciseLikeForDefaults): ExerciseParams {
-  const normalizedSide = exercise.side?.trim().toLowerCase();
-  const normalizedExerciseSide = exercise.exerciseSide?.trim().toLowerCase();
-
   return {
-    sets: exercise.defaultSets ?? exercise.sets ?? 3,
-    reps: exercise.defaultReps ?? exercise.reps ?? 10,
+    sets: exercise.defaultSets ?? exercise.sets ?? EXERCISE_PARAM_DEFAULTS.sets,
+    reps: exercise.defaultReps ?? exercise.reps ?? EXERCISE_PARAM_DEFAULTS.reps,
     duration: exercise.defaultDuration ?? exercise.duration ?? 0,
-    restSets: exercise.defaultRestBetweenSets ?? exercise.restSets ?? 60,
-    restReps: exercise.defaultRestBetweenReps ?? exercise.restReps ?? 0,
+    restSets: exercise.defaultRestBetweenSets ?? exercise.restSets ?? EXERCISE_PARAM_DEFAULTS.restSets,
+    restReps: exercise.defaultRestBetweenReps ?? exercise.restReps ?? EXERCISE_PARAM_DEFAULTS.restReps,
     preparationTime: exercise.preparationTime ?? 0,
     executionTime: exercise.defaultExecutionTime ?? 0,
     notes: exercise.notes ?? '',
-    exerciseSide: normalizedSide || normalizedExerciseSide || 'both',
+    exerciseSide: normalizeExerciseSide(exercise.side) ?? normalizeExerciseSide(exercise.exerciseSide) ?? 'both',
     customName: '',
     customDescription: '',
     tempo: exercise.tempo ?? '',

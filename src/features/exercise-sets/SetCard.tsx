@@ -16,8 +16,11 @@ import {
 import { cn } from '@/lib/utils';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { getMediaUrl } from '@/utils/mediaUrl';
-import { calculateEstimatedTime } from '@/utils/exerciseTime';
-import { HIDE_EXERCISE_TAGS } from '@/components/shared/exercise';
+import {
+  HIDE_EXERCISE_TAGS,
+  estimateEffectiveExerciseSeconds,
+  resolveEffectiveExerciseParams,
+} from '@/components/shared/exercise';
 import type { ExerciseTag } from '@/types/apollo';
 import { isPatientPlan, isTemplateSet } from '@/features/exercise-sets/utils/setKind';
 import { formatExerciseCount } from '@/utils/polishPlural';
@@ -150,26 +153,7 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
   const estimatedDuration = useMemo(() => {
     let totalSeconds = 0;
     for (const mapping of set.exerciseMappings || []) {
-      const sets = mapping.sets || mapping.exercise?.sets || mapping.exercise?.defaultSets || 3;
-      const duration = mapping.duration || mapping.exercise?.duration || mapping.exercise?.defaultDuration || 0;
-      const reps = mapping.reps || mapping.exercise?.reps || mapping.exercise?.defaultReps || 10;
-      const executionTime =
-        mapping.executionTime || mapping.exercise?.executionTime || mapping.exercise?.defaultExecutionTime || 0;
-      const restSets = mapping.restSets || mapping.exercise?.restSets || mapping.exercise?.defaultRestBetweenSets || 30;
-      const restReps = mapping.restReps || mapping.exercise?.restReps || mapping.exercise?.defaultRestBetweenReps || 0;
-      const side = mapping.exercise?.side ?? mapping.exercise?.exerciseSide;
-
-      totalSeconds += calculateEstimatedTime({
-        sets,
-        reps,
-        duration,
-        executionTime,
-        rest: restSets,
-        restReps,
-        side,
-        preparationTime: mapping.preparationTime ?? mapping.exercise?.preparationTime,
-        tempo: mapping.tempo ?? mapping.exercise?.tempo,
-      });
+      totalSeconds += estimateEffectiveExerciseSeconds(resolveEffectiveExerciseParams(mapping));
     }
     return Math.round(totalSeconds / 60); // minutes
   }, [set.exerciseMappings]);

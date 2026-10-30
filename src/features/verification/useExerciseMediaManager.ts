@@ -7,6 +7,7 @@ import type { AdminExercise } from '@/graphql/types/adminExercise.types';
 import type { ImageStyle } from '@/types/ai.types';
 
 import { MAX_PHOTOS, validatePhotoFile } from './utils/photoValidation';
+import { normalizeExerciseType } from '@/utils/exerciseEnums';
 
 interface UseExerciseMediaManagerOptions {
   exercise: AdminExercise;
@@ -107,7 +108,7 @@ export function useExerciseMediaManager({
     const generatedFile = await generate({
       exerciseName: exercise.name,
       exerciseDescription: description,
-      exerciseType: exercise.type?.toLowerCase() === 'time' ? 'time' : 'reps',
+      exerciseType: normalizeExerciseType(exercise.type) ?? 'reps',
       style: imageStyle,
     });
 
