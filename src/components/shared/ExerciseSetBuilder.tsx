@@ -37,6 +37,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { ShowMoreTrigger } from '@/components/shared/ShowMoreTrigger';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import {
   ExerciseExecutionCard,
@@ -53,6 +54,7 @@ import type { ExerciseSourceFilter } from '@/utils/exerciseSourceFilter';
 import { cn } from '@/lib/utils';
 import { EMPTY_EXERCISE_PARAMS, getExerciseDefaultParams } from '@/features/exercise-sets/utils/exerciseDefaults';
 import { filterExercisesBySearch } from '@/features/exercises/utils/exerciseSearch';
+import { useIncrementalList } from '@/hooks/useIncrementalList';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 
 // ============================================================
@@ -558,6 +560,19 @@ export function ExerciseSetBuilder({
     return filterExercisesBySearch(sourceFilteredExercises, searchQuery);
   }, [sourceFilteredExercises, searchQuery]);
 
+  // Popularne są pokazane osobno nad listą, więc lista „Wszystkie” ich nie powtarza.
+  const showPopular = !searchQuery && sourceFilter === 'all' && popularExercises.length > 0;
+  const listedExercises = useMemo(() => {
+    if (!showPopular) return filteredExercises;
+    const popularIds = new Set(popularExercises.map((e) => e.id));
+    return filteredExercises.filter((e) => !popularIds.has(e.id));
+  }, [filteredExercises, popularExercises, showPopular]);
+  const {
+    visibleItems: visibleExercises,
+    remaining: remainingExercises,
+    showMore: showMoreExercises,
+  } = useIncrementalList(listedExercises, `${sourceFilter}|${searchQuery}`);
+
   // Params helpers
   const getDefaultParams = useCallback(
     (exercise: BuilderExercise): ExerciseParams => getExerciseDefaultParams(exercise),
@@ -816,7 +831,7 @@ export function ExerciseSetBuilder({
               ) : (
                 <div className="space-y-6">
                   {/* Popular - show at top when no search/filter active */}
-                  {!searchQuery && sourceFilter === 'all' && popularExercises.length > 0 && (
+                  {showPopular && (
                     <div>
                       <div className="flex items-center gap-2 mb-3">
                         <TrendingUp className="h-4 w-4 text-primary" />
@@ -841,33 +856,30 @@ export function ExerciseSetBuilder({
 
                   {/* All exercises */}
                   <div>
-                    {!searchQuery && sourceFilter === 'all' && popularExercises.length > 0 && (
+                    {showPopular && (
                       <div className="flex items-center gap-2 mb-3">
                         <Dumbbell className="h-4 w-4 text-muted-foreground" />
                         <h4 className="text-sm font-semibold">Wszystkie ćwiczenia</h4>
                       </div>
                     )}
                     <div className="grid gap-2">
-                      {(() => {
-                        const showPopular = !searchQuery && sourceFilter === 'all' && popularExercises.length > 0;
-                        const popularIds = new Set(popularExercises.map((e) => e.id));
-                        const exercisesToShow = showPopular
-                          ? filteredExercises.filter((e) => !popularIds.has(e.id))
-                          : filteredExercises;
-
-                        return exercisesToShow.map((exercise) => (
-                          <ExercisePickerItem
-                            key={exercise.id}
-                            testIdPrefix={testIdPrefix}
-                            exercise={exercise}
-                            instanceCount={selectedInstances.filter((si) => si.exerciseId === exercise.id).length}
-                            onAdd={() => addExerciseToSet(exercise)}
-                            onPreview={() => onPreviewExercise?.(exercise)}
-                            getExerciseTags={getExerciseTags}
-                          />
-                        ));
-                      })()}
+                      {visibleExercises.map((exercise) => (
+                        <ExercisePickerItem
+                          key={exercise.id}
+                          testIdPrefix={testIdPrefix}
+                          exercise={exercise}
+                          instanceCount={selectedInstances.filter((si) => si.exerciseId === exercise.id).length}
+                          onAdd={() => addExerciseToSet(exercise)}
+                          onPreview={() => onPreviewExercise?.(exercise)}
+                          getExerciseTags={getExerciseTags}
+                        />
+                      ))}
                     </div>
+                    <ShowMoreTrigger
+                      remaining={remainingExercises}
+                      onShowMore={showMoreExercises}
+                      dataTestId={`${testIdPrefix}-show-more-btn`}
+                    />
                   </div>
                 </div>
               )}
