@@ -16,6 +16,7 @@ import { VerificationStatsCards } from '@/features/verification/VerificationStat
 import { VerificationTaskCard } from '@/features/verification/VerificationTaskCard';
 import { VerificationSelectionToolbar } from '@/features/verification/VerificationSelectionToolbar';
 import { VerificationArchiveDialog } from '@/features/verification/VerificationArchiveDialog';
+import { VerificationScopeTabs } from '@/features/verification/VerificationScopeTabs';
 import { useVerificationSelection } from '@/features/verification/utils/verificationSelection';
 import {
   buildOrganizationVerificationDetailHref,
@@ -168,6 +169,8 @@ export default function OrganizationVerificationPage() {
           </Button>
         </Link>
       </div>
+
+      <VerificationScopeTabs />
 
       <VerificationStatsCards
         mode="organization"
