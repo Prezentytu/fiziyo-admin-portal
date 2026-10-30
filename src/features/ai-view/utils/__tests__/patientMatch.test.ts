@@ -122,6 +122,7 @@ describe('matchPatients', () => {
     expect(matchPatients('dla Gienia', [{ id: 'p-gienio', name: 'Gienio Lis' }]).kind).toBe('one');
     expect(matchPatients('zestaw dla Ani na kolano', [{ id: 'p-ania', name: 'Ania Kowalska' }]).kind).toBe('one');
     expect(matchPatients('dla Asi', [{ id: 'p-asia', name: 'Asia Nowak' }]).kind).toBe('one');
+    expect(matchPatients('daj mi zestaw na kolano', [{ id: 'p-mia', name: 'Mia Nowak' }]).kind).toBe('none');
     expect(matchPatients('dla Nicoli', [{ id: 'p-nicole', name: 'Nicole Nowak' }]).kind).toBe('one');
     const basia = [{ id: 'p-basia', name: 'Basia Nowak' }];
     for (const text of ['dla Basi', 'Basiu', 'z Basią']) {

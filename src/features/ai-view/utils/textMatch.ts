@@ -79,8 +79,8 @@ function nameForms(nameWord: string): string[] {
     if (stem.length < 2) return [];
     const forms = SHORT_NAME_ENDINGS.map((ending) => stem + ending);
     if (stem.endsWith('j')) forms.push(`${stem.slice(0, -1)}i`);
-    // Ania → Ani, Asia → Asi; Maja keeps no bare stem, so "maj" never matches.
-    if (nameWord.endsWith('ia')) forms.push(stem);
+    // Ania → Ani, Asia → Asi; Mia keeps no bare stem ("mi"), nor Maja ("maj").
+    if (nameWord.endsWith('ia') && stem.length >= 3) forms.push(stem);
     return forms;
   }
   return wordStems(nameWord).flatMap((stem) => longNameEndings(nameWord, stem).map((ending) => stem + ending));
