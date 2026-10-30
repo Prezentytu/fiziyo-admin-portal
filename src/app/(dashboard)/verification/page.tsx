@@ -46,6 +46,7 @@ import { getMediaUrl } from '@/utils/mediaUrl';
 import { cn } from '@/lib/utils';
 import { VerificationSelectionToolbar } from '@/features/verification/VerificationSelectionToolbar';
 import { VerificationArchiveDialog } from '@/features/verification/VerificationArchiveDialog';
+import { VerificationScopeTabs } from '@/features/verification/VerificationScopeTabs';
 import type { UserByClerkIdResponse } from '@/types/apollo';
 import type {
   GetVerificationStatsResponse,
@@ -720,6 +721,7 @@ export default function VerificationPage() {
   if (!statsLoading && !hasTasks) {
     return (
       <div className="space-y-6">
+        <VerificationScopeTabs />
         <VerificationIntro
           userName={userName}
           scanResult={scanResult}
@@ -761,6 +763,8 @@ export default function VerificationPage() {
           </Button>
         </div>
       </div>
+
+      <VerificationScopeTabs />
 
       {/* Stats Cards - Interactive Filter Cards */}
       <VerificationStatsCards

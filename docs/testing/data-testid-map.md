@@ -136,40 +136,32 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `nav-collapse-btn` | Zwiń sidebar   | `Sidebar.tsx` |
 | `nav-expand-btn`   | Rozwiń sidebar | `Sidebar.tsx` |
 
-#### Linki nawigacyjne (Sidebar 2.0 - 3 strefy)
+#### Linki nawigacyjne (sidebar: tylko codzienna praca)
 
-**Strefa 1: Klinika**
+Konfiguracja menu desktop i mobile jest jedna: `src/components/layout/navigationConfig.ts`.
 
-| data-testid              | Element         | Plik          |
-| ------------------------ | --------------- | ------------- |
-| `nav-link-dashboard`     | Link: Panel     | `Sidebar.tsx` |
-| `nav-link-patients`      | Link: Pacjenci  | `Sidebar.tsx` |
-| `nav-link-exercise-sets` | Link: Zestawy   | `Sidebar.tsx` |
-| `nav-link-exercises`     | Link: Ćwiczenia | `Sidebar.tsx` |
+| data-testid              | Element                                                            | Plik          |
+| ------------------------ | ------------------------------------------------------------------ | ------------- |
+| `nav-link-dashboard`     | Link: Panel                                                        | `Sidebar.tsx` |
+| `nav-link-patients`      | Link: Pacjenci                                                     | `Sidebar.tsx` |
+| `nav-link-exercise-sets` | Link: Zestawy                                                      | `Sidebar.tsx` |
+| `nav-link-exercises`     | Link: Ćwiczenia                                                    | `Sidebar.tsx` |
+| `nav-link-verification`  | Link: Weryfikacja (pierwsza kolejka wg roli, licznik oczekujących) | `Sidebar.tsx` |
+| `nav-link-import`        | Link: Import dokumentów (AI)                                       | `Sidebar.tsx` |
 
-**Strefa 2: Smart Tools**
+#### Menu konta (dół sidebara)
 
-| data-testid       | Element                      | Plik          |
-| ----------------- | ---------------------------- | ------------- |
-| `nav-link-import` | Link: Import Dokumentów (AI) | `Sidebar.tsx` |
+Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu renderuje się w portalu, poza `<aside>`; najpierw kliknij `nav-user-footer-trigger`.
 
-**Strefa 3: Organizacja (tylko admin/owner)**
-
-| data-testid             | Element           | Plik          |
-| ----------------------- | ----------------- | ------------- |
-| `nav-link-organization` | Link: Zespół      | `Sidebar.tsx` |
-| `nav-link-billing`      | Link: Rozliczenia | `Sidebar.tsx` |
-| `nav-link-settings`     | Link: Ustawienia  | `Sidebar.tsx` |
-
-#### User Profile Footer (nowy komponent)
-
-| data-testid                | Element                                    | Plik                    |
-| -------------------------- | ------------------------------------------ | ----------------------- |
-| `nav-user-footer-trigger`  | Trigger profilu użytkownika (dół sidebara) | `UserProfileFooter.tsx` |
-| `nav-user-footer-settings` | Ustawienia konta (nawigacja do /settings)  | `UserProfileFooter.tsx` |
-| `nav-user-footer-org-{id}` | Przełącz do organizacji                    | `UserProfileFooter.tsx` |
-| `nav-user-footer-help`     | Pomoc / Support                            | `UserProfileFooter.tsx` |
-| `nav-user-footer-logout`   | Wyloguj się                                | `UserProfileFooter.tsx` |
+| data-testid                | Element                           | Plik                    |
+| -------------------------- | --------------------------------- | ----------------------- |
+| `nav-user-footer-trigger`  | Trigger menu konta (dół sidebara) | `UserProfileFooter.tsx` |
+| `nav-link-organization`    | Zespół (owner/admin)              | `UserProfileFooter.tsx` |
+| `nav-link-finances`        | Finanse (owner/admin)             | `UserProfileFooter.tsx` |
+| `nav-user-footer-settings` | Ustawienia (/settings)            | `UserProfileFooter.tsx` |
+| `nav-user-footer-org-{id}` | Przełącz do organizacji           | `UserProfileFooter.tsx` |
+| `nav-user-footer-help`     | Pomoc / Support                   | `UserProfileFooter.tsx` |
+| `nav-user-footer-logout`   | Wyloguj się                       | `UserProfileFooter.tsx` |
 
 #### Header (kontekst "tu i teraz")
 
@@ -201,11 +193,11 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `nav-mobile-link-patients`      | Link: Pacjenci (mobile)          | `MobileSidebar.tsx` |
 | `nav-mobile-link-exercise-sets` | Link: Zestawy (mobile)           | `MobileSidebar.tsx` |
 | `nav-mobile-link-exercises`     | Link: Ćwiczenia (mobile)         | `MobileSidebar.tsx` |
-| `nav-mobile-link-import`        | Link: Import Dokumentów (mobile) | `MobileSidebar.tsx` |
-| `nav-mobile-link-organization`  | Link: Zespół (mobile)            | `MobileSidebar.tsx` |
-| `nav-mobile-link-billing`       | Link: Rozliczenia (mobile)       | `MobileSidebar.tsx` |
-| `nav-mobile-link-settings`      | Link: Ustawienia (mobile)        | `MobileSidebar.tsx` |
-| `nav-mobile-user-profile`       | Ustawienia profilu (mobile)      | `MobileSidebar.tsx` |
+| `nav-mobile-link-verification`  | Link: Weryfikacja (mobile)       | `MobileSidebar.tsx` |
+| `nav-mobile-link-import`        | Link: Import dokumentów (mobile) | `MobileSidebar.tsx` |
+| `nav-mobile-user-profile`       | Ustawienia (mobile, stopka)      | `MobileSidebar.tsx` |
+| `nav-mobile-link-organization`  | Zespół (mobile, stopka, admin)   | `MobileSidebar.tsx` |
+| `nav-mobile-link-billing`       | Finanse (mobile, stopka, admin)  | `MobileSidebar.tsx` |
 | `nav-mobile-switch-org`         | Przełącz organizację (mobile)    | `MobileSidebar.tsx` |
 | `nav-mobile-help`               | Pomoc / Support (mobile)         | `MobileSidebar.tsx` |
 | `nav-mobile-logout-btn`         | Wyloguj (mobile)                 | `MobileSidebar.tsx` |
@@ -708,8 +700,10 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 
 | data-testid                           | Element                          | Plik                         |
 | ------------------------------------- | -------------------------------- | ---------------------------- |
-| `nav-link-verification`               | Link: Weryfikacja ćwiczeń        | `Sidebar.tsx`                |
-| `nav-link-verification-organizations` | Link: Weryfikacja Organizacji    | `Sidebar.tsx`                |
+| `verification-scope-tabs`             | Pasek kolejek (gdy rola ma ≥2)   | `VerificationScopeTabs.tsx`  |
+| `nav-link-organization-verification`  | Zakładka: Moja organizacja       | `VerificationScopeTabs.tsx`  |
+| `nav-link-verification-global`        | Zakładka: Katalog FiziYo         | `VerificationScopeTabs.tsx`  |
+| `nav-link-verification-organizations` | Zakładka: Wszystkie organizacje  | `VerificationScopeTabs.tsx`  |
 | `verification-search-input`           | Wyszukiwarka ćwiczeń             | `verification/page.tsx`      |
 | `verification-stats-pending`          | Karta statystyk: Oczekujące      | `VerificationStatsCards.tsx` |
 | `verification-stats-changes`          | Karta statystyk: Do poprawy      | `VerificationStatsCards.tsx` |

@@ -24,6 +24,14 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 
 ## Wpisy
 
+### 2026-10-30 - Jedna konfiguracja menu dla desktopu i mobile
+
+- **Kategoria**: `UI` | `Navigation`
+- **Problem**: Mobile nie miał żadnej weryfikacji, inne nazwy („Rozliczenia”, „Smart Tools”) i inne ikony niż desktop; trzy kolejki weryfikacji ćwiczeń były trzema pozycjami menu w dwóch grupach, a jedna nazywała się „Weryfikacja organizacji”, choć weryfikuje ćwiczenia wszystkich organizacji.
+- **Przyczyna**: `Sidebar` i `MobileSidebar` trzymały osobne tablice `navigationGroups` z własnym filtrowaniem ról.
+- **Rozwiązanie**: `navigationConfig.ts` + `useNavigationItems` dla obu menu; jedna pozycja „Weryfikacja” (`matchHrefs` na wszystkie kolejki) i `VerificationScopeTabs` z dostępnych zasięgów (`getVerificationScopes`). Sidebar ma tylko codzienną pracę; Zespół i Finanse są w menu konta (`buildAccountNavigationItems`), a zdublowany link „Ustawienia” zniknął.
+- **Reguła**: Nowa pozycja menu idzie tylko do `navigationConfig.ts`. Kilka widoków tej samej pracy (różny zasięg) to jedna pozycja menu z zakładkami, nie osobne linki. Strony odwiedzane rzadziej niż raz w tygodniu idą do menu konta, nie do sidebara.
+
 ### 2026-10-30 - Globalny styl poza warstwą przykrywa utility Tailwinda
 
 - **Kategoria**: `UI`

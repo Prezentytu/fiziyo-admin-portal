@@ -18,6 +18,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { Skeleton } from '@/components/ui/skeleton';
 import { OrganizationSwitchMenuItems } from './OrganizationSwitchMenuItems';
 import { useCurrentUserDisplay } from './useCurrentUserDisplay';
+import { useAccountNavigationItems } from './useNavigationItems';
 
 // ========================================
 // Types
@@ -39,6 +40,7 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
   const signOut = useAppSignOut();
   const [isOpen, setIsOpen] = useState(false);
   const { isLoaded, avatarUrl, email, displayName, compactDisplayName, initials } = useCurrentUserDisplay();
+  const accountNavigationItems = useAccountNavigationItems();
 
   // Loading state
   if (!isLoaded) {
@@ -64,6 +66,7 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
       <DropdownMenuTrigger asChild>
         <button
           data-testid="nav-user-footer-trigger"
+          aria-label={`Menu konta: ${displayName}`}
           className={cn(
             'group flex items-center rounded-2xl transition-all duration-200 cursor-pointer w-full',
             isCollapsed
@@ -74,9 +77,7 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
           {/* Avatar */}
           <Avatar className="h-9 w-9 shrink-0">
             <AvatarImage src={avatarUrl} alt={displayName} />
-            <AvatarFallback className="bg-avatar text-avatar-label text-sm font-semibold">
-              {initials}
-            </AvatarFallback>
+            <AvatarFallback className="bg-avatar text-avatar-label text-sm font-semibold">{initials}</AvatarFallback>
           </Avatar>
 
           {/* User Info (expanded only) */}
@@ -112,9 +113,7 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
               <AvatarImage src={avatarUrl} alt={displayName} />
-              <AvatarFallback className="bg-avatar text-avatar-label text-sm font-semibold">
-                {initials}
-              </AvatarFallback>
+              <AvatarFallback className="bg-avatar text-avatar-label text-sm font-semibold">{initials}</AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-foreground truncate">{displayName}</p>
@@ -127,11 +126,22 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
 
         <OrganizationSwitchMenuItems testIdPrefix="nav-user-footer-org" onSwitch={() => setIsOpen(false)} />
 
-        {/* Settings link */}
+        {accountNavigationItems.map((item) => {
+          const Icon = item.icon;
+          return (
+            <DropdownMenuItem key={item.href} asChild className="gap-3 px-3 py-2.5 cursor-pointer">
+              <Link href={item.href} data-testid={item.testId}>
+                <Icon className="h-4 w-4 text-muted-foreground" />
+                <span>{item.name}</span>
+              </Link>
+            </DropdownMenuItem>
+          );
+        })}
+
         <DropdownMenuItem asChild className="gap-3 px-3 py-2.5 cursor-pointer">
           <Link href="/settings" data-testid="nav-user-footer-settings">
             <Settings className="h-4 w-4 text-muted-foreground" />
-            <span>Ustawienia konta</span>
+            <span>Ustawienia</span>
           </Link>
         </DropdownMenuItem>
 

@@ -16,6 +16,7 @@ import { VerificationStatsCards } from '@/features/verification/VerificationStat
 import { VerificationTaskCard } from '@/features/verification/VerificationTaskCard';
 import { VerificationSelectionToolbar } from '@/features/verification/VerificationSelectionToolbar';
 import { VerificationArchiveDialog } from '@/features/verification/VerificationArchiveDialog';
+import { VerificationScopeTabs } from '@/features/verification/VerificationScopeTabs';
 import { useVerificationSelection } from '@/features/verification/utils/verificationSelection';
 import {
   GET_CROSS_ORG_VERIFICATION_QUEUE_PAGE_QUERY,
@@ -177,7 +178,9 @@ export default function CrossOrgVerificationPage() {
     <PageSheet contentClassName="gap-6" data-testid="cross-org-verification-page">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground">Weryfikacja organizacji</h1>
+          <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground">
+            Weryfikacja wszystkich organizacji
+          </h1>
           <p className="text-sm text-muted-foreground">Kolejka zgłoszeń organizacyjnych ze wszystkich organizacji.</p>
         </div>
         <Link href="/verification">
@@ -186,6 +189,8 @@ export default function CrossOrgVerificationPage() {
           </Button>
         </Link>
       </div>
+
+      <VerificationScopeTabs />
 
       <VerificationStatsCards
         mode="organization"
