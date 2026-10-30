@@ -31,6 +31,7 @@ import { ChatSpecRenderer } from './catalog/ChatSpecRenderer';
 import { PatientContextPanel } from './PatientContextPanel';
 import { useChatShortcuts } from './useChatShortcuts';
 import { useDocumentAnalysis } from './useDocumentAnalysis';
+import { useStickToBottom } from './useStickToBottom';
 import { useTodayAgenda } from './useTodayAgenda';
 import type { ChatThreadMessage } from './utils/conversationStore';
 import { nextRevealMarker, revealSegments, thinkingLabel, type RevealMarker } from './utils/replyMotion';
@@ -51,7 +52,6 @@ function greeting(now: Date): string {
 }
 
 const COPIED_MS = 1600;
-const NEAR_BOTTOM_PX = 120;
 
 /** Copy to clipboard with a short check mark in place of the icon, as in Claude. */
 function useCopy(): [boolean, (text: string) => void] {
@@ -209,37 +209,6 @@ function ThinkingLine({ isDocument }: { readonly isDocument: boolean }) {
 }
 
 /** Follows new messages only while the therapist is at the bottom; otherwise offers a jump back. */
-function useStickToBottom(scrollRef: RefObject<HTMLDivElement | null>, followKey: string) {
-  const [isAway, setIsAway] = useState(false);
-  const isAwayRef = useRef(false);
-
-  const scrollToBottom = useCallback(
-    (behavior: ScrollBehavior = 'smooth') => {
-      const element = scrollRef.current;
-      element?.scrollTo({ top: element.scrollHeight, behavior });
-    },
-    [scrollRef]
-  );
-
-  useEffect(() => {
-    const element = scrollRef.current;
-    if (!element) return;
-    const handleScroll = () => {
-      const away = element.scrollHeight - element.scrollTop - element.clientHeight > NEAR_BOTTOM_PX;
-      isAwayRef.current = away;
-      setIsAway(away);
-    };
-    element.addEventListener('scroll', handleScroll, { passive: true });
-    return () => element.removeEventListener('scroll', handleScroll);
-  }, [scrollRef]);
-
-  useEffect(() => {
-    if (!isAwayRef.current) scrollToBottom();
-  }, [followKey, scrollToBottom]);
-
-  return { isAway, scrollToBottom };
-}
-
 function TodayAgenda() {
   const { visits, issues } = useTodayAgenda();
   const { appendExchange } = useChatSession();
@@ -490,7 +459,7 @@ export function ChatView() {
   const revealSince = revealMarker?.since ?? Number.POSITIVE_INFINITY;
   const isWide = useMediaQuery('(min-width: 1280px)');
   const isEmpty = messages.length === 0;
-  const { isAway, scrollToBottom } = useStickToBottom(scrollRef, `${messages.length}-${isBusy}`);
+  const { isAway, scrollToBottom } = useStickToBottom(scrollRef, activeConversationId, `${messages.length}-${isBusy}`);
   const lastUser = messages.findLast((message) => message.role === 'user');
 
   // Typing anywhere in the chat lands in the composer, as in Claude.
