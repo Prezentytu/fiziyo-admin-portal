@@ -43,6 +43,8 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
   const pendingCommandRef = useRef<string | undefined>(undefined);
   // Bumped by a new conversation or organization: a reply still in flight belongs to the old one.
   const threadEpochRef = useRef(0);
+  // isBusy only blocks after a render; a double click lands before it.
+  const inFlightRef = useRef(false);
 
   if (threadScope !== scopeKey) {
     setThreadScope(scopeKey);
@@ -52,6 +54,7 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
 
   useEffect(() => {
     threadEpochRef.current += 1;
+    inFlightRef.current = false;
     hasNotifiedFallbackRef.current = false;
     pendingCommandRef.current = undefined;
   }, [scopeKey]);
@@ -73,7 +76,8 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
   const send = useCallback(
     async (text: string) => {
       const trimmed = text.trim();
-      if (!trimmed || isBusy || !ready) return;
+      if (!trimmed || inFlightRef.current || !ready) return;
+      inFlightRef.current = true;
       pushUser(trimmed);
       setIsBusy(true);
       const epoch = threadEpochRef.current;
@@ -110,10 +114,13 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
           },
         ]);
       } finally {
-        if (threadEpochRef.current === epoch) setIsBusy(false);
+        if (threadEpochRef.current === epoch) {
+          inFlightRef.current = false;
+          setIsBusy(false);
+        }
       }
     },
-    [context, isBusy, pushUser, ready, scopeKey, useAi]
+    [context, pushUser, ready, scopeKey, useAi]
   );
 
   /** A step of a flow (schedule, summary, sent) without a model call. */
@@ -128,25 +135,35 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
     [pushAssistant, pushUser]
   );
 
-  /** Local work the therapist started (a document to read): shown as busy like a dispatcher call. */
+  /**
+   * Local work the therapist started (a document to read): shown as busy like a dispatcher call.
+   * Resolves true only when the task's reply reached the thread.
+   */
   const runTask = useCallback(
-    async (userText: string, task: () => Promise<AssistantReply>, attachmentName?: string) => {
-      if (isBusy) return;
+    async (userText: string, task: () => Promise<AssistantReply>, attachmentName?: string): Promise<boolean> => {
+      if (inFlightRef.current) return false;
+      inFlightRef.current = true;
       pushUser(userText, attachmentName);
       setIsBusy(true);
       const epoch = threadEpochRef.current;
       try {
         const reply = await task();
-        if (threadEpochRef.current === epoch) pushAssistant(reply);
+        if (threadEpochRef.current !== epoch) return false;
+        pushAssistant(reply);
+        return true;
       } catch (error) {
-        if (threadEpochRef.current !== epoch) return;
+        if (threadEpochRef.current !== epoch) return false;
         const message = error instanceof Error && error.message ? error.message : 'Nie udało się tego zrobić.';
         pushAssistant({ text: `${message} Spróbuj jeszcze raz albo napisz, co zrobić.` });
+        return false;
       } finally {
-        if (threadEpochRef.current === epoch) setIsBusy(false);
+        if (threadEpochRef.current === epoch) {
+          inFlightRef.current = false;
+          setIsBusy(false);
+        }
       }
     },
-    [isBusy, pushAssistant, pushUser]
+    [pushAssistant, pushUser]
   );
 
   const markChosen = useCallback((messageId: string, chosen: string) => {
@@ -159,6 +176,7 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
 
   const reset = useCallback((nextMessages: ChatThreadMessage[] = []) => {
     threadEpochRef.current += 1;
+    inFlightRef.current = false;
     setMessages(nextMessages);
     setIsBusy(false);
     sessionRef.current = undefined;

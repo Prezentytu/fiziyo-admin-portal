@@ -26,8 +26,8 @@ export function useDocumentAnalysis() {
   const { runTask, refetchCredits } = useChatActions();
 
   const analyzeFile = useCallback(
-    (file: File, patientId?: string) => {
-      void runTask(
+    (file: File, patientId?: string) =>
+      runTask(
         'Przeanalizuj dokument',
         async (): Promise<AssistantReply> => {
           if (!documentImportService.isFormatSupported(file)) {
@@ -44,16 +44,15 @@ export function useDocumentAnalysis() {
           };
         },
         file.name
-      );
-    },
+      ),
     [refetchCredits, runTask]
   );
 
   const analyzeNote = useCallback(
     (note: string, patientId?: string) => {
       const text = note.trim();
-      if (text.length < MIN_NOTE_LENGTH) return false;
-      void runTask(text.length > 160 ? `${text.slice(0, 157)}…` : text, async (): Promise<AssistantReply> => {
+      if (text.length < MIN_NOTE_LENGTH) return Promise.resolve(false);
+      return runTask(text.length > 160 ? `${text.slice(0, 157)}…` : text, async (): Promise<AssistantReply> => {
         const items = toDocumentItems(await documentImportService.analyzeText(text, patientId));
         refetchCredits();
         return {
@@ -61,7 +60,6 @@ export function useDocumentAnalysis() {
           spec: { component: 'DocumentResult', fileName: 'Notatka z wizyty', items, patientId },
         };
       });
-      return true;
     },
     [refetchCredits, runTask]
   );

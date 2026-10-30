@@ -52,7 +52,7 @@ export interface ChatSession {
   appendAssistant: (reply: AssistantReply) => void;
   appendExchange: (userText: string, reply: AssistantReply, attachmentName?: string) => void;
   markChosen: (messageId: string, chosen: string) => void;
-  runTask: (userText: string, task: () => Promise<AssistantReply>, attachmentName?: string) => Promise<void>;
+  runTask: (userText: string, task: () => Promise<AssistantReply>, attachmentName?: string) => Promise<boolean>;
   conversations: readonly StoredConversation[];
   activeConversationId: string;
   title: string;

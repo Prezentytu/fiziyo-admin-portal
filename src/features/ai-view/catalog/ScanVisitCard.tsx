@@ -23,13 +23,17 @@ export function ScanVisitCard({ spec, testId, messageId, chosen }: CardProps<'Sc
   if (chosen !== undefined) {
     return (
       <p data-testid={testId} className="text-[14px] text-label-secondary">
-        Wysłano do analizy: {chosen}
+        Przeanalizowano: {chosen}
       </p>
     );
   }
 
-  const submitNote = () => {
-    if (analyzeNote(note, spec.patientId)) markChosen(messageId, 'notatka');
+  // The card stays open until the analysis answers, so a failed one can be retried here.
+  const submitNote = async () => {
+    if (await analyzeNote(note, spec.patientId)) markChosen(messageId, 'notatka');
+  };
+  const submitFile = async (file: File) => {
+    if (await analyzeFile(file, spec.patientId)) markChosen(messageId, file.name);
   };
 
   return (
@@ -48,7 +52,7 @@ export function ScanVisitCard({ spec, testId, messageId, chosen }: CardProps<'Sc
             Dokument
           </Button>
           <Button
-            onClick={submitNote}
+            onClick={() => void submitNote()}
             disabled={isBusy || note.trim().length < 20}
             data-testid={`${testId}-primary-btn`}
           >
@@ -63,7 +67,7 @@ export function ScanVisitCard({ spec, testId, messageId, chosen }: CardProps<'Sc
         onKeyDown={(event) => {
           if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
             event.preventDefault();
-            submitNote();
+            void submitNote();
           }
         }}
         rows={4}
@@ -83,8 +87,7 @@ export function ScanVisitCard({ spec, testId, messageId, chosen }: CardProps<'Sc
           const file = event.target.files?.[0];
           event.target.value = '';
           if (!file) return;
-          markChosen(messageId, file.name);
-          analyzeFile(file, spec.patientId);
+          void submitFile(file);
         }}
       />
       <ChatCardNote>
