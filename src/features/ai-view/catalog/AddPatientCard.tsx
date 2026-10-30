@@ -8,7 +8,7 @@ import { useCreatePatient } from './useChatWrites';
 
 /** New patient inline; the result goes into the thread as its own card, so the form never comes back. */
 export function AddPatientCard({ spec, testId, messageId, chosen }: CardProps<'AddPatient'>) {
-  const { organizationId, appendAssistant, markChosen } = useChatActions();
+  const { organizationId, therapistId, appendAssistant, markChosen } = useChatActions();
   const { create, creating } = useCreatePatient();
 
   if (chosen !== undefined) {
@@ -27,7 +27,7 @@ export function AddPatientCard({ spec, testId, messageId, chosen }: CardProps<'A
         submitLabel="Dodaj pacjenta"
         busy={creating}
         onSubmit={async (values) => {
-          const patient = await create(organizationId, values);
+          const patient = await create(organizationId, values, therapistId);
           if (!patient) return;
           markChosen(messageId, 'created');
           appendAssistant({ spec: { component: 'PatientAdded', patientId: patient.id, name: patient.name } });

@@ -66,7 +66,7 @@ export function PickPatientCard({ spec, testId, messageId, chosen }: CardProps<'
           busy={creating}
           onCancel={() => setIsAdding(false)}
           onSubmit={async (values) => {
-            const patient = await create(organizationId, values);
+            const patient = await create(organizationId, values, therapistId);
             if (patient) continueWith(patient.id, patient.name);
           }}
         />

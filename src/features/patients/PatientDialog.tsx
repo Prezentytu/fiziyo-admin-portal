@@ -12,12 +12,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { UnifiedPatientInput, PatientFormValues } from './UnifiedPatientInput';
 import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
 import { CREATE_SHADOW_PATIENT_MUTATION } from '@/graphql/mutations/users.mutations';
-import {
-  GET_THERAPIST_PATIENTS_QUERY,
-  GET_ALL_THERAPIST_PATIENTS_QUERY,
-  GET_ORGANIZATION_PATIENTS_QUERY,
-} from '@/graphql/queries/therapists.queries';
-import { GET_ALL_PATIENT_ASSIGNMENTS_QUERY } from '@/graphql/queries/patientAssignments.queries';
+import { formatPatientPhone, patientCreateRefetchQueries } from './utils/shadowPatient';
 import { cn } from '@/lib/utils';
 import { getAvatarGradient, getInitials } from '@/utils/textUtils';
 import type { Patient } from '@/features/assignment/types';
@@ -103,33 +98,18 @@ export function PatientDialog({
   }, [open]);
 
   const shouldRefetchAfterCreate = embeddedMode !== 'assignment';
-  const patientCreateRefetchQueries = shouldRefetchAfterCreate
-    ? [
-        { query: GET_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } },
-        { query: GET_ALL_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } },
-        { query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'all' } },
-        { query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'my' } },
-        { query: GET_ALL_PATIENT_ASSIGNMENTS_QUERY },
-      ]
-    : [];
 
   // Create shadow patient - creates user + adds to organization + assigns to therapist in one step
   const [createPatient, { loading }] = useMutation(CREATE_SHADOW_PATIENT_MUTATION, {
-    refetchQueries: patientCreateRefetchQueries,
+    refetchQueries: shouldRefetchAfterCreate ? patientCreateRefetchQueries(organizationId, therapistId) : [],
   });
-
-  // Helper to format phone with +48 prefix
-  const formatPhoneNumber = (phone: string | undefined): string | null => {
-    if (!phone) return null;
-    return phone.startsWith('+') ? phone : `+48${phone}`;
-  };
 
   // Handler for new patient creation (from SmartPatientLookup form mode)
   const handleCreateNewPatient = async (values: PatientFormValues) => {
     try {
       // Format phone with +48 prefix if provided (backend expects full number)
       // Phone może być puste jeśli podano email - wysyłamy null zamiast ''
-      const formattedPhone = formatPhoneNumber(values.phone);
+      const formattedPhone = formatPatientPhone(values.phone);
 
       const result = await createPatient({
         variables: {

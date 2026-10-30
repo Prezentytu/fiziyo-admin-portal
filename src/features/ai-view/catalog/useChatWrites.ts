@@ -10,6 +10,7 @@ import {
   CREATE_EXERCISE_MUTATION,
   CREATE_EXERCISE_SET_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
+import { formatPatientPhone, patientCreateRefetchQueries } from '@/features/patients/utils/shadowPatient';
 import { CREATE_SHADOW_PATIENT_MUTATION } from '@/graphql/mutations/users.mutations';
 import { GET_CURRENT_BILLING_STATUS_QUERY } from '@/graphql/queries/billing.queries';
 import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
@@ -156,20 +157,22 @@ export function useCreatePatient() {
   const [createPatient, { loading }] = useMutation<{ createShadowPatient?: { id: string; fullname?: string } }>(
     CREATE_SHADOW_PATIENT_MUTATION
   );
-  const apolloClient = useApolloClient();
   const inFlightRef = useRef(false);
 
   const create = useCallback(
-    async (organizationId: string, input: NewPatientInput) => {
+    async (organizationId: string, input: NewPatientInput, therapistId?: string) => {
       if (inFlightRef.current) return null;
       inFlightRef.current = true;
       try {
-        const phone = input.phone?.trim();
+        const phone = formatPatientPhone(input.phone);
         const result = await createPatient({
+          // Awaited, so the chat's patient list already has the new patient when the next card asks.
+          refetchQueries: patientCreateRefetchQueries(organizationId, therapistId),
+          awaitRefetchQueries: true,
           variables: {
             firstName: input.firstName.trim(),
             lastName: input.lastName.trim(),
-            phone: phone ? (phone.startsWith('+') ? phone : `+48${phone.replace(/\s/g, '')}`) : null,
+            phone,
             email: input.email?.trim() || null,
             organizationId,
             contextLabel: input.contextLabel?.trim() || null,
@@ -178,13 +181,6 @@ export function useCreatePatient() {
         });
         const patient = result.data?.createShadowPatient;
         if (!patient) throw new Error('Nie udało się dodać pacjenta');
-        await apolloClient
-          .query({
-            query: GET_ORGANIZATION_PATIENTS_QUERY,
-            variables: { organizationId, filter: 'all' },
-            fetchPolicy: 'network-only',
-          })
-          .catch(() => undefined);
         return { id: patient.id, name: patient.fullname || `${input.firstName} ${input.lastName}`.trim() };
       } catch (error) {
         toast.error(errorText(error, 'Nie udało się dodać pacjenta'));
@@ -193,7 +189,7 @@ export function useCreatePatient() {
         inFlightRef.current = false;
       }
     },
-    [apolloClient, createPatient]
+    [createPatient]
   );
 
   return { create, creating: loading };

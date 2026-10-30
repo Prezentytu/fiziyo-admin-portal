@@ -14,6 +14,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 import { UPDATE_SHADOW_PATIENT_MUTATION } from '@/graphql/mutations/users.mutations';
 import { GET_USER_BY_ID_QUERY } from '@/graphql/queries/users.queries';
+import { formatPatientPhone } from './utils/shadowPatient';
 
 interface Patient {
   id: string;
@@ -112,7 +113,7 @@ export function EditPatientDialog({ open, onOpenChange, patient, onSuccess }: Re
           firstName: firstName.trim(),
           lastName: lastName.trim(),
           email: email.trim() || null,
-          phone: phone ? `+48${phone.replaceAll(' ', '')}` : null,
+          phone: formatPatientPhone(phone),
         },
       });
       toast.success('Dane pacjenta zostały zaktualizowane');
