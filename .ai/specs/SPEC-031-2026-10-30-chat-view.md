@@ -83,12 +83,12 @@ Błędy: `400 invalid_message`, `400 insufficient_credits`, `403 forbidden`, `50
 
 ## Komponenty UI
 
-`src/features/ai-view/`: `ChatSidebar`, `ChatView` (górny pasek 52 px, ekran startowy z powitaniem, skrótami i „Dziś”, wątek), `ChatComposer` (spinacz na dokument, dyktowanie wypełnia pole, Enter wysyła, Shift+Enter nowa linia, Escape czyści), `PatientContextPanel` (340 px od 1280 px, niżej arkusz), `ChatSessionContext`, `ChatModeToggle`, `ChatModeSettings`, `catalog/*Card` + `ChatSpecRenderer`. Formularze w kartach (`NewPatientForm`, `CreateExerciseCard`) to react-hook-form + zod, `Cmd/Ctrl+Enter` zapisuje. Prymitywy: `components/ui/choice-chip.tsx` (pigułki), `components/ui/segmented-control.tsx`.
+`src/features/ai-view/`: `ChatSidebar`, `ChatView` (górny pasek 52 px, ekran startowy z powitaniem, skrótami i „Dziś”, wątek), `ChatComposer` (spinacz, wklejenie albo upuszczenie dokumentu na wątek; dyktowanie wypełnia pole, z licznikiem i podglądem na żywo; Enter wysyła, Shift+Enter nowa linia, strzałka w górę w pustym polu przywraca ostatnie pytanie, Escape zatrzymuje dyktowanie albo odpowiedź, potem czyści; w trakcie odpowiedzi wysyłanie zamienia się w Stop). Nowa odpowiedź wchodzi słowo po słowie (`utils/replyMotion.ts`, tylko odpowiedzi z bieżącej wizyty w widoku), status „myślenia” zmienia się z czasem, wątek trzyma się dołu tylko wtedy, gdy terapeuta jest na dole, a wyżej pokazuje przycisk powrotu. Wiadomość terapeuty ma Edytuj i Kopiuj, odpowiedź Kopiuj. Pisanie w dowolnym miejscu widoku trafia do pola. Sidebar grupuje rozmowy według dni, a usunięcie rozmowy da się cofnąć z toasta, `PatientContextPanel` (340 px od 1280 px, niżej arkusz), `ChatSessionContext`, `ChatModeToggle`, `ChatModeSettings`, `catalog/*Card` + `ChatSpecRenderer`. Formularze w kartach (`NewPatientForm`, `CreateExerciseCard`) to react-hook-form + zod, `Cmd/Ctrl+Enter` zapisuje. Prymitywy: `components/ui/choice-chip.tsx` (pigułki), `components/ui/segmented-control.tsx`.
 
 ## Data-testid
 
 - Powłoka: `nav-chat-sidebar`, `nav-chat-mobile-sidebar`, `nav-chat-sidebar-collapse-btn`, `nav-chat-new-btn`, `nav-chat-{patients,sets,exercises}-link`, `nav-chat-inactive-count`, `nav-chat-scan-btn`, `nav-chat-recent-list`, `nav-chat-recent-item-<id>`, `nav-chat-recent-delete-btn-<id>`, `nav-chat-credits`, `nav-chat-user-menu-btn`, `nav-chat-{settings,organization}-link`, `nav-chat-classic-btn`, `nav-chat-sign-out-btn`.
-- Widok: `common-chat-view`, `common-chat-thread`, `common-chat-thinking`, `common-chat-menu-btn`, `common-chat-sidebar-expand-btn`, `common-chat-ai-toggle-btn`, `common-chat-context-chip-btn`, `common-chat-new-btn`, `common-chat-shortcut-{set,patient,scan}-btn`, `common-chat-today-{btn,list,visit,inactive,ending}`, `common-chat-composer-{input,send-btn,attach-btn,file-input,mic-btn}`, `common-chat-context-{panel,close-btn,reason,week,pain,set,visit,set-btn,open-link}`.
+- Widok: `common-chat-view`, `common-chat-thread`, `common-chat-thinking`, `common-chat-menu-btn`, `common-chat-sidebar-expand-btn`, `common-chat-ai-toggle-btn`, `common-chat-context-chip-btn`, `common-chat-new-btn`, `common-chat-shortcut-{set,patient,scan}-btn`, `common-chat-today-{btn,list,visit,inactive,ending}`, `common-chat-composer`, `common-chat-composer-{input,send-btn,stop-btn,attach-btn,file-input,mic-btn}`, `common-chat-scroll-bottom-btn`, `common-chat-drop-overlay`, `common-chat-message-<id>-{edit,copy}-btn`, `common-chat-reply-<id>-copy-btn`, `common-chat-context-{panel,close-btn,reason,week,pain,set,visit,set-btn,open-link}`.
 - Odpowiedź: `common-chat-reply-<id>-<karta>` z elementami `-primary-btn`, `-option-<n>-btn`, `-item-<exerciseId>`, `-remove-<exerciseId>-btn`, `-undo-btn`, `-form`, `-<pole>-input`, `-submit-btn`, `-open-link` i innymi w kartach.
 - Ustawienia: `nav-chat-mode-toggle-btn`, `settings-chat-mode-card`, `settings-chat-mode-switch`, `settings-chat-ai-switch`.
 - Usunięty: `common-chat-shortcut-inactive-btn` (skrót zastąpiły „Dziś” i licznik w sidebarze); scenariuszy czatu nie ma jeszcze w `fiziyo-tests`.
@@ -104,7 +104,7 @@ Błędy: `400 invalid_message`, `400 insufficient_credits`, `403 forbidden`, `50
 - Słuchanie wizyty i wyłuskiwanie zaleceń z rozmowy na żywo.
 - Słownik form imion do aliasów (SPEC-032).
 - Decyzja o przetwarzaniu danych przez OpenRouter vs bezpośrednio Anthropic (DPA).
-- Strumieniowanie odpowiedzi; historia rozmów po stronie serwera (dziś tylko przeglądarka).
+- Prawdziwe strumieniowanie z modelu (dziś odpowiedź wchodzi animacją po przyjściu całości); historia rozmów po stronie serwera (dziś tylko przeglądarka).
 
 ## Changelog
 
@@ -112,3 +112,4 @@ Błędy: `400 invalid_message`, `400 insufficient_credits`, `403 forbidden`, `50
 
 - Utworzenie specyfikacji i pierwsza implementacja (panel + dyspozytor w backendzie).
 - Wygląd i działanie jak w designie „Czat v2”: powłoka z sidebarem i historią rozmów, tekst odpowiedzi nad kartą, pełny przepływ zestawu w wątku (budowanie, harmonogram, wysyłka), dodawanie pacjenta, tworzenie ćwiczenia, przypomnienia, skan wizyty z notatki lub dokumentu, panel kontekstu pacjenta.
+- Dopracowanie zachowań jak w Claude i Codex: miękki focus pola (globalny obrys `:focus-visible` przeniesiony do `@layer base`, żeby nie przykrywał focusu komponentów), Stop, edycja i kopiowanie wiadomości, upuszczanie i wklejanie dokumentu, dyktowanie z licznikiem, rozmowy według dni z cofnięciem usunięcia.

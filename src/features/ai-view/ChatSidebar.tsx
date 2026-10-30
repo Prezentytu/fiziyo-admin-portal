@@ -1,7 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import { useMemo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import {
   Building2,
   Dumbbell,
@@ -35,6 +37,7 @@ import { cn } from '@/lib/utils';
 import { useChatSession } from './ChatSessionContext';
 import { useChatShortcuts } from './useChatShortcuts';
 import { useChatMode } from './useChatMode';
+import { groupConversationsByDay, type StoredConversation } from './utils/conversationStore';
 
 interface ChatSidebarProps {
   readonly isCollapsed: boolean;
@@ -80,10 +83,19 @@ function SidebarBody({
     startConversation,
     openConversation,
     deleteConversation,
+    restoreDeletedConversation,
   } = useChatSession();
+  const groups = useMemo(() => groupConversationsByDay(conversations), [conversations]);
   const shortcuts = useChatShortcuts();
   const creditsPercent =
     credits && credits.limit > 0 ? Math.min(100, Math.round((credits.remaining / credits.limit) * 100)) : 0;
+
+  const remove = (conversation: StoredConversation) => {
+    deleteConversation(conversation.id);
+    toast('Rozmowa usunięta', {
+      action: { label: 'Cofnij', onClick: () => restoreDeletedConversation(conversation) },
+    });
+  };
 
   const run = (action: () => void) => () => {
     action();
@@ -147,43 +159,52 @@ function SidebarBody({
         </button>
       </nav>
 
-      <section aria-labelledby="chat-recent-heading" className="mt-4 flex min-h-0 flex-1 flex-col">
-        <h2 id="chat-recent-heading" className="px-2.5 pb-1.5 text-[12px] font-semibold text-label-tertiary">
-          Ostatnie
-        </h2>
+      <section aria-label="Ostatnie rozmowy" className="mt-4 flex min-h-0 flex-1 flex-col">
         {conversations.length === 0 ? (
-          <p className="px-2.5 text-[13px] text-label-tertiary">Tu pojawią się Twoje rozmowy.</p>
+          <>
+            <h2 className="px-2.5 pb-1.5 text-[12px] font-semibold text-label-tertiary">Ostatnie</h2>
+            <p className="px-2.5 text-[13px] text-label-tertiary">Tu pojawią się Twoje rozmowy.</p>
+          </>
         ) : (
-          <ul className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1" data-testid="nav-chat-recent-list">
-            {conversations.map((conversation) => {
-              const isActive = conversation.id === activeConversationId && pathname === '/';
-              return (
-                <li key={conversation.id} className="group relative">
-                  <button
-                    type="button"
-                    onClick={run(() => openConversation(conversation.id))}
-                    aria-current={isActive ? 'true' : undefined}
-                    data-testid={`nav-chat-recent-item-${conversation.id}`}
-                    className={cn(
-                      'flex h-9 w-full items-center rounded-[10px] pl-2.5 pr-9 text-left text-[14px] text-foreground transition-colors hover:bg-fill-quaternary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                      isActive && 'bg-fill-tertiary'
-                    )}
-                  >
-                    <span className="truncate">{conversation.title}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => deleteConversation(conversation.id)}
-                    aria-label={`Usuń rozmowę: ${conversation.title}`}
-                    data-testid={`nav-chat-recent-delete-btn-${conversation.id}`}
-                    className="absolute right-1 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-[8px] text-label-tertiary opacity-0 transition-opacity hover:bg-fill-tertiary hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover:opacity-100 [&_svg]:size-4"
-                  >
-                    <Trash2 aria-hidden="true" />
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
+          <div className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1" data-testid="nav-chat-recent-list">
+            {groups.map((group) => (
+              <div key={group.label} className="pb-3">
+                <h2 className="sticky top-0 z-[1] bg-grouped px-2.5 pb-1.5 pt-1 text-[12px] font-semibold text-label-tertiary">
+                  {group.label}
+                </h2>
+                <ul>
+                  {group.conversations.map((conversation) => {
+                    const isActive = conversation.id === activeConversationId && pathname === '/';
+                    return (
+                      <li key={conversation.id} className="group relative">
+                        <button
+                          type="button"
+                          onClick={run(() => openConversation(conversation.id))}
+                          aria-current={isActive ? 'true' : undefined}
+                          data-testid={`nav-chat-recent-item-${conversation.id}`}
+                          className={cn(
+                            'flex h-9 w-full items-center rounded-[10px] pl-2.5 pr-9 text-left text-[14px] text-foreground transition-colors hover:bg-fill-quaternary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                            isActive && 'bg-fill-tertiary font-medium'
+                          )}
+                        >
+                          <span className="truncate">{conversation.title}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => remove(conversation)}
+                          aria-label={`Usuń rozmowę: ${conversation.title}`}
+                          data-testid={`nav-chat-recent-delete-btn-${conversation.id}`}
+                          className="absolute right-1 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-[8px] text-label-tertiary opacity-0 transition-opacity hover:bg-fill-tertiary hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover:opacity-100 [&_svg]:size-4"
+                        >
+                          <Trash2 aria-hidden="true" />
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
+          </div>
         )}
       </section>
 

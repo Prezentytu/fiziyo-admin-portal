@@ -1,7 +1,21 @@
 'use client';
 
-import { memo, useEffect, useRef, useState } from 'react';
-import { CalendarDays, ChevronDown, FileText, FolderPlus, Menu, Sparkles, SquarePen, UserPlus } from 'lucide-react';
+import { memo, useCallback, useEffect, useRef, useState, type DragEvent, type RefObject } from 'react';
+import {
+  ArrowDown,
+  CalendarDays,
+  Check,
+  ChevronDown,
+  Copy,
+  FileText,
+  FileUp,
+  FolderPlus,
+  Menu,
+  Pencil,
+  Sparkles,
+  SquarePen,
+  UserPlus,
+} from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { ChoiceChip } from '@/components/ui/choice-chip';
@@ -10,7 +24,7 @@ import { InitialsAvatar } from '@/components/shared/page';
 import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { polishPlural } from '@/utils/polishPlural';
-import { ChatComposer } from './ChatComposer';
+import { ChatComposer, type ChatComposerHandle } from './ChatComposer';
 import { useChatSession } from './ChatSessionContext';
 import { useChatShellControls } from './ChatShellControls';
 import { ChatSpecRenderer } from './catalog/ChatSpecRenderer';
@@ -19,6 +33,7 @@ import { useChatShortcuts } from './useChatShortcuts';
 import { useDocumentAnalysis } from './useDocumentAnalysis';
 import { useTodayAgenda } from './useTodayAgenda';
 import type { ChatThreadMessage } from './utils/conversationStore';
+import { revealSegments, thinkingLabel } from './utils/replyMotion';
 import { describeIssue, type AgendaIssue } from './utils/todayAgenda';
 import type { DispatchFailure } from './utils/resolveReply';
 
@@ -34,35 +49,195 @@ function greeting(now: Date): string {
   return 'Dzień dobry';
 }
 
+const COPIED_MS = 1600;
+const NEAR_BOTTOM_PX = 120;
+
+/** Copy to clipboard with a short check mark in place of the icon, as in Claude. */
+function useCopy(): [boolean, (text: string) => void] {
+  const [copied, setCopied] = useState(false);
+  const copy = useCallback((text: string) => {
+    void navigator.clipboard?.writeText(text).then(() => {
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), COPIED_MS);
+    });
+  }, []);
+  return [copied, copy];
+}
+
+const ACTION_BUTTON =
+  'inline-flex h-7 w-7 items-center justify-center rounded-[8px] text-label-tertiary transition-colors hover:bg-fill-quaternary hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-[15px]';
+
+/** A fresh reply reads in word by word; history and restored conversations show at once. */
+function RevealText({ text, animate }: { readonly text: string; readonly animate: boolean }) {
+  if (!animate) return <>{text}</>;
+  return (
+    <>
+      {revealSegments(text).map((segment, index) => (
+        <span key={index} className="chat-word" style={{ animationDelay: `${segment.delayMs}ms` }}>
+          {segment.text}
+        </span>
+      ))}
+    </>
+  );
+}
+
 // Memoized: a new message leaves the cards above it alone (a spent card keeps its message object).
 const AssistantMessage = memo(function AssistantMessage({
   message,
+  animate,
 }: {
   readonly message: Extract<ChatThreadMessage, { role: 'assistant' }>;
+  readonly animate: boolean;
 }) {
+  const [copied, copy] = useCopy();
   return (
-    <div className="flex min-w-0 flex-1 flex-col gap-3.5">
+    <div className="group/message flex min-w-0 flex-1 flex-col gap-3.5">
       {message.text && (
-        <p className="whitespace-pre-wrap break-words text-[16px] leading-[26px] text-foreground">{message.text}</p>
+        <p className="whitespace-pre-wrap break-words text-[16px] leading-[26px] text-foreground">
+          <RevealText text={message.text} animate={animate} />
+        </p>
       )}
       {message.spec && (
-        <ChatSpecRenderer
-          spec={message.spec}
-          testId={`common-chat-reply-${message.id}`}
-          messageId={message.id}
-          chosen={message.chosen}
-        />
+        <div className={cn(animate && message.text && 'animate-chat-rise [animation-delay:180ms]')}>
+          <ChatSpecRenderer
+            spec={message.spec}
+            testId={`common-chat-reply-${message.id}`}
+            messageId={message.id}
+            chosen={message.chosen}
+          />
+        </div>
       )}
-      {message.fallbackReason ? (
-        <p className="text-[12px] text-label-tertiary">{FALLBACK_NOTES[message.fallbackReason]}</p>
-      ) : message.creditsUsed > 0 ? (
-        <p className="-mt-1.5 text-[12px] tabular-nums text-label-tertiary">
-          −{message.creditsUsed} {polishPlural(message.creditsUsed, 'kredyt', 'kredyty', 'kredytów')} AI
-        </p>
-      ) : null}
+      {(message.text || message.fallbackReason || message.creditsUsed > 0) && (
+        <div className="-mt-1.5 flex min-h-7 items-center gap-1">
+          {message.fallbackReason ? (
+            <p className="text-[12px] text-label-tertiary">{FALLBACK_NOTES[message.fallbackReason]}</p>
+          ) : message.creditsUsed > 0 ? (
+            <p className="text-[12px] tabular-nums text-label-tertiary">
+              −{message.creditsUsed} {polishPlural(message.creditsUsed, 'kredyt', 'kredyty', 'kredytów')} AI
+            </p>
+          ) : null}
+          {message.text && (
+            <button
+              type="button"
+              onClick={() => copy(message.text ?? '')}
+              aria-label={copied ? 'Skopiowano' : 'Kopiuj odpowiedź'}
+              title={copied ? 'Skopiowano' : 'Kopiuj'}
+              data-testid={`common-chat-reply-${message.id}-copy-btn`}
+              className={cn(ACTION_BUTTON, 'opacity-0 group-hover/message:opacity-100', copied && 'opacity-100')}
+            >
+              {copied ? <Check className="text-tint" aria-hidden="true" /> : <Copy aria-hidden="true" />}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 });
+
+function UserMessage({
+  message,
+  onEdit,
+}: {
+  readonly message: Extract<ChatThreadMessage, { role: 'user' }>;
+  readonly onEdit: (text: string) => void;
+}) {
+  const [copied, copy] = useCopy();
+  return (
+    <div className="group/message relative flex max-w-[min(80%,560px)] flex-col items-end gap-1.5">
+      {message.attachmentName && (
+        <span className="inline-flex items-center gap-2 rounded-[12px] border-[0.5px] border-hairline bg-card px-2.5 py-1.5 text-[14px] font-medium text-foreground">
+          <FileText className="h-4 w-4 text-label-secondary" aria-hidden="true" />
+          {message.attachmentName}
+        </span>
+      )}
+      <p className="whitespace-pre-wrap break-words rounded-[22px] bg-fill-tertiary px-4 py-2.5 text-[16px] leading-6 text-foreground">
+        {message.text}
+      </p>
+      <div
+        className={cn(
+          'absolute right-0 top-full mt-0.5 flex items-center gap-0.5 opacity-0 transition-opacity group-hover/message:opacity-100 focus-within:opacity-100',
+          copied && 'opacity-100'
+        )}
+      >
+        <button
+          type="button"
+          onClick={() => onEdit(message.text)}
+          aria-label="Edytuj i wyślij ponownie"
+          title="Edytuj"
+          data-testid={`common-chat-message-${message.id}-edit-btn`}
+          className={ACTION_BUTTON}
+        >
+          <Pencil aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          onClick={() => copy(message.text)}
+          aria-label={copied ? 'Skopiowano' : 'Kopiuj wiadomość'}
+          title={copied ? 'Skopiowano' : 'Kopiuj'}
+          data-testid={`common-chat-message-${message.id}-copy-btn`}
+          className={ACTION_BUTTON}
+        >
+          {copied ? <Check className="text-tint" aria-hidden="true" /> : <Copy aria-hidden="true" />}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** The busy line: a turning spark and a status that moves on while the wait grows. */
+function ThinkingLine({ isDocument }: { readonly isDocument: boolean }) {
+  const [elapsedMs, setElapsedMs] = useState(0);
+  useEffect(() => {
+    const startedAt = Date.now();
+    const interval = window.setInterval(() => setElapsedMs(Date.now() - startedAt), 400);
+    return () => window.clearInterval(interval);
+  }, []);
+  const label = thinkingLabel(elapsedMs, isDocument);
+  return (
+    <li
+      className="flex animate-chat-rise items-center gap-2.5 text-[15px]"
+      data-testid="common-chat-thinking"
+      role="status"
+    >
+      <Sparkles className="h-[18px] w-[18px] animate-spin text-tint [animation-duration:2.4s]" aria-hidden="true" />
+      <span key={label} className="text-chat-shimmer animate-chat-rise">
+        {label}
+      </span>
+    </li>
+  );
+}
+
+/** Follows new messages only while the therapist is at the bottom; otherwise offers a jump back. */
+function useStickToBottom(scrollRef: RefObject<HTMLDivElement | null>, followKey: string) {
+  const [isAway, setIsAway] = useState(false);
+  const isAwayRef = useRef(false);
+
+  const scrollToBottom = useCallback(
+    (behavior: ScrollBehavior = 'smooth') => {
+      const element = scrollRef.current;
+      element?.scrollTo({ top: element.scrollHeight, behavior });
+    },
+    [scrollRef]
+  );
+
+  useEffect(() => {
+    const element = scrollRef.current;
+    if (!element) return;
+    const handleScroll = () => {
+      const away = element.scrollHeight - element.scrollTop - element.clientHeight > NEAR_BOTTOM_PX;
+      isAwayRef.current = away;
+      setIsAway(away);
+    };
+    element.addEventListener('scroll', handleScroll, { passive: true });
+    return () => element.removeEventListener('scroll', handleScroll);
+  }, [scrollRef]);
+
+  useEffect(() => {
+    if (!isAwayRef.current) scrollToBottom();
+  }, [followKey, scrollToBottom]);
+
+  return { isAway, scrollToBottom };
+}
 
 function TodayAgenda() {
   const { visits, issues } = useTodayAgenda();
@@ -167,9 +342,11 @@ function TodayAgenda() {
 }
 
 function ChatHome({
+  composerRef,
   onSend,
   onAttach,
 }: {
+  readonly composerRef: RefObject<ChatComposerHandle | null>;
   readonly onSend: (text: string) => void;
   readonly onAttach: (file: File) => void;
 }) {
@@ -188,7 +365,7 @@ function ChatHome({
         </h1>
         <p className="text-[16px] text-label-secondary">W czym pomóc między wizytami?</p>
       </div>
-      <ChatComposer onSend={onSend} onAttach={onAttach} disabled={isBusy || !isReady} large />
+      <ChatComposer ref={composerRef} onSend={onSend} onAttach={onAttach} busy={isBusy} disabled={!isReady} large />
       <div className="flex flex-col gap-5">
         <div className="flex flex-wrap justify-center gap-2" role="group" aria-label="Skróty">
           <ChoiceChip onClick={shortcuts.createSet} disabled={!isReady} data-testid="common-chat-shortcut-set-btn">
@@ -291,17 +468,63 @@ function TopBar() {
   );
 }
 
+const TYPING_TARGETS = 'input, textarea, select, [contenteditable="true"], [role="dialog"], [role="menu"]';
+
+function hasDraggedFile(event: DragEvent): boolean {
+  return Array.from(event.dataTransfer.types).includes('Files');
+}
+
 /** Chat-first home (DEC-20261029-02, design "Czat v2"): one conversation, cards with the app's actions. */
 export function ChatView() {
-  const { messages, isBusy, isReady, sendMessage, isContextOpen, setContextOpen } = useChatSession();
+  const { messages, isBusy, isReady, sendMessage, stopReply, isContextOpen, setContextOpen } = useChatSession();
   const { analyzeFile } = useDocumentAnalysis();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const composerRef = useRef<ChatComposerHandle>(null);
+  const dragDepthRef = useRef(0);
+  const [isDragging, setIsDragging] = useState(false);
+  // Replies that arrive while the view is open read in; history opened from the sidebar shows at once.
+  const [openedAt] = useState(() => Date.now());
   const isWide = useMediaQuery('(min-width: 1280px)');
   const isEmpty = messages.length === 0;
+  const { isAway, scrollToBottom } = useStickToBottom(scrollRef, `${messages.length}-${isBusy}`);
+  const lastUser = messages.findLast((message) => message.role === 'user');
 
+  // Typing anywhere in the chat lands in the composer, as in Claude.
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-  }, [messages.length, isBusy]);
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.metaKey || event.ctrlKey || event.altKey || event.key.length !== 1) return;
+      const target = event.target instanceof Element ? event.target : null;
+      if (target?.closest(TYPING_TARGETS)) return;
+      composerRef.current?.focus();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const attach = (file: File) => {
+    if (!isReady || isBusy) return;
+    void analyzeFile(file);
+  };
+
+  const handleDragEnter = (event: DragEvent) => {
+    if (!hasDraggedFile(event)) return;
+    event.preventDefault();
+    dragDepthRef.current += 1;
+    setIsDragging(true);
+  };
+  const handleDragLeave = (event: DragEvent) => {
+    if (!hasDraggedFile(event)) return;
+    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+    if (dragDepthRef.current === 0) setIsDragging(false);
+  };
+  const handleDrop = (event: DragEvent) => {
+    if (!hasDraggedFile(event)) return;
+    event.preventDefault();
+    dragDepthRef.current = 0;
+    setIsDragging(false);
+    const file = event.dataTransfer.files[0];
+    if (file) attach(file);
+  };
 
   return (
     <div
@@ -311,7 +534,13 @@ export function ChatView() {
         isContextOpen && isWide ? 'grid-cols-[minmax(0,1fr)_340px]' : 'grid-cols-1'
       )}
     >
-      <section className="flex min-h-0 min-w-0 flex-col">
+      <section
+        className="relative flex min-h-0 min-w-0 flex-col"
+        onDragEnter={handleDragEnter}
+        onDragOver={(event) => hasDraggedFile(event) && event.preventDefault()}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
         <TopBar />
         <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
           <div
@@ -321,52 +550,66 @@ export function ChatView() {
             )}
           >
             {isEmpty ? (
-              <ChatHome onSend={sendMessage} onAttach={(file) => analyzeFile(file)} />
+              <ChatHome composerRef={composerRef} onSend={sendMessage} onAttach={attach} />
             ) : (
               <ol className="flex flex-col gap-7" aria-live="polite" data-testid="common-chat-thread">
                 {messages.map((message) =>
                   message.role === 'user' ? (
                     <li key={message.id} className="flex animate-chat-rise justify-end">
-                      <div className="flex max-w-[min(80%,560px)] flex-col items-end gap-1.5">
-                        {message.attachmentName && (
-                          <span className="inline-flex items-center gap-2 rounded-[12px] border-[0.5px] border-hairline bg-card px-2.5 py-1.5 text-[14px] font-medium text-foreground">
-                            <FileText className="h-4 w-4 text-label-secondary" aria-hidden="true" />
-                            {message.attachmentName}
-                          </span>
-                        )}
-                        <p className="whitespace-pre-wrap break-words rounded-[22px] bg-fill-tertiary px-4 py-2.5 text-[16px] leading-6 text-foreground">
-                          {message.text}
-                        </p>
-                      </div>
+                      <UserMessage message={message} onEdit={(text) => composerRef.current?.setDraft(text)} />
                     </li>
                   ) : (
                     <li key={message.id} className="flex animate-chat-rise">
-                      <AssistantMessage message={message} />
+                      <AssistantMessage message={message} animate={message.createdAt > openedAt} />
                     </li>
                   )
                 )}
-                {isBusy && (
-                  <li className="flex items-center gap-2.5 text-[15px]" data-testid="common-chat-thinking">
-                    <Sparkles
-                      className="h-[18px] w-[18px] animate-spin text-tint [animation-duration:2.4s]"
-                      aria-hidden="true"
-                    />
-                    <span className="text-chat-shimmer">Sprawdzam pacjentów i katalog…</span>
-                  </li>
-                )}
+                {isBusy && <ThinkingLine isDocument={Boolean(lastUser?.role === 'user' && lastUser.attachmentName)} />}
               </ol>
             )}
           </div>
         </div>
 
         {!isEmpty && (
-          <div className="shrink-0 px-4 pb-3.5 pt-2 sm:px-6">
+          <div className="relative shrink-0 px-4 pb-3.5 pt-2 sm:px-6">
+            {isAway && (
+              <button
+                type="button"
+                onClick={() => scrollToBottom()}
+                aria-label="Przewiń do najnowszej wiadomości"
+                data-testid="common-chat-scroll-bottom-btn"
+                className="absolute -top-11 left-1/2 inline-flex h-9 w-9 -translate-x-1/2 animate-chat-pop items-center justify-center rounded-full border-[0.5px] border-separator bg-card text-label-secondary shadow-raised transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-[18px]"
+              >
+                <ArrowDown aria-hidden="true" />
+              </button>
+            )}
             <div className="mx-auto flex w-full max-w-[760px] flex-col gap-2">
-              <ChatComposer onSend={sendMessage} onAttach={(file) => analyzeFile(file)} disabled={isBusy || !isReady} />
+              <ChatComposer
+                ref={composerRef}
+                onSend={sendMessage}
+                onAttach={attach}
+                onStop={stopReply}
+                busy={isBusy}
+                disabled={!isReady}
+                lastUserText={lastUser?.role === 'user' ? lastUser.text : undefined}
+              />
               <p className="text-center text-[12px] text-label-tertiary">
                 Do pacjenta trafia tylko to, co zatwierdzisz. Asystent może się mylić.
               </p>
             </div>
+          </div>
+        )}
+
+        {isDragging && (
+          <div
+            className="pointer-events-none absolute inset-2 z-20 flex animate-chat-pop flex-col items-center justify-center gap-3 rounded-[24px] border-2 border-dashed border-tint/50 bg-card/90 text-center backdrop-blur-sm"
+            data-testid="common-chat-drop-overlay"
+          >
+            <span className="flex h-12 w-12 items-center justify-center rounded-[14px] bg-tint-muted text-tint [&_svg]:size-6">
+              <FileUp aria-hidden="true" />
+            </span>
+            <p className="text-[17px] font-semibold text-foreground">Upuść dokument z zaleceniami</p>
+            <p className="text-[14px] text-label-secondary">PDF, Excel, CSV albo TXT. Ułożę z niego zestaw.</p>
           </div>
         )}
       </section>

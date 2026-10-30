@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useChatThread } from '../useChatThread';
+import { STOPPED_TEXT, useChatThread } from '../useChatThread';
 import type { IntentContext } from '../utils/intentRouter';
 
 const { dispatchMock } = vi.hoisted(() => ({ dispatchMock: vi.fn() }));
@@ -78,7 +78,9 @@ describe('useChatThread', () => {
   });
 
   it('sends one message when the composer fires twice before the busy state renders', async () => {
-    const { result } = renderHook(() => useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org-a' }));
+    const { result } = renderHook(() =>
+      useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org-a' })
+    );
 
     await act(() => Promise.all([result.current.send('Pokaż pacjentów'), result.current.send('Pokaż pacjentów')]));
 
@@ -88,11 +90,16 @@ describe('useChatThread', () => {
 
   it('runs one task when a file is picked twice and reports whether it succeeded', async () => {
     const task = vi.fn().mockResolvedValue({ text: 'Gotowe.' });
-    const { result } = renderHook(() => useChatThread({ useAi: false, context: CONTEXT, ready: true, scopeKey: 'org-a' }));
+    const { result } = renderHook(() =>
+      useChatThread({ useAi: false, context: CONTEXT, ready: true, scopeKey: 'org-a' })
+    );
 
     let outcomes: boolean[] = [];
     await act(async () => {
-      outcomes = await Promise.all([result.current.runTask('Dokument', task), result.current.runTask('Dokument', task)]);
+      outcomes = await Promise.all([
+        result.current.runTask('Dokument', task),
+        result.current.runTask('Dokument', task),
+      ]);
     });
     expect(task).toHaveBeenCalledTimes(1);
     expect(outcomes).toEqual([true, false]);
@@ -165,5 +172,30 @@ describe('useChatThread', () => {
     expect(result.current.isBusy).toBe(false);
     await act(() => result.current.send('kto nie ćwiczy'));
     expect(dispatchMock).toHaveBeenLastCalledWith('kto nie ćwiczy', undefined);
+  });
+
+  it('stops a reply in flight: the question stays, the late answer is dropped and the next send works', async () => {
+    let resolveDispatch: (value: unknown) => void = () => undefined;
+    dispatchMock.mockReturnValueOnce(new Promise((resolve) => (resolveDispatch = resolve)));
+    const { result } = renderHook(() =>
+      useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org-a' })
+    );
+
+    let pending: Promise<void> = Promise.resolve();
+    act(() => {
+      pending = result.current.send('zestaw dla Kowalskiego');
+    });
+    act(() => result.current.stop());
+    await act(async () => {
+      resolveDispatch({ sessionId: 'session-a', spec: { component: 'Navigate', route: 'patients' }, creditsUsed: 1 });
+      await pending;
+    });
+
+    expect(result.current.isBusy).toBe(false);
+    expect(result.current.messages).toHaveLength(2);
+    expect(result.current.messages[0]).toMatchObject({ role: 'user', text: 'zestaw dla Kowalskiego' });
+    expect(result.current.messages[1]).toMatchObject({ role: 'assistant', text: STOPPED_TEXT, spec: undefined });
+    await act(() => result.current.send('kto nie ćwiczy'));
+    expect(result.current.messages).toHaveLength(4);
   });
 });

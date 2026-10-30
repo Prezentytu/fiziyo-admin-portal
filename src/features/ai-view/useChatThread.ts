@@ -29,6 +29,8 @@ interface ChatThreadOptions {
   scopeKey: string;
 }
 
+export const STOPPED_TEXT = 'Zatrzymane. Napisz, co zrobić inaczej.';
+
 /**
  * One conversation: what the therapist wrote and what came back (a sentence and a card from the
  * dispatcher, AI or rules, or the next step of a flow the thread runs itself).
@@ -67,7 +69,15 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
   const appendAssistant = useCallback((reply: AssistantReply) => {
     setMessages((previous) => [
       ...previous,
-      { id: newChatId(), role: 'assistant', text: reply.text, spec: reply.spec, source: 'local', creditsUsed: 0, createdAt: Date.now() },
+      {
+        id: newChatId(),
+        role: 'assistant',
+        text: reply.text,
+        spec: reply.spec,
+        source: 'local',
+        creditsUsed: 0,
+        createdAt: Date.now(),
+      },
     ]);
   }, []);
 
@@ -176,6 +186,15 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
     );
   }, []);
 
+  /** The therapist stopped the reply: the question stays, whatever answers it later is dropped. */
+  const stop = useCallback(() => {
+    if (!inFlightRef.current) return;
+    threadEpochRef.current += 1;
+    inFlightRef.current = false;
+    setIsBusy(false);
+    appendAssistant({ text: STOPPED_TEXT });
+  }, [appendAssistant]);
+
   const reset = useCallback(
     (nextMessages: ChatThreadMessage[] = []) => {
       startOver();
@@ -185,5 +204,5 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
     [startOver]
   );
 
-  return { messages, isBusy, send, appendAssistant, appendExchange, runTask, markChosen, reset };
+  return { messages, isBusy, send, stop, appendAssistant, appendExchange, runTask, markChosen, reset };
 }
