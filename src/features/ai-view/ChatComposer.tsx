@@ -10,11 +10,13 @@ import {
   type KeyboardEvent,
   type Ref,
 } from 'react';
-import { ArrowUp, Mic, Paperclip, Square } from 'lucide-react';
+import { ArrowUp, Check, Mic, Paperclip, Square, X } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { DOCUMENT_ACCEPT } from './useDocumentAnalysis';
+import { useMicLevels } from './useMicLevels';
+import { WAVE_BARS } from './utils/micLevels';
 
 export interface ChatComposerHandle {
   /** Puts text in the field (edit of an earlier question) and focuses it, caret at the end. */
@@ -54,6 +56,22 @@ function formatElapsed(seconds: number): string {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 }
 
+/** Live microphone wave, newest bar on the right (Claude's dictation look). */
+function DictationWave({ levels }: { readonly levels: readonly number[] }) {
+  const padded = [...Array.from({ length: Math.max(0, WAVE_BARS - levels.length) }, () => 0.04), ...levels];
+  return (
+    <span className="flex h-8 min-w-0 flex-1 items-center justify-end gap-[3px] overflow-hidden" aria-hidden="true">
+      {padded.map((level, index) => (
+        <span
+          key={index}
+          className="w-[3px] shrink-0 rounded-full bg-foreground/70 transition-[height] duration-75"
+          style={{ height: `${Math.max(3, Math.round(level * 28))}px` }}
+        />
+      ))}
+    </span>
+  );
+}
+
 /**
  * The one input of the chat (design "Czat v2"): text, a document (clip, paste) or dictation (mic).
  * Enter sends, Shift+Enter breaks the line, Escape stops dictation or clears; dictation only fills
@@ -75,6 +93,7 @@ export function ChatComposer({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const dictationBaseRef = useRef('');
+  const dictationCancelledRef = useRef(false);
 
   const resize = () => {
     const textarea = textareaRef.current;
@@ -104,12 +123,14 @@ export function ChatComposer({
     language: 'pl-PL',
     autoSend: false,
     onTranscript: (transcript) => {
+      if (dictationCancelledRef.current) return;
       const base = dictationBaseRef.current;
       setValue(base ? `${base} ${transcript.trim()}` : transcript.trim());
       requestAnimationFrame(resize);
     },
   });
   const isListening = voice.state === 'listening';
+  const levels = useMicLevels(isListening);
 
   useEffect(() => {
     if (!large || value || isListening) return;
@@ -188,16 +209,25 @@ export function ChatComposer({
   };
 
   const toggleDictation = () => {
-    if (!isListening) dictationBaseRef.current = value.trim();
+    if (!isListening) {
+      dictationBaseRef.current = value.trim();
+      dictationCancelledRef.current = false;
+    }
     voice.toggleListening();
   };
 
-  const placeholder = isListening
-    ? 'Mów, tekst pojawi się tutaj…'
-    : large
-      ? COMPOSER_TIPS[tipIndex]
-      : 'Napisz albo podyktuj, co zrobić';
+  /** Throws away what was dictated in this take; the text typed before it stays. */
+  const cancelDictation = () => {
+    dictationCancelledRef.current = true;
+    voice.stopListening();
+    setValue(dictationBaseRef.current);
+    placeCaretAtEnd();
+  };
+
+  const placeholder = isListening ? 'Słucham…' : large ? COMPOSER_TIPS[tipIndex] : 'Napisz albo podyktuj, co zrobić';
   const showStop = busy && Boolean(onStop);
+  // Words still being recognised read in place of the placeholder while the field is empty.
+  const interimOverlay = isListening && Boolean(voice.interimTranscript) && !value;
 
   return (
     <form
@@ -206,7 +236,6 @@ export function ChatComposer({
       className={cn(
         'group/composer relative flex cursor-text flex-col gap-1 border-[0.5px] border-separator bg-card shadow-raised transition-[border-color,box-shadow] duration-200',
         'focus-within:border-tint/35 focus-within:shadow-[0_0_0_4px_var(--tint-muted),var(--elevation-raised)]',
-        isListening && 'border-status-danger/40 shadow-[0_0_0_4px_var(--status-danger-muted),var(--elevation-raised)]',
         large ? 'rounded-[28px] pb-2.5 pl-5 pr-3 pt-4' : 'rounded-[24px] pb-2 pl-4 pr-2.5 pt-3'
       )}
       onClick={(event) => {
@@ -216,111 +245,132 @@ export function ChatComposer({
       <label htmlFor="chat-composer-input" className="sr-only">
         Napisz do asystenta
       </label>
-      <textarea
-        id="chat-composer-input"
-        ref={textareaRef}
-        rows={1}
-        value={value}
-        onChange={(event) => {
-          setValue(event.target.value);
-          resize();
-        }}
-        onKeyDown={handleKeyDown}
-        onPaste={handlePaste}
-        placeholder={placeholder}
-        data-testid="common-chat-composer-input"
-        className={cn(
-          'w-full resize-none bg-transparent py-0.5 text-[16px] leading-6 text-foreground caret-tint outline-none placeholder:text-label-tertiary placeholder:transition-opacity focus:outline-none focus-visible:outline-none',
-          large ? 'min-h-[52px]' : 'min-h-7'
+      <div className="relative">
+        <textarea
+          id="chat-composer-input"
+          ref={textareaRef}
+          rows={1}
+          value={value}
+          onChange={(event) => {
+            setValue(event.target.value);
+            resize();
+          }}
+          onKeyDown={handleKeyDown}
+          onPaste={handlePaste}
+          placeholder={interimOverlay ? '' : placeholder}
+          data-testid="common-chat-composer-input"
+          className={cn(
+            'w-full resize-none bg-transparent py-0.5 text-[16px] leading-6 text-foreground caret-tint outline-none placeholder:text-label-tertiary placeholder:transition-opacity focus:outline-none focus-visible:outline-none',
+            large ? 'min-h-[52px]' : 'min-h-7'
+          )}
+        />
+        {interimOverlay && (
+          <p
+            className="pointer-events-none absolute inset-x-0 top-0.5 animate-chat-rise text-[16px] leading-6 text-label-secondary"
+            aria-hidden="true"
+          >
+            {voice.interimTranscript}
+          </p>
         )}
-      />
-      {isListening && voice.interimTranscript && (
-        <p className="-mt-0.5 truncate text-[15px] italic leading-6 text-label-tertiary" aria-hidden="true">
+      </div>
+      {isListening && voice.interimTranscript && !interimOverlay && (
+        <p className="-mt-0.5 animate-chat-rise truncate text-[16px] leading-6 text-label-tertiary" aria-hidden="true">
           {voice.interimTranscript}
         </p>
       )}
-      <div className="-ml-2 flex items-center gap-1">
-        <button
-          type="button"
-          className={ICON_BUTTON}
-          onClick={() => fileRef.current?.click()}
-          disabled={disabled || busy}
-          aria-label="Dodaj dokument z zaleceniami"
-          title="Dodaj dokument (PDF, Excel, CSV, TXT). Możesz też go upuścić albo wkleić."
-          data-testid="common-chat-composer-attach-btn"
-        >
-          <Paperclip aria-hidden="true" />
-        </button>
-        <button
-          type="button"
-          data-testid="common-chat-composer-mic-btn"
-          className={cn(
-            ICON_BUTTON,
-            isListening &&
-              'w-auto gap-2 bg-status-danger-muted pl-2.5 pr-3 text-status-danger hover:bg-status-danger-muted hover:text-status-danger'
-          )}
-          onClick={toggleDictation}
-          disabled={disabled || !voice.isSupported}
-          aria-pressed={isListening}
-          aria-label={isListening ? 'Zatrzymaj dyktowanie' : 'Dyktuj'}
-          title={
-            voice.isSupported
-              ? isListening
-                ? 'Zatrzymaj dyktowanie (Esc)'
-                : 'Dyktuj: mów, a tekst wpisze się w pole'
-              : 'Dyktowanie działa w Chrome, Edge i Safari'
-          }
-        >
-          {isListening ? (
-            <>
-              <span className="relative flex h-2 w-2" aria-hidden="true">
-                <span className="absolute inset-0 animate-ping rounded-full bg-status-danger opacity-60" />
-                <span className="relative h-2 w-2 rounded-full bg-status-danger" />
-              </span>
-              <span className="text-[13px] font-semibold tabular-nums">{formatElapsed(listenSeconds)}</span>
-              <Square className="!size-3.5" aria-hidden="true" />
-            </>
-          ) : (
+      {isListening ? (
+        <div className="-ml-2 flex animate-chat-rise items-center gap-2" role="group" aria-label="Dyktowanie">
+          <button
+            type="button"
+            data-testid="common-chat-composer-dictation-cancel-btn"
+            className={ICON_BUTTON}
+            onClick={cancelDictation}
+            aria-label="Anuluj dyktowanie"
+            title="Anuluj"
+          >
+            <X aria-hidden="true" />
+          </button>
+          <DictationWave levels={levels} />
+          <span className="w-10 shrink-0 text-right text-[13px] tabular-nums text-label-secondary">
+            {formatElapsed(listenSeconds)}
+          </span>
+          <button
+            type="button"
+            data-testid="common-chat-composer-mic-btn"
+            onClick={toggleDictation}
+            aria-pressed="true"
+            aria-label="Zakończ dyktowanie"
+            title="Gotowe (Esc)"
+            className="inline-flex h-[34px] w-[34px] shrink-0 animate-chat-pop items-center justify-center rounded-full bg-foreground text-background transition-transform active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 [&_svg]:size-[18px]"
+          >
+            <Check aria-hidden="true" strokeWidth={2.4} />
+          </button>
+        </div>
+      ) : (
+        <div className="-ml-2 flex items-center gap-1">
+          <button
+            type="button"
+            className={ICON_BUTTON}
+            onClick={() => fileRef.current?.click()}
+            disabled={disabled || busy}
+            aria-label="Dodaj dokument z zaleceniami"
+            title="Dodaj dokument (PDF, Excel, CSV, TXT). Możesz też go upuścić albo wkleić."
+            data-testid="common-chat-composer-attach-btn"
+          >
+            <Paperclip aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            data-testid="common-chat-composer-mic-btn"
+            className={ICON_BUTTON}
+            onClick={toggleDictation}
+            disabled={disabled || !voice.isSupported}
+            aria-pressed="false"
+            aria-label="Dyktuj"
+            title={
+              voice.isSupported ? 'Dyktuj: mów, a tekst wpisze się w pole' : 'Dyktowanie działa w Chrome, Edge i Safari'
+            }
+          >
             <Mic aria-hidden="true" />
-          )}
-        </button>
-        <span className="flex-1" />
-        <span
-          className={cn(
-            'hidden select-none pr-2 text-[12px] text-label-tertiary transition-opacity duration-200 md:inline',
-            value.trim() && !busy ? 'opacity-100' : 'opacity-0'
-          )}
-          aria-hidden="true"
-        >
-          <kbd className="font-sans">↵</kbd> wyślij · <kbd className="font-sans">⇧↵</kbd> nowa linia
-        </span>
-        {showStop ? (
-          <button
-            type="submit"
-            aria-label="Zatrzymaj odpowiedź"
-            title="Zatrzymaj (Esc)"
-            data-testid="common-chat-composer-stop-btn"
-            className="inline-flex h-[34px] w-[34px] shrink-0 animate-chat-pop items-center justify-center rounded-full bg-foreground text-background transition-transform active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          >
-            <Square className="size-3 fill-current" aria-hidden="true" />
           </button>
-        ) : (
-          <button
-            type="submit"
-            disabled={!canSend}
-            aria-label="Wyślij wiadomość"
-            data-testid="common-chat-composer-send-btn"
+          <span className="flex-1" />
+          <span
             className={cn(
-              'inline-flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full transition-[background-color,color,transform] duration-200 active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 [&_svg]:size-[18px]',
-              canSend
-                ? 'scale-100 bg-tint-fill text-on-tint hover:bg-tint-fill-hover'
-                : 'scale-95 bg-fill-tertiary text-label-tertiary'
+              'hidden select-none pr-2 text-[12px] text-label-tertiary transition-opacity duration-200 md:inline',
+              value.trim() && !busy ? 'opacity-100' : 'opacity-0'
             )}
+            aria-hidden="true"
           >
-            <ArrowUp aria-hidden="true" strokeWidth={2.4} />
-          </button>
-        )}
-      </div>
+            <kbd className="font-sans">↵</kbd> wyślij · <kbd className="font-sans">⇧↵</kbd> nowa linia
+          </span>
+          {showStop ? (
+            <button
+              type="submit"
+              aria-label="Zatrzymaj odpowiedź"
+              title="Zatrzymaj (Esc)"
+              data-testid="common-chat-composer-stop-btn"
+              className="inline-flex h-[34px] w-[34px] shrink-0 animate-chat-pop items-center justify-center rounded-full bg-foreground text-background transition-transform active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <Square className="size-3 fill-current" aria-hidden="true" />
+            </button>
+          ) : (
+            <button
+              type="submit"
+              disabled={!canSend}
+              aria-label="Wyślij wiadomość"
+              data-testid="common-chat-composer-send-btn"
+              className={cn(
+                'inline-flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full transition-[background-color,color,transform] duration-200 active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 [&_svg]:size-[18px]',
+                canSend
+                  ? 'scale-100 bg-tint-fill text-on-tint hover:bg-tint-fill-hover'
+                  : 'scale-95 bg-fill-tertiary text-label-tertiary'
+              )}
+            >
+              <ArrowUp aria-hidden="true" strokeWidth={2.4} />
+            </button>
+          )}
+        </div>
+      )}
       <input
         ref={fileRef}
         type="file"
