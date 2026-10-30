@@ -38,6 +38,8 @@ const CONSONANT_NAME_ENDINGS = ['', 'a', 'e', 'ie', 'u', 'owi', 'em', 'iem', 'om
 const MASCULINE_ADJECTIVE_ENDINGS = ['i', 'y', 'ego', 'emu', 'im', 'ym', 'iego', 'iemu'];
 const FEMININE_ADJECTIVE_ENDINGS = ['a', 'iej'];
 const FEMININE_NOUN_ENDINGS = ['a', 'e', 'i', 'o', 'y', 'ie'];
+// Mario, Julio: masculine on -o, never Marii or Juli.
+const OTHER_VOWEL_ENDINGS = ['owi', 'em', 'u'];
 // -ia names take only a, e, i (Maria → Marii, Marię), so Antonia never yields Antoni or Antonio; the
 // diminutives (Kasia, Madzia) and short -ia names (Hania, Julia) also stand bare or take u (Kasi, Haniu).
 const I_STEM_ENDINGS = ['a', 'e', 'i'];
@@ -49,6 +51,7 @@ const ADJECTIVE_STEM = /(sk|ck|dzk)$/;
 function longNameEndings(nameWord: string, stem: string): string[] {
   if (!TRAILING_VOWEL.test(nameWord)) return CONSONANT_NAME_ENDINGS;
   if (/[iy]$/.test(nameWord)) return MASCULINE_ADJECTIVE_ENDINGS;
+  if (!nameWord.endsWith('a')) return OTHER_VOWEL_ENDINGS;
   if (ADJECTIVE_STEM.test(stem)) return FEMININE_ADJECTIVE_ENDINGS;
   if (stem.endsWith('i') && (DIMINUTIVE_STEM.test(stem) || stem.length <= SHORT_I_STEM_LENGTH)) {
     return [...I_STEM_ENDINGS, ...DIMINUTIVE_ENDINGS];
