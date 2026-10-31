@@ -43,10 +43,11 @@ jobs:
       - name: Unit tests
         run: npm run test -- --run
 
+      # Build w PR wykonuje kod z gałęzi (także pisany przez agentów), więc nie dostaje sekretu Clerk. Klucz publiczny
+      # wystarcza do builda; sekret jest potrzebny dopiero w działającej aplikacji (Vercel), nie w CI.
       - name: Build
         run: npm run build
         env:
           SKIP_ENV_VALIDATION: true
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
-          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
