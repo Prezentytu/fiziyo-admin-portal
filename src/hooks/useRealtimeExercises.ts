@@ -6,7 +6,7 @@ import {
   ON_EXERCISE_DELETED,
   ON_GLOBAL_EXERCISE_PUBLISHED,
 } from '@/graphql/subscriptions';
-import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
+import { EXERCISE_LIBRARY_REFETCH_QUERIES } from '@/graphql/queries/exercises.queries';
 
 const REFETCH_DEBOUNCE_MS = 1000;
 
@@ -30,7 +30,7 @@ interface UseRealtimeExercisesOptions {
  *
  * Subskrypcje zwracają tylko ID - hook automatycznie:
  * - Refetchuje listę przy created/updated
- * - Usuwa z cache przy deleted
+ * - Usuwa z cache i odświeża listę przy deleted
  *
  * Użycie:
  * ```tsx
@@ -55,7 +55,7 @@ export function useRealtimeExercises({
   const refetch = useCallback(() => {
     if (!organizationId) return;
     client.refetchQueries({
-      include: [GET_AVAILABLE_EXERCISES_QUERY],
+      include: EXERCISE_LIBRARY_REFETCH_QUERIES,
     });
   }, [client, organizationId]);
 
@@ -116,6 +116,8 @@ export function useRealtimeExercises({
         id: client.cache.identify({ __typename: 'Exercise', id: exerciseId }),
       });
       client.cache.gc();
+      // The paged list has to pull the next record into the page and recount tabs.
+      scheduleRefetch();
 
       onDeleted?.(exerciseId);
     },
