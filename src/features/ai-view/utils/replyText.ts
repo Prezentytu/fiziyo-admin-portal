@@ -19,6 +19,11 @@ export function describeSpec(spec: ChatViewSpec, context: ReplyTextContext = {})
           ? `W katalogu jest zestaw „${set}”. Zmień, co trzeba, a potem ustalimy harmonogram dla: ${patient}.`
           : `W katalogu jest zestaw „${set}”. Zmień, co trzeba, i wybierz pacjenta.`;
       }
+      if (!spec.setId && spec.exerciseIds.length === 0) {
+        return patient
+          ? `Nowy zestaw dla: ${patient}. Dodaj ćwiczenia z katalogu.`
+          : 'Nowy zestaw bez pacjenta. Dodaj ćwiczenia z katalogu, a potem zapisz go w katalogu gabinetu.';
+      }
       return patient
         ? `Proponuję te ćwiczenia z katalogu dla: ${patient}. Zamień albo usuń, co nie pasuje.`
         : 'Proponuję te ćwiczenia z katalogu. Zamień albo usuń, co nie pasuje.';

@@ -26,6 +26,8 @@ import {
   applyParameterPatch,
   draftParameterValues,
   draftMinutes,
+  draftNote,
+  savedInCatalogText,
   scheduleQuestion,
   formatDraftParams,
   itemMinutes,
@@ -239,7 +241,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen }: CardProps<'Set
       return;
     }
     appendExchange('Wybierz pacjenta', {
-      text: 'Dla kogo jest ten zestaw?',
+      text: 'Dla kogo jest ten zestaw? Bez pacjenta zapiszę go w katalogu gabinetu.',
       spec: { component: 'PickPatient', draft },
     });
   };
@@ -249,7 +251,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen }: CardProps<'Set
     if (!saved) return;
     markChosen(messageId, 'saved');
     appendExchange('Zapisz w katalogu', {
-      text: `Zapisane w katalogu gabinetu jako „${saved.name}”. Możesz go teraz przypisać dowolnemu pacjentowi.`,
+      text: savedInCatalogText(saved.name),
       spec: { component: 'SetSaved', setId: saved.id, name: saved.name },
     });
   };
@@ -391,10 +393,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen }: CardProps<'Set
           </span>
         </div>
       )}
-      <ChatCardNote>
-        Zestaw z katalogu, a nie zalecenie dla tej osoby. Decyzja należy do Ciebie: do pacjenta nic nie trafi przed
-        kliknięciem „Wyślij”.
-      </ChatCardNote>
+      <ChatCardNote>{draftNote({ fromCatalog: Boolean(set), hasPatient: Boolean(patient) })}</ChatCardNote>
     </ChatCard>
   );
 }

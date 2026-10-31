@@ -54,7 +54,8 @@ Wygląd: canvas „Czat v2 AJ” (https://claude.ai/artifact/QGoTcDeTx2JX2yDq86R
 - Tekst z modelu jest tylko tekstem (bez HTML i markdownu), a wszystko, co zmienia dane, jest kartą z przyciskiem. Do pacjenta trafia tylko to, co fizjoterapeuta zatwierdził w karcie `SendSummary`.
 - Brak sztucznych blokad: czat ma umieć wszystko, co panel (decyzja Adama 30.10). Gdy czegoś jeszcze nie umie, mówi to wprost i proponuje, co umie.
 - „Dziś N wizyt” liczy notatki kliniczne z dzisiejszą datą, bo panel nie ma jeszcze kalendarza wizyt (`/appointments` to zapowiedź).
-- „Skanuj wizytę” działa z notatki albo dokumentu przez istniejący import; słuchanie wizyty (wyłuskiwanie zaleceń z rozmowy) jeszcze nie istnieje i karta mówi to wprost.
+- „Skanuj wizytę” działa z notatki albo dokumentu przez istniejący import. Karta mówi tylko, skąd bierze zalecenia, bez zapowiedzi „słuchania” (zgłoszenie z 31.10: brzmiało jak podsłuch); wariant głosowy to osobna decyzja produktu.
+- „Dla kogo?” zaczyna się od „Bez pacjenta” (zestaw zapisany w katalogu gabinetu, np. żeby wypróbować aplikację), potem pacjenci. Zestaw ułożony w wątku nie jest zestawem z katalogu i karta tak go nie nazywa (`draftNote`, `planNote` w `utils/setDraft.ts`).
 - „Kto nie ćwiczy” pokazuje pacjentów zalogowanego fizjoterapeuty; pytanie o konkretnego pacjenta szuka w całej organizacji (opieka zespołowa).
 - Kilku pacjentów o tym samym imieniu: backend pyta „O kogo chodzi?” bez wołania modelu.
 - Model: `Chat:OpenApiModelDispatcher` (domyślnie Haiku przez OpenRouter), osobny klucz klienta bez logowania promptów.
@@ -101,12 +102,16 @@ Błędy: `400 invalid_message`, `400 insufficient_credits`, `403 forbidden`, `50
 
 ## Poza zakresem (następne kroki)
 
-- Słuchanie wizyty i wyłuskiwanie zaleceń z rozmowy na żywo.
+- Zalecenia z przebiegu wizyty mówionego głosem (zgoda pacjenta, nazwa i forma do ustalenia; nie „słuchanie”).
 - Słownik form imion do aliasów (SPEC-032).
 - Decyzja o przetwarzaniu danych przez OpenRouter vs bezpośrednio Anthropic (DPA).
 - Prawdziwe strumieniowanie z modelu (dziś odpowiedź wchodzi animacją po przyjściu całości); historia rozmów po stronie serwera (dziś tylko przeglądarka).
 
 ## Changelog
+
+### 2026-10-31
+
+- „Bez pacjenta” jako pierwsza odpowiedź na „Dla kogo?”, notka zestawu zależna od pochodzenia, wyszukiwanie ćwiczeń po formach odmiany i opisie klinicznym.
 
 ### 2026-10-30
 

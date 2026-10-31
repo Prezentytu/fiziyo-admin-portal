@@ -61,8 +61,16 @@ describe('routeIntent', () => {
 
   it('asks for whom when a set request names no patient and no topic', () => {
     const spec = routeIntent('Utwórz zestaw', CONTEXT);
-    expect(spec.component).toBe('Clarify');
-    expect(spec.component === 'Clarify' && spec.options).toHaveLength(3);
+    expect(spec).toEqual({
+      component: 'Clarify',
+      question: expect.any(String),
+      options: ['Bez pacjenta', 'Jan Kowalski', 'Ewa Wiśniewska', 'Ewa Nowicka'],
+    });
+  });
+
+  it('composes a set without a patient when the therapist answers so', () => {
+    expect(routeIntent('Bez pacjenta', CONTEXT, 'Utwórz zestaw')).toEqual({ component: 'SetDraft', exerciseIds: [] });
+    expect(routeIntent('bez pacjenta', CONTEXT)).toEqual({ component: 'SetDraft', exerciseIds: [] });
   });
 
   it('opens the patient card when only the patient is named', () => {

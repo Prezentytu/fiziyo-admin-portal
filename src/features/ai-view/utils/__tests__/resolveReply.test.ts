@@ -77,8 +77,16 @@ describe('replyText', () => {
 
   it('appends the clarify question the model left out of its text', () => {
     const spec = { component: 'Clarify' as const, question: 'Którą Ewę?', options: ['Ewa W.', 'Ewa N.'] };
-    expect(replyText('Mam dwie osoby o tym imieniu.', spec, CONTEXT)).toBe('Mam dwie osoby o tym imieniu.\n\nKtórą Ewę?');
+    expect(replyText('Mam dwie osoby o tym imieniu.', spec, CONTEXT)).toBe(
+      'Mam dwie osoby o tym imieniu.\n\nKtórą Ewę?'
+    );
     expect(replyText('Którą Ewę?', spec, CONTEXT)).toBe('Którą Ewę?');
+  });
+
+  it('describes an empty draft as one to fill, not as proposed exercises', () => {
+    const text = replyText(undefined, { component: 'SetDraft', exerciseIds: [] }, CONTEXT);
+    expect(text).not.toContain('Proponuję');
+    expect(text).toContain('Dodaj ćwiczenia');
   });
 
   it('is empty for no text and no card', () => {

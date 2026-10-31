@@ -17,7 +17,7 @@ import {
   resolvePlanDates,
   type SchedulePlan,
 } from '../utils/schedulePlan';
-import { draftMinutes } from '../utils/setDraft';
+import { draftMinutes, planNote } from '../utils/setDraft';
 import type { CardProps } from './cardProps';
 import { ChatCard, ChatCardNote } from './ChatCard';
 import { useSendPlan } from './useChatWrites';
@@ -111,7 +111,7 @@ export function SendSummaryCard({ spec, testId, messageId, chosen }: CardProps<'
         <span className="text-label-secondary">Koniec</span>
         <span className="font-medium tabular-nums text-foreground">{formatPlanDate(endDate)}</span>
       </div>
-      <ChatCardNote>Plan pacjenta to kopia zestawu: zmiany tutaj nie ruszają katalogu.</ChatCardNote>
+      <ChatCardNote>{planNote(Boolean(spec.draft.sourceSetId))}</ChatCardNote>
     </ChatCard>
   );
 }

@@ -10,10 +10,7 @@ import { DOCUMENT_ACCEPT, MIN_NOTE_LENGTH, useDocumentAnalysis } from '../useDoc
 import type { CardProps } from './cardProps';
 import { ChatCard, ChatCardNote } from './ChatCard';
 
-/**
- * "Skanuj wizytę": recommendations from a visit note or document become a set. Listening to the
- * visit itself is not built yet; the card says so instead of pretending.
- */
+/** "Skanuj wizytę": recommendations from a visit note or document the therapist adds become a set. */
 export function ScanVisitCard({ spec, testId, messageId, chosen }: CardProps<'ScanVisit'>) {
   const { markChosen } = useChatActions();
   const isBusy = useChatBusy();
@@ -91,9 +88,7 @@ export function ScanVisitCard({ spec, testId, messageId, chosen }: CardProps<'Sc
           void submitFile(file);
         }}
       />
-      <ChatCardNote>
-        Słuchanie rozmowy z wizyty jeszcze nie działa. Na razie zalecenia biorę z notatki albo dokumentu.
-      </ChatCardNote>
+      <ChatCardNote>Zalecenia biorę tylko z notatki albo dokumentu, które tu dodasz.</ChatCardNote>
     </ChatCard>
   );
 }
