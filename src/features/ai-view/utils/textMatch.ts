@@ -21,8 +21,22 @@ export function wordStems(word: string): string[] {
   return stems;
 }
 
+// Longest first, so "pośladków" loses "ów" and not only "w".
+const INFLECTION_ENDINGS = ['ami', 'ach', 'ow', 'om', 'ie', 'em', 'a', 'e', 'i', 'o', 'u', 'y'];
+const MIN_CORE_LENGTH = 4;
+
+/** "mostki", "mostek" → "mostk"; "pośladków", "pośladki" → "posladk": the part every form shares. */
+function inflectionCore(word: string): string {
+  const ending = INFLECTION_ENDINGS.find(
+    (candidate) => word.endsWith(candidate) && word.length - candidate.length >= MIN_CORE_LENGTH
+  );
+  const core = ending ? word.slice(0, -ending.length) : word;
+  return MOVABLE_E.test(core) && core.length > MIN_CORE_LENGTH ? core.replace(MOVABLE_E, '$1') : core;
+}
+
 export function wordMatches(candidate: string, word: string): boolean {
   if (candidate === word) return true;
+  if (word.length >= MIN_CORE_LENGTH && inflectionCore(candidate) === inflectionCore(word)) return true;
   const maxExtra = word.length <= 3 ? 1 : 4;
   if (candidate.length > word.length + maxExtra) return false;
   return wordStems(word).some((stem) => stem.length >= 2 && candidate.startsWith(stem));

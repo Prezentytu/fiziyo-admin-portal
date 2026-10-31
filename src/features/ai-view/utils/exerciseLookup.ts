@@ -4,15 +4,20 @@ export interface SearchableExercise {
   id: string;
   name: string;
   description?: string | null;
+  clinicalDescription?: string | null;
   patientDescription?: string | null;
   mainTags?: ReadonlyArray<{ name?: string | null } | string> | null;
+  additionalTags?: ReadonlyArray<{ name?: string | null } | string> | null;
 }
 
 function exerciseWords(exercise: SearchableExercise): { name: string[]; rest: string[] } {
-  const tagNames = (exercise.mainTags ?? []).map((tag) => (typeof tag === 'string' ? tag : (tag.name ?? '')));
+  const tagNames = [...(exercise.mainTags ?? []), ...(exercise.additionalTags ?? [])].map((tag) =>
+    typeof tag === 'string' ? tag : (tag.name ?? '')
+  );
+  const texts = [exercise.description, exercise.clinicalDescription, exercise.patientDescription, ...tagNames];
   return {
     name: tokenizeWords(exercise.name),
-    rest: tokenizeWords([exercise.description, exercise.patientDescription, ...tagNames].filter(Boolean).join(' ')),
+    rest: tokenizeWords(texts.filter(Boolean).join(' ')),
   };
 }
 

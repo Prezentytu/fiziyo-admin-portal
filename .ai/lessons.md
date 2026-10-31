@@ -24,6 +24,14 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 
 ## Wpisy
 
+### 2026-10-31 - Wyszukiwarka czatu: fikstura z polem, którego zapytanie nie pobiera
+
+- **Kategoria**: `Testing` | `Chat`
+- **Problem**: Wyszukiwanie ćwiczeń w czacie bez AI nie znajdowało „Mostek biodrowy” po „mostki” ani ćwiczeń po opisie klinicznym i tagach dodatkowych, a testy były zielone.
+- **Przyczyna**: Stem brał tylko końcówkę zapytania, więc liczba mnoga i dopełniacz („mostki”, „pośladków”) nie były prefiksem nazwy; fikstura testu miała pole `description`, którego `ExercisePickerFragment` nie pobiera (jest `clinicalDescription`), więc test sprawdzał dane, których czat nigdy nie dostaje.
+- **Rozwiązanie**: `wordMatches` porównuje rdzeń odmiany obu słów (`inflectionCore` w `src/features/ai-view/utils/textMatch.ts`); `searchExercises` czyta `clinicalDescription` i `additionalTags`.
+- **Reguła**: Fikstura testu wyszukiwania ma pola z fragmentu GraphQL, którym przychodzą dane, nie z wyobrażonego typu. [egzekwowane: src/features/ai-view/utils/__tests__/exerciseLookup.test.ts]
+
 ### 2026-10-31 - Prettier przerabia `__tests__` w lessons.md na pogrubienie
 
 - **Kategoria**: `Tooling` | `Agent workflow`
