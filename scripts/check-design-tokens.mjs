@@ -8,14 +8,24 @@ const BASELINE_PATH = path.join(ROOT_DIR, '.ai/quality/design-token-baseline.jso
 const FILE_EXTENSION_PATTERN = /\.(ts|tsx)$/;
 const IGNORED_PATH_PATTERN = /(__tests__|\.test\.tsx?$|\.spec\.tsx?$|src\/components\/pdf\/)/;
 
-const COLOR_UTILITY_PREFIX = '(?:bg|text|border|from|via|to|ring|fill|stroke|outline|decoration|divide|placeholder|shadow|accent|caret)';
+const COLOR_UTILITY_PREFIX =
+  '(?:bg|text|border|from|via|to|ring|fill|stroke|outline|decoration|divide|placeholder|shadow|accent|caret)';
 const RAW_PALETTE =
   '(?:zinc|gray|slate|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)';
 
 export const VIOLATION_PATTERNS = [
   { id: 'arbitrary-hex', pattern: new RegExp(`\\b${COLOR_UTILITY_PREFIX}-\\[#[0-9a-fA-F]{3,8}\\]`, 'g') },
   { id: 'raw-palette', pattern: new RegExp(`\\b${COLOR_UTILITY_PREFIX}-${RAW_PALETTE}-\\d{2,3}\\b`, 'g') },
-  { id: 'inline-hex', pattern: /\b(?:color|background|backgroundColor|borderColor|fill|stroke)\s*:\s*['"`]#[0-9a-fA-F]{3,8}/g },
+  {
+    id: 'inline-hex',
+    pattern: /\b(?:color|background|backgroundColor|borderColor|fill|stroke)\s*:\s*['"`]#[0-9a-fA-F]{3,8}/g,
+  },
+  // Muted backgrounds are ~15% alpha, so fixed white/black text on them is unreadable in one of the themes.
+  {
+    id: 'fixed-text-on-muted',
+    pattern:
+      /\bbg-[a-z-]+-muted\b[^'"`\n]*\btext-(?:white|black)\b|\btext-(?:white|black)\b[^'"`\n]*\bbg-[a-z-]+-muted\b/g,
+  },
 ];
 
 export function countViolations(source) {
@@ -97,7 +107,8 @@ async function main() {
   const regressions = compareWithBaseline(counts, baseline);
   if (regressions.length > 0) {
     console.error('New colors outside the design system. Use tokens from docs/design-system.md:');
-    for (const { filePath, count, allowed } of regressions) console.error(`  ${filePath}: ${count} (allowed ${allowed})`);
+    for (const { filePath, count, allowed } of regressions)
+      console.error(`  ${filePath}: ${count} (allowed ${allowed})`);
     process.exit(1);
   }
   const total = Object.values(counts).reduce((sum, count) => sum + count, 0);

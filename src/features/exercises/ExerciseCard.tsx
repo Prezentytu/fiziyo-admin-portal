@@ -35,6 +35,7 @@ import { ImageLightbox } from '@/components/shared/ImageLightbox';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { HIDE_EXERCISE_TAGS } from '@/components/shared/exercise';
 import { verificationCopy } from '@/features/verification/verificationCopy';
+import { exerciseStatusBadgeVariant } from './utils/exerciseStatusBadgeVariant';
 
 export interface ExerciseTag {
   id: string;
@@ -71,11 +72,7 @@ export interface Exercise {
     | 'ARCHIVED_GLOBAL'
     | 'UPDATE_PENDING';
   organizationVerificationStatus?:
-    | 'NOT_SUBMITTED'
-    | 'PENDING_ORG_REVIEW'
-    | 'ORG_VERIFIED'
-    | 'ORG_CHANGES_REQUESTED'
-    | 'ORG_ARCHIVED';
+    'NOT_SUBMITTED' | 'PENDING_ORG_REVIEW' | 'ORG_VERIFIED' | 'ORG_CHANGES_REQUESTED' | 'ORG_ARCHIVED';
   scope?: 'PERSONAL' | 'ORGANIZATION' | 'GLOBAL';
   adminReviewNotes?: string;
   // Global submission tracking (nowy model weryfikacji)
@@ -165,6 +162,16 @@ export function ExerciseCard({
     onSubmitToOrganizationReview &&
     exercise.scope === 'ORGANIZATION' &&
     (organizationVerificationStatus === 'NOT_SUBMITTED' || organizationVerificationStatus === 'ORG_CHANGES_REQUESTED');
+
+  const statusBadgeVariant =
+    exerciseStatusBadgeVariant({
+      isSubmittedToGlobal: isSubmittedToGlobal && !isGlobalExercise,
+      isPendingReview,
+      isChangesRequested,
+      isPendingOrganizationReview,
+      isOrganizationChangesRequested,
+      isOrganizationVerified,
+    }) ?? 'outline';
 
   // Global exercises and pending review exercises are read-only (no edit/delete)
   const isReadOnly = isGlobalExercise || isPendingReview || isPendingOrganizationReview;
@@ -554,20 +561,11 @@ export function ExerciseCard({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Badge
-                      variant="outline"
+                      variant={statusBadgeVariant}
                       className={cn(
-                        'text-[10px] font-semibold backdrop-blur-md border shadow-lg cursor-help',
-                        isGlobalExercise && 'bg-violet/90 text-white border-violet-dark',
-                        isSubmittedToGlobal &&
-                          !isPendingReview &&
-                          !isChangesRequested &&
-                          !isGlobalExercise &&
-                          'bg-card/95 text-status-info border-status-info/40',
-                        isPendingReview && 'bg-card/95 text-status-warning border-status-warning/40',
-                        isChangesRequested && 'bg-card/95 text-status-danger border-status-danger/40',
-                        isPendingOrganizationReview && 'bg-card/95 text-status-warning border-status-warning/40',
-                        isOrganizationChangesRequested && 'bg-card/95 text-status-danger border-status-danger/40',
-                        isOrganizationVerified && 'bg-card/95 text-status-success border-status-success/40'
+                        'text-[10px] font-semibold cursor-help',
+                        statusBadgeVariant === 'outline' &&
+                          'border-violet-dark bg-violet/90 text-white shadow-lg backdrop-blur-md'
                       )}
                     >
                       {isGlobalExercise && (

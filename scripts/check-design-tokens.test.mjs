@@ -11,11 +11,24 @@ test('counts arbitrary hex, raw palettes and inline hex colors', () => {
 });
 
 test('ignores DS tokens and semantic classes', () => {
-  const source = '<div className="bg-grouped text-label-secondary border-separator bg-tint-fill text-on-tint bg-status-danger-muted" />';
+  const source =
+    '<div className="bg-grouped text-label-secondary border-separator bg-tint-fill text-on-tint bg-status-danger-muted" />';
   assert.equal(countViolations(source), 0);
 });
 
 test('flags only files that grew past the baseline', () => {
   const regressions = compareWithBaseline({ 'a.tsx': 3, 'b.tsx': 1, 'c.tsx': 2 }, { 'a.tsx': 3, 'b.tsx': 2 });
   assert.deepEqual(regressions, [{ filePath: 'c.tsx', count: 2, allowed: 0 }]);
+});
+
+test('flags fixed white or black text on a translucent muted status background', () => {
+  const source = [
+    '<Badge className="bg-status-warning-muted text-white" />',
+    "cn('text-black border-x bg-status-info-muted')",
+  ].join('\n');
+  assert.equal(countViolations(source), 2);
+});
+
+test('allows muted status backgrounds with their theme-aware text color', () => {
+  assert.equal(countViolations("cn('bg-status-warning-muted text-status-warning', 'text-white')"), 0);
 });

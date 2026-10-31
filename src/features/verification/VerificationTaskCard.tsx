@@ -94,7 +94,7 @@ export function VerificationTaskCard({
   const gifUrl = getMediaUrl(exercise.gifUrl);
   const videoUrl = getMediaUrl(exercise.videoUrl);
   const isEmbeddedVideo = isYouTubeUrl(exercise.videoUrl) || isVimeoUrl(exercise.videoUrl);
-  const previewVideoUrl = (gifUrl || isEmbeddedVideo) ? null : videoUrl;
+  const previewVideoUrl = gifUrl || isEmbeddedVideo ? null : videoUrl;
   const hasVideoPreview = gifUrl || previewVideoUrl;
   const hasVideo = gifUrl || videoUrl;
 
@@ -253,13 +253,8 @@ export function VerificationTaskCard({
                   {qualityIndicators.slice(0, 2).map((indicator, idx) => (
                     <Badge
                       key={idx}
-                      variant="outline"
-                      className={cn(
-                        'text-[10px] px-2 py-0.5 backdrop-blur-sm',
-                        indicator.type === 'warning'
-                          ? 'border-status-warning bg-status-warning-muted text-white'
-                          : 'border-info bg-info/80 text-white'
-                      )}
+                      variant={indicator.type === 'warning' ? 'overlay-warning' : 'overlay-info'}
+                      className="text-[10px] px-2 py-0.5"
                     >
                       <AlertCircle className="h-3 w-3 mr-1" />
                       {indicator.label}
