@@ -20,6 +20,10 @@ const CREATE_EXERCISE_PATTERN = /(utworz|stworz|dodaj|nowe|nowego)\w* (wlasne )?
 const SET_PATTERN = /zestaw|plan|przypisz|program/;
 const SEARCH_PATTERN = /znajdz|wyszukaj|szukaj|cwiczeni|cwiczen/;
 const NAVIGATE_VERB_PATTERN = /^(przejdz|otworz|pokaz|idz)\b/;
+const NO_PATIENT_PATTERN = /^bez pacjent/;
+
+/** First answer to "Dla kogo?": a set to try the app or keep in the catalog needs no patient. */
+export const NO_PATIENT_OPTION = 'Bez pacjenta';
 
 const NAVIGATE_TARGETS: Array<[RegExp, NavigateRoute]> = [
   [/pacjen/, 'patients'],
@@ -111,11 +115,12 @@ export function findBestSet(sets: readonly MatchableSet[], topic: readonly strin
   return best;
 }
 
-function askWhichPatient(patients: readonly MatchablePatient[], question: string): ChatViewSpec {
+function askWhichPatient(patients: readonly MatchablePatient[], question: string, firstOption?: string): ChatViewSpec {
+  const names = patients.map((patient) => patient.name);
   return {
     component: 'Clarify',
     question,
-    options: patients.slice(0, MAX_CLARIFY_OPTIONS).map((patient) => patient.name),
+    options: (firstOption ? [firstOption, ...names] : names).slice(0, MAX_CLARIFY_OPTIONS),
   };
 }
 
@@ -145,6 +150,7 @@ function routeCommand(text: string, context: IntentContext, chosen?: { id: strin
   const normalized = normalizeSearchText(text).trim();
   if (!normalized) return UNSUPPORTED_SPEC;
 
+  if (NO_PATIENT_PATTERN.test(normalized)) return { component: 'SetDraft', exerciseIds: [] };
   if (INACTIVE_PATTERN.test(normalized)) return { component: 'PatientPeek', filter: 'inactive' };
   if (ADD_PATIENT_PATTERN.test(normalized)) return { component: 'AddPatient', name: textAfter(text, /^pacjent/i) };
   if (CREATE_EXERCISE_PATTERN.test(normalized)) {
@@ -172,7 +178,11 @@ function routeCommand(text: string, context: IntentContext, chosen?: { id: strin
     if (topic.length > 0) return { component: 'ExerciseResults', query: topic.join(' '), exerciseIds: [], patientId };
     if (patientId) return { component: 'PatientPeek', patientId };
     if (context.patients.length === 0) return { component: 'Navigate', route: 'patient-new' };
-    return askWhichPatient(context.patients, 'Dla kogo? Wybierz pacjenta albo napisz imię i nazwisko.');
+    return askWhichPatient(
+      context.patients,
+      'Dla kogo? Zacznij bez pacjenta, wybierz pacjenta albo napisz imię i nazwisko.',
+      NO_PATIENT_OPTION
+    );
   }
 
   if (SEARCH_PATTERN.test(normalized) && topic.length > 0) {
