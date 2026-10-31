@@ -24,6 +24,14 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 
 ## Wpisy
 
+### 2026-10-31 - Biały tekst na tle `*-muted` znika w jasnym motywie
+
+- **Kategoria**: `UI` | `Design system`
+- **Problem**: Badge statusu na kafelku ćwiczenia („Weryfikacja org”) i ostrzeżenia na karcie weryfikacji („Brak wideo”) miały `bg-status-*-muted text-white`; w jasnym motywie tekst był prawie niewidoczny.
+- **Przyczyna**: Tokeny `*-muted` mają ~15% krycia, więc tło przejmuje kolor zdjęcia albo karty; stały `text-white`/`text-black` działa tylko w jednym motywie. Każdy feature składał overlay z klas od nowa.
+- **Rozwiązanie**: Warianty `overlay-info|success|warning|danger` w `src/components/ui/badge.tsx` (tło karty, tekst i border w kolorze statusu) użyte w `ExerciseCard` i `VerificationTaskCard`.
+- **Reguła**: Badge na zdjęciu bierze wariant `overlay-*`; na tle `*-muted` tekst ma kolor statusu, nigdy `text-white`/`text-black`. [egzekwowane: scripts/check-design-tokens.mjs]
+
 ### 2026-10-31 - Prettier przerabia `__tests__` w lessons.md na pogrubienie
 
 - **Kategoria**: `Tooling` | `Agent workflow`

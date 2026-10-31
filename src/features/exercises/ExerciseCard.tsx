@@ -33,10 +33,9 @@ import { cn } from '@/lib/utils';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { ImageLightbox } from '@/components/shared/ImageLightbox';
 import { getMediaUrl } from '@/utils/mediaUrl';
-import {
-  HIDE_EXERCISE_TAGS,
-} from '@/components/shared/exercise';
+import { HIDE_EXERCISE_TAGS } from '@/components/shared/exercise';
 import { verificationCopy } from '@/features/verification/verificationCopy';
+import { exerciseStatusBadgeVariant } from './utils/exerciseStatusBadgeVariant';
 
 export interface ExerciseTag {
   id: string;
@@ -73,11 +72,7 @@ export interface Exercise {
     | 'ARCHIVED_GLOBAL'
     | 'UPDATE_PENDING';
   organizationVerificationStatus?:
-    | 'NOT_SUBMITTED'
-    | 'PENDING_ORG_REVIEW'
-    | 'ORG_VERIFIED'
-    | 'ORG_CHANGES_REQUESTED'
-    | 'ORG_ARCHIVED';
+    'NOT_SUBMITTED' | 'PENDING_ORG_REVIEW' | 'ORG_VERIFIED' | 'ORG_CHANGES_REQUESTED' | 'ORG_ARCHIVED';
   scope?: 'PERSONAL' | 'ORGANIZATION' | 'GLOBAL';
   adminReviewNotes?: string;
   // Global submission tracking (nowy model weryfikacji)
@@ -167,6 +162,16 @@ export function ExerciseCard({
     onSubmitToOrganizationReview &&
     exercise.scope === 'ORGANIZATION' &&
     (organizationVerificationStatus === 'NOT_SUBMITTED' || organizationVerificationStatus === 'ORG_CHANGES_REQUESTED');
+
+  const statusBadgeVariant =
+    exerciseStatusBadgeVariant({
+      isSubmittedToGlobal: isSubmittedToGlobal && !isGlobalExercise,
+      isPendingReview,
+      isChangesRequested,
+      isPendingOrganizationReview,
+      isOrganizationChangesRequested,
+      isOrganizationVerified,
+    }) ?? 'outline';
 
   // Global exercises and pending review exercises are read-only (no edit/delete)
   const isReadOnly = isGlobalExercise || isPendingReview || isPendingOrganizationReview;
@@ -268,10 +273,7 @@ export function ExerciseCard({
               {isGlobalExercise && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Badge
-                      variant="outline"
-                      className="text-[9px] bg-violet/10 text-violet border-violet/20 shrink-0"
-                    >
+                    <Badge variant="outline" className="text-[9px] bg-violet/10 text-violet border-violet/20 shrink-0">
                       <Sparkles className="h-2.5 w-2.5 mr-0.5" />
                       FiziYo
                     </Badge>
@@ -548,31 +550,22 @@ export function ExerciseCard({
             )}
 
             {/* Status badges - top left */}
-              {(isGlobalExercise ||
-                isSubmittedToGlobal ||
-                isPendingReview ||
-                isChangesRequested ||
-                isPendingOrganizationReview ||
-                isOrganizationChangesRequested ||
-                isOrganizationVerified) && (
+            {(isGlobalExercise ||
+              isSubmittedToGlobal ||
+              isPendingReview ||
+              isChangesRequested ||
+              isPendingOrganizationReview ||
+              isOrganizationChangesRequested ||
+              isOrganizationVerified) && (
               <div className="absolute top-3 left-3 z-10">
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Badge
-                      variant="outline"
+                      variant={statusBadgeVariant}
                       className={cn(
-                        'text-[10px] font-semibold backdrop-blur-md border shadow-lg cursor-help',
-                        isGlobalExercise && 'bg-violet/90 text-white border-violet-dark',
-                        isSubmittedToGlobal &&
-                          !isPendingReview &&
-                          !isChangesRequested &&
-                          !isGlobalExercise &&
-                          'bg-status-info-muted text-white border-status-info',
-                        isPendingReview && 'bg-status-warning-muted text-black border-status-warning',
-                        isChangesRequested && 'bg-status-danger-muted text-white border-status-danger',
-                        isPendingOrganizationReview && 'bg-status-warning-muted text-white border-status-warning',
-                        isOrganizationChangesRequested && 'bg-status-danger-muted text-white border-status-danger',
-                        isOrganizationVerified && 'bg-status-success-muted text-white border-status-success'
+                        'text-[10px] font-semibold cursor-help',
+                        statusBadgeVariant === 'outline' &&
+                          'border-violet-dark bg-violet/90 text-white shadow-lg backdrop-blur-md'
                       )}
                     >
                       {isGlobalExercise && (

@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { ChoiceChip } from '@/components/ui/choice-chip';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { InitialsAvatar } from '@/components/shared/page';
+import { HeaderActions } from '@/components/layout/HeaderActions';
 import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { polishPlural } from '@/utils/polishPlural';
@@ -364,7 +365,7 @@ function TopBar() {
   const isEmpty = messages.length === 0;
 
   return (
-    <header className="flex h-[52px] shrink-0 items-center gap-2 pl-3 pr-4">
+    <header className="flex h-16 shrink-0 items-center gap-2 pl-3 pr-4 lg:pr-6">
       <Button
         variant="ghost"
         size="icon"
@@ -434,6 +435,8 @@ function TopBar() {
           <SquarePen aria-hidden="true" />
         </Button>
       )}
+      <span className="mx-1 h-5 w-px shrink-0 bg-hairline" aria-hidden="true" />
+      <HeaderActions />
     </header>
   );
 }

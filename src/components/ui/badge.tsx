@@ -15,6 +15,10 @@ const badgeVariants = cva(
         warning: 'bg-status-warning-muted text-status-warning',
         info: 'bg-status-info-muted text-status-info',
         solid: 'bg-tint-fill text-on-tint',
+        'overlay-info': 'border-status-info/40 bg-card/95 text-status-info shadow-lg backdrop-blur-md',
+        'overlay-success': 'border-status-success/40 bg-card/95 text-status-success shadow-lg backdrop-blur-md',
+        'overlay-warning': 'border-status-warning/40 bg-card/95 text-status-warning shadow-lg backdrop-blur-md',
+        'overlay-danger': 'border-status-danger/40 bg-card/95 text-status-danger shadow-lg backdrop-blur-md',
       },
     },
     defaultVariants: {
