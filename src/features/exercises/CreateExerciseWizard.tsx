@@ -44,7 +44,10 @@ import {
   UPDATE_EXERCISE_MUTATION,
   UPLOAD_EXERCISE_IMAGE_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
-import { GET_AVAILABLE_EXERCISES_QUERY, GET_AVAILABLE_EXERCISE_NAMES_QUERY } from '@/graphql/queries/exercises.queries';
+import {
+  EXERCISE_LIBRARY_REFETCH_QUERIES,
+  GET_AVAILABLE_EXERCISE_NAMES_QUERY,
+} from '@/graphql/queries/exercises.queries';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
 import type { ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
@@ -1054,7 +1057,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
   const [createExercise] = useMutation<CreateExerciseMutationResult, CreateExerciseVariables>(
     CREATE_EXERCISE_MUTATION,
     {
-      refetchQueries: [GET_AVAILABLE_EXERCISES_QUERY],
+      refetchQueries: EXERCISE_LIBRARY_REFETCH_QUERIES,
     }
   );
 
@@ -1478,7 +1481,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
         // dane (thumbnailUrl/imageUrl/images). Bez tego refetchu kafelek na
         // /exercises pokazuje placeholder az do recznego odswiezenia strony.
         void apolloClient.refetchQueries({
-          include: [GET_AVAILABLE_EXERCISES_QUERY],
+          include: EXERCISE_LIBRARY_REFETCH_QUERIES,
         });
       }
 

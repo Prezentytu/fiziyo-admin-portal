@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Plus, Dumbbell, LayoutGrid, List, Search } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { LoadingState } from '@/components/shared/LoadingState';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { ShowMoreTrigger } from '@/components/shared/ShowMoreTrigger';
+import { ListPagination } from '@/components/shared/ListPagination';
 import { ExerciseCard, Exercise } from '@/features/exercises/ExerciseCard';
 import { ExerciseDialog } from '@/features/exercises/ExerciseDialog';
 import { SubmitToGlobalDialog } from '@/features/exercises/SubmitToGlobalDialog';
@@ -23,8 +23,10 @@ import { ExerciseBuilderSidebar } from '@/components/exercise-builder/ExerciseBu
 import { ExerciseBuilderFAB } from '@/components/exercise-builder/ExerciseBuilderFAB';
 import { cn } from '@/lib/utils';
 
-import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
-import { useIncrementalList } from '@/hooks/useIncrementalList';
+import {
+  EXERCISE_LIBRARY_REFETCH_QUERIES,
+  GET_AVAILABLE_EXERCISES_PAGE_QUERY,
+} from '@/graphql/queries/exercises.queries';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
 import {
@@ -38,23 +40,31 @@ import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
 import { useDataManagement } from '@/hooks/useDataManagement';
 import { useRealtimeExercises } from '@/hooks/useRealtimeExercises';
 import { ORG_VERIFICATION_REFETCH_QUERIES } from '@/hooks/useOrganizationVerificationRealtime';
-import type { AvailableExercisesResponse, ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
-import { sortExercisesByNewest } from '@/features/exercises/utils/sortExercisesByNewest';
-import { filterExercisesBySearch } from '@/features/exercises/utils/exerciseSearch';
-import { exerciseNeedsChanges } from '@/features/exercises/utils/exerciseNeedsChanges';
+import type { AvailableExercisesPageResponse, ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
+import {
+  buildExerciseLibraryQueryString,
+  EXERCISE_LIBRARY_PAGE_SIZES,
+  parseExerciseLibraryUrlState,
+  toExerciseLibraryTab,
+  type ExerciseLibraryUrlState,
+} from '@/features/exercises/utils/exerciseLibraryUrlState';
 import { getExerciseDefaultParams } from '@/features/exercise-sets/utils/exerciseDefaults';
 import { PageHeader } from '@/components/shared/page';
 
-// Typ dla filtra źródła ćwiczeń
-type ExerciseSourceFilter = 'all' | 'organization' | 'fiziyo' | 'needsChanges';
+const SEARCH_DEBOUNCE_MS = 300;
 
 export default function ExercisesPage() {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { currentOrganization } = useOrganization();
   const { toggleExercise, isInBuilder } = useExerciseBuilder();
-  const [searchQuery, setSearchQuery] = useState('');
+  // Filter, search and page live in the URL, so going back from an exercise returns to the same page.
+  const listState = useMemo(() => parseExerciseLibraryUrlState(searchParams), [searchParams]);
+  const { filter: sourceFilter, search: committedSearch } = listState;
+  const [searchQuery, setSearchQuery] = useState(committedSearch);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [sourceFilter, setSourceFilter] = useState<ExerciseSourceFilter>('all');
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
   const [deletingExercise, setDeletingExercise] = useState<Exercise | null>(null);
@@ -114,12 +124,37 @@ export default function ExercisesPage() {
     organizationId,
   });
 
-  // Get exercises (includes organization, global, and personal exercises)
-  const { data, loading, error } = useQuery(GET_AVAILABLE_EXERCISES_QUERY, {
-    variables: { organizationId },
-    skip: !organizationId,
-    fetchPolicy: 'cache-and-network',
-  });
+  const updateListState = useCallback(
+    (patch: Partial<ExerciseLibraryUrlState>) => {
+      const query = buildExerciseLibraryQueryString({ ...listState, page: 1, ...patch });
+      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    },
+    [listState, pathname, router]
+  );
+
+  useEffect(() => {
+    if (searchQuery.trim() === committedSearch) return;
+    const timer = setTimeout(() => updateListState({ search: searchQuery }), SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [committedSearch, searchQuery, updateListState]);
+
+  // One page of the library: tab, search, sorting and counts come from the API, not from 5k records in memory.
+  const { data, previousData, loading, error } = useQuery<AvailableExercisesPageResponse>(
+    GET_AVAILABLE_EXERCISES_PAGE_QUERY,
+    {
+      variables: {
+        organizationId,
+        tab: toExerciseLibraryTab(sourceFilter),
+        search: committedSearch || null,
+        page: listState.page,
+        pageSize: listState.pageSize,
+      },
+      skip: !organizationId,
+      fetchPolicy: 'cache-and-network',
+    }
+  );
+  // Keep the previous page on screen while the next one loads instead of flashing skeletons.
+  const libraryPage = (data ?? previousData)?.availableExercisesPage;
 
   // Real-time updates dla ćwiczeń (WebSocket subscriptions)
   // Automatycznie aktualizuje Apollo Cache - nie wymaga refetchQueries
@@ -142,43 +177,23 @@ export default function ExercisesPage() {
     skip: !organizationId,
   });
 
-  // Delete mutation: drop the record from cache instead of downloading the whole library again.
+  // The page and its counts change after a delete, so refetch the (small) page; the full library only if shown.
   const [deleteExercise, { loading: deleting }] = useMutation(DELETE_EXERCISE_MUTATION, {
-    update: (cache, _result, { variables }) => {
-      const exerciseId = (variables as { exerciseId?: string } | undefined)?.exerciseId;
-      if (!exerciseId) return;
-      cache.evict({ id: cache.identify({ __typename: 'Exercise', id: exerciseId }) });
-      cache.gc();
-    },
+    refetchQueries: EXERCISE_LIBRARY_REFETCH_QUERIES,
   });
 
   // Submit to global review mutation
   const [submitToGlobalReview, { loading: submittingToGlobal }] = useMutation(SUBMIT_TO_GLOBAL_REVIEW_MUTATION, {
-    refetchQueries: [
-      {
-        query: GET_AVAILABLE_EXERCISES_QUERY,
-        variables: { organizationId },
-      },
-    ],
+    refetchQueries: EXERCISE_LIBRARY_REFETCH_QUERIES,
   });
   const [submitForOrganizationReview, { loading: submittingToOrganization }] = useMutation(
     SUBMIT_FOR_ORGANIZATION_REVIEW_MUTATION,
     {
-      refetchQueries: [
-        {
-          query: GET_AVAILABLE_EXERCISES_QUERY,
-          variables: { organizationId },
-        },
-        ...ORG_VERIFICATION_REFETCH_QUERIES,
-      ],
+      refetchQueries: [...EXERCISE_LIBRARY_REFETCH_QUERIES, ...ORG_VERIFICATION_REFETCH_QUERIES],
     }
   );
 
-  // Memoized so the tag mapping, sort and filters below don't rerun on every keystroke.
-  const rawExercises = useMemo<Exercise[]>(
-    () => (data as AvailableExercisesResponse)?.availableExercises || [],
-    [data]
-  );
+  const rawExercises = useMemo<Exercise[]>(() => libraryPage?.items ?? [], [libraryPage]);
   const tags = useMemo(() => (tagsData as ExerciseTagsResponse)?.exerciseTags || [], [tagsData]);
   const categories = useMemo(
     () => (categoriesData as TagCategoriesResponse)?.tagsByOrganizationId || [],
@@ -189,42 +204,20 @@ export default function ExercisesPage() {
   const tagsMap = useMemo(() => createTagsMap(tags, categories), [tags, categories]);
   const exercises = useMemo(() => mapExercisesWithTags(rawExercises, tagsMap), [rawExercises, tagsMap]);
 
-  // Filtrowanie po źródle (zakładki)
-  const sourceFilteredExercises = useMemo(() => {
-    if (sourceFilter === 'all') return exercises;
-    if (sourceFilter === 'organization') {
-      return exercises.filter((e) => e.scope === 'ORGANIZATION' || e.scope === 'PERSONAL');
-    }
-    if (sourceFilter === 'fiziyo') {
-      return exercises.filter((e) => e.scope === 'GLOBAL');
-    }
-    if (sourceFilter === 'needsChanges') {
-      return exercises.filter(exerciseNeedsChanges);
-    }
-    return exercises;
-  }, [exercises, sourceFilter]);
+  const counts = libraryPage?.counts;
+  const totalCount = counts?.all ?? 0;
+  const isSearching = searchQuery.trim().length > 0;
+  const isInitialLoading = loading && !libraryPage;
 
-  // Liczniki dla zakładek (po deduplikacji)
-  const organizationCount = useMemo(
-    () => exercises.filter((e) => e.scope === 'ORGANIZATION' || e.scope === 'PERSONAL').length,
-    [exercises]
-  );
-  const fiziyoCount = useMemo(() => exercises.filter((e) => e.scope === 'GLOBAL').length, [exercises]);
-  const needsChangesCount = useMemo(() => exercises.filter(exerciseNeedsChanges).length, [exercises]);
+  const handlePageChange = (page: number) => {
+    updateListState({ page });
+    scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
-  // Stats - łączna liczba (po deduplikacji)
-  const totalCount = exercises.length;
-
-  const sortedExercises = useMemo(() => sortExercisesByNewest(sourceFilteredExercises), [sourceFilteredExercises]);
-  const filteredExercises = useMemo(
-    () => filterExercisesBySearch(sortedExercises, searchQuery),
-    [sortedExercises, searchQuery]
-  );
-  const {
-    visibleItems: visibleExercises,
-    remaining: remainingExercises,
-    showMore: showMoreExercises,
-  } = useIncrementalList(filteredExercises, `${sourceFilter}|${searchQuery}`);
+  const clearSearch = () => {
+    setSearchQuery('');
+    updateListState({ search: '' });
+  };
 
   const handleView = (exercise: Exercise) => {
     router.push(`/exercises/${exercise.id}`);
@@ -292,7 +285,10 @@ export default function ExercisesPage() {
   return (
     <div className="flex h-full overflow-hidden rounded-card bg-card">
       {/* Left Panel: Strefa Inspiracji (Grid) */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-8 sm:py-8 xl:px-11 xl:py-9 scroll-smooth custom-scrollbar [--surface-card:var(--grouped-tertiary)]">
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto px-4 py-6 sm:px-8 sm:py-8 xl:px-11 xl:py-9 scroll-smooth custom-scrollbar [--surface-card:var(--grouped-tertiary)]"
+      >
         <div className="mx-auto flex max-w-[1160px] flex-col gap-6">
           <PageHeader
             title="Ćwiczenia"
@@ -349,15 +345,15 @@ export default function ExercisesPage() {
           <div role="group" aria-label="Źródło ćwiczeń" className="flex gap-6 overflow-x-auto shadow-[inset_0_-0.5px_0_var(--separator)]">
             {([
               { id: 'all', label: 'Wszystkie', count: totalCount, testId: 'exercise-filter-all' },
-              { id: 'organization', label: 'Moje ćwiczenia', count: organizationCount, testId: 'exercise-filter-organization' },
-              { id: 'fiziyo', label: 'Baza FiziYo', count: fiziyoCount, testId: 'exercise-filter-fiziyo' },
-              { id: 'needsChanges', label: 'Do poprawy', count: needsChangesCount, testId: 'exercise-filter-needs-changes' },
+              { id: 'organization', label: 'Moje ćwiczenia', count: counts?.organization ?? 0, testId: 'exercise-filter-organization' },
+              { id: 'fiziyo', label: 'Baza FiziYo', count: counts?.fiziyo ?? 0, testId: 'exercise-filter-fiziyo' },
+              { id: 'needsChanges', label: 'Do poprawy', count: counts?.needsChanges ?? 0, testId: 'exercise-filter-needs-changes' },
             ] as const).map((tab) => (
               <button
                 key={tab.id}
                 type="button"
                 aria-pressed={sourceFilter === tab.id}
-                onClick={() => setSourceFilter(tab.id)}
+                onClick={() => updateListState({ filter: tab.id })}
                 data-testid={tab.testId}
                 className={cn(
                   'h-11 shrink-0 whitespace-nowrap text-[15px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
@@ -373,17 +369,17 @@ export default function ExercisesPage() {
           </div>
 
           {/* Results info */}
-          {searchQuery && (
+          {isSearching && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span>Wyniki:</span>
               <Badge variant="secondary" className="text-xs">
-                {filteredExercises.length} z {totalCount}
+                {libraryPage?.totalCount ?? 0} z {totalCount}
               </Badge>
               <Button
                 variant="ghost"
                 size="sm"
                 className="h-6 px-2 text-xs"
-                onClick={() => setSearchQuery('')}
+                onClick={clearSearch}
                 data-testid="exercise-search-clear-btn"
               >
                 Wyczyść wyszukiwanie
@@ -392,7 +388,7 @@ export default function ExercisesPage() {
           )}
 
           {/* Content */}
-          {loading ? (
+          {isInitialLoading ? (
             <div
               className={cn(
                 viewMode === 'grid' ? 'grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'space-y-2',
@@ -401,28 +397,31 @@ export default function ExercisesPage() {
             >
               <LoadingState type={viewMode === 'grid' ? 'exercise' : 'exercise-row'} count={8} />
             </div>
-          ) : filteredExercises.length === 0 ? (
+          ) : exercises.length === 0 ? (
             <Card className="border-dashed border-border/60">
               <CardContent className="py-16">
                 <EmptyState
                   icon={Dumbbell}
-                  title={searchQuery ? 'Nie znaleziono ćwiczeń' : 'Brak ćwiczeń'}
+                  title={committedSearch ? 'Nie znaleziono ćwiczeń' : 'Brak ćwiczeń'}
                   description={
-                    searchQuery
+                    committedSearch
                       ? 'Spróbuj zmienić kryteria wyszukiwania'
                       : 'Dodaj pierwsze ćwiczenie lub załaduj przykładowe zestawy'
                   }
-                  actionLabel={!searchQuery ? 'Dodaj ćwiczenie' : undefined}
-                  onAction={!searchQuery ? () => setIsDialogOpen(true) : undefined}
-                  secondaryActionLabel={!searchQuery && !hasImportedExamples ? 'Załaduj przykłady' : undefined}
-                  onSecondaryAction={!searchQuery && !hasImportedExamples ? importExampleSets : undefined}
+                  actionLabel={!committedSearch ? 'Dodaj ćwiczenie' : undefined}
+                  onAction={!committedSearch ? () => setIsDialogOpen(true) : undefined}
+                  secondaryActionLabel={!committedSearch && !hasImportedExamples ? 'Załaduj przykłady' : undefined}
+                  onSecondaryAction={!committedSearch && !hasImportedExamples ? importExampleSets : undefined}
                   secondaryActionLoading={isImporting}
                 />
               </CardContent>
             </Card>
           ) : viewMode === 'grid' ? (
-            <div className={cn('grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 animate-stagger')}>
-              {visibleExercises.map((exercise) => (
+            <div
+              aria-busy={loading}
+              className={cn('grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 animate-stagger', loading && 'opacity-60')}
+            >
+              {exercises.map((exercise) => (
                 <ExerciseCard
                   key={exercise.id}
                   exercise={exercise}
@@ -439,8 +438,8 @@ export default function ExercisesPage() {
               ))}
             </div>
           ) : (
-            <div className="space-y-2 animate-stagger">
-              {visibleExercises.map((exercise) => (
+            <div aria-busy={loading} className={cn('space-y-2 animate-stagger', loading && 'opacity-60')}>
+              {exercises.map((exercise) => (
                 <ExerciseCard
                   key={exercise.id}
                   exercise={exercise}
@@ -458,11 +457,19 @@ export default function ExercisesPage() {
               ))}
             </div>
           )}
-          {!loading && (
-            <ShowMoreTrigger
-              remaining={remainingExercises}
-              onShowMore={showMoreExercises}
-              dataTestId="exercise-show-more-btn"
+          {libraryPage && libraryPage.totalCount > 0 && (
+            <ListPagination
+              page={libraryPage.page}
+              totalPages={libraryPage.totalPages}
+              totalCount={libraryPage.totalCount}
+              visibleCount={exercises.length}
+              pageSize={libraryPage.pageSize}
+              pageSizeOptions={EXERCISE_LIBRARY_PAGE_SIZES}
+              hasPreviousPage={libraryPage.hasPreviousPage}
+              hasNextPage={libraryPage.hasNextPage}
+              onPageChange={handlePageChange}
+              onPageSizeChange={(pageSize) => updateListState({ pageSize })}
+              testIdPrefix="exercise"
             />
           )}
         </div>

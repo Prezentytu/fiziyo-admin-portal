@@ -1,7 +1,8 @@
 import { renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ON_EXERCISE_CREATED, ON_EXERCISE_UPDATED } from '@/graphql/subscriptions';
+import { ON_EXERCISE_CREATED, ON_EXERCISE_DELETED, ON_EXERCISE_UPDATED } from '@/graphql/subscriptions';
+import { GET_AVAILABLE_EXERCISES_PAGE_QUERY } from '@/graphql/queries/exercises.queries';
 
 import { useRealtimeExercises } from './useRealtimeExercises';
 
@@ -43,6 +44,16 @@ describe('useRealtimeExercises', () => {
 
     vi.advanceTimersByTime(1000);
     expect(refetchQueriesMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('po usunięciu odświeża też stronę listy, bo liczniki i strona się przesuwają', () => {
+    renderHook(() => useRealtimeExercises({ organizationId: 'org-1' }));
+
+    handlers.get(ON_EXERCISE_DELETED)?.({ data: { data: { onExerciseDeleted: 'a' } } });
+    vi.advanceTimersByTime(1000);
+
+    expect(refetchQueriesMock).toHaveBeenCalledTimes(1);
+    expect(refetchQueriesMock.mock.calls[0]?.[0].include).toContain(GET_AVAILABLE_EXERCISES_PAGE_QUERY);
   });
 
   it('nie odświeża po odmontowaniu', () => {
