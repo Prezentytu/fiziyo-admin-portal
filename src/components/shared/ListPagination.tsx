@@ -47,7 +47,8 @@ export function ListPagination({
           data-testid={`${testIdPrefix}-page-size`}
         >
           <SelectTrigger
-            className="h-8 w-[86px] bg-background"
+            size="sm"
+            className="w-[86px]"
             aria-label="Liczba na stronie"
             data-testid={`${testIdPrefix}-page-size-select`}
           >

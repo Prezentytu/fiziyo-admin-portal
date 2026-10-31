@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useState, useCallback, useDeferredValue, useEffect, useMemo, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useApolloClient } from '@apollo/client/react';
@@ -62,6 +62,7 @@ import { formatDurationPolish } from '@/utils/durationPolish';
 import { calculateExerciseTotalSeconds } from '@/utils/exerciseTime';
 import {
   findSimilarExercises,
+  prepareExerciseNames,
   rankExerciseNamesForDuplicateCheck,
 } from '@/features/exercises/utils/exerciseDuplicateCandidates';
 import { createExerciseSubmit } from './utils/createExerciseSubmit';
@@ -1004,20 +1005,26 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
     skip: !organizationId,
   });
 
-  // Get existing exercises for duplicate detection
+  // The wizard stays mounted on /exercises, so load names only while it is open; refresh on each open
+  // because exercises created since the last open must count as duplicates too.
   const { data: exercisesData } = useQuery<{ availableExercises: ExistingExercise[] }>(
     GET_AVAILABLE_EXERCISE_NAMES_QUERY,
     {
       variables: { organizationId },
-      skip: !organizationId,
+      skip: !organizationId || !open,
+      fetchPolicy: 'cache-and-network',
     }
   );
-  const existingExercises = useMemo(() => exercisesData?.availableExercises ?? [], [exercisesData]);
+  const existingExercises = useMemo(
+    () => prepareExerciseNames(exercisesData?.availableExercises ?? []),
+    [exercisesData]
+  );
 
-  // Similar exercises detection (Inline Library Guard): substring + Levenshtein lokalnie, bez kredytów AI.
+  // Inline Library Guard runs locally without AI credits; deferred so typing stays responsive in a large library.
+  const deferredName = useDeferredValue(data.name);
   const similarExercises = useMemo(
-    () => findSimilarExercises(data.name, existingExercises),
-    [data.name, existingExercises]
+    () => findSimilarExercises(deferredName, existingExercises),
+    [deferredName, existingExercises]
   );
 
   const tags: ExerciseTag[] = useMemo(() => {
@@ -1480,9 +1487,9 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
         // Final refetch listy cwiczen - po uploadzie obrazow backend ma juz pelne
         // dane (thumbnailUrl/imageUrl/images). Bez tego refetchu kafelek na
         // /exercises pokazuje placeholder az do recznego odswiezenia strony.
-        void apolloClient.refetchQueries({
-          include: EXERCISE_LIBRARY_REFETCH_QUERIES,
-        });
+        apolloClient
+          .refetchQueries({ include: EXERCISE_LIBRARY_REFETCH_QUERIES })
+          .catch((refetchError: unknown) => console.error('Error refreshing exercise list:', refetchError));
       }
 
       if (submitResult.enrichmentWarning) {

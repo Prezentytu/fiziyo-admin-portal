@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Plus, Dumbbell, LayoutGrid, List, Search } from 'lucide-react';
@@ -50,8 +50,7 @@ import {
 } from '@/features/exercises/utils/exerciseLibraryUrlState';
 import { getExerciseDefaultParams } from '@/features/exercise-sets/utils/exerciseDefaults';
 import { PageHeader } from '@/components/shared/page';
-
-const SEARCH_DEBOUNCE_MS = 300;
+import { useUrlSearchInput } from '@/features/exercises/useUrlSearchInput';
 
 export default function ExercisesPage() {
   const router = useRouter();
@@ -62,7 +61,6 @@ export default function ExercisesPage() {
   // Filter, search and page live in the URL, so going back from an exercise returns to the same page.
   const listState = useMemo(() => parseExerciseLibraryUrlState(searchParams), [searchParams]);
   const { filter: sourceFilter, search: committedSearch } = listState;
-  const [searchQuery, setSearchQuery] = useState(committedSearch);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -132,11 +130,12 @@ export default function ExercisesPage() {
     [listState, pathname, router]
   );
 
-  useEffect(() => {
-    if (searchQuery.trim() === committedSearch) return;
-    const timer = setTimeout(() => updateListState({ search: searchQuery }), SEARCH_DEBOUNCE_MS);
-    return () => clearTimeout(timer);
-  }, [committedSearch, searchQuery, updateListState]);
+  const commitSearch = useCallback((search: string) => updateListState({ search }), [updateListState]);
+  const {
+    input: searchQuery,
+    setInput: setSearchQuery,
+    clear: clearSearch,
+  } = useUrlSearchInput(committedSearch, commitSearch);
 
   // One page of the library: tab, search, sorting and counts come from the API, not from 5k records in memory.
   const { data, previousData, loading, error } = useQuery<AvailableExercisesPageResponse>(
@@ -153,8 +152,15 @@ export default function ExercisesPage() {
       fetchPolicy: 'cache-and-network',
     }
   );
-  // Keep the previous page on screen while the next one loads instead of flashing skeletons.
-  const libraryPage = (data ?? previousData)?.availableExercisesPage;
+  // Keep the previous page on screen while the next one loads instead of flashing skeletons,
+  // but never another organization's exercises after switching organizations.
+  const [loadedOrganizationId, setLoadedOrganizationId] = useState(organizationId);
+  if (data && loadedOrganizationId !== organizationId) {
+    setLoadedOrganizationId(organizationId);
+  }
+  const libraryPage =
+    data?.availableExercisesPage ??
+    (loadedOrganizationId === organizationId ? previousData?.availableExercisesPage : undefined);
 
   // Real-time updates dla ćwiczeń (WebSocket subscriptions)
   // Automatycznie aktualizuje Apollo Cache - nie wymaga refetchQueries
@@ -214,10 +220,6 @@ export default function ExercisesPage() {
     scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const clearSearch = () => {
-    setSearchQuery('');
-    updateListState({ search: '' });
-  };
 
   const handleView = (exercise: Exercise) => {
     router.push(`/exercises/${exercise.id}`);

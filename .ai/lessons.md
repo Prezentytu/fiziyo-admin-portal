@@ -24,6 +24,14 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 
 ## Wpisy
 
+### 2026-10-31 - PR postawiony na innym PR wszedł do jego gałęzi, nie do main
+
+- **Kategoria**: `Process` | `Git`
+- **Problem**: #144 (lista ćwiczeń stronami) miał bazę `fix/exercise-library-large-org` (#143). Oba zmergowano w odstępie 14 sekund, więc #144 wszedł do gałęzi #143 już po jej merge'u, a stronicowanie nie trafiło na `main` ani na DEV, choć PR ma status „merged”.
+- **Przyczyna**: GitHub przestawia bazę PR-a dziecka na `main` dopiero po usunięciu gałęzi bazowej; merge dziecka przed tym kończy się w gałęzi bazowej.
+- **Rozwiązanie**: Brakujące commity weszły na `main` razem z poprawkami review (`fix/exercise-library-review`).
+- **Reguła**: PR do `main` zawsze stawiaj od `main`. Jeśli dwa PR-y dotykają tych samych plików, drugi zostaje draftem do merge'u pierwszego, potem rebase na `main` i zmiana bazy, zanim wyjdzie z draftu.
+
 ### 2026-10-31 - Duża biblioteka: nazwy zamiast pełnego fragmentu, odświeżanie tylko aktywnych list
 
 - **Kategoria**: `Performance` | `GraphQL`
