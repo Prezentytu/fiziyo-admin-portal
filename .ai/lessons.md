@@ -24,13 +24,21 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 
 ## Wpisy
 
+### 2026-10-31 - Prettier przerabia `__tests__` w lessons.md na pogrubienie
+
+- **Kategoria**: `Tooling` | `Agent workflow`
+- **Problem**: Commit z nowym wpisem w `.ai/lessons.md` przeszedł przez lint-staged (`prettier --write` dla `*.md`), który zamienił każde gołe `__tests__` w znacznikach egzekwowania na `**tests**`; `agent:check` w CI padł na 8 ścieżkach.
+- **Przyczyna**: Prettier traktuje `__słowo__` poza kodem jako pogrubienie; plik nigdy wcześniej nie był formatowany, więc pierwszy commit przez hook przepisał cały plik.
+- **Rozwiązanie**: `.ai/lessons.md` w `.prettierignore`; plik przywrócony z `main`.
+- **Reguła**: Pliki ze ścieżkami w zwykłym tekście, które czyta skrypt, wyłączaj z Prettiera. [egzekwowane: scripts/check-agent-context.mjs]
+
 ### 2026-10-31 - Treść ćwiczenia: „nie pobrano” to nie „pusto”
 
 - **Kategoria**: `Data` | `Exercises`
 - **Problem**: `AddExerciseToSetDialog`, `EditExerciseSetFullDialog` i kreator przypisania mapowały bibliotekę ręcznie bez `enrichmentData`, więc karta pokazywała puste instrukcje, a zapis edycji zestawu i przypisania wpisywał całą treść ćwiczenia do nadpisań (różnica liczona do pustego szablonu). Odchudzenie listy pickera groziło odwrotnością: różnica pełnego szablonu do pustej treści zapisałaby wyczyszczenie kroków.
 - **Przyczyna**: `toV3(undefined)` daje pusty dokument, więc brak pola w odpowiedzi wyglądał jak ćwiczenie bez treści.
 - **Rozwiązanie**: `undefined` = nie pobrano, `null` = brak treści; `buildEnrichmentOverrideDelta` i `resolveParamsEnrichmentDelta` nie liczą różnicy bez obu stron, a seed z mappingu bez treści trzyma samo `enrichmentOverride`. Picker doczytuje treść wybranych ćwiczeń i blokuje zapis do jej przyjścia.
-- **Reguła**: Jeśli mapujesz ćwiczenie ręcznie albo odchudzasz fragment, zachowaj `enrichmentData` jako `undefined`, gdy go nie pobrano, i nigdy nie licz różnicy treści do szablonu, którego nie masz. [egzekwowane: src/components/shared/exercise/**tests**/enrichmentOverride.test.ts]
+- **Reguła**: Jeśli mapujesz ćwiczenie ręcznie albo odchudzasz fragment, zachowaj `enrichmentData` jako `undefined`, gdy go nie pobrano, i nigdy nie licz różnicy treści do szablonu, którego nie masz. [egzekwowane: src/components/shared/exercise/__tests__/enrichmentOverride.test.ts]
 
 ### 2026-10-31 - PR postawiony na innym PR wszedł do jego gałęzi, nie do main
 
@@ -46,7 +54,7 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 - **Problem**: Na koncie z 5000 ćwiczeń otwarcie ćwiczenia, dialogu edycji albo kreatora ściągało całą bibliotekę z `ExerciseFullFragment` (`enrichmentData`, dziesiątki MB), choć potrzebne były same nazwy; kreator po utworzeniu czekał na pobranie całej listy, a podpowiedź duplikatów czytała `organizationExercises` z odpowiedzi `availableExercises`, więc od stycznia zawsze była pusta.
 - **Przyczyna**: Zapytania „po nazwy” użyły pełnych query listy; `refetchQueries: [{ query, variables }]` pobiera listę z sieci nawet wtedy, gdy nikt jej nie wyświetla.
 - **Rozwiązanie**: `GET_AVAILABLE_EXERCISE_NAMES_QUERY` i `GET_ORGANIZATION_EXERCISE_NAMES_QUERY` (ten sam root field, więc pełna lista w cache odpowiada bez sieci); `refetchQueries: [DOCUMENT]` odświeża tylko aktywne listy; usunięcie na liście usuwa rekord z cache; dopasowanie duplikatów w `exerciseDuplicateCandidates.ts`, a do AI idzie 80 najbliższych nazw (backend tnie prompt do 80).
-- **Reguła**: Jeśli potrzebujesz kilku pól z listy ćwiczeń, napisz osobne query z tymi polami na tym samym root fieldzie. Po mutacji odświeżaj listy dokumentem (`refetchQueries: [GET_..._QUERY]`), a formy `{ query, variables }` używaj tylko dla pojedynczego rekordu. [egzekwowane: src/features/exercises/utils/**tests**/exerciseDuplicateCandidates.test.ts]
+- **Reguła**: Jeśli potrzebujesz kilku pól z listy ćwiczeń, napisz osobne query z tymi polami na tym samym root fieldzie. Po mutacji odświeżaj listy dokumentem (`refetchQueries: [GET_..._QUERY]`), a formy `{ query, variables }` używaj tylko dla pojedynczego rekordu. [egzekwowane: src/features/exercises/utils/__tests__/exerciseDuplicateCandidates.test.ts]
 
 ### 2026-10-30 - Jedna konfiguracja menu dla desktopu i mobile
 
@@ -70,7 +78,7 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 - **Problem**: Zakładka „Do poprawy” (T-0003) filtrowała po `status === 'CHANGES_REQUESTED'`, więc ćwiczenia zwrócone z centrum weryfikacji nigdy się nie pojawiały.
 - **Przyczyna**: `SubmitToGlobalReview` tworzy kopię globalną i nie zmienia statusu oryginału; `RejectExercise` ustawia `ChangesRequested` na kopii, której `availableExercises` nie zwraca.
 - **Rozwiązanie**: Addytywne pole `Exercise.globalSubmissionStatus` (status kopii) w backendzie i filtr na nim w portalu.
-- **Reguła**: Status weryfikacji globalnej oryginału czytaj z `globalSubmissionStatus`, nigdy z `status`. Test helpera ma odtwarzać kształt z listy (`status: 'DRAFT'` + status kopii), a nie wymyślony. [egzekwowane: src/features/exercises/utils/**tests**/exerciseNeedsChanges.test.ts]
+- **Reguła**: Status weryfikacji globalnej oryginału czytaj z `globalSubmissionStatus`, nigdy z `status`. Test helpera ma odtwarzać kształt z listy (`status: 'DRAFT'` + status kopii), a nie wymyślony. [egzekwowane: src/features/exercises/utils/__tests__/exerciseNeedsChanges.test.ts]
 
 ### 2026-10-26 - Obecność pola to nie poprawność parametru
 
@@ -78,7 +86,7 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 - **Problem**: Ekran weryfikacji świecił na zielono „Przysiad 100 serii × 1000 powtórzeń”, bo reguły publikacji sprawdzały tylko, czy serie i powtórzenia są większe od zera.
 - **Przyczyna**: `computeVerificationCompletion` liczy kompletność, a nie wiarygodność; żadna warstwa nie znała limitów ani typowych zakresów, ani czasu całego ćwiczenia.
 - **Rozwiązanie**: `utils/parameterRules.ts` ocenia każde pole (limit = blokada, poza typowym zakresem = „Sprawdź” z „Tak ma być”) i czas całego ćwiczenia (strona ciała ×2), a `verificationStages.ts` blokuje publikację, dopóki etap ma uwagi (SPEC-030).
-- **Reguła**: Jeśli UI ocenia dane domenowe kolorem „gotowe”, zawsze sprawdzaj wiarygodność wartości (limit, typowy zakres, wynik złożony jak czas sesji), a nie tylko obecność — i trzymaj te reguły w czystej funkcji z testem przypadku absurdalnego. [egzekwowane: src/features/verification/utils/**tests**/parameterRules.test.ts]
+- **Reguła**: Jeśli UI ocenia dane domenowe kolorem „gotowe”, zawsze sprawdzaj wiarygodność wartości (limit, typowy zakres, wynik złożony jak czas sesji), a nie tylko obecność — i trzymaj te reguły w czystej funkcji z testem przypadku absurdalnego. [egzekwowane: src/features/verification/utils/__tests__/parameterRules.test.ts]
 
 ### 2026-10-15 - Enter na ostatnim kroku kreatora nie zapisuje planu
 
@@ -206,7 +214,7 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 - **Problem**: Dopisanie słowa w wyszukiwarce gubiło ćwiczenie, bo klient i backend szukały całego ciągu (`przysiad kettlebell` ≠ `Przysiad z kettlebell`).
 - **Przyczyna**: `matchesSearchQuery` / `ToLower().Contains(cała fraza)` bez tokenizacji; e-mail autora w `ApplySearch` dawał szum.
 - **Rozwiązanie**: `matchesExerciseSearch` / `filterExercisesBySearch` (portal `src/features/exercises/utils`) i backend `ExerciseSearchQuery` — token AND, ranking nazwy, bez e-maila.
-- **Reguła**: Jeśli filtrujesz katalog ćwiczeń, zawsze tokenizuj zapytanie (AND, min. 2 znaki) i nie dopasowuj e-maila autora. [egzekwowane: src/features/exercises/utils/**tests**/exerciseSearch.test.ts]
+- **Reguła**: Jeśli filtrujesz katalog ćwiczeń, zawsze tokenizuj zapytanie (AND, min. 2 znaki) i nie dopasowuj e-maila autora. [egzekwowane: src/features/exercises/utils/__tests__/exerciseSearch.test.ts]
 
 ### 2026-09-20 - Preview domena nie może mieć gitBranch main (nieaktualne, zob. 2026-10-01)
 
@@ -222,7 +230,7 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 - **Problem**: Skaner telefonu na demo K01 pokazał „brak używalnych danych”, bo QR kodował `fiziyo://connect?...`.
 - **Przyczyna**: Kamera otwiera tylko `http(s):`. Custom URI bez zainstalowanej apki jest dla skanera pustym payloadem. Copy i PDF używały jeszcze innych URL-i.
 - **Rozwiązanie**: `buildPatientJoinUrl` / `buildPatientConnectUrl` w `src/lib/patientJoinUrl.ts`. QR tylko gdy `isHttpsUrl`. Pusty payload = spinner, nie kod.
-- **Reguła**: Jeśli QR ma otworzyć się kamerą, zawsze koduj pełny `https://` na domenie FiziYo; nigdy `fiziyo://`, JSON ani pusty string. [egzekwowane: src/lib/**tests**/patientJoinUrl.test.ts]
+- **Reguła**: Jeśli QR ma otworzyć się kamerą, zawsze koduj pełny `https://` na domenie FiziYo; nigdy `fiziyo://`, JSON ani pusty string. [egzekwowane: src/lib/__tests__/patientJoinUrl.test.ts]
 
 ### 2026-09-19 - Sidebar create-set musi pisać overridesJson strony
 
@@ -294,7 +302,7 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 - **Problem**: W edycji ćwiczenia kosz przy pustych polach „Błąd” / „Jak poprawić” i wskazówkach wyglądał na aktywny, choć nie było treści do usunięcia.
 - **Przyczyna**: Listy enrichment zawsze renderują starterowy pusty wiersz (`items.length ? items : ['']`). Kosz był `disabled` tylko przy locku edycji, więc klik kasował `[]` i ten sam placeholder wracał.
 - **Rozwiązanie**: Wspólne `canRemovePlaceholderRow` — kosz aktywny, gdy wiersz ma treść albo jest więcej niż jeden. Pusty jedyny wiersz: `disabled` + stonowana ikona + `aria-label` „Brak treści do usunięcia”.
-- **Reguła**: Jeśli UI dokłada pusty wiersz-placeholder, przycisk usuwania musi zależeć od treści, nie od samego istnienia wiersza. `data-testid` dawaj jako pierwszy atrybut — skaner testid kończy tag na `=>` w `onClick`. [egzekwowane: src/components/shared/enrichment/**tests**/canRemovePlaceholderRow.test.ts]
+- **Reguła**: Jeśli UI dokłada pusty wiersz-placeholder, przycisk usuwania musi zależeć od treści, nie od samego istnienia wiersza. `data-testid` dawaj jako pierwszy atrybut — skaner testid kończy tag na `=>` w `onClick`. [egzekwowane: src/components/shared/enrichment/__tests__/canRemovePlaceholderRow.test.ts]
 
 ### 2026-09-15 - Import nie może przesuwać fałszywego braku testid
 
@@ -486,7 +494,7 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 - **Problem**: Create wizard, dialog edycji (`ExerciseForm`) i detal (`ExerciseEditor`) miały różne zestawy pól i etykiet (`Czas powtórzenia` vs `Czas 1 powtórzenia`); mapping/override też dryfowały.
 - **Przyczyna**: Trzy niezależne artefakty formularza z lokalnymi listami pól zamiast jednego field-setu z intencją (Salesforce page-layout tax).
 - **Rozwiązanie**: `fieldContract.ts` jako SSOT (tier, surfaces, zod, options) + etykiety z `displayRegistry`; `ExerciseParametersEditor` / `ExerciseEditor` współdzielone; create = lean subset; usunięto `ExerciseForm` i martwe legacy edytory.
-- **Reguła**: Dla danych domenowych edytowanych w wielu miejscach utrzymuj jeden kontrakt pól. Powierzchnia może różnić layout i podzbiór (create-as-prefix), nigdy etykietę, walidację ani mapowanie na mutację. Guardrail: test kompletności kontraktu + integralność testid. [egzekwowane: src/components/shared/exercise/**tests**/fieldContract.test.ts]
+- **Reguła**: Dla danych domenowych edytowanych w wielu miejscach utrzymuj jeden kontrakt pól. Powierzchnia może różnić layout i podzbiór (create-as-prefix), nigdy etykietę, walidację ani mapowanie na mutację. Guardrail: test kompletności kontraktu + integralność testid. [egzekwowane: src/components/shared/exercise/__tests__/fieldContract.test.ts]
 
 ### 2026-07-28 - Generowanie obrazów AI wyłącznie przez Image API, nigdy chat/completions z modalities
 
