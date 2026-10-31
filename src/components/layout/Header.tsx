@@ -1,13 +1,11 @@
 'use client';
 
-import { ChevronRight, Home, Menu, Bell } from 'lucide-react';
+import { ChevronRight, Home, Menu } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { MobileOrgIndicator } from '@/components/layout/MobileOrgIndicator';
-import { FeedbackButton } from '@/components/shared/FeedbackButton';
-import { ChatModeToggle } from '@/features/ai-view/ChatModeToggle';
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { HeaderActions } from '@/components/layout/HeaderActions';
 
 // Route name mappings
 const routeNames: Record<string, string> = {
@@ -81,76 +79,39 @@ interface HeaderProps {
 }
 
 export function Header({ onMobileMenuToggle }: HeaderProps) {
-  // TODO: Replace with real notification count from backend
-  const notificationCount = 0;
-  const hasNotifications = notificationCount > 0;
-
   return (
-    <TooltipProvider delayDuration={300}>
-      <header
-        data-testid="nav-header"
-        className="flex shrink-0 h-16 items-center justify-between bg-grouped px-4 lg:px-6"
-      >
-        {/* Left side - Mobile menu + Org indicator + Breadcrumbs */}
-        <div className="flex items-center gap-3">
-          {/* Mobile menu button */}
-          {onMobileMenuToggle && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="xl:hidden"
-              onClick={onMobileMenuToggle}
-              aria-label="Otwórz menu"
-              data-testid="nav-mobile-menu-btn"
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-          )}
+    <header
+      data-testid="nav-header"
+      className="flex shrink-0 h-16 items-center justify-between bg-grouped px-4 lg:px-6"
+    >
+      {/* Left side - Mobile menu + Org indicator + Breadcrumbs */}
+      <div className="flex items-center gap-3">
+        {/* Mobile menu button */}
+        {onMobileMenuToggle && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="xl:hidden"
+            onClick={onMobileMenuToggle}
+            aria-label="Otwórz menu"
+            data-testid="nav-mobile-menu-btn"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+        )}
 
-          {/* Mobile organization indicator - visible when sidebar is overlay (tablet + mobile) */}
-          <div className="xl:hidden">
-            <MobileOrgIndicator />
-          </div>
-
-          {/* Breadcrumbs - hidden on mobile */}
-          <div className="hidden sm:flex sm:items-center">
-            <Breadcrumbs />
-          </div>
+        {/* Mobile organization indicator - visible when sidebar is overlay (tablet + mobile) */}
+        <div className="xl:hidden">
+          <MobileOrgIndicator />
         </div>
 
-        {/* Right side - Notifications & Feedback (kontekst "tu i teraz") */}
-        <div className="flex items-center gap-1 sm:gap-2">
-          <ChatModeToggle />
-
-          {/* Notifications - KLUCZOWE dla engagement */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative"
-                data-testid="nav-notifications-btn"
-                aria-label="Powiadomienia"
-              >
-                <Bell className="h-5 w-5 text-label-secondary" />
-                {/* Notification badge */}
-                {hasNotifications && (
-                  <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-                    {notificationCount > 9 ? '9+' : notificationCount}
-                  </span>
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Powiadomienia</p>
-              <p className="text-xs text-muted-foreground">Wkrótce dostępne</p>
-            </TooltipContent>
-          </Tooltip>
-
-          {/* Feedback / Help */}
-          <FeedbackButton variant="icon" />
+        {/* Breadcrumbs - hidden on mobile */}
+        <div className="hidden sm:flex sm:items-center">
+          <Breadcrumbs />
         </div>
-      </header>
-    </TooltipProvider>
+      </div>
+
+      <HeaderActions />
+    </header>
   );
 }

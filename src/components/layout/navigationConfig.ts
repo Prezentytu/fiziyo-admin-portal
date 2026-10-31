@@ -33,7 +33,8 @@ function navigationItem(item: Omit<NavigationItem, 'matchHrefs'>): NavigationIte
   return { ...item, matchHrefs: [item.href] };
 }
 
-function verificationItem(scopes: VerificationScope[], pendingCount: number): NavigationItem {
+/** Verification entry for any navigation surface; callers render it only when `scopes` is non-empty. */
+export function verificationItem(scopes: VerificationScope[], pendingCount: number): NavigationItem {
   return {
     name: 'Weryfikacja',
     href: scopes[0].href,
