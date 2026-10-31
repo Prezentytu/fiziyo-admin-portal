@@ -26,7 +26,7 @@ import {
 import {
   GET_ORGANIZATION_EXERCISES_QUERY,
   GET_ORGANIZATION_EXERCISE_NAMES_QUERY,
-  GET_AVAILABLE_EXERCISES_QUERY,
+  EXERCISE_LIBRARY_REFETCH_QUERIES,
   GET_EXERCISE_BY_ID_QUERY,
 } from '@/graphql/queries/exercises.queries';
 import type { Exercise } from './ExerciseCard';
@@ -195,7 +195,7 @@ export function ExerciseDialog({
 
   // Fork mutation - copy global exercise to organization
   const [copyExercise, { loading: copying }] = useMutation(COPY_EXERCISE_TEMPLATE_MUTATION, {
-    refetchQueries: [GET_AVAILABLE_EXERCISES_QUERY, GET_ORGANIZATION_EXERCISE_NAMES_QUERY],
+    refetchQueries: [...EXERCISE_LIBRARY_REFETCH_QUERIES, GET_ORGANIZATION_EXERCISE_NAMES_QUERY],
   });
   const organizationExerciseNames =
     ((organizationExercisesData as { organizationExercises?: { name?: string | null }[] } | undefined)
@@ -409,7 +409,7 @@ export function ExerciseDialog({
         mediaChangeSet.removedImageUrls.length > 0 || mediaChangeSet.filesToUpload.length > 0;
       if (hadMediaMutations) {
         await apolloClient.refetchQueries({
-          include: [GET_ORGANIZATION_EXERCISES_QUERY, GET_AVAILABLE_EXERCISES_QUERY],
+          include: [GET_ORGANIZATION_EXERCISES_QUERY, ...EXERCISE_LIBRARY_REFETCH_QUERIES],
         });
       }
 

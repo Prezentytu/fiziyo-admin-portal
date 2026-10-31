@@ -219,6 +219,26 @@ export interface AvailableExercisesResponse {
   availableExercises: Exercise[];
 }
 
+export type ExerciseLibraryTab = 'ALL' | 'ORGANIZATION' | 'FIZIYO' | 'NEEDS_CHANGES';
+
+export interface AvailableExercisesPageResponse {
+  availableExercisesPage: {
+    items: Exercise[];
+    totalCount: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    hasPreviousPage: boolean;
+    hasNextPage: boolean;
+    counts: {
+      all: number;
+      organization: number;
+      fiziyo: number;
+      needsChanges: number;
+    };
+  };
+}
+
 export interface ExerciseByIdResponse {
   exerciseById: Exercise | null;
 }

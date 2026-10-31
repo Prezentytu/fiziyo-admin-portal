@@ -231,6 +231,11 @@ Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu r
 | `exercise-view-grid-btn`                    | Widok siatki                          | `exercises/page.tsx`             |
 | `exercise-view-list-btn`                    | Widok listy                           | `exercises/page.tsx`             |
 | `exercise-create-btn`                       | Dodaj ćwiczenie                       | `exercises/page.tsx`             |
+| `exercise-pagination-summary`               | Wyświetlono X z Y                     | `ListPagination.tsx`             |
+| `exercise-page-size-select`                 | Liczba na stronie                     | `ListPagination.tsx`             |
+| `exercise-pagination-prev`                  | Poprzednia strona                     | `ListPagination.tsx`             |
+| `exercise-pagination-indicator`             | Strona X z Y                          | `ListPagination.tsx`             |
+| `exercise-pagination-next`                  | Następna strona                       | `ListPagination.tsx`             |
 | `exercise-card-{id}`                        | Karta ćwiczenia                       | `ExerciseCard.tsx`               |
 | `exercise-card-{id}-menu-trigger`           | Menu kontekstowe                      | `ExerciseCard.tsx`               |
 | `exercise-card-{id}-view-btn`               | Podgląd                               | `ExerciseCard.tsx`               |
