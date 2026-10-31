@@ -142,14 +142,14 @@ export default function ExercisesPage() {
     skip: !organizationId,
   });
 
-  // Delete mutation
+  // Delete mutation: drop the record from cache instead of downloading the whole library again.
   const [deleteExercise, { loading: deleting }] = useMutation(DELETE_EXERCISE_MUTATION, {
-    refetchQueries: [
-      {
-        query: GET_AVAILABLE_EXERCISES_QUERY,
-        variables: { organizationId },
-      },
-    ],
+    update: (cache, _result, { variables }) => {
+      const exerciseId = (variables as { exerciseId?: string } | undefined)?.exerciseId;
+      if (!exerciseId) return;
+      cache.evict({ id: cache.identify({ __typename: 'Exercise', id: exerciseId }) });
+      cache.gc();
+    },
   });
 
   // Submit to global review mutation

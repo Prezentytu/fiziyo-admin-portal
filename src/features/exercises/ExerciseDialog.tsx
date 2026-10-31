@@ -25,6 +25,7 @@ import {
 } from '@/graphql/mutations/exercises.mutations';
 import {
   GET_ORGANIZATION_EXERCISES_QUERY,
+  GET_ORGANIZATION_EXERCISE_NAMES_QUERY,
   GET_AVAILABLE_EXERCISES_QUERY,
   GET_EXERCISE_BY_ID_QUERY,
 } from '@/graphql/queries/exercises.queries';
@@ -90,7 +91,7 @@ export function ExerciseDialog({
   const [isMediaStateReady, setIsMediaStateReady] = useState(false);
   const mediaFileInputRef = useRef<HTMLInputElement>(null);
   // Only needed for the copy-name suggestion; don't fetch the whole library while the dialog is closed.
-  const { data: organizationExercisesData } = useQuery(GET_ORGANIZATION_EXERCISES_QUERY, {
+  const { data: organizationExercisesData } = useQuery(GET_ORGANIZATION_EXERCISE_NAMES_QUERY, {
     variables: { organizationId },
     skip: !organizationId || !open,
   });
@@ -187,14 +188,14 @@ export function ExerciseDialog({
   const apolloClient = useApolloClient();
 
   const [updateExercise, { loading: updating }] = useMutation(UPDATE_EXERCISE_MUTATION, {
-    refetchQueries: [{ query: GET_ORGANIZATION_EXERCISES_QUERY, variables: { organizationId } }],
+    refetchQueries: [GET_ORGANIZATION_EXERCISES_QUERY],
   });
   const [uploadExerciseImage, { loading: uploadingMedia }] = useMutation(UPLOAD_EXERCISE_IMAGE_MUTATION);
   const [deleteExerciseImage, { loading: deletingMedia }] = useMutation(DELETE_EXERCISE_IMAGE_MUTATION);
 
   // Fork mutation - copy global exercise to organization
   const [copyExercise, { loading: copying }] = useMutation(COPY_EXERCISE_TEMPLATE_MUTATION, {
-    refetchQueries: [{ query: GET_AVAILABLE_EXERCISES_QUERY, variables: { organizationId } }],
+    refetchQueries: [GET_AVAILABLE_EXERCISES_QUERY, GET_ORGANIZATION_EXERCISE_NAMES_QUERY],
   });
   const organizationExerciseNames =
     ((organizationExercisesData as { organizationExercises?: { name?: string | null }[] } | undefined)
@@ -221,13 +222,13 @@ export function ExerciseDialog({
       await updateExercise({
         variables: { exerciseId: exercise.id, ...variables },
         refetchQueries: [
-          { query: GET_ORGANIZATION_EXERCISES_QUERY, variables: { organizationId } },
+          GET_ORGANIZATION_EXERCISES_QUERY,
           { query: GET_EXERCISE_BY_ID_QUERY, variables: { id: exercise.id } },
         ],
         awaitRefetchQueries: true,
       });
     },
-    [exercise, organizationId, updateExercise]
+    [exercise, updateExercise]
   );
 
   const updateEnrichment = useCallback(

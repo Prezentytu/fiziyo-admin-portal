@@ -44,7 +44,7 @@ import {
   UPDATE_EXERCISE_MUTATION,
   UPLOAD_EXERCISE_IMAGE_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
-import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
+import { GET_AVAILABLE_EXERCISES_QUERY, GET_AVAILABLE_EXERCISE_NAMES_QUERY } from '@/graphql/queries/exercises.queries';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
 import type { ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
@@ -57,7 +57,10 @@ import { useExerciseImageGeneration } from './useExerciseImageGeneration';
 import { ImageStylePicker } from './ImageStylePicker';
 import { formatDurationPolish } from '@/utils/durationPolish';
 import { calculateExerciseTotalSeconds } from '@/utils/exerciseTime';
-import { findSimilar } from '@/utils/stringSimilarity';
+import {
+  findSimilarExercises,
+  rankExerciseNamesForDuplicateCheck,
+} from '@/features/exercises/utils/exerciseDuplicateCandidates';
 import { createExerciseSubmit } from './utils/createExerciseSubmit';
 import { inferExerciseType } from './utils/inferExerciseType';
 import { ExerciseParametersEditor } from './ExerciseParametersEditor';
@@ -999,43 +1002,20 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
   });
 
   // Get existing exercises for duplicate detection
-  const { data: exercisesData } = useQuery(GET_AVAILABLE_EXERCISES_QUERY, {
-    variables: { organizationId },
-    skip: !organizationId,
-  });
-
-  // Similar exercises detection (Inline Library Guard).
-  // Łączy dwie strategie:
-  //   1) substring match (np. "hip" → "Hip Thrust z hantlem")
-  //   2) Levenshtein fuzzy match (np. "hip trust" → "Hip Thrust") - łapie literówki LOKALNIE,
-  //      bez wywołania AI, więc działa zanim user kliknie "Ulepsz z AI" i nie zużywa kredytów.
-  const similarExercises = useMemo((): ExistingExercise[] => {
-    if (!data.name || data.name.length < 2) return [];
-
-    const exercises = (exercisesData as { organizationExercises?: ExistingExercise[] })?.organizationExercises || [];
-    const normalizedInput = normalizeText(data.name);
-
-    const substringHits = exercises.filter((ex) => {
-      const normalizedName = normalizeText(ex.name);
-      return (
-        (normalizedName.includes(normalizedInput) || normalizedInput.includes(normalizedName)) &&
-        normalizedName !== normalizedInput
-      );
-    });
-
-    const fuzzyHits = findSimilar(data.name, exercises, (ex) => ex.name, { limit: 5, threshold: 0.7 });
-
-    // Deduplikacja po id, zachowując kolejność (substring najpierw - najpewniejsze sygnały)
-    const seen = new Set<string>();
-    const merged: ExistingExercise[] = [];
-    for (const ex of [...substringHits, ...fuzzyHits]) {
-      if (!seen.has(ex.id)) {
-        seen.add(ex.id);
-        merged.push(ex);
-      }
+  const { data: exercisesData } = useQuery<{ availableExercises: ExistingExercise[] }>(
+    GET_AVAILABLE_EXERCISE_NAMES_QUERY,
+    {
+      variables: { organizationId },
+      skip: !organizationId,
     }
-    return merged.slice(0, 5);
-  }, [data.name, exercisesData]);
+  );
+  const existingExercises = useMemo(() => exercisesData?.availableExercises ?? [], [exercisesData]);
+
+  // Similar exercises detection (Inline Library Guard): substring + Levenshtein lokalnie, bez kredytów AI.
+  const similarExercises = useMemo(
+    () => findSimilarExercises(data.name, existingExercises),
+    [data.name, existingExercises]
+  );
 
   const tags: ExerciseTag[] = useMemo(() => {
     const rawTags = (tagsData as ExerciseTagsResponse)?.exerciseTags || [];
@@ -1074,8 +1054,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
   const [createExercise] = useMutation<CreateExerciseMutationResult, CreateExerciseVariables>(
     CREATE_EXERCISE_MUTATION,
     {
-      refetchQueries: [{ query: GET_AVAILABLE_EXERCISES_QUERY, variables: { organizationId } }],
-      awaitRefetchQueries: true,
+      refetchQueries: [GET_AVAILABLE_EXERCISES_QUERY],
     }
   );
 
@@ -1340,10 +1319,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
 
     try {
       const tagNames = tags.map((t) => t.name);
-      // Pobierz nazwy istniejących ćwiczeń dla wykrywania duplikatów przez AI
-      const existingNames = (
-        (exercisesData as { organizationExercises?: ExistingExercise[] })?.organizationExercises || []
-      ).map((e) => e.name);
+      const existingNames = rankExerciseNamesForDuplicateCheck(data.name, existingExercises);
       const suggestion = await aiService.getExerciseSuggestion(data.name, tagNames, existingNames);
       setAiSuggestion(suggestion);
     } catch (error) {
@@ -1353,7 +1329,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
     } finally {
       setIsLoadingAI(false);
     }
-  }, [data.name, tags, exercisesData]);
+  }, [data.name, tags, existingExercises]);
 
   // Accept single AI field
   const handleAcceptAIField = useCallback(<K extends keyof ExerciseData>(field: K, value: unknown) => {
@@ -1501,7 +1477,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
         // Final refetch listy cwiczen - po uploadzie obrazow backend ma juz pelne
         // dane (thumbnailUrl/imageUrl/images). Bez tego refetchu kafelek na
         // /exercises pokazuje placeholder az do recznego odswiezenia strony.
-        await apolloClient.refetchQueries({
+        void apolloClient.refetchQueries({
           include: [GET_AVAILABLE_EXERCISES_QUERY],
         });
       }

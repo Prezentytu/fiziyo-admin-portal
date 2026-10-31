@@ -61,7 +61,11 @@ import {
 import { cn } from '@/lib/utils';
 import { normalizeExerciseFieldValues } from '@/components/shared/exercise';
 
-import { GET_EXERCISE_BY_ID_QUERY, GET_ORGANIZATION_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
+import {
+  GET_EXERCISE_BY_ID_QUERY,
+  GET_ORGANIZATION_EXERCISES_QUERY,
+  GET_ORGANIZATION_EXERCISE_NAMES_QUERY,
+} from '@/graphql/queries/exercises.queries';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
 import {
@@ -138,7 +142,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const { data, loading, error } = useQuery(GET_EXERCISE_BY_ID_QUERY, {
     variables: { id },
   });
-  const { data: organizationExercisesData } = useQuery(GET_ORGANIZATION_EXERCISES_QUERY, {
+  const { data: organizationExercisesData } = useQuery(GET_ORGANIZATION_EXERCISE_NAMES_QUERY, {
     variables: { organizationId },
     skip: !organizationId,
   });
@@ -158,14 +162,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const [deleteExerciseImage] = useMutation(DELETE_EXERCISE_IMAGE_MUTATION);
 
   const [deleteExercise, { loading: deleting }] = useMutation(DELETE_EXERCISE_MUTATION, {
-    refetchQueries: organizationId
-      ? [
-          {
-            query: GET_ORGANIZATION_EXERCISES_QUERY,
-            variables: { organizationId },
-          },
-        ]
-      : [],
+    refetchQueries: [GET_ORGANIZATION_EXERCISES_QUERY, GET_ORGANIZATION_EXERCISE_NAMES_QUERY],
   });
 
   const [submitToGlobalReview, { loading: submittingToGlobal }] = useMutation(SUBMIT_TO_GLOBAL_REVIEW_MUTATION, {
@@ -182,9 +179,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
     refetchQueries: [{ query: GET_EXERCISE_BY_ID_QUERY, variables: { id } }],
   });
   const [createExercise, { loading: duplicating }] = useMutation(CREATE_EXERCISE_MUTATION, {
-    refetchQueries: organizationId
-      ? [{ query: GET_ORGANIZATION_EXERCISES_QUERY, variables: { organizationId } }]
-      : [],
+    refetchQueries: [GET_ORGANIZATION_EXERCISES_QUERY, GET_ORGANIZATION_EXERCISE_NAMES_QUERY],
   });
 
   const rawExercise = (data as ExerciseByIdResponse)?.exerciseById;
