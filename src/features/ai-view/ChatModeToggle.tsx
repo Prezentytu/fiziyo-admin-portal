@@ -30,7 +30,11 @@ export function ChatModeToggle() {
           aria-pressed={preference.enabled}
           data-testid="nav-chat-mode-toggle-btn"
         >
-          {preference.enabled ? <LayoutGrid aria-hidden="true" /> : <MessageSquare aria-hidden="true" />}
+          {preference.enabled ? (
+            <LayoutGrid className="h-5 w-5 text-label-secondary" aria-hidden="true" />
+          ) : (
+            <MessageSquare className="h-5 w-5 text-label-secondary" aria-hidden="true" />
+          )}
         </Button>
       </TooltipTrigger>
       <TooltipContent>{label} (eksperymentalny czat)</TooltipContent>

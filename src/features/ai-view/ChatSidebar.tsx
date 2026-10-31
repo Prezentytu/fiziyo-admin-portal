@@ -30,9 +30,14 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { Logo } from '@/components/shared/Logo';
+import { NavCountBadge } from '@/components/layout/NavCountBadge';
 import { OrganizationSwitchMenuItems } from '@/components/layout/OrganizationSwitchMenuItems';
+import { verificationItem } from '@/components/layout/navigationConfig';
 import { useCurrentUserDisplay } from '@/components/layout/useCurrentUserDisplay';
+import { useOrganizationVerificationAccess } from '@/hooks/useOrganizationVerificationAccess';
+import { useOrganizationVerificationRealtime } from '@/hooks/useOrganizationVerificationRealtime';
 import { useAppSignOut } from '@/lib/auth/useAppSignOut';
+import { useVerificationScopes } from '@/features/verification/useVerificationScopes';
 import { cn } from '@/lib/utils';
 import { useChatSession } from './ChatSessionContext';
 import { useChatShortcuts } from './useChatShortcuts';
@@ -49,8 +54,10 @@ interface ChatSidebarProps {
 interface NavRow {
   label: string;
   href: string;
+  matchHrefs?: readonly string[];
   icon: LucideIcon;
   testId: string;
+  badge?: number;
 }
 
 const NAV_ROWS: readonly NavRow[] = [
@@ -58,6 +65,8 @@ const NAV_ROWS: readonly NavRow[] = [
   { label: 'Zestawy', href: '/exercise-sets', icon: FolderKanban, testId: 'nav-chat-sets-link' },
   { label: 'Ćwiczenia', href: '/exercises', icon: Dumbbell, testId: 'nav-chat-exercises-link' },
 ];
+
+const MENU_ICON_CLASS = 'size-[18px] shrink-0 text-label-secondary';
 
 const ROW_CLASS =
   'flex h-9 w-full items-center gap-2.5 rounded-[10px] px-2.5 text-left text-[14px] font-medium text-foreground transition-colors hover:bg-fill-quaternary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40 [&_svg]:size-[18px] [&_svg]:shrink-0 [&_svg]:text-label-secondary';
@@ -86,6 +95,23 @@ function SidebarBody({
     restoreDeletedConversation,
   } = useChatSession();
   const groups = useMemo(() => groupConversationsByDay(conversations), [conversations]);
+  const verificationScopes = useVerificationScopes();
+  const { pendingCount } = useOrganizationVerificationAccess();
+  const navRows = useMemo<readonly NavRow[]>(() => {
+    if (verificationScopes.length === 0) return NAV_ROWS;
+    const verification = verificationItem(verificationScopes, pendingCount);
+    return [
+      ...NAV_ROWS,
+      {
+        label: verification.name,
+        href: verification.href,
+        matchHrefs: verification.matchHrefs,
+        icon: verification.icon,
+        testId: 'nav-chat-verification-link',
+        badge: verification.badge,
+      },
+    ];
+  }, [verificationScopes, pendingCount]);
   const shortcuts = useChatShortcuts();
   const creditsPercent =
     credits && credits.limit > 0 ? Math.min(100, Math.round((credits.remaining / credits.limit) * 100)) : 0;
@@ -125,28 +151,32 @@ function SidebarBody({
           <span className="flex-1">Nowa rozmowa</span>
           <kbd className="text-[12px] font-normal text-label-tertiary">⌘K</kbd>
         </button>
-        {NAV_ROWS.map((row) => (
-          <Link
-            key={row.href}
-            href={row.href}
-            onClick={onNavigate}
-            data-testid={row.testId}
-            aria-current={pathname.startsWith(row.href) ? 'page' : undefined}
-            className={cn(ROW_CLASS, pathname.startsWith(row.href) && 'bg-fill-tertiary')}
-          >
-            <row.icon aria-hidden="true" />
-            <span className="flex-1">{row.label}</span>
-            {row.href === '/patients' && inactiveCount > 0 && (
-              <span
-                className="rounded-full bg-status-warning-muted px-2 text-[12px] font-semibold text-status-warning"
-                title="Nie ćwiczą od kilku dni"
-                data-testid="nav-chat-inactive-count"
-              >
-                {inactiveCount}
-              </span>
-            )}
-          </Link>
-        ))}
+        {navRows.map((row) => {
+          const isActive = (row.matchHrefs ?? [row.href]).some((href) => pathname.startsWith(href));
+          return (
+            <Link
+              key={row.href}
+              href={row.href}
+              onClick={onNavigate}
+              data-testid={row.testId}
+              aria-current={isActive ? 'page' : undefined}
+              className={cn(ROW_CLASS, isActive && 'bg-fill-tertiary')}
+            >
+              <row.icon aria-hidden="true" />
+              <span className="flex-1">{row.label}</span>
+              {row.href === '/patients' && inactiveCount > 0 && (
+                <span
+                  className="rounded-full bg-status-warning-muted px-2 text-[12px] font-semibold text-status-warning"
+                  title="Nie ćwiczą od kilku dni"
+                  data-testid="nav-chat-inactive-count"
+                >
+                  {inactiveCount}
+                </span>
+              )}
+              <NavCountBadge count={row.badge ?? 0} />
+            </Link>
+          );
+        })}
         <button
           type="button"
           className={ROW_CLASS}
@@ -242,19 +272,20 @@ function SidebarBody({
         </DropdownMenuTrigger>
         <DropdownMenuContent side="top" align="start" className="w-64">
           <OrganizationSwitchMenuItems testIdPrefix="nav-chat-org" onSwitch={onNavigate} />
-          <DropdownMenuItem asChild data-testid="nav-chat-settings-link">
+          <DropdownMenuItem asChild className="gap-2.5" data-testid="nav-chat-settings-link">
             <Link href="/settings" onClick={onNavigate}>
-              <Settings aria-hidden="true" />
+              <Settings className={MENU_ICON_CLASS} aria-hidden="true" />
               Ustawienia
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild data-testid="nav-chat-organization-link">
+          <DropdownMenuItem asChild className="gap-2.5" data-testid="nav-chat-organization-link">
             <Link href="/organization" onClick={onNavigate}>
-              <Building2 aria-hidden="true" />
+              <Building2 className={MENU_ICON_CLASS} aria-hidden="true" />
               Organizacja
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem
+            className="gap-2.5"
             onSelect={() => {
               update({ enabled: false });
               onNavigate();
@@ -262,12 +293,12 @@ function SidebarBody({
             }}
             data-testid="nav-chat-classic-btn"
           >
-            <LayoutGrid aria-hidden="true" />
+            <LayoutGrid className={MENU_ICON_CLASS} aria-hidden="true" />
             Klasyczny panel
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={() => void signOut()} data-testid="nav-chat-sign-out-btn">
-            <LogOut aria-hidden="true" />
+          <DropdownMenuItem className="gap-2.5" onSelect={() => void signOut()} data-testid="nav-chat-sign-out-btn">
+            <LogOut className={MENU_ICON_CLASS} aria-hidden="true" />
             Wyloguj
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -278,6 +309,8 @@ function SidebarBody({
 
 /** Quiet sidebar of the chat shell (design "Czat v2"): conversations first, the rest of the panel one click away. */
 export function ChatSidebar({ isCollapsed, onToggleCollapse, isMobileOpen, onMobileClose }: ChatSidebarProps) {
+  useOrganizationVerificationRealtime();
+
   return (
     <>
       {!isCollapsed && (
