@@ -33,9 +33,7 @@ import { cn } from '@/lib/utils';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { ImageLightbox } from '@/components/shared/ImageLightbox';
 import { getMediaUrl } from '@/utils/mediaUrl';
-import {
-  HIDE_EXERCISE_TAGS,
-} from '@/components/shared/exercise';
+import { HIDE_EXERCISE_TAGS } from '@/components/shared/exercise';
 import { verificationCopy } from '@/features/verification/verificationCopy';
 
 export interface ExerciseTag {
@@ -268,10 +266,7 @@ export function ExerciseCard({
               {isGlobalExercise && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Badge
-                      variant="outline"
-                      className="text-[9px] bg-violet/10 text-violet border-violet/20 shrink-0"
-                    >
+                    <Badge variant="outline" className="text-[9px] bg-violet/10 text-violet border-violet/20 shrink-0">
                       <Sparkles className="h-2.5 w-2.5 mr-0.5" />
                       FiziYo
                     </Badge>
@@ -548,13 +543,13 @@ export function ExerciseCard({
             )}
 
             {/* Status badges - top left */}
-              {(isGlobalExercise ||
-                isSubmittedToGlobal ||
-                isPendingReview ||
-                isChangesRequested ||
-                isPendingOrganizationReview ||
-                isOrganizationChangesRequested ||
-                isOrganizationVerified) && (
+            {(isGlobalExercise ||
+              isSubmittedToGlobal ||
+              isPendingReview ||
+              isChangesRequested ||
+              isPendingOrganizationReview ||
+              isOrganizationChangesRequested ||
+              isOrganizationVerified) && (
               <div className="absolute top-3 left-3 z-10">
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -567,12 +562,12 @@ export function ExerciseCard({
                           !isPendingReview &&
                           !isChangesRequested &&
                           !isGlobalExercise &&
-                          'bg-status-info-muted text-white border-status-info',
-                        isPendingReview && 'bg-status-warning-muted text-black border-status-warning',
-                        isChangesRequested && 'bg-status-danger-muted text-white border-status-danger',
-                        isPendingOrganizationReview && 'bg-status-warning-muted text-white border-status-warning',
-                        isOrganizationChangesRequested && 'bg-status-danger-muted text-white border-status-danger',
-                        isOrganizationVerified && 'bg-status-success-muted text-white border-status-success'
+                          'bg-card/95 text-status-info border-status-info/40',
+                        isPendingReview && 'bg-card/95 text-status-warning border-status-warning/40',
+                        isChangesRequested && 'bg-card/95 text-status-danger border-status-danger/40',
+                        isPendingOrganizationReview && 'bg-card/95 text-status-warning border-status-warning/40',
+                        isOrganizationChangesRequested && 'bg-card/95 text-status-danger border-status-danger/40',
+                        isOrganizationVerified && 'bg-card/95 text-status-success border-status-success/40'
                       )}
                     >
                       {isGlobalExercise && (
