@@ -48,6 +48,27 @@ export function searchExercises<T extends SearchableExercise>(exercises: readonl
   return ranked.slice(0, limit).map((entry) => entry.exercise);
 }
 
+type TagList = SearchableExercise['mainTags'];
+
+/** The picker list carries tag ids; search and alternatives compare names, as the set wizard shows them. */
+export function withTagNames<T extends Pick<SearchableExercise, 'mainTags' | 'additionalTags'>>(
+  exercises: T[],
+  tags: ReadonlyArray<{ id: string; name: string }>
+): T[] {
+  if (tags.length === 0) return exercises;
+  const names = new Map(tags.map((tag) => [tag.id, tag.name]));
+  const resolve = (list: TagList) =>
+    list?.map((tag) => {
+      const name = typeof tag === 'string' ? names.get(tag) : undefined;
+      return name ? { name } : tag;
+    });
+  return exercises.map((exercise) => ({
+    ...exercise,
+    mainTags: resolve(exercise.mainTags),
+    additionalTags: resolve(exercise.additionalTags),
+  }));
+}
+
 export function pickExercisesById<T extends { id: string }>(exercises: readonly T[], ids: readonly string[]): T[] {
   const byId = new Map(exercises.map((exercise) => [exercise.id, exercise]));
   return ids.map((id) => byId.get(id)).filter((exercise): exercise is T => exercise !== undefined);

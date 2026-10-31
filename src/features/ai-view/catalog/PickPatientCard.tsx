@@ -90,6 +90,7 @@ export function PickPatientCard({ spec, testId, messageId, chosen }: CardProps<'
           <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
+            disabled={saving}
             placeholder="Szukaj pacjenta"
             aria-label="Szukaj pacjenta"
             data-testid={`${testId}-search-input`}
@@ -117,8 +118,9 @@ export function PickPatientCard({ spec, testId, messageId, chosen }: CardProps<'
                 <button
                   type="button"
                   onClick={() => continueWith(patient.id, patient.name)}
+                  disabled={saving}
                   data-testid={`${testId}-patient-${patient.id}-btn`}
-                  className="flex w-full items-center gap-3 rounded-[12px] px-2 py-2 text-left hover:bg-fill-quaternary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="flex w-full items-center gap-3 rounded-[12px] px-2 py-2 text-left hover:bg-fill-quaternary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
                 >
                   <InitialsAvatar
                     name={patient.name}
@@ -144,6 +146,7 @@ export function PickPatientCard({ spec, testId, messageId, chosen }: CardProps<'
             size="sm"
             className="self-start"
             onClick={() => setIsAdding(true)}
+            disabled={saving}
             data-testid={`${testId}-add-btn`}
           >
             <UserPlus aria-hidden="true" />
