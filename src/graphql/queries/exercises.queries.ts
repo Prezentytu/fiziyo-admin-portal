@@ -65,6 +65,17 @@ export const EXERCISE_FULL_FRAGMENT = gql`
   }
 `;
 
+// Same root field as GET_AVAILABLE_EXERCISES_QUERY, so a cached full list answers it without a network trip.
+export const GET_AVAILABLE_EXERCISE_NAMES_QUERY = gql`
+  query GetAvailableExerciseNames($organizationId: String!) {
+    availableExercises(organizationId: $organizationId) {
+      id
+      name
+      imageUrl
+    }
+  }
+`;
+
 // Query do pobierania pojedynczego ćwiczenia
 export const GET_EXERCISE_BY_ID_QUERY = gql`
   query GetExerciseById($id: String!) {
@@ -83,6 +94,16 @@ export const GET_ORGANIZATION_EXERCISES_QUERY = gql`
     }
   }
   ${EXERCISE_FULL_FRAGMENT}
+`;
+
+// Names only (copy-name suggestion); the full fragment of a 5k library is tens of MB.
+export const GET_ORGANIZATION_EXERCISE_NAMES_QUERY = gql`
+  query GetOrganizationExerciseNames($organizationId: String!) {
+    organizationExercises(organizationId: $organizationId) {
+      id
+      name
+    }
+  }
 `;
 
 // TypeScript types for export query

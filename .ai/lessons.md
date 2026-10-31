@@ -24,6 +24,14 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 
 ## Wpisy
 
+### 2026-10-31 - Duża biblioteka: nazwy zamiast pełnego fragmentu, odświeżanie tylko aktywnych list
+
+- **Kategoria**: `Performance` | `GraphQL`
+- **Problem**: Na koncie z 5000 ćwiczeń otwarcie ćwiczenia, dialogu edycji albo kreatora ściągało całą bibliotekę z `ExerciseFullFragment` (`enrichmentData`, dziesiątki MB), choć potrzebne były same nazwy; kreator po utworzeniu czekał na pobranie całej listy, a podpowiedź duplikatów czytała `organizationExercises` z odpowiedzi `availableExercises`, więc od stycznia zawsze była pusta.
+- **Przyczyna**: Zapytania „po nazwy” użyły pełnych query listy; `refetchQueries: [{ query, variables }]` pobiera listę z sieci nawet wtedy, gdy nikt jej nie wyświetla.
+- **Rozwiązanie**: `GET_AVAILABLE_EXERCISE_NAMES_QUERY` i `GET_ORGANIZATION_EXERCISE_NAMES_QUERY` (ten sam root field, więc pełna lista w cache odpowiada bez sieci); `refetchQueries: [DOCUMENT]` odświeża tylko aktywne listy; usunięcie na liście usuwa rekord z cache; dopasowanie duplikatów w `exerciseDuplicateCandidates.ts`, a do AI idzie 80 najbliższych nazw (backend tnie prompt do 80).
+- **Reguła**: Jeśli potrzebujesz kilku pól z listy ćwiczeń, napisz osobne query z tymi polami na tym samym root fieldzie. Po mutacji odświeżaj listy dokumentem (`refetchQueries: [GET_..._QUERY]`), a formy `{ query, variables }` używaj tylko dla pojedynczego rekordu. [egzekwowane: src/features/exercises/utils/__tests__/exerciseDuplicateCandidates.test.ts]
+
 ### 2026-10-30 - Jedna konfiguracja menu dla desktopu i mobile
 
 - **Kategoria**: `UI` | `Navigation`
