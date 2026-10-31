@@ -107,6 +107,7 @@ Każda specyfikacja powinna mieć sekcję Changelog na końcu:
 | 030 | [Verification stages](SPEC-030-2026-10-26-verification-stages.md)                                     | Weryfikacja ćwiczeń w 5 etapach z oceną poprawności parametrów | in-progress |
 | 031 | [Chat view](SPEC-031-2026-10-30-chat-view.md)                                                         | Czat jak w designie Czat v2: rozmowa z kartami akcji panelu    | in-progress |
 | 032 | [Patient name forms](SPEC-032-2026-10-30-patient-name-forms.md)                                       | Formy imion pacjentów ze słownika zamiast reguł końcówek       | draft       |
+| 033 | [Exercise library pages](SPEC-033-2026-10-31-exercise-library-pages.md)                               | Lista ćwiczeń stronami z API z licznikami zakładek             | in-progress |
 
 ## Numery bez specu
 

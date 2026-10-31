@@ -65,6 +65,42 @@ export const EXERCISE_FULL_FRAGMENT = gql`
   }
 `;
 
+// One page of the exercise library (list view); tab, search, sorting and tab counts are computed by the API.
+export const GET_AVAILABLE_EXERCISES_PAGE_QUERY = gql`
+  query GetAvailableExercisesPage(
+    $organizationId: String!
+    $tab: ExerciseLibraryTab!
+    $search: String
+    $page: Int!
+    $pageSize: Int!
+  ) {
+    availableExercisesPage(
+      organizationId: $organizationId
+      tab: $tab
+      search: $search
+      page: $page
+      pageSize: $pageSize
+    ) {
+      items {
+        ...ExerciseFullFragment
+      }
+      totalCount
+      page
+      pageSize
+      totalPages
+      hasPreviousPage
+      hasNextPage
+      counts {
+        all
+        organization
+        fiziyo
+        needsChanges
+      }
+    }
+  }
+  ${EXERCISE_FULL_FRAGMENT}
+`;
+
 // Same root field as GET_AVAILABLE_EXERCISES_QUERY, so a cached full list answers it without a network trip.
 export const GET_AVAILABLE_EXERCISE_NAMES_QUERY = gql`
   query GetAvailableExerciseNames($organizationId: String!) {
@@ -125,3 +161,6 @@ export const GET_AVAILABLE_EXERCISES_QUERY = gql`
   }
   ${EXERCISE_FULL_FRAGMENT}
 `;
+
+/** Refresh both the full library (set and assignment pickers) and the paged list after exercise writes. */
+export const EXERCISE_LIBRARY_REFETCH_QUERIES = [GET_AVAILABLE_EXERCISES_QUERY, GET_AVAILABLE_EXERCISES_PAGE_QUERY];
