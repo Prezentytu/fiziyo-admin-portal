@@ -21,7 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDocumentImport } from '@/hooks/useDocumentImport';
 import { useOrganization } from '@/contexts/OrganizationContext';
-import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
+import { GET_AVAILABLE_EXERCISE_NAMES_QUERY } from '@/graphql/queries/exercises.queries';
 import type { AvailableExercisesResponse } from '@/types/apollo';
 import {
   DocumentDropzone,
@@ -87,7 +87,7 @@ export default function ImportPage() {
     goToStep,
   } = useDocumentImport();
 
-  const { data: availableExercisesData } = useQuery<AvailableExercisesResponse>(GET_AVAILABLE_EXERCISES_QUERY, {
+  const { data: availableExercisesData } = useQuery<AvailableExercisesResponse>(GET_AVAILABLE_EXERCISE_NAMES_QUERY, {
     variables: { organizationId },
     skip: !organizationId,
   });

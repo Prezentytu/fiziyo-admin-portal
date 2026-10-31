@@ -191,3 +191,57 @@ describe('ExerciseSetBuilder preview semantics', () => {
     expect(onPreviewExercise).toHaveBeenCalledWith(exercise);
   });
 });
+
+describe('ExerciseSetBuilder chosen exercise content', () => {
+  const selectedInstances = [{ instanceId: 'i1', exerciseId: 'e1' }];
+
+  it('keeps the card read-only until the exercise content is loaded, then allows editing', () => {
+    const { rerender } = render(
+      <ExerciseSetBuilder
+        {...createProps({ selectedInstances, availableExercises: [{ id: 'e1', name: 'Przysiad' }] })}
+      />
+    );
+
+    expect(screen.getByText('Wczytywanie treści ćwiczenia…')).toBeInTheDocument();
+
+    rerender(
+      <ExerciseSetBuilder
+        {...createProps({
+          selectedInstances,
+          availableExercises: [
+            { id: 'e1', name: 'Przysiad', enrichmentData: { $schema: 'fiziyo-exercise-v3', patient: { steps: ['Krok'] } } },
+          ],
+        })}
+      />
+    );
+
+    expect(screen.queryByText('Wczytywanie treści ćwiczenia…')).not.toBeInTheDocument();
+  });
+
+  it('shows the loaded content with the inherited override applied, not a blank draft', async () => {
+    const user = userEvent.setup();
+    const onPreviewExercise = vi.fn();
+    render(
+      <ExerciseSetBuilder
+        {...createProps({
+          selectedInstances,
+          exerciseParams: new Map([['i1', { sets: 3, enrichmentOverride: { patient: { cues: ['Wydech'] } } }]]),
+          onPreviewExercise,
+          availableExercises: [
+            {
+              id: 'e1',
+              name: 'Przysiad',
+              enrichmentData: { $schema: 'fiziyo-exercise-v3', patient: { steps: ['Krok'], cues: ['Wdech'] } },
+            },
+          ],
+        })}
+      />
+    );
+
+    await user.click(screen.getByTestId('set-builder-e1-thumbnail-btn'));
+
+    expect(onPreviewExercise.mock.calls[0]?.[1]?.enrichment).toMatchObject({
+      patient: { steps: ['Krok'], cues: ['Wydech'] },
+    });
+  });
+});

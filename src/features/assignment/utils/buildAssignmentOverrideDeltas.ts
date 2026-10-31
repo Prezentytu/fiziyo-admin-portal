@@ -6,7 +6,7 @@ import {
 } from '@/components/shared/exercise/exercisePersonalizationWriter';
 import type { ExerciseOverrideFields } from '@/components/shared/exercise/exerciseOverride';
 import { hasExerciseOverrideContent } from '@/components/shared/exercise/exerciseOverride';
-import { buildEnrichmentOverrideDelta } from '@/components/shared/exercise/enrichmentOverride';
+import { resolveParamsEnrichmentDelta } from '@/components/shared/exercise/enrichmentOverride';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 
 /** Minimal exercise shape for override baseline (assignment Exercise or BuilderExercise). */
@@ -107,10 +107,7 @@ export function buildAssignmentOverrideDeltasFromBuilder(
     }
 
     const delta = buildOverrideDelta(inherited, clinicalDesired);
-    const enrichmentDelta = buildEnrichmentOverrideDelta(
-      exercise?.enrichmentData,
-      params.enrichment
-    );
+    const enrichmentDelta = resolveParamsEnrichmentDelta(exercise?.enrichmentData, params);
     if (enrichmentDelta) {
       delta.enrichment = enrichmentDelta;
     }

@@ -30,7 +30,7 @@ import { cn } from '@/lib/utils';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
 
-import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
+import { GET_AVAILABLE_EXERCISES_PICKER_QUERY } from '@/graphql/queries/exercises.queries';
 import { filterExercisesBySearch } from '@/features/exercises/utils/exerciseSearch';
 import { useIncrementalList } from '@/hooks/useIncrementalList';
 import {
@@ -278,7 +278,7 @@ function AddExerciseToPatientDialogContent({
   );
 
     // Get exercises from organization
-  const { data: exercisesData, loading: loadingExercises } = useQuery(GET_AVAILABLE_EXERCISES_QUERY, {
+  const { data: exercisesData, loading: loadingExercises } = useQuery(GET_AVAILABLE_EXERCISES_PICKER_QUERY, {
     variables: { organizationId },
     skip: !organizationId,
   });

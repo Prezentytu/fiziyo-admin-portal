@@ -24,6 +24,22 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 
 ## Wpisy
 
+### 2026-10-31 - Prettier przerabia `__tests__` w lessons.md na pogrubienie
+
+- **Kategoria**: `Tooling` | `Agent workflow`
+- **Problem**: Commit z nowym wpisem w `.ai/lessons.md` przeszedł przez lint-staged (`prettier --write` dla `*.md`), który zamienił każde gołe `__tests__` w znacznikach egzekwowania na `**tests**`; `agent:check` w CI padł na 8 ścieżkach.
+- **Przyczyna**: Prettier traktuje `__słowo__` poza kodem jako pogrubienie; plik nigdy wcześniej nie był formatowany, więc pierwszy commit przez hook przepisał cały plik.
+- **Rozwiązanie**: `.ai/lessons.md` w `.prettierignore`; plik przywrócony z `main`.
+- **Reguła**: Pliki ze ścieżkami w zwykłym tekście, które czyta skrypt, wyłączaj z Prettiera. [egzekwowane: scripts/check-agent-context.mjs]
+
+### 2026-10-31 - Treść ćwiczenia: „nie pobrano” to nie „pusto”
+
+- **Kategoria**: `Data` | `Exercises`
+- **Problem**: `AddExerciseToSetDialog`, `EditExerciseSetFullDialog` i kreator przypisania mapowały bibliotekę ręcznie bez `enrichmentData`, więc karta pokazywała puste instrukcje, a zapis edycji zestawu i przypisania wpisywał całą treść ćwiczenia do nadpisań (różnica liczona do pustego szablonu). Odchudzenie listy pickera groziło odwrotnością: różnica pełnego szablonu do pustej treści zapisałaby wyczyszczenie kroków.
+- **Przyczyna**: `toV3(undefined)` daje pusty dokument, więc brak pola w odpowiedzi wyglądał jak ćwiczenie bez treści.
+- **Rozwiązanie**: `undefined` = nie pobrano, `null` = brak treści; `buildEnrichmentOverrideDelta` i `resolveParamsEnrichmentDelta` nie liczą różnicy bez obu stron, a seed z mappingu bez treści trzyma samo `enrichmentOverride`. Picker doczytuje treść wybranych ćwiczeń i blokuje zapis do jej przyjścia.
+- **Reguła**: Jeśli mapujesz ćwiczenie ręcznie albo odchudzasz fragment, zachowaj `enrichmentData` jako `undefined`, gdy go nie pobrano, i nigdy nie licz różnicy treści do szablonu, którego nie masz. [egzekwowane: src/components/shared/exercise/__tests__/enrichmentOverride.test.ts]
+
 ### 2026-10-31 - PR postawiony na innym PR wszedł do jego gałęzi, nie do main
 
 - **Kategoria**: `Process` | `Git`

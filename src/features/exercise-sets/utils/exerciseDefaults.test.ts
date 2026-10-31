@@ -47,7 +47,7 @@ describe('getExerciseDefaultParams', () => {
   });
 
   it('fallbackuje do wartosci pustych gdy brak danych', () => {
-    const defaults = getExerciseDefaultParams({});
+    const defaults = getExerciseDefaultParams({ enrichmentData: null });
 
     expect(defaults).toEqual(EMPTY_EXERCISE_PARAMS);
   });
@@ -68,5 +68,15 @@ describe('getExerciseDefaultParams', () => {
     });
 
     expect(defaults.duration).toBe(0);
+  });
+});
+
+describe('getExerciseDefaultParams enrichment loading', () => {
+  it('leaves enrichment unset when the exercise came from a picker list without enrichmentData', () => {
+    expect(getExerciseDefaultParams({ defaultSets: 3 }).enrichment).toBeUndefined();
+  });
+
+  it('seeds enrichment when enrichmentData was loaded, even if empty', () => {
+    expect(getExerciseDefaultParams({ enrichmentData: null }).enrichment).toEqual({ $schema: 'fiziyo-exercise-v3' });
   });
 });

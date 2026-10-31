@@ -161,7 +161,9 @@ export default function OrganizationVerificationPage() {
       <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground">Weryfikacja organizacji</h1>
-          <p className="text-sm text-muted-foreground">Lokalna kolejka weryfikacji ćwiczeń dla organizacji.</p>
+          <p className="text-sm text-muted-foreground">
+            Ćwiczenia dodane przez terapeutów Twojej organizacji. Zatwierdzone może przypisywać tylko Twój zespół.
+          </p>
         </div>
         <Link href="/organization">
           <Button data-testid="org-verification-back-btn" variant="outline">

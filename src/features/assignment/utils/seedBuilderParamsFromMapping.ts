@@ -1,7 +1,7 @@
 import type { ExerciseInstance, ExerciseParams } from '@/components/shared/ExerciseSetBuilder';
 import type { ExerciseOverrideFields } from '@/components/shared/exercise/exerciseOverride';
 import { parseMappingOverridesJson } from '@/components/shared/exercise/mappingOverrides';
-import { applyEnrichmentOverride } from '@/components/shared/exercise/enrichmentOverride';
+import { applyEnrichmentOverride, mergeEnrichmentOverrides } from '@/components/shared/exercise/enrichmentOverride';
 import { resolveEffectiveExerciseParams } from '@/components/shared/exercise/resolveEffectiveExerciseParams';
 import { parseOverrideMap } from '@/components/shared/exercise/exercisePersonalizationWriter';
 import type { ExerciseMapping } from '../types';
@@ -17,6 +17,17 @@ export function seedBuilderParamsFromMapping(
   mapping: ExerciseMapping,
   assignmentOverride?: ExerciseOverrideFields | null
 ): ExerciseParams {
+  const mappingOverrides = parseMappingOverridesJson(mapping.overridesJson);
+  const exercise = mapping.exercise;
+  // Without the exercise's own content, a blank template plus override would read as "clear the rest".
+  const contentSeed =
+    exercise?.enrichmentData === undefined
+      ? {
+          enrichment: undefined,
+          enrichmentOverride: mergeEnrichmentOverrides(mappingOverrides.enrichment, assignmentOverride?.enrichment),
+        }
+      : null;
+
   if (assignmentOverride) {
     const effective = resolveEffectiveExerciseParams(mapping, assignmentOverride);
     return {
@@ -50,12 +61,9 @@ export function seedBuilderParamsFromMapping(
       clinicalDescription: effective.clinicalDescription ?? undefined,
       audioCue: effective.audioCue ?? undefined,
       customImages: effective.customImages,
-      enrichment: effective.effectiveEnrichment,
+      ...(contentSeed ?? { enrichment: effective.effectiveEnrichment }),
     };
   }
-
-  const mappingOverrides = parseMappingOverridesJson(mapping.overridesJson);
-  const exercise = mapping.exercise;
 
   return {
     sets: mapping.sets ?? undefined,
@@ -85,7 +93,7 @@ export function seedBuilderParamsFromMapping(
     clinicalDescription:
       mappingOverrides.clinicalDescription ?? exercise?.clinicalDescription ?? undefined,
     audioCue: mappingOverrides.audioCue ?? exercise?.audioCue ?? undefined,
-    enrichment: applyEnrichmentOverride(exercise?.enrichmentData, mappingOverrides.enrichment),
+    ...(contentSeed ?? { enrichment: applyEnrichmentOverride(exercise?.enrichmentData, mappingOverrides.enrichment) }),
   };
 }
 

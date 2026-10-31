@@ -116,6 +116,6 @@ export function getExerciseDefaultParams(exercise: ExerciseLikeForDefaults): Exe
     clinicalDescription: exercise.clinicalDescription ?? '',
     audioCue: exercise.audioCue ?? '',
     customImages: undefined,
-    enrichment: toV3(exercise.enrichmentData),
+    enrichment: exercise.enrichmentData === undefined ? undefined : toV3(exercise.enrichmentData),
   };
 }
