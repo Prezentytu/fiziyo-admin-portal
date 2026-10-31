@@ -165,6 +165,31 @@ export function toMappingInput(item: DraftItem): ExerciseMappingSubmitInput {
   };
 }
 
+const SEND_GUARD = 'do pacjenta nic nie trafi przed kliknięciem „Wyślij”.';
+
+/** Under the draft: a set composed in the thread is not a catalog set, so it is never called one. */
+export function draftNote(options: { fromCatalog: boolean; hasPatient: boolean }): string {
+  if (options.fromCatalog) {
+    return options.hasPatient
+      ? `Zestaw z katalogu, a nie zalecenie dla tej osoby. Decyzja należy do Ciebie: ${SEND_GUARD}`
+      : `Zestaw z katalogu gabinetu. Decyzja należy do Ciebie: ${SEND_GUARD}`;
+  }
+  return options.hasPatient
+    ? `Zestaw tylko dla tego pacjenta, poza katalogiem gabinetu. Decyzja należy do Ciebie: ${SEND_GUARD}`
+    : `Nowy zestaw poza katalogiem. Wybierz pacjenta albo zapisz zestaw w katalogu gabinetu; ${SEND_GUARD}`;
+}
+
+/** Under the summary: a catalog set is copied into the plan, a composed one exists only there. */
+export function planNote(fromCatalog: boolean): string {
+  return fromCatalog
+    ? 'Plan pacjenta to kopia zestawu: zmiany tutaj nie ruszają katalogu.'
+    : 'Plan tylko dla tego pacjenta: zestaw nie trafi do katalogu gabinetu.';
+}
+
+export function savedInCatalogText(name: string): string {
+  return `Zapisane w katalogu gabinetu jako „${name}”. Możesz go teraz przypisać dowolnemu pacjentowi.`;
+}
+
 const MAX_NAME_LENGTH = 80;
 
 /** "Kolano po ACL · Jan Kowalski": the topic the therapist wrote, then whose plan it is. */

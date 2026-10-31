@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import {
   applyParameterPatch,
   draftItemFromMapping,
+  draftNote,
+  planNote,
   draftMinutes,
   formatDraftParams,
   scheduleQuestion,
@@ -71,7 +73,7 @@ describe('proposeDraftName', () => {
 });
 
 describe('scheduleQuestion', () => {
-  it('proposes the default plan with the set\'s daily minutes', () => {
+  it("proposes the default plan with the set's daily minutes", () => {
     expect(scheduleQuestion([ITEM])).toBe(
       `Od kiedy i jak często? Proponuję od jutra, przez 4 tygodnie, codziennie (ok. ${draftMinutes([ITEM])} min dziennie).`
     );
@@ -79,7 +81,7 @@ describe('scheduleQuestion', () => {
 });
 
 describe('applyParameterPatch', () => {
-  it('takes the shared parameter editor\'s patch, cleared numbers become 0', () => {
+  it("takes the shared parameter editor's patch, cleared numbers become 0", () => {
     expect(applyParameterPatch(ITEM, { reps: 12, restSets: null, tempo: '3-1-1', loadKg: 5, notes: 'Wolno' })).toEqual({
       ...ITEM,
       reps: 12,
@@ -100,5 +102,21 @@ describe('toMappingInput', () => {
       loadWeightKg: 5,
       notes: 'Wolno',
     });
+  });
+});
+
+describe('draftNote and planNote', () => {
+  it('calls only a draft started from a catalog set a catalog set', () => {
+    expect(draftNote({ fromCatalog: true, hasPatient: true })).toContain('Zestaw z katalogu');
+    expect(planNote(true)).toContain('kopia zestawu');
+    for (const hasPatient of [true, false]) {
+      expect(draftNote({ fromCatalog: false, hasPatient })).not.toMatch(/z katalogu|zalecenie dla tej osoby/);
+    }
+    expect(planNote(false)).not.toContain('kopia zestawu');
+  });
+
+  it('speaks of a person only once there is a patient', () => {
+    expect(draftNote({ fromCatalog: true, hasPatient: false })).not.toContain('tej osoby');
+    expect(draftNote({ fromCatalog: false, hasPatient: true })).toContain('tylko dla tego pacjenta');
   });
 });
