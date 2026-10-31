@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { useQuery, useMutation } from '@apollo/client/react';
+import { useApolloClient, useQuery, useMutation } from '@apollo/client/react';
 import { Loader2, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -27,21 +27,25 @@ import {
 import { cn } from '@/lib/utils';
 import { aiService } from '@/services/aiService';
 
-import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 import {
   CREATE_EXERCISE_SET_MUTATION,
   ADD_EXERCISE_TO_EXERCISE_SET_MUTATION,
   ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
-import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
+import {
+  GET_ORGANIZATION_EXERCISE_SETS_QUERY,
+  GET_ORGANIZATION_EXERCISE_USAGE_QUERY,
+} from '@/graphql/queries/exerciseSets.queries';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
 import { GET_PATIENT_CLINICAL_NOTES_QUERY } from '@/graphql/queries/clinicalNotes.queries';
 import { createTagsMap, mapExercisesWithTags, type ExerciseWithTags } from '@/utils/tagUtils';
+import { useExercisePickerLibrary } from '@/hooks/useExercisePickerLibrary';
 import type { ExerciseTagsResponse, TagCategoriesResponse, OrganizationExerciseSetsResponse } from '@/types/apollo';
 import type { PatientClinicalNotesQueryData } from '@/graphql/types/operation-responses';
 import { getExerciseDefaultParams } from '@/features/exercise-sets/utils/exerciseDefaults';
 import { submitCreateTemplateSet } from '@/features/exercise-sets/utils/createSetSubmit';
+import { countExerciseUsage } from '@/features/exercise-sets/utils/builderExercises';
 import { buildMappingOverridesFromParams } from '@/features/exercise-sets/utils/buildMappingOverridesFromParams';
 
 interface CreateSetWizardProps {
@@ -114,11 +118,20 @@ export function CreateSetWizard({
     }
   }, [open, patientName]);
 
-  const { data: exercisesData, loading: loadingExercises } = useQuery<{
-    availableExercises?: ExerciseWithTags[];
-  }>(GET_AVAILABLE_EXERCISES_QUERY, {
-    variables: { organizationId },
-    skip: !organizationId || !open,
+  const apolloClient = useApolloClient();
+  const selectedExerciseIds = useMemo(
+    () => selectedInstances.map((instance) => instance.exerciseId),
+    [selectedInstances]
+  );
+  const {
+    exercises: pickerExercises,
+    loading: loadingExercises,
+    detailsPending,
+    ensureDetailsReady,
+  } = useExercisePickerLibrary<ExerciseWithTags>({
+    organizationId,
+    skip: !open,
+    detailExerciseIds: selectedExerciseIds,
   });
 
   const { data: tagsData } = useQuery(GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY, {
@@ -131,7 +144,7 @@ export function CreateSetWizard({
     skip: !organizationId || !open,
   });
 
-  const { data: exerciseSetsData, refetch: refetchExerciseSets } = useQuery(GET_ORGANIZATION_EXERCISE_SETS_QUERY, {
+  const { data: exerciseUsageData } = useQuery<OrganizationExerciseSetsResponse>(GET_ORGANIZATION_EXERCISE_USAGE_QUERY, {
     variables: { organizationId },
     skip: !organizationId || !open,
   });
@@ -178,32 +191,19 @@ export function CreateSetWizard({
     [categoriesData]
   );
   const tagsMap = useMemo(() => createTagsMap(tags, categories), [tags, categories]);
-  const exerciseSets = useMemo(
-    () => (exerciseSetsData as OrganizationExerciseSetsResponse)?.exerciseSets || [],
-    [exerciseSetsData]
-  );
-
   const exercises: BuilderExercise[] = useMemo(() => {
-    const rawExercises = exercisesData?.availableExercises || [];
-    return mapExercisesWithTags(rawExercises, tagsMap) as BuilderExercise[];
-  }, [exercisesData, tagsMap]);
+    return mapExercisesWithTags(pickerExercises, tagsMap) as BuilderExercise[];
+  }, [pickerExercises, tagsMap]);
 
   const builderTags: ExerciseTag[] = useMemo(
     () => tags.map((tag) => ({ id: tag.id, name: tag.name, color: tag.color })),
     [tags]
   );
 
-  const exercisePopularity = useMemo(() => {
-    const popularity: Record<string, number> = {};
-    for (const set of exerciseSets) {
-      for (const mapping of set.exerciseMappings || []) {
-        if (mapping.exerciseId) {
-          popularity[mapping.exerciseId] = (popularity[mapping.exerciseId] || 0) + 1;
-        }
-      }
-    }
-    return popularity;
-  }, [exerciseSets]);
+  const exercisePopularity = useMemo(
+    () => countExerciseUsage(exerciseUsageData?.exerciseSets ?? []),
+    [exerciseUsageData]
+  );
 
   const getDefaultParams = useCallback(
     (exercise: BuilderExercise): ExerciseParams => getExerciseDefaultParams(exercise),
@@ -304,6 +304,7 @@ export function CreateSetWizard({
       focusNameInput();
       return;
     }
+    if (!ensureDetailsReady()) return;
 
     try {
       const sanitizedName = name.trim();
@@ -346,7 +347,9 @@ export function CreateSetWizard({
         mappings
       );
 
-      await refetchExerciseSets();
+      await apolloClient.refetchQueries({
+        include: [GET_ORGANIZATION_EXERCISE_SETS_QUERY, GET_ORGANIZATION_EXERCISE_USAGE_QUERY],
+      });
 
       if (autoAssign && patientId) {
         await assignSetToPatient({
@@ -377,7 +380,7 @@ export function CreateSetWizard({
           if (event.key !== 'Enter') return;
           if (!event.metaKey && !event.ctrlKey) return;
           event.preventDefault();
-          if (isLoading) return;
+          if (isLoading || detailsPending) return;
           void handleCreateSet();
         }}
         onInteractOutside={(e) => e.preventDefault()}
@@ -481,14 +484,18 @@ export function CreateSetWizard({
           <Button
             type="button"
             onClick={handleCreateSet}
-            disabled={isLoading}
+            disabled={isLoading || detailsPending}
             className={cn(
               'px-8 bg-tint-fill hover:bg-tint-fill-hover text-on-tint font-semibold',
               'disabled:opacity-50 disabled:cursor-not-allowed'
             )}
             data-testid="set-composer-create-btn"
           >
-            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4 mr-2" />}
+            {isLoading || detailsPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Check className="h-4 w-4 mr-2" />
+            )}
             Utwórz zestaw
           </Button>
         </div>

@@ -77,3 +77,32 @@ describe('seedBuilderParamsFromMapping', () => {
     expect(params.enrichment?.therapist?.clinical_notes).toBe('Keep');
   });
 });
+
+describe('seedBuilderParamsFromMapping when the exercise content was not loaded', () => {
+  const steps = { $schema: 'fiziyo-exercise-v3', patient: { steps: ['Krok z zestawu'] } };
+
+  it('keeps only the inherited content override instead of a blank template plus override', () => {
+    const mapping: ExerciseMapping = {
+      id: 'm9',
+      exerciseId: 'e9',
+      overridesJson: JSON.stringify({ enrichment: { patient: { steps: ['Krok z zestawu'] } } }),
+      exercise: { id: 'e9', name: 'Bez treści w odpowiedzi' },
+    };
+
+    const params = seedBuilderParamsFromMapping(mapping);
+
+    expect(params.enrichment).toBeUndefined();
+    expect(params.enrichmentOverride).toEqual({ patient: { steps: ['Krok z zestawu'] } });
+  });
+
+  it('seeds the full content when the exercise content was loaded', () => {
+    const mapping: ExerciseMapping = {
+      id: 'm10',
+      exerciseId: 'e10',
+      exercise: { id: 'e10', name: 'Z treścią', enrichmentData: steps },
+    };
+
+    expect(seedBuilderParamsFromMapping(mapping).enrichment?.patient?.steps).toEqual(['Krok z zestawu']);
+  });
+});
+

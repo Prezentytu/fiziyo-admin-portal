@@ -35,7 +35,7 @@ Backend eksponuje jeden schemat GraphQL. Oba frontendy definiują **własne** za
 
 Zapytania używane w obu frontendach (wspólne resolwery):
 
-- Exercises: `GET_EXERCISE_BY_ID_QUERY`, `GET_AVAILABLE_EXERCISES_QUERY` (lista w panelu: `GET_AVAILABLE_EXERCISES_QUERY` / `GET_ORGANIZATION_EXERCISES_QUERY`; `GET_EXERCISES_QUERY` jest tylko w mobile i nie jest listą panelu)
+- Exercises: `GET_EXERCISE_BY_ID_QUERY`, `GET_AVAILABLE_EXERCISES_PAGE_QUERY` (lista `/exercises` stronami), `GET_AVAILABLE_EXERCISES_PICKER_QUERY` (wybór ćwiczeń w zestawach, przypisaniach i czacie, bez `enrichmentData`; treść wybranych przez `GET_EXERCISE_ENRICHMENT_QUERY`), `GET_ORGANIZATION_EXERCISES_QUERY`; `GET_EXERCISES_QUERY` jest tylko w mobile i nie jest listą panelu
 - Patients: `GET_THERAPIST_PATIENTS_QUERY`
 
 ### Operacje tylko w panelu admin

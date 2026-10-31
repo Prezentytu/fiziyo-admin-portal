@@ -23,23 +23,26 @@ import {
   type ExerciseExecutionCardData,
 } from '@/components/shared/exercise';
 
-import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 import {
   GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY,
-  GET_ORGANIZATION_EXERCISE_SETS_QUERY,
+  GET_ORGANIZATION_EXERCISE_USAGE_QUERY,
 } from '@/graphql/queries/exerciseSets.queries';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
 import { ADD_EXERCISE_TO_EXERCISE_SET_MUTATION } from '@/graphql/mutations/exercises.mutations';
-import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
+import { createTagsMap } from '@/utils/tagUtils';
 import { pluralize } from '@/utils/textUtils';
 import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
 import { buildMappingOverridesFromParams } from '@/features/exercise-sets/utils/buildMappingOverridesFromParams';
+import { useExercisePickerLibrary } from '@/hooks/useExercisePickerLibrary';
+import { countExerciseUsage, toBuilderExercises } from '@/features/exercise-sets/utils/builderExercises';
 import type {
   ExerciseTagsResponse,
   TagCategoriesResponse,
   OrganizationExerciseSetsResponse,
 } from '@/types/apollo';
+
+type PickerExerciseRecord = Record<string, unknown> & { id: string; name: string; updatedAt?: string | null };
 
 interface AddExerciseToSetDialogProps {
   open: boolean;
@@ -89,9 +92,23 @@ export function AddExerciseToSetDialog({
     }
   }, [open]);
 
-  const { data: exercisesData, loading: loadingExercises } = useQuery(GET_AVAILABLE_EXERCISES_QUERY, {
-    variables: { organizationId },
-    skip: !organizationId || !open,
+  // Only newly added exercises are saved; the ones already in the set stay read-only.
+  const newExerciseIds = useMemo(
+    () =>
+      selectedInstances
+        .filter((instance) => !initialInstanceIdsRef.current.has(instance.instanceId))
+        .map((instance) => instance.exerciseId),
+    [selectedInstances]
+  );
+  const {
+    exercises: pickerExercises,
+    loading: loadingExercises,
+    detailsPending,
+    ensureDetailsReady,
+  } = useExercisePickerLibrary<PickerExerciseRecord>({
+    organizationId,
+    skip: !open,
+    detailExerciseIds: newExerciseIds,
   });
 
   const { data: tagsData } = useQuery(GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY, {
@@ -104,7 +121,7 @@ export function AddExerciseToSetDialog({
     skip: !organizationId || !open,
   });
 
-  const { data: exerciseSetsData } = useQuery(GET_ORGANIZATION_EXERCISE_SETS_QUERY, {
+  const { data: exerciseUsageData } = useQuery<OrganizationExerciseSetsResponse>(GET_ORGANIZATION_EXERCISE_USAGE_QUERY, {
     variables: { organizationId },
     skip: !organizationId || !open,
   });
@@ -120,59 +137,15 @@ export function AddExerciseToSetDialog({
   );
   const tagsMap = useMemo(() => createTagsMap(tags, categories), [tags, categories]);
 
-  const rawAvailableExercises = useMemo(() => {
-    const data = exercisesData as { availableExercises?: Record<string, unknown>[] } | undefined;
-    return (data?.availableExercises || []).filter((ex) => (ex as { isActive?: boolean }).isActive !== false);
-  }, [exercisesData]);
-
-  const availableExercises: BuilderExercise[] = useMemo(() => {
-    return mapExercisesWithTags(
-      rawAvailableExercises.map((raw) => ({
-        id: raw.id as string,
-        name: raw.name as string,
-        type: raw.type as string | undefined,
-        patientDescription: (raw.patientDescription ?? raw.description) as string | undefined,
-        side: raw.side as string | undefined,
-        thumbnailUrl: raw.thumbnailUrl as string | undefined,
-        imageUrl: raw.imageUrl as string | undefined,
-        images: raw.images as string[] | undefined,
-        videoUrl: raw.videoUrl as string | undefined,
-        defaultSets: raw.defaultSets as number | undefined,
-        defaultReps: raw.defaultReps as number | undefined,
-        defaultDuration: raw.defaultDuration as number | undefined,
-        defaultRestBetweenSets: raw.defaultRestBetweenSets as number | undefined,
-        defaultRestBetweenReps: raw.defaultRestBetweenReps as number | undefined,
-        defaultExecutionTime: raw.defaultExecutionTime as number | undefined,
-        description: (raw.patientDescription ?? raw.description) as string | undefined,
-        sets: raw.sets as number | undefined,
-        reps: raw.reps as number | undefined,
-        duration: raw.duration as number | undefined,
-        restSets: raw.restSets as number | undefined,
-        restReps: raw.restReps as number | undefined,
-        exerciseSide: (raw.side as string)?.toLowerCase() ?? (raw.exerciseSide as string) ?? undefined,
-        mainTags: raw.mainTags as (string | ExerciseTag)[] | undefined,
-        additionalTags: raw.additionalTags as (string | ExerciseTag)[] | undefined,
-        scope: raw.scope as string | undefined,
-      })),
-      tagsMap
-    ) as BuilderExercise[];
-  }, [rawAvailableExercises, tagsMap]);
-
-  const exerciseSets = useMemo(
-    () => (exerciseSetsData as OrganizationExerciseSetsResponse)?.exerciseSets || [],
-    [exerciseSetsData]
+  const availableExercises: BuilderExercise[] = useMemo(
+    () => toBuilderExercises(pickerExercises, tagsMap),
+    [pickerExercises, tagsMap]
   );
-  const exercisePopularity = useMemo(() => {
-    const popularity: Record<string, number> = {};
-    for (const set of exerciseSets) {
-      for (const mapping of set.exerciseMappings || []) {
-        if (mapping.exerciseId) {
-          popularity[mapping.exerciseId] = (popularity[mapping.exerciseId] || 0) + 1;
-        }
-      }
-    }
-    return popularity;
-  }, [exerciseSets]);
+
+  const exercisePopularity = useMemo(
+    () => countExerciseUsage(exerciseUsageData?.exerciseSets ?? []),
+    [exerciseUsageData]
+  );
 
   const builderTags: ExerciseTag[] = useMemo(
     () => tags.map((tag) => ({ id: tag.id, name: tag.name, color: tag.color })),
@@ -252,6 +225,7 @@ export function AddExerciseToSetDialog({
       toast.error('Dodaj przynajmniej jedno ćwiczenie');
       return;
     }
+    if (!ensureDetailsReady()) return;
 
     const exerciseLookup = new Map(availableExercises.map((e) => [e.id, e]));
     const existingCount = initialInstanceIdsRef.current.size;
@@ -309,6 +283,7 @@ export function AddExerciseToSetDialog({
     addExerciseToSet,
     onOpenChange,
     onSuccess,
+    ensureDetailsReady,
   ]);
 
   const handlePreviewExercise = useCallback((exercise: BuilderExercise, params?: ExerciseParams) => {
@@ -375,13 +350,11 @@ export function AddExerciseToSetDialog({
             </Button>
             <Button
               onClick={handleSave}
-              disabled={adding || newInstancesCount === 0}
+              disabled={adding || newInstancesCount === 0 || detailsPending}
               className="min-w-[160px]"
               data-testid="set-add-exercise-submit-btn"
             >
-              {adding ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : null}
+              {adding || detailsPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               {newInstancesCount === 0
                 ? 'Brak nowych ćwiczeń'
                 : `Dodaj ${pluralize(newInstancesCount, 'ćwiczenie', true)}`}

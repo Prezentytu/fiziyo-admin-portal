@@ -88,7 +88,7 @@ import {
   UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION,
   UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
-import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
+import { useExercisePickerLibrary } from '@/hooks/useExercisePickerLibrary';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import { GET_CURRENT_BILLING_STATUS_QUERY } from '@/graphql/queries/billing.queries';
 import type { OrganizationExerciseSetsResponse, OrganizationPatientsResponse } from '@/types/apollo';
@@ -444,12 +444,29 @@ function AssignmentWizardContent({
     }
   );
 
-  // Load available exercises for Rapid Builder (includes global FiziYo exercises)
-  const { data: exercisesData, refetch: refetchAvailableExercises } = useQuery<{
-    availableExercises?: RawAvailableExercise[];
-  }>(GET_AVAILABLE_EXERCISES_QUERY, {
-    variables: { organizationId },
-    skip: !organizationId || !open,
+  // Rapid Builder library (includes global FiziYo exercises); content only for exercises in the plan.
+  const builderExerciseIds = useMemo(
+    () => builderInstances.map((instance) => instance.exerciseId),
+    [builderInstances]
+  );
+  // Set mappings already carry each exercise's full content, so those exercises need no extra request.
+  const knownEnrichment = useMemo(
+    () =>
+      [...(initialAssignment?.exerciseSet.exerciseMappings ?? []), ...(selectedSet?.exerciseMappings ?? [])].map(
+        (mapping) => ({ id: mapping.exerciseId, enrichmentData: mapping.exercise?.enrichmentData })
+      ),
+    [initialAssignment, selectedSet]
+  );
+  const {
+    exercises: rawAvailableExercises,
+    refetch: refetchAvailableExercises,
+    detailsPending,
+    ensureDetailsReady,
+  } = useExercisePickerLibrary<RawAvailableExercise>({
+    organizationId,
+    skip: !open,
+    detailExerciseIds: builderExerciseIds,
+    knownEnrichment,
   });
 
   // Apollo client - uzywany do final refetch po petli mutacji w handleEditSubmit,
@@ -591,6 +608,7 @@ function AssignmentWizardContent({
               difficultyLevel: m.exercise.difficultyLevel,
               scope: m.exercise.scope,
               status: m.exercise.status,
+              enrichmentData: m.exercise.enrichmentData,
             }
           : undefined,
       };
@@ -648,8 +666,8 @@ function AssignmentWizardContent({
 
   // Process available exercises for Rapid Builder (includes global FiziYo exercises)
   const availableExercises: Exercise[] = useMemo(() => {
-    return mapAvailableExercises(exercisesData?.availableExercises);
-  }, [exercisesData]);
+    return mapAvailableExercises(rawAvailableExercises);
+  }, [rawAvailableExercises]);
 
   // Handle create new set - sets mode to creating new and navigates to customize step
   const handleCreateSet = useCallback((searchQuery?: string) => {
@@ -1139,6 +1157,7 @@ function AssignmentWizardContent({
   const handleEditSubmit = async () => {
     if (!isEditMode || !initialAssignment || !selectedSet) return;
     if (builderInstances.length === 0 || isSubmitting) return;
+    if (!ensureDetailsReady()) return;
 
     setIsSubmitting(true);
     try {
@@ -1295,6 +1314,7 @@ function AssignmentWizardContent({
     if (builderInstances.length === 0) return;
     if (selectedPatients.length === 0) return;
     if (isSubmitting) return;
+    if (!ensureDetailsReady()) return;
 
     // Refetched once after the assignment loop instead of once per patient (each pulls full org lists).
     const assignRefetchQueries = [
@@ -1873,11 +1893,11 @@ function AssignmentWizardContent({
 
             <Button
               onClick={isLastStep ? handleFinalSubmit : goNext}
-              disabled={isLoading || !canProceed()}
+              disabled={isLoading || !canProceed() || (isLastStep && detailsPending)}
               className="min-w-[160px]"
               data-testid={isLastStep ? 'assign-summary-submit-btn' : 'assign-wizard-next-btn'}
             >
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {(isLoading || (isLastStep && detailsPending)) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {getNextButtonText()}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>

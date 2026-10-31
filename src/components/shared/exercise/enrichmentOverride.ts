@@ -128,6 +128,8 @@ export function buildEnrichmentOverrideDelta(
   template: ExerciseEnrichmentData | null | undefined,
   desired: ExerciseEnrichmentData | null | undefined
 ): EnrichmentOverride | undefined {
+  // undefined = not loaded (picker list without enrichmentData); a delta against it would clear or freeze content.
+  if (template === undefined || desired === undefined) return undefined;
   const baseline = toV3(template);
   const next = toV3(desired);
   const delta: EnrichmentOverride = {};
@@ -202,3 +204,18 @@ export function listOverriddenEnrichmentPaths(override?: EnrichmentOverride | nu
   if (!override) return [];
   return PERSONALIZABLE_ENRICHMENT_PATHS.filter((path) => getAtPath(override, path) !== undefined);
 }
+
+/**
+ * Content delta to persist for builder params: the edited content against the template,
+ * or the override inherited from the source mapping when the content was never loaded.
+ */
+export function resolveParamsEnrichmentDelta(
+  template: ExerciseEnrichmentData | null | undefined,
+  params: { enrichment?: ExerciseEnrichmentData; enrichmentOverride?: EnrichmentOverride | null }
+): EnrichmentOverride | undefined {
+  if (params.enrichment === undefined) {
+    return hasEnrichmentOverrideContent(params.enrichmentOverride) ? (params.enrichmentOverride ?? undefined) : undefined;
+  }
+  return buildEnrichmentOverrideDelta(template, params.enrichment);
+}
+

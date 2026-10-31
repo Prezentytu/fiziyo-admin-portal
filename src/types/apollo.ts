@@ -321,6 +321,7 @@ export interface ExerciseSetMapping {
     scope?: string;
     status?: string;
     difficultyLevel?: string;
+    enrichmentData?: ExerciseEnrichmentData | null;
     exerciseSide?: string;
     description?: string;
     executionTime?: number;

@@ -101,13 +101,14 @@ export const GET_AVAILABLE_EXERCISES_PAGE_QUERY = gql`
   ${EXERCISE_FULL_FRAGMENT}
 `;
 
-// Same root field as GET_AVAILABLE_EXERCISES_QUERY, so a cached full list answers it without a network trip.
+// Same root field as GET_AVAILABLE_EXERCISES_PICKER_QUERY, so a cached picker list answers it without a network trip.
 export const GET_AVAILABLE_EXERCISE_NAMES_QUERY = gql`
   query GetAvailableExerciseNames($organizationId: String!) {
     availableExercises(organizationId: $organizationId) {
       id
       name
       imageUrl
+      thumbnailUrl
     }
   }
 `;
@@ -151,16 +152,72 @@ export interface ExportExercisesToCsvVariables {
   organizationId: string;
 }
 
-// Query do pobierania wszystkich dostępnych ćwiczeń dla organizacji
-// Obejmuje: organizacyjne, globalne i publiczne templates
-export const GET_AVAILABLE_EXERCISES_QUERY = gql`
-  query GetAvailableExercises($organizationId: String!) {
-    availableExercises(organizationId: $organizationId) {
-      ...ExerciseFullFragment
+// Exercise pickers (sets, assignment, patient): everything a list card and default parameters need, without
+// enrichmentData. A 5k library with enrichment is tens of MB; pickers load enrichment only for chosen exercises.
+export const EXERCISE_PICKER_FRAGMENT = gql`
+  fragment ExercisePickerFragment on Exercise {
+    id
+    name
+    type
+    isActive
+    scope
+    status
+    organizationId
+    createdAt
+    updatedAt
+    patientDescription
+    clinicalDescription
+    audioCue
+    tempo
+    rangeOfMotion
+    side
+    preparationTime
+    defaultDuration
+    defaultExecutionTime
+    defaultSets
+    defaultReps
+    defaultRestBetweenReps
+    defaultRestBetweenSets
+    defaultLoad {
+      loadWeightKg
+      loadSource
+      type
+      value
+      unit
+      text
     }
+    difficultyLevel
+    mainTags
+    additionalTags
+    notes
+    gifUrl
+    images
+    imageUrl
+    thumbnailUrl
+    videoUrl
   }
-  ${EXERCISE_FULL_FRAGMENT}
 `;
 
-/** Refresh both the full library (set and assignment pickers) and the paged list after exercise writes. */
-export const EXERCISE_LIBRARY_REFETCH_QUERIES = [GET_AVAILABLE_EXERCISES_QUERY, GET_AVAILABLE_EXERCISES_PAGE_QUERY];
+// Detail views use GET_EXERCISE_BY_ID_QUERY; chosen exercises get their enrichment via GET_EXERCISE_ENRICHMENT_QUERY.
+export const GET_AVAILABLE_EXERCISES_PICKER_QUERY = gql`
+  query GetAvailableExercisesForPicker($organizationId: String!) {
+    availableExercises(organizationId: $organizationId) {
+      ...ExercisePickerFragment
+    }
+  }
+  ${EXERCISE_PICKER_FRAGMENT}
+`;
+
+// Enrichment of one exercise chosen in a picker (the picker list itself omits it).
+export const GET_EXERCISE_ENRICHMENT_QUERY = gql`
+  query GetExerciseEnrichment($id: String!) {
+    exerciseById(id: $id) {
+      id
+      updatedAt
+      enrichmentData
+    }
+  }
+`;
+
+/** Refresh both the picker library (set and assignment pickers) and the paged list after exercise writes. */
+export const EXERCISE_LIBRARY_REFETCH_QUERIES = [GET_AVAILABLE_EXERCISES_PICKER_QUERY, GET_AVAILABLE_EXERCISES_PAGE_QUERY];

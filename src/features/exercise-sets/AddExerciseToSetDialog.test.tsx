@@ -12,6 +12,7 @@ const mockUseMutation = vi.fn();
 vi.mock('@apollo/client/react', () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args),
   useMutation: () => [mockUseMutation(), { loading: false }],
+  useApolloClient: () => ({ query: vi.fn() }),
 }));
 
 describe('AddExerciseToSetDialog', () => {

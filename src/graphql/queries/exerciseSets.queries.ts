@@ -122,6 +122,19 @@ export const GET_ORGANIZATION_EXERCISE_SETS_QUERY = gql`
   ${EXERCISE_SET_WITH_EXERCISES_FRAGMENT}
 `;
 
+// Which exercises the organization's sets use (builder "Popularne"); same root field as the full sets list.
+export const GET_ORGANIZATION_EXERCISE_USAGE_QUERY = gql`
+  query GetOrganizationExerciseUsage($organizationId: String!) {
+    exerciseSets(where: { organizationId: { eq: $organizationId }, isActive: { eq: true } }) {
+      id
+      exerciseMappings {
+        id
+        exerciseId
+      }
+    }
+  }
+`;
+
 // Query do pobierania zestawu z przypisaniami
 export const GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY = gql`
   query GetExerciseSetWithAssignments($exerciseSetId: String!) {

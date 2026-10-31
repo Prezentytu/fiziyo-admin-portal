@@ -25,6 +25,22 @@ describe('buildMappingOverridesFromParams', () => {
   });
 });
 
+describe('buildMappingOverridesFromParams content not loaded', () => {
+  const template = {
+    enrichmentData: { $schema: 'fiziyo-exercise-v3', patient: { steps: ['Krok 1', 'Krok 2'], cues: ['Wdech'] } },
+  };
+
+  it('carries the inherited content override when the builder never had the content', () => {
+    const json = buildMappingOverridesFromParams(template, { enrichmentOverride: { patient: { cues: ['Wydech'] } } });
+
+    expect(JSON.parse(json ?? '{}')).toEqual({ enrichment: { patient: { cues: ['Wydech'] } } });
+  });
+
+  it('writes no content override (never a clear) when content was not loaded and nothing was inherited', () => {
+    expect(buildMappingOverridesFromParams(template, {})).toBeNull();
+  });
+});
+
 describe('addExerciseToSet write-paths send overridesJson', () => {
   const filesWithSideEditor = [
     'src/features/exercise-sets/AddExerciseToSetDialog.tsx',
