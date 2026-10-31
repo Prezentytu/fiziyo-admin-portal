@@ -708,7 +708,7 @@ Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu r
 | `verification-scope-tabs`             | Pasek kolejek (gdy rola ma ≥2)   | `VerificationScopeTabs.tsx`  |
 | `nav-link-organization-verification`  | Zakładka: Moja organizacja       | `VerificationScopeTabs.tsx`  |
 | `nav-link-verification-global`        | Zakładka: Katalog FiziYo         | `VerificationScopeTabs.tsx`  |
-| `nav-link-verification-organizations` | Zakładka: Wszystkie organizacje  | `VerificationScopeTabs.tsx`  |
+| `nav-link-verification-organizations` | Zakładka: Organizacje klientów   | `VerificationScopeTabs.tsx`  |
 | `verification-search-input`           | Wyszukiwarka ćwiczeń             | `verification/page.tsx`      |
 | `verification-stats-pending`          | Karta statystyk: Oczekujące      | `VerificationStatsCards.tsx` |
 | `verification-stats-changes`          | Karta statystyk: Do poprawy      | `VerificationStatsCards.tsx` |

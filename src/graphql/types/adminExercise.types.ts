@@ -248,6 +248,10 @@ export interface GetOrganizationVerificationStatsResponse {
   organizationVerificationStats: OrganizationVerificationStats;
 }
 
+export interface GetCrossOrgVerificationStatsResponse {
+  crossOrgVerificationStats: OrganizationVerificationStats;
+}
+
 export interface VerificationQueuePage {
   items: AdminExercise[];
   totalCount: number;

@@ -32,7 +32,7 @@ const VERIFICATION_SCOPES: ReadonlyArray<
   },
   {
     key: 'cross-org',
-    label: 'Wszystkie organizacje',
+    label: 'Organizacje klientów',
     href: '/verification/organizations',
     testId: 'nav-link-verification-organizations',
     isAvailable: (access) => access.isSiteSuperAdmin,

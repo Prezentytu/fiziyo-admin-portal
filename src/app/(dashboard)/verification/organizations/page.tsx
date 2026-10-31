@@ -27,7 +27,7 @@ import { ON_EXERCISE_SUBMITTED_FOR_GLOBAL_REVIEW } from '@/graphql/subscriptions
 import type {
   BatchArchiveOrganizationExercisesAsAdminResponse,
   CrossOrgVerificationQueuePage,
-  GetOrganizationVerificationStatsResponse,
+  GetCrossOrgVerificationStatsResponse,
 } from '@/graphql/types/adminExercise.types';
 import { PageSheet } from '@/components/shared/page';
 
@@ -56,7 +56,7 @@ export default function CrossOrgVerificationPage() {
     data: statsData,
     loading: statsLoading,
     refetch: refetchStats,
-  } = useQuery<GetOrganizationVerificationStatsResponse>(GET_CROSS_ORG_VERIFICATION_STATS_QUERY, {
+  } = useQuery<GetCrossOrgVerificationStatsResponse>(GET_CROSS_ORG_VERIFICATION_STATS_QUERY, {
     skip: !isSiteSuperAdmin,
     fetchPolicy: 'cache-and-network',
     pollInterval: 30_000,
@@ -169,7 +169,7 @@ export default function CrossOrgVerificationPage() {
       <EmptyState
         icon={ShieldCheck}
         title="Brak dostępu"
-        description="Tylko SiteSuperAdmin ma dostęp do cross-organizacyjnej weryfikacji."
+        description="Ten widok jest dostępny tylko dla zespołu FiziYo."
       />
     );
   }
@@ -179,13 +179,16 @@ export default function CrossOrgVerificationPage() {
       <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground">
-            Weryfikacja wszystkich organizacji
+            Weryfikacja w organizacjach klientów
           </h1>
-          <p className="text-sm text-muted-foreground">Kolejka zgłoszeń organizacyjnych ze wszystkich organizacji.</p>
+          <p className="text-sm text-muted-foreground">
+            Ćwiczenia czekające na zatwierdzenie w organizacjach klientów. Zostają w swojej organizacji i nie trafiają
+            do katalogu FiziYo.
+          </p>
         </div>
         <Link href="/verification">
           <Button data-testid="cross-org-verification-back-btn" variant="outline">
-            Wróć do centrum
+            Przejdź do katalogu FiziYo
           </Button>
         </Link>
       </div>
@@ -195,7 +198,7 @@ export default function CrossOrgVerificationPage() {
       <VerificationStatsCards
         mode="organization"
         stats={null}
-        organizationStats={statsData?.organizationVerificationStats ?? null}
+        organizationStats={statsData?.crossOrgVerificationStats ?? null}
         isLoading={statsLoading}
         activeFilter={filter}
         onFilterChange={(nextFilter) => {
@@ -303,7 +306,7 @@ export default function CrossOrgVerificationPage() {
       <VerificationArchiveDialog
         open={archiveDialogOpen}
         count={selection.selectedCount}
-        scopeLabel="cross-org Centrum Weryfikacji"
+        scopeLabel="kolejkach organizacji klientów"
         isLoading={archiving}
         onOpenChange={setArchiveDialogOpen}
         onConfirm={handleArchiveSelected}
