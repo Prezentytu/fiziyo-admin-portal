@@ -19,7 +19,6 @@ import { getAvatarGradient, getInitials } from '@/utils/textUtils';
 
 import { FIND_USER_BY_EMAIL_QUERY, FIND_USER_BY_PHONE_QUERY } from '@/graphql/queries/users.queries';
 import { ASSIGN_PATIENT_TO_THERAPIST_MUTATION } from '@/graphql/mutations/therapists.mutations';
-import { ADD_DIRECT_MEMBER_MUTATION } from '@/graphql/mutations/organizations.mutations';
 import {
   GET_THERAPIST_PATIENTS_QUERY,
   GET_ALL_THERAPIST_PATIENTS_QUERY,
@@ -28,13 +27,18 @@ import {
 import { GET_ALL_PATIENT_ASSIGNMENTS_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import type { FindUserByEmailData, FindUserByPhoneData } from '@/graphql/types/user.types';
 import type { OrganizationPatientsResponse } from '@/types/apollo';
+import { PatientInvitePanel } from './PatientInvitePanel';
+import { PATIENT_INVITE_REQUIRED, getGraphQLErrorCode, getGraphQLErrorMessage } from './utils/patientConsent';
 
 // ============================================
 // TYPES
 // ============================================
 
 type ContactType = 'email' | 'phone' | 'unknown';
-type ViewState = 'search' | 'found' | 'form';
+type ViewState = 'search' | 'found' | 'form' | 'invite';
+
+/** `invite-required`: the contact belongs to an account outside the clinic, so only an invitation can add it. */
+export type CreatePatientOutcome = { status: 'created' } | { status: 'invite-required'; message: string } | { status: 'failed' };
 
 interface FoundUser {
   id: string;
@@ -70,7 +74,7 @@ export interface UnifiedPatientInputProps {
     firstName?: string;
     lastName?: string;
   }) => void;
-  readonly onCreateNewPatient: (values: PatientFormValues) => Promise<void>;
+  readonly onCreateNewPatient: (values: PatientFormValues) => Promise<CreatePatientOutcome>;
   readonly onCancel: () => void;
   readonly onDirtyChange?: (isDirty: boolean) => void;
   readonly isLoading?: boolean;
@@ -163,6 +167,8 @@ export function UnifiedPatientInput({
     therapistId: string;
     therapistName: string;
   } | null>(null);
+  const [invite, setInvite] = useState<{ email: string; reason: string } | null>(null);
+  const [invitationSent, setInvitationSent] = useState(false);
 
   // Refs
   const contactInputRef = useRef<HTMLInputElement>(null);
@@ -181,7 +187,7 @@ export function UnifiedPatientInput({
   });
 
   // Track dirty state
-  const isDirty = contactValue.length > 0 || form.formState.isDirty;
+  const isDirty = !invitationSent && (contactValue.length > 0 || form.formState.isDirty);
 
   useEffect(() => {
     onDirtyChange?.(isDirty);
@@ -238,11 +244,7 @@ export function UnifiedPatientInput({
     awaitRefetchQueries: true,
   });
 
-  const [addDirectMember, { loading: addMemberLoading }] = useMutation(ADD_DIRECT_MEMBER_MUTATION, {
-    awaitRefetchQueries: true,
-  });
-
-  const isLoading = externalLoading || assignLoading || addMemberLoading;
+  const isLoading = externalLoading || assignLoading;
 
   // ============================================
   // EFFECTS
@@ -314,7 +316,6 @@ export function UnifiedPatientInput({
   // COMPUTED
   // ============================================
 
-  const isAlreadyInOrg = foundUser?.organizationIds?.includes(organizationId);
   const existingAssignment = therapistPatientsData?.therapistPatients?.find(
     (assignment) => assignment.patientId === foundUser?.id
   );
@@ -381,6 +382,12 @@ export function UnifiedPatientInput({
     toast.error('Wpisz poprawny email lub numer telefonu');
   }, [contactValue]);
 
+  const openInvite = useCallback((email: string, reason: string) => {
+    setInvite({ email, reason });
+    setInvitationSent(false);
+    setViewState('invite');
+  }, []);
+
   const handleAddExistingPatient = useCallback(async (skipTakeoverConfirm: boolean = false) => {
     if (!foundUser) return;
 
@@ -397,18 +404,7 @@ export function UnifiedPatientInput({
     }
 
     try {
-      // Add to organization if not already member
-      if (!foundUser.organizationIds?.includes(organizationId)) {
-        await addDirectMember({
-          variables: {
-            organizationId,
-            userId: foundUser.id,
-            role: 'patient',
-          },
-        });
-      }
-
-      // Assign to therapist
+      // Lookup returns only members of this organization; joining it needs the patient's consent (invitation).
       await assignPatient({
         variables: {
           patientId: foundUser.id,
@@ -429,12 +425,14 @@ export function UnifiedPatientInput({
         lastName: foundUser.personalData?.lastName,
       });
     } catch (error) {
+      if (getGraphQLErrorCode(error) === PATIENT_INVITE_REQUIRED) {
+        openInvite(foundUser.email ?? '', getGraphQLErrorMessage(error, ''));
+        return;
+      }
       console.error('Błąd przy dodawaniu pacjenta:', error);
-      const gqlError = error as { graphQLErrors?: Array<{ message: string }> };
-      const errorMessage = gqlError.graphQLErrors?.[0]?.message || 'Nie udało się dodać pacjenta';
-      toast.error(errorMessage);
+      toast.error(getGraphQLErrorMessage(error, 'Nie udało się dodać pacjenta'));
     }
-  }, [foundUser, activeTherapistForFoundUser, addDirectMember, assignPatient, therapistId, organizationId, clinicId, onSuccess]);
+  }, [foundUser, activeTherapistForFoundUser, assignPatient, therapistId, organizationId, clinicId, onSuccess, openInvite]);
 
   const handleSubmitNewPatient = useCallback(
     async (values: z.infer<typeof patientFormSchema>) => {
@@ -446,9 +444,12 @@ export function UnifiedPatientInput({
         ...(contactType === 'phone' ? { phone: getCleanPhone(contactValue) } : {}),
       };
 
-      await onCreateNewPatient(patientData);
+      const outcome = await onCreateNewPatient(patientData);
+      if (outcome?.status === 'invite-required') {
+        openInvite(contactType === 'email' ? contactValue.trim() : '', outcome.message);
+      }
     },
-    [contactType, contactValue, onCreateNewPatient]
+    [contactType, contactValue, onCreateNewPatient, openInvite]
   );
 
   const handleEditContact = useCallback(() => {
@@ -464,6 +465,8 @@ export function UnifiedPatientInput({
     setSubmittedContact('');
     form.reset();
     setIsNoteExpanded(false);
+    setInvite(null);
+    setInvitationSent(false);
     setTimeout(() => contactInputRef.current?.focus(), 100);
   }, [form]);
 
@@ -505,6 +508,9 @@ export function UnifiedPatientInput({
           onCancel();
         } else if (viewState === 'form') {
           handleEditContact();
+        } else if (viewState === 'invite') {
+          if (invitationSent) onCancel();
+          else handleBackToSearch();
         }
         return;
       }
@@ -534,6 +540,7 @@ export function UnifiedPatientInput({
       handleBackToSearch,
       onCancel,
       handleEditContact,
+      invitationSent,
     ]
   );
 
@@ -625,8 +632,7 @@ export function UnifiedPatientInput({
                 className={cn('text-sm font-medium', isAlreadyAssignedToTherapist ? 'text-warning' : 'text-primary')}
               >
                 {isAlreadyAssignedToTherapist && 'Pacjent jest już na Twojej liście'}
-                {!isAlreadyAssignedToTherapist && isAlreadyInOrg && 'Pacjent już w organizacji'}
-                {!isAlreadyAssignedToTherapist && !isAlreadyInOrg && 'Znaleziono pacjenta w systemie'}
+                {!isAlreadyAssignedToTherapist && 'Pacjent już w organizacji'}
               </span>
             </div>
 
@@ -898,6 +904,32 @@ export function UnifiedPatientInput({
               </div>
             </form>
           </Form>
+        </div>
+      )}
+
+      {/* INVITE STATE (account outside the clinic: joins only after the patient accepts) */}
+      {viewState === 'invite' && invite && (
+        <div className="animate-in fade-in duration-200 space-y-6" data-testid="patient-unified-invite-step">
+          <PatientInvitePanel
+            initialEmail={invite.email}
+            reason={invite.reason || undefined}
+            onInvited={() => setInvitationSent(true)}
+          />
+          <div className="flex items-center justify-between gap-3 pt-6 border-t border-border">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleBackToSearch}
+              data-testid="patient-unified-invite-back-btn"
+            >
+              {invitationSent ? 'Dodaj kolejnego pacjenta' : 'Wróć'}
+            </Button>
+            {invitationSent && (
+              <Button type="button" onClick={onCancel} data-testid="patient-unified-invite-close-btn">
+                Zamknij
+              </Button>
+            )}
+          </div>
         </div>
       )}
 

@@ -22,6 +22,8 @@ Moduł pacjentów umożliwia zarządzanie bazą pacjentów fizjoterapeuty - doda
 | `PatientDialog`              | Dialog szczegółów                              |
 | `EditPatientDialog`          | Edycja danych pacjenta                         |
 | `UnifiedPatientInput`        | Zunifikowany input dodawania pacjenta          |
+| `PatientInvitePanel`         | Zaproszenie pacjenta z kontem spoza gabinetu   |
+| `PendingPatientInvitations`  | Zaproszenia czekające na akceptację, Wycofaj   |
 | `PatientAssignmentCard`      | Karta przypisania zestawu                      |
 | `EditExerciseOverrideDialog` | Nadpisywanie parametrów ćwiczenia dla pacjenta |
 | `ActivityReport`             | Raport aktywności pacjenta                     |
@@ -47,10 +49,12 @@ Moduł pacjentów umożliwia zarządzanie bazą pacjentów fizjoterapeuty - doda
 - `GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY` - przypisania po user ID
 - `FIND_USER_BY_EMAIL_QUERY`, `FIND_USER_BY_PHONE_QUERY` - wyszukiwanie pacjenta
 - `GET_USER_BY_ID_QUERY` - dane użytkowników
+- `GET_PATIENT_INVITATIONS_QUERY` - oczekujące zaproszenia pacjentów (organizacja z tokenu)
 
 **Mutations:**
 
 - Shadow patients: `CREATE_SHADOW_PATIENT_MUTATION`, `UPDATE_SHADOW_PATIENT_MUTATION`
+- Zgoda pacjenta: `INVITE_PATIENT_MUTATION`, `REVOKE_PATIENT_INVITATION_MUTATION`. Konto spoza gabinetu nie jest widoczne w wyszukiwaniu; create/link zwraca `PATIENT_INVITE_REQUIRED`, zmiana maila shadow na zajęty `PATIENT_EMAIL_UNAVAILABLE` → panel proponuje zaproszenie (fizjo-app#219).
 - Profile: `UPDATE_USER_MUTATION`, `UPDATE_USER_PROFILE_MUTATION`
 
 ### Kluczowe typy danych

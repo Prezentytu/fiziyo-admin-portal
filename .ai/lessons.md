@@ -31,6 +31,13 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 - **Przyczyna**: Operacje napisano według planu w specu, nie według `schema.graphql`; drugi raz ten sam wzorzec co wpis z 2026-09-19 (brak walidacji dokumentów GraphQL portalu względem SDL w CI).
 - **Rozwiązanie**: `runBatchArchive` (`src/features/verification/utils/batchArchive.ts`) woła istniejącą pojedynczą mutację per ćwiczenie i liczy wynik per ID; zaznaczanie tylko w zakładce, której status backend archiwizuje (`published` globalnie, `verified` w organizacji).
 - **Reguła**: Jeśli dodajesz operację GraphQL w portalu, zawsze sprawdź pole w `origin/main:backend/schema.graphql` z `fizjo-app`, nie w specu ani w checkoutcie innej gałęzi.
+### 2026-11-01 - Błąd mutacji czytany polem z Apollo 3
+
+- **Kategoria**: `GraphQL`
+- **Problem**: Edycja shadow pacjenta, dodawanie pacjenta i przedłużenie zestawu pokazywały ogólny komunikat („Nie udało się zaktualizować…”) zamiast treści i kodu z backendu.
+- **Przyczyna**: Kod rzutował błąd na `{ graphQLErrors }` z Apollo 3. Apollo 4 rzuca `CombinedGraphQLErrors` z `errors[]`, więc pole było zawsze `undefined`, a TypeScript tego nie widział przez `as`.
+- **Rozwiązanie**: `getGraphQLErrorCode` i `getGraphQLErrorMessage` w `src/features/patients/utils/patientConsent.ts` (przez `CombinedGraphQLErrors.is`); reguła `no-restricted-syntax` blokuje `graphQLErrors`.
+- **Reguła**: Jeśli czytasz błąd z `useMutation`, zawsze przez `CombinedGraphQLErrors.is` i `errors[i].extensions.code`, nigdy przez `as`. [egzekwowane: eslint.config.mjs]
 
 ### 2026-10-31 - Wyszukiwarka czatu: fikstura z polem, którego zapytanie nie pobiera
 

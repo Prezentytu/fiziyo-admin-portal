@@ -262,10 +262,13 @@ Panel / Mobile                     Backend (.NET)              OpenAI/OpenRouter
 │                                                       │
 │  Clerk signup → Webhook → Backend: tworzy User        │
 │  NIE tworzy organizacji                               │
-│  → Czeka na przypisanie przez fizjo:                  │
+│  → Dołącza do gabinetu tylko za swoją zgodą:          │
 │    • QR code (fizjo://connect)                        │
-│    • Wyszukanie po email/telefon                      │
+│    • Zaproszenie z panelu (invitePatient po email)    │
+│      → akceptacja w aplikacji → OrganizationMember    │
 │    • Kod zaproszenia                                  │
+│  Wyszukanie po email/telefon widzi tylko członków     │
+│  gabinetu; zajęty kontakt → PATIENT_INVITE_REQUIRED   │
 └──────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────┐

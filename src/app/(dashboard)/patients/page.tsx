@@ -15,6 +15,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { PageSheet, PageHeader } from '@/components/shared/page';
 import { PatientExpandableCard, PATIENT_ROW_GRID, type Patient } from '@/features/patients/PatientExpandableCard';
 import { PatientDialog } from '@/features/patients/PatientDialog';
+import { PendingPatientInvitations } from '@/features/patients/PendingPatientInvitations';
 import { PatientQRCodeDialog } from '@/features/patients/PatientQRCodeDialog';
 import { TakeOverDialog } from '@/features/patients/TakeOverDialog';
 import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
@@ -364,6 +365,8 @@ export default function PatientsPage() {
           </Button>
         </div>
       )}
+
+      {organizationId && <PendingPatientInvitations organizationId={organizationId} />}
 
       <section aria-label="Lista pacjentów">
         <div
