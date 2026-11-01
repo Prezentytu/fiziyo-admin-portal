@@ -87,4 +87,47 @@ describe('EditPatientDialog: PATIENT_EMAIL_UNAVAILABLE', () => {
     expect(screen.queryByText(EMAIL_UNAVAILABLE_MESSAGE)).not.toBeInTheDocument();
     expect(screen.queryByTestId('patient-invite-send-btn')).not.toBeInTheDocument();
   });
+
+  // Review #149 (P2): potwierdzenie zaproszenia nie znika po edycji ani po zapisie.
+  it('po wysłaniu zaproszenia zostawia potwierdzenie i przywraca poprzedni mail', async () => {
+    const user = userEvent.setup();
+    render(<EditPatientDialog open onOpenChange={vi.fn()} patient={patient} />);
+
+    const emailInput = screen.getByTestId('edit-patient-email');
+    await user.clear(emailInput);
+    await user.type(emailInput, 'zajety@example.com');
+    await user.click(screen.getByTestId('edit-patient-submit-btn'));
+    await user.click(await screen.findByTestId('patient-invite-send-btn', undefined, ASYNC));
+    await screen.findByTestId('patient-invite-pending', undefined, ASYNC);
+
+    expect(emailInput).toHaveValue('stary@example.com');
+    expect(emailInput).toBeDisabled();
+    expect(screen.getByTestId('edit-patient-submit-btn')).toBeDisabled();
+
+    await user.clear(screen.getByTestId('edit-patient-firstname'));
+    await user.type(screen.getByTestId('edit-patient-firstname'), 'Anita');
+    updatePatientMock.mockResolvedValue({ data: { updateShadowPatient: { id: 'patient-1' } } });
+    await user.click(screen.getByTestId('edit-patient-submit-btn'));
+
+    await waitFor(() => {
+      expect(updatePatientMock).toHaveBeenLastCalledWith(
+        expect.objectContaining({ variables: expect.objectContaining({ email: 'stary@example.com' }) })
+      );
+    }, ASYNC);
+  });
+
+  it('nie ogłasza zaproszenia bez potwierdzenia w odpowiedzi', async () => {
+    invitePatientMock.mockResolvedValue({ data: null });
+    const user = userEvent.setup();
+    render(<EditPatientDialog open onOpenChange={vi.fn()} patient={patient} />);
+
+    const emailInput = screen.getByTestId('edit-patient-email');
+    await user.clear(emailInput);
+    await user.type(emailInput, 'zajety@example.com');
+    await user.click(screen.getByTestId('edit-patient-submit-btn'));
+    await user.click(await screen.findByTestId('patient-invite-send-btn', undefined, ASYNC));
+
+    expect(await screen.findByText('Nie udało się utworzyć zaproszenia. Spróbuj ponownie.', undefined, ASYNC)).toBeInTheDocument();
+    expect(screen.queryByTestId('patient-invite-pending')).not.toBeInTheDocument();
+  });
 });

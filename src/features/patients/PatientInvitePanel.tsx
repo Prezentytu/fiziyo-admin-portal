@@ -48,7 +48,11 @@ export function PatientInvitePanel({
     setValidationError(null);
     try {
       const result = await invitePatient({ variables: { email: parsed.data } });
-      const sentTo = result.data?.invitePatient.email ?? parsed.data;
+      const invitation = result.data?.invitePatient;
+      if (!invitation?.id) {
+        throw new Error('Nie udało się utworzyć zaproszenia. Spróbuj ponownie.');
+      }
+      const sentTo = invitation.email;
       setInvitedEmail(sentTo);
       toast.success('Zaproszenie utworzone');
       onInvited?.(sentTo);

@@ -64,6 +64,9 @@ export function EditPatientDialog({ open, onOpenChange, patient, onSuccess }: Re
   const [phone, setPhone] = useState(shouldReset ? initialValues.phone : '');
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [emailConflict, setEmailConflict] = useState<{ email: string; message: string } | null>(null);
+  // Po wysłaniu zaproszenia potwierdzenie zostaje, a mail wraca do poprzedniego: zajęty adres
+  // należy do innego konta i nie trafi do tego pacjenta.
+  const [emailInvited, setEmailInvited] = useState(false);
 
   // Sync tracking - update lastSyncedPatientId when we detect a new patient
   if (shouldReset) {
@@ -73,6 +76,7 @@ export function EditPatientDialog({ open, onOpenChange, patient, onSuccess }: Re
     setEmail(initialValues.email);
     setPhone(initialValues.phone);
     setEmailConflict(null);
+    setEmailInvited(false);
   }
 
   // Check if there are unsaved changes
@@ -110,7 +114,9 @@ export function EditPatientDialog({ open, onOpenChange, patient, onSuccess }: Re
       return;
     }
 
-    setEmailConflict(null);
+    if (!emailInvited) {
+      setEmailConflict(null);
+    }
     try {
       await updatePatient({
         variables: {
@@ -220,7 +226,7 @@ export function EditPatientDialog({ open, onOpenChange, patient, onSuccess }: Re
                 }}
                 placeholder="jan@example.com"
                 className="h-11"
-                disabled={!isShadowUser}
+                disabled={!isShadowUser || emailInvited}
                 data-testid="edit-patient-email"
               />
               {!isShadowUser && (
@@ -241,6 +247,10 @@ export function EditPatientDialog({ open, onOpenChange, patient, onSuccess }: Re
                     key={emailConflict.email}
                     initialEmail={emailConflict.email}
                     sendLabel="Wyślij zaproszenie na ten adres"
+                    onInvited={() => {
+                      setEmailInvited(true);
+                      setEmail(initialValues.email);
+                    }}
                   />
                 </div>
               )}
