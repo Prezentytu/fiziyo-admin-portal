@@ -22,6 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import { GET_CURRENT_BILLING_STATUS_QUERY } from '@/graphql/queries/billing.queries';
+import { getGraphQLErrorMessage } from './utils/patientConsent';
 
 interface ExtendSetDialogProps {
   readonly open: boolean;
@@ -97,18 +98,8 @@ export function ExtendSetDialog({
   const newStartDate = isExpired ? new Date() : currentEndDate;
   const newEndDate = addDays(newStartDate, Number.parseInt(durationDays, 10));
 
-  const getGraphQLErrorMessage = (error: unknown): string | null => {
-    if (typeof error !== 'object' || error === null) {
-      return null;
-    }
-
-    const maybeApolloError = error as { graphQLErrors?: Array<{ message?: string }> };
-    const serverMessage = maybeApolloError.graphQLErrors?.[0]?.message;
-    return serverMessage ?? null;
-  };
-
   const mapExtendErrorMessage = (error: unknown): string => {
-    const serverMessage = getGraphQLErrorMessage(error);
+    const serverMessage = getGraphQLErrorMessage(error, '') || null;
 
     if (serverMessage?.includes('Data zakończenia nie może być wcześniejsza')) {
       return 'Nieprawidłowe daty. Data zakończenia musi być późniejsza od rozpoczęcia.';

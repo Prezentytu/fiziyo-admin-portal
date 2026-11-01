@@ -218,3 +218,29 @@ export const RESEND_INVITATION_MUTATION = gql`
     }
   }
 `;
+
+/**
+ * Zaproszenie pacjenta do organizacji z tokenu. Pacjent dołącza po akceptacji w aplikacji.
+ * Ten sam adres przedłuża istniejące zaproszenie zamiast tworzyć drugie.
+ */
+export const INVITE_PATIENT_MUTATION = gql`
+  mutation InvitePatient($email: String!) {
+    invitePatient(email: $email) {
+      id
+      organizationId
+      email
+      status
+      createdAt
+      expiresAt
+    }
+  }
+`;
+
+/**
+ * Wycofanie oczekującego zaproszenia pacjenta (organizacja z tokenu)
+ */
+export const REVOKE_PATIENT_INVITATION_MUTATION = gql`
+  mutation RevokePatientInvitation($invitationId: String!) {
+    revokePatientInvitation(invitationId: $invitationId)
+  }
+`;
