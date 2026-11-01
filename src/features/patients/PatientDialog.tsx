@@ -9,10 +9,11 @@ import { UserPlus, CheckCircle2, Send, UserPlus2, X, Sparkles } from 'lucide-rea
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { UnifiedPatientInput, PatientFormValues } from './UnifiedPatientInput';
+import { UnifiedPatientInput, type CreatePatientOutcome, type PatientFormValues } from './UnifiedPatientInput';
 import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
 import { CREATE_SHADOW_PATIENT_MUTATION } from '@/graphql/mutations/users.mutations';
 import { formatPatientPhone, patientCreateRefetchQueries } from './utils/shadowPatient';
+import { PATIENT_INVITE_REQUIRED, getGraphQLErrorCode, getGraphQLErrorMessage } from './utils/patientConsent';
 import { cn } from '@/lib/utils';
 import { getAvatarGradient, getInitials } from '@/utils/textUtils';
 import type { Patient } from '@/features/assignment/types';
@@ -105,7 +106,7 @@ export function PatientDialog({
   });
 
   // Handler for new patient creation (from SmartPatientLookup form mode)
-  const handleCreateNewPatient = async (values: PatientFormValues) => {
+  const handleCreateNewPatient = async (values: PatientFormValues): Promise<CreatePatientOutcome> => {
     try {
       // Format phone with +48 prefix if provided (backend expects full number)
       // Phone może być puste jeśli podano email - wysyłamy null zamiast ''
@@ -145,7 +146,7 @@ export function PatientDialog({
         onOpenChange(false);
         onSuccess?.();
         toast.success('Pacjent został dodany');
-        return;
+        return { status: 'created' };
       }
 
       // Trigger success animation
@@ -160,9 +161,14 @@ export function PatientDialog({
       });
       setFormIsDirty(false);
       toast.success('Pacjent został dodany');
+      return { status: 'created' };
     } catch (error) {
+      if (getGraphQLErrorCode(error) === PATIENT_INVITE_REQUIRED) {
+        return { status: 'invite-required', message: getGraphQLErrorMessage(error, '') };
+      }
       console.error('Błąd podczas dodawania pacjenta:', error);
-      toast.error('Nie udało się dodać pacjenta');
+      toast.error(getGraphQLErrorMessage(error, 'Nie udało się dodać pacjenta'));
+      return { status: 'failed' };
     }
   };
 

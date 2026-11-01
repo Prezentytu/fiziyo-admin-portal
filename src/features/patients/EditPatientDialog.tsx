@@ -15,6 +15,8 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { UPDATE_SHADOW_PATIENT_MUTATION } from '@/graphql/mutations/users.mutations';
 import { GET_USER_BY_ID_QUERY } from '@/graphql/queries/users.queries';
 import { formatPatientPhone } from './utils/shadowPatient';
+import { PATIENT_EMAIL_UNAVAILABLE, getGraphQLErrorCode, getGraphQLErrorMessage } from './utils/patientConsent';
+import { PatientInvitePanel } from './PatientInvitePanel';
 
 interface Patient {
   id: string;
@@ -61,6 +63,7 @@ export function EditPatientDialog({ open, onOpenChange, patient, onSuccess }: Re
   const [email, setEmail] = useState(shouldReset ? initialValues.email : '');
   const [phone, setPhone] = useState(shouldReset ? initialValues.phone : '');
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [emailConflict, setEmailConflict] = useState<{ email: string; message: string } | null>(null);
 
   // Sync tracking - update lastSyncedPatientId when we detect a new patient
   if (shouldReset) {
@@ -69,6 +72,7 @@ export function EditPatientDialog({ open, onOpenChange, patient, onSuccess }: Re
     setLastName(initialValues.lastName);
     setEmail(initialValues.email);
     setPhone(initialValues.phone);
+    setEmailConflict(null);
   }
 
   // Check if there are unsaved changes
@@ -106,6 +110,7 @@ export function EditPatientDialog({ open, onOpenChange, patient, onSuccess }: Re
       return;
     }
 
+    setEmailConflict(null);
     try {
       await updatePatient({
         variables: {
@@ -120,10 +125,15 @@ export function EditPatientDialog({ open, onOpenChange, patient, onSuccess }: Re
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {
+      if (getGraphQLErrorCode(error) === PATIENT_EMAIL_UNAVAILABLE) {
+        setEmailConflict({
+          email: email.trim(),
+          message: getGraphQLErrorMessage(error, 'Tego adresu nie można przypisać temu pacjentowi.'),
+        });
+        return;
+      }
       console.error('Błąd podczas aktualizacji pacjenta:', error);
-      const gqlError = error as { graphQLErrors?: Array<{ message: string }> };
-      const errorMessage = gqlError.graphQLErrors?.[0]?.message || 'Nie udało się zaktualizować danych pacjenta';
-      toast.error(errorMessage);
+      toast.error(getGraphQLErrorMessage(error, 'Nie udało się zaktualizować danych pacjenta'));
     }
   };
 
@@ -204,7 +214,10 @@ export function EditPatientDialog({ open, onOpenChange, patient, onSuccess }: Re
                 id="email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setEmailConflict(null);
+                }}
                 placeholder="jan@example.com"
                 className="h-11"
                 disabled={!isShadowUser}
@@ -214,6 +227,22 @@ export function EditPatientDialog({ open, onOpenChange, patient, onSuccess }: Re
                 <p className="text-xs text-muted-foreground">
                   Email nie może być zmieniony dla użytkowników z aktywnym kontem.
                 </p>
+              )}
+              {emailConflict && (
+                <div className="space-y-3 pt-1" data-testid="edit-patient-email-conflict">
+                  <p
+                    role="alert"
+                    className="flex items-start gap-2 rounded-lg border border-status-warning/30 bg-status-warning-muted p-3 text-sm text-foreground"
+                  >
+                    <AlertCircle className="h-4 w-4 mt-0.5 shrink-0 text-status-warning" aria-hidden="true" />
+                    {emailConflict.message}
+                  </p>
+                  <PatientInvitePanel
+                    key={emailConflict.email}
+                    initialEmail={emailConflict.email}
+                    sendLabel="Wyślij zaproszenie na ten adres"
+                  />
+                </div>
               )}
             </div>
 
