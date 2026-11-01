@@ -10,7 +10,8 @@ import { GET_ALL_THERAPIST_PATIENTS_QUERY } from '@/graphql/queries/therapists.q
 const INVITE_REQUIRED_MESSAGE =
   'Tego pacjenta nie można dodać bezpośrednio. Wyślij zaproszenie na jego adres email – pacjent dołączy do gabinetu po akceptacji w aplikacji.';
 
-const ASYNC = { timeout: 3000 };
+// Pełny zestaw vitest równolegle spowalnia userEvent.type; 3 s dawało flaki w `npm run validate`.
+const ASYNC = { timeout: 10000 };
 const mockUseQuery = vi.fn();
 const invitePatientMock = vi.fn();
 const assignPatientMock = vi.fn();
@@ -69,7 +70,7 @@ async function submitNewPatient(user: ReturnType<typeof userEvent.setup>, contac
   await user.click(screen.getByTestId('patient-unified-form-submit-btn'));
 }
 
-describe('UnifiedPatientInput: PATIENT_INVITE_REQUIRED', () => {
+describe('UnifiedPatientInput: PATIENT_INVITE_REQUIRED', { timeout: 20000 }, () => {
   beforeEach(() => {
     vi.clearAllMocks();
     invitePatientMock.mockResolvedValue({
