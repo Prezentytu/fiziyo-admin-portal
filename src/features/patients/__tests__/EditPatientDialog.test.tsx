@@ -130,4 +130,26 @@ describe('EditPatientDialog: PATIENT_EMAIL_UNAVAILABLE', () => {
     expect(await screen.findByText('Nie udało się utworzyć zaproszenia. Spróbuj ponownie.', undefined, ASYNC)).toBeInTheDocument();
     expect(screen.queryByTestId('patient-invite-pending')).not.toBeInTheDocument();
   });
+
+  // Review #149 (P2): zamknięcie i ponowne otwarcie tego samego pacjenta odblokowuje mail.
+  it('po zaproszeniu, zamknięciu i ponownym otwarciu pole maila jest edytowalne', async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<EditPatientDialog open onOpenChange={vi.fn()} patient={patient} />);
+
+    const emailInput = screen.getByTestId('edit-patient-email');
+    await user.clear(emailInput);
+    await user.type(emailInput, 'zajety@example.com');
+    await user.click(screen.getByTestId('edit-patient-submit-btn'));
+    await user.click(await screen.findByTestId('patient-invite-send-btn', undefined, ASYNC));
+    await screen.findByTestId('patient-invite-pending', undefined, ASYNC);
+    expect(screen.getByTestId('edit-patient-email')).toBeDisabled();
+
+    rerender(<EditPatientDialog open={false} onOpenChange={vi.fn()} patient={patient} />);
+    rerender(<EditPatientDialog open onOpenChange={vi.fn()} patient={patient} />);
+
+    const reopenedEmail = await screen.findByTestId('edit-patient-email', undefined, ASYNC);
+    expect(reopenedEmail).not.toBeDisabled();
+    expect(reopenedEmail).toHaveValue('stary@example.com');
+    expect(screen.queryByTestId('edit-patient-email-conflict')).not.toBeInTheDocument();
+  });
 });

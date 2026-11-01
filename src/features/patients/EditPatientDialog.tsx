@@ -67,6 +67,20 @@ export function EditPatientDialog({ open, onOpenChange, patient, onSuccess }: Re
   // Po wysłaniu zaproszenia potwierdzenie zostaje, a mail wraca do poprzedniego: zajęty adres
   // należy do innego konta i nie trafi do tego pacjenta.
   const [emailInvited, setEmailInvited] = useState(false);
+  const [wasOpen, setWasOpen] = useState(open);
+
+  // Dialog zostaje zamontowany po zamknięciu: ponowne otwarcie zaczyna bez starego konfliktu maila,
+  // inaczej pole zostawało zablokowane po wcześniejszym zaproszeniu.
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) {
+      setEmailInvited(false);
+      setEmailConflict(null);
+      if (patient) {
+        setEmail(initialValues.email);
+      }
+    }
+  }
 
   // Sync tracking - update lastSyncedPatientId when we detect a new patient
   if (shouldReset) {
