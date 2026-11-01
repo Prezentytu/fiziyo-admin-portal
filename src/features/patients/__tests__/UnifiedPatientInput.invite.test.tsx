@@ -10,7 +10,6 @@ import { GET_ALL_THERAPIST_PATIENTS_QUERY } from '@/graphql/queries/therapists.q
 const INVITE_REQUIRED_MESSAGE =
   'Tego pacjenta nie można dodać bezpośrednio. Wyślij zaproszenie na jego adres email – pacjent dołączy do gabinetu po akceptacji w aplikacji.';
 
-// Pełny zestaw vitest równolegle spowalnia userEvent.type; 3 s dawało flaki w `npm run validate`.
 const ASYNC = { timeout: 10000 };
 const mockUseQuery = vi.fn();
 const invitePatientMock = vi.fn();
@@ -65,8 +64,15 @@ function renderInput(onCreateNewPatient = vi.fn()) {
 async function submitNewPatient(user: ReturnType<typeof userEvent.setup>, contact: string) {
   await user.type(screen.getByTestId('patient-unified-input'), contact);
   await user.click(screen.getByTestId('patient-unified-next-btn'));
-  await user.type(await screen.findByTestId('patient-unified-firstname-input', undefined, ASYNC), 'Anna');
-  await user.type(screen.getByTestId('patient-unified-lastname-input'), 'Nowak');
+  const firstName = await screen.findByTestId('patient-unified-firstname-input', undefined, ASYNC);
+  // Formularz po 100 ms przenosi focus na imię (setTimeout). Na wolnym CI timer wpadał w trakcie
+  // wpisywania nazwiska i litery lądowały w imieniu; czekamy, aż focus już tam jest.
+  await waitFor(() => expect(firstName).toHaveFocus(), ASYNC);
+  await user.type(firstName, 'Anna');
+  const lastName = screen.getByTestId('patient-unified-lastname-input');
+  await user.type(lastName, 'Nowak');
+  expect(firstName).toHaveValue('Anna');
+  expect(lastName).toHaveValue('Nowak');
   await user.click(screen.getByTestId('patient-unified-form-submit-btn'));
 }
 
