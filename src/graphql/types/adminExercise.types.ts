@@ -197,22 +197,8 @@ export interface BulkArchiveResult {
   errors: string[];
 }
 
-export interface BatchArchiveExercisesVariables {
-  exerciseIds: string[];
-  reason?: string | null;
-}
-
-export interface BatchArchiveOrganizationExercisesVariables extends BatchArchiveExercisesVariables {
-  organizationId: string;
-}
-
-export interface OrganizationExerciseScopeInput {
-  organizationId: string;
+export interface ArchiveExerciseVariables {
   exerciseId: string;
-}
-
-export interface BatchArchiveOrganizationExercisesAsAdminVariables {
-  organizationExercises: OrganizationExerciseScopeInput[];
   reason?: string | null;
 }
 
@@ -347,16 +333,12 @@ export interface BatchApproveExercisesResponse {
   };
 }
 
-export interface BatchArchiveExercisesResponse {
-  batchArchiveExercises: BulkArchiveResult;
+export interface ArchiveOrganizationExerciseResponse {
+  archiveOrganizationExercise: Pick<AdminExercise, 'id'> | null;
 }
 
-export interface BatchArchiveOrganizationExercisesResponse {
-  batchArchiveOrganizationExercises: BulkArchiveResult;
-}
-
-export interface BatchArchiveOrganizationExercisesAsAdminResponse {
-  batchArchiveOrganizationExercisesAsAdmin: BulkArchiveResult;
+export interface ArchiveOrganizationExerciseAsAdminResponse {
+  archiveOrganizationExerciseAsAdmin: Pick<AdminExercise, 'id'> | null;
 }
 
 export interface PublishApprovedExercisesResponse {

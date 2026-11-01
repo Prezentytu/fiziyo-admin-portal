@@ -22,10 +22,12 @@ import {
   GET_CROSS_ORG_VERIFICATION_QUEUE_PAGE_QUERY,
   GET_CROSS_ORG_VERIFICATION_STATS_QUERY,
 } from '@/graphql/queries/crossOrgVerification.queries';
-import { BATCH_ARCHIVE_ORGANIZATION_EXERCISES_AS_ADMIN_MUTATION } from '@/graphql/mutations/crossOrgVerification.mutations';
+import { ARCHIVE_ORGANIZATION_EXERCISE_AS_ADMIN_MUTATION } from '@/graphql/mutations/crossOrgVerification.mutations';
+import { formatBatchArchiveSummary, runBatchArchive } from '@/features/verification/utils/batchArchive';
 import { ON_EXERCISE_SUBMITTED_FOR_GLOBAL_REVIEW } from '@/graphql/subscriptions';
 import type {
-  BatchArchiveOrganizationExercisesAsAdminResponse,
+  ArchiveExerciseVariables,
+  ArchiveOrganizationExerciseAsAdminResponse,
   CrossOrgVerificationQueuePage,
   GetCrossOrgVerificationStatsResponse,
 } from '@/graphql/types/adminExercise.types';
@@ -89,9 +91,13 @@ export default function CrossOrgVerificationPage() {
     [visibleQueueItems]
   );
   const selection = useVerificationSelection(visibleExerciseIds);
-  const [batchArchiveExercises, { loading: archiving }] = useMutation<BatchArchiveOrganizationExercisesAsAdminResponse>(
-    BATCH_ARCHIVE_ORGANIZATION_EXERCISES_AS_ADMIN_MUTATION
-  );
+  const [archiveOrganizationExerciseAsAdmin] = useMutation<
+    ArchiveOrganizationExerciseAsAdminResponse,
+    ArchiveExerciseVariables
+  >(ARCHIVE_ORGANIZATION_EXERCISE_AS_ADMIN_MUTATION);
+  const [archiving, setArchiving] = useState(false);
+  // Archiwizować da się tylko ćwiczenia OrgVerified (backend), więc zaznaczanie jest tylko w tej zakładce.
+  const canArchive = filter === 'verified';
 
   useSubscription<{ onExerciseSubmittedForGlobalReview: string }>(ON_EXERCISE_SUBMITTED_FOR_GLOBAL_REVIEW, {
     skip: !isSiteSuperAdmin,
@@ -124,43 +130,32 @@ export default function CrossOrgVerificationPage() {
   }, [filter, search, page, pageSize]);
 
   const handleArchiveSelected = async () => {
-    const selectedIdSet = new Set(selection.selectedIds);
-    const organizationExercises = visibleQueueItems
-      .filter((queueItem) => selectedIdSet.has(queueItem.exercise.id))
-      .map((queueItem) => ({
-        organizationId: queueItem.organizationId,
-        exerciseId: queueItem.exercise.id,
-      }));
-
-    if (organizationExercises.length === 0) {
+    const selectedIds = selection.selectedIds;
+    if (selectedIds.length === 0) {
       return;
     }
 
+    setArchiving(true);
     try {
-      const response = await batchArchiveExercises({
-        variables: { organizationExercises, reason: null },
+      // Backend wyznacza organizację z samego ćwiczenia, więc wystarczy exerciseId.
+      const result = await runBatchArchive(selectedIds, async (exerciseId) => {
+        const response = await archiveOrganizationExerciseAsAdmin({ variables: { exerciseId, reason: null } });
+        if (response.error) {
+          throw response.error;
+        }
+        return response.data?.archiveOrganizationExerciseAsAdmin ?? null;
       });
-      const result = response.data?.batchArchiveOrganizationExercisesAsAdmin;
-      if (!result) {
-        throw new Error('Brak wyniku archiwizacji');
-      }
 
       const failedIdSet = new Set(result.failedIds);
-      selection.remove(
-        organizationExercises.map((item) => item.exerciseId).filter((exerciseId) => !failedIdSet.has(exerciseId))
-      );
-      await Promise.all([refetchStats(), refetchQueue()]);
+      selection.remove(selectedIds.filter((exerciseId) => !failedIdSet.has(exerciseId)));
       setArchiveDialogOpen(false);
-
-      if (result.failedIds.length > 0) {
-        toast.warning(
-          `Zarchiwizowano ${result.successCount} z ${result.totalRequested} ćwiczeń. Niektóre pozycje wymagają ponowienia.`
-        );
-      } else {
-        toast.success(`Zarchiwizowano ${result.successCount} ćwiczeń.`);
-      }
+      const summary = formatBatchArchiveSummary(result);
+      toast[summary.kind](summary.message);
+      await Promise.all([refetchStats(), refetchQueue()]);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Nie udało się zarchiwizować ćwiczeń.');
+      toast.error(error instanceof Error ? error.message : 'Nie udało się odświeżyć listy po archiwizacji.');
+    } finally {
+      setArchiving(false);
     }
   };
 
@@ -235,7 +230,7 @@ export default function CrossOrgVerificationPage() {
         onToggleVisible={selection.toggleVisible}
         onClear={selection.clear}
         onArchive={() => setArchiveDialogOpen(true)}
-        disabled={filter === 'archived' || queueLoading}
+        disabled={!canArchive || queueLoading}
         isArchiving={archiving}
       />
 
@@ -254,7 +249,7 @@ export default function CrossOrgVerificationPage() {
               </div>
               <VerificationTaskCard
                 exercise={queueItem.exercise}
-                selectable={filter !== 'archived'}
+                selectable={canArchive}
                 selected={selection.isSelected(queueItem.exercise.id)}
                 onSelectionChange={() => selection.toggle(queueItem.exercise.id)}
                 detailHref={`/verification/organizations/${queueItem.exercise.id}?${detailQueryString}`}
