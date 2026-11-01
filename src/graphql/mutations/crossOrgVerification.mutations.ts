@@ -36,16 +36,3 @@ export const ARCHIVE_ORGANIZATION_EXERCISE_AS_ADMIN_MUTATION = gql`
   ${ORG_VERIFICATION_MUTATION_RESULT_FRAGMENT}
 `;
 
-export const BATCH_ARCHIVE_ORGANIZATION_EXERCISES_AS_ADMIN_MUTATION = gql`
-  mutation BatchArchiveOrganizationExercisesAsAdmin(
-    $organizationExercises: [OrganizationExerciseScopeInput!]!
-    $reason: String
-  ) {
-    batchArchiveOrganizationExercisesAsAdmin(organizationExercises: $organizationExercises, reason: $reason) {
-      totalRequested
-      successCount
-      failedIds
-      errors
-    }
-  }
-`;

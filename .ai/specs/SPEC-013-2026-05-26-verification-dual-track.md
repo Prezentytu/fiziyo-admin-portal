@@ -101,13 +101,13 @@ Centrum Weryfikacji wspiera masowe zaznaczanie i archiwizację ćwiczeń w trzec
 
 Archiwizacja jest soft-delete: rekord ćwiczenia, media i historia recenzji pozostają zachowane, a ćwiczenie znika z aktywnej kolejki i pozostaje dostępne w filtrze archiwalnym. Zaznaczenie obejmuje wyłącznie elementy aktualnie załadowanej strony paginacji. Wynik bulk operation musi raportować sukcesy i błędy per ID, aby częściowa porażka nie była ukryta przed recenzentem.
 
-Proponowane additive-first mutacje GraphQL:
+Backend nie ma mutacji zbiorczych (`batchArchive*` nigdy nie powstały). Panel archiwizuje zaznaczenie, wołając pojedynczą mutację per ćwiczenie (`src/features/verification/utils/batchArchive.ts`, maks. 4 równolegle) i raportuje wynik per ID: sukces tylko przy potwierdzeniu w `data`, częściowa porażka jako ostrzeżenie z liczbą nieudanych, nieudane pozycje zostają zaznaczone.
 
-- `batchArchiveExercises(exerciseIds, reason)` — globalny ContentManager,
-- `batchArchiveOrganizationExercises(organizationId, exerciseIds, reason)` — Owner/Admin bieżącej organizacji,
-- `batchArchiveOrganizationExercisesAsAdmin(organizationExercises, reason)` — SiteSuperAdmin, gdzie każdy element niesie `organizationId` i `exerciseId`.
+- globalna: `unpublishExercise(exerciseId, reason)` — ContentManager; backend wycofuje tylko `PUBLISHED`, więc zaznaczanie jest tylko w zakładce „published”,
+- organizacja: `archiveOrganizationExercise(exerciseId, reason)` — Owner/Admin bieżącej organizacji (scope z kontekstu tenantu),
+- cross-org: `archiveOrganizationExerciseAsAdmin(exerciseId, reason)` — backend wyznacza organizację z ćwiczenia i sprawdza uprawnienia.
 
-Każda mutacja musi ponownie sprawdzać RBAC, scope organizacji i dozwolone przejścia state machine; frontend nie może traktować samego `exerciseId` jako dowodu przynależności do organizacji.
+Obie mutacje organizacyjne archiwizują tylko `ORG_VERIFIED`, więc zaznaczanie jest tylko w zakładce „verified”. Każda mutacja sprawdza RBAC, scope organizacji i dozwolone przejście state machine po stronie backendu.
 
 ## Changelog
 
@@ -120,3 +120,7 @@ Każda mutacja musi ponownie sprawdzać RBAC, scope organizacji i dozwolone prze
 
 - Dodano plan bulk selection i soft-delete/archiwizacji dla globalnej, organizacyjnej i cross-org kolejki.
 - Ustalono page-scoped selection, jawne potwierdzenie i obsługę partial failure.
+
+### 2026-11-01
+
+- Akcja zbiorcza woła istniejące pojedyncze mutacje zamiast nieistniejących `batchArchive*`; zaznaczanie ograniczone do zakładek, w których backend pozwala archiwizować.

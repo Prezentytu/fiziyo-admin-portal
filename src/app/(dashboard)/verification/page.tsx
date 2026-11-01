@@ -36,7 +36,6 @@ import {
   SCAN_EXERCISE_REPOSITORY_MUTATION,
   IMPORT_EXERCISES_TO_REVIEW_MUTATION,
   UNPUBLISH_EXERCISE_MUTATION,
-  BATCH_ARCHIVE_EXERCISES_MUTATION,
 } from '@/graphql/mutations/adminExercises.mutations';
 import { ON_EXERCISE_SUBMITTED_FOR_GLOBAL_REVIEW } from '@/graphql/subscriptions';
 import Link from 'next/link';
@@ -54,8 +53,9 @@ import type {
   GetVerificationQueuePageVariables,
   UnpublishExerciseResponse,
   AdminExercise,
-  BatchArchiveExercisesResponse,
+  ArchiveExerciseVariables,
 } from '@/graphql/types/adminExercise.types';
+import { formatBatchArchiveSummary, runBatchArchive } from '@/features/verification/utils/batchArchive';
 import type { ExerciseReport } from '@/types/exercise-report.types';
 import { useVerificationSelection } from '@/features/verification/utils/verificationSelection';
 import { formatRelativeTime } from '@/utils/dateUtils';
@@ -391,7 +391,7 @@ export default function VerificationPage() {
     UNPUBLISH_EXERCISE_MUTATION,
     {
       onCompleted: () => {
-        toast.success('Ćwiczenie zostało cofnięte do wersji roboczej.');
+        toast.success('Ćwiczenie zostało wycofane z bazy globalnej.');
         refetchStats();
         refetchQueue();
       },
@@ -405,9 +405,13 @@ export default function VerificationPage() {
     unpublishExercise({ variables: { exerciseId, reason } });
   };
 
-  const [batchArchiveExercises, { loading: archiving }] = useMutation<BatchArchiveExercisesResponse>(
-    BATCH_ARCHIVE_EXERCISES_MUTATION
+  // Zbiorcze wycofanie z bazy globalnej = unpublishExercise per ćwiczenie (status ArchivedGlobal).
+  // Backend wycofuje tylko ćwiczenia opublikowane, więc zaznaczanie jest tylko w zakładce „published”.
+  const [unpublishExerciseForBatch] = useMutation<UnpublishExerciseResponse, ArchiveExerciseVariables>(
+    UNPUBLISH_EXERCISE_MUTATION
   );
+  const [archiving, setArchiving] = useState(false);
+  const canArchive = activeFilter === 'published';
 
   useEffect(() => {
     if (!canReviewExercises) {
@@ -669,29 +673,26 @@ export default function VerificationPage() {
       return;
     }
 
+    setArchiving(true);
     try {
-      const response = await batchArchiveExercises({
-        variables: { exerciseIds: selectedIds, reason: null },
+      const result = await runBatchArchive(selectedIds, async (exerciseId) => {
+        const response = await unpublishExerciseForBatch({ variables: { exerciseId, reason: null } });
+        if (response.error) {
+          throw response.error;
+        }
+        return response.data?.unpublishExercise ?? null;
       });
-      const result = response.data?.batchArchiveExercises;
-      if (!result) {
-        throw new Error('Brak wyniku archiwizacji');
-      }
 
       const failedIdSet = new Set(result.failedIds);
       selection.remove(selectedIds.filter((exerciseId) => !failedIdSet.has(exerciseId)));
-      await Promise.all([refetchStats(), refetchQueue()]);
       setArchiveDialogOpen(false);
-
-      if (result.failedIds.length > 0) {
-        toast.warning(
-          `Zarchiwizowano ${result.successCount} z ${result.totalRequested} ćwiczeń. Niektóre pozycje wymagają ponowienia.`
-        );
-      } else {
-        toast.success(`Zarchiwizowano ${result.successCount} ćwiczeń.`);
-      }
+      const summary = formatBatchArchiveSummary(result);
+      toast[summary.kind](summary.message);
+      await Promise.all([refetchStats(), refetchQueue()]);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Nie udało się zarchiwizować ćwiczeń.');
+      toast.error(error instanceof Error ? error.message : 'Nie udało się odświeżyć listy po archiwizacji.');
+    } finally {
+      setArchiving(false);
     }
   };
 
@@ -819,7 +820,7 @@ export default function VerificationPage() {
         onToggleVisible={selection.toggleVisible}
         onClear={selection.clear}
         onArchive={() => setArchiveDialogOpen(true)}
-        disabled={activeFilter === 'archived' || isLoading}
+        disabled={!canArchive || isLoading}
         isArchiving={archiving}
       />
 
@@ -886,7 +887,7 @@ export default function VerificationPage() {
               exercise={exercise}
               onUnpublish={activeFilter === 'published' ? handleUnpublish : undefined}
               isUnpublishing={unpublishing}
-              selectable={activeFilter !== 'archived'}
+              selectable={canArchive}
               selected={selection.isSelected(exercise.id)}
               onSelectionChange={() => selection.toggle(exercise.id)}
               detailHref={`/verification/${exercise.id}?${detailQueryString}`}
@@ -902,7 +903,7 @@ export default function VerificationPage() {
               exercise={exercise}
               onUnpublish={activeFilter === 'published' ? handleUnpublish : undefined}
               isUnpublishing={unpublishing}
-              selectable={activeFilter !== 'archived'}
+              selectable={canArchive}
               selected={selection.isSelected(exercise.id)}
               onSelectionChange={() => selection.toggle(exercise.id)}
               detailHref={`/verification/${exercise.id}?${detailQueryString}`}

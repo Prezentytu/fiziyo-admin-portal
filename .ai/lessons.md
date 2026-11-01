@@ -24,6 +24,13 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 
 ## Wpisy
 
+### 2026-11-01 - Zbiorcza archiwizacja wołała mutacje, których backend nie ma
+
+- **Kategoria**: `GraphQL` | `Verification`
+- **Problem**: Przyciski „Archiwizuj” na trzech listach weryfikacji zawsze kończyły się błędem: `batchArchiveExercises`, `batchArchiveOrganizationExercises` i `batchArchiveOrganizationExercisesAsAdmin` z SPEC-013 nigdy nie powstały w backendzie. Zaznaczanie działało też w zakładkach, w których backend nie pozwala archiwizować.
+- **Przyczyna**: Operacje napisano według planu w specu, nie według `schema.graphql`; drugi raz ten sam wzorzec co wpis z 2026-09-19 (brak walidacji dokumentów GraphQL portalu względem SDL w CI).
+- **Rozwiązanie**: `runBatchArchive` (`src/features/verification/utils/batchArchive.ts`) woła istniejącą pojedynczą mutację per ćwiczenie i liczy wynik per ID; zaznaczanie tylko w zakładce, której status backend archiwizuje (`published` globalnie, `verified` w organizacji).
+- **Reguła**: Jeśli dodajesz operację GraphQL w portalu, zawsze sprawdź pole w `origin/main:backend/schema.graphql` z `fizjo-app`, nie w specu ani w checkoutcie innej gałęzi.
 ### 2026-11-01 - Błąd mutacji czytany polem z Apollo 3
 
 - **Kategoria**: `GraphQL`

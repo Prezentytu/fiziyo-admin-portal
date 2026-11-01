@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-31T09:27:44.800Z",
+  "generatedAt": "2026-11-01T17:35:33.512Z",
   "description": "Legacy interactive elements without data-testid. Keep shrinking this list; CI fails on new entries.",
   "entries": [
     "src/app/(auth)/invite/page.tsx:183:Button",
@@ -11,7 +11,7 @@
     "src/app/(auth)/reset-password/page.tsx:484:Input",
     "src/app/(blocked)/patient-redirect/page.tsx:70:a",
     "src/app/(blocked)/patient-redirect/page.tsx:78:a",
-    "src/app/(dashboard)/verification/page.tsx:929:Select",
+    "src/app/(dashboard)/verification/page.tsx:930:Select",
     "src/components/billing/TherapistBillingTable.tsx:146:Button",
     "src/components/clinical/ClinicalNoteEditor.tsx:305:Select",
     "src/components/finances/RevenueHistoryTable.tsx:186:Button",

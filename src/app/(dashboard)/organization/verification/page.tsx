@@ -27,9 +27,11 @@ import {
   GET_ORGANIZATION_VERIFICATION_QUEUE_PAGE_QUERY,
   GET_ORGANIZATION_VERIFICATION_STATS_QUERY,
 } from '@/graphql/queries/adminExercises.queries';
-import { BATCH_ARCHIVE_ORGANIZATION_EXERCISES_MUTATION } from '@/graphql/mutations/adminExercises.mutations';
+import { ARCHIVE_ORGANIZATION_EXERCISE_MUTATION } from '@/graphql/mutations/adminExercises.mutations';
+import { formatBatchArchiveSummary, runBatchArchive } from '@/features/verification/utils/batchArchive';
 import type {
-  BatchArchiveOrganizationExercisesResponse,
+  ArchiveExerciseVariables,
+  ArchiveOrganizationExerciseResponse,
   GetOrganizationVerificationStatsResponse,
   VerificationQueuePage,
 } from '@/graphql/types/adminExercise.types';
@@ -85,9 +87,12 @@ export default function OrganizationVerificationPage() {
     [queueData]
   );
   const selection = useVerificationSelection(visibleExerciseIds);
-  const [batchArchiveExercises, { loading: archiving }] = useMutation<BatchArchiveOrganizationExercisesResponse>(
-    BATCH_ARCHIVE_ORGANIZATION_EXERCISES_MUTATION
+  const [archiveOrganizationExercise] = useMutation<ArchiveOrganizationExerciseResponse, ArchiveExerciseVariables>(
+    ARCHIVE_ORGANIZATION_EXERCISE_MUTATION
   );
+  const [archiving, setArchiving] = useState(false);
+  // Archiwizować da się tylko ćwiczenia OrgVerified (backend), więc zaznaczanie jest tylko w tej zakładce.
+  const canArchive = filter === 'verified';
 
   const updateUrl = (nextFilter: OrgFilter, nextSearch: string, nextPage: number) => {
     const params = buildOrganizationVerificationSearchParams({
@@ -101,37 +106,31 @@ export default function OrganizationVerificationPage() {
   };
 
   const handleArchiveSelected = async () => {
-    if (!organizationId || selection.selectedIds.length === 0) {
+    const selectedIds = selection.selectedIds;
+    if (!organizationId || selectedIds.length === 0) {
       return;
     }
 
+    setArchiving(true);
     try {
-      const response = await batchArchiveExercises({
-        variables: {
-          organizationId,
-          exerciseIds: selection.selectedIds,
-          reason: null,
-        },
+      const result = await runBatchArchive(selectedIds, async (exerciseId) => {
+        const response = await archiveOrganizationExercise({ variables: { exerciseId, reason: null } });
+        if (response.error) {
+          throw response.error;
+        }
+        return response.data?.archiveOrganizationExercise ?? null;
       });
-      const result = response.data?.batchArchiveOrganizationExercises;
-      if (!result) {
-        throw new Error('Brak wyniku archiwizacji');
-      }
 
       const failedIdSet = new Set(result.failedIds);
-      selection.remove(selection.selectedIds.filter((exerciseId) => !failedIdSet.has(exerciseId)));
-      await Promise.all([refetchStats(), refetchQueue()]);
+      selection.remove(selectedIds.filter((exerciseId) => !failedIdSet.has(exerciseId)));
       setArchiveDialogOpen(false);
-
-      if (result.failedIds.length > 0) {
-        toast.warning(
-          `Zarchiwizowano ${result.successCount} z ${result.totalRequested} ćwiczeń. Niektóre pozycje wymagają ponowienia.`
-        );
-      } else {
-        toast.success(`Zarchiwizowano ${result.successCount} ćwiczeń.`);
-      }
+      const summary = formatBatchArchiveSummary(result);
+      toast[summary.kind](summary.message);
+      await Promise.all([refetchStats(), refetchQueue()]);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Nie udało się zarchiwizować ćwiczeń.');
+      toast.error(error instanceof Error ? error.message : 'Nie udało się odświeżyć listy po archiwizacji.');
+    } finally {
+      setArchiving(false);
     }
   };
 
@@ -214,7 +213,7 @@ export default function OrganizationVerificationPage() {
         onToggleVisible={selection.toggleVisible}
         onClear={selection.clear}
         onArchive={() => setArchiveDialogOpen(true)}
-        disabled={!organizationId || filter === 'archived' || queueLoading}
+        disabled={!organizationId || !canArchive || queueLoading}
         isArchiving={archiving}
       />
 
@@ -228,7 +227,7 @@ export default function OrganizationVerificationPage() {
             <VerificationTaskCard
               key={exercise.id}
               exercise={exercise}
-              selectable={filter !== 'archived'}
+              selectable={canArchive}
               selected={selection.isSelected(exercise.id)}
               onSelectionChange={() => selection.toggle(exercise.id)}
               detailHref={buildOrganizationVerificationDetailHref(exercise.id, detailQueryState)}
