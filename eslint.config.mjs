@@ -35,6 +35,17 @@ const ruleOverrides = {
       })),
     },
   ],
+  // Apollo 4 throws CombinedGraphQLErrors; the Apollo 3 `graphQLErrors` field is always undefined.
+  "no-restricted-syntax": [
+    "error",
+    ...["MemberExpression[property.name='graphQLErrors']", "TSPropertySignature[key.name='graphQLErrors']"].map(
+      (selector) => ({
+        selector,
+        message:
+          "Apollo 4 has no error.graphQLErrors. Use CombinedGraphQLErrors.is / getGraphQLErrorCode from src/features/patients/utils/patientConsent.ts.",
+      }),
+    ),
+  ],
   "@typescript-eslint/no-restricted-types": [
     "error",
     {
