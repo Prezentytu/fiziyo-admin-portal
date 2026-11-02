@@ -24,6 +24,13 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 
 ## Wpisy
 
+### 2026-11-02 - Pole parametru zapisywało wartość spoza zakresu
+
+- **Kategoria**: `Exercises` | `UI`
+- **Problem**: Wpisanie 30 w pole przerwy z wartością 60 dawało 6030 s, które szło do mutacji zestawu i wydłużało czas planu. Tempo z literówką („30”) liczyło się jako 30 s na powtórzenie, drugi raz po incydencie „~1208 min” opisanym w `parseTempo`.
+- **Przyczyna**: Zakres pola żyje w `fieldContract.ts`, ale `NumberField` brał tylko atrybut HTML `max`, który nie blokuje zapisu; zod z kontraktu działał wyłącznie w schemacie szablonu. `parseTempo` przyjmował każdy ciąg cyfr inny niż 3–4 znaki jako sekundy.
+- **Rozwiązanie**: `parseNumberFieldDraft` (`src/components/shared/exercise/numberFieldDraft.ts`) odrzuca wartość spoza `min`/`max` z komunikatem pod polem, a fokus zaznacza liczbę; `parseTempo` zwraca `null` dla 2 i 5+ cyfr.
+- **Reguła**: Jeśli pole liczbowe zapisuje do mutacji, zawsze sprawdzaj zakres z `fieldContract` przed `onCommit`, nie atrybutem HTML. [egzekwowane: src/components/shared/exercise/__tests__/numberFieldDraft.test.ts]
 ### 2026-11-01 - Zbiorcza archiwizacja wołała mutacje, których backend nie ma
 
 - **Kategoria**: `GraphQL` | `Verification`
