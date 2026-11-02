@@ -18,7 +18,7 @@ import { SetCard, ExerciseSet } from '@/features/exercise-sets/SetCard';
 import { EditExerciseSetFullDialog } from '@/features/exercise-sets/EditExerciseSetFullDialog';
 import { CreateSetWizard } from '@/features/exercise-sets/CreateSetWizard';
 import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
-import { normalizeFrequencySeed } from '@/features/assignment/utils/scheduleFrequencyUtils';
+import { toPreselectedSet } from '@/features/assignment/utils/toPreselectedSet';
 import { cn } from '@/lib/utils';
 import { HIDE_EXERCISE_TAGS } from '@/components/shared/exercise';
 
@@ -540,29 +540,7 @@ export default function ExerciseSetsPage() {
           mode="from-set"
           organizationId={organizationId}
           therapistId={therapistId}
-          preselectedSet={
-            assigningSet
-              ? {
-                  id: assigningSet.id,
-                  name: assigningSet.name,
-                  description: assigningSet.description,
-                  frequency: assigningSet.frequency ? normalizeFrequencySeed(assigningSet.frequency) : undefined,
-                  exerciseMappings: assigningSet.exerciseMappings?.map((m) => ({
-                    id: m.id,
-                    exerciseId: m.exerciseId,
-                    order: m.order,
-                    exercise: m.exercise
-                      ? {
-                          id: m.exercise.id,
-                          name: m.exercise.name,
-                          imageUrl: m.exercise.imageUrl,
-                          images: m.exercise.images,
-                        }
-                      : undefined,
-                  })),
-                }
-              : undefined
-          }
+          preselectedSet={assigningSet ? toPreselectedSet(assigningSet) : undefined}
           onSuccess={() => setAssigningSet(null)}
         />
       )}
