@@ -59,7 +59,11 @@ describe('VerificationTaskCard', () => {
   it('nie oznacza ćwiczenia z filmem YouTube jako „Brak wideo” i nie wstawia linku YouTube do <video>', () => {
     const { container } = render(
       <VerificationTaskCard
-        exercise={{ ...baseExercise, videoUrl: 'https://www.youtube.com/watch?v=7rnlAVhAK-8&t=6s', imageUrl: 'https://cdn.example/x.jpg' }}
+        exercise={{
+          ...baseExercise,
+          videoUrl: 'https://www.youtube.com/watch?v=7rnlAVhAK-8&t=6s',
+          imageUrl: 'https://cdn.example/x.jpg',
+        }}
       />
     );
 
@@ -82,5 +86,17 @@ describe('VerificationTaskCard', () => {
 
     expect(screen.getByText('Brak wideo')).toBeInTheDocument();
     expect(screen.getByText('Brak obrazu')).toBeInTheDocument();
+  });
+
+  it('w kolejce organizacji pokazuje status organizacyjny zamiast globalnego „Szkic”', () => {
+    render(
+      <VerificationTaskCard
+        track="organization"
+        exercise={{ ...baseExercise, status: 'DRAFT', organizationVerificationStatus: 'PENDING_ORG_REVIEW' }}
+      />
+    );
+
+    expect(screen.getByTestId('verification-card-exercise-1-status-badge')).toHaveTextContent('Oczekuje');
+    expect(screen.queryByText('Szkic')).not.toBeInTheDocument();
   });
 });

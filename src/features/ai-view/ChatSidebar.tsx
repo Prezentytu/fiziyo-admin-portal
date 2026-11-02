@@ -34,10 +34,10 @@ import { NavCountBadge } from '@/components/layout/NavCountBadge';
 import { OrganizationSwitchMenuItems } from '@/components/layout/OrganizationSwitchMenuItems';
 import { verificationItem } from '@/components/layout/navigationConfig';
 import { useCurrentUserDisplay } from '@/components/layout/useCurrentUserDisplay';
-import { useOrganizationVerificationAccess } from '@/hooks/useOrganizationVerificationAccess';
 import { useOrganizationVerificationRealtime } from '@/hooks/useOrganizationVerificationRealtime';
+import { useVerificationQueuesRealtime } from '@/hooks/useVerificationQueuesRealtime';
 import { useAppSignOut } from '@/lib/auth/useAppSignOut';
-import { useVerificationScopes } from '@/features/verification/useVerificationScopes';
+import { useVerificationPendingCounts, useVerificationScopes } from '@/features/verification/useVerificationScopes';
 import { cn } from '@/lib/utils';
 import { useChatSession } from './ChatSessionContext';
 import { useChatShortcuts } from './useChatShortcuts';
@@ -96,7 +96,7 @@ function SidebarBody({
   } = useChatSession();
   const groups = useMemo(() => groupConversationsByDay(conversations), [conversations]);
   const verificationScopes = useVerificationScopes();
-  const { pendingCount } = useOrganizationVerificationAccess();
+  const { total: pendingCount } = useVerificationPendingCounts();
   const navRows = useMemo<readonly NavRow[]>(() => {
     if (verificationScopes.length === 0) return NAV_ROWS;
     const verification = verificationItem(verificationScopes, pendingCount);
@@ -310,6 +310,7 @@ function SidebarBody({
 /** Quiet sidebar of the chat shell (design "Czat v2"): conversations first, the rest of the panel one click away. */
 export function ChatSidebar({ isCollapsed, onToggleCollapse, isMobileOpen, onMobileClose }: ChatSidebarProps) {
   useOrganizationVerificationRealtime();
+  useVerificationQueuesRealtime();
 
   return (
     <>

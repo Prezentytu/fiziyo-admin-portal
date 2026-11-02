@@ -24,6 +24,14 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 
 ## Wpisy
 
+### 2026-11-02 - Karta w kolejce organizacji pokazywała „Szkic”
+
+- **Kategoria**: `UI/UX`
+- **Problem**: Ćwiczenie w zakładce „Oczekujące” weryfikacji organizacji miało na karcie badge „Szkic”.
+- **Przyczyna**: `VerificationTaskCard` brał badge z globalnego `status`, a ćwiczenie organizacyjne ma tam `DRAFT`; stan kolejki jest w `organizationVerificationStatus`.
+- **Rozwiązanie**: Badge z `getVerificationStatusBadge(exercise, track)`; listy organizacji i cross-org przekazują `track="organization"`.
+- **Reguła**: Widok toru organizacyjnego czyta `organizationVerificationStatus`, nigdy globalny `status`. [egzekwowane: src/features/verification/utils/__tests__/statusBadge.test.ts]
+
 ### 2026-11-02 - Pole parametru zapisywało wartość spoza zakresu
 
 - **Kategoria**: `Exercises` | `UI`

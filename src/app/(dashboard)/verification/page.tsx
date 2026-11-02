@@ -20,6 +20,7 @@ import { VerificationIntro } from '@/features/verification/VerificationIntro';
 import { useSystemRole } from '@/hooks/useSystemRole';
 import { getExerciseReports, getExerciseReportsPage } from '@/services/exerciseReportService';
 import {
+  buildVerificationDetailHref,
   buildVerificationSearchParams,
   clampVerificationPageSize,
   parsePositiveInt,
@@ -46,6 +47,8 @@ import { cn } from '@/lib/utils';
 import { VerificationSelectionToolbar } from '@/features/verification/VerificationSelectionToolbar';
 import { VerificationArchiveDialog } from '@/features/verification/VerificationArchiveDialog';
 import { VerificationScopeTabs } from '@/features/verification/VerificationScopeTabs';
+import { VerificationPageHeader } from '@/features/verification/VerificationPageHeader';
+import { VerificationQueueHero } from '@/features/verification/VerificationQueueHero';
 import type { UserByClerkIdResponse } from '@/types/apollo';
 import type {
   GetVerificationStatsResponse,
@@ -85,8 +88,14 @@ function VerificationTaskRow({
   const imageUrl = getMediaUrl(exercise.thumbnailUrl || exercise.imageUrl || exercise.images?.[0]);
 
   const statusConfig: Record<string, { label: string; className: string }> = {
-    PENDING_REVIEW: { label: 'Oczekuje', className: 'bg-status-warning-muted text-status-warning border-status-warning/20' },
-    CHANGES_REQUESTED: { label: 'Do poprawy', className: 'bg-status-warning-muted text-status-warning border-status-warning/20' },
+    PENDING_REVIEW: {
+      label: 'Oczekuje',
+      className: 'bg-status-warning-muted text-status-warning border-status-warning/20',
+    },
+    CHANGES_REQUESTED: {
+      label: 'Do poprawy',
+      className: 'bg-status-warning-muted text-status-warning border-status-warning/20',
+    },
     PUBLISHED: { label: 'Opublikowany', className: 'bg-primary/10 text-primary border-primary/20' },
   };
   const status = statusConfig[exercise.status] || { label: 'Szkic', className: 'bg-muted text-muted-foreground' };
@@ -318,12 +327,26 @@ export default function VerificationPage() {
     data: queueData,
     loading: queueLoading,
     error: queueError,
-    refetch: refetchQueue,
+    refetch: refetchQueuePage,
   } = useQuery<GetVerificationQueuePageResponse, GetVerificationQueuePageVariables>(GET_VERIFICATION_QUEUE_PAGE_QUERY, {
     variables: queueVariables,
     skip: !canReviewExercises || activeFilter === 'reported',
     fetchPolicy: 'cache-and-network',
   });
+
+  const { data: firstPendingData, refetch: refetchFirstPending } = useQuery<
+    GetVerificationQueuePageResponse,
+    GetVerificationQueuePageVariables
+  >(GET_VERIFICATION_QUEUE_PAGE_QUERY, {
+    variables: { filter: 'pending', search: null, page: 1, pageSize: 1 },
+    skip: !canReviewExercises,
+    fetchPolicy: 'cache-and-network',
+  });
+  const refetchQueue = () => Promise.all([refetchQueuePage(), refetchFirstPending()]);
+  const firstPendingId = firstPendingData?.verificationQueuePage.items[0]?.id;
+  const startHref = firstPendingId
+    ? buildVerificationDetailHref(firstPendingId, { filter: 'pending', search: '', page: 1, pageSize, view: viewMode })
+    : null;
 
   useSubscription<{ onExerciseSubmittedForGlobalReview: string }>(ON_EXERCISE_SUBMITTED_FOR_GLOBAL_REVIEW, {
     skip: !canReviewExercises,
@@ -740,75 +763,75 @@ export default function VerificationPage() {
   // FULL VIEW: There are tasks to verify
   return (
     <PageSheet contentClassName="gap-6">
-      {/* Hero Header with compact achievements */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground">Weryfikacja ćwiczeń</h1>
-          <p className="text-muted-foreground mt-1">
-            Cześć {userName}, dzięki Tobie baza ćwiczeń jest bezpieczna i profesjonalna.
-          </p>
-        </div>
-        <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
-          {/* Compact achievements in header */}
-          <ReviewerAchievements variant="compact" />
-          <Button
-            data-testid="verification-refresh-btn"
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={isLoading}
-            className="gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            Odśwież
-          </Button>
-        </div>
-      </div>
-
-      <VerificationScopeTabs />
-
-      {/* Stats Cards - Interactive Filter Cards */}
-      <VerificationStatsCards
-        stats={stats}
-        isLoading={statsLoading}
-        activeFilter={activeFilter}
-        onFilterChange={handleFilterChange}
-        reportedCount={reportedCount}
+      <VerificationPageHeader
+        scopeKey="global"
+        actions={
+          <>
+            <ReviewerAchievements variant="compact" />
+            <Button
+              data-testid="verification-refresh-btn"
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isLoading}
+              className="gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              Odśwież
+            </Button>
+          </>
+        }
       />
 
-      {/* Search and View Mode */}
-      <div className="flex items-center gap-3 justify-end">
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            data-testid="verification-search-input"
-            placeholder="Szukaj ćwiczenia..."
-            className="pl-9 bg-surface border-border/60"
-            value={searchQuery}
-            onChange={(e) => handleSearchChange(e.target.value)}
-          />
-        </div>
+      <VerificationQueueHero
+        pendingCount={statsLoading ? null : pendingCount}
+        startHref={startHref}
+        testIdPrefix="verification"
+      />
 
-        {/* View Mode Toggle */}
-        <div className="flex items-center rounded-lg border border-border/60 bg-surface p-1">
-          <Button
-            variant={viewMode === 'grid' ? 'default' : 'ghost'}
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => handleViewModeChange('grid')}
-            data-testid="verification-view-grid"
-          >
-            <LayoutGrid className="h-4 w-4" />
-          </Button>
-          <Button
-            variant={viewMode === 'list' ? 'default' : 'ghost'}
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => handleViewModeChange('list')}
-            data-testid="verification-view-list"
-          >
-            <List className="h-4 w-4" />
-          </Button>
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <VerificationStatsCards
+          stats={stats}
+          isLoading={statsLoading}
+          activeFilter={activeFilter}
+          onFilterChange={handleFilterChange}
+          reportedCount={reportedCount}
+        />
+
+        <div className="flex items-center gap-3">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              aria-label="Szukaj ćwiczenia"
+              data-testid="verification-search-input"
+              placeholder="Szukaj ćwiczenia..."
+              className="pl-9 bg-surface border-border/60"
+              value={searchQuery}
+              onChange={(e) => handleSearchChange(e.target.value)}
+            />
+          </div>
+
+          {/* View Mode Toggle */}
+          <div className="flex items-center rounded-lg border border-border/60 bg-surface p-1">
+            <Button
+              variant={viewMode === 'grid' ? 'default' : 'ghost'}
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => handleViewModeChange('grid')}
+              data-testid="verification-view-grid"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'ghost'}
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => handleViewModeChange('list')}
+              data-testid="verification-view-list"
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
 

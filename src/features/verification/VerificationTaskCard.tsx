@@ -13,8 +13,9 @@ import { cn } from '@/lib/utils';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { isVimeoUrl, isYouTubeUrl } from '@/utils/videoEmbed';
 import { HIDE_EXERCISE_TAGS } from '@/components/shared/exercise';
-import type { AdminExercise, ContentStatus } from '@/graphql/types/adminExercise.types';
+import type { AdminExercise } from '@/graphql/types/adminExercise.types';
 import { formatRelativeTime } from '@/utils/dateUtils';
+import { getVerificationStatusBadge, type VerificationTrack } from '@/features/verification/utils/statusBadge';
 
 interface VerificationTaskCardProps {
   exercise: AdminExercise;
@@ -25,37 +26,7 @@ interface VerificationTaskCardProps {
   selectable?: boolean;
   selected?: boolean;
   onSelectionChange?: (selected: boolean) => void;
-}
-
-function getStatusBadge(status: ContentStatus) {
-  switch (status) {
-    case 'PENDING_REVIEW':
-      return {
-        label: 'Oczekuje',
-        variant: 'warning' as const,
-        className: 'bg-status-warning-muted text-status-warning border-status-warning/20',
-      };
-    case 'CHANGES_REQUESTED':
-      return {
-        label: 'Do poprawy',
-        variant: 'destructive' as const,
-        className: 'bg-status-warning-muted text-status-warning border-status-warning/20',
-      };
-    case 'APPROVED':
-      return {
-        label: 'Zatwierdzony',
-        variant: 'success' as const,
-        className: 'bg-status-success-muted text-status-success border-status-success/20',
-      };
-    case 'PUBLISHED':
-      return {
-        label: 'Opublikowany',
-        variant: 'default' as const,
-        className: 'bg-primary/10 text-primary border-primary/20',
-      };
-    default:
-      return { label: 'Szkic', variant: 'secondary' as const, className: 'bg-muted text-muted-foreground' };
-  }
+  track?: VerificationTrack;
 }
 
 function getQualityIndicators(exercise: AdminExercise) {
@@ -86,6 +57,7 @@ export function VerificationTaskCard({
   selectable = false,
   selected = false,
   onSelectionChange,
+  track = 'global',
 }: VerificationTaskCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -98,7 +70,7 @@ export function VerificationTaskCard({
   const hasVideoPreview = gifUrl || previewVideoUrl;
   const hasVideo = gifUrl || videoUrl;
 
-  const statusBadge = getStatusBadge(exercise.status);
+  const statusBadge = getVerificationStatusBadge(exercise, track);
   const qualityIndicators = getQualityIndicators(exercise);
   const hasWarnings = qualityIndicators.some((i) => i.type === 'warning');
   const hasOpenReport = Boolean(exercise.hasOpenReport);
@@ -233,7 +205,12 @@ export function VerificationTaskCard({
               {/* Status badge overlay */}
               <div className={cn('absolute top-3 left-3', selectable && 'left-11')}>
                 <div className="flex items-center gap-2">
-                  <Badge className={cn('border', statusBadge.className)}>{statusBadge.label}</Badge>
+                  <Badge
+                    className={cn('border', statusBadge.className)}
+                    data-testid={`verification-card-${exercise.id}-status-badge`}
+                  >
+                    {statusBadge.label}
+                  </Badge>
                   {hasOpenReport && (
                     <Badge
                       variant="outline"
