@@ -13,8 +13,9 @@ interface VerificationFloatingBarProps {
 }
 
 /**
- * Action bar docked to the bottom of the stage column, so it never covers the media panel.
- * Sticky stops at the `<main>` padding edge, which keeps a small, even gap to the window bottom.
+ * Footer docked to the bottom edge of the dashboard scroll area. Content ends above it instead of scrolling
+ * underneath a floating pill: the negative bottom inset cancels the `<main>` padding (p-4 lg:p-6 2xl:p-8)
+ * and the solid band spans the sheet width, so nothing shows below or beside it.
  */
 export function VerificationFloatingBar({
   hint,
@@ -25,16 +26,18 @@ export function VerificationFloatingBar({
   secondary,
 }: VerificationFloatingBarProps) {
   return (
-    <div className="sticky bottom-0 z-30 mt-auto pt-2" data-testid="verification-floating-bar">
-      <div className="flex w-full flex-wrap items-center gap-2 rounded-[20px] border-[0.5px] border-separator bg-elevated py-1.5 pl-4 pr-1.5 shadow-floating sm:flex-nowrap">
+    <div
+      className="sticky -bottom-4 z-30 -mx-4 mt-2 border-t-[0.5px] border-separator bg-card px-4 py-3 sm:-mx-8 sm:px-8 lg:-bottom-6 xl:-mx-11 xl:px-11 2xl:-bottom-8"
+      data-testid="verification-floating-bar"
+    >
+      <div className="flex w-full flex-wrap items-center gap-3 sm:flex-nowrap">
         <p
           className={cn(
-            'min-w-0 flex-1 truncate text-[13px] leading-[18px]',
+            'min-w-0 flex-1 text-[14px] leading-5',
             isBlocked ? 'font-semibold text-status-warning' : 'text-label-secondary'
           )}
           role="status"
           aria-live="polite"
-          title={hint}
         >
           {hint}
         </p>
