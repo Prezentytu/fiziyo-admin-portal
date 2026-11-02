@@ -59,7 +59,7 @@ export function parseTempo(tempo: string | undefined): number | null {
   //      (prompt nakazuje "DOKLADNIE 4 cyfry bez separatorow"). Bez tej galezi
   //      "3010" parsowalo sie jako 3010 sekund/powt. → totalDuration ~1208 min.
   //   Inny ciag samych cyfr ("30", "20103") to literowka, nie sekundy na powtorzenie.
-  //   Ta sama regula w fizjo-app utils/exerciseSetDuration.ts (szacowany czas w aplikacji pacjenta).
+  //   Blizniaczy parser: fizjo-app utils/exerciseSetDuration.ts (szacowany czas w aplikacji pacjenta); zmieniaj oba razem.
   if (/^\d{2}$|^\d{5,}$/.test(normalizedTempo)) {
     return null;
   }
