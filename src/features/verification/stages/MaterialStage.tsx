@@ -114,9 +114,10 @@ export function MaterialStage({
       <StageSection
         title="Zdjęcia"
         hint="Sprawdź każde zdjęcie z nagraniem: ustawienie stawów, dłonie, tło. Pod zdjęciem widać, który krok pokazuje."
+        className="@container"
         data-testid="verification-material-photos"
       >
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 @md:grid-cols-3 @2xl:grid-cols-4">
           {photos.map((url, index) => {
             const isPending = pendingPhoto?.index === index;
             const src = isPending ? pendingPhoto.previewUrl : getMediaUrl(url);

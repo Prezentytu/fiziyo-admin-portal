@@ -93,11 +93,12 @@ Mobile: do obsługi w `fizjo-app` (handoff), do tego czasu bez zmian dla pacjent
 | `VerificationStageNav`, `VerificationFloatingBar`, `StageSection`, `ChipListEditor`      | `src/features/verification/stages/` |
 | `MaterialStage`, `PhotoReplaceDialog`                                                    | `src/features/verification/stages/` |
 | `ParametersStage`, `InstructionStage`, `SafetyStage`, `DecisionStage`, `DuplicateDialog` | `src/features/verification/stages/` |
+| `RequestChangesDialog` (tor organizacji)                                                 | `src/features/verification/stages/` |
 | `Button` wariant `plain`                                                                 | `src/components/ui/button.tsx`      |
 
 ## Data-testid
 
-Pełna lista w `docs/testing/data-testid-map.md` (sekcja 15, „Etapy weryfikacji globalnej”). Zachowane: `verification-back-btn`. Ścieżki organizacji (`VerdictPanel`, `MasterVideoPlayer`, dialogi approve/reject) bez zmian.
+Pełna lista w `docs/testing/data-testid-map.md` (sekcja 15, „Etapy weryfikacji globalnej”). Zachowane: `verification-back-btn`. Tor organizacji i moderacja cross-org renderują ten sam `VerificationWorkspace` z propem `organizationDecision` (zatwierdź w gabinecie, odeślij do poprawek z notatką w `RequestChangesDialog`, archiwizuj zweryfikowane); stary detal z `VerdictPanel` i `MasterVideoPlayer` usunięty.
 
 Zdjęcie przy czytanym kroku ma test integracyjny `VerificationWorkspace.readingFocus.test.tsx` (cały workspace, bez backendu) i E2E VER01–VER04 w `fiziyo-tests` (`tests/logged/verification/step-photos.spec.ts`, tylko odczyt na DEV). Duże medium w panelu ma `verification-media-stage-{image|video}`.
 

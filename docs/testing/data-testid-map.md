@@ -703,17 +703,14 @@ Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu r
 
 #### Ekran powitalny (Intro)
 
-| data-testid                          | Element                                        | Plik                       |
-| ------------------------------------ | ---------------------------------------------- | -------------------------- |
-| `verification-media-upload-btn`      | Upload zdjęć w MasterVideoPlayer               | `MasterVideoPlayer.tsx`    |
-| `verification-media-ai-generate-btn` | Generuj AI w MasterVideoPlayer                 | `MasterVideoPlayer.tsx`    |
-| `verification-media-ai-style-group`  | Wybór stylu AI w weryfikacji                   | `MasterVideoPlayer.tsx`    |
-| `verification-intro-container`       | Kontener ekranu powitalnego                    | `VerificationIntro.tsx`    |
-| `verification-intro-hero-icon`       | Ikona hero                                     | `VerificationIntro.tsx`    |
-| `verification-intro-status-card`     | Karta statusu (wynik scan)                     | `VerificationIntro.tsx`    |
-| `verification-intro-load-btn`        | Przycisk "Załaduj ćwiczenia"                   | `VerificationIntro.tsx`    |
-| `reviewer-achievements-card`         | Karta osiągnięć recenzenta (wariant full)      | `ReviewerAchievements.tsx` |
-| `reviewer-achievements-compact`      | Kompaktowy element osiągnięć (wariant compact) | `ReviewerAchievements.tsx` |
+| data-testid                      | Element                                        | Plik                       |
+| -------------------------------- | ---------------------------------------------- | -------------------------- |
+| `verification-intro-container`   | Kontener ekranu powitalnego                    | `VerificationIntro.tsx`    |
+| `verification-intro-hero-icon`   | Ikona hero                                     | `VerificationIntro.tsx`    |
+| `verification-intro-status-card` | Karta statusu (wynik scan)                     | `VerificationIntro.tsx`    |
+| `verification-intro-load-btn`    | Przycisk "Załaduj ćwiczenia"                   | `VerificationIntro.tsx`    |
+| `reviewer-achievements-card`     | Karta osiągnięć recenzenta (wariant full)      | `ReviewerAchievements.tsx` |
+| `reviewer-achievements-compact`  | Kompaktowy element osiągnięć (wariant compact) | `ReviewerAchievements.tsx` |
 
 #### Widok pełny (z zadaniami)
 
@@ -775,6 +772,17 @@ Ekran globalny publikuje z paska, a jedyne wyjście bez publikacji to „To dupl
 | `verification-safety-supervision-checkbox`                                      | Tylko pod nadzorem                          | `SafetyStage.tsx`             |
 | `verification-decision-{key}-go-btn`                                            | Zmień / Popraw w podsumowaniu               | `DecisionStage.tsx`           |
 | `verification-duplicate-dialog` / `-confirm-btn`                                | Oznacz jako duplikat                        | `DuplicateDialog.tsx`         |
+
+Tor organizacji (`/organization/verification/[id]`) i moderacja cross-org (`/verification/organizations/[id]`) używają tego samego `VerificationWorkspace` z propem `organizationDecision`; stary trójkolumnowy detal (`VerdictPanel`, `MasterVideoPlayer`, `CollapsibleMediaPanel`) usunięty.
+
+| data-testid                                        | Element                              | Plik                                      |
+| -------------------------------------------------- | ------------------------------------ | ----------------------------------------- |
+| `org-verification-workspace`                       | Arkusz weryfikacji w gabinecie       | `organization/verification/[id]/page.tsx` |
+| `org-verification-back-btn`                        | Powrót do kolejki gabinetu           | `VerificationWorkspace.tsx`               |
+| `org-verification-archive-btn`                     | Archiwizuj (ćwiczenie zweryfikowane) | `VerificationWorkspace.tsx`               |
+| `org-verification-bar-request-changes-btn`         | „Odeślij do poprawek” w pasku        | `VerificationFloatingBar.tsx`             |
+| `org-verification-changes-dialog` / `-notes-input` | Dialog odesłania z notatką           | `RequestChangesDialog.tsx`                |
+| `org-verification-changes-{cancel\|confirm}-btn`   | Anuluj / Odeślij autorowi            | `RequestChangesDialog.tsx`                |
 
 #### Cross-org verification (SiteSuperAdmin)
 

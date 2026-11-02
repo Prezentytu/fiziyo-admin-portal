@@ -5,10 +5,9 @@ import { useQuery } from '@apollo/client/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FileText } from 'lucide-react';
 
-import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/shared/EmptyState';
-import { PageSheet } from '@/components/shared/page';
 import { VerificationWorkspace } from '@/features/verification/VerificationWorkspace';
+import { VerificationWorkspaceSkeleton } from '@/features/verification/VerificationWorkspaceSkeleton';
 
 import { useSystemRole } from '@/hooks/useSystemRole';
 import { getExerciseReports } from '@/services/exerciseReportService';
@@ -144,20 +143,7 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
   }
 
   if (loading && !exercise) {
-    return (
-      <PageSheet contentClassName="gap-5">
-        <Skeleton className="h-8 w-40" />
-        <Skeleton className="h-9 w-2/3" />
-        <Skeleton className="h-14 w-full" />
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(260px,360px)_minmax(0,1fr)]">
-          <Skeleton className="aspect-[4/5] w-full rounded-sheet" />
-          <div className="flex flex-col gap-4">
-            <Skeleton className="h-32 w-full rounded-card" />
-            <Skeleton className="h-48 w-full rounded-card" />
-          </div>
-        </div>
-      </PageSheet>
-    );
+    return <VerificationWorkspaceSkeleton />;
   }
 
   if (error || !exercise) {

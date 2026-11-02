@@ -23,7 +23,7 @@ Moduł obsługuje dwa niezależne tory:
 - Lista global: `src/app/(dashboard)/verification/page.tsx`
 - Detal global: `src/app/(dashboard)/verification/[id]/page.tsx` → `VerificationWorkspace.tsx` + `stages/` (5 etapów, SPEC-030)
 - Lista org: `src/app/(dashboard)/organization/verification/page.tsx`
-- Detal org: `src/app/(dashboard)/organization/verification/[id]/page.tsx`
+- Detal org: `src/app/(dashboard)/organization/verification/[id]/page.tsx` → ten sam `VerificationWorkspace` z `organizationDecision`; cross-org (`verification/organizations/[id]`) tak samo, przez mutacje `*AsAdmin`. Starego detalu nie przywracamy: jeden widok weryfikacji na wszystkie tory.
 - Shared UI list: `VerificationPageHeader.tsx` (tytuł, opis kolejki, `VerificationScopeTabs`), `VerificationQueueHero.tsx` (liczba oczekujących, start kolejki), `VerificationStatsCards.tsx` (przełącznik statusów), `VerificationTaskCard.tsx` (`track="organization"` w kolejkach organizacji, SPEC-034)
 - Utils: `src/features/verification/utils/`
 

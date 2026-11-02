@@ -35,6 +35,15 @@ describe('buildStageCopy', () => {
     expect(hints.decision).toBe('Trafi do bazy z podpisem: Anna Nowak.');
   });
 
+  it('keeps organization approval inside the clinic', () => {
+    const awaiting = buildStageCopy(input({ organization: { statusLabel: 'Oczekuje' } }));
+    expect(awaiting.hints.decision).toBe('Trafi do ćwiczeń gabinetu z podpisem: Anna Nowak.');
+
+    const verified = buildStageCopy(input({ canDecide: false, organization: { statusLabel: 'Zweryfikowane' } }));
+    expect(verified.subs.decision).toBe('Zweryfikowane');
+    expect(verified.hints.decision).toBe('Ćwiczenie nie czeka na weryfikację. Poprawki zapisują się od razu.');
+  });
+
   it('puts pending decisions first', () => {
     const { subs, hints } = buildStageCopy(input({ hasPendingPhoto: true, hasPendingProposal: true }));
     expect(subs.material).toBe('Nowe zdjęcie do przyjęcia');

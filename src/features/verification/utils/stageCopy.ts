@@ -18,6 +18,8 @@ export interface StageCopyInput {
   stopIfCount: number;
   canDecide: boolean;
   signerName: string;
+  /** Organization track: approval stays inside the clinic; `statusLabel` describes an exercise that is not awaiting review. */
+  organization?: { statusLabel: string };
 }
 
 interface StageCopy {
@@ -52,8 +54,8 @@ function safetySub({ stages, stopIfCount }: StageCopyInput): string {
   return stopIfCount === 0 ? 'Brak objawów przerwania' : `Do poprawy: ${stages.issues.safety.length}`;
 }
 
-function decisionSub({ stages, canDecide }: StageCopyInput): string {
-  if (!canDecide) return 'Już w bazie';
+function decisionSub({ stages, canDecide, organization }: StageCopyInput): string {
+  if (!canDecide) return organization ? organization.statusLabel : 'Już w bazie';
   return stages.canPublish ? 'Zatwierdź' : `Do poprawy: ${formatStageCount(stages.openStages.length)}`;
 }
 
@@ -78,9 +80,17 @@ function instructionHint({ stages, hasPendingProposal }: StageCopyInput): string
   return stages.issues.instruction[0]?.text ?? 'Przeczytaj opis oczami pacjenta.';
 }
 
-function decisionHint({ stages, canDecide, signerName }: StageCopyInput): string {
-  if (!canDecide) return 'Ćwiczenie jest już w bazie. Poprawki zapisują się od razu.';
-  if (stages.canPublish) return `Trafi do bazy z podpisem: ${signerName}.`;
+function decisionHint({ stages, canDecide, signerName, organization }: StageCopyInput): string {
+  if (!canDecide) {
+    return organization
+      ? 'Ćwiczenie nie czeka na weryfikację. Poprawki zapisują się od razu.'
+      : 'Ćwiczenie jest już w bazie. Poprawki zapisują się od razu.';
+  }
+  if (stages.canPublish) {
+    return organization
+      ? `Trafi do ćwiczeń gabinetu z podpisem: ${signerName}.`
+      : `Trafi do bazy z podpisem: ${signerName}.`;
+  }
   return `Najpierw popraw: ${stages.openStages.map((key) => STAGE_TITLES[key]).join(', ')}.`;
 }
 
