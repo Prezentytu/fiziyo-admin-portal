@@ -1,11 +1,9 @@
 ---
 name: principle-boundary-discipline
-description: 'Stosuj przy walidacji, adapterze, typie albo sygnaturze. Guard na granicy, zaufanie do typów w środku, stan nielegalny niereprezentowalny. EN - boundary discipline, type system discipline, parse at the edge.'
+description: "Stosuj przy walidacji, adapterze, typie albo sygnaturze. Guard na granicy, zaufanie do typów w środku, stan nielegalny niereprezentowalny. EN - boundary discipline, type system discipline, parse at the edge."
 ---
 
 # Boundary discipline
-
-> **Synchronizacja:** źródło w `fizjo-app/.ai/skills/principle-boundary-discipline/SKILL.md`. Przy zmianie zaktualizuj oba repozytoria.
 
 Walidacja, zwężenie typu i obsługa błędu stoją na granicy systemu (sieć, GraphQL, config, CLI). Wewnątrz ufasz typom. Logika biznesowa zostaje czystą funkcją.
 
