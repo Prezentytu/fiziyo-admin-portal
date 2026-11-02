@@ -37,7 +37,6 @@ import {
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useExerciseBuilder, type BuilderExercise } from '@/contexts/ExerciseBuilderContext';
 import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
-import { useDataManagement } from '@/hooks/useDataManagement';
 import { useRealtimeExercises } from '@/hooks/useRealtimeExercises';
 import { ORG_VERIFICATION_REFETCH_QUERIES } from '@/hooks/useOrganizationVerificationRealtime';
 import type { AvailableExercisesPageResponse, ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
@@ -117,11 +116,6 @@ export default function ExercisesPage() {
     },
     [toggleExercise]
   );
-
-  // Data management hook for importing examples
-  const { importExampleSets, isImporting, hasImportedExamples } = useDataManagement({
-    organizationId,
-  });
 
   const updateListState = useCallback(
     (patch: Partial<ExerciseLibraryUrlState>) => {
@@ -409,13 +403,10 @@ export default function ExercisesPage() {
                   description={
                     committedSearch
                       ? 'Spróbuj zmienić kryteria wyszukiwania'
-                      : 'Dodaj pierwsze ćwiczenie lub załaduj przykładowe zestawy'
+                      : 'Utwórz pierwsze ćwiczenie, a potem dodaj je do zestawu dla pacjenta.'
                   }
                   actionLabel={!committedSearch ? 'Dodaj ćwiczenie' : undefined}
                   onAction={!committedSearch ? () => setIsDialogOpen(true) : undefined}
-                  secondaryActionLabel={!committedSearch && !hasImportedExamples ? 'Załaduj przykłady' : undefined}
-                  onSecondaryAction={!committedSearch && !hasImportedExamples ? importExampleSets : undefined}
-                  secondaryActionLoading={isImporting}
                 />
               </CardContent>
             </Card>
