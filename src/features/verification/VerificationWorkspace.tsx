@@ -30,7 +30,7 @@ import {
 } from '@/graphql/mutations/exercises.mutations';
 import { GET_VERIFICATION_STATS_QUERY } from '@/graphql/queries/adminExercises.queries';
 
-import { getMediaUrls } from '@/utils/mediaUrl';
+import { getMediaUrl, getMediaUrls } from '@/utils/mediaUrl';
 import type {
   AdminExercise,
   ApproveExerciseResponse,
@@ -340,6 +340,11 @@ export function VerificationWorkspace({
     if (index === galleryIndex) return;
     setMediaIndex(index);
     if (isFollowingText) setIsMediaFollowingText(false);
+  };
+
+  const handlePreviewPhoto = (url: string) => {
+    const index = mediaItems.findIndex((item) => item.kind === 'image' && item.src === getMediaUrl(url));
+    if (index >= 0) handleGalleryIndexChange(index);
   };
 
   const { mode } = parameterReview;
@@ -1042,6 +1047,7 @@ export function VerificationWorkspace({
           {stage === 'material' && (
             <MaterialStage
               videoUrl={core.videoUrl}
+              hasVideo={hasVideo}
               photos={photos}
               stepImages={patient.step_images}
               maxPhotos={MAX_PHOTOS}
@@ -1050,6 +1056,7 @@ export function VerificationWorkspace({
               isGenerating={imageGeneration.isGenerating}
               isSavingPhoto={isSavingPhoto}
               onVideoUrlChange={(value) => setCoreField('videoUrl', value)}
+              onPreviewPhoto={handlePreviewPhoto}
               onReplacePhoto={setPhotoDialogIndex}
               onDeletePhoto={(url) => void handleDeletePhoto(url)}
               onAddPhotos={(files) => void handleAddPhotos(files)}

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Loader2, Sparkles, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -164,8 +165,15 @@ export function InstructionStage({
   const cues = patient.cues ?? [];
   const mistakes = patient.mistakes ?? [];
   const descriptionLength = patientDescription.trim().length;
+  // Only a row the reviewer has just added takes the focus, never rows loaded with the exercise.
+  const [addedRow, setAddedRow] = useState<string | null>(null);
 
   const updatePatient = (changes: Partial<ExerciseEnrichmentPatientV3>) => onPatientChange({ ...patient, ...changes });
+
+  const pinNextPhoto = (index: number) => {
+    updatePatient({ step_images: cycleStepImage(patient.step_images, index, imageUrls) });
+    onFocusStep(index);
+  };
 
   const updateStep = (index: number, value: string) =>
     updatePatient({ steps: steps.map((step, stepIndex) => (stepIndex === index ? value : step)) });
@@ -266,10 +274,7 @@ export function InstructionStage({
                           ? `Krok ${index + 1}: zdjęcie ${photoIndex + 1}. Wybierz inne`
                           : `Krok ${index + 1}: przypnij zdjęcie`
                       }
-                      onClick={() => {
-                        updatePatient({ step_images: cycleStepImage(patient.step_images, index, imageUrls) });
-                        onFocusStep(index);
-                      }}
+                      onClick={() => pinNextPhoto(index)}
                     >
                       {photoIndex >= 0 ? 'Zmień zdjęcie' : 'Przypnij zdjęcie'}
                     </Button>
@@ -285,6 +290,7 @@ export function InstructionStage({
                     </Button>
                   </div>
                   <Input
+                    autoFocus={addedRow === `step-${index}`}
                     value={step}
                     aria-label={`Krok ${index + 1}`}
                     onChange={(event) => updateStep(index, event.target.value)}
@@ -304,7 +310,10 @@ export function InstructionStage({
           variant="plain"
           size="sm"
           className="self-start"
-          onClick={() => updatePatient({ steps: [...steps, ''] })}
+          onClick={() => {
+            setAddedRow(`step-${steps.length}`);
+            updatePatient({ steps: [...steps, ''] });
+          }}
           data-testid="verification-step-add-btn"
         >
           + Dodaj krok
@@ -322,6 +331,7 @@ export function InstructionStage({
             return (
               <li key={index} className="flex flex-wrap items-center gap-2 rounded-[14px] bg-card p-1.5 pl-1">
                 <Input
+                  autoFocus={addedRow === `cue-${index}`}
                   value={cue}
                   aria-label={`Wskazówka ${index + 1}`}
                   onChange={(event) => updateCue(index, event.target.value)}
@@ -359,7 +369,10 @@ export function InstructionStage({
           variant="plain"
           size="sm"
           className="self-start"
-          onClick={() => updatePatient({ cues: [...cues, ''] })}
+          onClick={() => {
+            setAddedRow(`cue-${cues.length}`);
+            updatePatient({ cues: [...cues, ''] });
+          }}
           data-testid="verification-cue-add-btn"
         >
           + Dodaj wskazówkę
@@ -387,6 +400,7 @@ export function InstructionStage({
           {mistakes.map((entry, index) => (
             <li key={index} className="grid grid-cols-1 items-center gap-2 sm:grid-cols-[1fr_auto_1fr_auto]">
               <Input
+                autoFocus={addedRow === `mistake-${index}`}
                 value={entry.mistake ?? ''}
                 aria-label={`Błąd ${index + 1}`}
                 placeholder="Błąd"
@@ -423,7 +437,10 @@ export function InstructionStage({
           variant="plain"
           size="sm"
           className="self-start"
-          onClick={() => updatePatient({ mistakes: [...mistakes, { mistake: '', fix: '' }] })}
+          onClick={() => {
+            setAddedRow(`mistake-${mistakes.length}`);
+            updatePatient({ mistakes: [...mistakes, { mistake: '', fix: '' }] });
+          }}
           data-testid="verification-mistake-add-btn"
         >
           + Dodaj błąd
