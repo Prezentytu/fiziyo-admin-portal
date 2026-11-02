@@ -5,19 +5,16 @@ identyfikatora automacji, wersji opisu, dwóch zaakceptowanych prób i potwierdz
 przebiegu. Stan rzeczywisty zapisuje rejestr aktywacji w `notatki-adam/grok-bot`.
 Nie ustalono tutaj, które stare automacje nadal działają w panelu.
 
-Przed pilotem wyłącz stary bezpośredni trigger `agent-fix` w Cursor. Zmiana pliku
-nie zmienia zdalnej automacji. Jedynym wykonawcą uruchomień implementacji jest
-chroniony dispatcher w `agent-ops`. Etykieta, parser i login właściciela PAT
-nie są autoryzacją. `agent-promote.yml` jedynie pokazuje kanał kwalifikacji.
+Zmiana pliku nie zmienia zdalnej automacji. Implementację zleca Adam: lokalna
+sesja albo ręcznie uruchomiony Cloud Agent, wynik to PR, merge robi człowiek.
+Etykieta, parser i login właściciela PAT nie są autoryzacją. Tor
+`agent-intake` → `agent-promote` → dispatcher `agent-ops` usunięto 2026-11-02.
 `task-card.mjs check` potwierdza format; `authorize` zawsze kończy się odmową.
 
-- `01-intake.md`: odczyt i deduplikacja zgłoszenia. Webhook wymaga jawnego
-  `AGENT_INTAKE_ENABLED=true` po sprawdzeniu narzędzi i tożsamości odbiorcy.
 - `02-pr-review.md`: niezależne review aktualnego SHA, bez edycji kandydata.
 - `03-po-merge.md`: oddzielne stany merge, deployment i test wdrożenia.
-- `04-triage-ci.md`: diagnoza rzeczywistego failure; ponowne wykonanie przez dispatcher.
-- `05-fix.md`: instrukcja workera wywołanego przez dispatcher; bez własnego triggera.
-- `06-night-scan.md`: nocny skan zatwierdzonego wycinka; projekt, `unverified`.
+- `04-triage-ci.md`: diagnoza rzeczywistego failure; ponowne uruchomienie zleca Adam.
+- `06-night-scan.md`: nocny skan zleconego wycinka; projekt, `unverified`.
 - `07-drift.md`: dryf speców i indeksu; projekt, `unverified`.
 
 Wspólne zasady: rezultat i warunek zakończenia, maksymalnie 90 minut na run,

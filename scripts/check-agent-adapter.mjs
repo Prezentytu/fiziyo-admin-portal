@@ -11,7 +11,7 @@ function isSafeRelative(relative) {
   );
 }
 
-// Structural check only. Trusted execution configuration lives in agent-ops.
+// Structural check only: the adapter does not grant permissions or start agents.
 export function checkAdapter(root) {
   const adapter = JSON.parse(fs.readFileSync(path.join(root, '.ai/agent-adapter.json'), 'utf8'));
   const errors = [];

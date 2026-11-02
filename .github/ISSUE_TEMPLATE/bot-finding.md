@@ -47,7 +47,7 @@ Zlecił:
 ```
 
 <!--
-Kolejność dla bota, inaczej intake zobaczy kartę w połowie wypełnioną:
+Kolejność dla bota, inaczej triage zobaczy kartę w połowie wypełnioną:
   1. utwórz issue BEZ etykiety,
   2. uzupełnij kartę (`gh issue edit`),
   3. dopiero teraz nadaj `bot-finding` albo `from-przemek`.
@@ -57,14 +57,13 @@ Kolejność dla bota, inaczej intake zobaczy kartę w połowie wypełnioną:
         Bez repo: printf '%s' "$(echo "$linia" | tr 'A-Z' 'a-z' | tr -s '[:space:]' ' ')" | shasum -a 256 | cut -c1-12
 
 Tryb: advise na wejściu — zgłoszenie jest przyjmowane, nie naprawiane.
-      Promocja do naprawy (robi Szef Sztabu / Adam): etykieta `agent-fix` tylko kwalifikuje.
-      `agent-promote.yml` nie przepisuje karty i nie uruchamia workera.
-      Start naprawy: chroniony dispatch w agent-ops, nie ręczna edycja karty.
+      Naprawę zleca Adam bezpośrednio (lokalna sesja albo Cloud Agent).
+      Etykieta ani edycja karty nie uruchamiają naprawy.
 -->
 
 ## Dla triage (wypełnia Szef Sztabu / Adam)
 
-- [ ] `agent-fix` — wąski, w kodzie produktu → karta zadania dla Cloud Agenta
+- [ ] do naprawy — wąski, w kodzie produktu → Adam zleca agentowi
 - [ ] `needs-clarification` — jedno pytanie: …
 - [ ] `duplicate` of #
 - [ ] `needs-adam` — dlaczego: …
