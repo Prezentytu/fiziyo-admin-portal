@@ -3,14 +3,13 @@
 import { useMemo } from 'react';
 
 import { useRoleAccess } from '@/hooks/useRoleAccess';
-import { useOrganizationVerificationAccess } from '@/hooks/useOrganizationVerificationAccess';
-import { useVerificationScopes } from '@/features/verification/useVerificationScopes';
+import { useVerificationPendingCounts, useVerificationScopes } from '@/features/verification/useVerificationScopes';
 import { buildAccountNavigationItems, buildNavigationItems, type NavigationItem } from './navigationConfig';
 
 /** Role-filtered sidebar items shared by the desktop and mobile sidebars. */
 export function useNavigationItems(): { items: NavigationItem[]; matchHrefs: string[] } {
   const verificationScopes = useVerificationScopes();
-  const { pendingCount } = useOrganizationVerificationAccess();
+  const { total: pendingCount } = useVerificationPendingCounts();
 
   return useMemo(() => {
     const items = buildNavigationItems({ verificationScopes, verificationPendingCount: pendingCount });

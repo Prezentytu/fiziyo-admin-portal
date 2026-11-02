@@ -19,8 +19,7 @@ const tabsListVariants = cva('inline-flex items-center text-label-secondary', {
   },
 });
 
-type TabsListProps = React.ComponentPropsWithoutRef<typeof TabsPrimitive.List> &
-  VariantProps<typeof tabsListVariants>;
+type TabsListProps = React.ComponentPropsWithoutRef<typeof TabsPrimitive.List> & VariantProps<typeof tabsListVariants>;
 
 const TabsList = React.forwardRef<React.ElementRef<typeof TabsPrimitive.List>, TabsListProps>(
   ({ className, variant, ...props }, ref) => (
@@ -34,10 +33,10 @@ const tabsTriggerVariants = cva(
   {
     variants: {
       activeVariant: {
-        surface: 'data-[state=active]:bg-elevated data-[state=active]:text-foreground data-[state=active]:shadow-raised',
+        surface:
+          'data-[state=active]:bg-elevated data-[state=active]:text-foreground data-[state=active]:shadow-raised',
         subtle: 'data-[state=active]:bg-elevated data-[state=active]:text-foreground data-[state=active]:shadow-none',
-        accent:
-          'data-[state=active]:bg-tint-muted data-[state=active]:text-tint data-[state=active]:shadow-none',
+        accent: 'data-[state=active]:bg-tint-muted data-[state=active]:text-tint data-[state=active]:shadow-none',
         success:
           'data-[state=active]:bg-status-success-muted data-[state=active]:text-status-success data-[state=active]:shadow-none',
         warning:
@@ -54,19 +53,28 @@ const tabsTriggerVariants = cva(
   }
 );
 
+/** Underline tab rendered as a link, for tabs that switch routes instead of panels. */
+const tabLinkVariants = cva(
+  'inline-flex min-h-14 items-center gap-2.5 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background',
+  {
+    variants: {
+      active: {
+        true: 'text-foreground shadow-[inset_0_-2px_0_var(--tint)]',
+        false: 'text-label-secondary hover:text-foreground',
+      },
+    },
+    defaultVariants: { active: false },
+  }
+);
+
 type TabsTriggerProps = React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger> &
   VariantProps<typeof tabsTriggerVariants>;
 
-const TabsTrigger = React.forwardRef<
-  React.ElementRef<typeof TabsPrimitive.Trigger>,
-  TabsTriggerProps
->(({ className, activeVariant, ...props }, ref) => (
-  <TabsPrimitive.Trigger
-    ref={ref}
-    className={cn(tabsTriggerVariants({ activeVariant }), className)}
-    {...props}
-  />
-));
+const TabsTrigger = React.forwardRef<React.ElementRef<typeof TabsPrimitive.Trigger>, TabsTriggerProps>(
+  ({ className, activeVariant, ...props }, ref) => (
+    <TabsPrimitive.Trigger ref={ref} className={cn(tabsTriggerVariants({ activeVariant }), className)} {...props} />
+  )
+);
 TabsTrigger.displayName = TabsPrimitive.Trigger.displayName;
 
 const TabsContent = React.forwardRef<
@@ -84,4 +92,4 @@ const TabsContent = React.forwardRef<
 ));
 TabsContent.displayName = TabsPrimitive.Content.displayName;
 
-export { Tabs, TabsList, TabsTrigger, TabsContent };
+export { Tabs, TabsList, TabsTrigger, TabsContent, tabLinkVariants };
