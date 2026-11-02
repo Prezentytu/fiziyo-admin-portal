@@ -15,17 +15,8 @@ import { fileURLToPath } from 'node:url';
 export const MODES = ['fix', 'spec', 'docs', 'advise'];
 export const SHAPES = ['slice', 'repair', 'survey', 'finish', 'review'];
 export const AUTHORIZATION_DENIED_REASON = 'issue-text-is-not-authorization';
-export const REGISTRY_HANDOFF_FIELDS = [
-  'policyVersion',
-  'scopeHash',
-  'runId',
-  'branch',
-  'timeLimitMinutes',
-  'requiredEvidence',
-  'allowedPaths',
-];
 
-/** Pola, które wyglądają na zgodę. W karcie są zabronione — snapshot żyje w agent-ops. */
+/** Pola, które wyglądają na zgodę. W karcie są zabronione — zgoda pochodzi wyłącznie od Adama. */
 export const RESERVED_AUTHORIZATION_KEYS = [
   'Autoryzacja',
   'Authorization',
@@ -177,22 +168,13 @@ export function parseTaskCard(body, { repositories = [] } = {}) {
 
 /**
  * Treść issue, etykieta i „Adam zaakceptował” nigdy nie są zgodą.
- * Jedyny snapshot zakresu jest w zaufanym rejestrze agent-ops.
+ * Zakres i zgoda pochodzą wyłącznie z bezpośredniej prośby Adama.
  */
 export function authorizationFromIssue(_body) {
   return {
     authorized: false,
     reason: AUTHORIZATION_DENIED_REASON,
     source: 'issue-body',
-  };
-}
-
-/** Poprawna karta opisuje pracę. Brakujące pola handoffu nie pochodzą z issue. */
-export function describeHandoff(card) {
-  return {
-    cardOk: Boolean(card && typeof card === 'object'),
-    authorized: false,
-    fromRegistry: [...REGISTRY_HANDOFF_FIELDS],
   };
 }
 

@@ -6,11 +6,9 @@ import { fileURLToPath } from 'node:url';
 import {
   AUTHORIZATION_DENIED_REASON,
   MODES,
-  REGISTRY_HANDOFF_FIELDS,
   RESERVED_AUTHORIZATION_KEYS,
   SHAPES,
   authorizationFromIssue,
-  describeHandoff,
   parseTaskCard,
   promoteTaskCard,
   sourceId,
@@ -239,11 +237,6 @@ describe('karta nie jest zgodą', () => {
     });
     assert.equal(promoted.ok, true);
     assert.equal(authorizationFromIssue(promoted.body).authorized, false);
-    const handoff = describeHandoff(parsed.card);
-    assert.equal(handoff.cardOk, true);
-    assert.equal(handoff.authorized, false);
-    assert.deepEqual(handoff.fromRegistry, REGISTRY_HANDOFF_FIELDS);
-    assert.equal(handoff.fromRegistry.includes('scopeHash'), true);
   });
 
   it('odrzuca klucze udające zgodę zamiast traktować je jako format karty', () => {
