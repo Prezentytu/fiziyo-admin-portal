@@ -110,7 +110,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="flex min-h-full overflow-hidden rounded-card bg-card [--surface-card:var(--grouped-tertiary)]">
+    <div className="flex min-h-full shrink-0 overflow-hidden rounded-card bg-card [--surface-card:var(--grouped-tertiary)]">
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}
