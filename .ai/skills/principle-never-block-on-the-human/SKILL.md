@@ -5,8 +5,6 @@ description: "Stosuj, gdy kusi pytanie 'czy zrobić X' przy odwracalnej pracy. F
 
 # Never block on the human
 
-> **Synchronizacja:** źródło w `fizjo-app/.ai/skills/principle-never-block-on-the-human/SKILL.md`. Przy zmianie zaktualizuj oba repozytoria.
-
 Nadzór jest asynchroniczny. Wykonanie nie czeka na potwierdzenie odwracalnej pracy.
 
 - Jeśli odpowiedź jest faktem obserwowalnym (zachowanie, timing, layout, wynik), nie pytaj. Uruchom, zrób prototyp, pokaż wynik.

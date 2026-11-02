@@ -1,2 +1,5 @@
 # Read by scripts/check-agent-context.mjs: Prettier would turn bare __tests__ in paths into **tests**.
 .ai/lessons.md
+# Kopie bajt w bajt z fizjo-app/.agents/skills (rozjazd zgłasza baza-wiedzy/scripts/harness.mjs).
+.ai/skills/principle-*/SKILL.md
+.ai/skills/sec-report/SKILL.md

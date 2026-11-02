@@ -1,11 +1,9 @@
 ---
 name: principle-model-the-domain
-description: 'Stosuj, gdy logika stanowa rozjeżdża się na ify albo to samo założenie o kształcie powtarza się w plikach. Zakoduj domenę w strukturze. EN - model the domain, named data shape first.'
+description: "Stosuj, gdy logika stanowa rozjeżdża się na ify albo to samo założenie o kształcie powtarza się w plikach. Zakoduj domenę w strukturze. EN - model the domain, named data shape first."
 ---
 
 # Model the domain
-
-> **Synchronizacja:** źródło w `fizjo-app/.ai/skills/principle-model-the-domain/SKILL.md`. Przy zmianie zaktualizuj oba repozytoria.
 
 Zanim napiszesz logikę, nazwij kształt danych. Potem dobierz strukturę: maszyna stanów, typ, tabela, reducer, kolekcja. Rozproszone `if` powielają to samo założenie i rozjeżdżają się przy pierwszej nowej kombinacji.
 
