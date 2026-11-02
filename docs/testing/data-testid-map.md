@@ -717,19 +717,24 @@ Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu r
 
 #### Widok pełny (z zadaniami)
 
-| data-testid                           | Element                          | Plik                         |
-| ------------------------------------- | -------------------------------- | ---------------------------- |
-| `verification-scope-tabs`             | Pasek kolejek (gdy rola ma ≥2)   | `VerificationScopeTabs.tsx`  |
-| `nav-link-organization-verification`  | Zakładka: Moja organizacja       | `VerificationScopeTabs.tsx`  |
-| `nav-link-verification-global`        | Zakładka: Katalog FiziYo         | `VerificationScopeTabs.tsx`  |
-| `nav-link-verification-organizations` | Zakładka: Organizacje klientów   | `VerificationScopeTabs.tsx`  |
-| `verification-search-input`           | Wyszukiwarka ćwiczeń             | `verification/page.tsx`      |
-| `verification-stats-pending`          | Karta statystyk: Oczekujące      | `VerificationStatsCards.tsx` |
-| `verification-stats-changes`          | Karta statystyk: Do poprawy      | `VerificationStatsCards.tsx` |
-| `verification-stats-approved`         | Karta statystyk: Zatwierdzone    | `VerificationStatsCards.tsx` |
-| `verification-stats-published`        | Karta statystyk: Opublikowane    | `VerificationStatsCards.tsx` |
-| `verification-card-{id}`              | Karta zadania weryfikacji        | `VerificationTaskCard.tsx`   |
-| `verification-card-{id}-start-btn`    | Przycisk rozpoczęcia weryfikacji | `VerificationTaskCard.tsx`   |
+| data-testid                                                              | Element                                                                      | Plik                         |
+| ------------------------------------------------------------------------ | ---------------------------------------------------------------------------- | ---------------------------- |
+| `verification-scope-tabs`                                                | Pasek kolejek (gdy rola ma ≥2)                                               | `VerificationScopeTabs.tsx`  |
+| `nav-link-organization-verification`                                     | Zakładka: nazwa organizacji (fallback „Moja organizacja”)                    | `VerificationScopeTabs.tsx`  |
+| `{zakładka}-count`                                                       | Licznik oczekujących przy zakładce, np. `nav-link-verification-global-count` | `VerificationScopeTabs.tsx`  |
+| `verification-scope-tabs-moderation-label`                               | Podpis grupy „Moderacja FiziYo”                                              | `VerificationScopeTabs.tsx`  |
+| `verification-queue-hero` (`org-`, `cross-org-` dla pozostałych kolejek) | Panel: liczba oczekujących albo „Kolejka jest pusta”                         | `VerificationQueueHero.tsx`  |
+| `verification-start-queue-btn` (`org-`, `cross-org-`)                    | Zacznij weryfikację: pierwsze oczekujące                                     | `VerificationQueueHero.tsx`  |
+| `nav-link-verification-global`                                           | Zakładka: Katalog FiziYo                                                     | `VerificationScopeTabs.tsx`  |
+| `nav-link-verification-organizations`                                    | Zakładka: Organizacje klientów                                               | `VerificationScopeTabs.tsx`  |
+| `verification-search-input`                                              | Wyszukiwarka ćwiczeń                                                         | `verification/page.tsx`      |
+| `verification-stats-pending`                                             | Status (przełącznik): Oczekujące                                             | `VerificationStatsCards.tsx` |
+| `verification-stats-changes`                                             | Status (przełącznik): Do poprawy                                             | `VerificationStatsCards.tsx` |
+| `verification-stats-approved`                                            | Status (przełącznik): Zatwierdzone                                           | `VerificationStatsCards.tsx` |
+| `verification-stats-published`                                           | Status (przełącznik): Opublikowane                                           | `VerificationStatsCards.tsx` |
+| `verification-card-{id}`                                                 | Karta zadania weryfikacji                                                    | `VerificationTaskCard.tsx`   |
+| `verification-card-{id}-start-btn`                                       | Przycisk rozpoczęcia weryfikacji                                             | `VerificationTaskCard.tsx`   |
+| `verification-card-{id}-status-badge`                                    | Status na karcie (w kolejkach organizacji: status organizacyjny)             | `VerificationTaskCard.tsx`   |
 
 #### Etapy weryfikacji globalnej (`verification/[id]`, SPEC-030)
 
