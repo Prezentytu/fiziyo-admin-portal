@@ -151,4 +151,22 @@ describe('ExerciseExecutionCard inline read-only source info', () => {
     expect(screen.getAllByTitle(/powtórzeń pacjent wykonuje/).length).toBeGreaterThan(0);
     expect(screen.getAllByTitle(/łączny czas wykonania ćwiczenia/).length).toBeGreaterThan(0);
   });
+
+  it.each([
+    [1, '1 seria'],
+    [4, '4 serie'],
+    [5, '5 serii'],
+    [12, '12 serii'],
+  ])('w widoku readable odmienia %i serii poprawnie', (sets, expected) => {
+    render(
+      <ExerciseExecutionCard
+        mode="view"
+        viewVariant="readable"
+        testIdPrefix="exercise-card"
+        exercise={{ id: `exercise-plural-${sets}`, displayName: 'Przysiad', sets, reps: 10 }}
+      />
+    );
+
+    expect(screen.getByText(expected)).toBeInTheDocument();
+  });
 });

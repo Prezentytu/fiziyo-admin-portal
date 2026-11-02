@@ -165,17 +165,18 @@ export function SummaryStep({
         <div
           className={cn(
             'bg-surface border border-border/60 rounded-xl overflow-hidden flex flex-col',
-            isAside ? 'max-h-[320px]' : 'min-h-[200px] sm:min-h-[280px] lg:min-h-0 lg:flex-1'
+            !isAside && 'min-h-[200px] sm:min-h-[280px] lg:min-h-0 lg:flex-1'
           )}
           data-testid="summary-exercises-card"
         >
           {/* Header */}
-          <div className="bg-surface-light/30 p-3 sm:p-4 border-b border-border/40 flex justify-between items-center shrink-0">
-            <div>
+          <div className="bg-surface-light/30 p-3 sm:p-4 border-b border-border/40 flex justify-between items-start gap-3 shrink-0">
+            <div className="min-w-0">
               <h3 className="text-sm font-bold text-foreground">Zestaw Ćwiczeń</h3>
-              <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5 flex-wrap">
-                <span>&ldquo;{exerciseSet.name}&rdquo;</span>
-                <span>•</span>
+              <p className="text-xs text-muted-foreground mt-0.5 wrap-break-word" data-testid="summary-set-name">
+                &ldquo;{exerciseSet.name}&rdquo;
+              </p>
+              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5 flex-wrap">
                 <span>{formatExerciseCount(exerciseCount)}</span>
                 <span>•</span>
                 <span className="inline-flex items-center gap-1 text-primary font-semibold bg-primary/10 px-1.5 py-0.5 rounded">
@@ -190,7 +191,7 @@ export function SummaryStep({
               <button
                 data-testid="summary-edit-exercises-btn"
                 onClick={() => onGoToStep(editMode ? 'customize-set' : 'select-set')}
-                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1.5 transition-colors"
+                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1.5 transition-colors shrink-0"
               >
                 <Pencil className="h-3 w-3" />
                 Edytuj
@@ -254,7 +255,7 @@ export function SummaryStep({
                 </div>
                 <div className="min-w-0">
                   <h4 className="text-xs sm:text-sm font-semibold text-status-warning">Masz uwagi do ćwiczeń?</h4>
-                  <p className="text-[10px] sm:text-xs text-status-warning truncate">
+                  <p className="text-[10px] sm:text-xs text-status-warning" data-testid="summary-concierge-hint">
                     Jeśli widzisz błąd (zdjęcie, opis), zgłoś to nam.
                   </p>
                 </div>

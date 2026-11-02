@@ -69,5 +69,8 @@ describe('SummaryStep exercise list', () => {
     expect(name).not.toHaveClass('truncate');
     expect(screen.getByText(/4 serie/)).toBeInTheDocument();
     expect(screen.getByText(/10 powt\./)).toBeInTheDocument();
+    // Wąska kolumna obok harmonogramu: lista bez własnego przewijania, podpowiedź zgłoszenia bez ucinania.
+    expect(screen.getByTestId('summary-exercises-card')).not.toHaveClass('max-h-[320px]');
+    expect(screen.getByTestId('summary-concierge-hint')).not.toHaveClass('truncate');
   });
 });

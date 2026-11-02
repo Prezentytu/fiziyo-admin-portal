@@ -8,6 +8,7 @@ import { LabeledStepper } from '@/components/shared/LabeledStepper';
 import { ExerciseThumbnail } from './ExerciseThumbnail';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { cn } from '@/lib/utils';
+import { polishPlural } from '@/utils/polishPlural';
 import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
 import {
   type ExerciseExecutionCardProps,
@@ -617,7 +618,9 @@ export function ExerciseExecutionCard({
                 </TooltipProvider>
                 {showReadableView ? (
                   <p className="mt-1 text-xs text-muted-foreground whitespace-normal wrap-break-word">
-                    <span title={setsField.tooltip}>{exercise.sets} serie</span> •{' '}
+                    <span title={setsField.tooltip}>
+                      {exercise.sets} {polishPlural(exercise.sets, 'seria', 'serie', 'serii')}
+                    </span> •{' '}
                     <span title={repsField.tooltip}>{exercise.reps} powt.</span>
                     {durationBadgeLabel ? (
                       <span title={DURATION_TOOLTIP}>{` • Czas ćwiczenia: ${durationBadgeLabel}`}</span>
