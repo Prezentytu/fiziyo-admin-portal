@@ -18,6 +18,8 @@ interface ParameterRule {
   typicalMin: number;
   typicalMax: number;
   suggested: number;
+  /** Slider scale. Narrower than `hardMax`, so the typical band is wide enough to drag precisely. */
+  slider: { min: number; max: number; step: number };
 }
 
 /**
@@ -25,11 +27,51 @@ interface ParameterRule {
  * not medical norms: physiotherapists own these numbers and may tune them.
  */
 export const PARAMETER_RULES: Record<ParameterKey, ParameterRule> = {
-  sets: { label: 'Serie', unit: '', hardMax: 20, typicalMin: 2, typicalMax: 5, suggested: 3 },
-  reps: { label: 'Powtórzenia', unit: '', hardMax: 200, typicalMin: 6, typicalMax: 20, suggested: 12 },
-  repTime: { label: 'Czas powtórzenia', unit: 's', hardMax: 60, typicalMin: 2, typicalMax: 6, suggested: 3 },
-  hold: { label: 'Czas utrzymania', unit: 's', hardMax: 300, typicalMin: 10, typicalMax: 60, suggested: 30 },
-  rest: { label: 'Przerwa między seriami', unit: 's', hardMax: 600, typicalMin: 30, typicalMax: 120, suggested: 60 },
+  sets: {
+    label: 'Serie',
+    unit: '',
+    hardMax: 20,
+    typicalMin: 2,
+    typicalMax: 5,
+    suggested: 3,
+    slider: { min: 1, max: 10, step: 1 },
+  },
+  reps: {
+    label: 'Powtórzenia',
+    unit: '',
+    hardMax: 200,
+    typicalMin: 6,
+    typicalMax: 20,
+    suggested: 12,
+    slider: { min: 1, max: 40, step: 1 },
+  },
+  repTime: {
+    label: 'Czas powtórzenia',
+    unit: 's',
+    hardMax: 60,
+    typicalMin: 2,
+    typicalMax: 6,
+    suggested: 3,
+    slider: { min: 1, max: 15, step: 1 },
+  },
+  hold: {
+    label: 'Czas utrzymania',
+    unit: 's',
+    hardMax: 300,
+    typicalMin: 10,
+    typicalMax: 60,
+    suggested: 30,
+    slider: { min: 5, max: 120, step: 5 },
+  },
+  rest: {
+    label: 'Przerwa między seriami',
+    unit: 's',
+    hardMax: 600,
+    typicalMin: 30,
+    typicalMax: 120,
+    suggested: 60,
+    slider: { min: 0, max: 240, step: 15 },
+  },
 };
 
 export const MODE_PARAMETERS: Record<ExecutionMode, ParameterKey[]> = {
@@ -315,6 +357,28 @@ export function formatSessionDuration(seconds: number): string {
     return `${hours} h ${minutes} min`;
   }
   return `${Math.max(1, Math.round(seconds / 60))} min`;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+/** Position on the slider track (0–100). Values beyond the slider scale sit at its end. */
+export function sliderPercent(key: ParameterKey, value: number): number {
+  const { min, max } = PARAMETER_RULES[key].slider;
+  return ((clamp(value, min, max) - min) / (max - min)) * 100;
+}
+
+/** Slider thumb value; an empty field shows what the patient gets anyway (default or suggested). */
+export function toSliderValue(key: ParameterKey, value: number | null): number {
+  const rule = PARAMETER_RULES[key];
+  const fallback = key === 'repTime' ? DEFAULT_REP_SECONDS : rule.suggested;
+  return clamp(value ?? fallback, rule.slider.min, rule.slider.max);
+}
+
+export function fromSliderValue(key: ParameterKey, raw: string): number {
+  const { min, max, step } = PARAMETER_RULES[key].slider;
+  return clamp(Math.round(Number(raw) / step) * step, min, max);
 }
 
 export function formatWithUnit(value: number, unit: string): string {

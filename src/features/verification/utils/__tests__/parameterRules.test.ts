@@ -12,9 +12,12 @@ import {
   deriveExecutionMode,
   evaluateParameters,
   findHardcodedNumbers,
+  fromSliderValue,
   planModeSwitch,
   replaceHardcodedNumbers,
   sideFactor,
+  sliderPercent,
+  toSliderValue,
   toParameterValues,
   type ParameterValues,
 } from '../parameterRules';
@@ -318,5 +321,29 @@ describe('parameter review state', () => {
   it('does nothing when the mode is already selected', () => {
     const review = createParameterReview(source);
     expect(switchExecutionMode(review, source, 'reps')).toEqual({ review, updates: {} });
+  });
+});
+
+describe('suwak parametru', () => {
+  it('typowy zakres zajmuje czytelną część suwaka, a nie kilka procent skali limitu', () => {
+    const bandWidth = sliderPercent('reps', 20) - sliderPercent('reps', 6);
+    expect(bandWidth).toBeGreaterThan(25);
+  });
+
+  it('wartość ponad skalą suwaka stoi na jego końcu', () => {
+    expect(sliderPercent('reps', 1000)).toBe(100);
+    expect(sliderPercent('sets', 0)).toBe(0);
+  });
+
+  it('puste pole ustawia suwak na wartości, którą pacjent i tak dostanie', () => {
+    expect(toSliderValue('repTime', null)).toBe(3);
+    expect(toSliderValue('sets', null)).toBe(3);
+    expect(toSliderValue('reps', 500)).toBe(40);
+  });
+
+  it('przesunięcie suwaka daje wartość z krokiem pola', () => {
+    expect(fromSliderValue('rest', '75')).toBe(75);
+    expect(fromSliderValue('rest', '83')).toBe(90);
+    expect(fromSliderValue('sets', '4')).toBe(4);
   });
 });
