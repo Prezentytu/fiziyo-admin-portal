@@ -44,6 +44,11 @@ describe('buildStageCopy', () => {
     expect(verified.hints.decision).toBe('Ćwiczenie nie czeka na weryfikację. Poprawki zapisują się od razu.');
   });
 
+  it('bez nagrania nie każe porównywać parametrów z nagraniem', () => {
+    expect(buildStageCopy(input()).hints.parameters).toBe('Porównaj parametry z nagraniem.');
+    expect(buildStageCopy(input({ hasVideo: false })).hints.parameters).toBe('Porównaj parametry ze zdjęciami.');
+  });
+
   it('puts pending decisions first', () => {
     const { subs, hints } = buildStageCopy(input({ hasPendingPhoto: true, hasPendingProposal: true }));
     expect(subs.material).toBe('Nowe zdjęcie do przyjęcia');
