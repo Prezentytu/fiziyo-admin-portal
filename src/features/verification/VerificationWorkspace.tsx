@@ -1111,17 +1111,17 @@ export function VerificationWorkspace({
           )}
 
           {stage === 'decision' && <DecisionStage rows={decisionRows} onGoToStage={goToStage} />}
+
+          <VerificationFloatingBar
+            hint={hints[stage]}
+            isBlocked={isPrimaryBlocked}
+            primaryLabel={primaryLabel}
+            onPrimary={handlePrimary}
+            isBusy={isBusy}
+            secondary={secondary}
+          />
         </div>
       </div>
-
-      <VerificationFloatingBar
-        hint={hints[stage]}
-        isBlocked={isPrimaryBlocked}
-        primaryLabel={primaryLabel}
-        onPrimary={handlePrimary}
-        isBusy={isBusy}
-        secondary={secondary}
-      />
 
       <PhotoReplaceDialog
         open={photoDialogIndex !== null}
