@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useApolloClient, useSubscription } from '@apollo/client/react';
+import { useApolloClient, useQuery, useSubscription } from '@apollo/client/react';
 
 import { useVerificationScopes } from '@/features/verification/useVerificationScopes';
 import {
@@ -13,6 +13,10 @@ import {
   GET_CROSS_ORG_VERIFICATION_STATS_QUERY,
 } from '@/graphql/queries/crossOrgVerification.queries';
 import { ON_EXERCISE_SUBMITTED_FOR_GLOBAL_REVIEW } from '@/graphql/subscriptions';
+import type {
+  GetCrossOrgVerificationStatsResponse,
+  GetVerificationStatsResponse,
+} from '@/graphql/types/adminExercise.types';
 
 const CROSS_ORG_POLL_INTERVAL_MS = 30_000;
 const CROSS_ORG_REFETCH_QUERIES = [GET_CROSS_ORG_VERIFICATION_STATS_QUERY, GET_CROSS_ORG_VERIFICATION_QUEUE_PAGE_QUERY];
@@ -27,6 +31,17 @@ export function useVerificationQueuesRealtime() {
   const scopes = useVerificationScopes();
   const hasGlobal = scopes.some((scope) => scope.key === 'global');
   const hasCrossOrg = scopes.some((scope) => scope.key === 'cross-org');
+
+  // Own observers: `refetchQueries` only reaches mounted queries, and the badge readers can be unmounted
+  // (collapsed chat sidebar), which would leave stale stats in the cache for the lists.
+  useQuery<GetVerificationStatsResponse>(GET_VERIFICATION_STATS_QUERY, {
+    skip: !hasGlobal,
+    fetchPolicy: 'cache-and-network',
+  });
+  useQuery<GetCrossOrgVerificationStatsResponse>(GET_CROSS_ORG_VERIFICATION_STATS_QUERY, {
+    skip: !hasCrossOrg,
+    fetchPolicy: 'cache-and-network',
+  });
 
   useSubscription<{ onExerciseSubmittedForGlobalReview: string }>(ON_EXERCISE_SUBMITTED_FOR_GLOBAL_REVIEW, {
     skip: !hasGlobal && !hasCrossOrg,
