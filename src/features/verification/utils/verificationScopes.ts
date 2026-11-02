@@ -7,7 +7,6 @@ export interface VerificationScope {
   label: string;
   /** Who sees an exercise once it is approved in this queue. */
   audience: string;
-  description: string;
   group: VerificationScopeGroup;
   href: string;
   testId: string;
@@ -26,8 +25,6 @@ const VERIFICATION_SCOPES: ReadonlyArray<
     key: 'organization',
     label: 'Moja organizacja',
     audience: 'Widzi tylko Twój zespół',
-    description:
-      'Ćwiczenia dodane przez terapeutów Twojej organizacji. Po zatwierdzeniu przypisuje je tylko Twój zespół.',
     group: 'own',
     href: '/organization/verification',
     testId: 'nav-link-organization-verification',
@@ -37,7 +34,6 @@ const VERIFICATION_SCOPES: ReadonlyArray<
     key: 'global',
     label: 'Katalog FiziYo',
     audience: 'Widzą wszystkie gabinety',
-    description: 'Kandydaci do katalogu FiziYo. Opublikowane ćwiczenie widzą wszystkie gabinety.',
     group: 'moderation',
     href: '/verification',
     testId: 'nav-link-verification-global',
@@ -47,8 +43,6 @@ const VERIFICATION_SCOPES: ReadonlyArray<
     key: 'cross-org',
     label: 'Organizacje klientów',
     audience: 'Widzi tylko dany klient',
-    description:
-      'Ćwiczenia czekające na zatwierdzenie w organizacjach klientów. Zostają w swojej organizacji i nie trafiają do katalogu FiziYo.',
     group: 'moderation',
     href: '/verification/organizations',
     testId: 'nav-link-verification-organizations',
@@ -63,11 +57,10 @@ export function getVerificationScopes(
 ): VerificationScope[] {
   const ownLabel = organizationName?.trim();
   return VERIFICATION_SCOPES.filter((scope) => scope.isAvailable(access)).map(
-    ({ key, label, audience, description, group, href, testId }) => ({
+    ({ key, label, audience, group, href, testId }) => ({
       key,
       label: key === 'organization' && ownLabel ? ownLabel : label,
       audience,
-      description,
       group,
       href,
       testId,

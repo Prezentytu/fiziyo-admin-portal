@@ -17,23 +17,22 @@ interface VerificationQueueHeroProps {
 /** Pending count with the action that opens the queue; the main action of a verification list. */
 export function VerificationQueueHero({ pendingCount, startHref, testIdPrefix }: VerificationQueueHeroProps) {
   if (pendingCount === null) {
-    return <Skeleton className="h-[100px] w-full rounded-[20px]" />;
+    return <Skeleton className="h-14 w-full rounded-xl" />;
   }
 
   return (
     <section
       aria-label="Do weryfikacji"
       data-testid={`${testIdPrefix}-queue-hero`}
-      className="flex flex-col gap-4 rounded-[20px] bg-surface-card p-6 sm:flex-row sm:items-center sm:justify-between"
+      className="flex flex-col gap-3 rounded-xl bg-surface-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
     >
       {pendingCount > 0 ? (
         <>
-          <div className="flex items-center gap-5">
-            <span className="text-5xl font-bold tabular-nums text-foreground">{pendingCount}</span>
-            <span className="text-xl font-semibold text-foreground">{formatPendingQueueTitle(pendingCount)}</span>
-          </div>
+          <p className="text-[15px] text-foreground">
+            <span className="font-semibold tabular-nums">{pendingCount}</span> {formatPendingQueueTitle(pendingCount)}
+          </p>
           {startHref && (
-            <Button asChild size="lg" data-testid={`${testIdPrefix}-start-queue-btn`}>
+            <Button asChild data-testid={`${testIdPrefix}-start-queue-btn`}>
               <Link href={startHref}>
                 <Play className="fill-current" aria-hidden />
                 Zacznij weryfikację
@@ -42,15 +41,10 @@ export function VerificationQueueHero({ pendingCount, startHref, testIdPrefix }:
           )}
         </>
       ) : (
-        <div className="flex items-center gap-4">
-          <CheckCircle2 className="h-8 w-8 shrink-0 text-primary" aria-hidden />
-          <div className="flex flex-col gap-1">
-            <span className="text-xl font-semibold text-foreground">Kolejka jest pusta</span>
-            <span className="text-muted-foreground">
-              Nowe ćwiczenia pojawią się tu, gdy autor wyśle je do weryfikacji.
-            </span>
-          </div>
-        </div>
+        <p className="flex items-center gap-2 text-[15px] text-foreground">
+          <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+          Kolejka jest pusta
+        </p>
       )}
     </section>
   );
