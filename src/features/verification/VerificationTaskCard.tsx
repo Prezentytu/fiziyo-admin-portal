@@ -27,6 +27,8 @@ interface VerificationTaskCardProps {
   selected?: boolean;
   onSelectionChange?: (selected: boolean) => void;
   track?: VerificationTrack;
+  /** Status chip on the photo; off when the active filter already names the status. */
+  showStatus?: boolean;
 }
 
 function getQualityIndicators(exercise: AdminExercise) {
@@ -58,6 +60,7 @@ export function VerificationTaskCard({
   selected = false,
   onSelectionChange,
   track = 'global',
+  showStatus = true,
 }: VerificationTaskCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -205,12 +208,15 @@ export function VerificationTaskCard({
               {/* Status badge overlay */}
               <div className={cn('absolute top-3 left-3', selectable && 'left-11')}>
                 <div className="flex items-center gap-2">
-                  <Badge
-                    className={cn('border', statusBadge.className)}
-                    data-testid={`verification-card-${exercise.id}-status-badge`}
-                  >
-                    {statusBadge.label}
-                  </Badge>
+                  {showStatus && (
+                    <span
+                      className="inline-flex items-center gap-1.5 rounded-md border border-border/70 bg-background/90 px-2 py-1 text-[11px] font-medium leading-none text-foreground backdrop-blur-sm"
+                      data-testid={`verification-card-${exercise.id}-status-badge`}
+                    >
+                      <span aria-hidden className={cn('h-1.5 w-1.5 rounded-full', statusBadge.dotClassName)} />
+                      {statusBadge.label}
+                    </span>
+                  )}
                   {hasOpenReport && (
                     <Badge
                       variant="outline"

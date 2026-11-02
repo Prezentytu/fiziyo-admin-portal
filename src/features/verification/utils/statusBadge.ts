@@ -4,30 +4,31 @@ export type VerificationTrack = 'global' | 'organization';
 
 export interface VerificationStatusBadge {
   label: string;
-  className: string;
+  /** Color of the dot in front of the label. */
+  dotClassName: string;
 }
 
-const WARNING = 'bg-status-warning-muted text-status-warning border-status-warning/20';
-const SUCCESS = 'bg-status-success-muted text-status-success border-status-success/20';
-const PRIMARY = 'bg-primary/10 text-primary border-primary/20';
-const NEUTRAL = 'bg-muted text-muted-foreground';
+const WARNING = 'bg-status-warning';
+const SUCCESS = 'bg-status-success';
+const PRIMARY = 'bg-primary';
+const NEUTRAL = 'bg-muted-foreground';
 
 const GLOBAL_BADGES: Partial<Record<ContentStatus, VerificationStatusBadge>> = {
-  PENDING_REVIEW: { label: 'Oczekuje', className: WARNING },
-  CHANGES_REQUESTED: { label: 'Do poprawy', className: WARNING },
-  APPROVED: { label: 'Zatwierdzony', className: SUCCESS },
-  PUBLISHED: { label: 'Opublikowany', className: PRIMARY },
+  PENDING_REVIEW: { label: 'Oczekuje', dotClassName: WARNING },
+  CHANGES_REQUESTED: { label: 'Do poprawy', dotClassName: WARNING },
+  APPROVED: { label: 'Zatwierdzony', dotClassName: SUCCESS },
+  PUBLISHED: { label: 'Opublikowany', dotClassName: PRIMARY },
 };
 
 const ORGANIZATION_BADGES: Record<OrganizationVerificationStatus, VerificationStatusBadge> = {
-  NOT_SUBMITTED: { label: 'Szkic', className: NEUTRAL },
-  PENDING_ORG_REVIEW: { label: 'Oczekuje', className: WARNING },
-  ORG_CHANGES_REQUESTED: { label: 'Do poprawy', className: WARNING },
-  ORG_VERIFIED: { label: 'Zweryfikowane', className: SUCCESS },
-  ORG_ARCHIVED: { label: 'Zarchiwizowane', className: NEUTRAL },
+  NOT_SUBMITTED: { label: 'Szkic', dotClassName: NEUTRAL },
+  PENDING_ORG_REVIEW: { label: 'Oczekuje', dotClassName: WARNING },
+  ORG_CHANGES_REQUESTED: { label: 'Do poprawy', dotClassName: WARNING },
+  ORG_VERIFIED: { label: 'Zweryfikowane', dotClassName: SUCCESS },
+  ORG_ARCHIVED: { label: 'Zarchiwizowane', dotClassName: NEUTRAL },
 };
 
-const DRAFT_BADGE: VerificationStatusBadge = { label: 'Szkic', className: NEUTRAL };
+const DRAFT_BADGE: VerificationStatusBadge = { label: 'Szkic', dotClassName: NEUTRAL };
 
 /** Status badge for a queue card; organization queues read the organization track, not the global `status`. */
 export function getVerificationStatusBadge(

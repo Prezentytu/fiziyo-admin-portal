@@ -176,7 +176,7 @@ export default function OrganizationVerificationPage() {
 
   return (
     <PageSheet contentClassName="gap-6">
-      <VerificationPageHeader scopeKey="organization" />
+      <VerificationPageHeader />
 
       <VerificationQueueHero
         pendingCount={statsData?.organizationVerificationStats.pendingOrgReview ?? null}
@@ -242,6 +242,7 @@ export default function OrganizationVerificationPage() {
               key={exercise.id}
               exercise={exercise}
               track="organization"
+              showStatus={false}
               selectable={canArchive}
               selected={selection.isSelected(exercise.id)}
               onSelectionChange={() => selection.toggle(exercise.id)}
