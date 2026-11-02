@@ -150,7 +150,8 @@ interface CreateExerciseWizardProps {
 }
 
 export interface CreateExerciseWizardSuccessEvent {
-  action: 'created';
+  /** `existing`: the therapist picked a similar exercise from the catalog instead of creating one. */
+  action: 'created' | 'existing';
   exerciseId: string;
 }
 
@@ -1306,15 +1307,13 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
     setIsMediaLightboxOpen(true);
   }, []);
 
-  // Handle use existing exercise (from duplicate detection)
   const handleUseExisting = useCallback(
     (exercise: ExistingExercise) => {
-      // Close modal and notify parent that user chose existing exercise
       toast.info(`Wybrano istniejące ćwiczenie: ${exercise.name}`);
       onOpenChange(false);
-      // Note: Parent component should handle adding this exercise to the set
+      onSuccess?.({ action: 'existing', exerciseId: exercise.id });
     },
-    [onOpenChange]
+    [onOpenChange, onSuccess]
   );
 
   // Handle AI Enhancement

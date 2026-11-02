@@ -136,5 +136,19 @@ describe('ExerciseExecutionCard inline read-only source info', () => {
 
     expect(screen.getByText('Czas: ~2 min')).toBeInTheDocument();
   });
-});
 
+  it.each(['compact', 'readable'] as const)('opisuje serie, powtórzenia i czas w widoku %s', (viewVariant) => {
+    render(
+      <ExerciseExecutionCard
+        mode="view"
+        viewVariant={viewVariant}
+        testIdPrefix="exercise-card"
+        exercise={{ id: 'exercise-hint-1', displayName: 'Przysiad', sets: 3, reps: 10, executionTime: 4 }}
+      />
+    );
+
+    expect(screen.getAllByTitle(/pełnych serii/).length).toBeGreaterThan(0);
+    expect(screen.getAllByTitle(/powtórzeń pacjent wykonuje/).length).toBeGreaterThan(0);
+    expect(screen.getAllByTitle(/łączny czas wykonania ćwiczenia/).length).toBeGreaterThan(0);
+  });
+});

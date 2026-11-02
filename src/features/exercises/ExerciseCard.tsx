@@ -33,7 +33,7 @@ import { cn } from '@/lib/utils';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { ImageLightbox } from '@/components/shared/ImageLightbox';
 import { getMediaUrl } from '@/utils/mediaUrl';
-import { HIDE_EXERCISE_TAGS } from '@/components/shared/exercise';
+import { EXERCISE_FIELD_METADATA, HIDE_EXERCISE_TAGS } from '@/components/shared/exercise';
 import { verificationCopy } from '@/features/verification/verificationCopy';
 import { exerciseStatusBadgeVariant } from './utils/exerciseStatusBadgeVariant';
 
@@ -333,15 +333,15 @@ export function ExerciseCard({
             </div>
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
               {setsValue && setsValue > 0 && (
-                <span className="flex items-center gap-1">
-                  <Repeat className="h-3 w-3" />
+                <span className="flex items-center gap-1" title={EXERCISE_FIELD_METADATA.sets.tooltip}>
+                  <Repeat className="h-3 w-3" aria-hidden />
                   {setsValue} serii
                 </span>
               )}
-              {repsValue && repsValue > 0 && <span>{repsValue} powt.</span>}
+              {repsValue && repsValue > 0 && <span title={EXERCISE_FIELD_METADATA.reps.tooltip}>{repsValue} powt.</span>}
               {executionTimeValue && executionTimeValue > 0 && (
-                <span className="flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
+                <span className="flex items-center gap-1" title={EXERCISE_FIELD_METADATA.executionTime.tooltip}>
+                  <Clock className="h-3 w-3" aria-hidden />
                   {executionTimeValue}s
                 </span>
               )}

@@ -1,3 +1,5 @@
+import { addWeeks } from 'date-fns';
+
 /**
  * Dni tygodnia (zgodne z polem Frequency w assignment).
  * Używane przez getDefaultDaysForFrequency do rozkładu sesji w tygodniu.
@@ -70,4 +72,11 @@ export function getDefaultDaysForFrequency(timesPerWeek: number): WeekDays {
     ...ALL_FALSE,
     monday: true,
   };
+}
+
+/** Plan length the wizard starts with; the end date matches the preselected "4 tygodnie" option. */
+export const DEFAULT_PLAN_WEEKS = 4;
+
+export function getDefaultPlanEndDate(startDate: Date): Date {
+  return addWeeks(startDate, DEFAULT_PLAN_WEEKS);
 }

@@ -30,6 +30,7 @@ import {
   type ResolvedParameterField,
 } from './fieldContract';
 import { getExecutionTimeFieldHint } from './executionTimeFieldHint';
+import { parseNumberFieldDraft } from './numberFieldDraft';
 import { getTimerModeDescription, getTimerModeLabel } from './timerModeCopy';
 
 /** Normalized values for the shared parameter presentation layer. */
@@ -184,21 +185,22 @@ function NumberField({
   onCommit: (value: number | null) => void;
 }>) {
   const [raw, setRaw] = useState(value != null ? String(value) : '');
+  const [error, setError] = useState<string | null>(null);
   const metadata = EXERCISE_FIELD_METADATA[config.key];
 
   useEffect(() => {
     setRaw(value != null ? String(value) : '');
+    setError(null);
   }, [value]);
 
   const commit = () => {
-    const trimmed = raw.trim();
-    if (trimmed === '') {
-      if (value != null) onCommit(null);
+    const draft = parseNumberFieldDraft(raw, config);
+    if (draft.kind === 'error') {
+      setError(draft.message);
       return;
     }
-    const parsed = Number(trimmed);
-    const next = Number.isNaN(parsed) ? null : parsed;
-    if (next !== value) onCommit(next);
+    setError(null);
+    if (draft.value !== (value ?? null)) onCommit(draft.value);
   };
 
   return (
@@ -221,7 +223,12 @@ function NumberField({
           max={config.max}
           step={config.step}
           value={raw}
-          onChange={(event) => setRaw(event.target.value)}
+          aria-invalid={error ? true : undefined}
+          onFocus={(event) => event.currentTarget.select()}
+          onChange={(event) => {
+            setRaw(event.target.value);
+            setError(null);
+          }}
           onBlur={commit}
           onKeyDown={(event) => {
             if (event.key === 'Enter') event.currentTarget.blur();
@@ -240,6 +247,11 @@ function NumberField({
           </span>
         ) : null}
       </div>
+      {error ? (
+        <p className="text-[11px] leading-snug text-destructive" data-testid={`${testId}-error`}>
+          {error}
+        </p>
+      ) : null}
       {hint ? (
         <p className="text-[11px] leading-snug text-muted-foreground" data-testid={hintTestId}>
           {hint}

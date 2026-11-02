@@ -453,17 +453,38 @@ export function AssignmentSuccessDialog({
               <Smartphone className="h-4 w-4 text-muted-foreground" />
               Aplikacja mobilna
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCopyLink}
-              disabled={!canRenderQr}
-              className="mt-3"
-              data-testid="assign-success-copy-link-btn"
-            >
-              {copied ? <Check className="h-3.5 w-3.5 mr-1.5 text-primary" /> : <Copy className="h-3.5 w-3.5 mr-1.5" />}
-              {copied ? 'Skopiowano link' : 'Kopiuj link'}
-            </Button>
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCopyLink}
+                disabled={!canRenderQr}
+                data-testid="assign-success-copy-link-btn"
+              >
+                {copied ? <Check className="h-3.5 w-3.5 mr-1.5 text-primary" /> : <Copy className="h-3.5 w-3.5 mr-1.5" />}
+                {copied ? 'Skopiowano link' : 'Kopiuj link'}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleShare}
+                disabled={!canRenderQr}
+                data-testid="assign-success-share-btn"
+              >
+                <Share2 className="h-3.5 w-3.5 mr-1.5" />
+                Wyślij link
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadPDF}
+                disabled={isGeneratingPDF || !organization || !exerciseSet}
+                data-testid="assign-success-download-pdf-btn"
+              >
+                <Download className="h-3.5 w-3.5 mr-1.5" />
+                Pobierz PDF
+              </Button>
+            </div>
           </div>
 
           <Collapsible
@@ -500,17 +521,6 @@ export function AssignmentSuccessDialog({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={handleShare}
-                  disabled={!canRenderQr}
-                  className="justify-start text-xs text-muted-foreground h-8"
-                  data-testid="assign-success-share-btn"
-                >
-                  <Share2 className="h-3 w-3 mr-1.5" />
-                  Wyślij link
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
                   onClick={handlePrintCard}
                   disabled={isGeneratingPDF || !organization || !exerciseSet}
                   className="justify-start text-xs text-muted-foreground h-8"
@@ -518,17 +528,6 @@ export function AssignmentSuccessDialog({
                 >
                   <Printer className="h-3 w-3 mr-1.5" />
                   Drukuj kartę
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleDownloadPDF}
-                  disabled={isGeneratingPDF || !organization || !exerciseSet}
-                  className="justify-start text-xs text-muted-foreground h-8"
-                  data-testid="assign-success-download-pdf-btn"
-                >
-                  <Download className="h-3 w-3 mr-1.5" />
-                  Pobierz PDF
                 </Button>
                 <Button
                   variant="ghost"

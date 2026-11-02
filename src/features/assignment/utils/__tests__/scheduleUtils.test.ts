@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { getDefaultDaysForFrequency } from '../scheduleUtils';
+import { differenceInDays } from 'date-fns';
+import { getDefaultDaysForFrequency, getDefaultPlanEndDate } from '../scheduleUtils';
 
 describe('getDefaultDaysForFrequency', () => {
   it('returns only Monday for 1 session per week', () => {
@@ -78,5 +79,12 @@ describe('getDefaultDaysForFrequency', () => {
   it('rounds fractional values', () => {
     expect(getDefaultDaysForFrequency(2.4)).toEqual(getDefaultDaysForFrequency(2));
     expect(getDefaultDaysForFrequency(2.6)).toEqual(getDefaultDaysForFrequency(3));
+  });
+});
+
+describe('getDefaultPlanEndDate', () => {
+  it('ends the default plan exactly four weeks after the start, like the "4 tygodnie" option', () => {
+    const start = new Date(2026, 10, 2);
+    expect(differenceInDays(getDefaultPlanEndDate(start), start)).toBe(28);
   });
 });

@@ -6,7 +6,6 @@ import { Loader2, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { SetNameField } from '@/features/exercise-sets/components/SetNameField';
@@ -30,7 +29,6 @@ import { aiService } from '@/services/aiService';
 import {
   CREATE_EXERCISE_SET_MUTATION,
   ADD_EXERCISE_TO_EXERCISE_SET_MUTATION,
-  ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
 import {
   GET_ORGANIZATION_EXERCISE_SETS_QUERY,
@@ -55,7 +53,6 @@ interface CreateSetWizardProps {
   onSuccess?: (setId: string) => void;
   patientId?: string;
   patientName?: string;
-  autoAssign?: boolean;
   initialExerciseIds?: string[];
 }
 
@@ -73,7 +70,6 @@ export function CreateSetWizard({
   onSuccess,
   patientId,
   patientName,
-  autoAssign = false,
   initialExerciseIds,
 }: CreateSetWizardProps) {
   const [name, setName] = useState('');
@@ -183,7 +179,6 @@ export function CreateSetWizard({
 
   const [createSet, { loading: creatingSet }] = useMutation(CREATE_EXERCISE_SET_MUTATION);
   const [addExercise, { loading: addingExercises }] = useMutation(ADD_EXERCISE_TO_EXERCISE_SET_MUTATION);
-  const [assignSetToPatient, { loading: assigning }] = useMutation(ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION);
 
   const tags = useMemo(() => (tagsData as ExerciseTagsResponse)?.exerciseTags || [], [tagsData]);
   const categories = useMemo(
@@ -289,7 +284,7 @@ export function CreateSetWizard({
   }, [exercises, name, selectedInstances]);
 
   const canCreate = name.trim().length >= 2;
-  const isLoading = creatingSet || addingExercises || assigning;
+  const isLoading = creatingSet || addingExercises;
 
   const focusNameInput = useCallback(() => {
     if (!nameInputRef.current) return;
@@ -351,17 +346,7 @@ export function CreateSetWizard({
         include: [GET_ORGANIZATION_EXERCISE_SETS_QUERY, GET_ORGANIZATION_EXERCISE_USAGE_QUERY],
       });
 
-      if (autoAssign && patientId) {
-        await assignSetToPatient({
-          variables: {
-            exerciseSetId: newSetId,
-            patientId,
-          },
-        });
-        toast.success(`Zestaw "${sanitizedName}" utworzony i przypisany do pacjenta`);
-      } else {
-        toast.success(`Zestaw "${sanitizedName}" utworzony`);
-      }
+      toast.success(`Zestaw "${sanitizedName}" utworzony`);
       onOpenChange(false);
       onSuccess?.(newSetId);
     } catch (error) {
@@ -420,11 +405,6 @@ export function CreateSetWizard({
                   <div className="flex items-center gap-2 text-[10px] text-muted-foreground shrink-0">
                     <span>Dla:</span>
                     <span className="font-medium text-foreground">{patientContext.patientName}</span>
-                    {autoAssign && (
-                      <Badge variant="secondary" className="text-[9px] bg-surface-light border-border text-muted-foreground">
-                        Auto-przypisanie
-                      </Badge>
-                    )}
                   </div>
                 )}
                 <Button

@@ -28,7 +28,6 @@ describe.each(['https://clinic.example', 'http://localhost:4317'])('patient navi
         id: 'patient-42',
         fullname: 'Test Patient',
         email: 'patient@example.com',
-        organizationIds: ['org-1'],
       },
     };
     const assignments = {

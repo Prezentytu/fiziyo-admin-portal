@@ -61,6 +61,9 @@ const CARD_FIELD_TESTID_MAP: Record<
   customDescription: { input: 'custom-description-input', info: 'help-customDescription' },
 };
 
+const DURATION_TOOLTIP =
+  'Szacowany łączny czas wykonania ćwiczenia z uwzględnieniem serii, powtórzeń, przerw i przygotowania.';
+
 function exerciseToParameterValues(
   exercise: ExerciseExecutionCardProps['exercise']
 ): ExerciseParameterValues {
@@ -532,8 +535,7 @@ export function ExerciseExecutionCard({
                               </span>
                             </TooltipTrigger>
                             <TooltipContent side="top" className="max-w-[220px] text-xs">
-                              Szacowany laczny czas wykonania cwiczenia z uwzglednieniem serii, powtorzen, przerw i
-                              przygotowania.
+                              {DURATION_TOOLTIP}
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
@@ -615,8 +617,11 @@ export function ExerciseExecutionCard({
                 </TooltipProvider>
                 {showReadableView ? (
                   <p className="mt-1 text-xs text-muted-foreground whitespace-normal wrap-break-word">
-                    {exercise.sets} serie • {exercise.reps} powt.
-                    {durationBadgeLabel ? ` • Czas cwiczenia: ${durationBadgeLabel}` : ''}
+                    <span title={setsField.tooltip}>{exercise.sets} serie</span> •{' '}
+                    <span title={repsField.tooltip}>{exercise.reps} powt.</span>
+                    {durationBadgeLabel ? (
+                      <span title={DURATION_TOOLTIP}>{` • Czas ćwiczenia: ${durationBadgeLabel}`}</span>
+                    ) : null}
                     {showModifiedBadge ? ' • Zmienione' : ''}
                   </p>
                 ) : shouldShowDurationBadge || showModifiedBadge ? (
@@ -631,8 +636,7 @@ export function ExerciseExecutionCard({
                             </span>
                           </TooltipTrigger>
                           <TooltipContent side="top" className="text-xs max-w-[220px]">
-                            Szacowany laczny czas wykonania cwiczenia z uwzglednieniem serii, powtorzen, przerw i
-                            przygotowania.
+                            {DURATION_TOOLTIP}
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
@@ -652,7 +656,10 @@ export function ExerciseExecutionCard({
             </div>
             {viewVariant === 'compact' && (
               <div className="flex flex-col sm:flex-row sm:items-center justify-center sm:justify-end gap-1.5 sm:gap-3 text-sm font-semibold text-foreground shrink-0 ml-3 bg-surface-light/50 px-3 py-2 sm:py-1.5 rounded-lg border border-border/40 min-w-[80px] sm:min-w-[120px]">
-                <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-1.5 w-full sm:w-auto">
+                <div
+                  className="flex items-center justify-between sm:justify-start gap-3 sm:gap-1.5 w-full sm:w-auto"
+                  title={setsField.tooltip}
+                >
                   <span className="text-[10px] sm:hidden text-muted-foreground uppercase font-bold tracking-wide">
                     Serie
                   </span>
@@ -660,7 +667,10 @@ export function ExerciseExecutionCard({
                   <span className="text-muted-foreground text-xs font-normal hidden sm:inline ml-[-2px]">serie</span>
                 </div>
                 <div className="hidden sm:block text-muted-foreground/30 h-4 w-px bg-border/50"></div>
-                <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-1.5 w-full sm:w-auto">
+                <div
+                  className="flex items-center justify-between sm:justify-start gap-3 sm:gap-1.5 w-full sm:w-auto"
+                  title={repsField.tooltip}
+                >
                   <span className="text-[10px] sm:hidden text-muted-foreground uppercase font-bold tracking-wide">
                     Powt.
                   </span>
@@ -670,7 +680,10 @@ export function ExerciseExecutionCard({
                 {shouldShowDurationBadge && (
                   <>
                     <div className="hidden sm:block text-muted-foreground/30 h-4 w-px bg-border/50"></div>
-                    <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-1.5 w-full sm:w-auto">
+                    <div
+                      className="flex items-center justify-between sm:justify-start gap-3 sm:gap-1.5 w-full sm:w-auto"
+                      title={DURATION_TOOLTIP}
+                    >
                       <span className="text-[10px] sm:hidden text-muted-foreground uppercase font-bold tracking-wide">
                         Czas
                       </span>

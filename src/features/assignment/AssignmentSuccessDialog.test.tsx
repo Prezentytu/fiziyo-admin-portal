@@ -72,6 +72,23 @@ describe('AssignmentSuccessDialog QR payload', () => {
     expect(screen.getByTestId('assign-success-copy-link-btn')).toBeEnabled();
   });
 
+  it('shows send link and PDF without opening more options', () => {
+    render(
+      <AssignmentSuccessDialog
+        open
+        onOpenChange={vi.fn()}
+        patients={patients}
+        setName="Plan testowy"
+        organizationId="org-9"
+        therapistId="th-2"
+      />
+    );
+
+    expect(screen.getByTestId('assign-success-share-btn')).toBeEnabled();
+    expect(screen.getByTestId('assign-success-download-pdf-btn')).toBeInTheDocument();
+    expect(screen.queryByTestId('assign-success-download-qr-btn')).not.toBeInTheDocument();
+  });
+
   it('shows unavailable QR instead of a spinner when therapist is missing', async () => {
     const user = userEvent.setup();
     render(
@@ -90,8 +107,9 @@ describe('AssignmentSuccessDialog QR payload', () => {
     expect(screen.getByTestId('assign-success-qr-unavailable')).toBeInTheDocument();
     expect(screen.getByTestId('assign-success-copy-link-btn')).toBeDisabled();
 
+    expect(screen.getByTestId('assign-success-share-btn')).toBeDisabled();
+
     await user.click(screen.getByTestId('assign-success-more-options-trigger'));
     expect(screen.getByTestId('assign-success-download-qr-btn')).toBeDisabled();
-    expect(screen.getByTestId('assign-success-share-btn')).toBeDisabled();
   });
 });

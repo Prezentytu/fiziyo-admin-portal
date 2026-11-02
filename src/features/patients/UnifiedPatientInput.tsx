@@ -47,7 +47,6 @@ interface FoundUser {
   image?: string;
   isShadowUser?: boolean;
   isActive?: boolean;
-  organizationIds?: string[];
   personalData?: {
     firstName?: string;
     lastName?: string;
@@ -270,7 +269,6 @@ export function UnifiedPatientInput({
         image: user.image,
         isShadowUser: user.isShadowUser,
         isActive: user.isActive,
-        organizationIds: user.organizationIds,
         personalData: user.personalData,
         contactData: user.contactData,
       });
@@ -298,7 +296,6 @@ export function UnifiedPatientInput({
         image: user.image,
         isShadowUser: user.isShadowUser,
         isActive: user.isActive,
-        organizationIds: user.organizationIds,
         personalData: user.personalData,
         contactData: user.contactData,
       });

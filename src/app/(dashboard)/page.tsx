@@ -20,7 +20,8 @@ import { EmptyState } from '@/components/shared/EmptyState';
 import { SetThumbnail } from '@/features/exercise-sets/SetThumbnail';
 import { CreateSetWizard } from '@/features/exercise-sets/CreateSetWizard';
 import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
-import { normalizeFrequencySeed } from '@/features/assignment/utils/scheduleFrequencyUtils';
+import { toPreselectedSet } from '@/features/assignment/utils/toPreselectedSet';
+import type { ExerciseMapping } from '@/features/assignment/types';
 import { PatientDialog } from '@/features/patients/PatientDialog';
 import { ActivatePremiumDialog } from '@/features/patients/ActivatePremiumDialog';
 import { DashboardSkeleton } from '@/components/shared/DashboardSkeleton';
@@ -74,16 +75,8 @@ interface ExerciseSetItem {
     saturday?: boolean;
     sunday?: boolean;
   };
-  exerciseMappings?: Array<{
-    id: string;
-    exerciseId: string;
-    exercise?: {
-      id: string;
-      name: string;
-      imageUrl?: string;
-      images?: string[];
-    };
-  }>;
+  /** Full mappings from `EXERCISE_SET_WITH_EXERCISES_FRAGMENT`; quick assign starts from the set's own parameters. */
+  exerciseMappings?: ExerciseMapping[];
 }
 
 interface PatientAssignmentData {
@@ -548,28 +541,7 @@ function ClassicDashboard() {
           mode={quickAssignSet ? 'from-set' : 'from-patient'}
           organizationId={organizationId}
           therapistId={therapistId}
-          preselectedSet={
-            quickAssignSet
-              ? {
-                  id: quickAssignSet.id,
-                  name: quickAssignSet.name,
-                  description: quickAssignSet.description,
-                  frequency: quickAssignSet.frequency ? normalizeFrequencySeed(quickAssignSet.frequency) : undefined,
-                  exerciseMappings: quickAssignSet.exerciseMappings?.map((m) => ({
-                    id: m.id,
-                    exerciseId: m.exerciseId,
-                    exercise: m.exercise
-                      ? {
-                          id: m.exercise.id,
-                          name: m.exercise.name,
-                          imageUrl: m.exercise.imageUrl,
-                          images: m.exercise.images,
-                        }
-                      : undefined,
-                  })),
-                }
-              : undefined
-          }
+          preselectedSet={quickAssignSet ? toPreselectedSet(quickAssignSet) : undefined}
           onSuccess={() => {
             setIsAssignWizardOpen(false);
             setQuickAssignSet(null);

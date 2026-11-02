@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   calculateEstimatedTime,
   calculateExerciseTotalSeconds,
+  formatEstimatedTime,
   formatExerciseDuration,
   parseTempo,
 } from './exerciseTime';
@@ -22,6 +23,12 @@ describe('parseTempo', () => {
 
   it('parsuje skompresowany format 3 cyfr bez separatora', () => {
     expect(parseTempo('310')).toBe(4);
+  });
+
+  it('nie traktuje ciagu cyfr innej dlugosci niz 1, 3 albo 4 jako sekund na powtorzenie', () => {
+    expect(parseTempo('30')).toBeNull();
+    expect(parseTempo('20103')).toBeNull();
+    expect(parseTempo('3')).toBe(3);
   });
 
   it('zwraca null gdy wszystkie cyfry sa zerowe', () => {
@@ -212,5 +219,31 @@ describe('formatExerciseDuration', () => {
 
   it('formatuje czas estymowany z prefiksem', () => {
     expect(formatExerciseDuration(150, true)).toBe('~3 min');
+  });
+
+  it('pokazuje godziny od 60 minut', () => {
+    expect(formatExerciseDuration(3900, false)).toBe('1 h 5 min');
+    expect(formatExerciseDuration(3600, true)).toBe('~1 h');
+  });
+
+  it('nie pokazuje NaN dla niepoprawnej liczby', () => {
+    expect(formatExerciseDuration(Number.NaN, false)).toBe('0 s');
+  });
+});
+
+describe('formatEstimatedTime', () => {
+  it('zaokragla do minut z prefiksem', () => {
+    expect(formatEstimatedTime(150)).toBe('~3 min');
+    expect(formatEstimatedTime(20)).toBe('~1 min');
+  });
+
+  it('pokazuje godziny od 60 minut', () => {
+    expect(formatEstimatedTime(3900)).toBe('~1 h 5 min');
+    expect(formatEstimatedTime(7200)).toBe('~2 h');
+  });
+
+  it('nie pokazuje NaN ani Infinity', () => {
+    expect(formatEstimatedTime(Number.NaN)).toBe('~0 min');
+    expect(formatEstimatedTime(Number.POSITIVE_INFINITY)).toBe('~0 min');
   });
 });
