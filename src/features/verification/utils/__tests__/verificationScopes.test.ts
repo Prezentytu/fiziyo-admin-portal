@@ -75,4 +75,14 @@ describe('sumPendingCounts', () => {
 
     expect(sumPendingCounts(scopes, { organization: 1, global: 12, 'cross-org': 3 })).toBe(15);
   });
+
+  it('keeps the own organization while the cross-org count has not arrived yet', () => {
+    const scopes = getVerificationScopes({
+      canManageOrganization: true,
+      canReviewExercises: true,
+      isSiteSuperAdmin: true,
+    });
+
+    expect(sumPendingCounts(scopes, { organization: 4, global: 1 })).toBe(5);
+  });
 });
