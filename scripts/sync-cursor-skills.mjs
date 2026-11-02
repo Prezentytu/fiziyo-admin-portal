@@ -3,7 +3,8 @@ import path from 'node:path';
 
 const ROOT_DIR = process.cwd();
 const SOURCE_ROOT = path.join(ROOT_DIR, '.ai/skills');
-const TARGET_ROOTS = ['.cursor/skills', '.agents/skills'].map((dir) => path.join(ROOT_DIR, dir));
+// Claude Code czyta skille projektu tylko z .claude/skills.
+const TARGET_ROOTS = ['.cursor/skills', '.agents/skills', '.claude/skills'].map((dir) => path.join(ROOT_DIR, dir));
 const MANIFEST_PATH = path.join(SOURCE_ROOT, 'manifest.json');
 const LINT_MODE = process.argv.includes('--lint');
 const CHECK_MODE = process.argv.includes('--check');
@@ -140,9 +141,7 @@ function ensureManifestMatchesDirectories(declaredSkills, skillDirectories) {
 
   if (missingInManifest.length || missingOnDisk.length) {
     const details = [
-      missingInManifest.length > 0
-        ? `Directories not listed in manifest: ${missingInManifest.join(', ')}.`
-        : null,
+      missingInManifest.length > 0 ? `Directories not listed in manifest: ${missingInManifest.join(', ')}.` : null,
       missingOnDisk.length > 0 ? `Manifest entries missing on disk: ${missingOnDisk.join(', ')}.` : null,
     ]
       .filter(Boolean)
@@ -196,7 +195,7 @@ async function main() {
 
   for (const targetRoot of TARGET_ROOTS) await preflight(targetRoot, sourceEntries);
   if (CHECK_MODE) {
-    console.log(`skills:check OK (${validationSummary.length} skills, both mirrors match).`);
+    console.log(`skills:check OK (${validationSummary.length} skills, all mirrors match).`);
     return;
   }
 
@@ -209,7 +208,9 @@ async function main() {
       else await fs.writeFile(targetPath, content);
     }
   }
-  console.log(`Synced ${validationSummary.length} skills to .cursor/skills and .agents/skills (manifest version ${manifest.version ?? 'n/a'}).`);
+  console.log(
+    `Synced ${validationSummary.length} skills to .cursor/skills, .agents/skills and .claude/skills (manifest version ${manifest.version ?? 'n/a'}).`
+  );
 }
 
 main().catch((error) => {

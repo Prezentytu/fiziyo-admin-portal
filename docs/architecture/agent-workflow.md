@@ -11,8 +11,8 @@ delegowaniu i wznowieniu. Proste pytanie lub literówka nie wymagają runu.
 - Zakres: issue albo istniejący spec; status specu wyłącznie w `.ai/specs/README.md`.
 - Postęp zadania, decyzje, dowody i następny krok: jeden plik `.ai/runs/<date>-<slug>.md`.
   Nie duplikuj treści specu ani historii rozmowy. Wskaż spec i pliki.
-- Skille portalu: `.ai/skills/` i `manifest.json` są źródłem; `.agents/skills/`
-  i `.cursor/skills/` to lokalne, ignorowane przez Git kopie do wykrywania przez klientów.
+- Skille portalu: `.ai/skills/` i `manifest.json` są źródłem; `.agents/skills/`,
+  `.cursor/skills/` i `.claude/skills/` to lokalne, ignorowane przez Git kopie do wykrywania przez klientów.
   Mobile ma własne źródło `.agents/skills/`; nie kopiuj katalogów między repo.
 
 Koordynator utrzymuje zakres i run, przydziela pliki, sprawdza wynik i linkuje
