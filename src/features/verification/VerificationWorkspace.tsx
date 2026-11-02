@@ -4,7 +4,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { useMutation } from '@apollo/client/react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
-import { ArrowLeft, FileText, Loader2 } from 'lucide-react';
+import { Archive, ArrowLeft, FileText, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -34,6 +34,7 @@ import { getMediaUrls } from '@/utils/mediaUrl';
 import type {
   AdminExercise,
   ApproveExerciseResponse,
+  OrganizationVerificationStatus,
   RejectExerciseResponse,
 } from '@/graphql/types/adminExercise.types';
 import type { ExerciseEnrichmentData, ExerciseEnrichmentPatientV3 } from '@/graphql/types/exerciseEnrichment.types';
@@ -45,6 +46,7 @@ import { InstructionStage } from './stages/InstructionStage';
 import { MaterialStage, type PendingPhoto } from './stages/MaterialStage';
 import { ParametersStage } from './stages/ParametersStage';
 import { PhotoReplaceDialog } from './stages/PhotoReplaceDialog';
+import { RequestChangesDialog } from './stages/RequestChangesDialog';
 import { SafetyStage } from './stages/SafetyStage';
 import { VerificationFloatingBar } from './stages/VerificationFloatingBar';
 import { VerificationStageNav, type StageNavItem, type StageNavState } from './stages/VerificationStageNav';
@@ -71,7 +73,13 @@ import {
   type ExecutionMode,
   type ParameterKey,
 } from './utils/parameterRules';
+import {
+  canApproveOrganizationExercise,
+  canArchiveOrganizationExercise,
+  canRequestOrganizationChanges,
+} from './utils/orgStateMachine';
 import { MAX_PHOTOS, validatePhotoFile } from './utils/photoValidation';
+import { getVerificationStatusBadge } from './utils/statusBadge';
 import { buildStageCopy } from './utils/stageCopy';
 import {
   describeReadingFocus,
@@ -108,16 +116,37 @@ const REPORT_STAGE: Record<ExerciseReportReasonCategory, VerificationStageKey> =
   OTHER: 'parameters',
 };
 
+/**
+ * Organization track (clinic queue and backoffice cross-org moderation): the page owns the mutations,
+ * the workspace owns stages, notes and navigation after the decision.
+ */
+export interface OrganizationDecision {
+  status: OrganizationVerificationStatus | undefined;
+  isBusy: boolean;
+  onApprove: () => Promise<void>;
+  onRequestChanges: (notes: string) => Promise<void>;
+  onArchive: () => Promise<void>;
+}
+
 interface VerificationWorkspaceProps {
   exercise: AdminExercise;
   queuePosition: number | null;
   queueTotal: number;
   nextExerciseId: string | null;
-  openReports: ExerciseReport[];
+  openReports?: ExerciseReport[];
   listUrl: string;
   buildDetailUrl: (exerciseId: string) => string;
   reloadImages: () => Promise<string[]>;
+  /** Without it the workspace runs the global track (publish, duplicate). */
+  organizationDecision?: OrganizationDecision;
+  /** Overrides the default enrichment save (admin `updateExerciseField`). */
+  saveEnrichment?: (payload: ExerciseEnrichmentData) => Promise<void>;
+  onSaveError?: (error: unknown) => void;
+  backTestId?: string;
+  'data-testid'?: string;
 }
+
+const NO_REPORTS: ExerciseReport[] = [];
 
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -158,10 +187,15 @@ export function VerificationWorkspace({
   queuePosition,
   queueTotal,
   nextExerciseId,
-  openReports,
+  openReports = NO_REPORTS,
   listUrl,
   buildDetailUrl,
   reloadImages,
+  organizationDecision,
+  saveEnrichment,
+  onSaveError,
+  backTestId = 'verification-back-btn',
+  'data-testid': rootTestId = 'verification-workspace',
 }: VerificationWorkspaceProps) {
   const router = useRouter();
   const { user } = useUser();
@@ -203,18 +237,22 @@ export function VerificationWorkspace({
 
   const updateEnrichment = useCallback(
     async (payload: ExerciseEnrichmentData) => {
+      if (saveEnrichment) {
+        await saveEnrichment(payload);
+        return;
+      }
       await updateExerciseField({
         variables: { exerciseId: exercise.id, fieldName: 'enrichmentData', value: JSON.stringify(payload ?? {}) },
       });
     },
-    [exercise.id, updateExerciseField]
+    [exercise.id, saveEnrichment, updateExerciseField]
   );
 
   const form = useExerciseEditorForm({
     source: exercise,
     updateCore,
     updateEnrichment,
-    onError: () => toast.error('Nie udało się zapisać zmian'),
+    onError: onSaveError ?? (() => toast.error('Nie udało się zapisać zmian')),
     autosaveDelayMs: 900,
   });
   const { core, enrichment, setCoreField, setEnrichmentPath, flush } = form;
@@ -239,6 +277,7 @@ export function VerificationWorkspace({
   const [isSavingPhoto, setIsSavingPhoto] = useState(false);
   const [replacedPhotoCount, setReplacedPhotoCount] = useState(0);
   const [isDuplicateOpen, setIsDuplicateOpen] = useState(false);
+  const [isChangesOpen, setIsChangesOpen] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
   const lastPhotoRequestRef = useRef<{ index: number; problems: string[]; note: string } | null>(null);
 
@@ -610,11 +649,30 @@ export function VerificationWorkspace({
   // HANDLERS: decisions
   // ============================================
 
-  const canDecide = canDecideOnExercise(exercise.status);
+  const isOrganization = organizationDecision !== undefined;
+  const organizationStatus = organizationDecision?.status;
+  const canDecide = isOrganization
+    ? canApproveOrganizationExercise(organizationStatus)
+    : canDecideOnExercise(exercise.status);
+  const canRequestChanges = isOrganization && canRequestOrganizationChanges(organizationStatus);
+  const canArchive = isOrganization && canArchiveOrganizationExercise(organizationStatus);
 
   const handlePublish = useCallback(async () => {
     if (!canDecide || !stages.canPublish) return;
     setIsLeaving(true);
+    if (organizationDecision) {
+      try {
+        await flush();
+        await organizationDecision.onApprove();
+        toast.success('Ćwiczenie zweryfikowane w gabinecie');
+        leaveToNext();
+      } catch (error) {
+        console.error('Błąd zatwierdzania w organizacji:', error);
+        toast.error('Nie udało się zatwierdzić ćwiczenia');
+        setIsLeaving(false);
+      }
+      return;
+    }
     try {
       await flush();
       await approveExercise({ variables: { exerciseId: exercise.id, reviewNotes: null } });
@@ -626,7 +684,50 @@ export function VerificationWorkspace({
       toast.error('Nie udało się zatwierdzić ćwiczenia');
       setIsLeaving(false);
     }
-  }, [approveExercise, canDecide, exercise.id, flush, leaveToNext, resolveReports, stages.canPublish]);
+  }, [
+    approveExercise,
+    canDecide,
+    exercise.id,
+    flush,
+    leaveToNext,
+    organizationDecision,
+    resolveReports,
+    stages.canPublish,
+  ]);
+
+  const handleRequestChanges = useCallback(
+    async (notes: string) => {
+      if (!organizationDecision || !canRequestChanges) return;
+      setIsLeaving(true);
+      try {
+        await flush();
+        await organizationDecision.onRequestChanges(notes);
+        toast.success('Ćwiczenie odesłane do poprawek');
+        setIsChangesOpen(false);
+        leaveToNext();
+      } catch (error) {
+        console.error('Błąd odsyłania do poprawek:', error);
+        toast.error('Nie udało się odesłać ćwiczenia do poprawek');
+        setIsLeaving(false);
+      }
+    },
+    [canRequestChanges, flush, leaveToNext, organizationDecision]
+  );
+
+  const handleArchive = useCallback(async () => {
+    if (!organizationDecision || !canArchive) return;
+    setIsLeaving(true);
+    try {
+      await flush();
+      await organizationDecision.onArchive();
+      toast.success('Ćwiczenie zarchiwizowane');
+      router.push(listUrl);
+    } catch (error) {
+      console.error('Błąd archiwizacji:', error);
+      toast.error('Nie udało się zarchiwizować ćwiczenia');
+      setIsLeaving(false);
+    }
+  }, [canArchive, flush, listUrl, organizationDecision, router]);
 
   const handleMarkDuplicate = useCallback(
     async (target: DuplicateTarget) => {
@@ -674,7 +775,7 @@ export function VerificationWorkspace({
     if (nextStage) goToStage(nextStage);
   }, [canDecide, goToStage, handlePublish, handleSkip, isLeaving, isPrimaryBlocked, stage]);
 
-  const isDialogOpen = photoDialogIndex !== null || isDuplicateOpen;
+  const isDialogOpen = photoDialogIndex !== null || isDuplicateOpen || isChangesOpen;
 
   useVerificationHotkeys({
     onApproveAndNext: handlePrimary,
@@ -702,6 +803,14 @@ export function VerificationWorkspace({
     stopIfCount,
     canDecide,
     signerName: user?.fullName ?? 'Twoje konto',
+    organization: isOrganization
+      ? {
+          statusLabel: getVerificationStatusBadge(
+            { status: exercise.status, organizationVerificationStatus: organizationStatus },
+            'organization'
+          ).label,
+        }
+      : undefined,
   });
 
   const navItems: StageNavItem[] = VERIFICATION_STAGES.map((key) => {
@@ -765,9 +874,32 @@ export function VerificationWorkspace({
   ];
 
   const reportStage = latestReport ? REPORT_STAGE[latestReport.reasonCategory] : null;
+  const previousNotes = isOrganization ? exercise.orgReviewNotes : exercise.adminReviewNotes;
+  const isBusy = isLeaving || approving || rejecting || Boolean(organizationDecision?.isBusy);
+
+  let primaryLabel = PRIMARY_LABELS[stage];
+  if (stage === 'decision' && !canDecide) primaryLabel = 'Gotowe, dalej';
+  else if (stage === 'decision' && isOrganization) primaryLabel = 'Zatwierdź w gabinecie';
+
+  let secondary: { label: string; testId: string; onClick: () => void } | undefined;
+  if (isOrganization) {
+    if (canRequestChanges) {
+      secondary = {
+        label: 'Odeślij do poprawek',
+        testId: 'org-verification-bar-request-changes-btn',
+        onClick: () => setIsChangesOpen(true),
+      };
+    }
+  } else if (canDecide) {
+    secondary = {
+      label: 'To duplikat',
+      testId: 'verification-bar-duplicate-btn',
+      onClick: () => setIsDuplicateOpen(true),
+    };
+  }
 
   return (
-    <PageSheet contentClassName="gap-5" data-testid="verification-workspace">
+    <PageSheet contentClassName="gap-5" data-testid={rootTestId}>
       <div ref={rootRef} className="scroll-mt-6" />
 
       <header className="flex flex-col gap-2">
@@ -778,7 +910,7 @@ export function VerificationWorkspace({
             size="sm"
             className="-ml-3"
             onClick={() => router.push(listUrl)}
-            data-testid="verification-back-btn"
+            data-testid={backTestId}
           >
             <ArrowLeft />
             Lista ćwiczeń
@@ -790,6 +922,19 @@ export function VerificationWorkspace({
           )}
           <span className="flex-1" />
           <SaveStatus status={form.saveStatus} />
+          {canArchive && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => void handleArchive()}
+              disabled={isBusy}
+              data-testid="org-verification-archive-btn"
+            >
+              <Archive />
+              Archiwizuj
+            </Button>
+          )}
           <Button
             type="button"
             variant="ghost"
@@ -836,7 +981,7 @@ export function VerificationWorkspace({
         </div>
       )}
 
-      {exercise.adminReviewNotes && (
+      {previousNotes && (
         <div
           className="flex items-start gap-2 rounded-2xl bg-status-warning-muted px-4 py-3"
           data-testid="verification-previous-notes"
@@ -844,7 +989,7 @@ export function VerificationWorkspace({
           <FileText className="mt-0.5 h-4 w-4 shrink-0 text-status-warning" />
           <div className="min-w-0">
             <p className="text-[13px] font-semibold text-status-warning">Poprzednie uwagi</p>
-            <p className="text-[15px] text-foreground">{exercise.adminReviewNotes}</p>
+            <p className="text-[15px] text-foreground">{previousNotes}</p>
           </div>
         </div>
       )}
@@ -972,11 +1117,10 @@ export function VerificationWorkspace({
       <VerificationFloatingBar
         hint={hints[stage]}
         isBlocked={isPrimaryBlocked}
-        primaryLabel={stage === 'decision' && !canDecide ? 'Gotowe, dalej' : PRIMARY_LABELS[stage]}
+        primaryLabel={primaryLabel}
         onPrimary={handlePrimary}
-        isBusy={isLeaving || approving || rejecting}
-        secondaryLabel={canDecide ? 'To duplikat' : undefined}
-        onSecondary={canDecide ? () => setIsDuplicateOpen(true) : undefined}
+        isBusy={isBusy}
+        secondary={secondary}
       />
 
       <PhotoReplaceDialog
@@ -991,6 +1135,16 @@ export function VerificationWorkspace({
         }}
         onUploadOwn={(file) => void handleUploadOwnPhoto(file)}
       />
+
+      {isOrganization && (
+        <RequestChangesDialog
+          open={isChangesOpen}
+          initialNotes=""
+          isSubmitting={isBusy}
+          onOpenChange={setIsChangesOpen}
+          onConfirm={(notes) => void handleRequestChanges(notes)}
+        />
+      )}
 
       <DuplicateDialog
         open={isDuplicateOpen}

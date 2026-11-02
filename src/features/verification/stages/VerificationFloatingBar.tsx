@@ -9,25 +9,28 @@ interface VerificationFloatingBarProps {
   primaryLabel: string;
   onPrimary: () => void;
   isBusy?: boolean;
-  secondaryLabel?: string;
-  onSecondary?: () => void;
+  secondary?: { label: string; testId: string; onClick: () => void };
 }
 
+/**
+ * Footer docked to the bottom edge of the dashboard scroll area. Content ends above it instead of scrolling
+ * underneath a floating pill: the negative bottom inset cancels the `<main>` padding (p-4 lg:p-6 2xl:p-8)
+ * and the solid band spans the sheet width, so nothing shows below or beside it.
+ */
 export function VerificationFloatingBar({
   hint,
   isBlocked,
   primaryLabel,
   onPrimary,
   isBusy = false,
-  secondaryLabel,
-  onSecondary,
+  secondary,
 }: VerificationFloatingBarProps) {
   return (
     <div
-      className="pointer-events-none sticky bottom-4 z-30 flex justify-center"
+      className="sticky -bottom-4 z-30 -mx-4 mt-2 border-t-[0.5px] border-separator bg-card px-4 py-3 sm:-mx-8 sm:px-8 lg:-bottom-6 xl:-mx-11 xl:px-11 2xl:-bottom-8"
       data-testid="verification-floating-bar"
     >
-      <div className="pointer-events-auto flex w-full max-w-[880px] flex-wrap items-center gap-3 rounded-[28px] bg-elevated/95 py-2 pl-5 pr-2 shadow-floating backdrop-blur sm:flex-nowrap">
+      <div className="flex w-full flex-wrap items-center gap-3 sm:flex-nowrap">
         <p
           className={cn(
             'min-w-0 flex-1 text-[14px] leading-5',
@@ -38,15 +41,15 @@ export function VerificationFloatingBar({
         >
           {hint}
         </p>
-        {secondaryLabel && onSecondary && (
+        {secondary && (
           <Button
             type="button"
             variant="ghost"
-            onClick={onSecondary}
+            onClick={secondary.onClick}
             disabled={isBusy}
-            data-testid="verification-bar-duplicate-btn"
+            data-testid={secondary.testId}
           >
-            {secondaryLabel}
+            {secondary.label}
           </Button>
         )}
         <Button

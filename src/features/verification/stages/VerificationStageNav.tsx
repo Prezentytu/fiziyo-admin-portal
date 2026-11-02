@@ -45,7 +45,12 @@ export function VerificationStageNav({ items, onSelect }: VerificationStageNavPr
   return (
     <nav
       aria-label="Etapy weryfikacji"
-      className="sticky top-0 z-20 -mx-4 border-b-[0.5px] border-separator bg-card px-4 pb-3 pt-2 sm:-mx-8 sm:px-8 xl:-mx-11 xl:px-11"
+      className={cn(
+        'sticky top-0 z-20 -mx-4 mt-3 border-b-[0.5px] border-separator bg-card px-4 pb-3 pt-2 sm:-mx-8 sm:px-8 xl:-mx-11 xl:px-11',
+        // Sticky stops at the <main> padding edge (p-4 lg:p-6 2xl:p-8); this strip fills that gap so content
+        // never scrolls visibly above the stuck nav.
+        'before:pointer-events-none before:absolute before:inset-x-0 before:bottom-full before:h-4 before:bg-card lg:before:h-6 2xl:before:h-8'
+      )}
       data-testid="verification-stage-nav"
     >
       <ol className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-5">
