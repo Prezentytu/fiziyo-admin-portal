@@ -116,13 +116,24 @@ describe('removeConversation', () => {
 
 describe('clearStoredConversations', () => {
   it('removes every chat history and nothing else', () => {
-    window.localStorage.setItem(conversationStorageKey('u1', 'org-a'), '[]');
-    window.localStorage.setItem(conversationStorageKey('u2', 'org-b'), '[]');
-    window.localStorage.setItem('fiziyo-chat-mode', '{"enabled":true}');
-    clearStoredConversations(window.localStorage);
-    expect(window.localStorage.getItem(conversationStorageKey('u1', 'org-a'))).toBeNull();
-    expect(window.localStorage.getItem(conversationStorageKey('u2', 'org-b'))).toBeNull();
-    expect(window.localStorage.getItem('fiziyo-chat-mode')).toBe('{"enabled":true}');
+    const entries = new Map<string, string>([
+      [conversationStorageKey('u1', 'org-a'), '[]'],
+      [conversationStorageKey('u2', 'org-b'), '[]'],
+      ['fiziyo-chat-mode', '{"enabled":true}'],
+    ]);
+    const storage = {
+      get length() {
+        return entries.size;
+      },
+      key: (index: number) => Array.from(entries.keys())[index] ?? null,
+      removeItem: (key: string) => {
+        entries.delete(key);
+      },
+    };
+    clearStoredConversations(storage);
+    expect(entries.has(conversationStorageKey('u1', 'org-a'))).toBe(false);
+    expect(entries.has(conversationStorageKey('u2', 'org-b'))).toBe(false);
+    expect(entries.get('fiziyo-chat-mode')).toBe('{"enabled":true}');
   });
 });
 
