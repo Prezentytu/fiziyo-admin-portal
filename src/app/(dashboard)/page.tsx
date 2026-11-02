@@ -21,6 +21,7 @@ import { SetThumbnail } from '@/features/exercise-sets/SetThumbnail';
 import { CreateSetWizard } from '@/features/exercise-sets/CreateSetWizard';
 import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
 import { toPreselectedSet } from '@/features/assignment/utils/toPreselectedSet';
+import type { ExerciseMapping } from '@/features/assignment/types';
 import { PatientDialog } from '@/features/patients/PatientDialog';
 import { ActivatePremiumDialog } from '@/features/patients/ActivatePremiumDialog';
 import { DashboardSkeleton } from '@/components/shared/DashboardSkeleton';
@@ -74,16 +75,8 @@ interface ExerciseSetItem {
     saturday?: boolean;
     sunday?: boolean;
   };
-  exerciseMappings?: Array<{
-    id: string;
-    exerciseId: string;
-    exercise?: {
-      id: string;
-      name: string;
-      imageUrl?: string;
-      images?: string[];
-    };
-  }>;
+  /** Full mappings from `EXERCISE_SET_WITH_EXERCISES_FRAGMENT`; quick assign starts from the set's own parameters. */
+  exerciseMappings?: ExerciseMapping[];
 }
 
 interface PatientAssignmentData {
