@@ -13,6 +13,7 @@ import { isNavigationItemActive } from './navigationActive';
 import { useNavigationItems } from './useNavigationItems';
 import { Logo } from '@/components/shared/Logo';
 import { useOrganizationVerificationRealtime } from '@/hooks/useOrganizationVerificationRealtime';
+import { useVerificationQueuesRealtime } from '@/hooks/useVerificationQueuesRealtime';
 import { NavCountBadge } from '@/components/layout/NavCountBadge';
 
 interface SidebarProps {
@@ -23,6 +24,7 @@ interface SidebarProps {
 export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
   const pathname = usePathname();
   useOrganizationVerificationRealtime();
+  useVerificationQueuesRealtime();
   const { items: navigationItems, matchHrefs: navigationMatchHrefs } = useNavigationItems();
   const navigationRef = useRef<HTMLElement | null>(null);
   const [showTopFade, setShowTopFade] = useState(false);

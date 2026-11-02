@@ -35,6 +35,7 @@ import { OrganizationSwitchMenuItems } from '@/components/layout/OrganizationSwi
 import { verificationItem } from '@/components/layout/navigationConfig';
 import { useCurrentUserDisplay } from '@/components/layout/useCurrentUserDisplay';
 import { useOrganizationVerificationRealtime } from '@/hooks/useOrganizationVerificationRealtime';
+import { useVerificationQueuesRealtime } from '@/hooks/useVerificationQueuesRealtime';
 import { useAppSignOut } from '@/lib/auth/useAppSignOut';
 import { useVerificationPendingCounts, useVerificationScopes } from '@/features/verification/useVerificationScopes';
 import { cn } from '@/lib/utils';
@@ -309,6 +310,7 @@ function SidebarBody({
 /** Quiet sidebar of the chat shell (design "Czat v2"): conversations first, the rest of the panel one click away. */
 export function ChatSidebar({ isCollapsed, onToggleCollapse, isMobileOpen, onMobileClose }: ChatSidebarProps) {
   useOrganizationVerificationRealtime();
+  useVerificationQueuesRealtime();
 
   return (
     <>
