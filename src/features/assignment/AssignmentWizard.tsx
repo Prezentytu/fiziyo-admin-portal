@@ -5,7 +5,7 @@ import { useQuery, useMutation, useApolloClient } from '@apollo/client/react';
 import { useRouter } from 'next/navigation';
 import { Loader2, ArrowLeft, ArrowRight, Users, Pencil, Sparkles, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { addDays, format } from 'date-fns';
+import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
@@ -38,6 +38,7 @@ import { appendPatientIfMissing } from './utils/patientSelectionUtils';
 import { computeExerciseDiff, type ExerciseMappingSnapshot } from './utils/exerciseDiff';
 import { buildExerciseSetFromBuilder } from './utils/buildExerciseSetFromBuilder';
 import { sortMappingsByOrder } from './utils/sortMappingsByOrder';
+import { getDefaultPlanEndDate } from './utils/scheduleUtils';
 import {
   getAssignmentOverrideForMapping,
   buildBuilderStateFromMappings,
@@ -262,7 +263,7 @@ function AssignmentWizardContent({
   const [selectedSet, setSelectedSet] = useState<ExerciseSet | null>(preselectedSet || null);
   const [selectedPatients, setSelectedPatients] = useState<Patient[]>(preselectedPatient ? [preselectedPatient] : []);
   const [startDate, setStartDate] = useState<Date>(() => new Date());
-  const [endDate, setEndDate] = useState<Date>(() => addDays(new Date(), 30));
+  const [endDate, setEndDate] = useState<Date>(() => getDefaultPlanEndDate(new Date()));
   const [frequency, setFrequency] = useState<Frequency>(() => normalizeFrequencySeed(defaultFrequency));
   const [isCreatingSet, setIsCreatingSet] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);

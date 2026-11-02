@@ -2,12 +2,12 @@
 
 import { useMemo, useState } from 'react';
 import { Calendar, Zap, ArrowRight, Minus, Plus } from 'lucide-react';
-import { addDays, addWeeks, differenceInDays, format } from 'date-fns';
+import { addWeeks, differenceInDays, format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { ScheduleSummary } from '@/components/shared';
 import { Input } from '@/components/ui/input';
 import { formatEstimatedTime } from '@/utils/exerciseTime';
-import { getDefaultDaysForFrequency } from './utils/scheduleUtils';
+import { getDefaultDaysForFrequency, getDefaultPlanEndDate } from './utils/scheduleUtils';
 import type { Frequency } from './types';
 
 interface ScheduleStepProps {
@@ -442,7 +442,7 @@ export function ScheduleStep({
                         const nextStartDate = new Date(event.target.value);
                         onStartDateChange(nextStartDate);
                         if (nextStartDate > endDate) {
-                          onEndDateChange(addDays(nextStartDate, 30));
+                          onEndDateChange(getDefaultPlanEndDate(nextStartDate));
                         }
                       }}
                       className="bg-surface border-border/60 focus:bg-surface text-sm transition-colors"
