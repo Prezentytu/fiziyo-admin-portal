@@ -30,10 +30,14 @@ const exercise = {
   type: 'REPS',
   isActive: true,
   status: 'DRAFT',
-  patientDescription: 'Unieś biodra i powoli je opuść.',
+  patientDescription: 'Połóż się na plecach, unieś biodra do linii z udami i powoli opuść je na matę.',
+  clinicalDescription: 'Aktywacja mięśni pośladkowych i prostowników.',
   defaultSets: 3,
   defaultReps: 10,
+  defaultRestBetweenSets: 60,
+  videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
   images: ['https://cdn.test/photo-1.jpg'],
+  enrichmentData: { $schema: 'fiziyo-exercise-v3', safety: { stop_if: 'Ból w odcinku lędźwiowym' } },
   orgReviewNotes: 'Popraw zdjęcie startowe.',
   adminReviewNotes: 'Uwaga z toru globalnego',
 } as AdminExercise;
@@ -90,6 +94,18 @@ describe('VerificationWorkspace – tor organizacji', () => {
     await user.click(screen.getByTestId('org-verification-changes-confirm-btn'));
 
     expect(decision.onRequestChanges).toHaveBeenCalledWith('Zdjęcie 2 nie pasuje do kroku 2');
+  });
+
+  it('approves through the organization decision once every stage is clean', async () => {
+    const decision = renderOrganization('PENDING_ORG_REVIEW');
+    const user = userEvent.setup();
+
+    await user.click(screen.getByTestId('verification-stage-decision-btn'));
+    const primary = screen.getByTestId('verification-bar-primary-btn');
+    expect(primary).toBeEnabled();
+    await user.click(primary);
+
+    expect(decision.onApprove).toHaveBeenCalledTimes(1);
   });
 
   it('offers archive for a verified exercise and no review decisions', () => {
