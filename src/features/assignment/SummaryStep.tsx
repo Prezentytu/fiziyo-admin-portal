@@ -213,6 +213,7 @@ export function SummaryStep({
                 <div key={mapping.id} data-testid={`summary-exercise-item-${mapping.id}`}>
                   <ExerciseExecutionCard
                     mode="view"
+                    viewVariant="readable"
                     exercise={cardData}
                     index={i + 1}
                     testIdPrefix="summary-exercise"
