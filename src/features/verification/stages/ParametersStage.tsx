@@ -19,7 +19,10 @@ import {
   buildPatientParameterLine,
   formatSessionDuration,
   formatWithUnit,
+  fromSliderValue,
   sideFactor,
+  sliderPercent,
+  toSliderValue,
   type AcknowledgeKey,
   type ExecutionMode,
   type ParameterEvaluation,
@@ -80,9 +83,11 @@ function ParameterRow({
   const rule = PARAMETER_RULES[field.key];
   const status = statusFor(field);
   const inputId = `verification-param-${field.key}`;
-  const position = field.value == null ? null : Math.min(100, (field.value / rule.hardMax) * 100);
-  const bandLeft = (rule.typicalMin / rule.hardMax) * 100;
-  const bandWidth = Math.max(2, ((rule.typicalMax - rule.typicalMin) / rule.hardMax) * 100);
+  const sliderValue = toSliderValue(field.key, field.value);
+  const position = sliderPercent(field.key, sliderValue);
+  const bandLeft = sliderPercent(field.key, rule.typicalMin);
+  const bandWidth = sliderPercent(field.key, rule.typicalMax) - bandLeft;
+  const isEmpty = field.value == null;
   const isLimit = field.level === 'limit';
   const isWarning = field.level === 'warning';
 
@@ -109,23 +114,43 @@ function ParameterRow({
           </span>
         )}
       </div>
-      <div className="col-span-2 flex flex-col gap-1 sm:col-span-1" aria-hidden="true">
-        <div className="relative h-2 rounded-full bg-fill-tertiary">
-          <span
-            className="absolute inset-y-0 rounded-full bg-tint/45"
-            style={{ left: `${bandLeft}%`, width: `${bandWidth}%` }}
-          />
-          {position != null && (
+      <div className="col-span-2 flex flex-col gap-1 sm:col-span-1">
+        <div className="relative flex h-6 items-center">
+          <div className="relative h-2 w-full rounded-full bg-fill-tertiary" aria-hidden="true">
             <span
-              className={cn(
-                'absolute -top-1 h-4 w-4 -translate-x-1/2 rounded-full ring-[3px] ring-grouped-tertiary',
-                isLimit ? 'bg-status-danger' : isWarning ? 'bg-status-warning' : 'bg-foreground'
-              )}
-              style={{ left: `${position}%` }}
+              className="absolute inset-y-0 rounded-full bg-tint/45"
+              style={{ left: `${bandLeft}%`, width: `${bandWidth}%` }}
             />
-          )}
+          </div>
+          <input
+            type="range"
+            min={rule.slider.min}
+            max={rule.slider.max}
+            step={rule.slider.step}
+            value={sliderValue}
+            aria-label={`${rule.label}: suwak`}
+            aria-valuetext={isEmpty ? `${status.text || 'Puste'}` : formatWithUnit(sliderValue, rule.unit)}
+            onChange={(event) => onChange(fromSliderValue(field.key, event.target.value))}
+            className="peer absolute inset-0 h-full w-full cursor-pointer appearance-none bg-transparent opacity-0"
+            data-testid={`verification-param-${field.key}-slider`}
+          />
+          <span
+            aria-hidden="true"
+            className={cn(
+              'pointer-events-none absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full ring-[3px] ring-grouped-tertiary transition-transform',
+              'peer-hover:scale-110 peer-active:scale-125 peer-focus-visible:ring-tint',
+              isEmpty
+                ? 'bg-card ring-2 ring-label-secondary'
+                : isLimit
+                  ? 'bg-status-danger'
+                  : isWarning
+                    ? 'bg-status-warning'
+                    : 'bg-foreground'
+            )}
+            style={{ left: `${position}%` }}
+          />
         </div>
-        <span className="text-[12px] text-label-secondary">
+        <span className="text-[12px] text-label-secondary" aria-hidden="true">
           zwykle {rule.typicalMin}–{formatWithUnit(rule.typicalMax, rule.unit)}
         </span>
       </div>

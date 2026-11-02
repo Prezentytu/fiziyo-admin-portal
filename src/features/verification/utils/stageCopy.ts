@@ -65,14 +65,14 @@ function materialHint({ stages, hasPendingPhoto, hasVideo }: StageCopyInput): st
   return hasVideo ? 'Obejrzyj nagranie i zdjęcia.' : 'Sprawdź zdjęcia krok po kroku.';
 }
 
-function parametersHint({ stages, parameters }: StageCopyInput): string {
+function parametersHint({ stages, parameters, hasVideo }: StageCopyInput): string {
   const blockingFieldCount = parameters.findings.filter(
     (finding) => finding.level === 'limit' && finding.key !== 'session'
   ).length;
   if (blockingFieldCount > 0) return `Popraw zaznaczone parametry: ${blockingFieldCount}.`;
   if (parameters.sessionLevel === 'limit') return 'Za długie ćwiczenie: zmniejsz serie, powtórzenia albo przerwę.';
   if (stages.issues.parameters.length > 0) return 'Popraw albo potwierdź „Tak ma być”.';
-  return 'Porównaj parametry z nagraniem.';
+  return hasVideo ? 'Porównaj parametry z nagraniem.' : 'Porównaj parametry ze zdjęciami.';
 }
 
 function instructionHint({ stages, hasPendingProposal }: StageCopyInput): string {

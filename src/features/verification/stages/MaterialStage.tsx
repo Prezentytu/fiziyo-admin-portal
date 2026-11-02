@@ -18,6 +18,8 @@ export interface PendingPhoto {
 
 interface MaterialStageProps {
   videoUrl: string;
+  /** Video or GIF the photos can be compared with. */
+  hasVideo: boolean;
   photos: string[];
   stepImages: EnrichmentStepImageV3[] | undefined;
   maxPhotos: number;
@@ -26,6 +28,7 @@ interface MaterialStageProps {
   isGenerating: boolean;
   isSavingPhoto: boolean;
   onVideoUrlChange: (value: string) => void;
+  onPreviewPhoto: (url: string) => void;
   onReplacePhoto: (index: number) => void;
   onDeletePhoto: (url: string) => void;
   onAddPhotos: (files: FileList) => void;
@@ -63,10 +66,11 @@ function VideoCard({
           type="button"
           size="sm"
           variant="secondary"
+          aria-expanded={isEditing}
           onClick={() => setIsEditing((previous) => !previous)}
           data-testid="verification-material-video-edit-btn"
         >
-          {hasVideo ? 'Wymień nagranie' : 'Dodaj nagranie'}
+          {isEditing ? 'Gotowe' : hasVideo ? 'Wymień nagranie' : 'Dodaj nagranie'}
         </Button>
       </div>
       {isEditing && (
@@ -89,6 +93,7 @@ function VideoCard({
 
 export function MaterialStage({
   videoUrl,
+  hasVideo,
   photos,
   stepImages,
   maxPhotos,
@@ -97,6 +102,7 @@ export function MaterialStage({
   isGenerating,
   isSavingPhoto,
   onVideoUrlChange,
+  onPreviewPhoto,
   onReplacePhoto,
   onDeletePhoto,
   onAddPhotos,
@@ -113,7 +119,7 @@ export function MaterialStage({
 
       <StageSection
         title="Zdjęcia"
-        hint="Sprawdź każde zdjęcie z nagraniem: ustawienie stawów, dłonie, tło. Pod zdjęciem widać, który krok pokazuje."
+        hint={`${hasVideo ? 'Sprawdź każde zdjęcie z nagraniem' : 'Sprawdź każde zdjęcie'}: ustawienie stawów, dłonie, tło. Kliknij zdjęcie, żeby zobaczyć je w dużym rozmiarze. Pod zdjęciem widać, który krok pokazuje.`}
         className="@container"
         data-testid="verification-material-photos"
       >
@@ -133,8 +139,17 @@ export function MaterialStage({
               >
                 <div className="relative aspect-[3/4] overflow-hidden rounded-control bg-fill-tertiary">
                   {src && (
-                    // eslint-disable-next-line @next/next/no-img-element -- remote CDN or local preview data URL
-                    <img src={src} alt={`Zdjęcie ${index + 1}`} className="h-full w-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => onPreviewPhoto(url)}
+                      disabled={isPending}
+                      aria-label={`Pokaż duże zdjęcie ${index + 1}`}
+                      className="block h-full w-full cursor-zoom-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-tint disabled:cursor-default"
+                      data-testid={`verification-material-photo-${index + 1}-preview-btn`}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element -- remote CDN or local preview data URL */}
+                      <img src={src} alt={`Zdjęcie ${index + 1}`} className="h-full w-full object-cover" />
+                    </button>
                   )}
                   {isGenerating && generatingIndex === index && (
                     <span className="absolute inset-0 grid place-items-center bg-scrim">
@@ -149,7 +164,7 @@ export function MaterialStage({
                   </span>
                   <span className="text-[12px] text-label-secondary">
                     {isPending
-                      ? 'Nowe zdjęcie od agenta. Porównaj z nagraniem.'
+                      ? `Nowe zdjęcie od agenta. Porównaj ${hasVideo ? 'z nagraniem' : 'z pozostałymi zdjęciami'}.`
                       : steps.length > 0
                         ? `Krok ${steps.join(', ')}`
                         : 'Nieprzypięte do kroku'}

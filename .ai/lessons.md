@@ -24,6 +24,14 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 
 ## Wpisy
 
+### 2026-11-02 - Suwaki parametrów w weryfikacji wyglądały na klikalne, ale były rysunkiem
+
+- **Kategoria**: `UI/UX` | `Verification`
+- **Problem**: W etapie Parametry przy seriach, powtórzeniach, czasie i przerwie stał pasek z kropką jak suwak, a nie dało się go przeciągnąć ani kliknąć.
+- **Przyczyna**: Pasek był `<span>` w kontenerze `aria-hidden`, a skalą był limit (`hardMax`), więc typowy zakres zajmował kilka procent szerokości i nawet działający suwak byłby nieprecyzyjny.
+- **Rozwiązanie**: Pod rysunkiem leży przezroczysty `<input type="range">` (mysz, klawiatura, czytnik ekranu); skala i krok suwaka żyją w `PARAMETER_RULES[key].slider`, a `sliderPercent` / `toSliderValue` / `fromSliderValue` w `parameterRules.ts`.
+- **Reguła**: Jeśli coś wygląda jak kontrolka (kropka na torze, karta ze zdjęciem), zawsze jest prawdziwą kontrolką z `data-testid`; sam wskaźnik rysuj bez uchwytu. [egzekwowane: src/features/verification/stages/ParametersStage.test.tsx]
+
 ### 2026-11-02 - Karta w kolejce organizacji pokazywała „Szkic”
 
 - **Kategoria**: `UI/UX`

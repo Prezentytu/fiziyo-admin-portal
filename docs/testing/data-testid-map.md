@@ -754,11 +754,13 @@ Ekran globalny publikuje z paska, a jedyne wyjście bez publikacji to „To dupl
 | `verification-media-stage-{image\|video}`                                       | Duże zdjęcie / nagranie w panelu            | `MediaGallery.tsx`            |
 | `verification-reading-focus-flag-btn`                                           | Zdjęcie nie pasuje do opisu                 | `VerificationWorkspace.tsx`   |
 | `verification-material-photo-{n}-{replace\|delete\|accept\|retry\|discard}-btn` | Akcje zdjęcia n                             | `MaterialStage.tsx`           |
+| `verification-material-photo-{n}-preview-btn`                                   | Zdjęcie n w dużym rozmiarze w panelu        | `MaterialStage.tsx`           |
 | `verification-material-photo-add-btn`                                           | Dodaj zdjęcie                               | `MaterialStage.tsx`           |
 | `verification-material-video-edit-btn` / `-video-url-input`                     | Dodaj / wymień nagranie                     | `MaterialStage.tsx`           |
 | `verification-photo-replace-dialog`                                             | Dialog nowego zdjęcia                       | `PhotoReplaceDialog.tsx`      |
 | `verification-photo-replace-{generate\|upload\|cancel}-btn`                     | Akcje dialogu nowego zdjęcia                | `PhotoReplaceDialog.tsx`      |
 | `verification-param-{sets\|reps\|repTime\|hold\|rest}-input`                    | Pole parametru                              | `ParametersStage.tsx`         |
+| `verification-param-{sets\|reps\|repTime\|hold\|rest}-slider`                   | Suwak parametru (zmienia pole)              | `ParametersStage.tsx`         |
 | `verification-param-{key}-fix-btn` / `-ack-btn`                                 | „Ustaw X” / „Tak ma być”                    | `ParametersStage.tsx`         |
 | `verification-param-mode-{reps\|hold}-btn`                                      | Powtórzenia / Utrzymanie pozycji            | `ParametersStage.tsx`         |
 | `verification-param-side-select`                                                | Strona ciała                                | `ParametersStage.tsx`         |
