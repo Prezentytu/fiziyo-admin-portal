@@ -77,7 +77,13 @@ export function getVerificationScopes(
 
 export type VerificationPendingCounts = Partial<Record<VerificationScopeKey, number>>;
 
-/** Pending items across the queues the user can open; drives the navigation badge. */
+/**
+ * Pending items across the queues the user can open; drives the navigation badge.
+ * The cross-org queue spans every organization, the user's own included, so it replaces the own count.
+ */
 export function sumPendingCounts(scopes: ReadonlyArray<VerificationScope>, counts: VerificationPendingCounts): number {
-  return scopes.reduce((total, scope) => total + (counts[scope.key] ?? 0), 0);
+  const includesCrossOrg = scopes.some((scope) => scope.key === 'cross-org');
+  return scopes
+    .filter((scope) => !(includesCrossOrg && scope.key === 'organization'))
+    .reduce((total, scope) => total + (counts[scope.key] ?? 0), 0);
 }
