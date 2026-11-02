@@ -10,7 +10,7 @@
  * - Null-safe props pattern
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, type ClipboardEvent } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { usePathname } from 'next/navigation';
 import { Send, Info } from 'lucide-react';
@@ -22,6 +22,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { FileUpload } from '@/components/shared/FileUpload';
 import { cn } from '@/lib/utils';
 import { sendFeedbackToDiscord, createFeedbackMetadata } from '@/services/feedbackService';
+import { appendImageFiles, getClipboardImageFiles } from '@/utils/clipboardImages';
 import type { FeedbackType, FeedbackData, FeedbackImage, FeedbackUserRole } from '@/types/feedback.types';
 import { FEEDBACK_TYPE_CONFIG } from '@/types/feedback.types';
 
@@ -42,6 +43,7 @@ interface FeedbackDialogProps {
 const MAX_IMAGES = 3;
 const MAX_DESCRIPTION_LENGTH = 2000;
 const MIN_DESCRIPTION_LENGTH = 10;
+const MAX_IMAGE_SIZE_MB = 5;
 
 // ============================================================================
 // COMPONENT
@@ -88,6 +90,23 @@ export function FeedbackDialog({ isOpen, onClose, screenName }: FeedbackDialogPr
     // Limit do MAX_IMAGES
     setFiles(newFiles.slice(0, MAX_IMAGES));
   }, []);
+
+  const handlePaste = useCallback(
+    (event: ClipboardEvent<HTMLDivElement>) => {
+      const pastedImages = getClipboardImageFiles(event.clipboardData?.items);
+      if (pastedImages.length === 0) return;
+      if (!event.clipboardData.getData('text/plain')) event.preventDefault();
+
+      const result = appendImageFiles(files, pastedImages, {
+        maxFiles: MAX_IMAGES,
+        maxSizeBytes: MAX_IMAGE_SIZE_MB * 1024 * 1024,
+      });
+      if (result.addedCount > 0) setFiles(result.files);
+      if (result.overLimitCount > 0) toast.error(`Możesz dodać maksymalnie ${MAX_IMAGES} zdjęcia`);
+      if (result.oversizeCount > 0) toast.error(`Zdjęcie przekracza ${MAX_IMAGE_SIZE_MB}MB`);
+    },
+    [files]
+  );
 
   const handleSubmit = useCallback(async () => {
     if (!canSubmit || !user) return;
@@ -138,7 +157,7 @@ export function FeedbackDialog({ isOpen, onClose, screenName }: FeedbackDialogPr
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl" data-testid="common-feedback-dialog">
+      <DialogContent className="max-w-4xl" data-testid="common-feedback-dialog" onPaste={handlePaste}>
         <DialogHeader>
           <DialogTitle>Zgłoś uwagę</DialogTitle>
           <DialogDescription>Pomóż nam ulepszyć aplikację - zgłoś błąd, sugestię lub zadaj pytanie.</DialogDescription>
@@ -162,6 +181,7 @@ export function FeedbackDialog({ isOpen, onClose, screenName }: FeedbackDialogPr
                       key={type}
                       type="button"
                       onClick={() => setFeedbackType(type)}
+                      data-testid={`common-feedback-type-${type}-btn`}
                       className={cn(
                         'flex flex-col items-center justify-center gap-1 rounded-lg border-2 p-2.5 transition-colors duration-200',
                         isSelected ? 'shadow-sm' : 'border-border hover:border-muted-foreground/50'
@@ -223,11 +243,12 @@ export function FeedbackDialog({ isOpen, onClose, screenName }: FeedbackDialogPr
                 accept="image/*"
                 multiple
                 maxFiles={MAX_IMAGES}
-                maxSizeMB={5}
+                maxSizeMB={MAX_IMAGE_SIZE_MB}
                 value={files}
                 onChange={handleFilesChange}
                 preview
               />
+              <p className="text-xs text-muted-foreground">Zrzut ekranu możesz też wkleić w opisie (Ctrl/Cmd + V).</p>
             </div>
 
             {/* Info box */}

@@ -57,7 +57,6 @@
     "src/components/shared/DataTable.tsx:93:Button",
     "src/components/shared/EmptyState.tsx:43:Button",
     "src/components/shared/EmptyState.tsx:49:Button",
-    "src/components/shared/FeedbackDialog.tsx:161:button",
     "src/components/shared/GhostField.tsx:113:button",
     "src/components/shared/ImageLightbox.tsx:113:button",
     "src/components/shared/ImageLightbox.tsx:148:button",
