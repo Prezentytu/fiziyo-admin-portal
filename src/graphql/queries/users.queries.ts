@@ -71,7 +71,6 @@ export const USER_LOOKUP_FRAGMENT = gql`
     image
     isShadowUser
     isActive
-    organizationIds
     personalData {
       firstName
       lastName

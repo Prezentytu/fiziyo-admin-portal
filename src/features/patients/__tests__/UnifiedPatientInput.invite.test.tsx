@@ -126,7 +126,7 @@ describe('UnifiedPatientInput: PATIENT_INVITE_REQUIRED', { timeout: 20000 }, () 
 
   it('gdy przypięcie znalezionego pacjenta wymaga zgody, przechodzi do zaproszenia', async () => {
     mockLookup({
-      userByEmail: { id: 'patient-7', fullname: 'Anna Nowak', email: 'anna@example.com', organizationIds: ['org-1'] },
+      userByEmail: { id: 'patient-7', fullname: 'Anna Nowak', email: 'anna@example.com' },
     });
     assignPatientMock.mockRejectedValue(inviteRequiredError());
     const user = userEvent.setup();
