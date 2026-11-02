@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useMutation, useQuery, useSubscription } from '@apollo/client/react';
 import { Search, ShieldCheck } from 'lucide-react';
@@ -16,7 +15,8 @@ import { VerificationStatsCards } from '@/features/verification/VerificationStat
 import { VerificationTaskCard } from '@/features/verification/VerificationTaskCard';
 import { VerificationSelectionToolbar } from '@/features/verification/VerificationSelectionToolbar';
 import { VerificationArchiveDialog } from '@/features/verification/VerificationArchiveDialog';
-import { VerificationScopeTabs } from '@/features/verification/VerificationScopeTabs';
+import { VerificationPageHeader } from '@/features/verification/VerificationPageHeader';
+import { VerificationQueueHero } from '@/features/verification/VerificationQueueHero';
 import { useVerificationSelection } from '@/features/verification/utils/verificationSelection';
 import {
   GET_CROSS_ORG_VERIFICATION_QUEUE_PAGE_QUERY,
@@ -84,6 +84,19 @@ export default function CrossOrgVerificationPage() {
       skipPollAttempt: () => document.hidden,
     }
   );
+
+  const { data: firstPendingData } = useQuery<{ crossOrgVerificationQueuePage: CrossOrgVerificationQueuePage }>(
+    GET_CROSS_ORG_VERIFICATION_QUEUE_PAGE_QUERY,
+    {
+      variables: { filter: 'pending', search: null, page: 1, pageSize: 1 },
+      skip: !isSiteSuperAdmin,
+      fetchPolicy: 'cache-and-network',
+    }
+  );
+  const firstPendingId = firstPendingData?.crossOrgVerificationQueuePage.items[0]?.exercise.id;
+  const startHref = firstPendingId
+    ? `/verification/organizations/${firstPendingId}?filter=pending&page=1&pageSize=${pageSize}`
+    : null;
 
   const visibleQueueItems = useMemo(() => queueData?.crossOrgVerificationQueuePage.items ?? [], [queueData]);
   const visibleExerciseIds = useMemo(
@@ -171,55 +184,47 @@ export default function CrossOrgVerificationPage() {
 
   return (
     <PageSheet contentClassName="gap-6" data-testid="cross-org-verification-page">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground">
-            Weryfikacja w organizacjach klientów
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Ćwiczenia czekające na zatwierdzenie w organizacjach klientów. Zostają w swojej organizacji i nie trafiają
-            do katalogu FiziYo.
-          </p>
-        </div>
-        <Link href="/verification">
-          <Button data-testid="cross-org-verification-back-btn" variant="outline">
-            Przejdź do katalogu FiziYo
-          </Button>
-        </Link>
-      </div>
+      <VerificationPageHeader scopeKey="cross-org" />
 
-      <VerificationScopeTabs />
-
-      <VerificationStatsCards
-        mode="organization"
-        stats={null}
-        organizationStats={statsData?.crossOrgVerificationStats ?? null}
-        isLoading={statsLoading}
-        activeFilter={filter}
-        onFilterChange={(nextFilter) => {
-          const normalizedFilter = nextFilter === 'verified' ? 'verified' : (nextFilter as CrossOrgFilter);
-          selection.clear();
-          setFilter(normalizedFilter);
-          setPage(1);
-          updateUrl(normalizedFilter, search, 1);
-        }}
+      <VerificationQueueHero
+        pendingCount={statsData?.crossOrgVerificationStats.pendingOrgReview ?? null}
+        startHref={startHref}
+        testIdPrefix="cross-org-verification"
       />
 
-      <div className="relative w-full sm:w-80">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          data-testid="cross-org-verification-search-input"
-          value={search}
-          onChange={(event) => {
-            const next = event.target.value;
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <VerificationStatsCards
+          mode="organization"
+          stats={null}
+          organizationStats={statsData?.crossOrgVerificationStats ?? null}
+          isLoading={statsLoading}
+          activeFilter={filter}
+          onFilterChange={(nextFilter) => {
+            const normalizedFilter = nextFilter === 'verified' ? 'verified' : (nextFilter as CrossOrgFilter);
             selection.clear();
-            setSearch(next);
+            setFilter(normalizedFilter);
             setPage(1);
-            updateUrl(filter, next, 1);
+            updateUrl(normalizedFilter, search, 1);
           }}
-          placeholder="Szukaj ćwiczenia..."
-          className="pl-9"
         />
+
+        <div className="relative w-full sm:w-80">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            aria-label="Szukaj ćwiczenia"
+            data-testid="cross-org-verification-search-input"
+            value={search}
+            onChange={(event) => {
+              const next = event.target.value;
+              selection.clear();
+              setSearch(next);
+              setPage(1);
+              updateUrl(filter, next, 1);
+            }}
+            placeholder="Szukaj ćwiczenia..."
+            className="pl-9"
+          />
+        </div>
       </div>
 
       <VerificationSelectionToolbar
@@ -249,6 +254,7 @@ export default function CrossOrgVerificationPage() {
               </div>
               <VerificationTaskCard
                 exercise={queueItem.exercise}
+                track="organization"
                 selectable={canArchive}
                 selected={selection.isSelected(queueItem.exercise.id)}
                 onSelectionChange={() => selection.toggle(queueItem.exercise.id)}

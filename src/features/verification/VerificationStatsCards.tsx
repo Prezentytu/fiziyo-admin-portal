@@ -1,9 +1,7 @@
 'use client';
 
-import { Clock, AlertTriangle, FileCheck, Archive, Flag } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { segmentedSegmentVariants, segmentedTrackVariants } from '@/components/ui/segmented-control';
 import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
 import type { OrganizationVerificationStats, VerificationStats } from '@/graphql/types/adminExercise.types';
 
 type FilterType = 'pending' | 'changes' | 'published' | 'archived' | 'reported' | 'verified';
@@ -18,73 +16,38 @@ interface VerificationStatsCardsProps {
   mode?: 'global' | 'organization';
 }
 
-interface StatCardProps {
+interface StatusOption {
+  filter: FilterType;
   label: string;
   value: number;
-  icon: React.ElementType;
-  color: string;
-  bgColor: string;
-  activeBgColor: string;
-  activeBorderColor: string;
-  isActive: boolean;
-  onClick: () => void;
   testId: string;
 }
 
-function StatCard({
-  label,
-  value,
-  icon: Icon,
-  color,
-  bgColor,
-  activeBgColor,
-  activeBorderColor,
-  isActive,
-  onClick,
-  testId,
-}: StatCardProps) {
-  return (
-    <Card
-      data-testid={testId}
-      className={cn(
-        'relative overflow-hidden transition-all duration-300 cursor-pointer',
-        isActive
-          ? `${activeBgColor} ${activeBorderColor} shadow-lg`
-          : 'border-border/60 bg-card opacity-70 hover:opacity-100 hover:border-border hover:shadow-md'
-      )}
-      onClick={onClick}
-    >
-      <CardContent className="p-4">
-        <div className="flex items-center gap-3">
-          <div className={cn('flex h-10 w-10 items-center justify-center rounded-xl', bgColor)}>
-            <Icon className={cn('h-5 w-5', color)} />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-foreground tabular-nums">{value}</p>
-            <p className="text-xs text-muted-foreground font-medium">{label}</p>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
+function getOrganizationOptions(stats: OrganizationVerificationStats): StatusOption[] {
+  return [
+    { filter: 'pending', label: 'Oczekujące', value: stats.pendingOrgReview, testId: 'org-verification-stats-pending' },
+    {
+      filter: 'changes',
+      label: 'Do poprawy',
+      value: stats.orgChangesRequested,
+      testId: 'org-verification-stats-changes',
+    },
+    { filter: 'verified', label: 'Zweryfikowane', value: stats.orgVerified, testId: 'org-verification-stats-verified' },
+    { filter: 'archived', label: 'Archiwum', value: stats.orgArchived, testId: 'org-verification-stats-archived' },
+  ];
 }
 
-function StatCardSkeleton() {
-  return (
-    <Card className="border-border/60">
-      <CardContent className="p-4">
-        <div className="flex items-center gap-3">
-          <Skeleton className="h-10 w-10 rounded-xl" />
-          <div className="space-y-2">
-            <Skeleton className="h-7 w-12" />
-            <Skeleton className="h-3 w-20" />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
+function getGlobalOptions(stats: VerificationStats, reportedCount: number): StatusOption[] {
+  return [
+    { filter: 'pending', label: 'Oczekujące', value: stats.pendingReview, testId: 'verification-stats-pending' },
+    { filter: 'changes', label: 'Do poprawy', value: stats.changesRequested, testId: 'verification-stats-changes' },
+    { filter: 'published', label: 'Opublikowane', value: stats.published, testId: 'verification-stats-published' },
+    { filter: 'reported', label: 'Zgłoszone', value: reportedCount, testId: 'verification-stats-reported' },
+    { filter: 'archived', label: 'Wycofane', value: stats.archivedGlobal, testId: 'verification-stats-archived' },
+  ];
 }
 
+/** Status filter of a verification queue: one segment per status with its count. */
 export function VerificationStatsCards({
   stats,
   organizationStats = null,
@@ -94,135 +57,34 @@ export function VerificationStatsCards({
   reportedCount = 0,
   mode = 'global',
 }: VerificationStatsCardsProps) {
-  if (isLoading || (mode === 'global' ? !stats : !organizationStats)) {
-    return (
-      <div className={cn('grid gap-3', mode === 'global' ? 'grid-cols-5' : 'grid-cols-4')}>
-        <StatCardSkeleton />
-        <StatCardSkeleton />
-        <StatCardSkeleton />
-        <StatCardSkeleton />
-        {mode === 'global' && <StatCardSkeleton />}
-      </div>
-    );
-  }
+  const options =
+    mode === 'organization'
+      ? organizationStats && getOrganizationOptions(organizationStats)
+      : stats && getGlobalOptions(stats, reportedCount);
 
-  if (mode === 'organization' && organizationStats) {
-    return (
-      <div className="grid gap-3 grid-cols-4">
-        <StatCard
-          testId="org-verification-stats-pending"
-          label="Oczekujące"
-          value={organizationStats.pendingOrgReview}
-          icon={Clock}
-          color="text-status-warning"
-          bgColor="bg-status-warning-muted"
-          activeBgColor="bg-status-warning-muted"
-          activeBorderColor="border-status-warning/40"
-          isActive={activeFilter === 'pending'}
-          onClick={() => onFilterChange('pending')}
-        />
-        <StatCard
-          testId="org-verification-stats-changes"
-          label="Do poprawy"
-          value={organizationStats.orgChangesRequested}
-          icon={AlertTriangle}
-          color="text-status-warning"
-          bgColor="bg-status-warning-muted"
-          activeBgColor="bg-status-warning-muted"
-          activeBorderColor="border-status-warning/40"
-          isActive={activeFilter === 'changes'}
-          onClick={() => onFilterChange('changes')}
-        />
-        <StatCard
-          testId="org-verification-stats-verified"
-          label="Zweryfikowane"
-          value={organizationStats.orgVerified}
-          icon={FileCheck}
-          color="text-primary"
-          bgColor="bg-primary/20"
-          activeBgColor="bg-primary/10"
-          activeBorderColor="border-primary/40"
-          isActive={activeFilter === 'verified'}
-          onClick={() => onFilterChange('verified')}
-        />
-        <StatCard
-          testId="org-verification-stats-archived"
-          label="Archiwum"
-          value={organizationStats.orgArchived}
-          icon={Archive}
-          color="text-muted-foreground"
-          bgColor="bg-muted"
-          activeBgColor="bg-muted/70"
-          activeBorderColor="border-border"
-          isActive={activeFilter === 'archived'}
-          onClick={() => onFilterChange('archived')}
-        />
-      </div>
-    );
+  if (isLoading || !options) {
+    return <Skeleton className="h-[34px] w-full max-w-[460px] rounded-[10px]" />;
   }
 
   return (
-    <div className="grid gap-3 grid-cols-5">
-      <StatCard
-        testId="verification-stats-pending"
-        label="Oczekujące"
-        value={stats?.pendingReview ?? 0}
-        icon={Clock}
-        color="text-status-warning"
-        bgColor="bg-status-warning-muted"
-        activeBgColor="bg-status-warning-muted"
-        activeBorderColor="border-status-warning/40"
-        isActive={activeFilter === 'pending'}
-        onClick={() => onFilterChange('pending')}
-      />
-      <StatCard
-        testId="verification-stats-changes"
-        label="Do poprawy"
-        value={stats?.changesRequested ?? 0}
-        icon={AlertTriangle}
-        color="text-status-warning"
-        bgColor="bg-status-warning-muted"
-        activeBgColor="bg-status-warning-muted"
-        activeBorderColor="border-status-warning/40"
-        isActive={activeFilter === 'changes'}
-        onClick={() => onFilterChange('changes')}
-      />
-      <StatCard
-        testId="verification-stats-published"
-        label="Opublikowane"
-        value={stats?.published ?? 0}
-        icon={FileCheck}
-        color="text-primary"
-        bgColor="bg-primary/20"
-        activeBgColor="bg-primary/10"
-        activeBorderColor="border-primary/40"
-        isActive={activeFilter === 'published'}
-        onClick={() => onFilterChange('published')}
-      />
-      <StatCard
-        testId="verification-stats-reported"
-        label="Zgłoszone"
-        value={reportedCount}
-        icon={Flag}
-        color="text-status-warning"
-        bgColor="bg-status-warning-muted"
-        activeBgColor="bg-status-warning-muted"
-        activeBorderColor="border-status-warning/40"
-        isActive={activeFilter === 'reported'}
-        onClick={() => onFilterChange('reported')}
-      />
-      <StatCard
-        testId="verification-stats-archived"
-        label="Wycofane"
-        value={stats?.archivedGlobal ?? 0}
-        icon={Archive}
-        color="text-muted-foreground"
-        bgColor="bg-muted"
-        activeBgColor="bg-muted/70"
-        activeBorderColor="border-border"
-        isActive={activeFilter === 'archived'}
-        onClick={() => onFilterChange('archived')}
-      />
+    <div role="radiogroup" aria-label="Status" className={segmentedTrackVariants({ className: 'self-start' })}>
+      {options.map((option) => {
+        const isActive = option.filter === activeFilter;
+        return (
+          <button
+            key={option.filter}
+            type="button"
+            role="radio"
+            aria-checked={isActive}
+            data-testid={option.testId}
+            onClick={() => onFilterChange(option.filter)}
+            className={segmentedSegmentVariants({ active: isActive, className: 'inline-flex items-center gap-1.5' })}
+          >
+            {option.label}
+            <span className="font-normal tabular-nums text-muted-foreground">{option.value}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }

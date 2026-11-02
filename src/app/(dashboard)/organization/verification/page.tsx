@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useMutation, useQuery } from '@apollo/client/react';
 import { Search, ShieldCheck } from 'lucide-react';
@@ -16,7 +15,8 @@ import { VerificationStatsCards } from '@/features/verification/VerificationStat
 import { VerificationTaskCard } from '@/features/verification/VerificationTaskCard';
 import { VerificationSelectionToolbar } from '@/features/verification/VerificationSelectionToolbar';
 import { VerificationArchiveDialog } from '@/features/verification/VerificationArchiveDialog';
-import { VerificationScopeTabs } from '@/features/verification/VerificationScopeTabs';
+import { VerificationPageHeader } from '@/features/verification/VerificationPageHeader';
+import { VerificationQueueHero } from '@/features/verification/VerificationQueueHero';
 import { useVerificationSelection } from '@/features/verification/utils/verificationSelection';
 import {
   buildOrganizationVerificationDetailHref,
@@ -81,6 +81,25 @@ export default function OrganizationVerificationPage() {
       fetchPolicy: 'cache-and-network',
     }
   );
+
+  const { data: firstPendingData } = useQuery<{ organizationVerificationQueuePage: VerificationQueuePage }>(
+    GET_ORGANIZATION_VERIFICATION_QUEUE_PAGE_QUERY,
+    {
+      variables: { organizationId: organizationId ?? '', filter: 'pending', search: null, page: 1, pageSize: 1 },
+      skip: !organizationId || !canManageOrganization,
+      fetchPolicy: 'cache-and-network',
+    }
+  );
+  const firstPendingId = firstPendingData?.organizationVerificationQueuePage.items[0]?.id;
+  const startHref = firstPendingId
+    ? buildOrganizationVerificationDetailHref(firstPendingId, {
+        filter: 'pending',
+        search: '',
+        page: 1,
+        pageSize,
+        view: 'grid',
+      })
+    : null;
 
   const visibleExerciseIds = useMemo(
     () => queueData?.organizationVerificationQueuePage.items.map((exercise) => exercise.id) ?? [],
@@ -157,52 +176,47 @@ export default function OrganizationVerificationPage() {
 
   return (
     <PageSheet contentClassName="gap-6">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground">Weryfikacja organizacji</h1>
-          <p className="text-sm text-muted-foreground">
-            Ćwiczenia dodane przez terapeutów Twojej organizacji. Zatwierdzone może przypisywać tylko Twój zespół.
-          </p>
-        </div>
-        <Link href="/organization">
-          <Button data-testid="org-verification-back-btn" variant="outline">
-            Wróć do organizacji
-          </Button>
-        </Link>
-      </div>
+      <VerificationPageHeader scopeKey="organization" />
 
-      <VerificationScopeTabs />
-
-      <VerificationStatsCards
-        mode="organization"
-        stats={null}
-        organizationStats={statsData?.organizationVerificationStats ?? null}
-        isLoading={statsLoading}
-        activeFilter={filter}
-        onFilterChange={(nextFilter) => {
-          const normalizedFilter = nextFilter === 'verified' ? 'verified' : (nextFilter as OrgFilter);
-          selection.clear();
-          setFilter(normalizedFilter);
-          setPage(1);
-          updateUrl(normalizedFilter, search, 1);
-        }}
+      <VerificationQueueHero
+        pendingCount={statsData?.organizationVerificationStats.pendingOrgReview ?? null}
+        startHref={startHref}
+        testIdPrefix="org-verification"
       />
 
-      <div className="relative w-full sm:w-80">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          data-testid="org-verification-search-input"
-          value={search}
-          onChange={(event) => {
-            const next = event.target.value;
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <VerificationStatsCards
+          mode="organization"
+          stats={null}
+          organizationStats={statsData?.organizationVerificationStats ?? null}
+          isLoading={statsLoading}
+          activeFilter={filter}
+          onFilterChange={(nextFilter) => {
+            const normalizedFilter = nextFilter === 'verified' ? 'verified' : (nextFilter as OrgFilter);
             selection.clear();
-            setSearch(next);
+            setFilter(normalizedFilter);
             setPage(1);
-            updateUrl(filter, next, 1);
+            updateUrl(normalizedFilter, search, 1);
           }}
-          placeholder="Szukaj ćwiczenia..."
-          className="pl-9"
         />
+
+        <div className="relative w-full sm:w-80">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            aria-label="Szukaj ćwiczenia"
+            data-testid="org-verification-search-input"
+            value={search}
+            onChange={(event) => {
+              const next = event.target.value;
+              selection.clear();
+              setSearch(next);
+              setPage(1);
+              updateUrl(filter, next, 1);
+            }}
+            placeholder="Szukaj ćwiczenia..."
+            className="pl-9"
+          />
+        </div>
       </div>
 
       <VerificationSelectionToolbar
@@ -227,6 +241,7 @@ export default function OrganizationVerificationPage() {
             <VerificationTaskCard
               key={exercise.id}
               exercise={exercise}
+              track="organization"
               selectable={canArchive}
               selected={selection.isSelected(exercise.id)}
               onSelectionChange={() => selection.toggle(exercise.id)}
