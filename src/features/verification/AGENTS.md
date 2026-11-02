@@ -24,7 +24,7 @@ Moduł obsługuje dwa niezależne tory:
 - Detal global: `src/app/(dashboard)/verification/[id]/page.tsx` → `VerificationWorkspace.tsx` + `stages/` (5 etapów, SPEC-030)
 - Lista org: `src/app/(dashboard)/organization/verification/page.tsx`
 - Detal org: `src/app/(dashboard)/organization/verification/[id]/page.tsx`
-- Shared UI list: `VerificationPageHeader.tsx` (tytuł, opis kolejki, `VerificationScopeTabs`), `VerificationQueueHero.tsx` (liczba oczekujących, start kolejki), `VerificationStatsCards.tsx` (przełącznik statusów), `VerificationTaskCard.tsx` (`track="organization"` w kolejkach organizacji, SPEC-034)
+- Shared UI list: `VerificationPageHeader.tsx` (tytuł, `VerificationScopeTabs`), `VerificationQueueHero.tsx` (liczba oczekujących, start kolejki), `VerificationStatsCards.tsx` (przełącznik statusów), `VerificationTaskCard.tsx` (`track="organization"` w kolejkach organizacji, SPEC-034)
 - Utils: `src/features/verification/utils/`
 
 ## GraphQL contracts

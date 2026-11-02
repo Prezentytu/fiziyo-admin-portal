@@ -81,7 +81,7 @@ describe('CrossOrgVerificationPage', () => {
     render(<CrossOrgVerificationPage />);
 
     expect(screen.getByTestId('cross-org-verification-queue-hero')).toHaveTextContent(
-      '7ćwiczeń czeka na Twoją decyzję'
+      '7 ćwiczeń czeka na Twoją decyzję'
     );
     expect(screen.queryByTestId('cross-org-verification-start-queue-btn')).not.toBeInTheDocument();
   });

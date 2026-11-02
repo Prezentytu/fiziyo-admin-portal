@@ -186,7 +186,7 @@ export default function CrossOrgVerificationPage() {
 
   return (
     <PageSheet contentClassName="gap-6" data-testid="cross-org-verification-page">
-      <VerificationPageHeader scopeKey="cross-org" />
+      <VerificationPageHeader />
 
       <VerificationQueueHero
         pendingCount={statsData?.crossOrgVerificationStats.pendingOrgReview ?? null}
@@ -257,6 +257,7 @@ export default function CrossOrgVerificationPage() {
               <VerificationTaskCard
                 exercise={queueItem.exercise}
                 track="organization"
+                showStatus={false}
                 selectable={canArchive}
                 selected={selection.isSelected(queueItem.exercise.id)}
                 onSelectionChange={() => selection.toggle(queueItem.exercise.id)}

@@ -764,7 +764,6 @@ export default function VerificationPage() {
   return (
     <PageSheet contentClassName="gap-6">
       <VerificationPageHeader
-        scopeKey="global"
         actions={
           <>
             <ReviewerAchievements variant="compact" />
@@ -908,6 +907,7 @@ export default function VerificationPage() {
             <VerificationTaskCard
               key={exercise.id}
               exercise={exercise}
+              showStatus={activeFilter === 'reported'}
               onUnpublish={activeFilter === 'published' ? handleUnpublish : undefined}
               isUnpublishing={unpublishing}
               selectable={canArchive}
