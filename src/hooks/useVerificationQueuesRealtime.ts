@@ -1,18 +1,26 @@
 'use client';
 
-import { useApolloClient, useQuery, useSubscription } from '@apollo/client/react';
+import { useEffect } from 'react';
+import { useApolloClient, useSubscription } from '@apollo/client/react';
 
 import { useVerificationScopes } from '@/features/verification/useVerificationScopes';
-import { GET_VERIFICATION_STATS_QUERY } from '@/graphql/queries/adminExercises.queries';
-import { GET_CROSS_ORG_VERIFICATION_STATS_QUERY } from '@/graphql/queries/crossOrgVerification.queries';
+import {
+  GET_VERIFICATION_QUEUE_PAGE_QUERY,
+  GET_VERIFICATION_STATS_QUERY,
+} from '@/graphql/queries/adminExercises.queries';
+import {
+  GET_CROSS_ORG_VERIFICATION_QUEUE_PAGE_QUERY,
+  GET_CROSS_ORG_VERIFICATION_STATS_QUERY,
+} from '@/graphql/queries/crossOrgVerification.queries';
 import { ON_EXERCISE_SUBMITTED_FOR_GLOBAL_REVIEW } from '@/graphql/subscriptions';
-import type { GetCrossOrgVerificationStatsResponse } from '@/graphql/types/adminExercise.types';
 
 const CROSS_ORG_POLL_INTERVAL_MS = 30_000;
+const CROSS_ORG_REFETCH_QUERIES = [GET_CROSS_ORG_VERIFICATION_STATS_QUERY, GET_CROSS_ORG_VERIFICATION_QUEUE_PAGE_QUERY];
 
 /**
- * Keeps the catalog and cross-org pending counts fresh outside their lists, like
- * `useOrganizationVerificationRealtime` does for the own organization. Mount once in layout-level hooks.
+ * Keeps the catalog and cross-org counts fresh outside their lists, like `useOrganizationVerificationRealtime`
+ * does for the own organization. Stats and queue pages refetch together, so a count never runs ahead of the
+ * queue's first item. Mount once in layout-level hooks.
  */
 export function useVerificationQueuesRealtime() {
   const apolloClient = useApolloClient();
@@ -24,16 +32,21 @@ export function useVerificationQueuesRealtime() {
     skip: !hasGlobal && !hasCrossOrg,
     onData: () => {
       void apolloClient.refetchQueries({
-        include: [GET_VERIFICATION_STATS_QUERY, GET_CROSS_ORG_VERIFICATION_STATS_QUERY],
+        include: [GET_VERIFICATION_STATS_QUERY, GET_VERIFICATION_QUEUE_PAGE_QUERY, ...CROSS_ORG_REFETCH_QUERIES],
       });
     },
   });
 
-  // Organization-level submissions have no cross-tenant subscription; the cross-org list polls the same way.
-  useQuery<GetCrossOrgVerificationStatsResponse>(GET_CROSS_ORG_VERIFICATION_STATS_QUERY, {
-    skip: !hasCrossOrg,
-    fetchPolicy: 'cache-and-network',
-    pollInterval: CROSS_ORG_POLL_INTERVAL_MS,
-    skipPollAttempt: () => document.hidden,
-  });
+  // Organization-level submissions have no cross-tenant subscription, so cross-org counts are polled.
+  useEffect(() => {
+    if (!hasCrossOrg) {
+      return;
+    }
+    const timer = setInterval(() => {
+      if (!document.hidden) {
+        void apolloClient.refetchQueries({ include: CROSS_ORG_REFETCH_QUERIES });
+      }
+    }, CROSS_ORG_POLL_INTERVAL_MS);
+    return () => clearInterval(timer);
+  }, [apolloClient, hasCrossOrg]);
 }
