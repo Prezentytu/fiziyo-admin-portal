@@ -47,11 +47,6 @@ Zlecił:
 ```
 
 <!--
-Kolejność dla bota, inaczej triage zobaczy kartę w połowie wypełnioną:
-  1. utwórz issue BEZ etykiety,
-  2. uzupełnij kartę (`gh issue edit`),
-  3. dopiero teraz nadaj `bot-finding` albo `from-przemek`.
-
 Źródło: 12 hex — sha256 z treści po NFKC, lowercase, zwinięciu białych znaków i trim.
         W repo: node scripts/task-card.mjs source-id "linia źródłowa"
         Bez repo: printf '%s' "$(echo "$linia" | tr 'A-Z' 'a-z' | tr -s '[:space:]' ' ')" | shasum -a 256 | cut -c1-12

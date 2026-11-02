@@ -30,7 +30,7 @@ export function hookResponse(command) {
   if (result.permission === "deny") {
     return {
       permission: "deny",
-      agent_message: `Blocked: ${result.reasons.join(", ")}. Client hook only; server rules live in GitHub rulesets.`,
+      agent_message: `Blocked: ${result.reasons.join(", ")}. Client hook only; no server ruleset protects main yet.`,
       user_message: `Command blocked by agent-guard: ${result.reasons.join(", ")}`,
     };
   }
