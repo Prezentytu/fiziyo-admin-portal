@@ -14,7 +14,7 @@ import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ScheduleSummary } from '@/components/shared';
-import { ExerciseDialog } from '@/features/exercises/ExerciseDialog';
+import { ExerciseDialog, type ExerciseDialogSuccessEvent } from '@/features/exercises/ExerciseDialog';
 import { PatientDialog } from '@/features/patients/PatientDialog';
 import { defaultFrequency } from '@/features/exercise-sets/FrequencyPicker';
 
@@ -707,8 +707,8 @@ function AssignmentWizardContent({
   }, []);
 
   const handleExerciseDialogSuccess = useCallback(
-    async (event?: { action: 'updated' | 'copied' | 'created'; exerciseId: string }) => {
-      if (!event || event.action !== 'created') {
+    async (event?: ExerciseDialogSuccessEvent) => {
+      if (!event || (event.action !== 'created' && event.action !== 'existing')) {
         return;
       }
 

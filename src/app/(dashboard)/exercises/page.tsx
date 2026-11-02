@@ -51,6 +51,7 @@ import {
 import { getExerciseDefaultParams } from '@/features/exercise-sets/utils/exerciseDefaults';
 import { PageHeader } from '@/components/shared/page';
 import { useUrlSearchInput } from '@/features/exercises/useUrlSearchInput';
+import { getExerciseDialogSuccessRoute } from '@/features/exercises/utils/exerciseDialogSuccessRoute';
 
 export default function ExercisesPage() {
   const router = useRouter();
@@ -493,9 +494,8 @@ export default function ExercisesPage() {
           onSubmitToGlobal={(exercise) => setSubmitToGlobalExercise(exercise)}
           onSubmitToOrganizationReview={(exercise) => setSubmitToOrganizationExercise(exercise)}
           onSuccess={(event) => {
-            if (event?.action === 'copied' && event.exerciseId) {
-              router.push(`/exercises/${event.exerciseId}`);
-            }
+            const route = getExerciseDialogSuccessRoute(event);
+            if (route) router.push(route);
           }}
         />
       )}
