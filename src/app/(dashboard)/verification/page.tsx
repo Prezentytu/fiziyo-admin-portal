@@ -88,8 +88,14 @@ function VerificationTaskRow({
   const imageUrl = getMediaUrl(exercise.thumbnailUrl || exercise.imageUrl || exercise.images?.[0]);
 
   const statusConfig: Record<string, { label: string; className: string }> = {
-    PENDING_REVIEW: { label: 'Oczekuje', className: 'bg-status-warning-muted text-status-warning border-status-warning/20' },
-    CHANGES_REQUESTED: { label: 'Do poprawy', className: 'bg-status-warning-muted text-status-warning border-status-warning/20' },
+    PENDING_REVIEW: {
+      label: 'Oczekuje',
+      className: 'bg-status-warning-muted text-status-warning border-status-warning/20',
+    },
+    CHANGES_REQUESTED: {
+      label: 'Do poprawy',
+      className: 'bg-status-warning-muted text-status-warning border-status-warning/20',
+    },
     PUBLISHED: { label: 'Opublikowany', className: 'bg-primary/10 text-primary border-primary/20' },
   };
   const status = statusConfig[exercise.status] || { label: 'Szkic', className: 'bg-muted text-muted-foreground' };
@@ -321,21 +327,22 @@ export default function VerificationPage() {
     data: queueData,
     loading: queueLoading,
     error: queueError,
-    refetch: refetchQueue,
+    refetch: refetchQueuePage,
   } = useQuery<GetVerificationQueuePageResponse, GetVerificationQueuePageVariables>(GET_VERIFICATION_QUEUE_PAGE_QUERY, {
     variables: queueVariables,
     skip: !canReviewExercises || activeFilter === 'reported',
     fetchPolicy: 'cache-and-network',
   });
 
-  const { data: firstPendingData } = useQuery<GetVerificationQueuePageResponse, GetVerificationQueuePageVariables>(
-    GET_VERIFICATION_QUEUE_PAGE_QUERY,
-    {
-      variables: { filter: 'pending', search: null, page: 1, pageSize: 1 },
-      skip: !canReviewExercises,
-      fetchPolicy: 'cache-and-network',
-    }
-  );
+  const { data: firstPendingData, refetch: refetchFirstPending } = useQuery<
+    GetVerificationQueuePageResponse,
+    GetVerificationQueuePageVariables
+  >(GET_VERIFICATION_QUEUE_PAGE_QUERY, {
+    variables: { filter: 'pending', search: null, page: 1, pageSize: 1 },
+    skip: !canReviewExercises,
+    fetchPolicy: 'cache-and-network',
+  });
+  const refetchQueue = () => Promise.all([refetchQueuePage(), refetchFirstPending()]);
   const firstPendingId = firstPendingData?.verificationQueuePage.items[0]?.id;
   const startHref = firstPendingId
     ? buildVerificationDetailHref(firstPendingId, { filter: 'pending', search: '', page: 1, pageSize, view: viewMode })

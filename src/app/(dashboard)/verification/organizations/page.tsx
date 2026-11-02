@@ -68,7 +68,7 @@ export default function CrossOrgVerificationPage() {
   const {
     data: queueData,
     loading: queueLoading,
-    refetch: refetchQueue,
+    refetch: refetchQueuePage,
   } = useQuery<{ crossOrgVerificationQueuePage: CrossOrgVerificationQueuePage }>(
     GET_CROSS_ORG_VERIFICATION_QUEUE_PAGE_QUERY,
     {
@@ -85,14 +85,16 @@ export default function CrossOrgVerificationPage() {
     }
   );
 
-  const { data: firstPendingData } = useQuery<{ crossOrgVerificationQueuePage: CrossOrgVerificationQueuePage }>(
-    GET_CROSS_ORG_VERIFICATION_QUEUE_PAGE_QUERY,
-    {
-      variables: { filter: 'pending', search: null, page: 1, pageSize: 1 },
-      skip: !isSiteSuperAdmin,
-      fetchPolicy: 'cache-and-network',
-    }
-  );
+  const { data: firstPendingData, refetch: refetchFirstPending } = useQuery<{
+    crossOrgVerificationQueuePage: CrossOrgVerificationQueuePage;
+  }>(GET_CROSS_ORG_VERIFICATION_QUEUE_PAGE_QUERY, {
+    variables: { filter: 'pending', search: null, page: 1, pageSize: 1 },
+    skip: !isSiteSuperAdmin,
+    fetchPolicy: 'cache-and-network',
+    pollInterval: 30_000,
+    skipPollAttempt: () => document.hidden,
+  });
+  const refetchQueue = () => Promise.all([refetchQueuePage(), refetchFirstPending()]);
   const firstPendingId = firstPendingData?.crossOrgVerificationQueuePage.items[0]?.exercise.id;
   const startHref = firstPendingId
     ? `/verification/organizations/${firstPendingId}?filter=pending&page=1&pageSize=${pageSize}`
