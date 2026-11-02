@@ -48,7 +48,7 @@ Oprócz skills, folder `.ai/` zawiera dokumentację kontekstową:
 
 ## Integracja z klientami agentów
 
-Skille projektowe mają lokalne punkty wykrywania w `.cursor/skills/` i `.agents/skills/`. Oba katalogi są ignorowane przez Git od 2026-09-14; nowy checkout wymaga `npm run skills:sync`.
+Skille projektowe mają lokalne punkty wykrywania w `.cursor/skills/`, `.agents/skills/` i `.claude/skills/` (Claude Code, od 2026-11-02). Wszystkie są ignorowane przez Git; nowy checkout wymaga `npm run skills:sync`.
 Canonical source pozostaje w `.ai/skills/`, a workflow agentow jest spinany przez `AGENTS.md` oraz `.cursor/rules/*.mdc`.
 
 ### Source of truth
@@ -58,7 +58,7 @@ Canonical source pozostaje w `.ai/skills/`, a workflow agentow jest spinany prze
 - Frontmatter każdego `SKILL.md` musi mieć `name` i auto-trigger `description` (PL+EN).
 - Uruchamiaj `npm run skills:lint` aby wykryć dryf manifestu i brakujące frontmatter.
 - Synchronizuj obie kopie: `npm run skills:sync`, potem sprawdź `npm run skills:check`.
-- Nie edytuj ręcznie kopii `.cursor/skills/` i `.agents/skills/`. Sync nie usuwa obcych plików; konflikt wymaga przeglądu.
+- Nie edytuj ręcznie kopii `.cursor/skills/`, `.agents/skills/` i `.claude/skills/`. Sync nie usuwa obcych plików; konflikt wymaga przeglądu.
 
 ## Struktura skilla
 

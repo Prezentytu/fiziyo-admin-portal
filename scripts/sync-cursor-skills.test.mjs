@@ -32,12 +32,12 @@ function failure(result, message) {
   assert.match(result.stderr, message);
 }
 
-test('lint is source-only; sync creates both mirrors, overwrites canonical files and is idempotent', async (t) => {
+test('lint is source-only; sync creates every mirror, overwrites canonical files and is idempotent', async (t) => {
   const f = await fixture(t);
   success(f.run('--lint'));
   failure(f.run('--check'), /Missing mirror/);
   success(f.run());
-  for (const mirror of ['.cursor', '.agents']) {
+  for (const mirror of ['.cursor', '.agents', '.claude']) {
     assert.equal(await f.read(`${mirror}/skills/demo/SKILL.md`), skill);
     assert.equal(await f.read(`${mirror}/skills/demo/references/example.txt`), 'reference');
   }
