@@ -96,6 +96,7 @@ import {
 import { getNextExerciseCopyName } from '@/features/exercises/utils/getNextExerciseCopyName';
 import { buildCreateExerciseVariables } from '@/features/exercises/utils/buildCreateExerciseVariables';
 import { normalizeExerciseType } from '@/utils/exerciseEnums';
+import { canOpenVideoOutsidePortal } from '@/utils/videoEmbed';
 import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
 import { resolveLoadKg } from '@/utils/exerciseLoadMutation';
 import { verificationCopy } from '@/features/verification/verificationCopy';
@@ -614,7 +615,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                 <Copy className="mr-2 h-4 w-4" />
                 {duplicating ? 'Tworzenie kopii...' : 'Duplikuj'}
               </DropdownMenuItem>
-              {exercise.videoUrl && (
+              {canOpenVideoOutsidePortal(exercise.videoUrl) && (
                 <DropdownMenuItem asChild>
                   <a href={exercise.videoUrl} target="_blank" rel="noopener noreferrer" data-testid="exercise-detail-open-video-link">
                     <ExternalLink className="mr-2 h-4 w-4" />

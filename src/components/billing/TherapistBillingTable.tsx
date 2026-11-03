@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useQuery } from '@apollo/client/react';
+import Link from 'next/link';
 import { Users, UserPlus, ChevronRight, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -139,13 +140,15 @@ export function TherapistBillingTable({ organizationId, className }: TherapistBi
             <div className="h-14 w-14 rounded-2xl bg-surface-light flex items-center justify-center mb-3">
               <Users className="h-7 w-7 text-muted-foreground/50" />
             </div>
-            <p className="text-sm font-medium text-muted-foreground mb-1">Brak danych o zespole</p>
+            <p className="text-sm font-medium text-muted-foreground mb-1">Brak aktywacji w tym miesiącu</p>
             <p className="text-xs text-muted-foreground/70 mb-4 max-w-xs">
-              Zaproś terapeutów do organizacji, aby śledzić ich wyniki i efektywność
+              Podział pojawi się, gdy terapeuci aktywują plan pacjentom. Nowych terapeutów zaprosisz w Zespole.
             </p>
-            <Button size="sm" className="h-8 text-xs gap-2">
-              <UserPlus className="h-3.5 w-3.5" />
-              Zaproś terapeutę
+            <Button size="sm" className="h-8 text-xs gap-2" asChild data-testid="billing-therapist-invite-btn">
+              <Link href="/organization">
+                <UserPlus className="h-3.5 w-3.5" />
+                Zaproś terapeutę
+              </Link>
             </Button>
           </div>
         </CardContent>

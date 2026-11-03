@@ -75,7 +75,7 @@ describe('proposeDraftName', () => {
 describe('scheduleQuestion', () => {
   it("proposes the default plan with the set's daily minutes", () => {
     expect(scheduleQuestion([ITEM])).toBe(
-      `Od kiedy i jak często? Proponuję od jutra, przez 4 tygodnie, codziennie (ok. ${draftMinutes([ITEM])} min dziennie).`
+      `Od kiedy i jak często? Proponuję od jutra, przez 2 tygodnie, codziennie (ok. ${draftMinutes([ITEM])} min dziennie).`
     );
   });
 });

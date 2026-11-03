@@ -1,10 +1,11 @@
 'use client';
 
-import { Volume2 } from 'lucide-react';
+import { Lightbulb, Volume2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ListEditor } from '@/components/shared/enrichment/ListEditor';
 import { cn } from '@/lib/utils';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
+import { EXERCISE_CONTENT_LABELS } from '@/components/shared/enrichment/enrichmentFieldLabels';
 
 const CUES_PATH = 'patient.cues';
 
@@ -55,8 +56,8 @@ export function ExerciseAudioCues({
       data-testid="exercise-audio-cues"
     >
       <div className="flex items-center gap-2">
-        <Volume2 className="h-4 w-4 text-muted-foreground" />
-        <h2 className="text-base font-semibold text-foreground">Wskazówki głosowe</h2>
+        <Lightbulb className="h-4 w-4 text-muted-foreground" />
+        <h2 className="text-base font-semibold text-foreground">Wskazówki</h2>
         <span className="rounded-full bg-surface-light px-2 py-0.5 text-[10px] text-muted-foreground">
           przed / podczas ćwiczenia
         </span>
@@ -70,8 +71,12 @@ export function ExerciseAudioCues({
           )}
           data-testid="exercise-audio-cue-main"
         >
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70 mb-1.5">
-            Komenda TTS
+          <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+            <Volume2 className="h-3 w-3" aria-hidden />
+            {EXERCISE_CONTENT_LABELS.audioCue}
+          </p>
+          <p className="mt-0.5 mb-1.5 text-xs text-muted-foreground">
+            Jedno krótkie polecenie dla pacjenta, widoczne w szczegółach ćwiczenia w aplikacji.
           </p>
           {editable ? (
             <Input
@@ -100,7 +105,7 @@ export function ExerciseAudioCues({
 
       {editable ? (
         <ListEditor
-          title="Wskazówki (cues)"
+          title="Wskazówki dla pacjenta"
           items={cues}
           placeholder="Np. „Pilnuj, żeby kolano nie wychodziło za linię palców”"
           addLabel="Dodaj wskazówkę"
@@ -120,7 +125,7 @@ export function ExerciseAudioCues({
           )}
 
           {!showTtsBlock && !hasCues && (
-            <p className="text-sm text-muted-foreground">Brak wskazówek głosowych dla tego ćwiczenia.</p>
+            <p className="text-sm text-muted-foreground">Brak wskazówek dla tego ćwiczenia.</p>
           )}
         </>
       )}

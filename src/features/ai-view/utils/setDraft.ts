@@ -2,6 +2,7 @@ import {
   getExerciseDefaultParams,
   type ExerciseLikeForDefaults,
 } from '@/features/exercise-sets/utils/exerciseDefaults';
+import { DEFAULT_SCHEDULE_PLAN, planWeeksLabel } from './schedulePlan';
 import type { ExerciseMappingSubmitInput } from '@/features/exercise-sets/utils/createSetSubmit';
 import type { ExerciseParameterValues } from '@/components/shared/exercise/ExerciseParametersFields';
 import { calculateEstimatedTime } from '@/utils/exerciseTime';
@@ -136,7 +137,7 @@ export function draftMinutes(items: readonly DraftItem[]): number {
 
 /** The question that opens the schedule step; it proposes the default plan (DEFAULT_SCHEDULE_PLAN). */
 export function scheduleQuestion(items: readonly DraftItem[]): string {
-  return `Od kiedy i jak często? Proponuję od jutra, przez 4 tygodnie, codziennie (ok. ${draftMinutes(items)} min dziennie).`;
+  return `Od kiedy i jak często? Proponuję od jutra, przez ${planWeeksLabel(DEFAULT_SCHEDULE_PLAN.weeks)}, codziennie (ok. ${draftMinutes(items)} min dziennie).`;
 }
 
 /** "3 × 10 · 5 s powtórzenie" or "3 × 30 s" when a series is held for a time. */
