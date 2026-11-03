@@ -1,5 +1,6 @@
 import { formatDurationPolish } from '@/utils/durationPolish';
 import { EXERCISE_SIDE_HELP } from '@/utils/exerciseSideLabels';
+import { EXERCISE_CONTENT_LABELS, EXERCISE_NOTES_HINT } from '@/components/shared/enrichment/enrichmentFieldLabels';
 
 export type ExerciseFieldGroup = 'dosage' | 'execution' | 'content' | 'classification';
 
@@ -262,8 +263,8 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
   },
   clinicalDescription: {
     key: 'clinicalDescription',
-    label: 'Opis kliniczny',
-    tooltip: 'Opis kliniczny dla fizjoterapeuty: cel, biomechanika, uwagi terapeutyczne.',
+    label: EXERCISE_CONTENT_LABELS.clinicalDescription,
+    tooltip: 'Opis dla fizjoterapeuty: cel, biomechanika, uwagi terapeutyczne. Pacjent go nie widzi.',
     iconKey: 'description',
     group: 'content',
     isInlineVisible: true,
@@ -282,8 +283,8 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
   },
   notes: {
     key: 'notes',
-    label: 'Notatki',
-    tooltip: 'Dodatkowe notatki terapeuty: na co szczególnie zwrócić uwagę przy wykonaniu.',
+    label: EXERCISE_CONTENT_LABELS.notes,
+    tooltip: `Na co szczególnie zwrócić uwagę przy wykonaniu. ${EXERCISE_NOTES_HINT}`,
     iconKey: 'notes',
     group: 'content',
     isInlineVisible: true,

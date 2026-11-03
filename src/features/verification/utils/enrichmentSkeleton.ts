@@ -1,5 +1,6 @@
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import { ENRICHMENT_SCHEMA_V3 } from './enrichmentToV3';
+import { EXERCISE_CONTENT_LABELS } from '@/components/shared/enrichment/enrichmentFieldLabels';
 
 export interface EnrichmentSectionMeta {
   id: string;
@@ -124,7 +125,7 @@ export const ENRICHMENT_SECTIONS: EnrichmentSectionMeta[] = [
   },
   {
     id: 'clinical_notes',
-    label: 'Notatki kliniczne',
+    label: EXERCISE_CONTENT_LABELS.clinicalNotes,
     isFilled: (data) => isNonEmptyText(data.therapist?.clinical_notes),
   },
   {
@@ -134,7 +135,7 @@ export const ENRICHMENT_SECTIONS: EnrichmentSectionMeta[] = [
   },
   {
     id: 'clinical_benefits',
-    label: 'Korzyści kliniczne',
+    label: EXERCISE_CONTENT_LABELS.clinicalBenefits,
     isFilled: (data) => hasArrayItems(data.therapist?.clinical_benefits),
   },
   {

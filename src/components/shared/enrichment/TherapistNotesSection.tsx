@@ -3,6 +3,7 @@
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ListEditor } from './ListEditor';
+import { EXERCISE_CONTENT_LABELS as LABELS } from './enrichmentFieldLabels';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 
 interface TherapistNotesSectionProps {
@@ -21,7 +22,7 @@ export function TherapistNotesSection({
   return (
     <div className="space-y-4">
       <div className="space-y-1">
-        <Label className="text-xs text-muted-foreground">Notatki kliniczne</Label>
+        <Label className="text-xs text-muted-foreground">{LABELS.clinicalNotes}</Label>
         <Textarea
           value={draft.therapist?.clinical_notes ?? ''}
           disabled={disabled}
@@ -33,9 +34,9 @@ export function TherapistNotesSection({
       </div>
 
       <ListEditor
-        title="Wskazania kliniczne"
+        title={LABELS.indications}
         items={draft.therapist?.indications ?? []}
-        placeholder="Wskazanie kliniczne"
+        placeholder="Wskazanie"
         addLabel="Dodaj wskazanie"
         disabled={disabled}
         onChange={(items) => setPath('therapist.indications', items)}
@@ -44,7 +45,7 @@ export function TherapistNotesSection({
       />
 
       <ListEditor
-        title="Przeciwwskazania"
+        title={LABELS.contraindications}
         items={draft.therapist?.contraindications ?? []}
         placeholder="Przeciwwskazanie"
         addLabel="Dodaj przeciwwskazanie"
@@ -55,7 +56,7 @@ export function TherapistNotesSection({
       />
 
       <ListEditor
-        title="Faza rehabilitacji"
+        title={LABELS.rehabPhases}
         items={draft.therapist?.rehab_phases ?? []}
         placeholder="np. wczesna, środkowa, późna"
         addLabel="Dodaj fazę"
@@ -66,9 +67,9 @@ export function TherapistNotesSection({
       />
 
       <ListEditor
-        title="Korzyści kliniczne"
+        title={LABELS.clinicalBenefits}
         items={draft.therapist?.clinical_benefits ?? []}
-        placeholder="Korzyść kliniczna"
+        placeholder="Korzyść terapeutyczna"
         addLabel="Dodaj korzyść"
         disabled={disabled}
         onChange={(items) => setPath('therapist.clinical_benefits', items)}
@@ -77,7 +78,7 @@ export function TherapistNotesSection({
       />
 
       <div className="space-y-1">
-        <Label className="text-xs text-muted-foreground">Notatki o progresji</Label>
+        <Label className="text-xs text-muted-foreground">{LABELS.progressionNotes}</Label>
         <Textarea
           value={draft.therapist?.progression_notes ?? ''}
           disabled={disabled}
