@@ -1,6 +1,19 @@
 import { describe, expect, it } from 'vitest';
 
-import { getYouTubeEmbedUrl } from '../videoEmbed';
+import { canOpenVideoOutsidePortal, getYouTubeEmbedUrl } from '../videoEmbed';
+
+describe('canOpenVideoOutsidePortal', () => {
+  it.each([
+    ['https://vimeo.com/123456789', false],
+    ['https://player.vimeo.com/video/123456789?h=abc', false],
+    ['https://www.youtube.com/watch?v=7rnlAVhAK-8', true],
+    ['https://cdn.example.com/clip.mp4', true],
+    ['', false],
+    [null, false],
+  ])('dla %s zwraca %s', (url, expected) => {
+    expect(canOpenVideoOutsidePortal(url)).toBe(expected);
+  });
+});
 
 function startParam(url: string): string | null {
   const embedUrl = getYouTubeEmbedUrl(url);

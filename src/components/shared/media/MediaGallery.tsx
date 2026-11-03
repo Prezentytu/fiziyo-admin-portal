@@ -9,6 +9,7 @@ import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { VideoEmbed } from '@/components/shared/VideoEmbed';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { canOpenVideoOutsidePortal } from '@/utils/videoEmbed';
 
 import type { MediaItem } from './mediaItems';
 
@@ -207,7 +208,7 @@ export function MediaGallery({
           )}
         </div>
 
-        {selectedItem?.kind === 'video' && (
+        {selectedItem?.kind === 'video' && canOpenVideoOutsidePortal(selectedItem.src) && (
           <div className="absolute left-3 top-3 z-20">
             <a
               href={selectedItem.src}

@@ -13,6 +13,11 @@ export function isVimeoUrl(url: string | undefined | null): boolean {
   return typeof url === 'string' && url.includes('vimeo.com');
 }
 
+/** Our Vimeo videos are domain-restricted, so a link outside the portal opens a blocked player. */
+export function canOpenVideoOutsidePortal(url: string | undefined | null): boolean {
+  return typeof url === 'string' && url.trim() !== '' && !isVimeoUrl(url);
+}
+
 export function isDirectVideoUrl(url: string | undefined | null): boolean {
   if (typeof url !== 'string') {
     return false;
