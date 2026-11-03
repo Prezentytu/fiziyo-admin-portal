@@ -2,11 +2,12 @@ import { describe, expect, it } from 'vitest';
 
 import { evaluateParameters } from '../parameterRules';
 import {
+  hasPatientVideo,
   canDecideOnExercise,
   computeVerificationStages,
   formatStageCount,
-  parseStopIf,
-  serializeStopIf,
+  countStopIfSymptoms,
+  listContentGaps,
   type VerificationStagesInput,
 } from '../verificationStages';
 
@@ -69,12 +70,20 @@ describe('computeVerificationStages', () => {
   });
 });
 
-describe('stop_if helpers', () => {
-  it('zapisuje objawy w linijkach i odczytuje je z powrotem', () => {
-    const serialized = serializeStopIf([' Ostry ból kolana ', '', 'Zawroty głowy']);
-    expect(serialized).toBe('Ostry ból kolana\nZawroty głowy');
-    expect(parseStopIf(serialized)).toEqual(['Ostry ból kolana', 'Zawroty głowy']);
-    expect(parseStopIf(undefined)).toEqual([]);
+describe('countStopIfSymptoms', () => {
+  it('liczy objawy bez nagłówków grup i pustych linii', () => {
+    const stopIf = [
+      'Natychmiast przerwij i zadzwoń pod 112, jeśli pojawi się:',
+      '- ból lub ucisk w klatce piersiowej',
+      '- duszność, która nie mija',
+      '',
+      'Przerwij, usiądź i odpocznij:',
+      '- zawroty głowy',
+    ].join('\n');
+
+    expect(countStopIfSymptoms(stopIf)).toBe(3);
+    expect(countStopIfSymptoms('Ostry ból kolana')).toBe(1);
+    expect(countStopIfSymptoms(undefined)).toBe(0);
   });
 });
 
@@ -116,5 +125,41 @@ describe('canDecideOnExercise', () => {
     expect(canDecideOnExercise('ARCHIVED_GLOBAL')).toBe(false);
     expect(canDecideOnExercise('PENDING_REVIEW')).toBe(true);
     expect(canDecideOnExercise('CHANGES_REQUESTED')).toBe(true);
+  });
+});
+
+describe('hasPatientVideo', () => {
+  it('sam GIF nie zdejmuje braku nagrania, bo player pacjenta go nie pokazuje', () => {
+    expect(hasPatientVideo({ videoUrl: null, gifUrl: 'https://cdn.example.com/ruch.gif' })).toBe(false);
+    expect(hasPatientVideo({ videoUrl: '  ', gifUrl: null })).toBe(false);
+    expect(hasPatientVideo({ videoUrl: 'https://cdn.example.com/film.mp4', gifUrl: null })).toBe(true);
+  });
+});
+
+describe('listContentGaps', () => {
+  it('karta ćwiczenia widzi te same braki treści co bramka publikacji', () => {
+    const gaps = listContentGaps({
+      name: 'Przysiad',
+      patientDescription: 'Krótko',
+      therapistDescription: '',
+      hasVideo: false,
+      imageCount: 0,
+      stopIfCount: 0,
+    });
+    const stages = computeVerificationStages({
+      ...readyInput,
+      patientDescription: 'Krótko',
+      therapistDescription: '',
+      hasVideo: false,
+      imageCount: 0,
+      stopIfCount: 0,
+    });
+
+    expect(gaps.map((gap) => gap.text)).toEqual(stages.issues.decision.map((issue) => issue.text));
+    expect(gaps).toHaveLength(4);
+  });
+
+  it('pełna karta nie ma braków', () => {
+    expect(listContentGaps(readyInput)).toEqual([]);
   });
 });

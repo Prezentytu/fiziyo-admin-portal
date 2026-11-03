@@ -1,4 +1,4 @@
-import { calculateExerciseTotalSeconds } from '@/utils/exerciseTime';
+import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
 
 export type ExecutionMode = 'reps' | 'hold';
 
@@ -18,6 +18,8 @@ interface ParameterRule {
   typicalMin: number;
   typicalMax: number;
   suggested: number;
+  /** Whole numbers only: the patient player counts whole sets and repetitions. */
+  integer?: boolean;
   /** Slider scale. Narrower than `hardMax`, so the typical band is wide enough to drag precisely. */
   slider: { min: number; max: number; step: number };
 }
@@ -30,6 +32,7 @@ export const PARAMETER_RULES: Record<ParameterKey, ParameterRule> = {
   sets: {
     label: 'Serie',
     unit: '',
+    integer: true,
     hardMax: 20,
     typicalMin: 2,
     typicalMax: 5,
@@ -39,6 +42,7 @@ export const PARAMETER_RULES: Record<ParameterKey, ParameterRule> = {
   reps: {
     label: 'Powtórzenia w serii',
     unit: '',
+    integer: true,
     hardMax: 200,
     typicalMin: 6,
     typicalMax: 20,
@@ -120,6 +124,8 @@ export interface ParameterEvaluation {
   fields: ParameterFieldState[];
   findings: ParameterFinding[];
   sessionSeconds: number;
+  /** True when the repetition time is unknown and the duration is a guess. */
+  sessionIsEstimate: boolean;
   sessionLevel: 'ok' | FindingLevel;
   /** Findings that must be fixed (cannot be acknowledged). */
   blockingCount: number;
@@ -234,12 +240,12 @@ interface SessionTiming {
 }
 
 /** Delegates to the catalog/player formula so the gate sees exactly what the patient will do. */
-export function computeSessionSeconds(
+function computeSession(
   values: ParameterValues,
   mode: ExecutionMode,
   side: string,
   timing: SessionTiming = {}
-): number {
+): { seconds: number; isEstimate: boolean } {
   const sets = positive(values.sets) ?? 0;
   const shared = {
     sets,
@@ -248,7 +254,7 @@ export function computeSessionSeconds(
     side,
   };
   if (mode === 'hold') {
-    return calculateExerciseTotalSeconds({ ...shared, reps: 1, executionTime: positive(values.hold) ?? 0 }).seconds;
+    return calculateExerciseTotalSeconds({ ...shared, reps: 1, executionTime: positive(values.hold) ?? 0 });
   }
   return calculateExerciseTotalSeconds({
     ...shared,
@@ -258,16 +264,21 @@ export function computeSessionSeconds(
     tempo: timing.tempo ?? undefined,
     restReps: timing.restReps ?? undefined,
     type: 'reps',
-  }).seconds;
+  });
 }
 
-export function formatSessionDuration(seconds: number): string {
-  if (seconds >= 3600) {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.round((seconds % 3600) / 60);
-    return `${hours} h ${minutes} min`;
-  }
-  return `${Math.max(1, Math.round(seconds / 60))} min`;
+export function computeSessionSeconds(
+  values: ParameterValues,
+  mode: ExecutionMode,
+  side: string,
+  timing: SessionTiming = {}
+): number {
+  return computeSession(values, mode, side, timing).seconds;
+}
+
+/** Same wording as the exercise page, so both views show one number. */
+export function formatSessionDuration(seconds: number, isEstimate: boolean): string {
+  return formatExerciseDuration(seconds, isEstimate);
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -336,6 +347,18 @@ function evaluateField(
   }
 
   const numeric = value as number;
+  if (rule.integer && !Number.isInteger(numeric)) {
+    return {
+      field: { key, value: numeric, level: 'limit' },
+      finding: {
+        key,
+        level: 'limit',
+        text: `${rule.label}: ${formatWithUnit(numeric, rule.unit)}. Wpisz liczbę całkowitą.`,
+        suggested: Math.max(1, Math.round(numeric)),
+        canAcknowledge: false,
+      },
+    };
+  }
   if (numeric > rule.hardMax) {
     return {
       field: { key, value: numeric, level: 'limit' },
@@ -396,7 +419,7 @@ export function evaluateParameters({
     if (finding) findings.push(finding);
   }
 
-  const sessionSeconds = computeSessionSeconds(values, mode, side, timing);
+  const { seconds: sessionSeconds, isEstimate: sessionIsEstimate } = computeSession(values, mode, side, timing);
   let sessionLevel: ParameterEvaluation['sessionLevel'] = 'ok';
   if (sessionSeconds > SESSION_LIMIT_SECONDS) sessionLevel = 'limit';
   else if (sessionSeconds > SESSION_WARNING_SECONDS) sessionLevel = 'warning';
@@ -417,6 +440,7 @@ export function evaluateParameters({
     fields,
     findings,
     sessionSeconds,
+    sessionIsEstimate,
     sessionLevel,
     blockingCount,
   };
@@ -430,6 +454,7 @@ export function describeFieldNote(field: ParameterFieldState): string {
     case 'empty':
       return 'Puste';
     case 'limit':
+      if (rule.integer && field.value != null && !Number.isInteger(field.value)) return 'Liczba całkowita';
       return `Maks. ${formatWithUnit(rule.hardMax, rule.unit)}`;
     case 'warning':
       return `${(field.value ?? 0) < rule.typicalMin ? 'Mało' : 'Dużo'}, zwykle ${range}`;

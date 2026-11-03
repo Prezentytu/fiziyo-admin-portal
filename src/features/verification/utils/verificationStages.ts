@@ -44,11 +44,52 @@ export interface VerificationStagesResult {
   canPublish: boolean;
 }
 
-function materialIssues(input: VerificationStagesInput): StageIssue[] {
-  const issues: StageIssue[] = [];
+/**
+ * Video for the content gate: only what the patient player shows. The mobile player builds media
+ * from `videoUrl` and photos only, so a GIF alone leaves the patient without material.
+ */
+export function hasPatientVideo(media: { videoUrl?: string | null; gifUrl?: string | null }): boolean {
+  return Boolean(media.videoUrl?.trim());
+}
+
+/** Content an exercise needs before it can be published; the exercise page shows the same gaps. */
+export type ContentGapsInput = Pick<
+  VerificationStagesInput,
+  'name' | 'patientDescription' | 'therapistDescription' | 'hasVideo' | 'imageCount' | 'stopIfCount'
+>;
+
+export function listContentGaps(input: ContentGapsInput): StageIssue[] {
+  const gaps: StageIssue[] = [];
   if (!input.hasVideo && input.imageCount === 0) {
-    issues.push({ stage: 'material', text: 'Dodaj nagranie albo zdjęcie.' });
+    gaps.push({ stage: 'material', text: 'Dodaj nagranie albo zdjęcie.' });
   }
+  if (input.name.trim().length < MIN_NAME_LENGTH) {
+    gaps.push({ stage: 'instruction', text: 'Wpisz nazwę ćwiczenia.' });
+  }
+  if (input.patientDescription.trim().length < MIN_PATIENT_DESCRIPTION_LENGTH) {
+    gaps.push({
+      stage: 'instruction',
+      text: `Opis dla pacjenta: co najmniej ${MIN_PATIENT_DESCRIPTION_LENGTH} znaków.`,
+    });
+  }
+  if (input.stopIfCount === 0) {
+    gaps.push({ stage: 'safety', text: 'Dodaj co najmniej jeden objaw przerwania.' });
+  }
+  if (input.therapistDescription.trim().length < MIN_THERAPIST_DESCRIPTION_LENGTH) {
+    gaps.push({
+      stage: 'safety',
+      text: `Opis dla fizjoterapeuty: co najmniej ${MIN_THERAPIST_DESCRIPTION_LENGTH} znaków.`,
+    });
+  }
+  return gaps;
+}
+
+function gapsFor(stage: VerificationStageKey, gaps: StageIssue[]): StageIssue[] {
+  return gaps.filter((gap) => gap.stage === stage);
+}
+
+function materialIssues(input: VerificationStagesInput, gaps: StageIssue[]): StageIssue[] {
+  const issues = gapsFor('material', gaps);
   if (input.hasPendingPhoto) {
     issues.push({ stage: 'material', text: 'Przyjmij albo odrzuć nowe zdjęcie.' });
   }
@@ -66,42 +107,20 @@ function parameterIssues(input: VerificationStagesInput): StageIssue[] {
   return issues;
 }
 
-function instructionIssues(input: VerificationStagesInput): StageIssue[] {
-  const issues: StageIssue[] = [];
-  if (input.name.trim().length < MIN_NAME_LENGTH) {
-    issues.push({ stage: 'instruction', text: 'Wpisz nazwę ćwiczenia.' });
-  }
-  if (input.patientDescription.trim().length < MIN_PATIENT_DESCRIPTION_LENGTH) {
-    issues.push({
-      stage: 'instruction',
-      text: `Opis dla pacjenta: co najmniej ${MIN_PATIENT_DESCRIPTION_LENGTH} znaków.`,
-    });
-  }
+function instructionIssues(input: VerificationStagesInput, gaps: StageIssue[]): StageIssue[] {
+  const issues = gapsFor('instruction', gaps);
   if (input.hasPendingProposal) {
     issues.push({ stage: 'instruction', text: 'Wstaw propozycję agenta albo ją pomiń.' });
   }
   return issues;
 }
 
-function safetyIssues(input: VerificationStagesInput): StageIssue[] {
-  const issues: StageIssue[] = [];
-  if (input.stopIfCount === 0) {
-    issues.push({ stage: 'safety', text: 'Dodaj co najmniej jeden objaw przerwania.' });
-  }
-  if (input.therapistDescription.trim().length < MIN_THERAPIST_DESCRIPTION_LENGTH) {
-    issues.push({
-      stage: 'safety',
-      text: `Opis dla fizjoterapeuty: co najmniej ${MIN_THERAPIST_DESCRIPTION_LENGTH} znaków.`,
-    });
-  }
-  return issues;
-}
-
 export function computeVerificationStages(input: VerificationStagesInput): VerificationStagesResult {
-  const material = materialIssues(input);
+  const gaps = listContentGaps(input);
+  const material = materialIssues(input, gaps);
   const parameters = parameterIssues(input);
-  const instruction = instructionIssues(input);
-  const safety = safetyIssues(input);
+  const instruction = instructionIssues(input, gaps);
+  const safety = gapsFor('safety', gaps);
   const decision = [...material, ...parameters, ...instruction, ...safety];
 
   const issues: Record<VerificationStageKey, StageIssue[]> = {
@@ -117,19 +136,16 @@ export function computeVerificationStages(input: VerificationStagesInput): Verif
   return { issues, openStages, canPublish: openStages.length === 0 };
 }
 
-export function parseStopIf(value: string | null | undefined): string[] {
-  if (!value) return [];
+/**
+ * `safety.stop_if` is free text the patient app shows as is: group headings end with „:”,
+ * symptoms sit on their own lines, often with „- ”. Only symptom lines count.
+ */
+export function countStopIfSymptoms(value: string | null | undefined): number {
+  if (!value) return 0;
   return value
     .split('\n')
-    .map((entry) => entry.trim())
-    .filter((entry) => entry.length > 0);
-}
-
-export function serializeStopIf(entries: string[]): string {
-  return entries
-    .map((entry) => entry.trim())
-    .filter((entry) => entry.length > 0)
-    .join('\n');
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && !line.endsWith(':')).length;
 }
 
 /** Count with its Polish noun form, e.g. „3 etapy”. */

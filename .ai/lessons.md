@@ -24,6 +24,21 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 
 ## Wpisy
 
+### 2026-11-03 - „Przerwij, gdy…” traktowane jak lista linii gubiło strukturę
+
+- **Kategoria**: `Verification` | `Data`
+- **Problem**: Weryfikacja edytowała `safety.stop_if` chipami (linia = objaw), więc nagłówki grup typu „Zadzwoń pod 112, jeśli:” stawały się objawami, a zapis usuwał puste linie między grupami; karta ćwiczenia sklejała całość w akapit.
+- **Przyczyna**: Założenie, że pole to lista objawów, a w danych to wolny tekst, który aplikacja pacjenta pokazuje dosłownie.
+- **Rozwiązanie**: Edycja w polu tekstowym, odczyt z `whitespace-pre-line`, bramka liczy objawy przez `countStopIfSymptoms` (bez linii kończących się „:”).
+- **Reguła**: Zanim pole tekstowe z danych potniesz na listę, sprawdź prawdziwe dane (fixture E2E) i to, jak pokazuje je mobile. [egzekwowane: src/features/verification/utils/__tests__/verificationStages.test.ts]
+
+### 2026-11-03 - Weryfikator zatwierdzał treści, których nie widział
+
+- **Kategoria**: `Verification` | `UI/UX`
+- **Problem**: Etapy weryfikacji pokazywały część karty ćwiczenia; podsumowanie, odczucia, „dlaczego”, intensywność, progresję, sprzęt, słowa kluczowe i notatki fizjoterapeuta widział w katalogu, a weryfikator nie.
+- **Przyczyna**: Etapy powstały jako ręczny wybór pól, bez związku ze schematem enrichment, więc nowe pole schematu nie miało miejsca w weryfikacji.
+- **Rozwiązanie**: Pola spoza etapów opisuje `EXTRA_CONTENT_GROUPS` w `utils/extraContent.ts`, renderowane w etapie Decyzja; test porównuje je z `enrichmentSchema`.
+- **Reguła**: Nowe pole w `enrichmentSchema` dostaje miejsce w etapie albo w `EXTRA_CONTENT_GROUPS`, inaczej test pada. [egzekwowane: src/features/verification/utils/__tests__/extraContent.test.ts]
 ### 2026-11-03 - Kod z gałęzi PR dostawał sekrety Clerk i Vercel
 
 - **Kategoria**: `CI` | `Security`

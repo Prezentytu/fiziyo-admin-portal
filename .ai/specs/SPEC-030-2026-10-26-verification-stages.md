@@ -30,7 +30,8 @@ W etapie Instrukcja panel nagrania i zdjęć podąża za czytanym tekstem: fokus
 | `utils/verificationStages.ts`  | Uwagi per etap, które etapy są otwarte, czy można opublikować (zawiera dotychczasowe minima opisów)            |
 | `utils/stepMedia.ts`           | Przypięcie zdjęć do kroków i faz do wskazówek, przesuwanie indeksów po usunięciu                               |
 | `utils/instructionProposal.ts` | Propozycja agenta jako blok do „Wstaw / Pomiń” zamiast cichego scalania                                        |
-| `utils/changeSummary.ts`       | „Twoja zmiana” w podsumowaniu decyzji                                                                          |
+| `utils/changeSummary.ts`       | „Twoja zmiana” w podsumowaniu decyzji; liczniki pomijają puste pozycje                                         |
+| `utils/extraContent.ts`        | Pola karty ćwiczenia spoza etapów (test pilnuje, że każde pole schematu enrichment ma miejsce)                 |
 
 ### Zakresy parametrów (założenia produktu, do strojenia przez fizjoterapeutów)
 
@@ -48,17 +49,26 @@ Poziomy: powyżej limitu albo brak wymaganej wartości = „Błąd” (czerwony,
 
 ### Decyzje
 
-| Decyzja                                                                    | Dlaczego                                                                                                       |
-| -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| Brak „Odrzuć” na ekranie globalnym                                         | Ćwiczenie się poprawia, nie odrzuca. Wyjścia: publikacja, „Odłóż na później”, „To duplikat”.                   |
-| „To duplikat” = `rejectExercise(POTENTIAL_DUPLICATE)` z notatką o celu     | Backend nie ma scalania ćwiczeń; copy mówi uczciwie, że ćwiczenie znika z listy, a autor dostaje wskazanie.    |
-| Publikacja z paska, bez dialogu                                            | Etapy są potwierdzeniem; dialog dublował decyzję. Publikacja zablokowana, dopóki jakiś etap ma uwagi.          |
-| Bez checkboxów „sprawdziłem” i bez `⌘D`, `Esc` nie pomija                  | Przycisk etapu jest potwierdzeniem; `Esc` zamyka dialogi, a pomijanie ćwiczenia jednym klawiszem gubiło pracę. |
-| Wymiana zdjęcia w miejscu: `UpdateExercise(images)` z data URL na indeksie | Backend zapisuje data URL jako nowy blob i zachowuje kolejność; stary blob usuwany `DeleteExerciseImage`.      |
-| Nowe zdjęcie od agenta wymaga „Przyjmij”                                   | Fizjoterapeuta porównuje je z nagraniem przed zapisem.                                                         |
-| Okładki nie zmieniamy                                                      | `imageUrl`/`thumbnailUrl` nie są edytowalne bez backendu.                                                      |
-| „Opis dla fizjoterapeuty” w etapie Bezpieczeństwo                          | To pole (`clinicalDescription`, min. 20 znaków) było wymagane do publikacji, a canvas go nie miał.             |
-| Bez słowa „kliniczny” w copy weryfikacji                                   | Decyzja Adama.                                                                                                 |
+| Decyzja                                                                       | Dlaczego                                                                                                       |
+| ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Brak „Odrzuć” na ekranie globalnym                                            | Ćwiczenie się poprawia, nie odrzuca. Wyjścia: publikacja, „Odłóż na później”, „To duplikat”.                   |
+| „To duplikat” = `rejectExercise(POTENTIAL_DUPLICATE)` z notatką o celu        | Backend nie ma scalania ćwiczeń; copy mówi uczciwie, że ćwiczenie znika z listy, a autor dostaje wskazanie.    |
+| Publikacja z paska, bez dialogu                                               | Etapy są potwierdzeniem; dialog dublował decyzję. Publikacja zablokowana, dopóki jakiś etap ma uwagi.          |
+| Bez checkboxów „sprawdziłem” i bez `⌘D`, `Esc` nie pomija                     | Przycisk etapu jest potwierdzeniem; `Esc` zamyka dialogi, a pomijanie ćwiczenia jednym klawiszem gubiło pracę. |
+| Wymiana zdjęcia w miejscu: `UpdateExercise(images)` z data URL na indeksie    | Backend zapisuje data URL jako nowy blob i zachowuje kolejność; stary blob usuwany `DeleteExerciseImage`.      |
+| Nowe zdjęcie od agenta wymaga „Przyjmij”                                      | Fizjoterapeuta porównuje je z nagraniem przed zapisem.                                                         |
+| Okładki nie zmieniamy                                                         | `imageUrl`/`thumbnailUrl` nie są edytowalne bez backendu.                                                      |
+| „Opis dla fizjoterapeuty” w etapie Bezpieczeństwo                             | To pole (`clinicalDescription`, min. 20 znaków) było wymagane do publikacji, a canvas go nie miał.             |
+| Bez słowa „kliniczny” w copy weryfikacji                                      | Decyzja Adama.                                                                                                 |
+| Pozostałe treści karty edytowalne w etapie Decyzja, bez wpływu na bramkę      | Weryfikator nie może zatwierdzić treści, której nie widział; te pola nie blokują publikacji.                   |
+| Przerwa między powtórzeniami i czas przygotowania w etapie Parametry          | Wchodzą do czasu ćwiczenia, więc weryfikator musi je widzieć obok licznika.                                    |
+| „Przerwij, gdy…” jako tekst, nie chipy                                        | Aplikacja pacjenta pokazuje tekst z nagłówkami grup i pustymi liniami; chipy gubiły puste linie przy zapisie.  |
+| Bramka liczy objawy (`countStopIfSymptoms`), bez nagłówków kończących się „:” | Nagłówek grupy to nie objaw.                                                                                   |
+| Braki treści z `listContentGaps`, tak samo na karcie ćwiczenia                | Karta i bramka publikacji mają jedną listę wymagań.                                                            |
+| Czas ćwiczenia formatem karty (`formatExerciseDuration`)                      | Weryfikacja i karta pokazują ten sam czas, np. „6 min 38 s”, a szacunek z „~”.                                 |
+| Zapisane obciążenie spoza kilogramów pokazane przy polu kg                    | Mobile zapisuje gumę, RPE czy funty; pole kg tego nie pokaże, a wpis kg je zastępuje.                          |
+| Materiał w bramce: tylko nagranie albo zdjęcie widoczne dla pacjenta          | Player pacjenta nie pokazuje `gifUrl`, więc sam GIF nie zdejmuje braku (`hasPatientVideo`).                    |
+| Serie i powtórzenia tylko całkowite, ułamek blokuje publikację                | Player pacjenta liczy całe powtórzenia, a zegar weryfikacji obcina ułamek.                                     |
 
 ## Interfejsy
 
@@ -93,6 +103,7 @@ Mobile: do obsługi w `fizjo-app` (handoff), do tego czasu bez zmian dla pacjent
 | `VerificationStageNav`, `VerificationFloatingBar`, `StageSection`, `ChipListEditor`      | `src/features/verification/stages/` |
 | `MaterialStage`, `PhotoReplaceDialog`                                                    | `src/features/verification/stages/` |
 | `ParametersStage`, `InstructionStage`, `SafetyStage`, `DecisionStage`, `DuplicateDialog` | `src/features/verification/stages/` |
+| `ExtraContentSection` (pod podsumowaniem decyzji)                                        | `src/features/verification/stages/` |
 | `RequestChangesDialog` (tor organizacji)                                                 | `src/features/verification/stages/` |
 | `Button` wariant `plain`                                                                 | `src/components/ui/button.tsx`      |
 
@@ -114,3 +125,4 @@ Zdjęcie przy czytanym kroku ma test integracyjny `VerificationWorkspace.reading
 
 - 2026-10-26: Pierwsza wersja (etapy, ocena parametrów, zdjęcia przy krokach, fazy wskazówek, duplikat).
 - 2026-10-27: Testy zdjęć przy krokach (integracyjne i E2E), test ID dużego medium w panelu.
+- 2026-11-03: Pozostałe treści karty w etapie Decyzja, przerwa między powtórzeniami i czas przygotowania w Parametrach, liczniki bez pustych pozycji, „Przerwij, gdy…” jako tekst, wspólne braki treści z kartą ćwiczenia, jeden format czasu, zapisane obciążenie spoza kg, wspólne etykiety pól (`enrichmentFieldLabels.ts`); sam GIF nie spełnia wymogu materiału, pola liczb w Parametrach trzymają wpisany ułamek, serie i powtórzenia tylko całkowite.

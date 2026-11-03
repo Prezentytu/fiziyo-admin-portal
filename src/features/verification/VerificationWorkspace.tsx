@@ -43,6 +43,7 @@ import type { ExerciseReport, ExerciseReportReasonCategory } from '@/types/exerc
 
 import { DecisionStage, type DecisionRow } from './stages/DecisionStage';
 import { DuplicateDialog, type DuplicateTarget } from './stages/DuplicateDialog';
+import { ExtraContentSection } from './stages/ExtraContentSection';
 import { InstructionStage } from './stages/InstructionStage';
 import { MaterialStage, type PendingPhoto } from './stages/MaterialStage';
 import { ParametersStage } from './stages/ParametersStage';
@@ -51,7 +52,7 @@ import { RequestChangesDialog } from './stages/RequestChangesDialog';
 import { SafetyStage } from './stages/SafetyStage';
 import { VerificationFloatingBar } from './stages/VerificationFloatingBar';
 import { VerificationStageNav, type StageNavItem, type StageNavState } from './stages/VerificationStageNav';
-import { summarizeChanges, toChangeSnapshot } from './utils/changeSummary';
+import { countFilledMistakes, countFilledTexts, summarizeChanges, toChangeSnapshot } from './utils/changeSummary';
 import {
   applyInstructionProposal,
   buildInstructionProposal,
@@ -93,7 +94,8 @@ import {
   VERIFICATION_STAGES,
   canDecideOnExercise,
   computeVerificationStages,
-  parseStopIf,
+  countStopIfSymptoms,
+  hasPatientVideo,
   pluralizePl,
   type VerificationStageKey,
 } from './utils/verificationStages';
@@ -293,6 +295,7 @@ export function VerificationWorkspace({
     [exercise.thumbnailUrl, exercise.imageUrl, exercise.images]
   );
   const hasVideo = Boolean(core.videoUrl.trim() || exercise.gifUrl);
+  const patientHasVideo = hasPatientVideo({ videoUrl: core.videoUrl, gifUrl: exercise.gifUrl });
 
   const mediaItems = useMemo(
     () =>
@@ -380,7 +383,7 @@ export function VerificationWorkspace({
     () => (descriptionAcknowledged ? [] : findHardcodedNumbers(core.patientDescription)),
     [descriptionAcknowledged, core.patientDescription]
   );
-  const stopIfCount = parseStopIf(enrichment.safety?.stop_if).length;
+  const stopIfCount = countStopIfSymptoms(enrichment.safety?.stop_if);
 
   const stages = useMemo(
     () =>
@@ -388,7 +391,7 @@ export function VerificationWorkspace({
         name: core.name,
         patientDescription: core.patientDescription,
         therapistDescription: core.clinicalDescription,
-        hasVideo,
+        hasVideo: patientHasVideo,
         imageCount: allMediaUrls.length,
         hasPendingPhoto: pendingPhoto !== null,
         parameters: evaluation,
@@ -400,7 +403,7 @@ export function VerificationWorkspace({
       core.name,
       core.patientDescription,
       core.clinicalDescription,
-      hasVideo,
+      patientHasVideo,
       allMediaUrls.length,
       pendingPhoto,
       evaluation,
@@ -805,7 +808,7 @@ export function VerificationWorkspace({
 
   const sessionLine = `${parameterValues.sets ?? '–'} × ${
     mode === 'reps' ? (parameterValues.reps ?? '–') : `${parameterValues.hold ?? '–'} s`
-  } · ≈ ${formatSessionDuration(evaluation.sessionSeconds)}`;
+  } · ${formatSessionDuration(evaluation.sessionSeconds, evaluation.sessionIsEstimate)}`;
   const photoLabel = pluralizePl(allMediaUrls.length, 'zdjęcie', 'zdjęcia', 'zdjęć');
 
   const { subs, hints } = buildStageCopy({
@@ -813,7 +816,7 @@ export function VerificationWorkspace({
     parameters: evaluation,
     hasPendingPhoto: pendingPhoto !== null,
     hasPendingProposal: proposal !== null,
-    hasVideo,
+    hasVideo: patientHasVideo,
     photoLabel,
     sessionLine,
     stopIfCount,
@@ -841,14 +844,14 @@ export function VerificationWorkspace({
     {
       key: 'material',
       title: STAGE_TITLES.material,
-      summary: `${hasVideo ? 'Nagranie i ' : 'Bez nagrania, '}${photoLabel}`,
+      summary: `${patientHasVideo ? 'Nagranie i ' : 'Bez nagrania, '}${photoLabel}`,
       changes: changes.material,
       issues: stages.issues.material,
     },
     {
       key: 'parameters',
       title: STAGE_TITLES.parameters,
-      summary: `${buildPatientParameterLine(parameterValues, mode, core.side)} · ≈ ${formatSessionDuration(evaluation.sessionSeconds)}`,
+      summary: `${buildPatientParameterLine(parameterValues, mode, core.side)} · ${formatSessionDuration(evaluation.sessionSeconds, evaluation.sessionIsEstimate)}`,
       changes: changes.parameters,
       issues: stages.issues.parameters,
     },
@@ -857,14 +860,9 @@ export function VerificationWorkspace({
       title: STAGE_TITLES.instruction,
       summary: [
         'Opis',
-        pluralizePl((patient.steps ?? []).filter(Boolean).length, 'krok', 'kroki', 'kroków'),
-        pluralizePl(
-          (patient.cues ?? []).filter(Boolean).length,
-          'wskazówka głosowa',
-          'wskazówki głosowe',
-          'wskazówek głosowych'
-        ),
-        pluralizePl((patient.mistakes ?? []).length, 'typowy błąd', 'typowe błędy', 'typowych błędów'),
+        pluralizePl(countFilledTexts(patient.steps), 'krok', 'kroki', 'kroków'),
+        pluralizePl(countFilledTexts(patient.cues), 'wskazówka głosowa', 'wskazówki głosowe', 'wskazówek głosowych'),
+        pluralizePl(countFilledMistakes(patient.mistakes), 'typowy błąd', 'typowe błędy', 'typowych błędów'),
       ].join(', '),
       changes: changes.instruction,
       issues: stages.issues.instruction,
@@ -873,9 +871,9 @@ export function VerificationWorkspace({
       key: 'safety',
       title: STAGE_TITLES.safety,
       summary: [
-        parseStopIf(enrichment.safety?.stop_if).join(', '),
+        pluralizePl(stopIfCount, 'objaw przerwania', 'objawy przerwania', 'objawów przerwania'),
         pluralizePl(
-          enrichment.therapist?.contraindications?.length ?? 0,
+          countFilledTexts(enrichment.therapist?.contraindications),
           'przeciwwskazanie',
           'przeciwwskazania',
           'przeciwwskazań'
@@ -1096,6 +1094,7 @@ export function VerificationWorkspace({
               }
               onAcknowledgeDescription={() => setDescriptionAcknowledged(true)}
               onCoreFieldChange={setCoreField}
+              savedLoadLabel={form.savedLoadLabel}
             />
           )}
 
@@ -1129,7 +1128,17 @@ export function VerificationWorkspace({
             />
           )}
 
-          {stage === 'decision' && <DecisionStage rows={decisionRows} onGoToStage={goToStage} />}
+          {stage === 'decision' && (
+            <>
+              <DecisionStage rows={decisionRows} onGoToStage={goToStage} />
+              <ExtraContentSection
+                enrichment={enrichment}
+                core={{ audioCue: core.audioCue, notes: core.notes }}
+                onEnrichmentPathChange={setEnrichmentPath}
+                onCoreFieldChange={setCoreField}
+              />
+            </>
+          )}
         </div>
       </div>
 

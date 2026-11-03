@@ -27,6 +27,7 @@ export const enrichmentSchema = z
     safety: z
       .object({
         stop_if: z.string().optional(),
+        intensity_guide: z.string().optional(),
         requires_supervision: z.boolean().optional(),
       })
       .passthrough()

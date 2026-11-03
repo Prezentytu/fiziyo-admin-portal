@@ -1,6 +1,7 @@
 import { formatExerciseSideLabel } from '@/utils/exerciseSideLabels';
-import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
-import { parseStopIf, type VerificationStageKey } from './verificationStages';
+import { isMistakeRowEmpty } from '@/components/shared/enrichment/canRemovePlaceholderRow';
+import type { EnrichmentPatientMistakeV3, ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
+import { countStopIfSymptoms, type VerificationStageKey } from './verificationStages';
 
 export interface ChangeSnapshot {
   name: string;
@@ -65,8 +66,12 @@ function countChange(label: string, before: number, after: number): string | nul
   return before === after ? null : `${label}: ${before} → ${after}`;
 }
 
-function filledCount(values: string[] | undefined): number {
+export function countFilledTexts(values: string[] | undefined): number {
   return (values ?? []).filter((value) => value.trim().length > 0).length;
+}
+
+export function countFilledMistakes(items: EnrichmentPatientMistakeV3[] | undefined): number {
+  return (items ?? []).filter((item) => !isMistakeRowEmpty(item)).length;
 }
 
 export function summarizeChanges(
@@ -94,16 +99,20 @@ export function summarizeChanges(
   const instruction = [
     initial.name.trim() !== current.name.trim() ? 'nowa nazwa' : null,
     initial.patientDescription.trim() !== current.patientDescription.trim() ? 'poprawiony opis' : null,
-    countChange('kroki', filledCount(initialPatient?.steps), filledCount(currentPatient?.steps)),
-    countChange('wskazówki', filledCount(initialPatient?.cues), filledCount(currentPatient?.cues)),
-    countChange('typowe błędy', initialPatient?.mistakes?.length ?? 0, currentPatient?.mistakes?.length ?? 0),
+    countChange('kroki', countFilledTexts(initialPatient?.steps), countFilledTexts(currentPatient?.steps)),
+    countChange('wskazówki', countFilledTexts(initialPatient?.cues), countFilledTexts(currentPatient?.cues)),
+    countChange(
+      'typowe błędy',
+      countFilledMistakes(initialPatient?.mistakes),
+      countFilledMistakes(currentPatient?.mistakes)
+    ),
   ].filter((entry): entry is string => entry !== null);
 
   const safety = [
     countChange(
       'objawy przerwania',
-      parseStopIf(initial.enrichment.safety?.stop_if).length,
-      parseStopIf(current.enrichment.safety?.stop_if).length
+      countStopIfSymptoms(initial.enrichment.safety?.stop_if),
+      countStopIfSymptoms(current.enrichment.safety?.stop_if)
     ),
     initial.therapistDescription.trim() !== current.therapistDescription.trim()
       ? 'poprawiony opis dla fizjoterapeuty'

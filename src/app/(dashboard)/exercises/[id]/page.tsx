@@ -99,6 +99,8 @@ import { normalizeExerciseType } from '@/utils/exerciseEnums';
 import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
 import { resolveLoadKg } from '@/utils/exerciseLoadMutation';
 import { verificationCopy } from '@/features/verification/verificationCopy';
+import { countStopIfSymptoms, hasPatientVideo, listContentGaps } from '@/features/verification/utils/verificationStages';
+import { useSystemRole } from '@/hooks/useSystemRole';
 import { ORG_VERIFICATION_REFETCH_QUERIES } from '@/hooks/useOrganizationVerificationRealtime';
 import { PageSheet } from '@/components/shared/page';
 
@@ -119,6 +121,7 @@ function isTagObject(tag: string | ExerciseTag): tag is ExerciseTag {
 export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) {
   const { id } = use(params);
   const router = useRouter();
+  const { canReviewExercises } = useSystemRole();
   const { currentOrganization } = useOrganization();
   const [isEditMode, setIsEditMode] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -543,8 +546,15 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const patientDescription = exercise.patientDescription || exercise.description || '';
   const physiotherapistDescription = exercise.clinicalDescription || '';
   const audioCue = (exercise as { audioCue?: string }).audioCue || '';
-  const hasMissingCoreInformation =
-    !patientDescription.trim() || !physiotherapistDescription.trim() || imageItemsCount === 0;
+  const contentGaps = listContentGaps({
+    name: exercise.name ?? '',
+    // Same sources as the verification gate (useExerciseEditorForm + VerificationWorkspace).
+    patientDescription: exercise.patientDescription ?? exercise.description ?? '',
+    therapistDescription: physiotherapistDescription,
+    hasVideo: hasPatientVideo(exercise),
+    imageCount: imageItemsCount,
+    stopIfCount: countStopIfSymptoms(enrichment.safety?.stop_if),
+  });
 
   const isPendingOrganizationReview = exercise.organizationVerificationStatus === 'PENDING_ORG_REVIEW';
   const isLocked = isGlobalExercise || isPendingReview || isPendingOrganizationReview;
@@ -805,15 +815,17 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         )}
       </div>
 
-      {hasMissingCoreInformation && !isEditing && (
+      {contentGaps.length > 0 && !isEditing && (
         <div className="rounded-2xl border border-status-info/20 bg-status-info-muted p-4">
           <div className="flex items-start gap-3">
             <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-status-info" />
             <div>
               <p className="text-sm font-semibold text-foreground">To ćwiczenie może być jeszcze lepsze</p>
-              <p className="text-sm text-muted-foreground">
-                Dodaj opis dla pacjenta, opis kliniczny i zdjęcia, aby pacjent lepiej rozumiał sposób wykonania.
-              </p>
+              <ul className="list-disc space-y-0.5 pl-5 text-sm text-muted-foreground" data-testid="exercise-detail-content-gaps">
+                {contentGaps.map((gap) => (
+                  <li key={gap.text}>{gap.text}</li>
+                ))}
+              </ul>
             </div>
           </div>
         </div>
@@ -925,9 +937,24 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
           {isLocked && (
             <div className="rounded-2xl border border-border/40 bg-surface/50 px-4 py-3 text-xs text-muted-foreground flex items-center gap-2">
               <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-              {isGlobalExercise
-                ? 'Ćwiczenie z bazy FiziYo — tylko do odczytu. Użyj "Duplikuj" aby je edytować.'
-                : 'Edycja zablokowana podczas weryfikacji.'}
+              <span className="flex-1">
+                {!isGlobalExercise
+                  ? 'Edycja zablokowana podczas weryfikacji.'
+                  : canReviewExercises
+                    ? 'Ćwiczenie z bazy FiziYo. Poprawiasz je w weryfikacji, zmiana trafi do wszystkich gabinetów.'
+                    : 'Ćwiczenie z bazy FiziYo — tylko do odczytu. Użyj "Duplikuj" aby je edytować.'}
+              </span>
+              {isGlobalExercise && canReviewExercises && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => router.push(`/verification/${exercise.id}`)}
+                  data-testid="exercise-detail-open-verification-btn"
+                >
+                  Popraw w weryfikacji
+                </Button>
+              )}
             </div>
           )}
         </div>

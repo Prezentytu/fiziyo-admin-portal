@@ -1,6 +1,7 @@
 'use client';
 
 import { Info, Timer } from 'lucide-react';
+import { useState, type ComponentProps } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -42,6 +43,8 @@ interface ParametersStageProps {
   onFixDescription: () => void;
   onAcknowledgeDescription: () => void;
   onCoreFieldChange: <K extends keyof ExerciseCoreDraft>(field: K, value: ExerciseCoreDraft[K]) => void;
+  /** Saved load the kilogram field cannot show (band, RPE, text). */
+  savedLoadLabel?: string | null;
 }
 
 const FIELD_INFO: Partial<Record<ParameterKey, string>> = {
@@ -58,11 +61,89 @@ const DETAIL_INFO = {
     'Jak głęboko lub daleko: pełny, w wygodnym zakresie albo do kąta, np. do 90°. Opis ruchu należy do opisu ćwiczenia.',
 } as const;
 
+const TIMING_FIELDS = [
+  {
+    field: 'restReps',
+    label: 'Przerwa między powtórzeniami',
+    info: 'Krótka przerwa między pojedynczymi powtórzeniami. Wlicza się do czasu ćwiczenia.',
+  },
+  {
+    field: 'preparationTime',
+    label: 'Czas przygotowania',
+    info: 'Czas na ustawienie pozycji przed startem. Wlicza się do czasu ćwiczenia.',
+  },
+] as const satisfies ReadonlyArray<{ field: keyof ExerciseCoreDraft; label: string; info: string }>;
+
 function parseNumber(raw: string): number | null {
   const normalized = raw.replace(',', '.').trim();
   if (normalized === '') return null;
   const parsed = Number(normalized);
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+}
+
+type DecimalInputProps = Omit<ComponentProps<typeof Input>, 'value' | 'onChange'> & {
+  testId: string;
+  value: number | null | undefined;
+  onValueChange: (value: number | null) => void;
+  /** What an empty field means, e.g. 0 where the backend reads null as „keep the old value”. */
+  emptyValue?: number | null;
+  /** Sets and reps: the patient player counts whole repetitions. */
+  integer?: boolean;
+};
+
+/**
+ * Keeps the typed text, so „2,” stays on screen until the next digit instead of collapsing to 2,
+ * and resyncs when the value changes from outside (slider, reset). Text that is not a number reverts on blur
+ * to the value from before focus.
+ */
+function DecimalInput({
+  testId,
+  value,
+  onValueChange,
+  emptyValue = null,
+  integer = false,
+  onFocus,
+  onBlur,
+  ...props
+}: DecimalInputProps) {
+  const format = (next: number | null | undefined) => (next == null ? '' : String(next));
+  const parse = (raw: string) => (integer && !/^\s*\d+\s*$/.test(raw) ? null : parseNumber(raw));
+  const [text, setText] = useState(format(value));
+  const [syncedValue, setSyncedValue] = useState(value);
+  const [focusValue, setFocusValue] = useState(value);
+  if (value !== syncedValue) {
+    setSyncedValue(value);
+    if ((parse(text) ?? emptyValue) !== value) setText(format(value));
+  }
+
+  return (
+    <Input
+      {...props}
+      data-testid={testId}
+      value={text}
+      onChange={(event) => {
+        const raw = event.target.value;
+        setText(raw);
+        if (raw.trim() === '') onValueChange(emptyValue);
+        else {
+          const parsed = parse(raw);
+          if (parsed !== null) onValueChange(parsed);
+        }
+      }}
+      onFocus={(event) => {
+        setFocusValue(value);
+        onFocus?.(event);
+      }}
+      onBlur={(event) => {
+        if (text.trim() !== '' && parse(text) === null) {
+          // Partial keystrokes may have saved a prefix (e.g. „10” from „10,5”); undo the whole attempt.
+          setText(format(focusValue));
+          if (focusValue !== value) onValueChange(focusValue ?? emptyValue);
+        }
+        onBlur?.(event);
+      }}
+    />
+  );
 }
 
 function InfoButton({ label, text, testId }: Readonly<{ label: string; text: string; testId: string }>) {
@@ -146,15 +227,16 @@ function ParameterRow({
           {info && <InfoButton label={rule.label} text={info} testId={`verification-param-${field.key}-info-btn`} />}
         </div>
         <div className="relative">
-          <Input
+          <DecimalInput
             id={inputId}
-            data-testid={`verification-param-${field.key}-input`}
-            inputMode="decimal"
-            value={field.value ?? ''}
+            testId={`verification-param-${field.key}-input`}
+            inputMode={field.key === 'sets' || field.key === 'reps' ? 'numeric' : 'decimal'}
+            integer={field.key === 'sets' || field.key === 'reps'}
+            value={field.value}
             placeholder={field.key === 'repTime' ? String(DEFAULT_REP_SECONDS) : undefined}
             aria-invalid={isError || undefined}
             aria-describedby={showNote ? `${inputId}-note` : undefined}
-            onChange={(event) => onChange(parseNumber(event.target.value))}
+            onValueChange={onChange}
             className={cn(
               'pr-8 tabular-nums',
               isWarning && 'ring-2 ring-status-warning/50',
@@ -256,9 +338,10 @@ export function ParametersStage({
   onFixDescription,
   onAcknowledgeDescription,
   onCoreFieldChange,
+  savedLoadLabel = null,
 }: ParametersStageProps) {
   const sessionFinding = evaluation.findings.find((finding) => finding.key === 'session');
-  const sessionText = `≈ ${formatSessionDuration(evaluation.sessionSeconds)}`;
+  const sessionText = formatSessionDuration(evaluation.sessionSeconds, evaluation.sessionIsEstimate);
 
   return (
     <div className="flex flex-col gap-4" data-testid="verification-stage-parameters">
@@ -381,7 +464,7 @@ export function ParametersStage({
         </FieldNote>
       )}
 
-      <StageSection title="Tempo, obciążenie, zakres ruchu" data-testid="verification-param-details">
+      <StageSection title="Tempo, obciążenie, zakres ruchu, przerwy" data-testid="verification-param-details">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-1">
@@ -405,14 +488,19 @@ export function ParametersStage({
               </Label>
               <InfoButton label="Obciążenie" text={DETAIL_INFO.load} testId="verification-param-load-info-btn" />
             </div>
-            <Input
+            <DecimalInput
               id="verification-param-load"
               inputMode="decimal"
-              value={core.loadKg ?? ''}
-              placeholder="masa ciała"
-              onChange={(event) => onCoreFieldChange('loadKg', parseNumber(event.target.value))}
-              data-testid="verification-param-load-input"
+              value={core.loadKg}
+              placeholder={savedLoadLabel ?? 'masa ciała'}
+              onValueChange={(value) => onCoreFieldChange('loadKg', value)}
+              testId="verification-param-load-input"
             />
+            {savedLoadLabel && (
+              <p className="text-[13px] text-label-secondary" data-testid="verification-param-saved-load-note">
+                Zapisane: „{savedLoadLabel}”. Wpisanie kilogramów je zastąpi.
+              </p>
+            )}
           </div>
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-1">
@@ -433,6 +521,25 @@ export function ParametersStage({
               data-testid="verification-param-rom-input"
             />
           </div>
+          {TIMING_FIELDS.map(({ field, label, info }) => (
+            <div key={field} className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-1">
+                <Label htmlFor={`verification-param-${field}`} className="text-[13px] text-label-secondary">
+                  {label} (s)
+                </Label>
+                <InfoButton label={label} text={info} testId={`verification-param-${field}-info-btn`} />
+              </div>
+              <DecimalInput
+                id={`verification-param-${field}`}
+                inputMode="decimal"
+                value={core[field]}
+                placeholder="0"
+                emptyValue={0}
+                onValueChange={(value) => onCoreFieldChange(field, value ?? 0)}
+                testId={`verification-param-${field}-input`}
+              />
+            </div>
+          ))}
         </div>
       </StageSection>
     </div>
