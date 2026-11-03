@@ -5,7 +5,7 @@ import { resolveExerciseReportRoutingTarget } from '@/features/exercises/utils/e
 import type { CreateExerciseReportInput, ExerciseReport, ExerciseReportStatus } from '@/types/exercise-report.types';
 
 const DISCORD_WEBHOOK_URL = process.env.DISCORD_EXERCISE_REPORTS_WEBHOOK_URL;
-const ADMIN_BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://admin.fiziyo.com';
+const ADMIN_BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://portal.fiziyo.pl';
 
 interface LegacyExerciseInfo {
   id: string;
