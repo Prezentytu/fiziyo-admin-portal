@@ -2,7 +2,9 @@
 
 import { ListOrdered } from 'lucide-react';
 import { ListEditor } from '@/components/shared/enrichment/ListEditor';
+import { getStepImage } from '@/features/verification/utils/stepMedia';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
+import { getMediaUrl } from '@/utils/mediaUrl';
 
 interface ExerciseExecutionStepsProps {
   enrichmentData?: ExerciseEnrichmentData | null;
@@ -53,23 +55,35 @@ export function ExerciseExecutionSteps({
         />
       ) : hasSteps ? (
         <ol className="space-y-3" data-testid="exercise-execution-steps-list">
-          {stepTexts.map((text, index) => (
-            <li key={`step-${index}-${text}`} className="flex gap-3" data-testid={`exercise-execution-step-${index + 1}`}>
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-bold text-primary mt-0.5">
-                {index + 1}
-              </span>
-              <p className="flex-1 min-w-0 text-sm text-foreground leading-snug">{text || 'Brak opisu kroku'}</p>
-            </li>
-          ))}
+          {stepTexts.map((text, index) => {
+            const imageUrl = getMediaUrl(getStepImage(enrichmentData?.patient?.step_images, index));
+            return (
+              <li
+                key={`step-${index}-${text}`}
+                className="flex gap-3"
+                data-testid={`exercise-execution-step-${index + 1}`}
+              >
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-bold text-primary mt-0.5">
+                  {index + 1}
+                </span>
+                <p className="flex-1 min-w-0 text-sm text-foreground leading-snug">{text || 'Brak opisu kroku'}</p>
+                {imageUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element -- remote CDN image
+                  <img
+                    src={imageUrl}
+                    alt={`Zdjęcie do kroku ${index + 1}`}
+                    className="h-16 w-16 shrink-0 rounded-lg border border-border/40 object-cover"
+                    data-testid={`exercise-execution-step-${index + 1}-image`}
+                  />
+                )}
+              </li>
+            );
+          })}
         </ol>
       ) : patientDescription ? (
         <div className="rounded-xl bg-surface-light/30 p-4 space-y-2">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
-            Opis ćwiczenia
-          </p>
-          <p className="whitespace-pre-wrap text-sm text-muted-foreground leading-relaxed">
-            {patientDescription}
-          </p>
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">Opis ćwiczenia</p>
+          <p className="whitespace-pre-wrap text-sm text-muted-foreground leading-relaxed">{patientDescription}</p>
         </div>
       ) : (
         <p className="text-sm text-muted-foreground">Brak kroków wykonania dla tego ćwiczenia.</p>

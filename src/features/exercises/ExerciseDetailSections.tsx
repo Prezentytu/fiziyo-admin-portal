@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ListEditor } from '@/components/shared/enrichment/ListEditor';
 import { TherapistNotesSection } from '@/components/shared/enrichment/TherapistNotesSection';
 import { DirtyDot } from '@/components/shared/enrichment/DirtyDot';
+import { EXERCISE_CONTENT_LABELS as LABELS, EXERCISE_NOTES_HINT } from '@/components/shared/enrichment/enrichmentFieldLabels';
 import {
   canRemovePlaceholderRow,
   isMistakeRowEmpty,
@@ -25,6 +26,22 @@ function hasText(value: string | undefined | null): value is string {
 
 function hasListItems(values: string[] | undefined): boolean {
   return Boolean(values?.some((value) => hasText(value)));
+}
+
+function ReadList({ label, items, testId }: Readonly<{ label: string; items: string[]; testId?: string }>) {
+  if (!hasListItems(items)) return null;
+  return (
+    <div className="space-y-1 text-sm text-muted-foreground" data-testid={testId}>
+      <p className="font-medium text-foreground">{label}:</p>
+      <ul className="list-disc space-y-0.5 pl-5">
+        {items
+          .filter((item) => hasText(item))
+          .map((item, index) => (
+            <li key={`${index}-${item}`}>{item}</li>
+          ))}
+      </ul>
+    </div>
+  );
 }
 
 interface SectionCardProps {
@@ -151,7 +168,7 @@ export function PatientLeadSection({
         />
       ) : null}
       <EditableTextBlock
-        label="Krótkie podsumowanie"
+        label={LABELS.summary}
         value={summary}
         placeholder="Jedno–dwa zdania streszczenia dla szybkiego podglądu w aplikacji."
         editable={editable}
@@ -287,7 +304,7 @@ export function PatientExtrasSection({
           />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <EditableTextBlock
-              label="Co pacjent powinien czuć"
+              label={LABELS.shouldFeel}
               value={shouldFeel}
               placeholder="np. lekkie napięcie mięśni pośladkowych"
               editable
@@ -299,7 +316,7 @@ export function PatientExtrasSection({
               testId="exercise-detail-should-feel-input"
             />
             <EditableTextBlock
-              label="Czego nie powinien czuć"
+              label={LABELS.shouldNotFeel}
               value={shouldNotFeel}
               placeholder="np. ostrego bólu w kolanie"
               editable
@@ -312,7 +329,7 @@ export function PatientExtrasSection({
             />
           </div>
           <EditableTextBlock
-            label="Dlaczego to ćwiczenie"
+            label={LABELS.why}
             value={why}
             placeholder="Krótkie uzasadnienie dla pacjenta"
             editable
@@ -324,7 +341,7 @@ export function PatientExtrasSection({
             testId="exercise-detail-why-input"
           />
           <EditableTextBlock
-            label="Kiedy wykonywać"
+            label={LABELS.whenToDo}
             value={whenToDo}
             placeholder="np. rano i wieczorem, po rozgrzewce"
             editable
@@ -356,18 +373,18 @@ export function PatientExtrasSection({
           )}
           {hasText(shouldFeel) && (
             <p className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">Powinno być odczuwalne:</span> {shouldFeel}
+              <span className="font-medium text-foreground">{LABELS.shouldFeel}:</span> {shouldFeel}
             </p>
           )}
           {hasText(shouldNotFeel) && (
             <p className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">Nie powinno dawać:</span> {shouldNotFeel}
+              <span className="font-medium text-foreground">{LABELS.shouldNotFeel}:</span> {shouldNotFeel}
             </p>
           )}
           {hasText(why) && <p className="text-sm text-muted-foreground">{why}</p>}
           {hasText(whenToDo) && (
             <p className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">Kiedy wykonywać:</span> {whenToDo}
+              <span className="font-medium text-foreground">{LABELS.whenToDo}:</span> {whenToDo}
             </p>
           )}
         </div>
@@ -407,9 +424,9 @@ export function SafetySection({
       {editable ? (
         <div className="space-y-4">
           <EditableTextBlock
-            label="Przerwij ćwiczenie, gdy..."
+            label={LABELS.stopIf}
             value={stopIf}
-            placeholder="np. pojawi się ostry ból lub zawroty głowy"
+            placeholder="Każdy objaw w osobnej linii, np. ostry ból kolana"
             editable
             disabled={disabled}
             minHeight="min-h-[70px]"
@@ -419,7 +436,7 @@ export function SafetySection({
             testId="exercise-detail-stop-if-input"
           />
           <EditableTextBlock
-            label="Wskazówki dot. intensywności"
+            label={LABELS.intensityGuide}
             value={intensityGuide}
             placeholder="np. utrzymuj intensywność 5–6/10 w skali odczuwanego wysiłku"
             editable
@@ -454,13 +471,14 @@ export function SafetySection({
             <p className="text-sm font-medium text-status-warning">Wymaga nadzoru fizjoterapeuty</p>
           )}
           {hasText(stopIf) && (
-            <p className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">Przerwij gdy:</span> {stopIf}
-            </p>
+            <div className="space-y-1 text-sm text-muted-foreground" data-testid="exercise-detail-stop-if-text">
+              <p className="font-medium text-foreground">{LABELS.stopIf}</p>
+              <p className="whitespace-pre-line">{stopIf}</p>
+            </div>
           )}
           {hasText(intensityGuide) && (
             <p className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">Intensywność:</span> {intensityGuide}
+              <span className="font-medium text-foreground">{LABELS.intensityGuide}:</span> {intensityGuide}
             </p>
           )}
         </div>
@@ -509,12 +527,12 @@ export function TherapistSection({
   return (
     <SectionCard title="Dla fizjoterapeuty" icon={<Stethoscope className="h-4 w-4 text-muted-foreground" />} testId="exercise-detail-therapist">
       <EditableTextBlock
-        label="Opis kliniczny"
+        label={LABELS.clinicalDescription}
         value={clinicalDescription}
-        placeholder="Cel, biomechanika, uwagi terapeutyczne (język medyczny)."
+        placeholder="Cel, biomechanika, uwagi terapeutyczne."
         editable={editable}
         disabled={disabled}
-        emptyText="Brak opisu klinicznego."
+        emptyText="Brak opisu dla fizjoterapeuty."
         dirty={clinicalDescriptionDirty}
         onChange={onClinicalDescriptionChange}
         testId="exercise-detail-clinical-description-input"
@@ -527,31 +545,13 @@ export function TherapistSection({
           {hasText(therapist.clinical_notes) && (
             <p className="text-sm text-muted-foreground">{therapist.clinical_notes}</p>
           )}
-          {hasListItems(therapist.indications) && (
-            <p className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">Wskazania:</span> {(therapist.indications ?? []).join(', ')}
-            </p>
-          )}
-          {hasListItems(therapist.contraindications) && (
-            <p className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">Przeciwwskazania:</span>{' '}
-              {(therapist.contraindications ?? []).join(', ')}
-            </p>
-          )}
-          {hasListItems(therapist.rehab_phases) && (
-            <p className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">Faza rehab:</span> {(therapist.rehab_phases ?? []).join(', ')}
-            </p>
-          )}
-          {hasListItems(therapist.clinical_benefits) && (
-            <p className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">Korzyści kliniczne:</span>{' '}
-              {(therapist.clinical_benefits ?? []).join(', ')}
-            </p>
-          )}
+          <ReadList label={LABELS.indications} items={therapist.indications ?? []} />
+          <ReadList label={LABELS.contraindications} items={therapist.contraindications ?? []} />
+          <ReadList label={LABELS.rehabPhases} items={therapist.rehab_phases ?? []} />
+          <ReadList label={LABELS.clinicalBenefits} items={therapist.clinical_benefits ?? []} />
           {hasText(therapist.progression_notes) && (
             <p className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">Progresja:</span> {therapist.progression_notes}
+              <span className="font-medium text-foreground">{LABELS.progressionNotes}:</span> {therapist.progression_notes}
             </p>
           )}
         </div>
@@ -652,9 +652,9 @@ export function MetadataSection({
             />
           </div>
           <EditableTextBlock
-            label="Notatki wewnętrzne"
+            label={LABELS.notes}
             value={notes}
-            placeholder="Dodatkowe uwagi terapeuty (niewidoczne dla pacjenta)."
+            placeholder={`Na co zwrócić uwagę przy wykonaniu. ${EXERCISE_NOTES_HINT}`}
             editable
             disabled={disabled}
             minHeight="min-h-[70px]"
@@ -664,7 +664,7 @@ export function MetadataSection({
             testId="exercise-detail-notes-input"
           />
           <ListEditor
-            title="Potrzebny sprzęt"
+            title={LABELS.equipment}
             items={equipment}
             placeholder="np. mata do ćwiczeń"
             addLabel="Dodaj sprzęt"
@@ -674,7 +674,7 @@ export function MetadataSection({
             testIdPrefix="exercise-detail-equipment"
           />
           <ListEditor
-            title="Problemy / dolegliwości (AI)"
+            title={`${LABELS.problems} (AI)`}
             items={problems}
             placeholder="np. ból odcinka lędźwiowego"
             addLabel="Dodaj problem"
@@ -684,7 +684,7 @@ export function MetadataSection({
             testIdPrefix="exercise-detail-ai-problems"
           />
           <ListEditor
-            title="Odpowiednie dla (AI)"
+            title={`${LABELS.suitableFor} (AI)`}
             items={suitableFor}
             placeholder="np. osoby po siedzącej pracy"
             addLabel="Dodaj grupę"
@@ -694,7 +694,7 @@ export function MetadataSection({
             testIdPrefix="exercise-detail-ai-suitable"
           />
           <ListEditor
-            title="Przeciwwskazane dla (AI)"
+            title={`${LABELS.contraindicatedFor} (AI)`}
             items={contraindicatedFor}
             placeholder="np. ostry stan zapalny"
             addLabel="Dodaj przeciwwskazanie"
@@ -704,7 +704,7 @@ export function MetadataSection({
             testIdPrefix="exercise-detail-ai-contraindicated"
           />
           <ListEditor
-            title="Słowa kluczowe (AI)"
+            title={`${LABELS.keywords} (AI)`}
             items={keywords}
             placeholder="np. stabilizacja centralna"
             addLabel="Dodaj słowo kluczowe"
@@ -723,14 +723,14 @@ export function MetadataSection({
           )}
           {hasText(notes) && (
             <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">Notatki:</span> {notes}
+              <span className="font-medium text-foreground">{LABELS.notes}:</span> {notes}
             </p>
           )}
-          <ReadChips label="Potrzebny sprzęt" items={equipment} />
-          <ReadChips label="Problemy / dolegliwości" items={problems} />
-          <ReadChips label="Odpowiednie dla" items={suitableFor} />
-          <ReadChips label="Przeciwwskazane dla" items={contraindicatedFor} />
-          <ReadChips label="Słowa kluczowe" items={keywords} />
+          <ReadChips label={LABELS.equipment} items={equipment} />
+          <ReadChips label={LABELS.problems} items={problems} />
+          <ReadChips label={LABELS.suitableFor} items={suitableFor} />
+          <ReadChips label={LABELS.contraindicatedFor} items={contraindicatedFor} />
+          <ReadChips label={LABELS.keywords} items={keywords} />
         </div>
       )}
     </SectionCard>
