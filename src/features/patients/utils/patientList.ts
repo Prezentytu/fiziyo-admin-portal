@@ -77,3 +77,23 @@ export function sortPatients<T extends SortInput>(
     })
     .map(({ patient }) => patient);
 }
+
+interface SearchResultsInput {
+  /** The patient list query has returned data at least once. */
+  listLoaded: boolean;
+  /** The active tab filters by the signed-in therapist, so it needs their id first. */
+  filtersByTherapist: boolean;
+  therapistId: string | null | undefined;
+  count: number;
+}
+
+/** Results count the therapist actually sees, or null while the list cannot be shown yet. */
+export function settledSearchResultsCount(input: SearchResultsInput): number | null {
+  if (!input.listLoaded) {
+    return null;
+  }
+  if (input.filtersByTherapist && !input.therapistId) {
+    return null;
+  }
+  return input.count;
+}
