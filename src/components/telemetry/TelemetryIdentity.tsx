@@ -3,19 +3,17 @@
 import { useEffect } from 'react';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { decodeJwtPayload } from '@/lib/auth/jwtClaims';
-import { identifyTelemetryUser } from '@/lib/telemetry/client';
-import { useTelemetryConsent } from '@/lib/telemetry/useTelemetryConsent';
+import { setTelemetryUser } from '@/lib/telemetry/client';
 import { getBackendToken } from '@/lib/tokenCache';
 
-/** Links events to our internal user id (`sub` of the backend JWT) once consent is granted. */
+/** Binds telemetry and its consent to the signed-in person (`sub` of the backend JWT). */
 export function TelemetryIdentity() {
   const { currentOrganization } = useOrganization();
-  const { consent } = useTelemetryConsent();
   const organizationId = currentOrganization?.organizationId ?? null;
   const role = currentOrganization?.role ?? null;
 
   useEffect(() => {
-    if (consent !== 'granted' || !organizationId) {
+    if (!organizationId) {
       return;
     }
     const token = getBackendToken();
@@ -23,8 +21,8 @@ export function TelemetryIdentity() {
     if (typeof userId !== 'string' || !userId) {
       return;
     }
-    identifyTelemetryUser({ userId, role, organizationId });
-  }, [consent, organizationId, role]);
+    setTelemetryUser({ userId, role, organizationId });
+  }, [organizationId, role]);
 
   return null;
 }

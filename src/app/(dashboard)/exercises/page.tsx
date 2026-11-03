@@ -214,7 +214,6 @@ export default function ExercisesPage() {
     event: 'exercise_catalog:search',
     query: committedSearch,
     resultsCount: loading || !libraryPage ? null : libraryPage.totalCount,
-    includeQuery: true,
   });
 
   const handlePageChange = (page: number) => {

@@ -6,7 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { useTelemetryConsent } from '@/lib/telemetry/useTelemetryConsent';
 
 export function TelemetrySettings() {
-  const { consent, updateConsent, isConfigured } = useTelemetryConsent();
+  const { consent, hasUser, updateConsent, isConfigured } = useTelemetryConsent();
 
   if (!isConfigured) {
     return null;
@@ -29,6 +29,7 @@ export function TelemetrySettings() {
           <Switch
             id="settings-telemetry-switch"
             checked={consent === 'granted'}
+            disabled={!hasUser}
             onCheckedChange={(checked) => updateConsent(checked ? 'granted' : 'denied')}
             data-testid="settings-telemetry-switch"
           />

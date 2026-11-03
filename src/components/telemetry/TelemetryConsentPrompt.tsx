@@ -4,13 +4,13 @@ import { Button } from '@/components/ui/button';
 import { useTelemetryConsent } from '@/lib/telemetry/useTelemetryConsent';
 
 /**
- * One-time question shown until the therapist decides. Analytics is not necessary for the
+ * Question shown to each signed-in person until they decide. Analytics is not necessary for the
  * service, so it needs prior consent (art. 399 PKE); the choice can be changed in Settings.
  */
 export function TelemetryConsentPrompt() {
-  const { consent, updateConsent, isConfigured } = useTelemetryConsent();
+  const { consent, hasUser, updateConsent, isConfigured } = useTelemetryConsent();
 
-  if (!isConfigured || consent !== null) {
+  if (!isConfigured || !hasUser || consent !== null) {
     return null;
   }
 

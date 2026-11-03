@@ -11,8 +11,11 @@ interface TelemetryEnv {
   NEXT_PUBLIC_VERCEL_ENV?: string;
 }
 
-/** Same-origin path rewritten to PostHog EU in next.config.ts, so ad blockers do not drop events. */
-export const TELEMETRY_INGEST_PATH = '/ingest';
+/**
+ * Events go straight to PostHog EU, not through a same-origin rewrite: a rewrite would forward
+ * the portal's cookies (Clerk session) to PostHog. A cross-origin request carries none.
+ */
+export const TELEMETRY_API_HOST = 'https://eu.i.posthog.com';
 
 /**
  * Returns null when no key is configured: local runs, tests and preview builds without the
@@ -26,7 +29,7 @@ export function getTelemetryConfig(env: TelemetryEnv): TelemetryConfig | null {
 
   return {
     apiKey,
-    apiHost: TELEMETRY_INGEST_PATH,
+    apiHost: TELEMETRY_API_HOST,
     uiHost: env.NEXT_PUBLIC_POSTHOG_UI_HOST?.trim() || 'https://eu.posthog.com',
     environment: env.NEXT_PUBLIC_VERCEL_ENV?.trim() || 'development',
   };

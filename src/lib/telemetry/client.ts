@@ -3,14 +3,17 @@ import { readTelemetryConsent, writeTelemetryConsent, type TelemetryConsent } fr
 import { getTelemetryConfig, type TelemetryConfig } from './config';
 import { sanitizeProperties, redactUrl, type TelemetryEventName, type TelemetryProperties } from './events';
 
-interface TelemetryIdentity {
+export interface TelemetryUser {
   userId: string;
   role: string | null;
   organizationId: string | null;
 }
 
 let activeConfig: TelemetryConfig | null = null;
-let started = false;
+let initialized = false;
+let activeUser: TelemetryUser | null = null;
+let consent: TelemetryConsent | null = null;
+const listeners = new Set<() => void>();
 
 const URL_PROPERTIES = [
   '$current_url',
@@ -35,18 +38,18 @@ function stripUrls(event: CaptureResult | null): CaptureResult | null {
 }
 
 /**
- * PostHog is initialised only after the user grants consent (art. 399 PKE), so nothing is
- * stored on the device or sent before that.
+ * PostHog is initialised only after the signed-in person grants consent (art. 399 PKE), so nothing
+ * is stored on the device or sent before that. Consent belongs to the person, not the browser.
  */
-function start(config: TelemetryConfig): void {
-  if (started) {
-    posthog.opt_in_capturing();
+function ensureInitialized(config: TelemetryConfig): void {
+  if (initialized) {
     return;
   }
-
   posthog.init(config.apiKey, {
     api_host: config.apiHost,
     ui_host: config.uiHost,
+    // reset() clears the SDK's own opt-in; this keeps it opted out until we opt in again.
+    opt_out_capturing_by_default: true,
     person_profiles: 'identified_only',
     capture_pageview: false,
     capture_pageleave: true,
@@ -61,12 +64,39 @@ function start(config: TelemetryConfig): void {
     },
     before_send: stripUrls,
   });
-  registerBaseProperties(config);
-  started = true;
+  initialized = true;
 }
 
-function registerBaseProperties(config: TelemetryConfig): void {
+function isCapturing(): boolean {
+  return initialized && activeUser !== null && consent === 'granted';
+}
+
+function startCapture(config: TelemetryConfig, user: TelemetryUser): void {
+  ensureInitialized(config);
+  posthog.opt_in_capturing();
   posthog.register({ environment: config.environment, platform: 'portal' });
+  if (posthog.get_distinct_id() !== user.userId) {
+    posthog.identify(user.userId);
+  }
+  registerUserProperties(user);
+}
+
+function registerUserProperties(user: TelemetryUser): void {
+  posthog.register({ role: user.role, organization_id: user.organizationId });
+  posthog.setPersonProperties({ role: user.role, organization_id: user.organizationId });
+}
+
+/** reset() first: in posthog-js it clears the opt-out too, so the opt-out has to come after it. */
+function stopCapture(): void {
+  if (!initialized) {
+    return;
+  }
+  posthog.reset();
+  posthog.opt_out_capturing();
+}
+
+function notify(): void {
+  listeners.forEach((listener) => listener());
 }
 
 export function initTelemetry(): void {
@@ -78,60 +108,76 @@ export function initTelemetry(): void {
     NEXT_PUBLIC_POSTHOG_UI_HOST: process.env.NEXT_PUBLIC_POSTHOG_UI_HOST,
     NEXT_PUBLIC_VERCEL_ENV: process.env.NEXT_PUBLIC_VERCEL_ENV,
   });
-  if (activeConfig && readTelemetryConsent() === 'granted') {
-    start(activeConfig);
-  }
 }
 
 export function isTelemetryConfigured(): boolean {
   return activeConfig !== null;
 }
 
-export function setTelemetryConsent(consent: TelemetryConsent): void {
-  writeTelemetryConsent(consent);
-  if (!activeConfig) {
+export function subscribeTelemetry(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+/** Consent of the bound person; null while nobody is bound or the person has not decided. */
+export function getTelemetryConsent(): TelemetryConsent | null {
+  return consent;
+}
+
+export function hasTelemetryUser(): boolean {
+  return activeUser !== null;
+}
+
+/**
+ * Binds telemetry to the signed-in person (`sub` of the backend JWT, never e-mail or name).
+ * A different person, or none, stops capture first; it resumes only with that person's consent.
+ */
+export function setTelemetryUser(user: TelemetryUser | null): void {
+  if (user && activeUser && user.userId === activeUser.userId) {
+    const changed = user.role !== activeUser.role || user.organizationId !== activeUser.organizationId;
+    activeUser = user;
+    if (changed && isCapturing()) {
+      registerUserProperties(user);
+    }
     return;
   }
-  if (consent === 'granted') {
-    start(activeConfig);
-    trackEvent('telemetry:consent_change', { consent });
+  stopCapture();
+  activeUser = user;
+  consent = user ? readTelemetryConsent(user.userId) : null;
+  if (user && consent === 'granted' && activeConfig) {
+    startCapture(activeConfig, user);
+  }
+  notify();
+}
+
+export function setTelemetryConsent(next: TelemetryConsent): void {
+  const user = activeUser;
+  if (!user) {
     return;
   }
-  if (started) {
-    posthog.opt_out_capturing();
-    posthog.reset();
+  writeTelemetryConsent(user.userId, next);
+  consent = next;
+  if (activeConfig) {
+    if (next === 'granted') {
+      startCapture(activeConfig, user);
+      trackEvent('telemetry:consent_change', { consent: next });
+    } else {
+      stopCapture();
+    }
   }
+  notify();
 }
 
 export function trackEvent(event: TelemetryEventName, properties?: TelemetryProperties): void {
-  if (!started) {
+  if (!isCapturing()) {
     return;
   }
   posthog.capture(event, sanitizeProperties(properties));
 }
 
 export function trackPageView(path: string): void {
-  if (!started) {
+  if (!isCapturing()) {
     return;
   }
   posthog.capture('$pageview', { $current_url: `${window.location.origin}${redactUrl(path)}` });
-}
-
-/** Identity is our internal user id from the backend JWT (`sub`), never e-mail or name. */
-export function identifyTelemetryUser(identity: TelemetryIdentity): void {
-  if (!started) {
-    return;
-  }
-  if (posthog.get_distinct_id() !== identity.userId) {
-    posthog.identify(identity.userId);
-  }
-  posthog.register({ role: identity.role, organization_id: identity.organizationId });
-  posthog.setPersonProperties({ role: identity.role, organization_id: identity.organizationId });
-}
-
-export function resetTelemetryUser(): void {
-  if (started && activeConfig) {
-    posthog.reset();
-    registerBaseProperties(activeConfig);
-  }
 }

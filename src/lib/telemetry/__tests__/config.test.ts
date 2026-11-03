@@ -12,7 +12,7 @@ describe('getTelemetryConfig', () => {
   it('sends through the same-origin proxy to the EU host by default', () => {
     expect(getTelemetryConfig({ NEXT_PUBLIC_POSTHOG_KEY: 'phc_test', NEXT_PUBLIC_VERCEL_ENV: 'production' })).toEqual({
       apiKey: 'phc_test',
-      apiHost: '/ingest',
+      apiHost: 'https://eu.i.posthog.com',
       uiHost: 'https://eu.posthog.com',
       environment: 'production',
     });

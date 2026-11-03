@@ -7,19 +7,7 @@ const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === "true",
 });
 
-const POSTHOG_EU_INGEST = "https://eu.i.posthog.com";
-const POSTHOG_EU_ASSETS = "https://eu-assets.i.posthog.com";
-
 const nextConfig: NextConfig = {
-  // PostHog ingest API paths end with a slash; Next must not redirect them.
-  skipTrailingSlashRedirect: true,
-  async rewrites() {
-    return [
-      { source: "/ingest/static/:path*", destination: `${POSTHOG_EU_ASSETS}/static/:path*` },
-      { source: "/ingest/array/:path*", destination: `${POSTHOG_EU_ASSETS}/array/:path*` },
-      { source: "/ingest/:path*", destination: `${POSTHOG_EU_INGEST}/:path*` },
-    ];
-  },
   env: {
     // Zgłoszenia podają ten tekst w „Wersja:” (src/services/feedbackService.ts).
     NEXT_PUBLIC_APP_VERSION: buildAppVersionLabel(process.env, packageJson.version),

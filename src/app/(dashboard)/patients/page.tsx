@@ -171,7 +171,6 @@ export default function PatientsPage() {
     event: 'patient:search',
     query: searchQuery,
     resultsCount: filteredPatients.length,
-    includeQuery: false,
   });
 
   const tabCounts: Record<TherapyFilterType, number> = {
