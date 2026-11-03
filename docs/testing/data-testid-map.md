@@ -608,43 +608,48 @@ Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu r
 
 ### 11. Rozliczenia Pay-as-you-go (billing-)
 
-| data-testid                      | Element                            | Plik                        |
-| -------------------------------- | ---------------------------------- | --------------------------- |
-| `dashboard-billing-status-bar`   | Pasek rozliczeń (Dashboard bottom) | `BillingStatusBar.tsx`      |
-| `billing-therapist-table`        | Tabela terapeutów                  | `TherapistBillingTable.tsx` |
-| `billing-therapist-search-input` | Wyszukiwarka terapeutów            | `TherapistBillingTable.tsx` |
-| `billing-therapist-row-{id}`     | Wiersz terapeuty                   | `TherapistBillingTable.tsx` |
+| data-testid                      | Element                                          | Plik                        |
+| -------------------------------- | ------------------------------------------------ | --------------------------- |
+| `dashboard-billing-status-bar`   | Pasek rozliczeń (Dashboard bottom)               | `BillingStatusBar.tsx`      |
+| `finances-billing-page`          | Strona Finanse: rozliczenie z FiziYo             | `finances/page.tsx`         |
+| `billing-hero-card`              | Należność za bieżący miesiąc                     | `BillingHeroCard.tsx`       |
+| `billing-hero-amount`            | Kwota należności                                 | `BillingHeroCard.tsx`       |
+| `billing-hero-patients`          | Liczba aktywnych pacjentów                       | `BillingHeroCard.tsx`       |
+| `billing-therapist-table`        | Tabela terapeutów                                | `TherapistBillingTable.tsx` |
+| `billing-therapist-search-input` | Wyszukiwarka terapeutów                          | `TherapistBillingTable.tsx` |
+| `billing-therapist-row-{id}`     | Wiersz terapeuty                                 | `TherapistBillingTable.tsx` |
+| `billing-therapist-invite-btn`   | Zaproś terapeutę (pusta tabela), link do Zespołu | `TherapistBillingTable.tsx` |
 
-### 11A. Dashboard finansów (finance-/finances-)
+### 11A. Przychody gabinetu przez Stripe (finance-/finances-), tylko przy `STRIPE_CONNECT_ROLLOUT`
 
-| data-testid                             | Element                                        | Plik                       |
-| --------------------------------------- | ---------------------------------------------- | -------------------------- |
-| `finances-dashboard-page`               | Kontener strony Finanse                        | `finances/page.tsx`        |
-| `finances-dashboard-context-panel`      | Panel objaśniający źródła przychodów i poziomy | `finances/page.tsx`        |
-| `finances-context-funds-info-btn`       | Tooltip: źródło środków                        | `finances/page.tsx`        |
-| `finances-context-tier-info-btn`        | Tooltip: wzrost poziomu partnerskiego          | `finances/page.tsx`        |
-| `finances-dashboard-hero-grid`          | Grid hero kart finansowych                     | `finances/page.tsx`        |
-| `finances-dashboard-tabs`               | Sekcja zakładek wykres/historia/wypłaty        | `finances/page.tsx`        |
-| `finances-tab-chart-trigger`            | Trigger zakładki: Wykres                       | `finances/page.tsx`        |
-| `finances-tab-history-trigger`          | Trigger zakładki: Historia                     | `finances/page.tsx`        |
-| `finances-tab-payouts-trigger`          | Trigger zakładki: Ustawienia wypłat            | `finances/page.tsx`        |
-| `finance-alert-banner`                  | Baner konfiguracji finansów                    | `StripeAlertBanner.tsx`    |
-| `finance-alert-step-label`              | Label kroku konfiguracji (1/2 lub 2/2)         | `StripeAlertBanner.tsx`    |
-| `finance-alert-info-btn`                | Tooltip: szczegóły kroku konfiguracji          | `StripeAlertBanner.tsx`    |
-| `finance-alert-configure-btn`           | CTA uruchamiające konfigurację                 | `StripeAlertBanner.tsx`    |
-| `finance-alert-dismiss-btn`             | Zamknięcie banera konfiguracji                 | `StripeAlertBanner.tsx`    |
-| `finances-wallet-card`                  | Karta środków i statusu wypłat                 | `WalletCard.tsx`           |
-| `finances-wallet-helper-copy`           | Mikrocopy wyjaśniający źródło środków          | `WalletCard.tsx`           |
-| `finances-partner-progress-card`        | Karta progresu poziomu partnerskiego           | `GamificationProgress.tsx` |
-| `finances-partner-progress-helper-copy` | Mikrocopy opisujący wpływ liczby pacjentów     | `GamificationProgress.tsx` |
-| `finances-partner-level-card`           | Karta poziomu PARTNER (stan maksymalny)        | `GamificationProgress.tsx` |
-| `finances-growth-action-bar`            | Pasek CTA zapraszania pacjentów                | `GrowthActionBar.tsx`      |
-| `finances-growth-action-btn`            | Przycisk CTA: Zaproś pacjenta                  | `GrowthActionBar.tsx`      |
-| `invite-dialog`                         | Dialog zaproszenia pacjenta                    | `PatientInviteDialog.tsx`  |
-| `invite-qr-code`                        | QR HTTPS `/start?token=`; `data-qr-url`        | `PatientInviteDialog.tsx`  |
-| `invite-qr-unavailable`                 | Hint gdy mutacja bez tokenu/URL                | `PatientInviteDialog.tsx`  |
-| `invite-qr-copy-btn`                    | Kopiuj link obok QR zaproszenia                | `PatientInviteDialog.tsx`  |
-| `invite-cancel-btn`                     | Anuluj w tabie wysyłki                         | `PatientInviteDialog.tsx`  |
+| data-testid                             | Element                                        | Plik                                  |
+| --------------------------------------- | ---------------------------------------------- | ------------------------------------- |
+| `finances-dashboard-page`               | Kontener strony Finanse                        | `finances/(stripe)/earnings/page.tsx` |
+| `finances-dashboard-context-panel`      | Panel objaśniający źródła przychodów i poziomy | `finances/(stripe)/earnings/page.tsx` |
+| `finances-context-funds-info-btn`       | Tooltip: źródło środków                        | `finances/(stripe)/earnings/page.tsx` |
+| `finances-context-tier-info-btn`        | Tooltip: wzrost poziomu partnerskiego          | `finances/(stripe)/earnings/page.tsx` |
+| `finances-dashboard-hero-grid`          | Grid hero kart finansowych                     | `finances/(stripe)/earnings/page.tsx` |
+| `finances-dashboard-tabs`               | Sekcja zakładek wykres/historia/wypłaty        | `finances/(stripe)/earnings/page.tsx` |
+| `finances-tab-chart-trigger`            | Trigger zakładki: Wykres                       | `finances/(stripe)/earnings/page.tsx` |
+| `finances-tab-history-trigger`          | Trigger zakładki: Historia                     | `finances/(stripe)/earnings/page.tsx` |
+| `finances-tab-payouts-trigger`          | Trigger zakładki: Ustawienia wypłat            | `finances/(stripe)/earnings/page.tsx` |
+| `finance-alert-banner`                  | Baner konfiguracji finansów                    | `StripeAlertBanner.tsx`               |
+| `finance-alert-step-label`              | Label kroku konfiguracji (1/2 lub 2/2)         | `StripeAlertBanner.tsx`               |
+| `finance-alert-info-btn`                | Tooltip: szczegóły kroku konfiguracji          | `StripeAlertBanner.tsx`               |
+| `finance-alert-configure-btn`           | CTA uruchamiające konfigurację                 | `StripeAlertBanner.tsx`               |
+| `finance-alert-dismiss-btn`             | Zamknięcie banera konfiguracji                 | `StripeAlertBanner.tsx`               |
+| `finances-wallet-card`                  | Karta środków i statusu wypłat                 | `WalletCard.tsx`                      |
+| `finances-wallet-helper-copy`           | Mikrocopy wyjaśniający źródło środków          | `WalletCard.tsx`                      |
+| `finances-partner-progress-card`        | Karta progresu poziomu partnerskiego           | `GamificationProgress.tsx`            |
+| `finances-partner-progress-helper-copy` | Mikrocopy opisujący wpływ liczby pacjentów     | `GamificationProgress.tsx`            |
+| `finances-partner-level-card`           | Karta poziomu PARTNER (stan maksymalny)        | `GamificationProgress.tsx`            |
+| `finances-growth-action-bar`            | Pasek CTA zapraszania pacjentów                | `GrowthActionBar.tsx`                 |
+| `finances-growth-action-btn`            | Przycisk CTA: Zaproś pacjenta                  | `GrowthActionBar.tsx`                 |
+| `invite-dialog`                         | Dialog zaproszenia pacjenta                    | `PatientInviteDialog.tsx`             |
+| `invite-qr-code`                        | QR HTTPS `/start?token=`; `data-qr-url`        | `PatientInviteDialog.tsx`             |
+| `invite-qr-unavailable`                 | Hint gdy mutacja bez tokenu/URL                | `PatientInviteDialog.tsx`             |
+| `invite-qr-copy-btn`                    | Kopiuj link obok QR zaproszenia                | `PatientInviteDialog.tsx`             |
+| `invite-cancel-btn`                     | Anuluj w tabie wysyłki                         | `PatientInviteDialog.tsx`             |
 
 ### 12. Ustawienia (settings-)
 
@@ -954,7 +959,7 @@ Przy dodawaniu nowych komponentów:
 | `set-search-clear-btn`, `set-filter-reset-btn`, `set-tags-clear-btn`, `set-tag-filter-clear-btn` | Czyszczenie wyszukiwania i filtrów zestawów | `exercise-sets/page.tsx`  |
 | `exercise-tags-add-btn`, `exercise-tags-tab-tags`, `exercise-tags-tab-categories`                | Tagi i kategorie                            | `exercises/tags/page.tsx` |
 | `appointments-notify-btn`                                                                        | Powiadom mnie (wizyty)                      | `appointments/page.tsx`   |
-| `finances-invite-now-btn`, `finances-invoices-back-btn`, `finances-payouts-back-btn`             | Finanse                                     | `finances/**`             |
+| `finances-invite-now-btn`, `finances-payouts-back-btn`                                           | Finanse                                     | `finances/**`             |
 | `import-step-{id}-btn`, `import-back-btn`                                                        | Kroki i powrót importu                      | `import/page.tsx`         |
 | `patient-detail-not-found-back-btn`, `patient-detail-email-link`, `patient-detail-phone-link`    | Karta pacjenta                              | `patients/[id]/page.tsx`  |
 | `clinical-notes-editor-close-btn`                                                                | Zamknij edytor notatki                      | `ClinicalNotesList.tsx`   |

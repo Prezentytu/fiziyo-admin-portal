@@ -69,7 +69,7 @@ export default function PayoutsPage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" asChild data-testid="finances-payouts-back-btn">
-              <Link href="/finances" aria-label="Wróć do finansów">
+              <Link href="/finances/earnings" aria-label="Wróć do przychodów">
                 <ArrowLeft className="h-5 w-5" />
               </Link>
             </Button>

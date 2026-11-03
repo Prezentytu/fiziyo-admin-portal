@@ -117,10 +117,10 @@ mutation UpdateBillingDetails($organizationId: String!, $input: BillingDetailsIn
 
 ### Integration checks (manual)
 
-- Banner na `/finances`:
+- Banner na `/finances/earnings` (tylko przy `STRIPE_CONNECT_ROLLOUT`):
   - brak danych rozliczeniowych -> CTA otwiera dialog
   - komplet danych rozliczeniowych + brak Stripe -> CTA kieruje do Stripe
-- `/finances/invoices`:
+- `/finances` (rozliczenie z FiziYo, faktura poza aplikacją):
   - karta danych do faktury pokazuje dane z API
   - edycja przez dialog aktualizuje kartę
 
