@@ -4,7 +4,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
-import { MIN_THERAPIST_DESCRIPTION_LENGTH, parseStopIf, serializeStopIf } from '../utils/verificationStages';
+import { MIN_THERAPIST_DESCRIPTION_LENGTH } from '../utils/verificationStages';
 import { ChipListEditor } from './ChipListEditor';
 import { LengthHint } from './LengthHint';
 import { StageSection } from './StageSection';
@@ -22,7 +22,7 @@ export function SafetyStage({
   onTherapistDescriptionChange,
   onEnrichmentPathChange,
 }: SafetyStageProps) {
-  const stopIf = parseStopIf(enrichment.safety?.stop_if);
+  const stopIf = enrichment.safety?.stop_if ?? '';
   const indications = enrichment.therapist?.indications ?? [];
   const contraindications = enrichment.therapist?.contraindications ?? [];
   const requiresSupervision = enrichment.safety?.requires_supervision === true;
@@ -31,14 +31,18 @@ export function SafetyStage({
   return (
     <div className="flex flex-col gap-4" data-testid="verification-stage-safety">
       <StageSection title="Przerwij, gdy…" required data-testid="verification-safety-stop-if">
-        <ChipListEditor
-          items={stopIf}
-          onChange={(items) => onEnrichmentPathChange('safety.stop_if', serializeStopIf(items))}
-          addLabel="Dodaj objaw"
-          inputLabel="Nowy objaw przerwania"
-          placeholder="np. ostry ból kolana"
-          testIdPrefix="verification-safety-stop-if"
+        <Textarea
+          value={stopIf}
+          rows={4}
+          aria-label="Objawy przerwania"
+          placeholder={'Każdy objaw w osobnej linii, np.\n- ostry ból kolana\n- zawroty głowy'}
+          className="field-sizing-content"
+          onChange={(event) => onEnrichmentPathChange('safety.stop_if', event.target.value)}
+          data-testid="verification-safety-stop-if-input"
         />
+        <p className="text-[13px] text-label-secondary">
+          Pacjent widzi ten tekst tak, jak go zapiszesz, razem z nagłówkami grup i pustymi liniami.
+        </p>
       </StageSection>
 
       <StageSection title="Przeciwwskazania" data-testid="verification-safety-contraindications-section">

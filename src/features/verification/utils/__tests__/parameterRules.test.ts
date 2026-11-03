@@ -12,6 +12,7 @@ import {
   deriveExecutionMode,
   evaluateParameters,
   findHardcodedNumbers,
+  formatSessionDuration,
   fromSliderValue,
   replaceHardcodedNumbers,
   sideFactor,
@@ -20,6 +21,7 @@ import {
   toParameterValues,
   type ParameterValues,
 } from '../parameterRules';
+import { formatExerciseDuration } from '@/utils/exerciseTime';
 
 const typicalReps: ParameterValues = { sets: 3, reps: 12, repTime: 3, hold: null, rest: 60 };
 
@@ -305,5 +307,22 @@ describe('describeFieldNote', () => {
     expect(describeFieldNote({ key: 'sets', value: 100, level: 'limit' })).toBe('Maks. 20');
     expect(describeFieldNote({ key: 'sets', value: null, level: 'empty' })).toBe('Puste');
     expect(describeFieldNote({ key: 'sets', value: 3, level: 'ok' })).toBe('');
+  });
+});
+
+describe('formatSessionDuration', () => {
+  it('pisze czas tak samo jak karta ćwiczenia', () => {
+    expect(formatSessionDuration(398, false)).toBe(formatExerciseDuration(398, false));
+    expect(formatSessionDuration(398, false)).toBe('6 min 38 s');
+    expect(formatSessionDuration(398, true)).toBe(formatExerciseDuration(398, true));
+  });
+
+  it('oznacza szacunek, gdy nie znamy czasu powtórzenia', () => {
+    const evaluation = evaluateParameters({
+      values: { sets: 3, reps: 10, repTime: null, hold: null, rest: 60 },
+      mode: 'reps',
+      side: 'none',
+    });
+    expect(evaluation.sessionIsEstimate).toBe(true);
   });
 });

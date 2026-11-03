@@ -8,7 +8,7 @@ import { ParametersStage } from './ParametersStage';
 const core = { side: 'none', tempo: '', loadKg: null, rangeOfMotion: '' } as unknown as ExerciseCoreDraft;
 const values: ParameterValues = { sets: 3, reps: 10, repTime: null, hold: null, rest: 60 };
 
-function renderStage(onValueChange = vi.fn()) {
+function renderStage(onValueChange = vi.fn(), onCoreFieldChange = vi.fn(), savedLoadLabel: string | null = null) {
   render(
     <ParametersStage
       core={core}
@@ -20,7 +20,8 @@ function renderStage(onValueChange = vi.fn()) {
       onAcknowledge={vi.fn()}
       onFixDescription={vi.fn()}
       onAcknowledgeDescription={vi.fn()}
-      onCoreFieldChange={vi.fn()}
+      onCoreFieldChange={onCoreFieldChange}
+      savedLoadLabel={savedLoadLabel}
     />
   );
   return onValueChange;
@@ -41,5 +42,23 @@ describe('ParametersStage', () => {
     expect(screen.getByTestId('verification-param-sets-slider')).toHaveValue('3');
     expect(screen.getByTestId('verification-param-repTime-slider')).toHaveValue('3');
     expect(screen.getByRole('slider', { name: 'Przerwa między seriami: suwak' })).toHaveValue('60');
+  });
+
+  it('przerwa między powtórzeniami i czas przygotowania trafiają do pól ćwiczenia', () => {
+    const onCoreFieldChange = vi.fn();
+    renderStage(vi.fn(), onCoreFieldChange);
+
+    fireEvent.change(screen.getByTestId('verification-param-restReps-input'), { target: { value: '5' } });
+    fireEvent.change(screen.getByTestId('verification-param-preparationTime-input'), { target: { value: '10' } });
+
+    expect(onCoreFieldChange).toHaveBeenCalledWith('restReps', 5);
+    expect(onCoreFieldChange).toHaveBeenCalledWith('preparationTime', 10);
+  });
+
+  it('pokazuje zapisane obciążenie, którego nie da się wpisać w kilogramach', () => {
+    renderStage(vi.fn(), vi.fn(), 'guma czerwona');
+
+    expect(screen.getByTestId('verification-param-saved-load-note')).toHaveTextContent('guma czerwona');
+    expect(screen.getByTestId('verification-param-load-input')).toHaveAttribute('placeholder', 'guma czerwona');
   });
 });

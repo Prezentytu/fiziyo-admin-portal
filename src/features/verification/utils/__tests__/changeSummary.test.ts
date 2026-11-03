@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { summarizeChanges, type ChangeSnapshot } from '../changeSummary';
+import { countFilledMistakes, countFilledTexts, summarizeChanges, type ChangeSnapshot } from '../changeSummary';
 
 const base: ChangeSnapshot = {
   name: 'Przysiad',
@@ -48,7 +48,35 @@ describe('summarizeChanges', () => {
     expect(result.safety).toEqual(['objawy przerwania: 0 → 2', 'tylko pod nadzorem']);
   });
 
+  it('pusty wiersz typowego błędu nie jest zmianą', () => {
+    const withMistake = {
+      ...base,
+      enrichment: { patient: { mistakes: [{ mistake: 'Kolano do środka', fix: 'Kolano nad stopą' }] } },
+    };
+    const withBlankRow = {
+      ...base,
+      enrichment: {
+        patient: {
+          mistakes: [
+            { mistake: 'Kolano do środka', fix: 'Kolano nad stopą' },
+            { mistake: ' ', fix: '' },
+          ],
+        },
+      },
+    };
+
+    expect(summarizeChanges(withMistake, withBlankRow, 0).instruction).toEqual([]);
+  });
+
   it('bez zmian zwraca puste listy', () => {
     expect(summarizeChanges(base, base, 0)).toEqual({ material: [], parameters: [], instruction: [], safety: [] });
+  });
+});
+
+describe('liczniki podsumowania', () => {
+  it('nie liczą pustych i białych pozycji', () => {
+    expect(countFilledTexts(['Krok 1', '', '  ', 'Krok 2'])).toBe(2);
+    expect(countFilledTexts(undefined)).toBe(0);
+    expect(countFilledMistakes([{ mistake: 'Plecy okrągłe' }, { fix: 'Prosto' }, { mistake: ' ', fix: '' }])).toBe(2);
   });
 });

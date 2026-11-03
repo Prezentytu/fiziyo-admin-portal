@@ -42,6 +42,8 @@ interface ParametersStageProps {
   onFixDescription: () => void;
   onAcknowledgeDescription: () => void;
   onCoreFieldChange: <K extends keyof ExerciseCoreDraft>(field: K, value: ExerciseCoreDraft[K]) => void;
+  /** Saved load the kilogram field cannot show (band, RPE, text). */
+  savedLoadLabel?: string | null;
 }
 
 const FIELD_INFO: Partial<Record<ParameterKey, string>> = {
@@ -57,6 +59,19 @@ const DETAIL_INFO = {
   rangeOfMotion:
     'Jak głęboko lub daleko: pełny, w wygodnym zakresie albo do kąta, np. do 90°. Opis ruchu należy do opisu ćwiczenia.',
 } as const;
+
+const TIMING_FIELDS = [
+  {
+    field: 'restReps',
+    label: 'Przerwa między powtórzeniami',
+    info: 'Krótka przerwa między pojedynczymi powtórzeniami. Wlicza się do czasu ćwiczenia.',
+  },
+  {
+    field: 'preparationTime',
+    label: 'Czas przygotowania',
+    info: 'Czas na ustawienie pozycji przed startem. Wlicza się do czasu ćwiczenia.',
+  },
+] as const satisfies ReadonlyArray<{ field: keyof ExerciseCoreDraft; label: string; info: string }>;
 
 function parseNumber(raw: string): number | null {
   const normalized = raw.replace(',', '.').trim();
@@ -256,9 +271,10 @@ export function ParametersStage({
   onFixDescription,
   onAcknowledgeDescription,
   onCoreFieldChange,
+  savedLoadLabel = null,
 }: ParametersStageProps) {
   const sessionFinding = evaluation.findings.find((finding) => finding.key === 'session');
-  const sessionText = `≈ ${formatSessionDuration(evaluation.sessionSeconds)}`;
+  const sessionText = formatSessionDuration(evaluation.sessionSeconds, evaluation.sessionIsEstimate);
 
   return (
     <div className="flex flex-col gap-4" data-testid="verification-stage-parameters">
@@ -381,7 +397,7 @@ export function ParametersStage({
         </FieldNote>
       )}
 
-      <StageSection title="Tempo, obciążenie, zakres ruchu" data-testid="verification-param-details">
+      <StageSection title="Tempo, obciążenie, zakres ruchu, przerwy" data-testid="verification-param-details">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-1">
@@ -409,10 +425,15 @@ export function ParametersStage({
               id="verification-param-load"
               inputMode="decimal"
               value={core.loadKg ?? ''}
-              placeholder="masa ciała"
+              placeholder={savedLoadLabel ?? 'masa ciała'}
               onChange={(event) => onCoreFieldChange('loadKg', parseNumber(event.target.value))}
               data-testid="verification-param-load-input"
             />
+            {savedLoadLabel && (
+              <p className="text-[13px] text-label-secondary" data-testid="verification-param-saved-load-note">
+                Zapisane: „{savedLoadLabel}”. Wpisanie kilogramów je zastąpi.
+              </p>
+            )}
           </div>
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-1">
@@ -433,6 +454,24 @@ export function ParametersStage({
               data-testid="verification-param-rom-input"
             />
           </div>
+          {TIMING_FIELDS.map(({ field, label, info }) => (
+            <div key={field} className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-1">
+                <Label htmlFor={`verification-param-${field}`} className="text-[13px] text-label-secondary">
+                  {label} (s)
+                </Label>
+                <InfoButton label={label} text={info} testId={`verification-param-${field}-info-btn`} />
+              </div>
+              <Input
+                id={`verification-param-${field}`}
+                inputMode="numeric"
+                value={core[field] ?? ''}
+                placeholder="0"
+                onChange={(event) => onCoreFieldChange(field, parseNumber(event.target.value))}
+                data-testid={`verification-param-${field}-input`}
+              />
+            </div>
+          ))}
         </div>
       </StageSection>
     </div>
