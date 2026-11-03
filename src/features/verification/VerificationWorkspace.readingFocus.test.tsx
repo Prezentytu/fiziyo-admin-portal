@@ -138,17 +138,15 @@ describe('VerificationWorkspace – zdjęcie przy czytanym kroku (SPEC-030)', ()
     expect(within(panel()).getByTestId('verification-media-stage-image')).toHaveAttribute('src', PHOTO_2);
   });
 
-  it('klik w miniaturę kroku pokazuje po lewej jego zdjęcie razem z tekstem kroku', async () => {
+  it('klik w krok pokazuje po lewej jego przypięte zdjęcie razem z tekstem kroku', async () => {
     renderWorkspace();
     const user = await openInstruction();
 
-    await user.click(screen.getByTestId('verification-step-2-preview-btn'));
+    await user.click(screen.getByTestId('verification-step-2-input'));
 
     expect(within(panel()).getByTestId('verification-media-stage-image')).toHaveAttribute('src', PHOTO_2);
     expect(readingFocus()).toHaveTextContent('Krok 2 · zdjęcie 2');
     expect(readingFocus()).toHaveTextContent(STEP_2);
-    expect(screen.getByTestId('verification-step-2-preview-btn')).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByTestId('verification-step-1-preview-btn')).toHaveAttribute('aria-pressed', 'false');
   });
 
   it('panel podąża za polem kroku, w którym terapeuta pisze', async () => {
@@ -166,28 +164,11 @@ describe('VerificationWorkspace – zdjęcie przy czytanym kroku (SPEC-030)', ()
     expect(readingFocus()).toHaveTextContent(`${STEP_2} Zatrzymaj na 2 s.`);
   });
 
-  it('miniatury kroków pokazują przypięte zdjęcia i oznaczają krok bez zdjęcia', async () => {
-    renderWorkspace();
-    await openInstruction();
-
-    const firstThumb = screen.getByTestId('verification-step-1-preview-btn');
-    const secondThumb = screen.getByTestId('verification-step-2-preview-btn');
-    const thirdThumb = screen.getByTestId('verification-step-3-preview-btn');
-
-    expect(firstThumb.querySelector('img')).toHaveAttribute('src', PHOTO_1);
-    expect(secondThumb.querySelector('img')).toHaveAttribute('src', PHOTO_2);
-    expect(firstThumb).toHaveAccessibleName('Pokaż duże zdjęcie kroku 1');
-    expect(thirdThumb.querySelector('img')).toBeNull();
-    expect(thirdThumb).toHaveTextContent('Brak zdjęcia');
-    expect(thirdThumb).toHaveAccessibleName('Krok 3 nie ma zdjęcia');
-    expect(screen.getByTestId('verification-step-3-photo-btn')).toHaveTextContent('Przypnij zdjęcie');
-  });
-
   it('krok bez zdjęcia pokazuje nagranie zamiast zdjęcia innego kroku', async () => {
     renderWorkspace();
     const user = await openInstruction();
 
-    await user.click(screen.getByTestId('verification-step-3-preview-btn'));
+    await user.click(screen.getByTestId('verification-step-3-input'));
 
     expect(readingFocus()).toHaveTextContent('Krok 3 · bez zdjęcia');
     expect(readingFocus()).toHaveTextContent(STEP_3);
@@ -200,32 +181,21 @@ describe('VerificationWorkspace – zdjęcie przy czytanym kroku (SPEC-030)', ()
     renderWorkspace(buildExercise({ videoUrl: undefined }));
     const user = await openInstruction();
 
-    await user.click(screen.getByTestId('verification-step-3-preview-btn'));
+    await user.click(screen.getByTestId('verification-step-3-input'));
 
     expect(within(panel()).queryByTestId('verification-media-stage-image')).not.toBeInTheDocument();
     expect(within(panel()).getByTestId('verification-media-empty-cta')).toBeInTheDocument();
-  });
-
-  it('przypięcie zdjęcia do kroku od razu pokazuje je po lewej', async () => {
-    renderWorkspace();
-    const user = await openInstruction();
-
-    await user.click(screen.getByTestId('verification-step-3-photo-btn'));
-
-    expect(readingFocus()).toHaveTextContent('Krok 3 · zdjęcie 1');
-    expect(within(panel()).getByTestId('verification-media-stage-image')).toHaveAttribute('src', PHOTO_1);
-    expect(screen.getByTestId('verification-step-3-preview-btn').querySelector('img')).toHaveAttribute('src', PHOTO_1);
   });
 
   it('ręczne przewinięcie galerii wyłącza podążanie, a klik w krok je przywraca', async () => {
     renderWorkspace();
     const user = await openInstruction();
 
-    await user.click(screen.getByTestId('verification-step-1-preview-btn'));
+    await user.click(screen.getByTestId('verification-step-1-input'));
     await user.click(within(panel()).getByTestId('verification-media-next-btn'));
     expect(within(panel()).getByTestId('verification-media-stage-image')).toHaveAttribute('src', PHOTO_2);
 
-    await user.click(screen.getByTestId('verification-step-1-preview-btn'));
+    await user.click(screen.getByTestId('verification-step-1-input'));
     expect(within(panel()).getByTestId('verification-media-stage-image')).toHaveAttribute('src', PHOTO_1);
   });
 
@@ -233,7 +203,7 @@ describe('VerificationWorkspace – zdjęcie przy czytanym kroku (SPEC-030)', ()
     renderWorkspace();
     const user = await openInstruction();
 
-    await user.click(screen.getByTestId('verification-step-2-preview-btn'));
+    await user.click(screen.getByTestId('verification-step-2-input'));
     await user.click(screen.getByTestId('verification-reading-focus-flag-btn'));
 
     const dialog = await screen.findByTestId('verification-photo-replace-dialog');
@@ -248,7 +218,7 @@ describe('VerificationWorkspace – zdjęcie przy czytanym kroku (SPEC-030)', ()
     renderWorkspace();
     const user = await openInstruction();
 
-    await user.click(screen.getByTestId('verification-step-2-preview-btn'));
+    await user.click(screen.getByTestId('verification-step-2-input'));
     await user.click(screen.getByTestId('verification-step-1-remove-btn'));
 
     expect(readingFocus()).toHaveTextContent('Krok 1 · zdjęcie 2');
@@ -260,7 +230,7 @@ describe('VerificationWorkspace – zdjęcie przy czytanym kroku (SPEC-030)', ()
     renderWorkspace();
     const user = await openInstruction();
 
-    await user.click(screen.getByTestId('verification-step-1-preview-btn'));
+    await user.click(screen.getByTestId('verification-step-1-input'));
     await user.click(within(panel()).getByTestId('verification-media-next-btn'));
     await user.click(screen.getByTestId('verification-stage-material-btn'));
     await user.click(within(panel()).getByTestId('verification-media-next-btn'));

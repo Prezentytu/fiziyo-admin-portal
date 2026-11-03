@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Loader2, Video } from 'lucide-react';
+import { Loader2, Sparkles, Video } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +32,7 @@ interface MaterialStageProps {
   onReplacePhoto: (index: number) => void;
   onDeletePhoto: (url: string) => void;
   onAddPhotos: (files: FileList) => void;
+  onGeneratePhoto: () => void;
   onAcceptPending: () => void;
   onRetryPending: () => void;
   onDiscardPending: () => void;
@@ -106,12 +107,17 @@ export function MaterialStage({
   onReplacePhoto,
   onDeletePhoto,
   onAddPhotos,
+  onGeneratePhoto,
   onAcceptPending,
   onRetryPending,
   onDiscardPending,
 }: MaterialStageProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const isBusy = isGenerating || isSavingPhoto;
+  const isPendingNew = pendingPhoto !== null && pendingPhoto.index >= photos.length;
+  const tiles = isPendingNew ? [...photos, ''] : photos;
+  const canAddPhoto = !isPendingNew && photos.length < maxPhotos;
+  const isGeneratingNew = isGenerating && generatingIndex === photos.length;
 
   return (
     <div className="flex flex-col gap-4" data-testid="verification-stage-material">
@@ -119,18 +125,18 @@ export function MaterialStage({
 
       <StageSection
         title="Zdjęcia"
-        hint={`${hasVideo ? 'Sprawdź każde zdjęcie z nagraniem' : 'Sprawdź każde zdjęcie'}: ustawienie stawów, dłonie, tło. Kliknij zdjęcie, żeby zobaczyć je w dużym rozmiarze. Pod zdjęciem widać, który krok pokazuje.`}
+        hint={`${hasVideo ? 'Porównaj z nagraniem' : 'Sprawdź'}: ustawienie stawów, dłonie, tło.`}
         className="@container"
         data-testid="verification-material-photos"
       >
         <div className="grid grid-cols-2 gap-3 @md:grid-cols-3 @2xl:grid-cols-4">
-          {photos.map((url, index) => {
+          {tiles.map((url, index) => {
             const isPending = pendingPhoto?.index === index;
             const src = isPending ? pendingPhoto.previewUrl : getMediaUrl(url);
             const steps = stepsForImage(stepImages, url);
             return (
               <div
-                key={url}
+                key={url || 'pending-new'}
                 className={cn(
                   'flex flex-col gap-2 rounded-2xl bg-card p-2.5',
                   isPending && 'ring-[1.5px] ring-inset ring-tint'
@@ -162,13 +168,13 @@ export function MaterialStage({
                     Zdjęcie {index + 1}
                     {isPending ? ' · nowe' : ''}
                   </span>
-                  <span className="text-[12px] text-label-secondary">
-                    {isPending
-                      ? `Nowe zdjęcie od agenta. Porównaj ${hasVideo ? 'z nagraniem' : 'z pozostałymi zdjęciami'}.`
-                      : steps.length > 0
-                        ? `Krok ${steps.join(', ')}`
-                        : 'Nieprzypięte do kroku'}
-                  </span>
+                  {(isPending || steps.length > 0) && (
+                    <span className="text-[12px] text-label-secondary">
+                      {isPending
+                        ? `Od agenta. Porównaj ${hasVideo ? 'z nagraniem' : 'z pozostałymi'}.`
+                        : `Krok ${steps.join(', ')}`}
+                    </span>
+                  )}
                 </div>
                 <div className="flex flex-wrap gap-1">
                   {isPending ? (
@@ -202,7 +208,7 @@ export function MaterialStage({
                         disabled={isSavingPhoto}
                         data-testid={`verification-material-photo-${index + 1}-discard-btn`}
                       >
-                        Zostaw stare
+                        {isPendingNew ? 'Odrzuć' : 'Zostaw stare'}
                       </Button>
                     </>
                   ) : (
@@ -233,16 +239,28 @@ export function MaterialStage({
               </div>
             );
           })}
-          {photos.length < maxPhotos && (
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isBusy}
-              className="grid min-h-[200px] place-items-center rounded-2xl border-[1.5px] border-dashed border-separator text-[14px] font-semibold text-tint transition-colors hover:bg-tint-muted disabled:opacity-40"
-              data-testid="verification-material-photo-add-btn"
-            >
-              + Dodaj zdjęcie
-            </button>
+          {canAddPhoto && (
+            <div className="grid min-h-[200px] grid-rows-2 gap-2">
+              <button
+                type="button"
+                onClick={onGeneratePhoto}
+                disabled={isBusy || pendingPhoto !== null}
+                className="flex items-center justify-center gap-1.5 rounded-2xl bg-tint-muted text-[14px] font-semibold text-tint transition-colors hover:bg-tint-muted/70 disabled:opacity-40"
+                data-testid="verification-material-photo-generate-btn"
+              >
+                {isGeneratingNew ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                {isGeneratingNew ? 'Generuję…' : 'Wygeneruj zdjęcie'}
+              </button>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isBusy}
+                className="grid place-items-center rounded-2xl border-[1.5px] border-dashed border-separator text-[14px] font-semibold text-tint transition-colors hover:bg-tint-muted disabled:opacity-40"
+                data-testid="verification-material-photo-add-btn"
+              >
+                Wgraj z dysku
+              </button>
+            </div>
           )}
         </div>
         <input

@@ -7,6 +7,7 @@ import { useUser } from '@clerk/nextjs';
 import { Archive, ArrowLeft, FileText, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MediaGallery, buildMediaItems } from '@/components/shared';
 import { PageSheet } from '@/components/shared/page';
@@ -60,17 +61,16 @@ import {
   acknowledgeFinding,
   buildPatientParameterLine,
   createParameterReview,
+  deriveExecutionMode,
   evaluateParameters,
   findHardcodedNumbers,
   formatSessionDuration,
   markParameterEdited,
   replaceHardcodedNumbers,
   reviewValues,
-  switchExecutionMode,
   toCoreUpdates,
   type AcknowledgeKey,
   type CoreParameterUpdates,
-  type ExecutionMode,
   type ParameterKey,
 } from './utils/parameterRules';
 import {
@@ -264,7 +264,7 @@ export function VerificationWorkspace({
 
   const [stage, setStage] = useState<VerificationStageKey>('material');
   const [visited, setVisited] = useState<ReadonlySet<VerificationStageKey>>(() => new Set(['material']));
-  const [parameterReview, setParameterReview] = useState(() => createParameterReview(core));
+  const [parameterReview, setParameterReview] = useState(() => createParameterReview());
   const [descriptionAcknowledged, setDescriptionAcknowledged] = useState(false);
   const [proposal, setProposal] = useState<InstructionProposal | null>(null);
   const [isGeneratingProposal, setIsGeneratingProposal] = useState(false);
@@ -347,8 +347,8 @@ export function VerificationWorkspace({
     if (index >= 0) handleGalleryIndexChange(index);
   };
 
-  const { mode } = parameterReview;
-  const parameterValues = useMemo(() => reviewValues(core, parameterReview), [core, parameterReview]);
+  const mode = deriveExecutionMode(core);
+  const parameterValues = useMemo(() => reviewValues(core), [core]);
   const evaluation = useMemo(
     () =>
       evaluateParameters({
@@ -478,15 +478,6 @@ export function VerificationWorkspace({
     [evaluation.sessionSeconds]
   );
 
-  const handleModeChange = useCallback(
-    (nextMode: ExecutionMode) => {
-      const { review, updates } = switchExecutionMode(parameterReview, core, nextMode);
-      applyCoreUpdates(updates);
-      setParameterReview(review);
-    },
-    [applyCoreUpdates, core, parameterReview]
-  );
-
   // ============================================
   // HANDLERS: photos
   // ============================================
@@ -530,6 +521,26 @@ export function VerificationWorkspace({
       setEnrichmentPath,
       updateExerciseDetails,
     ]
+  );
+
+  const appendPhoto = useCallback(
+    async (dataUrl: string) => {
+      setIsSavingPhoto(true);
+      try {
+        const [header, base64Image = ''] = dataUrl.split(',');
+        const contentType = /^data:([^;]+)/.exec(header ?? '')?.[1] ?? 'image/png';
+        await uploadExerciseImage({ variables: { exerciseId: exercise.id, base64Image, contentType } });
+        await reloadImages();
+        setPendingPhoto(null);
+        toast.success('Dodano zdjęcie');
+      } catch (error) {
+        console.error('Błąd dodawania zdjęcia:', error);
+        toast.error('Nie udało się dodać zdjęcia');
+      } finally {
+        setIsSavingPhoto(false);
+      }
+    },
+    [exercise.id, reloadImages, uploadExerciseImage]
   );
 
   const generatePhoto = useCallback(
@@ -681,7 +692,7 @@ export function VerificationWorkspace({
     try {
       await flush();
       await approveExercise({ variables: { exerciseId: exercise.id, reviewNotes: null } });
-      toast.success('Ćwiczenie zatwierdzone i opublikowane');
+      toast.success('Zweryfikowane i opublikowane w Katalogu FiziYo');
       void resolveReports('Poprawione i opublikowane w weryfikacji');
       leaveToNext();
     } catch (error) {
@@ -907,53 +918,55 @@ export function VerificationWorkspace({
     <PageSheet contentClassName="gap-5" data-testid={rootTestId}>
       <div ref={rootRef} className="scroll-mt-6" />
 
-      <header className="flex flex-col gap-2">
-        <div className="flex flex-wrap items-center gap-3">
-          <Button
-            type="button"
-            variant="plain"
-            size="sm"
-            className="-ml-3"
-            onClick={() => router.push(listUrl)}
-            data-testid={backTestId}
-          >
-            <ArrowLeft />
-            Lista ćwiczeń
-          </Button>
-          {queuePosition != null && queueTotal > 0 && (
-            <span className="text-[13px] tabular-nums text-label-secondary">
-              {queuePosition} z {queueTotal} do weryfikacji
-            </span>
-          )}
-          <span className="flex-1" />
-          <SaveStatus status={form.saveStatus} />
-          {canArchive && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => void handleArchive()}
-              disabled={isBusy}
-              data-testid="org-verification-archive-btn"
-            >
-              <Archive />
-              Archiwizuj
-            </Button>
-          )}
+      <header className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="-ml-2"
+          aria-label="Lista ćwiczeń"
+          title="Lista ćwiczeń"
+          onClick={() => router.push(listUrl)}
+          data-testid={backTestId}
+        >
+          <ArrowLeft />
+        </Button>
+        <h1 className="min-w-0 truncate text-[20px] font-semibold leading-[25px] text-foreground">
+          {core.name.trim() || 'Ćwiczenie bez nazwy'}
+        </h1>
+        <Badge variant="secondary" className="shrink-0" data-testid="verification-destination-badge">
+          {isOrganization ? 'Ćwiczenia gabinetu' : 'Katalog FiziYo'}
+        </Badge>
+        {queuePosition != null && queueTotal > 0 && (
+          <span className="shrink-0 text-[13px] tabular-nums text-label-secondary">
+            {queuePosition} z {queueTotal}
+          </span>
+        )}
+        <span className="flex-1" />
+        <SaveStatus status={form.saveStatus} />
+        {canArchive && (
           <Button
             type="button"
             variant="ghost"
             size="sm"
-            onClick={handleSkip}
-            disabled={isLeaving}
-            data-testid="verification-skip-btn"
+            onClick={() => void handleArchive()}
+            disabled={isBusy}
+            data-testid="org-verification-archive-btn"
           >
-            Odłóż na później
+            <Archive />
+            Archiwizuj
           </Button>
-        </div>
-        <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground">
-          {core.name.trim() || 'Ćwiczenie bez nazwy'}
-        </h1>
+        )}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={handleSkip}
+          disabled={isLeaving}
+          data-testid="verification-skip-btn"
+        >
+          Odłóż na później
+        </Button>
       </header>
 
       {latestReport && reportStage && (
@@ -1042,8 +1055,6 @@ export function VerificationWorkspace({
         </aside>
 
         <div className="flex min-w-0 flex-col gap-4">
-          <h2 className="text-[20px] font-semibold leading-[25px] text-foreground">{STAGE_TITLES[stage]}</h2>
-
           {stage === 'material' && (
             <MaterialStage
               videoUrl={core.videoUrl}
@@ -1060,8 +1071,11 @@ export function VerificationWorkspace({
               onReplacePhoto={setPhotoDialogIndex}
               onDeletePhoto={(url) => void handleDeletePhoto(url)}
               onAddPhotos={(files) => void handleAddPhotos(files)}
+              onGeneratePhoto={() => void generatePhoto(photos.length, [], '')}
               onAcceptPending={() => {
-                if (pendingPhoto) void replacePhotoAt(pendingPhoto.index, pendingPhoto.previewUrl);
+                if (!pendingPhoto) return;
+                if (pendingPhoto.index >= photos.length) void appendPhoto(pendingPhoto.previewUrl);
+                else void replacePhotoAt(pendingPhoto.index, pendingPhoto.previewUrl);
               }}
               onRetryPending={handleRetryPhoto}
               onDiscardPending={() => setPendingPhoto(null)}
@@ -1075,7 +1089,6 @@ export function VerificationWorkspace({
               values={parameterValues}
               evaluation={evaluation}
               descriptionNumbers={descriptionNumbers}
-              onModeChange={handleModeChange}
               onValueChange={handleParameterChange}
               onAcknowledge={handleAcknowledge}
               onFixDescription={() =>
@@ -1091,7 +1104,6 @@ export function VerificationWorkspace({
               name={core.name}
               patientDescription={core.patientDescription}
               patient={patient}
-              imageUrls={photos}
               proposal={proposal}
               isGeneratingProposal={isGeneratingProposal}
               onCoreFieldChange={setCoreField}

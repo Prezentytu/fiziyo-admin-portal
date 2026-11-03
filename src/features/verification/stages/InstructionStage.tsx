@@ -7,17 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { cn } from '@/lib/utils';
-import { getMediaUrl } from '@/utils/mediaUrl';
 import type { ExerciseCoreDraft } from '@/features/exercises/useExerciseEditorForm';
 import type { EnrichmentPatientMistakeV3, ExerciseEnrichmentPatientV3 } from '@/graphql/types/exerciseEnrichment.types';
 import type { InstructionProposal } from '../utils/instructionProposal';
 import {
   CUE_PHASE_OPTIONS,
-  cycleStepImage,
   focusAfterRemovingStep,
   getCuePhase,
-  getStepImage,
   removeCuePhaseAt,
   removeStepImageAt,
   setCuePhase,
@@ -31,7 +27,6 @@ interface InstructionStageProps {
   name: string;
   patientDescription: string;
   patient: ExerciseEnrichmentPatientV3;
-  imageUrls: string[];
   proposal: InstructionProposal | null;
   isGeneratingProposal: boolean;
   onCoreFieldChange: <K extends keyof ExerciseCoreDraft>(field: K, value: ExerciseCoreDraft[K]) => void;
@@ -39,40 +34,9 @@ interface InstructionStageProps {
   onRequestProposal: () => void;
   onInsertProposal: () => void;
   onDismissProposal: () => void;
-  /** Step being read (null: the description); its photo is shown large next to the stages. */
+  /** Step being read (null: the description); its text is repeated next to the media. */
   focusedStep: number | null;
   onFocusStep: (stepIndex: number | null) => void;
-}
-
-function StepThumbnail({
-  url,
-  stepNumber,
-  isFocused,
-  onFocus,
-}: Readonly<{ url: string | null; stepNumber: number; isFocused: boolean; onFocus: () => void }>) {
-  const src = url ? getMediaUrl(url) : null;
-
-  return (
-    <button
-      type="button"
-      data-testid={`verification-step-${stepNumber}-preview-btn`}
-      onClick={onFocus}
-      aria-pressed={isFocused}
-      aria-label={src ? `Pokaż duże zdjęcie kroku ${stepNumber}` : `Krok ${stepNumber} nie ma zdjęcia`}
-      className={cn(
-        'relative grid h-[90px] w-[72px] shrink-0 place-items-center overflow-hidden rounded-control p-1.5 text-center text-[11px] leading-[14px] transition-shadow',
-        src ? 'bg-card' : 'bg-status-warning-muted font-semibold text-status-warning',
-        isFocused && 'ring-2 ring-tint ring-offset-2 ring-offset-grouped-tertiary'
-      )}
-    >
-      {src ? (
-        // eslint-disable-next-line @next/next/no-img-element -- remote CDN thumbnails, sized by the button
-        <img src={src} alt="" className="absolute inset-0 h-full w-full object-cover" />
-      ) : (
-        'Brak zdjęcia'
-      )}
-    </button>
-  );
 }
 
 function ProposalCard({
@@ -150,7 +114,6 @@ export function InstructionStage({
   name,
   patientDescription,
   patient,
-  imageUrls,
   proposal,
   isGeneratingProposal,
   onCoreFieldChange,
@@ -169,11 +132,6 @@ export function InstructionStage({
   const [addedRow, setAddedRow] = useState<string | null>(null);
 
   const updatePatient = (changes: Partial<ExerciseEnrichmentPatientV3>) => onPatientChange({ ...patient, ...changes });
-
-  const pinNextPhoto = (index: number) => {
-    updatePatient({ step_images: cycleStepImage(patient.step_images, index, imageUrls) });
-    onFocusStep(index);
-  };
 
   const updateStep = (index: number, value: string) =>
     updatePatient({ steps: steps.map((step, stepIndex) => (stepIndex === index ? value : step)) });
@@ -203,7 +161,7 @@ export function InstructionStage({
 
   return (
     <div className="flex flex-col gap-4" data-testid="verification-stage-instruction">
-      <StageSection title="Opis dla pacjenta" required>
+      <StageSection title="Opis ćwiczenia" required>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="verification-instruction-name" className="text-[13px] text-label-secondary">
             Nazwa ćwiczenia
@@ -218,12 +176,14 @@ export function InstructionStage({
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="verification-instruction-description" className="text-[13px] text-label-secondary">
-            Co pacjent przeczyta przed ćwiczeniem
+            Opis
           </Label>
+          <p className="text-[13px] text-label-tertiary">Widoczny przed, w trakcie i po ćwiczeniu</p>
           <Textarea
             id="verification-instruction-description"
             value={patientDescription}
             rows={4}
+            className="field-sizing-content"
             onChange={(event) => onCoreFieldChange('patientDescription', event.target.value)}
             onFocus={() => onFocusStep(null)}
             aria-describedby="verification-instruction-description-count"
@@ -237,73 +197,37 @@ export function InstructionStage({
         </div>
       </StageSection>
 
-      <StageSection
-        title="Kroki"
-        hint="Pacjent zobaczy każdy krok razem z przypiętym zdjęciem. Kliknij krok, a jego zdjęcie pojawi się po lewej w dużym rozmiarze."
-        data-testid="verification-instruction-steps"
-      >
+      <StageSection title="Kroki" data-testid="verification-instruction-steps">
         <ol className="flex flex-col gap-2">
-          {steps.map((step, index) => {
-            const stepUrl = getStepImage(patient.step_images, index);
-            const photoIndex = stepUrl ? imageUrls.indexOf(stepUrl) : -1;
-            const isFocused = focusedStep === index;
-            return (
-              <li key={index} className={cn('-mx-2 flex items-start gap-3 rounded-[16px] p-2', isFocused && 'bg-card')}>
-                <StepThumbnail
-                  url={photoIndex >= 0 ? stepUrl : null}
-                  stepNumber={index + 1}
-                  isFocused={isFocused}
-                  onFocus={() => onFocusStep(index)}
-                />
-                <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[13px] font-semibold text-label-secondary">Krok {index + 1}</span>
-                    <span className="min-w-0 truncate text-[13px] text-label-tertiary">
-                      {photoIndex >= 0 ? `Zdjęcie ${photoIndex + 1}` : 'Pacjent zobaczy sam tekst'}
-                    </span>
-                    <Button
-                      type="button"
-                      data-testid={`verification-step-${index + 1}-photo-btn`}
-                      variant="plain"
-                      size="sm"
-                      className="ml-auto"
-                      disabled={imageUrls.length === 0}
-                      title={imageUrls.length === 0 ? 'Najpierw dodaj zdjęcia w etapie Materiał' : undefined}
-                      aria-label={
-                        photoIndex >= 0
-                          ? `Krok ${index + 1}: zdjęcie ${photoIndex + 1}. Wybierz inne`
-                          : `Krok ${index + 1}: przypnij zdjęcie`
-                      }
-                      onClick={() => pinNextPhoto(index)}
-                    >
-                      {photoIndex >= 0 ? 'Zmień zdjęcie' : 'Przypnij zdjęcie'}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Usuń krok ${index + 1}`}
-                      onClick={() => removeStep(index)}
-                      data-testid={`verification-step-${index + 1}-remove-btn`}
-                    >
-                      <X />
-                    </Button>
-                  </div>
-                  <Input
-                    autoFocus={addedRow === `step-${index}`}
-                    value={step}
-                    aria-label={`Krok ${index + 1}`}
-                    onChange={(event) => updateStep(index, event.target.value)}
-                    onFocus={() => onFocusStep(index)}
-                    onBlur={() => {
-                      if (!step.trim()) removeStep(index);
-                    }}
-                    data-testid={`verification-step-${index + 1}-input`}
-                  />
-                </div>
-              </li>
-            );
-          })}
+          {steps.map((step, index) => (
+            <li key={index} className="flex items-center gap-2">
+              <span className="w-5 shrink-0 text-right text-[13px] font-semibold text-label-secondary">
+                {index + 1}.
+              </span>
+              <Input
+                autoFocus={addedRow === `step-${index}`}
+                value={step}
+                aria-label={`Krok ${index + 1}`}
+                onChange={(event) => updateStep(index, event.target.value)}
+                onFocus={() => onFocusStep(index)}
+                onBlur={() => {
+                  if (!step.trim()) removeStep(index);
+                }}
+                className="flex-1"
+                data-testid={`verification-step-${index + 1}-input`}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={`Usuń krok ${index + 1}`}
+                onClick={() => removeStep(index)}
+                data-testid={`verification-step-${index + 1}-remove-btn`}
+              >
+                <X />
+              </Button>
+            </li>
+          ))}
         </ol>
         <Button
           type="button"
@@ -320,11 +244,7 @@ export function InstructionStage({
         </Button>
       </StageSection>
 
-      <StageSection
-        title="Wskazówki głosowe"
-        hint="Lektor czyta je w wybranej fazie."
-        data-testid="verification-instruction-cues"
-      >
+      <StageSection title="Wskazówki głosowe" data-testid="verification-instruction-cues">
         <ul className="flex flex-col gap-2">
           {cues.map((cue, index) => {
             const phase = getCuePhase(patient.cue_phases, index);
