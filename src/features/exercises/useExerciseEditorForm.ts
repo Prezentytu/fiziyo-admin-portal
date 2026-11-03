@@ -12,6 +12,7 @@ import {
 import { shouldRehydrateExerciseEditorDraft } from './utils/shouldRehydrateExerciseEditorDraft';
 import { normalizeExerciseType } from '@/utils/exerciseEnums';
 import type { ExerciseParametersTimingType } from '@/components/shared/exercise/ExerciseParametersFields';
+import { describeSavedNonKgLoad } from './utils/describeSavedLoad';
 
 /**
  * Pojedynczy model formularza edytora ćwiczenia (v3).
@@ -441,11 +442,13 @@ export function useExerciseEditorForm({
   }, []);
 
   const exerciseType: ExerciseParametersTimingType = normalizeExerciseType(source?.type) ?? 'draft';
+  const savedLoadLabel = useMemo(() => describeSavedNonKgLoad(source), [source]);
 
   return useMemo(
     () => ({
       core,
       exerciseType,
+      savedLoadLabel,
       enrichment,
       setCoreField,
       setEnrichmentPath,
@@ -472,6 +475,7 @@ export function useExerciseEditorForm({
       reset,
       save,
       saveStatus,
+      savedLoadLabel,
       setCoreField,
       setEnrichmentPath,
     ]

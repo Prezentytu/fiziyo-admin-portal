@@ -301,6 +301,11 @@ export function ExerciseEditor({
           onSideChange={(value) => setCoreField('side', value)}
           onDifficultyChange={(value) => setCoreField('difficultyLevel', value)}
         />
+        {form.savedLoadLabel && (
+          <p className="mt-2 text-xs text-muted-foreground" data-testid="exercise-editor-saved-load-note">
+            Zapisane obciążenie: „{form.savedLoadLabel}”. Wpisanie kilogramów je zastąpi.
+          </p>
+        )}
       </div>
 
       <ExerciseContentSections
