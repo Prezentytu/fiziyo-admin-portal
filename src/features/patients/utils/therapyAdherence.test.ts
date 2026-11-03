@@ -78,4 +78,19 @@ describe('calculateTherapyStatus', () => {
     expect(statusResult.reason).not.toBe('inactivity');
     expect(statusResult.status).not.toBe('alert');
   });
+  it('describes regularity in training days, not as a second percentage next to plan completion', () => {
+    const result = evaluateTherapyAdherence({
+      daysSinceStart: 2,
+      daysSinceLastActivity: 0,
+      missedTrainings: 1,
+      hardCount: 0,
+      hasDiscomfort: false,
+      requiredSoFar: 2,
+      activeDays: 1,
+    });
+
+    expect(result.reason).toBe('on_track');
+    expect(result.description).toBe('Pacjent realizuje plan zgodnie z założeniami (1 z 2 dni z treningiem).');
+    expect(result.description).not.toMatch(/%/);
+  });
 });
