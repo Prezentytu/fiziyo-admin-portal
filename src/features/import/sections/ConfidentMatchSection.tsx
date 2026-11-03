@@ -55,17 +55,17 @@ export function ConfidentMatchSection({
       <Collapsible
         open={isOpen}
         onOpenChange={setIsOpen}
-        className={cn('rounded-xl border border-green-500/30 overflow-hidden', className)}
+        className={cn('rounded-xl border border-status-success/30 overflow-hidden', className)}
         data-testid="import-confident-section"
       >
         {/* Header */}
-        <div className="flex items-center justify-between bg-green-500/5 px-4 py-3">
+        <div className="flex items-center justify-between bg-status-success-muted px-4 py-3">
           <CollapsibleTrigger
             className="flex items-center gap-3 hover:opacity-80 transition-opacity"
             data-testid="import-confident-section-trigger"
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-green-500/20">
-              <CheckCircle className="h-5 w-5 text-green-500" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-status-success-muted">
+              <CheckCircle className="h-5 w-5 text-status-success" />
             </div>
             <div className="text-left">
               <h3 className="font-semibold text-foreground">Znalezione w bazie ({exercises.length})</h3>
@@ -90,8 +90,8 @@ export function ConfidentMatchSection({
             className={cn(
               'gap-2',
               allApproved
-                ? 'text-green-600 border-green-500/50 bg-green-500/10'
-                : 'text-green-600 border-green-500/50 hover:bg-green-500/10'
+                ? 'text-status-success border-status-success/50 bg-status-success-muted'
+                : 'text-status-success border-status-success/50 hover:bg-status-success-muted'
             )}
             data-testid="import-confident-section-approve-all-btn"
           >

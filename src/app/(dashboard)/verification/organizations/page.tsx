@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useMutation, useQuery, useSubscription } from '@apollo/client/react';
 import { Search, ShieldCheck } from 'lucide-react';
@@ -16,18 +15,23 @@ import { VerificationStatsCards } from '@/features/verification/VerificationStat
 import { VerificationTaskCard } from '@/features/verification/VerificationTaskCard';
 import { VerificationSelectionToolbar } from '@/features/verification/VerificationSelectionToolbar';
 import { VerificationArchiveDialog } from '@/features/verification/VerificationArchiveDialog';
+import { VerificationPageHeader } from '@/features/verification/VerificationPageHeader';
+import { VerificationQueueHero } from '@/features/verification/VerificationQueueHero';
 import { useVerificationSelection } from '@/features/verification/utils/verificationSelection';
 import {
   GET_CROSS_ORG_VERIFICATION_QUEUE_PAGE_QUERY,
   GET_CROSS_ORG_VERIFICATION_STATS_QUERY,
 } from '@/graphql/queries/crossOrgVerification.queries';
-import { BATCH_ARCHIVE_ORGANIZATION_EXERCISES_AS_ADMIN_MUTATION } from '@/graphql/mutations/crossOrgVerification.mutations';
+import { ARCHIVE_ORGANIZATION_EXERCISE_AS_ADMIN_MUTATION } from '@/graphql/mutations/crossOrgVerification.mutations';
+import { formatBatchArchiveSummary, runBatchArchive } from '@/features/verification/utils/batchArchive';
 import { ON_EXERCISE_SUBMITTED_FOR_GLOBAL_REVIEW } from '@/graphql/subscriptions';
 import type {
-  BatchArchiveOrganizationExercisesAsAdminResponse,
+  ArchiveExerciseVariables,
+  ArchiveOrganizationExerciseAsAdminResponse,
   CrossOrgVerificationQueuePage,
-  GetOrganizationVerificationStatsResponse,
+  GetCrossOrgVerificationStatsResponse,
 } from '@/graphql/types/adminExercise.types';
+import { PageSheet } from '@/components/shared/page';
 
 type CrossOrgFilter = 'pending' | 'changes' | 'verified' | 'archived';
 
@@ -54,7 +58,7 @@ export default function CrossOrgVerificationPage() {
     data: statsData,
     loading: statsLoading,
     refetch: refetchStats,
-  } = useQuery<GetOrganizationVerificationStatsResponse>(GET_CROSS_ORG_VERIFICATION_STATS_QUERY, {
+  } = useQuery<GetCrossOrgVerificationStatsResponse>(GET_CROSS_ORG_VERIFICATION_STATS_QUERY, {
     skip: !isSiteSuperAdmin,
     fetchPolicy: 'cache-and-network',
     pollInterval: 30_000,
@@ -64,7 +68,7 @@ export default function CrossOrgVerificationPage() {
   const {
     data: queueData,
     loading: queueLoading,
-    refetch: refetchQueue,
+    refetch: refetchQueuePage,
   } = useQuery<{ crossOrgVerificationQueuePage: CrossOrgVerificationQueuePage }>(
     GET_CROSS_ORG_VERIFICATION_QUEUE_PAGE_QUERY,
     {
@@ -81,15 +85,34 @@ export default function CrossOrgVerificationPage() {
     }
   );
 
+  const { data: firstPendingData, refetch: refetchFirstPending } = useQuery<{
+    crossOrgVerificationQueuePage: CrossOrgVerificationQueuePage;
+  }>(GET_CROSS_ORG_VERIFICATION_QUEUE_PAGE_QUERY, {
+    variables: { filter: 'pending', search: null, page: 1, pageSize: 1 },
+    skip: !isSiteSuperAdmin,
+    fetchPolicy: 'cache-and-network',
+    pollInterval: 30_000,
+    skipPollAttempt: () => document.hidden,
+  });
+  const refetchQueue = () => Promise.all([refetchQueuePage(), refetchFirstPending()]);
+  const firstPendingId = firstPendingData?.crossOrgVerificationQueuePage.items[0]?.exercise.id;
+  const startHref = firstPendingId
+    ? `/verification/organizations/${firstPendingId}?filter=pending&page=1&pageSize=${pageSize}`
+    : null;
+
   const visibleQueueItems = useMemo(() => queueData?.crossOrgVerificationQueuePage.items ?? [], [queueData]);
   const visibleExerciseIds = useMemo(
     () => visibleQueueItems.map((queueItem) => queueItem.exercise.id),
     [visibleQueueItems]
   );
   const selection = useVerificationSelection(visibleExerciseIds);
-  const [batchArchiveExercises, { loading: archiving }] = useMutation<BatchArchiveOrganizationExercisesAsAdminResponse>(
-    BATCH_ARCHIVE_ORGANIZATION_EXERCISES_AS_ADMIN_MUTATION
-  );
+  const [archiveOrganizationExerciseAsAdmin] = useMutation<
+    ArchiveOrganizationExerciseAsAdminResponse,
+    ArchiveExerciseVariables
+  >(ARCHIVE_ORGANIZATION_EXERCISE_AS_ADMIN_MUTATION);
+  const [archiving, setArchiving] = useState(false);
+  // Archiwizować da się tylko ćwiczenia OrgVerified (backend), więc zaznaczanie jest tylko w tej zakładce.
+  const canArchive = filter === 'verified';
 
   useSubscription<{ onExerciseSubmittedForGlobalReview: string }>(ON_EXERCISE_SUBMITTED_FOR_GLOBAL_REVIEW, {
     skip: !isSiteSuperAdmin,
@@ -122,43 +145,32 @@ export default function CrossOrgVerificationPage() {
   }, [filter, search, page, pageSize]);
 
   const handleArchiveSelected = async () => {
-    const selectedIdSet = new Set(selection.selectedIds);
-    const organizationExercises = visibleQueueItems
-      .filter((queueItem) => selectedIdSet.has(queueItem.exercise.id))
-      .map((queueItem) => ({
-        organizationId: queueItem.organizationId,
-        exerciseId: queueItem.exercise.id,
-      }));
-
-    if (organizationExercises.length === 0) {
+    const selectedIds = selection.selectedIds;
+    if (selectedIds.length === 0) {
       return;
     }
 
+    setArchiving(true);
     try {
-      const response = await batchArchiveExercises({
-        variables: { organizationExercises, reason: null },
+      // Backend wyznacza organizację z samego ćwiczenia, więc wystarczy exerciseId.
+      const result = await runBatchArchive(selectedIds, async (exerciseId) => {
+        const response = await archiveOrganizationExerciseAsAdmin({ variables: { exerciseId, reason: null } });
+        if (response.error) {
+          throw response.error;
+        }
+        return response.data?.archiveOrganizationExerciseAsAdmin ?? null;
       });
-      const result = response.data?.batchArchiveOrganizationExercisesAsAdmin;
-      if (!result) {
-        throw new Error('Brak wyniku archiwizacji');
-      }
 
       const failedIdSet = new Set(result.failedIds);
-      selection.remove(
-        organizationExercises.map((item) => item.exerciseId).filter((exerciseId) => !failedIdSet.has(exerciseId))
-      );
-      await Promise.all([refetchStats(), refetchQueue()]);
+      selection.remove(selectedIds.filter((exerciseId) => !failedIdSet.has(exerciseId)));
       setArchiveDialogOpen(false);
-
-      if (result.failedIds.length > 0) {
-        toast.warning(
-          `Zarchiwizowano ${result.successCount} z ${result.totalRequested} ćwiczeń. Niektóre pozycje wymagają ponowienia.`
-        );
-      } else {
-        toast.success(`Zarchiwizowano ${result.successCount} ćwiczeń.`);
-      }
+      const summary = formatBatchArchiveSummary(result);
+      toast[summary.kind](summary.message);
+      await Promise.all([refetchStats(), refetchQueue()]);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Nie udało się zarchiwizować ćwiczeń.');
+      toast.error(error instanceof Error ? error.message : 'Nie udało się odświeżyć listy po archiwizacji.');
+    } finally {
+      setArchiving(false);
     }
   };
 
@@ -167,55 +179,54 @@ export default function CrossOrgVerificationPage() {
       <EmptyState
         icon={ShieldCheck}
         title="Brak dostępu"
-        description="Tylko SiteSuperAdmin ma dostęp do cross-organizacyjnej weryfikacji."
+        description="Ten widok jest dostępny tylko dla zespołu FiziYo."
       />
     );
   }
 
   return (
-    <div className="space-y-6" data-testid="cross-org-verification-page">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Weryfikacja Organizacji</h1>
-          <p className="text-sm text-muted-foreground">Kolejka zgłoszeń organizacyjnych ze wszystkich organizacji.</p>
-        </div>
-        <Link href="/verification">
-          <Button data-testid="cross-org-verification-back-btn" variant="outline">
-            Wróć do centrum
-          </Button>
-        </Link>
-      </div>
+    <PageSheet contentClassName="gap-6" data-testid="cross-org-verification-page">
+      <VerificationPageHeader />
 
-      <VerificationStatsCards
-        mode="organization"
-        stats={null}
-        organizationStats={statsData?.organizationVerificationStats ?? null}
-        isLoading={statsLoading}
-        activeFilter={filter}
-        onFilterChange={(nextFilter) => {
-          const normalizedFilter = nextFilter === 'verified' ? 'verified' : (nextFilter as CrossOrgFilter);
-          selection.clear();
-          setFilter(normalizedFilter);
-          setPage(1);
-          updateUrl(normalizedFilter, search, 1);
-        }}
+      <VerificationQueueHero
+        pendingCount={statsData?.crossOrgVerificationStats.pendingOrgReview ?? null}
+        startHref={startHref}
+        testIdPrefix="cross-org-verification"
       />
 
-      <div className="relative w-full sm:w-80">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          data-testid="cross-org-verification-search-input"
-          value={search}
-          onChange={(event) => {
-            const next = event.target.value;
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <VerificationStatsCards
+          mode="organization"
+          stats={null}
+          organizationStats={statsData?.crossOrgVerificationStats ?? null}
+          isLoading={statsLoading}
+          activeFilter={filter}
+          onFilterChange={(nextFilter) => {
+            const normalizedFilter = nextFilter === 'verified' ? 'verified' : (nextFilter as CrossOrgFilter);
             selection.clear();
-            setSearch(next);
+            setFilter(normalizedFilter);
             setPage(1);
-            updateUrl(filter, next, 1);
+            updateUrl(normalizedFilter, search, 1);
           }}
-          placeholder="Szukaj ćwiczenia..."
-          className="pl-9"
         />
+
+        <div className="relative w-full sm:w-80">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            aria-label="Szukaj ćwiczenia"
+            data-testid="cross-org-verification-search-input"
+            value={search}
+            onChange={(event) => {
+              const next = event.target.value;
+              selection.clear();
+              setSearch(next);
+              setPage(1);
+              updateUrl(filter, next, 1);
+            }}
+            placeholder="Szukaj ćwiczenia..."
+            className="pl-9"
+          />
+        </div>
       </div>
 
       <VerificationSelectionToolbar
@@ -226,7 +237,7 @@ export default function CrossOrgVerificationPage() {
         onToggleVisible={selection.toggleVisible}
         onClear={selection.clear}
         onArchive={() => setArchiveDialogOpen(true)}
-        disabled={filter === 'archived' || queueLoading}
+        disabled={!canArchive || queueLoading}
         isArchiving={archiving}
       />
 
@@ -245,7 +256,9 @@ export default function CrossOrgVerificationPage() {
               </div>
               <VerificationTaskCard
                 exercise={queueItem.exercise}
-                selectable={filter !== 'archived'}
+                track="organization"
+                showStatus={false}
+                selectable={canArchive}
                 selected={selection.isSelected(queueItem.exercise.id)}
                 onSelectionChange={() => selection.toggle(queueItem.exercise.id)}
                 detailHref={`/verification/organizations/${queueItem.exercise.id}?${detailQueryString}`}
@@ -297,11 +310,11 @@ export default function CrossOrgVerificationPage() {
       <VerificationArchiveDialog
         open={archiveDialogOpen}
         count={selection.selectedCount}
-        scopeLabel="cross-org Centrum Weryfikacji"
+        scopeLabel="kolejkach organizacji klientów"
         isLoading={archiving}
         onOpenChange={setArchiveDialogOpen}
         onConfirm={handleArchiveSelected}
       />
-    </div>
+    </PageSheet>
   );
 }

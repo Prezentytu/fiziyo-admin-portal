@@ -10,7 +10,7 @@ import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import * as z from 'zod';
 
-import AvatarEditor from 'react-avatar-editor';
+import AvatarEditor, { type AvatarEditorRef } from 'react-avatar-editor';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -89,7 +89,7 @@ export function ProfileForm({ user, clerkId, onSuccess }: Readonly<ProfileFormPr
   const [cropDialogOpen, setCropDialogOpen] = useState(false);
   const [cropImageFile, setCropImageFile] = useState<File | null>(null);
   const [cropScale, setCropScale] = useState(1.2);
-  const avatarEditorRef = useRef<AvatarEditor | null>(null);
+  const avatarEditorRef = useRef<AvatarEditorRef | null>(null);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -315,7 +315,7 @@ export function ProfileForm({ user, clerkId, onSuccess }: Readonly<ProfileFormPr
         data-testid="settings-profile-form"
       >
         {/* Section 1: Profile Photo */}
-        <Card className="rounded-xl border border-border/50 bg-card/30">
+        <Card>
           <CardHeader className="pb-4">
             <CardTitle className="text-lg font-semibold tracking-tight">Zdjęcie profilowe</CardTitle>
             <CardDescription className="text-sm text-muted-foreground">
@@ -331,7 +331,7 @@ export function ProfileForm({ user, clerkId, onSuccess }: Readonly<ProfileFormPr
               onChange={handlePhotoSelect}
             />
             <div className="flex items-center gap-6">
-              <Avatar className="h-24 w-24 ring-4 ring-zinc-100 dark:ring-zinc-800">
+              <Avatar className="h-24 w-24 ring-4 ring-separator">
                 <AvatarImage
                   src={clerkUser?.imageUrl ?? user.image}
                   alt={displayName}
@@ -362,7 +362,7 @@ export function ProfileForm({ user, clerkId, onSuccess }: Readonly<ProfileFormPr
         </Card>
 
         {/* Section 2: Basic Info */}
-        <Card className="rounded-xl border border-border/50 bg-card/30">
+        <Card>
           <CardHeader className="pb-4">
             <CardTitle className="text-lg font-semibold tracking-tight">Informacje podstawowe</CardTitle>
             <CardDescription className="text-sm text-muted-foreground">
@@ -461,7 +461,7 @@ export function ProfileForm({ user, clerkId, onSuccess }: Readonly<ProfileFormPr
         </Card>
 
         {/* Section 3: Contact Info */}
-        <Card className="rounded-xl border border-border/50 bg-card/30">
+        <Card>
           <CardHeader className="pb-4">
             <CardTitle className="text-lg font-semibold tracking-tight">Dane kontaktowe</CardTitle>
             <CardDescription className="text-sm text-muted-foreground">
@@ -517,7 +517,7 @@ export function ProfileForm({ user, clerkId, onSuccess }: Readonly<ProfileFormPr
             <Button
               type="submit"
               disabled={loading}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-11 px-8 rounded-xl shadow-lg shadow-primary/20 transition-all"
+              className="px-8"
               data-testid="settings-profile-submit-btn"
             >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -545,7 +545,7 @@ export function ProfileForm({ user, clerkId, onSuccess }: Readonly<ProfileFormPr
             <div className="relative overflow-hidden rounded-2xl border border-border bg-surface">
               {cropImageFile && (
               <AvatarEditor
-                ref={(ref: AvatarEditor | null) => {
+                ref={(ref: AvatarEditorRef | null) => {
                   avatarEditorRef.current = ref;
                 }}
                 image={cropImageFile}

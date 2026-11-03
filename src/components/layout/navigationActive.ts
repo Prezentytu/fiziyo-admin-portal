@@ -24,3 +24,7 @@ export function isNavigationHrefActive(pathname: string, href: string, allHrefs:
 
   return href === longestMatch;
 }
+
+export function isNavigationItemActive(pathname: string, matchHrefs: string[], allHrefs: string[]): boolean {
+  return matchHrefs.some((href) => isNavigationHrefActive(pathname, href, allHrefs));
+}

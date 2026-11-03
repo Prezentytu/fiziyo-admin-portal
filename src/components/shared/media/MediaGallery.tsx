@@ -24,6 +24,9 @@ interface MediaGalleryProps {
   testIdPrefix: string;
   rootTestId?: string;
   className?: string;
+  /** Controlled selection; omit both to let the gallery manage it. */
+  selectedIndex?: number;
+  onSelectedIndexChange?: (index: number) => void;
 }
 
 const ASPECT_RATIO_CLASS: Record<MediaGalleryAspectRatio, string> = {
@@ -41,8 +44,19 @@ export function MediaGallery({
   testIdPrefix,
   rootTestId,
   className,
+  selectedIndex: controlledIndex,
+  onSelectedIndexChange,
 }: Readonly<MediaGalleryProps>) {
-  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [internalIndex, setInternalIndex] = useState(0);
+  const isControlled = controlledIndex !== undefined;
+  const selectedIndex = isControlled ? controlledIndex : internalIndex;
+  const setSelectedIndex = useCallback(
+    (index: number) => {
+      if (!isControlled) setInternalIndex(index);
+      onSelectedIndexChange?.(index);
+    },
+    [isControlled, onSelectedIndexChange]
+  );
   const [lightboxOpen, setLightboxOpen] = useState(false);
 
   const hasItems = items.length > 0;
@@ -53,7 +67,7 @@ export function MediaGallery({
     if (selectedIndex !== safeIndex) {
       setSelectedIndex(safeIndex);
     }
-  }, [safeIndex, selectedIndex]);
+  }, [safeIndex, selectedIndex, setSelectedIndex]);
 
   const hasMultiple = items.length > 1;
   const hasPrev = safeIndex > 0;
@@ -69,12 +83,12 @@ export function MediaGallery({
     selectedItem?.kind === 'video' ? selectedItem.poster ?? undefined : selectedItem?.src;
 
   const handlePrev = useCallback(() => {
-    setSelectedIndex((currentIndex) => (currentIndex > 0 ? currentIndex - 1 : currentIndex));
-  }, []);
+    if (safeIndex > 0) setSelectedIndex(safeIndex - 1);
+  }, [safeIndex, setSelectedIndex]);
 
   const handleNext = useCallback(() => {
-    setSelectedIndex((currentIndex) => (currentIndex < items.length - 1 ? currentIndex + 1 : currentIndex));
-  }, [items.length]);
+    if (safeIndex < items.length - 1) setSelectedIndex(safeIndex + 1);
+  }, [items.length, safeIndex, setSelectedIndex]);
 
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -96,7 +110,7 @@ export function MediaGallery({
 
   const rootDataTestId = rootTestId ?? `${testIdPrefix}-root`;
   const stageWrapperClass =
-    layout === 'fill' ? 'relative h-full min-h-0 overflow-hidden' : cn('relative overflow-hidden', ASPECT_RATIO_CLASS[aspectRatio]);
+    layout === 'fill' ? 'relative min-h-0 flex-1 overflow-hidden' : cn('relative overflow-hidden', ASPECT_RATIO_CLASS[aspectRatio]);
 
   return (
     <TooltipProvider>
@@ -130,9 +144,10 @@ export function MediaGallery({
               className="object-contain"
               sizes={layout === 'fill' ? '(max-width: 1280px) 100vw, 50vw' : '(max-width: 1024px) 100vw, 800px'}
               priority={safeIndex === 0}
+              data-testid={`${testIdPrefix}-stage-image`}
             />
           ) : (
-            <div className="h-full w-full p-2">
+            <div className="h-full w-full p-2" data-testid={`${testIdPrefix}-stage-video`}>
               <VideoEmbed url={selectedItem.src} title={selectedItem.title ?? title} className="h-full w-full" />
             </div>
           )}
@@ -210,52 +225,51 @@ export function MediaGallery({
           </div>
         )}
 
-        {hasMultiple && (
-          <div className="pointer-events-none absolute inset-x-0 bottom-3 z-20 flex flex-col items-center gap-1.5 px-3">
-            <div className="pointer-events-auto rounded-full border border-border/70 bg-background/85 px-3 py-1 text-xs text-foreground backdrop-blur-sm dark:bg-black/45 dark:text-white/85">
-              {safeIndex + 1} / {items.length}
-            </div>
-            <div className="pointer-events-auto max-w-full rounded-full border border-border/70 bg-background/85 p-1.5 backdrop-blur-sm dark:bg-black/45">
-              <div className="flex max-w-[min(100vw-6rem,30rem)] gap-2 overflow-x-auto px-0.5">
-                {items.map((item, index) => (
-                  <button
-                    data-testid={`${testIdPrefix}-thumb-${index}`}
-                    type="button"
-                    key={`${item.kind}-${item.src}-${index}`}
-                    onClick={() => setSelectedIndex(index)}
-                    className={cn(
-                      'group relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border-2 bg-surface',
-                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
-                      index === safeIndex ? 'border-primary ring-1 ring-primary/50' : 'border-transparent hover:border-border'
-                    )}
-                  >
-                    {item.kind === 'image' || item.kind === 'gif' ? (
-                      <Image src={item.src} alt="" fill className="object-cover" sizes="56px" />
-                    ) : item.poster ? (
-                      <Image src={item.poster} alt="" fill className="object-cover" sizes="56px" />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-surface-light/50 text-muted-foreground">
-                        <Film className="h-5 w-5" />
-                      </div>
-                    )}
-
-                    {item.kind === 'video' && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                        <Play className="h-4 w-4 fill-white text-white" />
-                      </div>
-                    )}
-                    {item.kind === 'gif' && (
-                      <span className="absolute bottom-1 right-1 rounded bg-background/85 px-1 text-[10px] font-semibold text-foreground dark:bg-black/50 dark:text-white/90">
-                        GIF
-                      </span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
       </div>
+
+      {hasMultiple && (
+        <div className="flex shrink-0 items-center gap-3 border-t border-border/40 px-3 py-2">
+          <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto p-0.5">
+            {items.map((item, index) => (
+              <button
+                data-testid={`${testIdPrefix}-thumb-${index}`}
+                type="button"
+                key={`${item.kind}-${item.src}-${index}`}
+                onClick={() => setSelectedIndex(index)}
+                className={cn(
+                  'group relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border-2 bg-surface',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
+                  index === safeIndex ? 'border-primary ring-1 ring-primary/50' : 'border-transparent hover:border-border'
+                )}
+              >
+                {item.kind === 'image' || item.kind === 'gif' ? (
+                  <Image src={item.src} alt="" fill className="object-cover" sizes="56px" />
+                ) : item.poster ? (
+                  <Image src={item.poster} alt="" fill className="object-cover" sizes="56px" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-surface-light/50 text-muted-foreground">
+                    <Film className="h-5 w-5" />
+                  </div>
+                )}
+
+                {item.kind === 'video' && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                    <Play className="h-4 w-4 fill-white text-white" />
+                  </div>
+                )}
+                {item.kind === 'gif' && (
+                  <span className="absolute bottom-1 right-1 rounded bg-background/85 px-1 text-[10px] font-semibold text-foreground dark:bg-black/50 dark:text-white/90">
+                    GIF
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+          <span className="shrink-0 text-xs tabular-nums text-muted-foreground" data-testid={`${testIdPrefix}-counter`}>
+            {safeIndex + 1} / {items.length}
+          </span>
+        </div>
+      )}
 
       {canOpenLightbox && selectedImageIndex >= 0 && (
         <ImageLightbox

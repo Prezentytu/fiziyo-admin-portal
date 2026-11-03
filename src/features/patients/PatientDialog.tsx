@@ -9,15 +9,11 @@ import { UserPlus, CheckCircle2, Send, UserPlus2, X, Sparkles } from 'lucide-rea
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { UnifiedPatientInput, PatientFormValues } from './UnifiedPatientInput';
+import { UnifiedPatientInput, type CreatePatientOutcome, type PatientFormValues } from './UnifiedPatientInput';
 import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
 import { CREATE_SHADOW_PATIENT_MUTATION } from '@/graphql/mutations/users.mutations';
-import {
-  GET_THERAPIST_PATIENTS_QUERY,
-  GET_ALL_THERAPIST_PATIENTS_QUERY,
-  GET_ORGANIZATION_PATIENTS_QUERY,
-} from '@/graphql/queries/therapists.queries';
-import { GET_ALL_PATIENT_ASSIGNMENTS_QUERY } from '@/graphql/queries/patientAssignments.queries';
+import { formatPatientPhone, patientCreateRefetchQueries } from './utils/shadowPatient';
+import { PATIENT_INVITE_REQUIRED, getGraphQLErrorCode, getGraphQLErrorMessage } from './utils/patientConsent';
 import { cn } from '@/lib/utils';
 import { getAvatarGradient, getInitials } from '@/utils/textUtils';
 import type { Patient } from '@/features/assignment/types';
@@ -103,33 +99,18 @@ export function PatientDialog({
   }, [open]);
 
   const shouldRefetchAfterCreate = embeddedMode !== 'assignment';
-  const patientCreateRefetchQueries = shouldRefetchAfterCreate
-    ? [
-        { query: GET_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } },
-        { query: GET_ALL_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } },
-        { query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'all' } },
-        { query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'my' } },
-        { query: GET_ALL_PATIENT_ASSIGNMENTS_QUERY },
-      ]
-    : [];
 
   // Create shadow patient - creates user + adds to organization + assigns to therapist in one step
   const [createPatient, { loading }] = useMutation(CREATE_SHADOW_PATIENT_MUTATION, {
-    refetchQueries: patientCreateRefetchQueries,
+    refetchQueries: shouldRefetchAfterCreate ? patientCreateRefetchQueries(organizationId, therapistId) : [],
   });
 
-  // Helper to format phone with +48 prefix
-  const formatPhoneNumber = (phone: string | undefined): string | null => {
-    if (!phone) return null;
-    return phone.startsWith('+') ? phone : `+48${phone}`;
-  };
-
   // Handler for new patient creation (from SmartPatientLookup form mode)
-  const handleCreateNewPatient = async (values: PatientFormValues) => {
+  const handleCreateNewPatient = async (values: PatientFormValues): Promise<CreatePatientOutcome> => {
     try {
       // Format phone with +48 prefix if provided (backend expects full number)
       // Phone może być puste jeśli podano email - wysyłamy null zamiast ''
-      const formattedPhone = formatPhoneNumber(values.phone);
+      const formattedPhone = formatPatientPhone(values.phone);
 
       const result = await createPatient({
         variables: {
@@ -165,7 +146,7 @@ export function PatientDialog({
         onOpenChange(false);
         onSuccess?.();
         toast.success('Pacjent został dodany');
-        return;
+        return { status: 'created' };
       }
 
       // Trigger success animation
@@ -180,9 +161,14 @@ export function PatientDialog({
       });
       setFormIsDirty(false);
       toast.success('Pacjent został dodany');
+      return { status: 'created' };
     } catch (error) {
+      if (getGraphQLErrorCode(error) === PATIENT_INVITE_REQUIRED) {
+        return { status: 'invite-required', message: getGraphQLErrorMessage(error, '') };
+      }
       console.error('Błąd podczas dodawania pacjenta:', error);
-      toast.error('Nie udało się dodać pacjenta');
+      toast.error(getGraphQLErrorMessage(error, 'Nie udało się dodać pacjenta'));
+      return { status: 'failed' };
     }
   };
 
@@ -281,7 +267,7 @@ export function PatientDialog({
                   <div
                     className={cn(
                       'absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full',
-                      'bg-primary text-primary-foreground shadow-lg ring-4 ring-background',
+                      'bg-tint-fill text-on-tint shadow-lg ring-4 ring-background',
                       'transition-all duration-300 delay-200',
                       showSuccessAnimation && 'animate-in zoom-in-50 duration-300'
                     )}
@@ -354,8 +340,8 @@ export function PatientDialog({
             <>
               <DialogHeader className="px-8 py-6 border-b border-border shrink-0 bg-linear-to-r from-surface to-surface-light/50">
                 <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-primary to-primary-dark shadow-lg shadow-primary/25">
-                    <UserPlus className="h-6 w-6 text-primary-foreground" />
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-tint-fill">
+                    <UserPlus className="h-6 w-6 text-on-tint" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <DialogTitle className="text-xl font-bold" data-testid="patient-dialog-title">

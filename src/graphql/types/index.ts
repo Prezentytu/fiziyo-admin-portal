@@ -4,6 +4,7 @@ export * from './clinic.types';
 export * from './exercise.types';
 export * from './assignment.types';
 export * from './operation-responses';
+export * from './patientInvitation.types';
 // Re-export adminExercise types excluding duplicates (ContentStatus, DifficultyLevel are in exercise.types)
 export type {
   AdminExercise,

@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useMutation, useQuery } from '@apollo/client/react';
 import { Search, ShieldCheck } from 'lucide-react';
@@ -16,6 +15,8 @@ import { VerificationStatsCards } from '@/features/verification/VerificationStat
 import { VerificationTaskCard } from '@/features/verification/VerificationTaskCard';
 import { VerificationSelectionToolbar } from '@/features/verification/VerificationSelectionToolbar';
 import { VerificationArchiveDialog } from '@/features/verification/VerificationArchiveDialog';
+import { VerificationPageHeader } from '@/features/verification/VerificationPageHeader';
+import { VerificationQueueHero } from '@/features/verification/VerificationQueueHero';
 import { useVerificationSelection } from '@/features/verification/utils/verificationSelection';
 import {
   buildOrganizationVerificationDetailHref,
@@ -26,12 +27,15 @@ import {
   GET_ORGANIZATION_VERIFICATION_QUEUE_PAGE_QUERY,
   GET_ORGANIZATION_VERIFICATION_STATS_QUERY,
 } from '@/graphql/queries/adminExercises.queries';
-import { BATCH_ARCHIVE_ORGANIZATION_EXERCISES_MUTATION } from '@/graphql/mutations/adminExercises.mutations';
+import { ARCHIVE_ORGANIZATION_EXERCISE_MUTATION } from '@/graphql/mutations/adminExercises.mutations';
+import { formatBatchArchiveSummary, runBatchArchive } from '@/features/verification/utils/batchArchive';
 import type {
-  BatchArchiveOrganizationExercisesResponse,
+  ArchiveExerciseVariables,
+  ArchiveOrganizationExerciseResponse,
   GetOrganizationVerificationStatsResponse,
   VerificationQueuePage,
 } from '@/graphql/types/adminExercise.types';
+import { PageSheet } from '@/components/shared/page';
 
 type OrgFilter = 'pending' | 'changes' | 'verified' | 'archived';
 
@@ -78,14 +82,36 @@ export default function OrganizationVerificationPage() {
     }
   );
 
+  const { data: firstPendingData } = useQuery<{ organizationVerificationQueuePage: VerificationQueuePage }>(
+    GET_ORGANIZATION_VERIFICATION_QUEUE_PAGE_QUERY,
+    {
+      variables: { organizationId: organizationId ?? '', filter: 'pending', search: null, page: 1, pageSize: 1 },
+      skip: !organizationId || !canManageOrganization,
+      fetchPolicy: 'cache-and-network',
+    }
+  );
+  const firstPendingId = firstPendingData?.organizationVerificationQueuePage.items[0]?.id;
+  const startHref = firstPendingId
+    ? buildOrganizationVerificationDetailHref(firstPendingId, {
+        filter: 'pending',
+        search: '',
+        page: 1,
+        pageSize,
+        view: 'grid',
+      })
+    : null;
+
   const visibleExerciseIds = useMemo(
     () => queueData?.organizationVerificationQueuePage.items.map((exercise) => exercise.id) ?? [],
     [queueData]
   );
   const selection = useVerificationSelection(visibleExerciseIds);
-  const [batchArchiveExercises, { loading: archiving }] = useMutation<BatchArchiveOrganizationExercisesResponse>(
-    BATCH_ARCHIVE_ORGANIZATION_EXERCISES_MUTATION
+  const [archiveOrganizationExercise] = useMutation<ArchiveOrganizationExerciseResponse, ArchiveExerciseVariables>(
+    ARCHIVE_ORGANIZATION_EXERCISE_MUTATION
   );
+  const [archiving, setArchiving] = useState(false);
+  // Archiwizować da się tylko ćwiczenia OrgVerified (backend), więc zaznaczanie jest tylko w tej zakładce.
+  const canArchive = filter === 'verified';
 
   const updateUrl = (nextFilter: OrgFilter, nextSearch: string, nextPage: number) => {
     const params = buildOrganizationVerificationSearchParams({
@@ -99,37 +125,31 @@ export default function OrganizationVerificationPage() {
   };
 
   const handleArchiveSelected = async () => {
-    if (!organizationId || selection.selectedIds.length === 0) {
+    const selectedIds = selection.selectedIds;
+    if (!organizationId || selectedIds.length === 0) {
       return;
     }
 
+    setArchiving(true);
     try {
-      const response = await batchArchiveExercises({
-        variables: {
-          organizationId,
-          exerciseIds: selection.selectedIds,
-          reason: null,
-        },
+      const result = await runBatchArchive(selectedIds, async (exerciseId) => {
+        const response = await archiveOrganizationExercise({ variables: { exerciseId, reason: null } });
+        if (response.error) {
+          throw response.error;
+        }
+        return response.data?.archiveOrganizationExercise ?? null;
       });
-      const result = response.data?.batchArchiveOrganizationExercises;
-      if (!result) {
-        throw new Error('Brak wyniku archiwizacji');
-      }
 
       const failedIdSet = new Set(result.failedIds);
-      selection.remove(selection.selectedIds.filter((exerciseId) => !failedIdSet.has(exerciseId)));
-      await Promise.all([refetchStats(), refetchQueue()]);
+      selection.remove(selectedIds.filter((exerciseId) => !failedIdSet.has(exerciseId)));
       setArchiveDialogOpen(false);
-
-      if (result.failedIds.length > 0) {
-        toast.warning(
-          `Zarchiwizowano ${result.successCount} z ${result.totalRequested} ćwiczeń. Niektóre pozycje wymagają ponowienia.`
-        );
-      } else {
-        toast.success(`Zarchiwizowano ${result.successCount} ćwiczeń.`);
-      }
+      const summary = formatBatchArchiveSummary(result);
+      toast[summary.kind](summary.message);
+      await Promise.all([refetchStats(), refetchQueue()]);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Nie udało się zarchiwizować ćwiczeń.');
+      toast.error(error instanceof Error ? error.message : 'Nie udało się odświeżyć listy po archiwizacji.');
+    } finally {
+      setArchiving(false);
     }
   };
 
@@ -155,49 +175,48 @@ export default function OrganizationVerificationPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Weryfikacja organizacji</h1>
-          <p className="text-sm text-muted-foreground">Lokalna kolejka weryfikacji ćwiczeń dla organizacji.</p>
-        </div>
-        <Link href="/organization">
-          <Button data-testid="org-verification-back-btn" variant="outline">
-            Wróć do organizacji
-          </Button>
-        </Link>
-      </div>
+    <PageSheet contentClassName="gap-6">
+      <VerificationPageHeader />
 
-      <VerificationStatsCards
-        mode="organization"
-        stats={null}
-        organizationStats={statsData?.organizationVerificationStats ?? null}
-        isLoading={statsLoading}
-        activeFilter={filter}
-        onFilterChange={(nextFilter) => {
-          const normalizedFilter = nextFilter === 'verified' ? 'verified' : (nextFilter as OrgFilter);
-          selection.clear();
-          setFilter(normalizedFilter);
-          setPage(1);
-          updateUrl(normalizedFilter, search, 1);
-        }}
+      <VerificationQueueHero
+        pendingCount={statsData?.organizationVerificationStats.pendingOrgReview ?? null}
+        startHref={startHref}
+        testIdPrefix="org-verification"
       />
 
-      <div className="relative w-full sm:w-80">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          data-testid="org-verification-search-input"
-          value={search}
-          onChange={(event) => {
-            const next = event.target.value;
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <VerificationStatsCards
+          mode="organization"
+          stats={null}
+          organizationStats={statsData?.organizationVerificationStats ?? null}
+          isLoading={statsLoading}
+          activeFilter={filter}
+          onFilterChange={(nextFilter) => {
+            const normalizedFilter = nextFilter === 'verified' ? 'verified' : (nextFilter as OrgFilter);
             selection.clear();
-            setSearch(next);
+            setFilter(normalizedFilter);
             setPage(1);
-            updateUrl(filter, next, 1);
+            updateUrl(normalizedFilter, search, 1);
           }}
-          placeholder="Szukaj ćwiczenia..."
-          className="pl-9"
         />
+
+        <div className="relative w-full sm:w-80">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            aria-label="Szukaj ćwiczenia"
+            data-testid="org-verification-search-input"
+            value={search}
+            onChange={(event) => {
+              const next = event.target.value;
+              selection.clear();
+              setSearch(next);
+              setPage(1);
+              updateUrl(filter, next, 1);
+            }}
+            placeholder="Szukaj ćwiczenia..."
+            className="pl-9"
+          />
+        </div>
       </div>
 
       <VerificationSelectionToolbar
@@ -208,7 +227,7 @@ export default function OrganizationVerificationPage() {
         onToggleVisible={selection.toggleVisible}
         onClear={selection.clear}
         onArchive={() => setArchiveDialogOpen(true)}
-        disabled={!organizationId || filter === 'archived' || queueLoading}
+        disabled={!organizationId || !canArchive || queueLoading}
         isArchiving={archiving}
       />
 
@@ -222,7 +241,9 @@ export default function OrganizationVerificationPage() {
             <VerificationTaskCard
               key={exercise.id}
               exercise={exercise}
-              selectable={filter !== 'archived'}
+              track="organization"
+              showStatus={false}
+              selectable={canArchive}
               selected={selection.isSelected(exercise.id)}
               onSelectionChange={() => selection.toggle(exercise.id)}
               detailHref={buildOrganizationVerificationDetailHref(exercise.id, detailQueryState)}
@@ -278,6 +299,6 @@ export default function OrganizationVerificationPage() {
         onOpenChange={setArchiveDialogOpen}
         onConfirm={handleArchiveSelected}
       />
-    </div>
+    </PageSheet>
   );
 }

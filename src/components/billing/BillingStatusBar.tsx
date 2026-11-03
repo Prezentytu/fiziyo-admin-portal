@@ -38,7 +38,7 @@ export function BillingStatusBar({ organizationId, className }: Readonly<Billing
   // Loading state
   if (loading) {
     return (
-      <div className={cn('rounded-xl border border-border/40 bg-surface/50 backdrop-blur-sm p-4', className)}>
+      <div className={cn('rounded-[14px] bg-grouped-tertiary px-4 py-3.5', className)}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Skeleton className="h-9 w-9 rounded-lg" />
@@ -64,7 +64,7 @@ export function BillingStatusBar({ organizationId, className }: Readonly<Billing
   const hasActivity = activeCount > 0;
   let amountClassName = 'text-muted-foreground group-hover:text-foreground';
   if (!isPilotMode && hasActivity) {
-    amountClassName = 'text-emerald-500 group-hover:text-emerald-400';
+    amountClassName = 'text-status-success group-hover:text-status-success';
   }
 
   // W pilot mode zawsze 0 PLN
@@ -76,9 +76,9 @@ export function BillingStatusBar({ organizationId, className }: Readonly<Billing
       href="/finances"
       data-testid="dashboard-billing-status-bar"
       className={cn(
-        'group block rounded-xl border border-border/40 bg-surface/50 backdrop-blur-sm',
-        'p-4 transition-all duration-300',
-        'hover:border-primary/30 hover:bg-surface-light hover:shadow-md',
+        'group block rounded-[14px] bg-grouped-tertiary px-4 py-3.5',
+        'transition-colors duration-150 hover:bg-fill-tertiary',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         className
       )}
     >
@@ -89,11 +89,11 @@ export function BillingStatusBar({ organizationId, className }: Readonly<Billing
             className={cn(
               'flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-300',
               hasActivity
-                ? 'bg-emerald-500/10 group-hover:bg-emerald-500/20'
+                ? 'bg-status-success-muted group-hover:bg-status-success-muted'
                 : 'bg-muted-foreground/10 group-hover:bg-muted-foreground/15'
             )}
           >
-            <Wallet className={cn('h-4.5 w-4.5', hasActivity ? 'text-emerald-500' : 'text-muted-foreground')} />
+            <Wallet className={cn('h-4.5 w-4.5', hasActivity ? 'text-status-success' : 'text-muted-foreground')} />
           </div>
           <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
             Bieżące rozliczenie
@@ -140,7 +140,7 @@ export function BillingStatusBar({ organizationId, className }: Readonly<Billing
             className={cn(
               'h-4 w-4 transition-all group-hover:translate-x-0.5',
               hasActivity
-                ? 'text-emerald-500/40 group-hover:text-emerald-500'
+                ? 'text-status-success group-hover:text-status-success'
                 : 'text-muted-foreground/40 group-hover:text-muted-foreground'
             )}
           />

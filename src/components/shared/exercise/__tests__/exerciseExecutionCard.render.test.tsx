@@ -62,7 +62,7 @@ describe('ExerciseExecutionCard inline read-only source info', () => {
     expect(screen.getAllByText('Obciążenie').length).toBeGreaterThan(0);
     expect(screen.queryByText('Odziedziczone z ćwiczenia')).not.toBeInTheDocument();
     expect(screen.queryByText('nogi')).not.toBeInTheDocument();
-    expect(screen.getAllByText('9 min 35 s').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('9 min 50 s').length).toBeGreaterThan(0);
 
     await user.click(screen.getByTestId('exercise-card-exercise-1-open-details-btn'));
 
@@ -136,5 +136,37 @@ describe('ExerciseExecutionCard inline read-only source info', () => {
 
     expect(screen.getByText('Czas: ~2 min')).toBeInTheDocument();
   });
-});
 
+  it.each(['compact', 'readable'] as const)('opisuje serie, powtórzenia i czas w widoku %s', (viewVariant) => {
+    render(
+      <ExerciseExecutionCard
+        mode="view"
+        viewVariant={viewVariant}
+        testIdPrefix="exercise-card"
+        exercise={{ id: 'exercise-hint-1', displayName: 'Przysiad', sets: 3, reps: 10, executionTime: 4 }}
+      />
+    );
+
+    expect(screen.getAllByTitle(/pełnych serii/).length).toBeGreaterThan(0);
+    expect(screen.getAllByTitle(/powtórzeń pacjent wykonuje/).length).toBeGreaterThan(0);
+    expect(screen.getAllByTitle(/łączny czas wykonania ćwiczenia/).length).toBeGreaterThan(0);
+  });
+
+  it.each([
+    [1, '1 seria'],
+    [4, '4 serie'],
+    [5, '5 serii'],
+    [12, '12 serii'],
+  ])('w widoku readable odmienia %i serii poprawnie', (sets, expected) => {
+    render(
+      <ExerciseExecutionCard
+        mode="view"
+        viewVariant="readable"
+        testIdPrefix="exercise-card"
+        exercise={{ id: `exercise-plural-${sets}`, displayName: 'Przysiad', sets, reps: 10 }}
+      />
+    );
+
+    expect(screen.getByText(expected)).toBeInTheDocument();
+  });
+});

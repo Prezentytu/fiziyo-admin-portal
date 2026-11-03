@@ -124,7 +124,7 @@ export function TagPicker({
           {/* Main Tags */}
           <div className="space-y-2">
             <Label className="text-xs font-medium flex items-center gap-1.5 text-muted-foreground">
-              <Star className="h-3 w-3 text-yellow-500" />
+              <Star className="h-3 w-3 text-status-warning" />
               Główne kategorie
               <span className="text-xs">
                 ({selectedMainTags.length}/{maxMainTags})
@@ -181,7 +181,7 @@ export function TagPicker({
                         <button
                           type="button"
                           onClick={() => promoteToMain(tag.id)}
-                          className="h-4 w-4 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 hover:text-yellow-500 transition-all"
+                          className="h-4 w-4 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 hover:text-status-warning transition-all"
                           title="Przenieś do głównych"
                         >
                           <Star className="h-2.5 w-2.5" />
@@ -365,9 +365,9 @@ function TagButton({
           className={cn(
             'p-1 pr-1.5 rounded-r-full transition-colors',
             isMain
-              ? 'text-yellow-500 hover:bg-yellow-500/10'
+              ? 'text-status-warning hover:bg-status-warning-muted'
               : canPromote
-                ? 'text-muted-foreground hover:text-yellow-500 hover:bg-yellow-500/10'
+                ? 'text-muted-foreground hover:text-status-warning hover:bg-status-warning-muted'
                 : 'text-muted-foreground/30 cursor-not-allowed'
           )}
           title={isMain ? 'Usuń z głównych' : canPromote ? 'Oznacz jako główny' : `Limit ${3} głównych tagów`}

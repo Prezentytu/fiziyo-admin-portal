@@ -182,19 +182,19 @@ export function GamificationProgress({ organizationId, className }: Gamification
     return (
       <div
         className={cn(
-          'rounded-2xl border border-emerald-500/20 bg-surface p-6 h-full shadow-sm',
+          'rounded-2xl border border-status-success/20 bg-surface p-6 h-full shadow-sm',
           className
         )}
         data-testid="finances-partner-level-card"
       >
         <div className="flex items-center gap-3 mb-5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
-            <Crown className="h-5 w-5 text-emerald-500" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-status-success-muted">
+            <Crown className="h-5 w-5 text-status-success" />
           </div>
           <h3 className="text-base font-semibold text-foreground">Poziom partnerski</h3>
         </div>
-        <div className="flex items-center gap-5 p-5 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
-          <Crown className="h-10 w-10 text-emerald-500" />
+        <div className="flex items-center gap-5 p-5 rounded-xl bg-status-success-muted border border-status-success/10">
+          <Crown className="h-10 w-10 text-status-success" />
           <div>
             <p className="text-2xl font-bold text-foreground tracking-tight">PARTNER</p>
             <p className="text-sm text-muted-foreground mt-0.5">

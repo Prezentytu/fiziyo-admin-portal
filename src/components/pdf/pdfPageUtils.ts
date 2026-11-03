@@ -22,6 +22,8 @@ export interface ExecutionParametersInput {
   duration?: number | null;
   executionTime?: number | null;
   restSets?: number | null;
+  /** Zapisany typ: TIME pokazuje czas utrzymania, REPS nie pokazuje pozostałego `duration` (jak player). */
+  type?: 'reps' | 'time';
 }
 
 export interface FormattedExecutionParameter {
@@ -38,7 +40,8 @@ export function formatExecutionParameters(params: ExecutionParametersInput): For
   if (params.reps) {
     items.push({ label: 'Powtórzenia', value: String(params.reps) });
   }
-  if (!params.reps && params.duration) {
+  const showDuration = params.type === 'time' ? true : params.type === 'reps' ? false : !params.reps;
+  if (showDuration && params.duration) {
     items.push({ label: 'Czas', value: formatDurationPolish(params.duration) });
   }
   if (params.executionTime) {

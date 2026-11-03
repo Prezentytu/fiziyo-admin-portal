@@ -5,7 +5,7 @@ import { useQuery, useMutation, useApolloClient } from '@apollo/client/react';
 import { useRouter } from 'next/navigation';
 import { Loader2, ArrowLeft, ArrowRight, Users, Pencil, Sparkles, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { addDays, format } from 'date-fns';
+import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ScheduleSummary } from '@/components/shared';
-import { ExerciseDialog } from '@/features/exercises/ExerciseDialog';
+import { ExerciseDialog, type ExerciseDialogSuccessEvent } from '@/features/exercises/ExerciseDialog';
 import { PatientDialog } from '@/features/patients/PatientDialog';
 import { defaultFrequency } from '@/features/exercise-sets/FrequencyPicker';
 
@@ -26,7 +26,7 @@ import { ScheduleStep } from './ScheduleStep';
 import { SummaryStep } from './SummaryStep';
 import { AssignmentSuccessDialog } from './AssignmentSuccessDialog';
 import type { ExerciseInstance, ExerciseParams } from '@/components/shared/ExerciseSetBuilder';
-import { canProceedFromStep } from './utils/assignmentWizardUtils';
+import { canProceedFromStep, wizardEnterAdvances, wizardEnterSubmits } from './utils/assignmentWizardUtils';
 import { decideAssignmentPlanMode, type AssignmentExecutionMode } from './utils/assignmentPlanDecision';
 import {
   buildAssignmentOverrideDeltasFromBuilder,
@@ -38,6 +38,7 @@ import { appendPatientIfMissing } from './utils/patientSelectionUtils';
 import { computeExerciseDiff, type ExerciseMappingSnapshot } from './utils/exerciseDiff';
 import { buildExerciseSetFromBuilder } from './utils/buildExerciseSetFromBuilder';
 import { sortMappingsByOrder } from './utils/sortMappingsByOrder';
+import { getDefaultPlanEndDate } from './utils/scheduleUtils';
 import {
   getAssignmentOverrideForMapping,
   buildBuilderStateFromMappings,
@@ -48,7 +49,11 @@ import {
   buildAssignmentFrequencyPayload,
   normalizeFrequencySeed,
 } from './utils/scheduleFrequencyUtils';
-import { calculateEstimatedTime } from '@/utils/exerciseTime';
+import {
+  estimateEffectiveExerciseSeconds,
+  resolveEffectiveExerciseParams,
+} from '@/components/shared/exercise/resolveEffectiveExerciseParams';
+import { normalizeExerciseSide } from '@/utils/exerciseEnums';
 import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
 import { buildMappingOverridesFromParams } from '@/features/exercise-sets/utils/buildMappingOverridesFromParams';
 import {
@@ -84,7 +89,7 @@ import {
   UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION,
   UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
-import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
+import { useExercisePickerLibrary } from '@/hooks/useExercisePickerLibrary';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import { GET_CURRENT_BILLING_STATUS_QUERY } from '@/graphql/queries/billing.queries';
 import type { OrganizationExerciseSetsResponse, OrganizationPatientsResponse } from '@/types/apollo';
@@ -96,6 +101,7 @@ import type {
   PatientAssignmentsByUserQueryData,
 } from '@/graphql/types/operation-responses';
 import { isTemplateSet } from '@/features/exercise-sets/utils/setKind';
+import { polishPlural } from '@/utils/polishPlural';
 
 // Success dialog data type
 interface SuccessDialogData {
@@ -257,7 +263,7 @@ function AssignmentWizardContent({
   const [selectedSet, setSelectedSet] = useState<ExerciseSet | null>(preselectedSet || null);
   const [selectedPatients, setSelectedPatients] = useState<Patient[]>(preselectedPatient ? [preselectedPatient] : []);
   const [startDate, setStartDate] = useState<Date>(() => new Date());
-  const [endDate, setEndDate] = useState<Date>(() => addDays(new Date(), 30));
+  const [endDate, setEndDate] = useState<Date>(() => getDefaultPlanEndDate(new Date()));
   const [frequency, setFrequency] = useState<Frequency>(() => normalizeFrequencySeed(defaultFrequency));
   const [isCreatingSet, setIsCreatingSet] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -439,12 +445,29 @@ function AssignmentWizardContent({
     }
   );
 
-  // Load available exercises for Rapid Builder (includes global FiziYo exercises)
-  const { data: exercisesData, refetch: refetchAvailableExercises } = useQuery<{
-    availableExercises?: RawAvailableExercise[];
-  }>(GET_AVAILABLE_EXERCISES_QUERY, {
-    variables: { organizationId },
-    skip: !organizationId || !open,
+  // Rapid Builder library (includes global FiziYo exercises); content only for exercises in the plan.
+  const builderExerciseIds = useMemo(
+    () => builderInstances.map((instance) => instance.exerciseId),
+    [builderInstances]
+  );
+  // Set mappings already carry each exercise's full content, so those exercises need no extra request.
+  const knownEnrichment = useMemo(
+    () =>
+      [...(initialAssignment?.exerciseSet.exerciseMappings ?? []), ...(selectedSet?.exerciseMappings ?? [])].map(
+        (mapping) => ({ id: mapping.exerciseId, enrichmentData: mapping.exercise?.enrichmentData })
+      ),
+    [initialAssignment, selectedSet]
+  );
+  const {
+    exercises: rawAvailableExercises,
+    refetch: refetchAvailableExercises,
+    detailsPending,
+    ensureDetailsReady,
+  } = useExercisePickerLibrary<RawAvailableExercise>({
+    organizationId,
+    skip: !open,
+    detailExerciseIds: builderExerciseIds,
+    knownEnrichment,
   });
 
   // Apollo client - uzywany do final refetch po petli mutacji w handleEditSubmit,
@@ -554,21 +577,21 @@ function AssignmentWizardContent({
               audioCue: m.exercise.audioCue,
               rangeOfMotion: m.exercise.rangeOfMotion,
               side: m.exercise.side,
-              exerciseSide: m.exercise.side?.toLowerCase() || m.exercise.exerciseSide,
+              exerciseSide: normalizeExerciseSide(m.exercise.side ?? m.exercise.exerciseSide),
               imageUrl: m.exercise.thumbnailUrl || m.exercise.imageUrl,
               thumbnailUrl: m.exercise.thumbnailUrl,
               images: m.exercise.images,
               gifUrl: m.exercise.gifUrl,
               videoUrl: m.exercise.videoUrl,
               notes: m.exercise.notes,
-              // Exercise default values (support both new and legacy names)
-              sets: m.exercise.defaultSets ?? m.exercise.sets,
-              reps: m.exercise.defaultReps ?? m.exercise.reps,
-              duration: m.exercise.defaultDuration ?? m.exercise.duration,
-              restSets: m.exercise.defaultRestBetweenSets ?? m.exercise.restSets,
-              restReps: m.exercise.defaultRestBetweenReps ?? m.exercise.restReps,
+              // GraphQL Exercise ma tylko pola default*; kopie pod starymi nazwami dla czytników legacy.
+              sets: m.exercise.defaultSets,
+              reps: m.exercise.defaultReps,
+              duration: m.exercise.defaultDuration,
+              restSets: m.exercise.defaultRestBetweenSets,
+              restReps: m.exercise.defaultRestBetweenReps,
               preparationTime: m.exercise.preparationTime,
-              executionTime: m.exercise.defaultExecutionTime ?? m.exercise.executionTime,
+              executionTime: m.exercise.defaultExecutionTime,
               tempo: m.exercise.tempo,
               defaultLoad: exerciseLoad,
               loadType: m.exercise.loadType,
@@ -586,6 +609,7 @@ function AssignmentWizardContent({
               difficultyLevel: m.exercise.difficultyLevel,
               scope: m.exercise.scope,
               status: m.exercise.status,
+              enrichmentData: m.exercise.enrichmentData,
             }
           : undefined,
       };
@@ -643,8 +667,8 @@ function AssignmentWizardContent({
 
   // Process available exercises for Rapid Builder (includes global FiziYo exercises)
   const availableExercises: Exercise[] = useMemo(() => {
-    return mapAvailableExercises(exercisesData?.availableExercises);
-  }, [exercisesData]);
+    return mapAvailableExercises(rawAvailableExercises);
+  }, [rawAvailableExercises]);
 
   // Handle create new set - sets mode to creating new and navigates to customize step
   const handleCreateSet = useCallback((searchQuery?: string) => {
@@ -683,8 +707,8 @@ function AssignmentWizardContent({
   }, []);
 
   const handleExerciseDialogSuccess = useCallback(
-    async (event?: { action: 'updated' | 'copied' | 'created'; exerciseId: string }) => {
-      if (!event || event.action !== 'created') {
+    async (event?: ExerciseDialogSuccessEvent) => {
+      if (!event || (event.action !== 'created' && event.action !== 'existing')) {
         return;
       }
 
@@ -957,12 +981,7 @@ function AssignmentWizardContent({
         case 'schedule':
           return {
             title: 'Harmonogram planu',
-            description: 'Zmień okres i częstotliwość wykonywania ćwiczeń',
-          };
-        case 'summary':
-          return {
-            title: 'Podsumowanie zmian',
-            description: 'Sprawdź i zapisz aktualizację planu pacjenta',
+            description: 'Zmień okres i częstotliwość, sprawdź zmiany po prawej',
           };
         default:
           return { title: '', description: '' };
@@ -1000,12 +1019,7 @@ function AssignmentWizardContent({
       case 'schedule':
         return {
           title: 'Harmonogram',
-          description: 'Ustal okres i częstotliwość wykonywania ćwiczeń',
-        };
-      case 'summary':
-        return {
-          title: 'Podsumowanie',
-          description: 'Sprawdź i potwierdź utworzenie planu oraz przypisanie',
+          description: 'Ustal okres i częstotliwość, sprawdź podsumowanie po prawej',
         };
       default:
         return { title: '', description: '' };
@@ -1063,31 +1077,22 @@ function AssignmentWizardContent({
     return builderInstances.reduce((totalSeconds, instance) => {
       const params = builderParams.get(instance.instanceId);
       const exercise = availableExercises.find((item) => item.id === instance.exerciseId);
-      const exerciseType = exercise?.type?.toLowerCase();
-      const isTimeBasedExercise = exerciseType === 'time';
-
-      const sets = params?.sets ?? exercise?.defaultSets ?? 3;
-      const reps = params?.reps ?? exercise?.defaultReps ?? 10;
-      const executionTime = params?.executionTime ?? exercise?.defaultExecutionTime;
-      const restBetweenSets = params?.restSets ?? exercise?.defaultRestBetweenSets ?? 60;
-      const duration = isTimeBasedExercise ? (params?.duration ?? exercise?.defaultDuration) : undefined;
-      const side = params?.exerciseSide ?? exercise?.side ?? exercise?.exerciseSide;
-      const preparationTime = params?.preparationTime ?? exercise?.preparationTime;
-
-      return (
-        totalSeconds +
-        calculateEstimatedTime({
-          sets,
-          reps,
-          duration,
-          executionTime,
-          rest: restBetweenSets,
-          restReps: params?.restReps ?? exercise?.defaultRestBetweenReps,
-          side,
-          preparationTime,
-          tempo: params?.tempo ?? exercise?.tempo,
-        })
+      const effective = resolveEffectiveExerciseParams(
+        {
+          id: instance.instanceId,
+          sets: params?.sets,
+          reps: params?.reps,
+          duration: params?.duration,
+          executionTime: params?.executionTime,
+          restSets: params?.restSets,
+          restReps: params?.restReps,
+          preparationTime: params?.preparationTime,
+          tempo: params?.tempo,
+          exercise,
+        },
+        params?.exerciseSide ? { exerciseSide: params.exerciseSide } : undefined
       );
+      return totalSeconds + estimateEffectiveExerciseSeconds(effective);
     }, 0);
   }, [availableExercises, builderInstances, builderParams]);
 
@@ -1153,6 +1158,7 @@ function AssignmentWizardContent({
   const handleEditSubmit = async () => {
     if (!isEditMode || !initialAssignment || !selectedSet) return;
     if (builderInstances.length === 0 || isSubmitting) return;
+    if (!ensureDetailsReady()) return;
 
     setIsSubmitting(true);
     try {
@@ -1309,6 +1315,7 @@ function AssignmentWizardContent({
     if (builderInstances.length === 0) return;
     if (selectedPatients.length === 0) return;
     if (isSubmitting) return;
+    if (!ensureDetailsReady()) return;
 
     // Refetched once after the assignment loop instead of once per patient (each pulls full org lists).
     const assignRefetchQueries = [
@@ -1530,7 +1537,7 @@ function AssignmentWizardContent({
 
   const isLoading = loadingSets || loadingPatients || assigning || removing || isSubmitting;
   const isFirstStep = steps.length > 0 && currentStep === steps[0].id;
-  const isLastStep = currentStep === 'summary';
+  const isLastStep = steps.length > 0 && currentStep === steps[steps.length - 1].id;
   const handleFinalSubmit = isEditMode ? handleEditSubmit : handleSubmit;
   const handleSubmitRef = useRef(handleFinalSubmit);
 
@@ -1540,9 +1547,6 @@ function AssignmentWizardContent({
 
   // Get contextual next button text
   const getNextButtonText = () => {
-    const currentIndex = steps.findIndex((s) => s.id === currentStep);
-    const nextStep = steps[currentIndex + 1];
-
     if (isLastStep) {
       if (isSubmitting) {
         return isEditMode ? 'Zapisywanie zmian...' : 'Tworzenie planu...';
@@ -1550,8 +1554,8 @@ function AssignmentWizardContent({
       return isEditMode ? 'Zapisz zmiany' : 'Utwórz plan i przypisz';
     }
 
-    if (nextStep) {
-      return `Dalej: ${nextStep.label}`;
+    if (currentStep === 'select-patients' && selectedPatients.length > 0) {
+      return `Dalej · ${selectedPatients.length} ${polishPlural(selectedPatients.length, 'wybrany', 'wybranych', 'wybranych')}`;
     }
 
     return 'Dalej';
@@ -1565,11 +1569,23 @@ function AssignmentWizardContent({
         return;
       }
 
-      if (e.key === 'Enter' && !e.shiftKey && canProceed()) {
-        e.preventDefault();
-        if (isLastStep) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        const proceed = canProceed();
+        if (
+          wizardEnterSubmits({
+            isLastStep,
+            canProceed: proceed,
+            shiftKey: e.shiftKey,
+            metaKey: e.metaKey,
+            ctrlKey: e.ctrlKey,
+          })
+        ) {
+          e.preventDefault();
           handleSubmitRef.current();
-        } else {
+          return;
+        }
+        if (wizardEnterAdvances({ isLastStep, canProceed: proceed, shiftKey: e.shiftKey })) {
+          e.preventDefault();
           goNext();
         }
       }
@@ -1639,56 +1655,64 @@ function AssignmentWizardContent({
           />
         );
 
-      case 'schedule':
+      case 'schedule': {
         // When creating new set, we use builderInstances instead of selectedSet
-        if (!isCreatingNewSet && !selectedSet) return null;
-        return (
-          <ScheduleStep
-            startDate={startDate}
-            endDate={endDate}
-            frequency={frequency}
-            estimatedSessionDurationSeconds={estimatedSessionDurationSeconds}
-            onStartDateChange={setStartDate}
-            onEndDateChange={setEndDate}
-            onFrequencyChange={setFrequency}
-          />
-        );
+        if (!isCreatingNewSet && !selectedSet && !isEditMode) return null;
 
-      case 'summary': {
-        // Need either a selected set (customized) or creating new set
-        if (builderInstances.length === 0) return null;
-
-        // Always build exercise set from builder state (it's always customized in customize-set step)
-        const summaryExerciseSet: ExerciseSet = buildExerciseSetFromBuilder({
-          setId: isCreatingNewSet ? 'new-set' : selectedSet?.id || 'customized-set',
-          setName: planName,
-          description: selectedSet?.description,
-          builderInstances,
-          builderParams,
-          availableExercises,
-        });
+        const summaryExerciseSet: ExerciseSet | null =
+          builderInstances.length > 0
+            ? buildExerciseSetFromBuilder({
+                setId: isCreatingNewSet ? 'new-set' : selectedSet?.id || 'customized-set',
+                setName: planName,
+                description: selectedSet?.description,
+                builderInstances,
+                builderParams,
+                availableExercises,
+              })
+            : null;
 
         const summaryLocalExercises =
-          summaryExerciseSet.exerciseMappings?.map((m) => ({
+          summaryExerciseSet?.exerciseMappings?.map((m) => ({
             ...m,
             isNew: isCreatingNewSet,
           })) || [];
 
         return (
-          <SummaryStep
-            exerciseSet={summaryExerciseSet}
-            localExercises={summaryLocalExercises}
-            selectedPatients={selectedPatients}
-            startDate={startDate}
-            endDate={endDate}
-            frequency={frequency}
-            overrides={summaryOverrides}
-            excludedExercises={excludedExercises}
-            saveAsTemplate={saveAsOrganizationSet}
-            onSaveAsTemplateChange={setSaveAsOrganizationSet}
-            onGoToStep={goToStep}
-              editMode={isEditMode}
-          />
+          <div className="grid min-h-full lg:grid-cols-[minmax(0,1fr)_minmax(320px,400px)]">
+            <div className="min-w-0">
+              <ScheduleStep
+                startDate={startDate}
+                endDate={endDate}
+                frequency={frequency}
+                estimatedSessionDurationSeconds={estimatedSessionDurationSeconds}
+                onStartDateChange={setStartDate}
+                onEndDateChange={setEndDate}
+                onFrequencyChange={setFrequency}
+              />
+            </div>
+            {summaryExerciseSet && (
+              <aside
+                aria-label="Podsumowanie"
+                className="min-w-0 border-t-[0.5px] border-separator bg-grouped-tertiary/60 lg:border-l-[0.5px] lg:border-t-0"
+              >
+                <SummaryStep
+                  exerciseSet={summaryExerciseSet}
+                  localExercises={summaryLocalExercises}
+                  selectedPatients={selectedPatients}
+                  startDate={startDate}
+                  endDate={endDate}
+                  frequency={frequency}
+                  overrides={summaryOverrides}
+                  excludedExercises={excludedExercises}
+                  saveAsTemplate={saveAsOrganizationSet}
+                  onSaveAsTemplateChange={setSaveAsOrganizationSet}
+                  onGoToStep={goToStep}
+                  editMode={isEditMode}
+                  layout="aside"
+                />
+              </aside>
+            )}
+          </div>
         );
       }
 
@@ -1710,14 +1734,14 @@ function AssignmentWizardContent({
         data-testid="assign-wizard"
       >
         <VisuallyHidden.Root>
-          <DialogTitle>{isEditMode ? 'Edycja planu pacjenta' : 'Personalizacja i przypisanie'} – {stepInfo.title}</DialogTitle>
+          <DialogTitle>{isEditMode ? 'Edytuj plan pacjenta' : 'Przypisz zestaw'} – {stepInfo.title}</DialogTitle>
         </VisuallyHidden.Root>
         {/* Toolbar: row-1 = eyebrow (h-7), row-2 = input + stepper + X (h-9). All on same grid → perfect alignment */}
         <div className="shrink-0 bg-surface/95 backdrop-blur-sm border-b border-border px-6">
           {/* Row 1: eyebrow — fixed height with padding */}
           <div className="h-7 flex items-end pb-1">
             <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 leading-none">
-              {isEditMode ? 'Edycja planu pacjenta' : 'Personalizacja i przypisanie'}
+              {isEditMode ? 'Edytuj plan pacjenta' : 'Przypisz zestaw'}
             </span>
           </div>
           {/* Row 2: input (left) + stepper + X (right) — all h-9, same row → centers aligned by definition */}
@@ -1763,7 +1787,7 @@ function AssignmentWizardContent({
             </div>
             {/* Right: context chip + stepper + X — all h-9, centered in the same row */}
             <div className="flex-1 flex items-center gap-3 min-w-0 pl-3">
-              {selectedPatients.length > 0 || currentStep === 'schedule' || currentStep === 'summary' ? (
+              {selectedPatients.length > 0 || currentStep === 'schedule' ? (
                 <div className="hidden sm:flex items-center gap-2 px-2 py-1 rounded-md bg-surface-light/40 text-[10px] text-muted-foreground shrink-0">
                   {selectedPatients.length > 0 && (
                     <div className="flex items-center gap-1">
@@ -1771,10 +1795,10 @@ function AssignmentWizardContent({
                       <span className="font-medium">{selectedPatients.length} {selectedPatients.length === 1 ? 'pacjent' : 'pacjentów'}</span>
                     </div>
                   )}
-                  {selectedPatients.length > 0 && (currentStep === 'schedule' || currentStep === 'summary') && (
+                  {selectedPatients.length > 0 && currentStep === 'schedule' && (
                     <span className="text-border">·</span>
                   )}
-                  {(currentStep === 'schedule' || currentStep === 'summary') && (
+                  {currentStep === 'schedule' && (
                     <ScheduleSummary
                       startDate={startDate}
                       endDate={endDate}
@@ -1870,15 +1894,11 @@ function AssignmentWizardContent({
 
             <Button
               onClick={isLastStep ? handleFinalSubmit : goNext}
-              disabled={isLoading || !canProceed()}
-              className={cn(
-                'shadow-lg shadow-primary/20 min-w-[160px] transition-all duration-300',
-                isLastStep &&
-                  'bg-linear-to-r from-primary to-primary hover:from-primary-dark hover:to-primary-dark'
-              )}
+              disabled={isLoading || !canProceed() || (isLastStep && detailsPending)}
+              className="min-w-[160px]"
               data-testid={isLastStep ? 'assign-summary-submit-btn' : 'assign-wizard-next-btn'}
             >
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {(isLoading || (isLastStep && detailsPending)) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {getNextButtonText()}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>

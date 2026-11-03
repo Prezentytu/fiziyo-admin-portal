@@ -171,7 +171,7 @@ export function EditContextLabelDialog({
                           className={cn(
                             'inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-full transition-all duration-200',
                             isAdded
-                              ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
+                              ? 'bg-tint-fill text-on-tint shadow-sm shadow-primary/20'
                               : 'bg-surface-light text-muted-foreground hover:bg-primary/10 hover:text-primary'
                           )}
                         >

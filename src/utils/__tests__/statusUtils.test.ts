@@ -36,11 +36,12 @@ describe('statusUtils translations and badge classes', () => {
   });
 
   it('returns dedicated color class for in_progress status', () => {
-    expect(getStatusColorClass('in_progress')).toContain('bg-indigo-500/20');
+    expect(getStatusColorClass('in_progress')).toContain('bg-status-info-muted');
   });
 
   it('translates and colors expired status', () => {
     expect(translateAssignmentStatus('expired')).toBe('Wygasł');
-    expect(getStatusColorClass('expired')).toContain('bg-red-500/20');
+    expect(getStatusColorClass('expired')).toContain('bg-status-danger-muted');
+    expect(getStatusColorClass('completed')).toContain('text-label-secondary');
   });
 });

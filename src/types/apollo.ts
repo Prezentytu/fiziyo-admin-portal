@@ -187,6 +187,7 @@ export interface Exercise {
 
   // Global submission tracking (nowy model weryfikacji)
   globalSubmissionId?: string;
+  globalSubmissionStatus?: 'DRAFT' | 'PENDING_REVIEW' | 'CHANGES_REQUESTED' | 'PUBLISHED' | 'ARCHIVED_GLOBAL' | 'UPDATE_PENDING' | null;
   sourceOrganizationExerciseId?: string;
   submittedToGlobalAt?: string;
   organizationVerificationStatus?:
@@ -216,6 +217,26 @@ export interface OrganizationExercisesResponse {
 
 export interface AvailableExercisesResponse {
   availableExercises: Exercise[];
+}
+
+export type ExerciseLibraryTab = 'ALL' | 'ORGANIZATION' | 'FIZIYO' | 'NEEDS_CHANGES';
+
+export interface AvailableExercisesPageResponse {
+  availableExercisesPage: {
+    items: Exercise[];
+    totalCount: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    hasPreviousPage: boolean;
+    hasNextPage: boolean;
+    counts: {
+      all: number;
+      organization: number;
+      fiziyo: number;
+      needsChanges: number;
+    };
+  };
 }
 
 export interface ExerciseByIdResponse {
@@ -300,6 +321,7 @@ export interface ExerciseSetMapping {
     scope?: string;
     status?: string;
     difficultyLevel?: string;
+    enrichmentData?: ExerciseEnrichmentData | null;
     exerciseSide?: string;
     description?: string;
     executionTime?: number;

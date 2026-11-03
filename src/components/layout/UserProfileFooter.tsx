@@ -1,9 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
-import { useUser } from '@clerk/nextjs';
-import { useQuery } from '@apollo/client/react';
 import { useAppSignOut } from '@/lib/auth/useAppSignOut';
 import { Settings, HelpCircle, LogOut, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
@@ -19,11 +16,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useOrganization } from '@/contexts/OrganizationContext';
-import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
-import type { UserByClerkIdResponse } from '@/types/apollo';
-import { getCompactDisplayName, resolveDisplayName } from './userDisplayName';
-import { getInitialsFromName } from '@/utils/textUtils';
+import { OrganizationSwitchMenuItems } from './OrganizationSwitchMenuItems';
+import { useCurrentUserDisplay } from './useCurrentUserDisplay';
+import { useAccountNavigationItems } from './useNavigationItems';
 
 // ========================================
 // Types
@@ -42,30 +37,15 @@ interface UserProfileFooterProps {
 // ========================================
 
 export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
-  const { user, isLoaded } = useUser();
   const signOut = useAppSignOut();
-  const { hasMultipleOrganizations, currentOrganization, organizations, switchOrganization, isSwitching } =
-    useOrganization();
   const [isOpen, setIsOpen] = useState(false);
-  const { data } = useQuery<UserByClerkIdResponse>(GET_USER_BY_CLERK_ID_QUERY, {
-    variables: { clerkId: user?.id },
-    skip: !user?.id,
-  });
-
-  const backendUser = data?.userByClerkId;
-  const avatarUrl = user?.imageUrl;
-  const fullName =
-    resolveDisplayName(backendUser?.fullname, backendUser?.personalData?.firstName, backendUser?.personalData?.lastName) ||
-    resolveDisplayName(user?.fullName, user?.firstName, user?.lastName);
-  const email = user?.primaryEmailAddress?.emailAddress || backendUser?.email || '';
-  const displayName = fullName || email.split('@')[0] || 'Brak danych';
-  const compactDisplayName = getCompactDisplayName(displayName);
-  const initials = getInitialsFromName(displayName);
+  const { isLoaded, avatarUrl, email, displayName, compactDisplayName, initials } = useCurrentUserDisplay();
+  const accountNavigationItems = useAccountNavigationItems();
 
   // Loading state
   if (!isLoaded) {
     return (
-      <div className={cn('border-t border-border', isCollapsed ? 'p-2' : 'p-4')}>
+      <div className={cn('mx-3 border-t-[0.5px] border-separator', isCollapsed ? 'py-2' : 'py-3')}>
         {isCollapsed ? (
           <Skeleton className="h-10 w-10 rounded-full mx-auto" />
         ) : (
@@ -86,19 +66,18 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
       <DropdownMenuTrigger asChild>
         <button
           data-testid="nav-user-footer-trigger"
+          aria-label={`Menu konta: ${displayName}`}
           className={cn(
             'group flex items-center rounded-2xl transition-all duration-200 cursor-pointer w-full',
             isCollapsed
-              ? 'h-12 w-12 justify-center hover:bg-surface-light mx-auto'
-              : 'gap-4 p-3 hover:bg-surface-light'
+              ? 'h-12 w-12 justify-center hover:bg-fill-quaternary mx-auto'
+              : 'gap-3 p-2 hover:bg-fill-quaternary'
           )}
         >
           {/* Avatar */}
           <Avatar className="h-9 w-9 shrink-0">
             <AvatarImage src={avatarUrl} alt={displayName} />
-            <AvatarFallback className="bg-linear-to-br from-primary to-primary-dark text-primary-foreground text-sm font-semibold">
-              {initials}
-            </AvatarFallback>
+            <AvatarFallback className="bg-avatar text-avatar-label text-sm font-semibold">{initials}</AvatarFallback>
           </Avatar>
 
           {/* User Info (expanded only) */}
@@ -134,9 +113,7 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
               <AvatarImage src={avatarUrl} alt={displayName} />
-              <AvatarFallback className="bg-linear-to-br from-primary to-primary-dark text-primary-foreground text-sm font-semibold">
-                {initials}
-              </AvatarFallback>
+              <AvatarFallback className="bg-avatar text-avatar-label text-sm font-semibold">{initials}</AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-foreground truncate">{displayName}</p>
@@ -147,53 +124,24 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
 
         <DropdownMenuSeparator />
 
-        {/* Organization switch - only if multiple orgs */}
-        {hasMultipleOrganizations && (
-          <>
-            <DropdownMenuLabel className="px-3 py-1.5 text-[10px] text-muted-foreground uppercase tracking-wider">
-              Przełącz organizację
-            </DropdownMenuLabel>
-            {organizations.map((org) => {
-              const isActive = org.organizationId === currentOrganization?.organizationId;
-              return (
-                <DropdownMenuItem
-                  key={org.organizationId}
-                  onClick={() => {
-                    if (!isActive && !isSwitching) {
-                      switchOrganization(org.organizationId);
-                      setIsOpen(false);
-                    }
-                  }}
-                  data-testid={`nav-user-footer-org-${org.organizationId}`}
-                  className={cn(
-                    'gap-3 px-3 py-2 cursor-pointer',
-                    isActive && 'bg-primary/10',
-                    isSwitching && 'opacity-50 pointer-events-none'
-                  )}
-                >
-                  {org.logoUrl ? (
-                    <span className="relative block h-6 w-6 rounded-md overflow-hidden shrink-0">
-                      <Image src={org.logoUrl} alt={org.organizationName} fill className="object-cover" sizes="24px" />
-                    </span>
-                  ) : (
-                    <div className="flex h-6 w-6 items-center justify-center rounded-md bg-surface-light text-[10px] font-semibold text-muted-foreground">
-                      {getInitialsFromName(org.organizationName)}
-                    </div>
-                  )}
-                  <span className={cn('flex-1 truncate', isActive && 'font-medium')}>{org.organizationName}</span>
-                  {isActive && <span className="text-[10px] text-primary">Aktywna</span>}
-                </DropdownMenuItem>
-              );
-            })}
-            <DropdownMenuSeparator />
-          </>
-        )}
+        <OrganizationSwitchMenuItems testIdPrefix="nav-user-footer-org" onSwitch={() => setIsOpen(false)} />
 
-        {/* Settings link */}
+        {accountNavigationItems.map((item) => {
+          const Icon = item.icon;
+          return (
+            <DropdownMenuItem key={item.href} asChild className="gap-3 px-3 py-2.5 cursor-pointer">
+              <Link href={item.href} data-testid={item.testId}>
+                <Icon className="h-4 w-4 text-muted-foreground" />
+                <span>{item.name}</span>
+              </Link>
+            </DropdownMenuItem>
+          );
+        })}
+
         <DropdownMenuItem asChild className="gap-3 px-3 py-2.5 cursor-pointer">
           <Link href="/settings" data-testid="nav-user-footer-settings">
             <Settings className="h-4 w-4 text-muted-foreground" />
-            <span>Ustawienia konta</span>
+            <span>Ustawienia</span>
           </Link>
         </DropdownMenuItem>
 
@@ -228,7 +176,7 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
   // Collapsed version with tooltip
   if (isCollapsed) {
     return (
-      <div className="border-t border-border p-2 bg-surface">
+      <div className="mx-3 border-t-[0.5px] border-separator py-2">
         <Tooltip open={!isOpen}>
           <TooltipTrigger asChild>
             <div>{menuContent}</div>
@@ -243,5 +191,5 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
   }
 
   // Expanded version
-  return <div className="border-t border-border p-4 bg-surface">{menuContent}</div>;
+  return <div className="mx-3 border-t-[0.5px] border-separator py-3">{menuContent}</div>;
 }

@@ -44,5 +44,5 @@ Dla każdego potrzebnego repo:
 - Następny krok: <jedna konkretna akcja>
 - Blokady: <powód, co odblokuje>
 - Transfer kodu: <ten sam checkout / zatwierdzony commit / patch + nowe pliki>
-- BOARD: <istniejąca pozycja lub proponowana linia do źródłowej tablicy>
+- Źródło: <T-00nn ze Skrzynki | BW-FZ-n | spec>
 ```

@@ -5,6 +5,7 @@ import { Calendar, Clock, Bell, Users, ArrowRight, Sparkles } from 'lucide-react
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { PageSheet } from '@/components/shared/page';
 
 const upcomingFeatures = [
   {
@@ -31,10 +32,10 @@ const upcomingFeatures = [
 
 export default function AppointmentsPage() {
   return (
-    <div className="space-y-6">
+    <PageSheet contentClassName="gap-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">Kalendarz wizyt</h1>
+        <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground">Kalendarz wizyt</h1>
         <p className="text-muted-foreground mt-1">Zarządzaj harmonogramem wizyt z pacjentami</p>
       </div>
 
@@ -55,7 +56,7 @@ export default function AppointmentsPage() {
             z pacjentami.
           </p>
           <div className="flex flex-wrap justify-center gap-3">
-            <Button variant="outline" className="rounded-xl" disabled>
+            <Button variant="secondary" disabled data-testid="appointments-notify-btn">
               <Bell className="mr-2 h-4 w-4" />
               Powiadom mnie
             </Button>
@@ -105,6 +106,6 @@ export default function AppointmentsPage() {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </PageSheet>
   );
 }

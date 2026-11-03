@@ -63,7 +63,7 @@ export function ImportStickyFooter({
             size="lg"
             onClick={onAction}
             disabled={disabled || isLoading || totalToImport === 0}
-            className="gap-2 h-11 px-8 bg-primary hover:bg-primary-dark"
+            className="gap-2 h-11 px-8"
             data-testid="import-footer-action-btn"
           >
             {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ArrowRight className="h-5 w-5" />}

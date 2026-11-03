@@ -13,6 +13,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { ShowMoreTrigger } from '@/components/shared/ShowMoreTrigger';
 import {
   ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS,
   ENABLE_FULL_PATIENT_PERSONALIZATION,
@@ -29,14 +30,16 @@ import { cn } from '@/lib/utils';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
 
-import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
+import { GET_AVAILABLE_EXERCISES_PICKER_QUERY } from '@/graphql/queries/exercises.queries';
 import { filterExercisesBySearch } from '@/features/exercises/utils/exerciseSearch';
+import { useIncrementalList } from '@/hooks/useIncrementalList';
 import {
   ADD_EXERCISE_TO_EXERCISE_SET_MUTATION,
   UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import type { PatientAssignment } from './PatientAssignmentCard';
+import { normalizeExerciseType } from '@/utils/exerciseEnums';
 
 const ADD_FIELD_TESTID_MAP: Record<
   ExerciseFieldKey | MappingOnlyFieldKey,
@@ -275,7 +278,7 @@ function AddExerciseToPatientDialogContent({
   );
 
     // Get exercises from organization
-  const { data: exercisesData, loading: loadingExercises } = useQuery(GET_AVAILABLE_EXERCISES_QUERY, {
+  const { data: exercisesData, loading: loadingExercises } = useQuery(GET_AVAILABLE_EXERCISES_PICKER_QUERY, {
     variables: { organizationId },
     skip: !organizationId,
   });
@@ -308,6 +311,11 @@ function AddExerciseToPatientDialogContent({
 
     return filterExercisesBySearch(filtered, searchQuery);
   }, [exercisesData, existingExerciseIds, searchQuery]);
+  const {
+    visibleItems: visibleExercises,
+    remaining: remainingExercises,
+    showMore: showMoreExercises,
+  } = useIncrementalList(exercises, searchQuery);
 
   // Track changes
   const hasChanges = selectedExercise !== null;
@@ -529,6 +537,7 @@ function AddExerciseToPatientDialogContent({
 
               <ExerciseParametersFields
                 surface="patientOverride"
+                exerciseType={normalizeExerciseType(selectedExercise?.type) ?? 'draft'}
                 values={parameterValues}
                 onChange={handleParametersChange}
                 showContentSection
@@ -565,7 +574,7 @@ function AddExerciseToPatientDialogContent({
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-3">
-                  {exercises.map((exercise) => {
+                  {visibleExercises.map((exercise) => {
                     const imageUrl = getMediaUrl(exercise.imageUrl || exercise.images?.[0]);
                     return (
                       <button
@@ -592,6 +601,13 @@ function AddExerciseToPatientDialogContent({
                     );
                   })}
                 </div>
+              )}
+              {!loadingExercises && (
+                <ShowMoreTrigger
+                  remaining={remainingExercises}
+                  onShowMore={showMoreExercises}
+                  dataTestId="add-exercise-show-more-btn"
+                />
               )}
             </div>
           </ScrollArea>

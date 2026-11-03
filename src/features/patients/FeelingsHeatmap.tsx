@@ -41,21 +41,21 @@ export function FeelingsHeatmap({ data, className, title }: FeelingsHeatmapProps
     if (day.hasActivity) {
       // Priorytet: dyskomfort > ciężko > OK
       if (day.wellbeing === 'discomfort') {
-        return 'bg-red-500/20 border-red-500/50 hover:bg-red-500/30';
+        return 'bg-status-danger-muted border-status-danger/50 hover:bg-status-danger-muted';
       }
 
       if (day.feeling === 'hard') {
-        return 'bg-yellow-500/20 border-yellow-500/50 hover:bg-yellow-500/30';
+        return 'bg-status-warning-muted border-status-warning/50 hover:bg-status-warning-muted';
       }
 
       // OK/Lekko - zielony z glow effect
-      return 'bg-green-500/20 border-green-500/50 hover:bg-green-500/30 shadow-[0_0_10px_-2px_rgba(34,197,94,0.2)]';
+      return 'bg-status-success-muted border-status-success/50 hover:bg-status-success-muted shadow-[0_0_10px_-2px_rgba(34,197,94,0.2)]';
     }
 
     // Nie ćwiczył
     if (day.isScheduled) {
       // Był zaplanowany ale nie ćwiczył - subtelne ostrzeżenie (nie czerwone!)
-      return 'bg-surface-light/70 border-orange-500/30 hover:border-orange-500/50';
+      return 'bg-surface-light/70 border-status-warning/30 hover:border-status-warning/50';
     }
 
     // Nie był zaplanowany - neutralne
@@ -123,15 +123,15 @@ export function FeelingsHeatmap({ data, className, title }: FeelingsHeatmapProps
         </div>
         <div className="flex flex-wrap gap-3 text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
           <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
+            <span className="w-2 h-2 rounded bg-tint-fill shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
             <span>OK</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded bg-yellow-500" />
+            <span className="w-2 h-2 rounded bg-status-warning-fill" />
             <span>Ciężko</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded bg-red-500" />
+            <span className="w-2 h-2 rounded bg-status-danger-fill" />
             <span>Dyskomfort</span>
           </div>
           <div className="flex items-center gap-1.5">

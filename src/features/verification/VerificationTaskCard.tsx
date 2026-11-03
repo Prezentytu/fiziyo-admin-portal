@@ -13,8 +13,9 @@ import { cn } from '@/lib/utils';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { isVimeoUrl, isYouTubeUrl } from '@/utils/videoEmbed';
 import { HIDE_EXERCISE_TAGS } from '@/components/shared/exercise';
-import type { AdminExercise, ContentStatus } from '@/graphql/types/adminExercise.types';
+import type { AdminExercise } from '@/graphql/types/adminExercise.types';
 import { formatRelativeTime } from '@/utils/dateUtils';
+import { getVerificationStatusBadge, type VerificationTrack } from '@/features/verification/utils/statusBadge';
 
 interface VerificationTaskCardProps {
   exercise: AdminExercise;
@@ -25,37 +26,9 @@ interface VerificationTaskCardProps {
   selectable?: boolean;
   selected?: boolean;
   onSelectionChange?: (selected: boolean) => void;
-}
-
-function getStatusBadge(status: ContentStatus) {
-  switch (status) {
-    case 'PENDING_REVIEW':
-      return {
-        label: 'Oczekuje',
-        variant: 'warning' as const,
-        className: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
-      };
-    case 'CHANGES_REQUESTED':
-      return {
-        label: 'Do poprawy',
-        variant: 'destructive' as const,
-        className: 'bg-orange-500/10 text-orange-600 border-orange-500/20',
-      };
-    case 'APPROVED':
-      return {
-        label: 'Zatwierdzony',
-        variant: 'success' as const,
-        className: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
-      };
-    case 'PUBLISHED':
-      return {
-        label: 'Opublikowany',
-        variant: 'default' as const,
-        className: 'bg-primary/10 text-primary border-primary/20',
-      };
-    default:
-      return { label: 'Szkic', variant: 'secondary' as const, className: 'bg-muted text-muted-foreground' };
-  }
+  track?: VerificationTrack;
+  /** Status chip on the photo; off when the active filter already names the status. */
+  showStatus?: boolean;
 }
 
 function getQualityIndicators(exercise: AdminExercise) {
@@ -86,6 +59,8 @@ export function VerificationTaskCard({
   selectable = false,
   selected = false,
   onSelectionChange,
+  track = 'global',
+  showStatus = true,
 }: VerificationTaskCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -94,11 +69,11 @@ export function VerificationTaskCard({
   const gifUrl = getMediaUrl(exercise.gifUrl);
   const videoUrl = getMediaUrl(exercise.videoUrl);
   const isEmbeddedVideo = isYouTubeUrl(exercise.videoUrl) || isVimeoUrl(exercise.videoUrl);
-  const previewVideoUrl = (gifUrl || isEmbeddedVideo) ? null : videoUrl;
+  const previewVideoUrl = gifUrl || isEmbeddedVideo ? null : videoUrl;
   const hasVideoPreview = gifUrl || previewVideoUrl;
   const hasVideo = gifUrl || videoUrl;
 
-  const statusBadge = getStatusBadge(exercise.status);
+  const statusBadge = getVerificationStatusBadge(exercise, track);
   const qualityIndicators = getQualityIndicators(exercise);
   const hasWarnings = qualityIndicators.some((i) => i.type === 'warning');
   const hasOpenReport = Boolean(exercise.hasOpenReport);
@@ -150,7 +125,7 @@ export function VerificationTaskCard({
           className={cn(
             'group relative overflow-hidden transition-all duration-300 cursor-pointer',
             'hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/10',
-            hasWarnings && 'border-amber-500/30',
+            hasWarnings && 'border-status-warning/30',
             selected && 'border-primary ring-1 ring-primary/30',
             className
           )}
@@ -233,11 +208,19 @@ export function VerificationTaskCard({
               {/* Status badge overlay */}
               <div className={cn('absolute top-3 left-3', selectable && 'left-11')}>
                 <div className="flex items-center gap-2">
-                  <Badge className={cn('border', statusBadge.className)}>{statusBadge.label}</Badge>
+                  {showStatus && (
+                    <span
+                      className="inline-flex items-center gap-1.5 rounded-md border border-border/70 bg-background/90 px-2 py-1 text-[11px] font-medium leading-none text-foreground backdrop-blur-sm"
+                      data-testid={`verification-card-${exercise.id}-status-badge`}
+                    >
+                      <span aria-hidden className={cn('h-1.5 w-1.5 rounded-full', statusBadge.dotClassName)} />
+                      {statusBadge.label}
+                    </span>
+                  )}
                   {hasOpenReport && (
                     <Badge
                       variant="outline"
-                      className="border-amber-500/30 bg-amber-500/15 text-amber-500"
+                      className="border-status-warning/30 bg-status-warning-muted text-status-warning"
                       data-testid={`verification-card-${exercise.id}-reported-badge`}
                     >
                       <Flag className="mr-1 h-3 w-3" />
@@ -253,13 +236,8 @@ export function VerificationTaskCard({
                   {qualityIndicators.slice(0, 2).map((indicator, idx) => (
                     <Badge
                       key={idx}
-                      variant="outline"
-                      className={cn(
-                        'text-[10px] px-2 py-0.5 backdrop-blur-sm',
-                        indicator.type === 'warning'
-                          ? 'border-amber-600 bg-amber-500/80 text-white'
-                          : 'border-info bg-info/80 text-white'
-                      )}
+                      variant={indicator.type === 'warning' ? 'overlay-warning' : 'overlay-info'}
+                      className="text-[10px] px-2 py-0.5"
                     >
                       <AlertCircle className="h-3 w-3 mr-1" />
                       {indicator.label}
@@ -317,7 +295,7 @@ export function VerificationTaskCard({
                   )}
                   {exercise.latestReport && (
                     <div
-                      className="rounded-md border border-amber-500/20 bg-amber-500/5 px-2 py-1 text-[10px] text-amber-600"
+                      className="rounded-md border border-status-warning/20 bg-status-warning-muted px-2 py-1 text-[10px] text-status-warning"
                       data-testid={`verification-card-${exercise.id}-report-context`}
                     >
                       {exercise.latestReport.reasonCategory}: {exercise.latestReport.description.slice(0, 72)}

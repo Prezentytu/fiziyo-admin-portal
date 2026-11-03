@@ -39,25 +39,25 @@ export function FeedbackBanner({ adminReviewNotes, updatedAt, onAcknowledge, cla
 
   return (
     <div
-      className={cn('rounded-lg border p-4 mb-6', 'bg-amber-500/10 border-amber-500/20', className)}
+      className={cn('rounded-lg border p-4 mb-6', 'bg-status-warning-muted border-status-warning/20', className)}
       data-testid="feedback-banner"
     >
       <div className="flex items-start gap-3">
         {/* Icon */}
         <div className="shrink-0 mt-0.5">
-          <AlertTriangle className="h-5 w-5 text-amber-600" />
+          <AlertTriangle className="h-5 w-5 text-status-warning" />
         </div>
 
         {/* Content */}
         <div className="flex-1 min-w-0">
           {/* Header */}
           <div className="flex items-center justify-between gap-2 mb-2">
-            <h4 className="font-semibold text-amber-600 text-sm flex items-center gap-1.5">
+            <h4 className="font-semibold text-status-warning text-sm flex items-center gap-1.5">
               <MessageSquare className="h-4 w-4" />
               Weryfikator zgłosił uwagi
             </h4>
             {relativeTime && (
-              <span className="text-xs text-amber-600/70 flex items-center gap-1 shrink-0">
+              <span className="text-xs text-status-warning flex items-center gap-1 shrink-0">
                 <Clock className="h-3 w-3" />
                 {relativeTime}
               </span>
@@ -74,7 +74,7 @@ export function FeedbackBanner({ adminReviewNotes, updatedAt, onAcknowledge, cla
                 variant="outline"
                 size="sm"
                 onClick={onAcknowledge}
-                className="border-amber-500/30 text-amber-600 hover:bg-amber-500/10"
+                className="border-status-warning/30 text-status-warning hover:bg-status-warning-muted"
               >
                 Rozumiem, poprawię
               </Button>
@@ -84,7 +84,7 @@ export function FeedbackBanner({ adminReviewNotes, updatedAt, onAcknowledge, cla
       </div>
 
       {/* Helper text */}
-      <p className="text-[11px] text-amber-600/60 mt-3 ml-8">
+      <p className="text-[11px] text-status-warning mt-3 ml-8">
         Wprowadź poprawki i kliknij &quot;Wyślij poprawki&quot; aby ponownie zgłosić do weryfikacji
       </p>
     </div>

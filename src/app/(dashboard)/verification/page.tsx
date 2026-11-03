@@ -20,6 +20,7 @@ import { VerificationIntro } from '@/features/verification/VerificationIntro';
 import { useSystemRole } from '@/hooks/useSystemRole';
 import { getExerciseReports, getExerciseReportsPage } from '@/services/exerciseReportService';
 import {
+  buildVerificationDetailHref,
   buildVerificationSearchParams,
   clampVerificationPageSize,
   parsePositiveInt,
@@ -36,7 +37,6 @@ import {
   SCAN_EXERCISE_REPOSITORY_MUTATION,
   IMPORT_EXERCISES_TO_REVIEW_MUTATION,
   UNPUBLISH_EXERCISE_MUTATION,
-  BATCH_ARCHIVE_EXERCISES_MUTATION,
 } from '@/graphql/mutations/adminExercises.mutations';
 import { ON_EXERCISE_SUBMITTED_FOR_GLOBAL_REVIEW } from '@/graphql/subscriptions';
 import Link from 'next/link';
@@ -46,6 +46,9 @@ import { getMediaUrl } from '@/utils/mediaUrl';
 import { cn } from '@/lib/utils';
 import { VerificationSelectionToolbar } from '@/features/verification/VerificationSelectionToolbar';
 import { VerificationArchiveDialog } from '@/features/verification/VerificationArchiveDialog';
+import { VerificationScopeTabs } from '@/features/verification/VerificationScopeTabs';
+import { VerificationPageHeader } from '@/features/verification/VerificationPageHeader';
+import { VerificationQueueHero } from '@/features/verification/VerificationQueueHero';
 import type { UserByClerkIdResponse } from '@/types/apollo';
 import type {
   GetVerificationStatsResponse,
@@ -53,11 +56,13 @@ import type {
   GetVerificationQueuePageVariables,
   UnpublishExerciseResponse,
   AdminExercise,
-  BatchArchiveExercisesResponse,
+  ArchiveExerciseVariables,
 } from '@/graphql/types/adminExercise.types';
+import { formatBatchArchiveSummary, runBatchArchive } from '@/features/verification/utils/batchArchive';
 import type { ExerciseReport } from '@/types/exercise-report.types';
 import { useVerificationSelection } from '@/features/verification/utils/verificationSelection';
 import { formatRelativeTime } from '@/utils/dateUtils';
+import { PageSheet } from '@/components/shared/page';
 
 type GlobalVerificationFilter = 'pending' | 'changes' | 'published' | 'archived' | 'reported';
 type VerificationStatsFilter = GlobalVerificationFilter | 'verified';
@@ -83,8 +88,14 @@ function VerificationTaskRow({
   const imageUrl = getMediaUrl(exercise.thumbnailUrl || exercise.imageUrl || exercise.images?.[0]);
 
   const statusConfig: Record<string, { label: string; className: string }> = {
-    PENDING_REVIEW: { label: 'Oczekuje', className: 'bg-amber-500/10 text-amber-600 border-amber-500/20' },
-    CHANGES_REQUESTED: { label: 'Do poprawy', className: 'bg-orange-500/10 text-orange-600 border-orange-500/20' },
+    PENDING_REVIEW: {
+      label: 'Oczekuje',
+      className: 'bg-status-warning-muted text-status-warning border-status-warning/20',
+    },
+    CHANGES_REQUESTED: {
+      label: 'Do poprawy',
+      className: 'bg-status-warning-muted text-status-warning border-status-warning/20',
+    },
     PUBLISHED: { label: 'Opublikowany', className: 'bg-primary/10 text-primary border-primary/20' },
   };
   const status = statusConfig[exercise.status] || { label: 'Szkic', className: 'bg-muted text-muted-foreground' };
@@ -154,7 +165,7 @@ function VerificationTaskRow({
             </div>
             {exercise.latestReport && (
               <p
-                className="mt-1 text-[11px] text-amber-600 line-clamp-1"
+                className="mt-1 text-[11px] text-status-warning line-clamp-1"
                 data-testid={`verification-row-${exercise.id}-report-context`}
               >
                 {exercise.latestReport.reasonCategory}: {exercise.latestReport.description}
@@ -167,7 +178,7 @@ function VerificationTaskRow({
             {exercise.hasOpenReport && (
               <Badge
                 variant="outline"
-                className="text-[10px] border-amber-500/30 bg-amber-500/10 text-amber-600"
+                className="text-[10px] border-status-warning/30 bg-status-warning-muted text-status-warning"
                 data-testid={`verification-row-${exercise.id}-reported-badge`}
               >
                 Zgłoszenia ({exercise.openReportCount ?? 1})
@@ -316,12 +327,26 @@ export default function VerificationPage() {
     data: queueData,
     loading: queueLoading,
     error: queueError,
-    refetch: refetchQueue,
+    refetch: refetchQueuePage,
   } = useQuery<GetVerificationQueuePageResponse, GetVerificationQueuePageVariables>(GET_VERIFICATION_QUEUE_PAGE_QUERY, {
     variables: queueVariables,
     skip: !canReviewExercises || activeFilter === 'reported',
     fetchPolicy: 'cache-and-network',
   });
+
+  const { data: firstPendingData, refetch: refetchFirstPending } = useQuery<
+    GetVerificationQueuePageResponse,
+    GetVerificationQueuePageVariables
+  >(GET_VERIFICATION_QUEUE_PAGE_QUERY, {
+    variables: { filter: 'pending', search: null, page: 1, pageSize: 1 },
+    skip: !canReviewExercises,
+    fetchPolicy: 'cache-and-network',
+  });
+  const refetchQueue = () => Promise.all([refetchQueuePage(), refetchFirstPending()]);
+  const firstPendingId = firstPendingData?.verificationQueuePage.items[0]?.id;
+  const startHref = firstPendingId
+    ? buildVerificationDetailHref(firstPendingId, { filter: 'pending', search: '', page: 1, pageSize, view: viewMode })
+    : null;
 
   useSubscription<{ onExerciseSubmittedForGlobalReview: string }>(ON_EXERCISE_SUBMITTED_FOR_GLOBAL_REVIEW, {
     skip: !canReviewExercises,
@@ -389,7 +414,7 @@ export default function VerificationPage() {
     UNPUBLISH_EXERCISE_MUTATION,
     {
       onCompleted: () => {
-        toast.success('Ćwiczenie zostało cofnięte do wersji roboczej.');
+        toast.success('Ćwiczenie zostało wycofane z bazy globalnej.');
         refetchStats();
         refetchQueue();
       },
@@ -403,9 +428,13 @@ export default function VerificationPage() {
     unpublishExercise({ variables: { exerciseId, reason } });
   };
 
-  const [batchArchiveExercises, { loading: archiving }] = useMutation<BatchArchiveExercisesResponse>(
-    BATCH_ARCHIVE_EXERCISES_MUTATION
+  // Zbiorcze wycofanie z bazy globalnej = unpublishExercise per ćwiczenie (status ArchivedGlobal).
+  // Backend wycofuje tylko ćwiczenia opublikowane, więc zaznaczanie jest tylko w zakładce „published”.
+  const [unpublishExerciseForBatch] = useMutation<UnpublishExerciseResponse, ArchiveExerciseVariables>(
+    UNPUBLISH_EXERCISE_MUTATION
   );
+  const [archiving, setArchiving] = useState(false);
+  const canArchive = activeFilter === 'published';
 
   useEffect(() => {
     if (!canReviewExercises) {
@@ -667,29 +696,26 @@ export default function VerificationPage() {
       return;
     }
 
+    setArchiving(true);
     try {
-      const response = await batchArchiveExercises({
-        variables: { exerciseIds: selectedIds, reason: null },
+      const result = await runBatchArchive(selectedIds, async (exerciseId) => {
+        const response = await unpublishExerciseForBatch({ variables: { exerciseId, reason: null } });
+        if (response.error) {
+          throw response.error;
+        }
+        return response.data?.unpublishExercise ?? null;
       });
-      const result = response.data?.batchArchiveExercises;
-      if (!result) {
-        throw new Error('Brak wyniku archiwizacji');
-      }
 
       const failedIdSet = new Set(result.failedIds);
       selection.remove(selectedIds.filter((exerciseId) => !failedIdSet.has(exerciseId)));
-      await Promise.all([refetchStats(), refetchQueue()]);
       setArchiveDialogOpen(false);
-
-      if (result.failedIds.length > 0) {
-        toast.warning(
-          `Zarchiwizowano ${result.successCount} z ${result.totalRequested} ćwiczeń. Niektóre pozycje wymagają ponowienia.`
-        );
-      } else {
-        toast.success(`Zarchiwizowano ${result.successCount} ćwiczeń.`);
-      }
+      const summary = formatBatchArchiveSummary(result);
+      toast[summary.kind](summary.message);
+      await Promise.all([refetchStats(), refetchQueue()]);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Nie udało się zarchiwizować ćwiczeń.');
+      toast.error(error instanceof Error ? error.message : 'Nie udało się odświeżyć listy po archiwizacji.');
+    } finally {
+      setArchiving(false);
     }
   };
 
@@ -719,6 +745,7 @@ export default function VerificationPage() {
   if (!statsLoading && !hasTasks) {
     return (
       <div className="space-y-6">
+        <VerificationScopeTabs />
         <VerificationIntro
           userName={userName}
           scanResult={scanResult}
@@ -735,74 +762,75 @@ export default function VerificationPage() {
 
   // FULL VIEW: There are tasks to verify
   return (
-    <div className="space-y-6">
-      {/* Hero Header with compact achievements */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight">Centrum Weryfikacji</h1>
-          <p className="text-muted-foreground mt-1">
-            Cześć {userName}, dzięki Tobie baza ćwiczeń jest bezpieczna i profesjonalna.
-          </p>
-        </div>
-        <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
-          {/* Compact achievements in header */}
-          <ReviewerAchievements variant="compact" />
-          <Button
-            data-testid="verification-refresh-btn"
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={isLoading}
-            className="gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            Odśwież
-          </Button>
-        </div>
-      </div>
-
-      {/* Stats Cards - Interactive Filter Cards */}
-      <VerificationStatsCards
-        stats={stats}
-        isLoading={statsLoading}
-        activeFilter={activeFilter}
-        onFilterChange={handleFilterChange}
-        reportedCount={reportedCount}
+    <PageSheet contentClassName="gap-6">
+      <VerificationPageHeader
+        actions={
+          <>
+            <ReviewerAchievements variant="compact" />
+            <Button
+              data-testid="verification-refresh-btn"
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isLoading}
+              className="gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              Odśwież
+            </Button>
+          </>
+        }
       />
 
-      {/* Search and View Mode */}
-      <div className="flex items-center gap-3 justify-end">
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            data-testid="verification-search-input"
-            placeholder="Szukaj ćwiczenia..."
-            className="pl-9 bg-surface border-border/60"
-            value={searchQuery}
-            onChange={(e) => handleSearchChange(e.target.value)}
-          />
-        </div>
+      <VerificationQueueHero
+        pendingCount={statsLoading ? null : pendingCount}
+        startHref={startHref}
+        testIdPrefix="verification"
+      />
 
-        {/* View Mode Toggle */}
-        <div className="flex items-center rounded-lg border border-border/60 bg-surface p-1">
-          <Button
-            variant={viewMode === 'grid' ? 'default' : 'ghost'}
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => handleViewModeChange('grid')}
-            data-testid="verification-view-grid"
-          >
-            <LayoutGrid className="h-4 w-4" />
-          </Button>
-          <Button
-            variant={viewMode === 'list' ? 'default' : 'ghost'}
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => handleViewModeChange('list')}
-            data-testid="verification-view-list"
-          >
-            <List className="h-4 w-4" />
-          </Button>
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <VerificationStatsCards
+          stats={stats}
+          isLoading={statsLoading}
+          activeFilter={activeFilter}
+          onFilterChange={handleFilterChange}
+          reportedCount={reportedCount}
+        />
+
+        <div className="flex items-center gap-3">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              aria-label="Szukaj ćwiczenia"
+              data-testid="verification-search-input"
+              placeholder="Szukaj ćwiczenia..."
+              className="pl-9 bg-surface border-border/60"
+              value={searchQuery}
+              onChange={(e) => handleSearchChange(e.target.value)}
+            />
+          </div>
+
+          {/* View Mode Toggle */}
+          <div className="flex items-center rounded-lg border border-border/60 bg-surface p-1">
+            <Button
+              variant={viewMode === 'grid' ? 'default' : 'ghost'}
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => handleViewModeChange('grid')}
+              data-testid="verification-view-grid"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'ghost'}
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => handleViewModeChange('list')}
+              data-testid="verification-view-list"
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -814,7 +842,7 @@ export default function VerificationPage() {
         onToggleVisible={selection.toggleVisible}
         onClear={selection.clear}
         onArchive={() => setArchiveDialogOpen(true)}
-        disabled={activeFilter === 'archived' || isLoading}
+        disabled={!canArchive || isLoading}
         isArchiving={archiving}
       />
 
@@ -879,9 +907,10 @@ export default function VerificationPage() {
             <VerificationTaskCard
               key={exercise.id}
               exercise={exercise}
+              showStatus={activeFilter === 'reported'}
               onUnpublish={activeFilter === 'published' ? handleUnpublish : undefined}
               isUnpublishing={unpublishing}
-              selectable={activeFilter !== 'archived'}
+              selectable={canArchive}
               selected={selection.isSelected(exercise.id)}
               onSelectionChange={() => selection.toggle(exercise.id)}
               detailHref={`/verification/${exercise.id}?${detailQueryString}`}
@@ -897,7 +926,7 @@ export default function VerificationPage() {
               exercise={exercise}
               onUnpublish={activeFilter === 'published' ? handleUnpublish : undefined}
               isUnpublishing={unpublishing}
-              selectable={activeFilter !== 'archived'}
+              selectable={canArchive}
               selected={selection.isSelected(exercise.id)}
               onSelectionChange={() => selection.toggle(exercise.id)}
               detailHref={`/verification/${exercise.id}?${detailQueryString}`}
@@ -909,7 +938,7 @@ export default function VerificationPage() {
       <VerificationArchiveDialog
         open={archiveDialogOpen}
         count={selection.selectedCount}
-        scopeLabel="globalnym Centrum Weryfikacji"
+        scopeLabel="globalnej weryfikacji ćwiczeń"
         isLoading={archiving}
         onOpenChange={setArchiveDialogOpen}
         onConfirm={handleArchiveSelected}
@@ -957,6 +986,6 @@ export default function VerificationPage() {
           </div>
         </div>
       )}
-    </div>
+    </PageSheet>
   );
 }

@@ -1,5 +1,5 @@
 import { buildMappingOverridesJson } from '@/components/shared/exercise/mappingOverrides';
-import { buildEnrichmentOverrideDelta } from '@/components/shared/exercise/enrichmentOverride';
+import { resolveParamsEnrichmentDelta } from '@/components/shared/exercise/enrichmentOverride';
 import type { ExerciseParams } from '@/components/shared/ExerciseSetBuilder';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 
@@ -23,10 +23,7 @@ export function buildMappingOverridesFromParams(
   template: MappingOverridesTemplateBaseline | undefined,
   params: ExerciseParams
 ): string | null {
-  const enrichmentDelta = buildEnrichmentOverrideDelta(
-    template?.enrichmentData,
-    params.enrichment
-  );
+  const enrichmentDelta = resolveParamsEnrichmentDelta(template?.enrichmentData, params);
   return buildMappingOverridesJson(
     {
       side: template?.side ?? template?.exerciseSide ?? undefined,

@@ -199,6 +199,7 @@ export function ExerciseBuilderProvider({ children }: ExerciseBuilderProviderPro
         preparationTime: exercise.preparationTime,
         tempo: exercise.tempo,
         side: exercise.exerciseSide ?? exercise.side,
+        type: exercise.type,
       });
 
       totalSeconds += duration.seconds;

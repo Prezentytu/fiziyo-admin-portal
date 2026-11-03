@@ -7,12 +7,18 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
-import { ExerciseExecutionCard, fromExerciseMapping } from '@/components/shared/exercise';
+import {
+  ExerciseExecutionCard,
+  estimateEffectiveExerciseSeconds,
+  fromExerciseMapping,
+  resolveEffectiveExerciseParams,
+} from '@/components/shared/exercise';
 import { ScheduleSummary } from '@/components/shared';
-import { calculateEstimatedTime, formatEstimatedTime } from '@/utils/exerciseTime';
+import { formatEstimatedTime } from '@/utils/exerciseTime';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { sendExerciseReport } from '@/services/exerciseReportService';
 import type { ExerciseSet, Patient, Frequency, ExerciseOverride, ExerciseMapping, LocalExerciseMapping } from './types';
+import { formatExerciseCount } from '@/utils/polishPlural';
 
 interface SummaryStepProps {
   exerciseSet: ExerciseSet;
@@ -27,41 +33,17 @@ interface SummaryStepProps {
   onSaveAsTemplateChange: (value: boolean) => void;
   onGoToStep?: (step: 'select-set' | 'customize-set' | 'select-patients' | 'schedule') => void;
   editMode?: boolean;
+  /** `aside`: single column next to the schedule step (v4 wizard), without the schedule and template cards */
+  layout?: 'page' | 'aside';
 }
 
 // Helper: Oblicz łączny czas zestawu
 function calculateTotalTime(mappings: ExerciseMapping[], overrides: Map<string, ExerciseOverride>): number {
-  return mappings.reduce((total, mapping) => {
-    const exercise = mapping.exercise;
-    const override = overrides.get(mapping.id);
-    const exerciseType = exercise?.type?.toLowerCase();
-    const isTimeBased = exerciseType === 'time';
-
-    const sets = override?.sets ?? mapping.sets ?? exercise?.defaultSets ?? 3;
-    const reps = override?.reps ?? mapping.reps ?? exercise?.defaultReps ?? 10;
-    const executionTime = override?.executionTime ?? mapping.executionTime ?? exercise?.defaultExecutionTime;
-    const rest = override?.restSets ?? mapping.restSets ?? exercise?.defaultRestBetweenSets ?? 60;
-
-    // Duration służy do kalkulacji czasu serii; w pozostałych przypadkach używamy executionTime.
-    const duration = isTimeBased ? (override?.duration ?? mapping.duration ?? exercise?.defaultDuration) : undefined;
-    const side = override?.exerciseSide ?? mapping.exercise?.side ?? exercise?.side ?? exercise?.exerciseSide;
-    const preparationTime = override?.preparationTime ?? mapping.preparationTime ?? exercise?.preparationTime;
-
-    return (
-      total +
-      calculateEstimatedTime({
-        sets,
-        reps,
-        duration,
-        executionTime,
-        rest,
-        restReps: override?.restReps ?? mapping.restReps ?? exercise?.defaultRestBetweenReps,
-        side,
-        preparationTime,
-        tempo: override?.tempo ?? mapping.tempo ?? exercise?.tempo,
-      })
-    );
-  }, 0);
+  return mappings.reduce(
+    (total, mapping) =>
+      total + estimateEffectiveExerciseSeconds(resolveEffectiveExerciseParams(mapping, overrides.get(mapping.id))),
+    0
+  );
 }
 
 export function SummaryStep({
@@ -77,7 +59,9 @@ export function SummaryStep({
   onSaveAsTemplateChange,
   onGoToStep,
   editMode = false,
+  layout = 'page',
 }: SummaryStepProps) {
+  const isAside = layout === 'aside';
   const { user } = useUser();
   const { currentOrganization } = useOrganization();
   const [showConcierge, setShowConcierge] = useState(false);
@@ -165,26 +149,35 @@ export function SummaryStep({
 
   return (
     <div
-      className="max-w-5xl mx-auto grid grid-cols-12 gap-4 sm:gap-6 animate-in fade-in slide-in-from-bottom-4 p-4 sm:p-6 lg:p-8 items-start lg:items-stretch"
+      className={cn(
+        'grid grid-cols-12 items-start',
+        isAside
+          ? 'gap-3 p-4 sm:p-5'
+          : 'max-w-5xl mx-auto gap-4 sm:gap-6 animate-in fade-in slide-in-from-bottom-4 p-4 sm:p-6 lg:p-8 lg:items-stretch'
+      )}
       data-testid="summary-step"
     >
       {/* ══════════════════════════════════════════════════════════════ */}
       {/* KOLUMNA LEWA: WSAD MERYTORYCZNY (8/12)                         */}
       {/* ══════════════════════════════════════════════════════════════ */}
-      <div className="col-span-12 lg:col-span-8 flex flex-col gap-3 sm:gap-4">
+      <div className={cn('col-span-12 flex flex-col gap-3 sm:gap-4', !isAside && 'lg:col-span-8')}>
         {/* KARTA 1: ĆWICZENIA (Zawsze rozwinięte!) */}
         <div
-          className="bg-surface border border-border/60 rounded-xl overflow-hidden flex flex-col min-h-[200px] sm:min-h-[280px] lg:min-h-0 lg:flex-1"
+          className={cn(
+            'bg-surface border border-border/60 rounded-xl overflow-hidden flex flex-col',
+            !isAside && 'min-h-[200px] sm:min-h-[280px] lg:min-h-0 lg:flex-1'
+          )}
           data-testid="summary-exercises-card"
         >
           {/* Header */}
-          <div className="bg-surface-light/30 p-3 sm:p-4 border-b border-border/40 flex justify-between items-center shrink-0">
-            <div>
+          <div className="bg-surface-light/30 p-3 sm:p-4 border-b border-border/40 flex justify-between items-start gap-3 shrink-0">
+            <div className="min-w-0">
               <h3 className="text-sm font-bold text-foreground">Zestaw Ćwiczeń</h3>
-              <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5 flex-wrap">
-                <span>&ldquo;{exerciseSet.name}&rdquo;</span>
-                <span>•</span>
-                <span>{exerciseCount} ćwiczeń</span>
+              <p className="text-xs text-muted-foreground mt-0.5 wrap-break-word" data-testid="summary-set-name">
+                &ldquo;{exerciseSet.name}&rdquo;
+              </p>
+              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5 flex-wrap">
+                <span>{formatExerciseCount(exerciseCount)}</span>
                 <span>•</span>
                 <span className="inline-flex items-center gap-1 text-primary font-semibold bg-primary/10 px-1.5 py-0.5 rounded">
                   <Clock className="h-3 w-3" />
@@ -198,7 +191,7 @@ export function SummaryStep({
               <button
                 data-testid="summary-edit-exercises-btn"
                 onClick={() => onGoToStep(editMode ? 'customize-set' : 'select-set')}
-                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1.5 transition-colors"
+                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1.5 transition-colors shrink-0"
               >
                 <Pencil className="h-3 w-3" />
                 Edytuj
@@ -221,6 +214,7 @@ export function SummaryStep({
                 <div key={mapping.id} data-testid={`summary-exercise-item-${mapping.id}`}>
                   <ExerciseExecutionCard
                     mode="view"
+                    viewVariant="readable"
                     exercise={cardData}
                     index={i + 1}
                     testIdPrefix="summary-exercise"
@@ -237,31 +231,31 @@ export function SummaryStep({
         <div
           className={cn(
             'border rounded-xl p-4 sm:p-5 transition-all shrink-0',
-            feedbackSent ? 'bg-emerald-950/20 border-emerald-500/30' : 'bg-amber-950/10 border-amber-900/20'
+            feedbackSent ? 'bg-status-success-muted border-status-success/30' : 'bg-status-warning-muted border-status-warning/20'
           )}
           data-testid="summary-concierge-card"
         >
           {feedbackSent ? (
             // Sukces wysłania
             <div className="flex items-center gap-3 sm:gap-4 animate-in fade-in">
-              <div className="p-2 sm:p-2.5 bg-emerald-500/20 rounded-lg text-emerald-500 shrink-0">
+              <div className="p-2 sm:p-2.5 bg-status-success-muted rounded-lg text-status-success shrink-0">
                 <Check className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
               <div className="min-w-0">
-                <h4 className="text-sm sm:text-base font-semibold text-emerald-500">Dziękujemy za zgłoszenie!</h4>
-                <p className="text-xs sm:text-sm text-emerald-400/60">Nasz zespół zajmie się tym w ciągu 24h.</p>
+                <h4 className="text-sm sm:text-base font-semibold text-status-success">Dziękujemy za zgłoszenie!</h4>
+                <p className="text-xs sm:text-sm text-status-success">Nasz zespół zajmie się tym w ciągu 24h.</p>
               </div>
             </div>
           ) : !showConcierge ? (
             // Wersja zwinięta
             <div className="flex items-center justify-between gap-3 sm:gap-4">
               <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                <div className="p-2 bg-amber-500/10 rounded-lg text-amber-500 shrink-0">
+                <div className="p-2 bg-status-warning-muted rounded-lg text-status-warning shrink-0">
                   <Flag className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
                 <div className="min-w-0">
-                  <h4 className="text-xs sm:text-sm font-semibold text-amber-500">Masz uwagi do ćwiczeń?</h4>
-                  <p className="text-[10px] sm:text-xs text-amber-400/60 truncate">
+                  <h4 className="text-xs sm:text-sm font-semibold text-status-warning">Masz uwagi do ćwiczeń?</h4>
+                  <p className="text-[10px] sm:text-xs text-status-warning" data-testid="summary-concierge-hint">
                     Jeśli widzisz błąd (zdjęcie, opis), zgłoś to nam.
                   </p>
                 </div>
@@ -269,7 +263,7 @@ export function SummaryStep({
               <button
                 data-testid="summary-concierge-open-btn"
                 onClick={() => setShowConcierge(true)}
-                className="text-xs bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 px-2.5 sm:px-3 py-1.5 rounded-lg font-medium transition-colors shrink-0"
+                className="text-xs bg-status-warning-muted hover:bg-status-warning-muted text-status-warning px-2.5 sm:px-3 py-1.5 rounded-lg font-medium transition-colors shrink-0"
               >
                 Zgłoś
               </button>
@@ -278,7 +272,7 @@ export function SummaryStep({
             // Wersja rozwinięta - formularz (pełne RWD)
             <div className="space-y-3 animate-in fade-in">
               <div className="flex justify-between items-start gap-2">
-                <label className="text-[10px] sm:text-xs font-bold text-amber-500 uppercase tracking-wide">
+                <label className="text-[10px] sm:text-xs font-bold text-status-warning uppercase tracking-wide">
                   Twoje uwagi dla zespołu FiziYo
                 </label>
                 <button
@@ -291,7 +285,7 @@ export function SummaryStep({
               </div>
               <textarea
                 data-testid="summary-concierge-textarea"
-                className="w-full bg-black/40 border border-amber-900/30 rounded-lg p-2.5 sm:p-3 text-sm text-amber-100 placeholder-amber-500/30 focus:border-amber-500 outline-none resize-none min-h-[80px] max-h-[120px]"
+                className="w-full bg-fill-tertiary border border-status-warning/30 rounded-control p-2.5 sm:p-3 text-sm text-foreground placeholder:text-label-tertiary focus:border-status-warning outline-none resize-none min-h-[80px] max-h-[120px]"
                 placeholder="Np. 'W ćwiczeniu Bird Dog zdjęcie jest niewyraźne, proszę o poprawę'..."
                 value={feedback}
                 onChange={(e) => setFeedback(e.target.value)}
@@ -304,14 +298,14 @@ export function SummaryStep({
                   <button
                     data-testid="summary-concierge-cancel-btn"
                     onClick={() => setShowConcierge(false)}
-                    className="text-xs text-amber-500 hover:text-amber-400 px-3 py-1.5 transition-colors flex-1 sm:flex-none"
+                    className="text-xs text-status-warning hover:text-status-warning px-3 py-1.5 transition-colors flex-1 sm:flex-none"
                   >
                     Anuluj
                   </button>
                   <button
                     onClick={handleSendFeedback}
                     disabled={!feedback.trim() || isSendingFeedback}
-                    className="text-xs bg-amber-500 text-black px-3 py-1.5 rounded font-bold hover:bg-amber-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-none flex items-center justify-center gap-1.5"
+                    className="text-xs bg-status-warning-fill text-black px-3 py-1.5 rounded font-bold hover:bg-status-warning-fill transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-none flex items-center justify-center gap-1.5"
                     data-testid="summary-concierge-submit-btn"
                   >
                     {isSendingFeedback ? (
@@ -333,7 +327,7 @@ export function SummaryStep({
       {/* ══════════════════════════════════════════════════════════════ */}
       {/* KOLUMNA PRAWA: KONTEKST I AKCJA (4/12)                         */}
       {/* ══════════════════════════════════════════════════════════════ */}
-      <div className="col-span-12 lg:col-span-4 flex flex-col gap-3 sm:gap-4">
+      <div className={cn('col-span-12 flex flex-col gap-3 sm:gap-4', !isAside && 'lg:col-span-4')}>
         {/* KARTA 3: PACJENT(CI) */}
         {!editMode && (
           <div className="bg-surface border border-border/60 rounded-xl p-4 sm:p-5" data-testid="summary-patients-card">
@@ -407,7 +401,8 @@ export function SummaryStep({
           </div>
         )}
 
-        {/* KARTA 4: HARMONOGRAM */}
+        {/* KARTA 4: HARMONOGRAM (w trybie aside harmonogram jest obok) */}
+        {!isAside && (
         <div className="bg-surface border border-border/60 rounded-xl p-4 sm:p-5" data-testid="summary-schedule-card">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs uppercase text-muted-foreground font-bold flex items-center gap-2">
@@ -441,8 +436,9 @@ export function SummaryStep({
             </div>
           )}
         </div>
+        )}
 
-        {!editMode && (
+        {!editMode && !isAside && (
           <div className="bg-surface border border-border/60 rounded-xl p-4 sm:p-5" data-testid="summary-template-save-card">
             <div className="mb-3 rounded-lg border border-border/50 bg-surface-light/30 px-3 py-2 text-xs text-muted-foreground">
               W tym flow zawsze tworzymy nowy, spersonalizowany plan ćwiczeń dla pacjenta.
@@ -464,7 +460,7 @@ export function SummaryStep({
         )}
 
         {/* Spacer - wypycha compliance na dół (tylko na desktop) */}
-        <div className="hidden lg:flex lg:flex-1" />
+        {!isAside && <div className="hidden lg:flex lg:flex-1" />}
 
         {/* Compliance Shield - "Pieczątka prawna" */}
         <div className="p-3 sm:p-4 rounded-xl bg-surface border border-border/40">

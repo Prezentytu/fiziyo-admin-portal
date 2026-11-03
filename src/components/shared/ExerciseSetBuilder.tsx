@@ -37,6 +37,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { ShowMoreTrigger } from '@/components/shared/ShowMoreTrigger';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import {
   ExerciseExecutionCard,
@@ -53,7 +54,9 @@ import type { ExerciseSourceFilter } from '@/utils/exerciseSourceFilter';
 import { cn } from '@/lib/utils';
 import { EMPTY_EXERCISE_PARAMS, getExerciseDefaultParams } from '@/features/exercise-sets/utils/exerciseDefaults';
 import { filterExercisesBySearch } from '@/features/exercises/utils/exerciseSearch';
+import { useIncrementalList } from '@/hooks/useIncrementalList';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
+import { applyEnrichmentOverride, type EnrichmentOverride } from '@/components/shared/exercise/enrichmentOverride';
 
 // ============================================================
 // TYPES
@@ -138,6 +141,11 @@ export interface ExerciseParams {
    * Write-path diffs this against exercise.enrichmentData.
    */
   enrichment?: ExerciseEnrichmentData;
+  /**
+   * Content override inherited from the source mapping while the exercise's own content is not loaded
+   * (enrichment undefined). Saved as-is; once the content loads it is applied on top of it.
+   */
+  enrichmentOverride?: EnrichmentOverride;
   // Structured load (alternative to individual load fields)
   load?: {
     loadWeightKg?: number | null;
@@ -407,6 +415,7 @@ function SortableExerciseCard({
   onPreview,
   testIdPrefix,
   isReadonly,
+  isContentLoading = false,
   cardSurface = 'mapping',
 }: {
   instanceId: string;
@@ -418,6 +427,8 @@ function SortableExerciseCard({
   onPreview: () => void;
   testIdPrefix?: string;
   isReadonly?: boolean;
+  /** Patient content (enrichment) of this exercise is still loading; editing it now would start from blank. */
+  isContentLoading?: boolean;
   cardSurface?: 'mapping' | 'patientPlan';
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -468,7 +479,7 @@ function SortableExerciseCard({
       data-testid={testIdPrefix ? `${testIdPrefix}-exercise-${exercise.id}` : undefined}
     >
       <ExerciseExecutionCard
-        mode={isReadonly ? 'view' : 'edit'}
+        mode={isReadonly || isContentLoading ? 'view' : 'edit'}
         surface={cardSurface}
         exercise={cardData}
         onChange={handleChange}
@@ -478,8 +489,8 @@ function SortableExerciseCard({
         dragHandle={dragHandle}
         index={index + 1}
         testIdPrefix={testIdPrefix ?? 'set-builder'}
-        readOnlyReason={isReadonly ? 'W zestawie wcześniej' : undefined}
-        className={isReadonly ? 'border-amber-500/20 bg-amber-500/5 ring-1 ring-amber-500/15' : undefined}
+        readOnlyReason={isReadonly ? 'W zestawie wcześniej' : isContentLoading ? 'Wczytywanie treści ćwiczenia…' : undefined}
+        className={isReadonly ? 'border-status-warning/20 bg-status-warning-muted ring-1 ring-status-warning/15' : undefined}
       />
     </div>
   );
@@ -558,10 +569,33 @@ export function ExerciseSetBuilder({
     return filterExercisesBySearch(sourceFilteredExercises, searchQuery);
   }, [sourceFilteredExercises, searchQuery]);
 
+  // Popularne są pokazane osobno nad listą, więc lista „Wszystkie” ich nie powtarza.
+  const showPopular = !searchQuery && sourceFilter === 'all' && popularExercises.length > 0;
+  const listedExercises = useMemo(() => {
+    if (!showPopular) return filteredExercises;
+    const popularIds = new Set(popularExercises.map((e) => e.id));
+    return filteredExercises.filter((e) => !popularIds.has(e.id));
+  }, [filteredExercises, popularExercises, showPopular]);
+  const {
+    visibleItems: visibleExercises,
+    remaining: remainingExercises,
+    showMore: showMoreExercises,
+  } = useIncrementalList(listedExercises, `${sourceFilter}|${searchQuery}`);
+
   // Params helpers
   const getDefaultParams = useCallback(
     (exercise: BuilderExercise): ExerciseParams => getExerciseDefaultParams(exercise),
     []
+  );
+
+  // Picker lists load enrichment only for chosen exercises, so params seeded before it arrived get it here.
+  const resolveInstanceParams = useCallback(
+    (instanceId: string, exercise: BuilderExercise): ExerciseParams => {
+      const stored = exerciseParams.get(instanceId) || getDefaultParams(exercise);
+      if (stored.enrichment !== undefined || exercise.enrichmentData === undefined) return stored;
+      return { ...stored, enrichment: applyEnrichmentOverride(exercise.enrichmentData, stored.enrichmentOverride) };
+    },
+    [exerciseParams, getDefaultParams]
   );
 
   const updateExerciseParams = useCallback(
@@ -570,16 +604,14 @@ export function ExerciseSetBuilder({
       const instance = selectedInstances.find((i) => i.instanceId === instanceId);
       const exercise = availableExercises.find((e) => e.id === instance?.exerciseId);
 
-      const current =
-        next.get(instanceId) ||
-        (exercise
-          ? getDefaultParams(exercise)
-          : EMPTY_EXERCISE_PARAMS);
+      const current = exercise
+        ? resolveInstanceParams(instanceId, exercise)
+        : next.get(instanceId) || EMPTY_EXERCISE_PARAMS;
       const normalizedValue = typeof value === 'number' ? Math.max(0, value) : value;
       next.set(instanceId, { ...current, [field]: normalizedValue });
       onExerciseParamsChange(next);
     },
-    [availableExercises, getDefaultParams, selectedInstances, exerciseParams, onExerciseParamsChange]
+    [availableExercises, resolveInstanceParams, selectedInstances, exerciseParams, onExerciseParamsChange]
   );
 
   const addExerciseToSet = useCallback(
@@ -656,6 +688,7 @@ export function ExerciseSetBuilder({
         preparationTime: params.preparationTime,
         tempo: params.tempo,
         side: params.exerciseSide ?? exercise.side ?? exercise.exerciseSide,
+        type: exercise.type,
       });
 
       totalSeconds += duration.seconds;
@@ -815,7 +848,7 @@ export function ExerciseSetBuilder({
               ) : (
                 <div className="space-y-6">
                   {/* Popular - show at top when no search/filter active */}
-                  {!searchQuery && sourceFilter === 'all' && popularExercises.length > 0 && (
+                  {showPopular && (
                     <div>
                       <div className="flex items-center gap-2 mb-3">
                         <TrendingUp className="h-4 w-4 text-primary" />
@@ -840,33 +873,30 @@ export function ExerciseSetBuilder({
 
                   {/* All exercises */}
                   <div>
-                    {!searchQuery && sourceFilter === 'all' && popularExercises.length > 0 && (
+                    {showPopular && (
                       <div className="flex items-center gap-2 mb-3">
                         <Dumbbell className="h-4 w-4 text-muted-foreground" />
                         <h4 className="text-sm font-semibold">Wszystkie ćwiczenia</h4>
                       </div>
                     )}
                     <div className="grid gap-2">
-                      {(() => {
-                        const showPopular = !searchQuery && sourceFilter === 'all' && popularExercises.length > 0;
-                        const popularIds = new Set(popularExercises.map((e) => e.id));
-                        const exercisesToShow = showPopular
-                          ? filteredExercises.filter((e) => !popularIds.has(e.id))
-                          : filteredExercises;
-
-                        return exercisesToShow.map((exercise) => (
-                          <ExercisePickerItem
-                            key={exercise.id}
-                            testIdPrefix={testIdPrefix}
-                            exercise={exercise}
-                            instanceCount={selectedInstances.filter((si) => si.exerciseId === exercise.id).length}
-                            onAdd={() => addExerciseToSet(exercise)}
-                            onPreview={() => onPreviewExercise?.(exercise)}
-                            getExerciseTags={getExerciseTags}
-                          />
-                        ));
-                      })()}
+                      {visibleExercises.map((exercise) => (
+                        <ExercisePickerItem
+                          key={exercise.id}
+                          testIdPrefix={testIdPrefix}
+                          exercise={exercise}
+                          instanceCount={selectedInstances.filter((si) => si.exerciseId === exercise.id).length}
+                          onAdd={() => addExerciseToSet(exercise)}
+                          onPreview={() => onPreviewExercise?.(exercise)}
+                          getExerciseTags={getExerciseTags}
+                        />
+                      ))}
                     </div>
+                    <ShowMoreTrigger
+                      remaining={remainingExercises}
+                      onShowMore={showMoreExercises}
+                      dataTestId={`${testIdPrefix}-show-more-btn`}
+                    />
                   </div>
                 </div>
               )}
@@ -934,12 +964,15 @@ export function ExerciseSetBuilder({
                         instanceId={data.instanceId}
                         exercise={data.exercise}
                         index={index}
-                        params={exerciseParams.get(data.instanceId) || getDefaultParams(data.exercise)}
+                        params={resolveInstanceParams(data.instanceId, data.exercise)}
                         onUpdateParams={(field, value) => updateExerciseParams(data.instanceId, field, value)}
                         onRemove={() => setInstanceToRemove(data.instanceId)}
-                        onPreview={() => onPreviewExercise?.(data.exercise, exerciseParams.get(data.instanceId))}
+                        onPreview={() =>
+                          onPreviewExercise?.(data.exercise, resolveInstanceParams(data.instanceId, data.exercise))
+                        }
                         testIdPrefix={testIdPrefix}
                         isReadonly={readonlyInstanceIds?.has(data.instanceId) ?? false}
+                        isContentLoading={data.exercise.enrichmentData === undefined}
                         cardSurface={cardSurface}
                       />
                     ))}

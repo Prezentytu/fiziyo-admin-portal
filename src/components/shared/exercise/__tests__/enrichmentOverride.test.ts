@@ -124,3 +124,19 @@ describe('enrichmentOverride', () => {
     ]);
   });
 });
+
+describe('buildEnrichmentOverrideDelta with content that was not loaded', () => {
+  it('does not clear template content when the desired enrichment was never loaded (light picker list)', () => {
+    expect(buildEnrichmentOverrideDelta(template, undefined)).toBeUndefined();
+  });
+
+  it('does not freeze desired content into an override when the template enrichment was not loaded', () => {
+    expect(buildEnrichmentOverrideDelta(undefined, template)).toBeUndefined();
+  });
+
+  it('still treats a loaded empty template (null) as a baseline', () => {
+    const delta = buildEnrichmentOverrideDelta(null, { $schema: 'fiziyo-exercise-v3', patient: { steps: ['Nowy krok'] } });
+
+    expect(delta?.patient?.steps).toEqual(['Nowy krok']);
+  });
+});

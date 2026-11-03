@@ -30,6 +30,7 @@ import {
   type ResolvedParameterField,
 } from './fieldContract';
 import { getExecutionTimeFieldHint } from './executionTimeFieldHint';
+import { parseNumberFieldDraft } from './numberFieldDraft';
 import { getTimerModeDescription, getTimerModeLabel } from './timerModeCopy';
 
 /** Normalized values for the shared parameter presentation layer. */
@@ -56,8 +57,16 @@ export interface ExerciseParameterValues {
 
 export type ParameterTestIdKind = 'input' | 'select' | 'info';
 
+/** Zapisany typ ćwiczenia albo `'draft'` dla szkicu bez typu (kreator tworzenia). */
+export type ExerciseParametersTimingType = 'reps' | 'time' | 'draft';
+
 export interface ExerciseParametersFieldsProps {
   surface: ExerciseFieldSurface;
+  /**
+   * Wymagany: REPS nie liczy pozostałego `duration` (jak player), `'draft'` liczy.
+   * Dla zapisanego ćwiczenia podaj `normalizeExerciseType(exercise.type) ?? 'draft'`.
+   */
+  exerciseType: ExerciseParametersTimingType;
   values: ExerciseParameterValues;
   onChange: (patch: Partial<ExerciseParameterValues>) => void;
   inheritedValues?: Partial<ExerciseParameterValues>;
@@ -176,21 +185,22 @@ function NumberField({
   onCommit: (value: number | null) => void;
 }>) {
   const [raw, setRaw] = useState(value != null ? String(value) : '');
+  const [error, setError] = useState<string | null>(null);
   const metadata = EXERCISE_FIELD_METADATA[config.key];
 
   useEffect(() => {
     setRaw(value != null ? String(value) : '');
+    setError(null);
   }, [value]);
 
   const commit = () => {
-    const trimmed = raw.trim();
-    if (trimmed === '') {
-      if (value != null) onCommit(null);
+    const draft = parseNumberFieldDraft(raw, config);
+    if (draft.kind === 'error') {
+      setError(draft.message);
       return;
     }
-    const parsed = Number(trimmed);
-    const next = Number.isNaN(parsed) ? null : parsed;
-    if (next !== value) onCommit(next);
+    setError(null);
+    if (draft.value !== (value ?? null)) onCommit(draft.value);
   };
 
   return (
@@ -213,7 +223,12 @@ function NumberField({
           max={config.max}
           step={config.step}
           value={raw}
-          onChange={(event) => setRaw(event.target.value)}
+          aria-invalid={error ? true : undefined}
+          onFocus={(event) => event.currentTarget.select()}
+          onChange={(event) => {
+            setRaw(event.target.value);
+            setError(null);
+          }}
           onBlur={commit}
           onKeyDown={(event) => {
             if (event.key === 'Enter') event.currentTarget.blur();
@@ -223,7 +238,7 @@ function NumberField({
             'text-sm tabular-nums transition-colors',
             density === 'comfortable' ? 'h-11' : 'h-9',
             config.suffix && 'pr-10',
-            dirty && 'border-amber-400/70 bg-amber-50/40 dark:border-amber-500/40 dark:bg-amber-500/5'
+            dirty && 'border-status-warning/70 bg-status-warning-muted dark:border-status-warning/40'
           )}
         />
         {config.suffix ? (
@@ -232,6 +247,11 @@ function NumberField({
           </span>
         ) : null}
       </div>
+      {error ? (
+        <p className="text-[11px] leading-snug text-destructive" data-testid={`${testId}-error`}>
+          {error}
+        </p>
+      ) : null}
       {hint ? (
         <p className="text-[11px] leading-snug text-muted-foreground" data-testid={hintTestId}>
           {hint}
@@ -286,7 +306,7 @@ function TextField({
         className={cn(
           'text-sm transition-colors',
           density === 'comfortable' ? 'h-11' : 'h-9',
-          dirty && 'border-amber-400/70 bg-amber-50/40 dark:border-amber-500/40 dark:bg-amber-500/5'
+          dirty && 'border-status-warning/70 bg-status-warning-muted dark:border-status-warning/40'
         )}
       />
     </div>
@@ -335,7 +355,7 @@ function TextAreaField({
         disabled={disabled}
         className={cn(
           'min-h-[60px] resize-none text-sm transition-colors',
-          dirty && 'border-amber-400/70 bg-amber-50/40 dark:border-amber-500/40 dark:bg-amber-500/5'
+          dirty && 'border-status-warning/70 bg-status-warning-muted dark:border-status-warning/40'
         )}
       />
     </div>
@@ -381,7 +401,7 @@ function SelectField({
           className={cn(
             'text-sm transition-colors',
             density === 'comfortable' ? 'h-11' : 'h-9',
-            dirty && 'border-amber-400/70 bg-amber-50/40 dark:border-amber-500/40 dark:bg-amber-500/5'
+            dirty && 'border-status-warning/70 bg-status-warning-muted dark:border-status-warning/40'
           )}
         >
           <SelectValue />
@@ -461,6 +481,7 @@ function isInheritedMatch(
 
 export function ExerciseParametersFields({
   surface,
+  exerciseType,
   values,
   onChange,
   inheritedValues,
@@ -513,6 +534,7 @@ export function ExerciseParametersFields({
     preparationTime: 0,
     tempo: values.tempo || undefined,
     side: values.side || undefined,
+    type: exerciseType === 'draft' ? undefined : exerciseType,
   });
 
   const totalSeconds = calculateExerciseTotalSeconds({
@@ -525,6 +547,7 @@ export function ExerciseParametersFields({
     preparationTime: values.preparationTime ?? undefined,
     tempo: values.tempo || undefined,
     side: values.side || undefined,
+    type: exerciseType === 'draft' ? undefined : exerciseType,
   });
 
   const dirty = (key: ExerciseFieldKey) => Boolean(isDirtyField?.(key));

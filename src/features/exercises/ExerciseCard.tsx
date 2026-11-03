@@ -33,10 +33,9 @@ import { cn } from '@/lib/utils';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { ImageLightbox } from '@/components/shared/ImageLightbox';
 import { getMediaUrl } from '@/utils/mediaUrl';
-import {
-  HIDE_EXERCISE_TAGS,
-} from '@/components/shared/exercise';
+import { EXERCISE_FIELD_METADATA, HIDE_EXERCISE_TAGS } from '@/components/shared/exercise';
 import { verificationCopy } from '@/features/verification/verificationCopy';
+import { exerciseStatusBadgeVariant } from './utils/exerciseStatusBadgeVariant';
 
 export interface ExerciseTag {
   id: string;
@@ -73,11 +72,7 @@ export interface Exercise {
     | 'ARCHIVED_GLOBAL'
     | 'UPDATE_PENDING';
   organizationVerificationStatus?:
-    | 'NOT_SUBMITTED'
-    | 'PENDING_ORG_REVIEW'
-    | 'ORG_VERIFIED'
-    | 'ORG_CHANGES_REQUESTED'
-    | 'ORG_ARCHIVED';
+    'NOT_SUBMITTED' | 'PENDING_ORG_REVIEW' | 'ORG_VERIFIED' | 'ORG_CHANGES_REQUESTED' | 'ORG_ARCHIVED';
   scope?: 'PERSONAL' | 'ORGANIZATION' | 'GLOBAL';
   adminReviewNotes?: string;
   // Global submission tracking (nowy model weryfikacji)
@@ -168,6 +163,16 @@ export function ExerciseCard({
     exercise.scope === 'ORGANIZATION' &&
     (organizationVerificationStatus === 'NOT_SUBMITTED' || organizationVerificationStatus === 'ORG_CHANGES_REQUESTED');
 
+  const statusBadgeVariant =
+    exerciseStatusBadgeVariant({
+      isSubmittedToGlobal: isSubmittedToGlobal && !isGlobalExercise,
+      isPendingReview,
+      isChangesRequested,
+      isPendingOrganizationReview,
+      isOrganizationChangesRequested,
+      isOrganizationVerified,
+    }) ?? 'outline';
+
   // Global exercises and pending review exercises are read-only (no edit/delete)
   const isReadOnly = isGlobalExercise || isPendingReview || isPendingOrganizationReview;
 
@@ -199,10 +204,19 @@ export function ExerciseCard({
     .map((img) => getMediaUrl(img))
     .filter((img): img is string => !!img);
 
-  // Lightweight card params for list view only
-  const setsValue = exercise.defaultSets ?? exercise.sets;
-  const repsValue = exercise.defaultReps ?? exercise.reps;
-  const executionTimeValue = exercise.defaultExecutionTime ?? exercise.executionTime;
+  // Lightweight card params for list view only (GraphQL Exercise ma tylko pola default*)
+  const setsValue = exercise.defaultSets;
+  const repsValue = exercise.defaultReps;
+  const executionTimeValue = exercise.defaultExecutionTime;
+
+  const handleOpen = () => {
+    // For CHANGES_REQUESTED, open edit directly to show feedback
+    if (isChangesRequested && onEdit) {
+      onEdit(exercise);
+    } else {
+      onView?.(exercise);
+    }
+  };
 
   // Compact list view
   if (compact) {
@@ -211,29 +225,22 @@ export function ExerciseCard({
         <div
           data-testid={`exercise-card-${exercise.id}`}
           className={cn(
-            'group relative flex items-center gap-4 rounded-xl border border-border/60 bg-surface p-3',
-            'transition-all duration-200 ease-out cursor-pointer',
-            'hover:bg-surface-light hover:border-primary/30 hover:shadow-md hover:shadow-primary/5',
+            'group relative flex items-center gap-4 rounded-card bg-grouped-tertiary p-3',
+            'transition-colors duration-150 ease-out cursor-pointer hover:bg-fill-tertiary',
+            'focus-within:ring-2 focus-within:ring-ring',
             isInBuilder && 'border-primary bg-primary/5 ring-1 ring-primary/20',
-            isPendingReview && 'border-yellow-500/30 bg-yellow-500/5 opacity-70',
-            isChangesRequested && 'border-red-500/30 bg-red-500/5',
+            isPendingReview && 'border-status-warning/30 bg-status-warning-muted opacity-70',
+            isChangesRequested && 'border-status-danger/30 bg-status-danger-muted',
             className
           )}
-          onClick={() => {
-            // For CHANGES_REQUESTED, open edit directly to show feedback
-            if (isChangesRequested && onEdit) {
-              onEdit(exercise);
-            } else {
-              onView?.(exercise);
-            }
-          }}
+          onClick={handleOpen}
         >
           {/* Notification dot for CHANGES_REQUESTED in compact mode */}
           {isChangesRequested && (
             <div className="absolute -top-1 -right-1 z-10">
               <span className="flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500" />
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-status-danger-fill opacity-75" />
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-status-danger-fill" />
               </span>
             </div>
           )}
@@ -249,15 +256,24 @@ export function ExerciseCard({
           {/* Content */}
           <div className="flex-1 min-w-0 space-y-1">
             <div className="flex items-center gap-2">
-              <p className="font-semibold truncate">{exercise.name}</p>
+              <p className="font-semibold truncate">
+                <button
+                  type="button"
+                  className="rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleOpen();
+                  }}
+                  data-testid={`exercise-card-${exercise.id}-open-btn`}
+                >
+                  {exercise.name}
+                </button>
+              </p>
               {/* Status badges in compact view */}
               {isGlobalExercise && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Badge
-                      variant="outline"
-                      className="text-[9px] bg-violet/10 text-violet border-violet/20 shrink-0"
-                    >
+                    <Badge variant="outline" className="text-[9px] bg-violet/10 text-violet border-violet/20 shrink-0">
                       <Sparkles className="h-2.5 w-2.5 mr-0.5" />
                       FiziYo
                     </Badge>
@@ -272,7 +288,7 @@ export function ExerciseCard({
                   <TooltipTrigger asChild>
                     <Badge
                       variant="outline"
-                      className="text-[9px] bg-blue-500/10 text-blue-600 border-blue-500/20 shrink-0"
+                      className="text-[9px] bg-status-info-muted text-status-info border-status-info/20 shrink-0"
                     >
                       <Globe className="h-2.5 w-2.5 mr-0.5" />W FiziYo
                     </Badge>
@@ -287,7 +303,7 @@ export function ExerciseCard({
                   <TooltipTrigger asChild>
                     <Badge
                       variant="outline"
-                      className="text-[9px] bg-yellow-500/10 text-yellow-600 border-yellow-500/20 shrink-0"
+                      className="text-[9px] bg-status-warning-muted text-status-warning border-status-warning/20 shrink-0"
                     >
                       <Clock className="h-2.5 w-2.5 mr-0.5" />
                       Weryfikacja
@@ -303,7 +319,7 @@ export function ExerciseCard({
                   <TooltipTrigger asChild>
                     <Badge
                       variant="outline"
-                      className="text-[9px] bg-red-500/10 text-red-600 border-red-500/20 shrink-0"
+                      className="text-[9px] bg-status-danger-muted text-status-danger border-status-danger/20 shrink-0"
                     >
                       <AlertCircle className="h-2.5 w-2.5 mr-0.5" />
                       Do poprawy
@@ -317,15 +333,15 @@ export function ExerciseCard({
             </div>
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
               {setsValue && setsValue > 0 && (
-                <span className="flex items-center gap-1">
-                  <Repeat className="h-3 w-3" />
+                <span className="flex items-center gap-1" title={EXERCISE_FIELD_METADATA.sets.tooltip}>
+                  <Repeat className="h-3 w-3" aria-hidden />
                   {setsValue} serii
                 </span>
               )}
-              {repsValue && repsValue > 0 && <span>{repsValue} powt.</span>}
+              {repsValue && repsValue > 0 && <span title={EXERCISE_FIELD_METADATA.reps.tooltip}>{repsValue} powt.</span>}
               {executionTimeValue && executionTimeValue > 0 && (
-                <span className="flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
+                <span className="flex items-center gap-1" title={EXERCISE_FIELD_METADATA.executionTime.tooltip}>
+                  <Clock className="h-3 w-3" aria-hidden />
                   {executionTimeValue}s
                 </span>
               )}
@@ -343,7 +359,7 @@ export function ExerciseCard({
               className={cn(
                 'h-8 w-8 shrink-0 transition-all duration-200',
                 isInBuilder
-                  ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                  ? 'bg-tint-fill text-on-tint hover:bg-tint-fill-hover'
                   : 'border-primary/50 text-primary hover:bg-primary/10 hover:border-primary',
                 isBouncing && 'animate-bounce-once'
               )}
@@ -361,7 +377,9 @@ export function ExerciseCard({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                aria-label={`Więcej opcji: ${exercise.name}`}
+                data-testid={`exercise-card-${exercise.id}-menu-trigger`}
+                className="h-8 w-8 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 group-focus-within:opacity-100 transition-opacity"
               >
                 <MoreVertical className="h-4 w-4" />
               </Button>
@@ -402,7 +420,7 @@ export function ExerciseCard({
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={(event) => runMenuAction(event, () => onSubmitToOrganizationReview?.(exercise))}
-                    className="text-emerald-600 focus:text-emerald-600"
+                    className="text-status-success focus:text-status-success"
                     data-testid={`exercise-card-${exercise.id}-submit-org-review-btn`}
                   >
                     <Rocket className="mr-2 h-4 w-4" />
@@ -414,7 +432,7 @@ export function ExerciseCard({
                 <DropdownMenuItem
                   onClick={(event) => runMenuAction(event, () => onReportIssue(exercise))}
                   data-testid={`exercise-card-${exercise.id}-report-btn`}
-                  className="text-amber-500 focus:text-amber-500 focus:bg-amber-500/10"
+                  className="text-status-warning focus:text-status-warning focus:bg-status-warning-muted"
                 >
                   <Flag className="mr-2 h-4 w-4" />
                   Zgłoś do poprawki
@@ -427,19 +445,19 @@ export function ExerciseCard({
                 </div>
               )}
               {isSubmittedToGlobal && (
-                <div className="px-2 py-1.5 text-xs text-blue-600 flex items-center gap-1">
+                <div className="px-2 py-1.5 text-xs text-status-info flex items-center gap-1">
                   <Globe className="h-3 w-3" />
                   Zgłoszono do FiziYo
                 </div>
               )}
               {isPendingReview && (
-                <div className="px-2 py-1.5 text-xs text-amber-600 flex items-center gap-1">
+                <div className="px-2 py-1.5 text-xs text-status-warning flex items-center gap-1">
                   <Globe className="h-3 w-3" />
                   Oczekuje na weryfikację
                 </div>
               )}
               {isPendingOrganizationReview && (
-                <div className="px-2 py-1.5 text-xs text-amber-700 flex items-center gap-1">
+                <div className="px-2 py-1.5 text-xs text-status-warning flex items-center gap-1">
                   <Clock className="h-3 w-3" />
                   Oczekuje na weryfikację org
                 </div>
@@ -470,20 +488,13 @@ export function ExerciseCard({
         <div
           data-testid={`exercise-card-${exercise.id}`}
           className={cn(
-            'group relative flex flex-col rounded-2xl border border-border/70 bg-card overflow-hidden',
-            'transition-all duration-300 ease-out cursor-pointer',
-            'hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/10',
+            'group relative flex flex-col rounded-card bg-grouped-tertiary overflow-hidden',
+            'transition-colors duration-150 ease-out cursor-pointer hover:bg-fill-tertiary',
+            'focus-within:ring-2 focus-within:ring-ring',
             isInBuilder && 'ring-2 ring-primary border-primary/50 shadow-lg shadow-primary/20',
             className
           )}
-          onClick={() => {
-            // For CHANGES_REQUESTED, open edit directly to show feedback
-            if (isChangesRequested && onEdit) {
-              onEdit(exercise);
-            } else {
-              onView?.(exercise);
-            }
-          }}
+          onClick={handleOpen}
         >
           {/* Image section with Atlas pattern (Blurred backdrop + Contain) */}
           <div className="relative aspect-4/3 overflow-hidden bg-muted/60 dark:bg-background">
@@ -515,6 +526,7 @@ export function ExerciseCard({
                 {!isInBuilder && (
                   <button
                     type="button"
+                    data-testid={`exercise-card-${exercise.id}-zoom-btn`}
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -538,31 +550,22 @@ export function ExerciseCard({
             )}
 
             {/* Status badges - top left */}
-              {(isGlobalExercise ||
-                isSubmittedToGlobal ||
-                isPendingReview ||
-                isChangesRequested ||
-                isPendingOrganizationReview ||
-                isOrganizationChangesRequested ||
-                isOrganizationVerified) && (
+            {(isGlobalExercise ||
+              isSubmittedToGlobal ||
+              isPendingReview ||
+              isChangesRequested ||
+              isPendingOrganizationReview ||
+              isOrganizationChangesRequested ||
+              isOrganizationVerified) && (
               <div className="absolute top-3 left-3 z-10">
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Badge
-                      variant="outline"
+                      variant={statusBadgeVariant}
                       className={cn(
-                        'text-[10px] font-semibold backdrop-blur-md border shadow-lg cursor-help',
-                        isGlobalExercise && 'bg-violet/90 text-white border-violet-dark',
-                        isSubmittedToGlobal &&
-                          !isPendingReview &&
-                          !isChangesRequested &&
-                          !isGlobalExercise &&
-                          'bg-blue-500/80 text-white border-blue-600',
-                        isPendingReview && 'bg-yellow-500/90 text-black border-yellow-600',
-                        isChangesRequested && 'bg-red-500/90 text-white border-red-600',
-                        isPendingOrganizationReview && 'bg-amber-600/90 text-white border-amber-700',
-                        isOrganizationChangesRequested && 'bg-rose-500/90 text-white border-rose-600',
-                        isOrganizationVerified && 'bg-emerald-500/90 text-white border-emerald-600'
+                        'text-[10px] font-semibold cursor-help',
+                        statusBadgeVariant === 'outline' &&
+                          'border-violet-dark bg-violet/90 text-white shadow-lg backdrop-blur-md'
                       )}
                     >
                       {isGlobalExercise && (
@@ -629,8 +632,8 @@ export function ExerciseCard({
             {isChangesRequested && (
               <div className="absolute top-0 right-0 z-20 -translate-y-1 translate-x-1">
                 <span className="flex h-4 w-4">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 border-2 border-background" />
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-status-danger-fill opacity-75" />
+                  <span className="relative inline-flex rounded-full h-4 w-4 bg-status-danger-fill border-2 border-background" />
                 </span>
               </div>
             )}
@@ -645,7 +648,7 @@ export function ExerciseCard({
                   className={cn(
                     'h-9 w-9 backdrop-blur-md transition-all duration-300 rounded-xl shadow-lg',
                     isInBuilder
-                      ? 'bg-primary text-primary-foreground border-primary/50'
+                      ? 'bg-tint-fill text-on-tint border-primary/50'
                       : 'bg-background/90 dark:bg-black/40 hover:bg-background dark:hover:bg-black/60 text-foreground dark:text-white border border-border/70 dark:border-white/10 hover:scale-105',
                     isBouncing && 'animate-bounce-once'
                   )}
@@ -662,7 +665,9 @@ export function ExerciseCard({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-9 w-9 bg-background/90 dark:bg-black/40 hover:bg-background dark:hover:bg-black/60 text-foreground dark:text-white backdrop-blur-sm rounded-xl border border-border/70 dark:border-white/10 shadow-lg"
+                    aria-label={`Więcej opcji: ${exercise.name}`}
+                    data-testid={`exercise-card-${exercise.id}-menu-trigger`}
+                    className="h-9 w-9 bg-background/90 dark:bg-black/40 hover:bg-background dark:hover:bg-black/60 text-foreground dark:text-white backdrop-blur-sm rounded-full border border-border/70 dark:border-white/10 shadow-floating"
                   >
                     <MoreVertical className="h-5 w-5" />
                   </Button>
@@ -697,7 +702,7 @@ export function ExerciseCard({
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={(event) => runMenuAction(event, () => onSubmitToOrganizationReview?.(exercise))}
-                        className="text-emerald-600 focus:text-emerald-600"
+                        className="text-status-success focus:text-status-success"
                         data-testid={`exercise-card-${exercise.id}-submit-org-review-btn`}
                       >
                         <Rocket className="mr-2 h-4 w-4" />
@@ -709,7 +714,7 @@ export function ExerciseCard({
                     <DropdownMenuItem
                       onClick={(event) => runMenuAction(event, () => onReportIssue(exercise))}
                       data-testid={`exercise-card-${exercise.id}-report-btn`}
-                      className="text-amber-500 focus:text-amber-500 focus:bg-amber-500/10"
+                      className="text-status-warning focus:text-status-warning focus:bg-status-warning-muted"
                     >
                       <Flag className="mr-2 h-4 w-4" />
                       Zgłoś do poprawki
@@ -722,13 +727,13 @@ export function ExerciseCard({
                     </div>
                   )}
                   {isSubmittedToGlobal && !isGlobalExercise && (
-                    <div className="px-2 py-1.5 text-xs text-blue-600 flex items-center gap-1">
+                    <div className="px-2 py-1.5 text-xs text-status-info flex items-center gap-1">
                       <Globe className="h-3 w-3" />
                       Zgłoszono do FiziYo
                     </div>
                   )}
                   {isPendingReview && (
-                    <div className="px-2 py-1.5 text-xs text-amber-600 flex items-center gap-1">
+                    <div className="px-2 py-1.5 text-xs text-status-warning flex items-center gap-1">
                       <Globe className="h-3 w-3" />
                       Oczekuje na weryfikację
                     </div>
@@ -751,9 +756,19 @@ export function ExerciseCard({
           </div>
 
           {/* Content section */}
-          <div className="flex flex-col p-4 pt-3 space-y-1 bg-card border-t border-border/50 backdrop-blur-sm">
-            <h3 className="font-bold text-sm sm:text-base leading-tight line-clamp-1 text-foreground">
-              {exercise.name}
+          <div className="flex flex-col p-4 pt-3 space-y-1">
+            <h3 className="font-semibold text-[15px] leading-tight line-clamp-1 text-foreground">
+              <button
+                type="button"
+                className="rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  handleOpen();
+                }}
+                data-testid={`exercise-card-${exercise.id}-open-btn`}
+              >
+                {exercise.name}
+              </button>
             </h3>
 
             {/* List/grid card should stay lightweight; full params are shown in detail views */}

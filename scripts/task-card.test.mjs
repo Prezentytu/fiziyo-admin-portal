@@ -6,11 +6,9 @@ import { fileURLToPath } from 'node:url';
 import {
   AUTHORIZATION_DENIED_REASON,
   MODES,
-  REGISTRY_HANDOFF_FIELDS,
   RESERVED_AUTHORIZATION_KEYS,
   SHAPES,
   authorizationFromIssue,
-  describeHandoff,
   parseTaskCard,
   promoteTaskCard,
   sourceId,
@@ -201,6 +199,19 @@ describe('stałe kontraktu', () => {
   });
 });
 
+describe('szablon karty w cloud-agent-policy', () => {
+  it('ma unikalne i znane klucze', async () => {
+    const { readFileSync } = await import('node:fs');
+    const policy = readFileSync(new URL('../docs/architecture/cloud-agent-policy.md', import.meta.url), 'utf8');
+    const result = parseTaskCard(policy);
+    assert.doesNotMatch(result.errors.join('\n'), /Brak bloku/);
+    assert.deepEqual(
+      result.errors.filter((error) => /Zduplikowany klucz|Nieznany klucz|Linia bez klucza/.test(error)),
+      [],
+    );
+  });
+});
+
 describe('karta nie jest zgodą', () => {
   it('odmawia niezależnie od etykiety, komentarza i „Adam zaakceptował”', () => {
     const bodies = [
@@ -226,11 +237,6 @@ describe('karta nie jest zgodą', () => {
     });
     assert.equal(promoted.ok, true);
     assert.equal(authorizationFromIssue(promoted.body).authorized, false);
-    const handoff = describeHandoff(parsed.card);
-    assert.equal(handoff.cardOk, true);
-    assert.equal(handoff.authorized, false);
-    assert.deepEqual(handoff.fromRegistry, REGISTRY_HANDOFF_FIELDS);
-    assert.equal(handoff.fromRegistry.includes('scopeHash'), true);
   });
 
   it('odrzuca klucze udające zgodę zamiast traktować je jako format karty', () => {

@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 
 import { loadPdfRenderer } from '@/components/pdf/loadPdfRenderer';
-import { preloadPdfExerciseImages, resolvePdfExerciseImageUrl } from '@/components/pdf/pdfExerciseUtils';
+import { preloadPdfExerciseImages, toPdfExercise } from '@/components/pdf/pdfExerciseUtils';
 import type {
   PDFExerciseSet,
   PDFOrganization,
@@ -424,26 +424,7 @@ export function PatientQRCodeDialog({
         website: organization.website,
       };
 
-      const pdfExercises: PDFExercise[] = (selectedPlan.exerciseMappings || []).map((mapping) => ({
-        id: mapping.id,
-        name: mapping.exercise?.name || 'Nieznane ćwiczenie',
-        description: mapping.exercise?.patientDescription || mapping.exercise?.description,
-        type: mapping.exercise?.type?.toLowerCase() as PDFExercise['type'],
-        exerciseSide: (mapping.exercise?.side?.toLowerCase() ||
-          mapping.exercise?.exerciseSide) as PDFExercise['exerciseSide'],
-        imageUrl: resolvePdfExerciseImageUrl(mapping.exercise),
-        images: mapping.exercise?.images,
-        notes: mapping.notes || mapping.exercise?.notes,
-        sets: mapping.sets ?? mapping.exercise?.defaultSets ?? mapping.exercise?.sets,
-        reps: mapping.reps ?? mapping.exercise?.defaultReps ?? mapping.exercise?.reps,
-        duration: mapping.duration ?? mapping.exercise?.defaultDuration ?? mapping.exercise?.duration,
-        restSets: mapping.restSets ?? mapping.exercise?.defaultRestBetweenSets ?? mapping.exercise?.restSets,
-        restReps: mapping.restReps ?? mapping.exercise?.defaultRestBetweenReps ?? mapping.exercise?.restReps,
-        executionTime: mapping.executionTime ?? mapping.exercise?.defaultExecutionTime,
-        order: mapping.order,
-        customName: mapping.customName,
-        customDescription: mapping.customDescription,
-      }));
+      const pdfExercises: PDFExercise[] = (selectedPlan.exerciseMappings || []).map(toPdfExercise);
       await preloadPdfExerciseImages(pdfExercises);
 
       const pdfExerciseSet: PDFExerciseSet = {
@@ -616,7 +597,7 @@ export function PatientQRCodeDialog({
                 )}
 
                 <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-1">
-                  <Smartphone className="h-4 w-4 text-blue-400" />
+                  <Smartphone className="h-4 w-4 text-status-info" />
                   Aplikacja Mobilna
                 </h3>
                 <p className="text-xs text-muted-foreground text-center max-w-[180px]">
@@ -715,7 +696,7 @@ export function PatientQRCodeDialog({
                       size="sm"
                       onClick={handlePrintCard}
                       disabled={isGeneratingPDF || !organization}
-                      className="w-full gap-2 bg-primary hover:bg-primary-dark shadow-lg shadow-primary/20"
+                      className="w-full gap-2"
                       data-testid="patient-qr-print-btn"
                     >
                       <Printer className="h-3.5 w-3.5" />

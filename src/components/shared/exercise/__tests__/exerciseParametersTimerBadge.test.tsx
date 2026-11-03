@@ -18,7 +18,7 @@ const BASE_VALUES = {
 describe('ExerciseParametersFields timer badge', () => {
   it('pokazuje Timer wyłączony, gdy czas powtórzenia jest pusty', () => {
     render(
-      <ExerciseParametersFields surface="template" values={BASE_VALUES} onChange={vi.fn()} />
+      <ExerciseParametersFields exerciseType="draft" surface="template" values={BASE_VALUES} onChange={vi.fn()} />
     );
 
     expect(screen.getByTestId('exercise-param-mode-indicator')).toHaveTextContent('Timer wyłączony');
@@ -27,7 +27,7 @@ describe('ExerciseParametersFields timer badge', () => {
 
   it('pokazuje Timer w aplikacji, gdy czas powtórzenia > 0', () => {
     render(
-      <ExerciseParametersFields
+      <ExerciseParametersFields exerciseType="draft"
         surface="template"
         values={{ ...BASE_VALUES, executionTime: 8 }}
         onChange={vi.fn()}

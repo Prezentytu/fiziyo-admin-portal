@@ -56,23 +56,23 @@ const shareOptions: ShareOption[] = [
   {
     name: 'WhatsApp',
     icon: WhatsAppIcon,
-    gradient: 'from-green-500 to-green-600',
-    hoverGradient: 'hover:from-green-600 hover:to-green-700',
+    gradient: 'from-status-success to-status-success',
+    hoverGradient: 'hover:from-status-success hover:to-status-success',
     getUrl: (url, text) => `https://wa.me/?text=${encodeURIComponent(text + '\n\n' + url)}`,
   },
   {
     name: 'Email',
     icon: Mail,
-    gradient: 'from-blue-500 to-blue-600',
-    hoverGradient: 'hover:from-blue-600 hover:to-blue-700',
+    gradient: 'from-status-info to-status-info',
+    hoverGradient: 'hover:from-status-info hover:to-status-info',
     getUrl: (url, text) =>
       `mailto:?subject=${encodeURIComponent('Zaproszenie do FiziYo')}&body=${encodeURIComponent(text + '\n\n' + url)}`,
   },
   {
     name: 'Telegram',
     icon: TelegramIcon,
-    gradient: 'from-sky-500 to-sky-600',
-    hoverGradient: 'hover:from-sky-600 hover:to-sky-700',
+    gradient: 'from-status-info to-status-info',
+    hoverGradient: 'hover:from-status-info hover:to-status-info',
     getUrl: (url, text) => `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`,
   },
   {
@@ -85,8 +85,8 @@ const shareOptions: ShareOption[] = [
   {
     name: 'SMS',
     icon: Smartphone,
-    gradient: 'from-emerald-500 to-emerald-600',
-    hoverGradient: 'hover:from-emerald-600 hover:to-emerald-700',
+    gradient: 'from-status-success to-status-success',
+    hoverGradient: 'hover:from-status-success hover:to-status-success',
     getUrl: (url, text) => `sms:?body=${encodeURIComponent(text + ' ' + url)}`,
   },
 ];
@@ -171,7 +171,7 @@ export function ShareSheet({ url, organizationName, role, expiresAt, className }
       data-testid="org-share-sheet"
     >
       {/* Header */}
-      <div className="px-5 py-4 border-b border-border/40 bg-gradient-to-r from-primary/5 via-emerald-500/5 to-primary/5">
+      <div className="px-5 py-4 border-b border-border/40 bg-gradient-to-r from-primary/5 via-status-success-muted to-primary/5">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/15 shrink-0">
             <Share2 className="h-5 w-5 text-primary" />
@@ -248,8 +248,8 @@ export function ShareSheet({ url, organizationName, role, expiresAt, className }
                   'transition-all duration-200 hover:scale-105 hover:shadow-lg',
                   'active:scale-95',
                   copied
-                    ? 'from-primary to-emerald-600'
-                    : 'from-zinc-600 to-zinc-700 hover:from-zinc-500 hover:to-zinc-600',
+                    ? 'from-primary to-status-success'
+                    : 'from-separator to-separator hover:from-separator hover:to-separator',
                   isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
                 )}
                 style={{ transitionDelay: `${100 + shareOptions.length * 40}ms` }}

@@ -12,6 +12,7 @@ import { MemberCard, OrganizationMember } from './MemberCard';
 import { passesRoleFilter, isStaffRole, type RoleFilter } from './teamSectionUtils';
 import { matchesSearchQuery } from '@/utils/textUtils';
 import { cn } from '@/lib/utils';
+import { polishPlural } from '@/utils/polishPlural';
 
 interface TeamSectionProps {
   members: OrganizationMember[];
@@ -27,8 +28,8 @@ interface TeamSectionProps {
 }
 
 const roleConfig = {
-  owner: { label: 'Właściciel', icon: Crown, color: 'text-amber-500', priority: 0 },
-  admin: { label: 'Administratorzy', icon: ShieldCheck, color: 'text-blue-500', priority: 1 },
+  owner: { label: 'Właściciel', icon: Crown, color: 'text-status-warning', priority: 0 },
+  admin: { label: 'Administratorzy', icon: ShieldCheck, color: 'text-status-info', priority: 1 },
   therapist: { label: 'Fizjoterapeuci', icon: User, color: 'text-primary', priority: 2 },
   member: { label: 'Członkowie', icon: User, color: 'text-muted-foreground', priority: 3 },
 };
@@ -116,7 +117,7 @@ export function TeamSection({
           <div>
             <h3 className="text-lg font-semibold text-foreground">Twój Zespół</h3>
             <p className="text-sm text-muted-foreground">
-              {staffMembers.length} {staffMembers.length === 1 ? 'osoba' : 'osób'} w organizacji
+              {staffMembers.length} {polishPlural(staffMembers.length, 'osoba', 'osoby', 'osób')} w organizacji
             </p>
           </div>
         </div>

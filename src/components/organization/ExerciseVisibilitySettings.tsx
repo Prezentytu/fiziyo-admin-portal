@@ -90,7 +90,7 @@ export function ExerciseVisibilitySettings({
   };
 
   return (
-    <Card className="rounded-xl border border-border/50 bg-card/30">
+    <Card>
       <CardHeader>
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
@@ -108,8 +108,8 @@ export function ExerciseVisibilitySettings({
           className={cn(
             'flex items-start gap-4 p-4 rounded-xl border transition-all',
             requireOrganizationVerification
-              ? 'border-emerald-500/30 bg-emerald-500/5 ring-1 ring-emerald-500/10'
-              : 'border-border/50 bg-background/50 hover:bg-background hover:border-emerald-500/30'
+              ? 'border-status-success/30 bg-status-success-muted ring-1 ring-status-success/10'
+              : 'border-border/50 bg-background/50 hover:bg-background hover:border-status-success/30'
           )}
         >
           <Checkbox
@@ -206,7 +206,7 @@ export function ExerciseVisibilitySettings({
             <Button
               onClick={handleSave}
               disabled={loading}
-              className="gap-2 bg-primary text-primary-foreground font-bold h-10 px-6 rounded-xl shadow-lg shadow-primary/20 transition-all"
+              className="gap-2 bg-tint-fill text-on-tint font-bold h-10 px-6 rounded-xl shadow-lg shadow-primary/20 transition-all"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               Zapisz zmiany

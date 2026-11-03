@@ -93,15 +93,15 @@ export function ReviewerAchievements({
           className
         )}
       >
-        <Trophy className="h-4 w-4 text-amber-500 shrink-0" />
+        <Trophy className="h-4 w-4 text-status-warning shrink-0" />
         <span className="text-foreground font-medium">{stats.total}</span>
         <span className="text-muted-foreground">zweryfikowanych</span>
 
         {stats.currentStreak > 0 && (
           <>
             <span className="text-border/60">•</span>
-            <Flame className="h-4 w-4 text-orange-500 shrink-0" />
-            <span className="text-orange-500 font-medium">{stats.currentStreak}</span>
+            <Flame className="h-4 w-4 text-status-warning shrink-0" />
+            <span className="text-status-warning font-medium">{stats.currentStreak}</span>
             <span className="text-muted-foreground hidden sm:inline">
               {pluralize(stats.currentStreak, 'dzień', false)}
             </span>
@@ -119,8 +119,8 @@ export function ReviewerAchievements({
     >
       <CardContent className="p-4 sm:p-5">
         <div className="flex items-center gap-2 mb-4">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/20">
-            <Trophy className="h-4 w-4 text-amber-500" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-status-warning-muted">
+            <Trophy className="h-4 w-4 text-status-warning" />
           </div>
           <h3 className="font-semibold text-foreground">Twoje Wpływy</h3>
         </div>
@@ -138,8 +138,8 @@ export function ReviewerAchievements({
           {/* Approved */}
           <div className="text-center">
             <div className="flex items-center justify-center gap-1.5 mb-1">
-              <CheckCircle2 className="h-4 w-4 text-green-500" />
-              <span className="text-2xl font-bold text-green-500">{stats.totalApproved}</span>
+              <CheckCircle2 className="h-4 w-4 text-status-success" />
+              <span className="text-2xl font-bold text-status-success">{stats.totalApproved}</span>
             </div>
             <p className="text-[11px] sm:text-xs text-muted-foreground">Zatwierdzone</p>
           </div>
@@ -147,8 +147,8 @@ export function ReviewerAchievements({
           {/* Rejected */}
           <div className="text-center">
             <div className="flex items-center justify-center gap-1.5 mb-1">
-              <XCircle className="h-4 w-4 text-red-500" />
-              <span className="text-2xl font-bold text-red-500">{stats.totalRejected}</span>
+              <XCircle className="h-4 w-4 text-status-danger" />
+              <span className="text-2xl font-bold text-status-danger">{stats.totalRejected}</span>
             </div>
             <p className="text-[11px] sm:text-xs text-muted-foreground">Odrzucone</p>
           </div>
@@ -156,11 +156,11 @@ export function ReviewerAchievements({
           {/* Streak */}
           <div className="text-center">
             <div className="flex items-center justify-center gap-1.5 mb-1">
-              <Flame className={cn('h-4 w-4', stats.currentStreak > 0 ? 'text-orange-500' : 'text-muted-foreground')} />
+              <Flame className={cn('h-4 w-4', stats.currentStreak > 0 ? 'text-status-warning' : 'text-muted-foreground')} />
               <span
                 className={cn(
                   'text-2xl font-bold',
-                  stats.currentStreak > 0 ? 'text-orange-500' : 'text-muted-foreground'
+                  stats.currentStreak > 0 ? 'text-status-warning' : 'text-muted-foreground'
                 )}
               >
                 {stats.currentStreak}
@@ -175,9 +175,9 @@ export function ReviewerAchievements({
 
         {/* Streak message */}
         {stats.currentStreak >= 3 && (
-          <div className="mt-4 flex items-center gap-2 p-2 rounded-lg bg-orange-500/10 border border-orange-500/20">
-            <Flame className="h-4 w-4 text-orange-500 shrink-0" />
-            <p className="text-xs text-orange-200">🔥 Świetna passa! {stats.currentStreak} dni aktywnej weryfikacji!</p>
+          <div className="mt-4 flex items-center gap-2 p-2 rounded-lg bg-status-warning-muted border border-status-warning/20">
+            <Flame className="h-4 w-4 text-status-warning shrink-0" />
+            <p className="text-xs text-foreground">🔥 Świetna passa! {stats.currentStreak} dni aktywnej weryfikacji!</p>
           </div>
         )}
       </CardContent>

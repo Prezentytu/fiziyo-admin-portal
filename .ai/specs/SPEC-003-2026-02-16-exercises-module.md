@@ -143,7 +143,7 @@ Na ekranie szczegółów ćwiczenia akcja `Dodaj do zestawu` otwiera `CreateSetW
 
 - `GET_EXERCISE_BY_ID_QUERY` - pojedyncze ćwiczenie
 - `GET_ORGANIZATION_EXERCISES_QUERY` - lista ćwiczeń organizacji w panelu
-- `GET_AVAILABLE_EXERCISES_QUERY` - ćwiczenia dostępne dla organizacji (własne + globalne)
+- `GET_AVAILABLE_EXERCISES_PICKER_QUERY` - ćwiczenia dostępne dla organizacji (własne + globalne) do wyboru, bez `enrichmentData`
 
 `GET_EXERCISES_QUERY` (nieograniczona lista `exercises`) jest tylko w mobile; panel go nie eksportuje (`src/graphql/__tests__/exercisesQuerySurface.test.ts`).
 

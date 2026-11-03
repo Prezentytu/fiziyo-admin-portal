@@ -70,10 +70,10 @@ export function ExercisePatientContentFields({
     <div className={cn('space-y-4', className)} data-testid={testIdPrefix}>
       {showRestore ? (
         <div
-          className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-status-warning/30 bg-status-warning-muted px-3 py-2"
           data-testid={`${testIdPrefix}-personalized-banner`}
         >
-          <p className="text-[11px] text-amber-800 dark:text-amber-200">
+          <p className="text-[11px] text-status-warning">
             Zmienione dla tego planu ({overriddenPaths.length})
           </p>
           <Button

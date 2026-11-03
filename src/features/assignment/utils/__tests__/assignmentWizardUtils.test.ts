@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { canProceedFromStep, type CanProceedContext } from '../assignmentWizardUtils';
+import {
+  canProceedFromStep,
+  wizardEnterAdvances,
+  wizardEnterSubmits,
+  type CanProceedContext,
+} from '../assignmentWizardUtils';
 
 function ctx(overrides: Partial<CanProceedContext> = {}): CanProceedContext {
   return {
@@ -59,8 +64,38 @@ describe('canProceedFromStep', () => {
       expect(canProceedFromStep('schedule', ctx({ frequency: { isFlexible: false, monday: true } }))).toBe(true);
     });
 
-    it('always allows the summary step', () => {
-      expect(canProceedFromStep('summary', ctx())).toBe(true);
-    });
+  });
+});
+
+const lastStepEnter = {
+  isLastStep: true,
+  canProceed: true,
+  shiftKey: false,
+  metaKey: false,
+  ctrlKey: false,
+};
+
+describe('wizardEnterSubmits', () => {
+  it('does not submit on Enter from a schedule day or session control', () => {
+    expect(wizardEnterSubmits(lastStepEnter)).toBe(false);
+  });
+
+  it('submits on Cmd+Enter or Ctrl+Enter on the last step', () => {
+    expect(wizardEnterSubmits({ ...lastStepEnter, metaKey: true })).toBe(true);
+    expect(wizardEnterSubmits({ ...lastStepEnter, ctrlKey: true })).toBe(true);
+  });
+
+  it('does not submit when the last step cannot proceed', () => {
+    expect(wizardEnterSubmits({ ...lastStepEnter, canProceed: false, metaKey: true })).toBe(false);
+  });
+});
+
+describe('wizardEnterAdvances', () => {
+  it('advances on Enter before the last step', () => {
+    expect(wizardEnterAdvances({ isLastStep: false, canProceed: true, shiftKey: false })).toBe(true);
+  });
+
+  it('does not advance on the last step', () => {
+    expect(wizardEnterAdvances({ isLastStep: true, canProceed: true, shiftKey: false })).toBe(false);
   });
 });

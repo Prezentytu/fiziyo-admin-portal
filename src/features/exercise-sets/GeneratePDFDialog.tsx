@@ -24,7 +24,7 @@ import { cn } from '@/lib/utils';
 
 import { loadPdfRenderer } from '@/components/pdf/loadPdfRenderer';
 import { formatExercises } from '@/components/pdf/polishUtils';
-import { preloadPdfExerciseImages, resolvePdfExerciseImageUrl } from '@/components/pdf/pdfExerciseUtils';
+import { preloadPdfExerciseImages, resolvePdfExerciseImageUrl, toPdfExercise } from '@/components/pdf/pdfExerciseUtils';
 import { preloadPdfImages } from '@/components/pdf/pdfImagePreloader';
 import type {
   PDFExerciseSet,
@@ -189,26 +189,7 @@ export function GeneratePDFDialog({
       };
 
       // Mapuj ćwiczenia
-      const pdfExercises: PDFExercise[] = (exerciseSet.exerciseMappings || []).map((mapping) => ({
-        id: mapping.id,
-        name: mapping.exercise?.name || 'Nieznane ćwiczenie',
-        description: mapping.exercise?.patientDescription || mapping.exercise?.description,
-        type: mapping.exercise?.type as PDFExercise['type'],
-        exerciseSide: (mapping.exercise?.side?.toLowerCase() ||
-          mapping.exercise?.exerciseSide) as PDFExercise['exerciseSide'],
-        imageUrl: resolvePdfExerciseImageUrl(mapping.exercise),
-        images: mapping.exercise?.images,
-        notes: mapping.notes || mapping.exercise?.notes,
-        sets: mapping.sets,
-        reps: mapping.reps,
-        duration: mapping.duration,
-        executionTime: mapping.executionTime,
-        restSets: mapping.restSets,
-        restReps: mapping.restReps,
-        order: mapping.order,
-        customName: mapping.customName,
-        customDescription: mapping.customDescription,
-      }));
+      const pdfExercises: PDFExercise[] = (exerciseSet.exerciseMappings || []).map(toPdfExercise);
 
       // Preload images via server-side proxy → base64 dataURL.
       // Bypasses browser CORS with Azure CDN and converts WebP/AVIF to PNG.
@@ -367,7 +348,7 @@ export function GeneratePDFDialog({
                     <div
                       className={cn(
                         'h-10 w-10 rounded-lg flex items-center justify-center',
-                        viewMode === 'full' ? 'bg-primary text-primary-foreground' : 'bg-surface-light'
+                        viewMode === 'full' ? 'bg-tint-fill text-on-tint' : 'bg-surface-light'
                       )}
                     >
                       <Eye className="h-5 w-5" />
@@ -395,7 +376,7 @@ export function GeneratePDFDialog({
                     <div
                       className={cn(
                         'h-10 w-10 rounded-lg flex items-center justify-center',
-                        viewMode === 'compact' ? 'bg-primary text-primary-foreground' : 'bg-surface-light'
+                        viewMode === 'compact' ? 'bg-tint-fill text-on-tint' : 'bg-surface-light'
                       )}
                     >
                       <List className="h-5 w-5" />

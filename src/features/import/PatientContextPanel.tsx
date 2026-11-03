@@ -18,6 +18,7 @@ import { GET_ALL_THERAPIST_PATIENTS_QUERY } from '@/graphql/queries/therapists.q
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import type { UserByClerkIdResponse, TherapistPatientsResponse } from '@/types/apollo';
+import { polishPlural } from '@/utils/polishPlural';
 
 interface PatientOption {
   id: string;
@@ -221,7 +222,7 @@ export function PatientContextPanel({
 
             {showWarning ? (
               <p className="mt-1 text-sm text-warning">
-                {notesToCreateCount} {notesToCreateCount === 1 ? 'notatka wymaga' : 'notatki wymagają'} powiązania z
+                {notesToCreateCount} {polishPlural(notesToCreateCount, 'notatka wymaga', 'notatki wymagają', 'notatek wymaga')} powiązania z
                 pacjentem
               </p>
             ) : (
@@ -233,7 +234,7 @@ export function PatientContextPanel({
         {/* AI suggestion */}
         {detectedPatientName && !selectedPatientId && (
           <div className="mt-4 flex items-center gap-3 rounded-xl bg-surface-light p-4">
-            <Badge variant="secondary" className="shrink-0 bg-blue-500/20 text-blue-600 border-0">
+            <Badge variant="secondary" className="shrink-0 bg-status-info-muted text-status-info border-0">
               AI wykryło
             </Badge>
             <span className="text-sm text-foreground truncate flex-1">&quot;{detectedPatientName}&quot;</span>
@@ -329,7 +330,7 @@ export function PatientContextPanel({
                           {suggestedPatient?.id === patient.id && (
                             <Badge
                               variant="secondary"
-                              className="shrink-0 text-xs bg-blue-500/20 text-blue-600 border-0"
+                              className="shrink-0 text-xs bg-status-info-muted text-status-info border-0"
                             >
                               Sugerowany
                             </Badge>

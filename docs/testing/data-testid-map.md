@@ -18,7 +18,7 @@
 - `billing-` - Rozliczenia Pay-as-you-go
 - `finance-` / `finances-` - Dashboard finansów i konfiguracja wypłat
 - `settings-` - Ustawienia
-- `verification-` - Centrum weryfikacji ćwiczeń (ContentManager)
+- `verification-` - Weryfikacja ćwiczeń (ContentManager)
 - `common-` - Wspólne komponenty
 
 **Sufiksy:**
@@ -129,47 +129,40 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 
 #### Desktop Sidebar
 
-| data-testid        | Element        | Plik          |
-| ------------------ | -------------- | ------------- |
-| `nav-sidebar`      | Główny sidebar | `Sidebar.tsx` |
-| `nav-logo-link`    | Link logo      | `Sidebar.tsx` |
-| `nav-collapse-btn` | Zwiń sidebar   | `Sidebar.tsx` |
-| `nav-expand-btn`   | Rozwiń sidebar | `Sidebar.tsx` |
+| data-testid              | Element                         | Plik          |
+| ------------------------ | ------------------------------- | ------------- |
+| `nav-sidebar`            | Główny sidebar                  | `Sidebar.tsx` |
+| `nav-logo-link`          | Link logo                       | `Sidebar.tsx` |
+| `nav-collapse-btn`       | Zwiń sidebar                    | `Sidebar.tsx` |
+| `nav-expand-btn`         | Rozwiń sidebar                  | `Sidebar.tsx` |
+| `nav-sidebar-expand-btn` | Rozwiń zwinięte menu z nagłówka | `Header.tsx`  |
 
-#### Linki nawigacyjne (Sidebar 2.0 - 3 strefy)
+#### Linki nawigacyjne (sidebar: tylko codzienna praca)
 
-**Strefa 1: Klinika**
+Konfiguracja menu desktop i mobile jest jedna: `src/components/layout/navigationConfig.ts`.
 
-| data-testid              | Element         | Plik          |
-| ------------------------ | --------------- | ------------- |
-| `nav-link-dashboard`     | Link: Panel     | `Sidebar.tsx` |
-| `nav-link-patients`      | Link: Pacjenci  | `Sidebar.tsx` |
-| `nav-link-exercise-sets` | Link: Zestawy   | `Sidebar.tsx` |
-| `nav-link-exercises`     | Link: Ćwiczenia | `Sidebar.tsx` |
+| data-testid              | Element                                                            | Plik          |
+| ------------------------ | ------------------------------------------------------------------ | ------------- |
+| `nav-link-dashboard`     | Link: Panel                                                        | `Sidebar.tsx` |
+| `nav-link-patients`      | Link: Pacjenci                                                     | `Sidebar.tsx` |
+| `nav-link-exercise-sets` | Link: Zestawy                                                      | `Sidebar.tsx` |
+| `nav-link-exercises`     | Link: Ćwiczenia                                                    | `Sidebar.tsx` |
+| `nav-link-verification`  | Link: Weryfikacja (pierwsza kolejka wg roli, licznik oczekujących) | `Sidebar.tsx` |
+| `nav-link-import`        | Link: Import dokumentów (AI)                                       | `Sidebar.tsx` |
 
-**Strefa 2: Smart Tools**
+#### Menu konta (dół sidebara)
 
-| data-testid       | Element                      | Plik          |
-| ----------------- | ---------------------------- | ------------- |
-| `nav-link-import` | Link: Import Dokumentów (AI) | `Sidebar.tsx` |
+Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu renderuje się w portalu, poza `<aside>`; najpierw kliknij `nav-user-footer-trigger`.
 
-**Strefa 3: Organizacja (tylko admin/owner)**
-
-| data-testid             | Element           | Plik          |
-| ----------------------- | ----------------- | ------------- |
-| `nav-link-organization` | Link: Zespół      | `Sidebar.tsx` |
-| `nav-link-billing`      | Link: Rozliczenia | `Sidebar.tsx` |
-| `nav-link-settings`     | Link: Ustawienia  | `Sidebar.tsx` |
-
-#### User Profile Footer (nowy komponent)
-
-| data-testid                | Element                                    | Plik                    |
-| -------------------------- | ------------------------------------------ | ----------------------- |
-| `nav-user-footer-trigger`  | Trigger profilu użytkownika (dół sidebara) | `UserProfileFooter.tsx` |
-| `nav-user-footer-settings` | Ustawienia konta (nawigacja do /settings)  | `UserProfileFooter.tsx` |
-| `nav-user-footer-org-{id}` | Przełącz do organizacji                    | `UserProfileFooter.tsx` |
-| `nav-user-footer-help`     | Pomoc / Support                            | `UserProfileFooter.tsx` |
-| `nav-user-footer-logout`   | Wyloguj się                                | `UserProfileFooter.tsx` |
+| data-testid                | Element                           | Plik                    |
+| -------------------------- | --------------------------------- | ----------------------- |
+| `nav-user-footer-trigger`  | Trigger menu konta (dół sidebara) | `UserProfileFooter.tsx` |
+| `nav-link-organization`    | Zespół (owner/admin)              | `UserProfileFooter.tsx` |
+| `nav-link-finances`        | Finanse (owner/admin)             | `UserProfileFooter.tsx` |
+| `nav-user-footer-settings` | Ustawienia (/settings)            | `UserProfileFooter.tsx` |
+| `nav-user-footer-org-{id}` | Przełącz do organizacji           | `UserProfileFooter.tsx` |
+| `nav-user-footer-help`     | Pomoc / Support                   | `UserProfileFooter.tsx` |
+| `nav-user-footer-logout`   | Wyloguj się                       | `UserProfileFooter.tsx` |
 
 #### Header (kontekst "tu i teraz")
 
@@ -201,30 +194,33 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `nav-mobile-link-patients`      | Link: Pacjenci (mobile)          | `MobileSidebar.tsx` |
 | `nav-mobile-link-exercise-sets` | Link: Zestawy (mobile)           | `MobileSidebar.tsx` |
 | `nav-mobile-link-exercises`     | Link: Ćwiczenia (mobile)         | `MobileSidebar.tsx` |
-| `nav-mobile-link-import`        | Link: Import Dokumentów (mobile) | `MobileSidebar.tsx` |
-| `nav-mobile-link-organization`  | Link: Zespół (mobile)            | `MobileSidebar.tsx` |
-| `nav-mobile-link-billing`       | Link: Rozliczenia (mobile)       | `MobileSidebar.tsx` |
-| `nav-mobile-link-settings`      | Link: Ustawienia (mobile)        | `MobileSidebar.tsx` |
-| `nav-mobile-user-profile`       | Ustawienia profilu (mobile)      | `MobileSidebar.tsx` |
+| `nav-mobile-link-verification`  | Link: Weryfikacja (mobile)       | `MobileSidebar.tsx` |
+| `nav-mobile-link-import`        | Link: Import dokumentów (mobile) | `MobileSidebar.tsx` |
+| `nav-mobile-user-profile`       | Ustawienia (mobile, stopka)      | `MobileSidebar.tsx` |
+| `nav-mobile-link-organization`  | Zespół (mobile, stopka, admin)   | `MobileSidebar.tsx` |
+| `nav-mobile-link-billing`       | Finanse (mobile, stopka, admin)  | `MobileSidebar.tsx` |
 | `nav-mobile-switch-org`         | Przełącz organizację (mobile)    | `MobileSidebar.tsx` |
 | `nav-mobile-help`               | Pomoc / Support (mobile)         | `MobileSidebar.tsx` |
 | `nav-mobile-logout-btn`         | Wyloguj (mobile)                 | `MobileSidebar.tsx` |
 
 ### 3. Dashboard (dashboard-)
 
-| data-testid                     | Element                                        | Plik       |
-| ------------------------------- | ---------------------------------------------- | ---------- |
-| `dashboard-greeting`            | Powitanie                                      | `page.tsx` |
-| `dashboard-hero-assign-set-btn` | Personalizuj i przypisz (główna akcja)         | `page.tsx` |
-| `dashboard-create-set-btn`      | Utwórz zestaw                                  | `page.tsx` |
-| `dashboard-add-patient-btn`     | Dodaj pacjenta                                 | `page.tsx` |
-| `dashboard-activity-section`    | Sekcja "Wymagają uwagi"                        | `page.tsx` |
-| `dashboard-patients-view-all`   | Link: Wszyscy pacjenci                         | `page.tsx` |
-| `dashboard-patient-item-{id}`   | Element listy pacjentów z aktywnością          | `page.tsx` |
-| `dashboard-sets-section`        | Sekcja "Szybki wybór"                          | `page.tsx` |
-| `dashboard-sets-view-all`       | Link: Wszystkie zestawy                        | `page.tsx` |
-| `dashboard-set-item-{id}`       | Element listy zestawów                         | `page.tsx` |
-| `dashboard-quick-assign-{id}`   | Przycisk szybkiej personalizacji i przypisania | `page.tsx` |
+| data-testid                       | Element                                        | Plik       |
+| --------------------------------- | ---------------------------------------------- | ---------- |
+| `dashboard-greeting`              | Powitanie                                      | `page.tsx` |
+| `dashboard-hero-assign-set-btn`   | Personalizuj i przypisz (główna akcja)         | `page.tsx` |
+| `dashboard-create-set-btn`        | Utwórz zestaw                                  | `page.tsx` |
+| `dashboard-add-patient-btn`       | Dodaj pacjenta                                 | `page.tsx` |
+| `dashboard-activity-section`      | Sekcja "Pacjenci do sprawdzenia"               | `page.tsx` |
+| `dashboard-patients-view-all`     | Link: Wszyscy pacjenci                         | `page.tsx` |
+| `dashboard-patient-item-{id}`     | Element listy pacjentów z aktywnością          | `page.tsx` |
+| `dashboard-sets-section`          | Sekcja "Szybkie przypisanie"                   | `page.tsx` |
+| `dashboard-sets-view-all`         | Link: Wszystkie zestawy                        | `page.tsx` |
+| `dashboard-set-item-{id}`         | Element listy zestawów                         | `page.tsx` |
+| `dashboard-quick-assign-{id}`     | Przycisk szybkiej personalizacji i przypisania | `page.tsx` |
+| `dashboard-premium-view-all`      | Link: Wszyscy bez dostępu (kolejka Premium)    | `page.tsx` |
+| `dashboard-premium-item-{id}`     | Pacjent bez aktywnego Premium                  | `page.tsx` |
+| `dashboard-premium-activate-{id}` | Aktywuj Premium z kolejki                      | `page.tsx` |
 
 ### 4. Ćwiczenia (exercise-)
 
@@ -236,6 +232,11 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `exercise-view-grid-btn`                    | Widok siatki                          | `exercises/page.tsx`             |
 | `exercise-view-list-btn`                    | Widok listy                           | `exercises/page.tsx`             |
 | `exercise-create-btn`                       | Dodaj ćwiczenie                       | `exercises/page.tsx`             |
+| `exercise-pagination-summary`               | Wyświetlono X z Y                     | `ListPagination.tsx`             |
+| `exercise-page-size-select`                 | Liczba na stronie                     | `ListPagination.tsx`             |
+| `exercise-pagination-prev`                  | Poprzednia strona                     | `ListPagination.tsx`             |
+| `exercise-pagination-indicator`             | Strona X z Y                          | `ListPagination.tsx`             |
+| `exercise-pagination-next`                  | Następna strona                       | `ListPagination.tsx`             |
 | `exercise-card-{id}`                        | Karta ćwiczenia                       | `ExerciseCard.tsx`               |
 | `exercise-card-{id}-menu-trigger`           | Menu kontekstowe                      | `ExerciseCard.tsx`               |
 | `exercise-card-{id}-view-btn`               | Podgląd                               | `ExerciseCard.tsx`               |
@@ -388,72 +389,91 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 
 ### 6. Pacjenci (patient-)
 
-| data-testid                                         | Element                                    | Plik                             |
-| --------------------------------------------------- | ------------------------------------------ | -------------------------------- |
-| `patient-page-title`                                | Tytuł strony                               | `patients/page.tsx`              |
-| `patient-search-input`                              | Wyszukiwarka                               | `patients/page.tsx`              |
-| `patient-filter-my-btn`                             | Filtr: Moi (Quick Stats)                   | `patients/page.tsx`              |
-| `patient-filter-all-btn`                            | Filtr: Wszyscy (Quick Stats)               | `patients/page.tsx`              |
-| `patient-filter-unassigned-btn`                     | Filtr: Nieprzypisani (Quick Stats)         | `patients/page.tsx`              |
-| `patient-create-btn`                                | Dodaj pacjenta                             | `patients/page.tsx`              |
-| `patient-card-{id}`                                 | Karta pacjenta                             | `PatientCard.tsx`                |
-| `patient-card-{id}-menu-trigger`                    | Menu kontekstowe                           | `PatientCard.tsx`                |
-| `patient-card-{id}-view-btn`                        | Podgląd                                    | `PatientCard.tsx`                |
-| `patient-card-{id}-edit-btn`                        | Edytuj                                     | `PatientCard.tsx`                |
-| `patient-card-{id}-assign-btn`                      | Personalizuj i przypisz                    | `PatientCard.tsx`                |
-| `patient-card-{id}-delete-btn`                      | Usuń                                       | `PatientCard.tsx`                |
-| `patient-card-therapist-badge`                      | Badge fizjoterapeuty                       | `TherapistBadge.tsx`             |
-| `patient-card-therapist-badge-unassigned`           | Badge nieprzypisany                        | `TherapistBadge.tsx`             |
-| `patient-takeover-btn`                              | Przejmij opiekę (przycisk)                 | `PatientExpandableCard.tsx`      |
-| `patient-takeover-dialog`                           | Dialog przejmowania opieki                 | `TakeOverDialog.tsx`             |
-| `patient-takeover-confirm-btn`                      | Potwierdź przejęcie                        | `TakeOverDialog.tsx`             |
-| `patient-expandable-{id}`                           | Karta rozwijana                            | `PatientExpandableCard.tsx`      |
-| `patient-expandable-{id}-assign-btn`                | Personalizuj i przypisz                    | `PatientExpandableCard.tsx`      |
-| `patient-expandable-{id}-menu-trigger`              | Menu kontekstowe                           | `PatientExpandableCard.tsx`      |
-| `patient-detail-back-btn`                           | Przycisk wstecz                            | `patients/[id]/page.tsx`         |
-| `patient-detail-name`                               | Imię i nazwisko                            | `patients/[id]/page.tsx`         |
-| `patient-detail-menu-trigger`                       | Menu akcji                                 | `patients/[id]/page.tsx`         |
-| `patient-detail-assign-btn`                         | Personalizuj i przypisz                    | `patients/[id]/page.tsx`         |
-| `patient-detail-qr-btn`                             | Kod QR                                     | `patients/[id]/page.tsx`         |
-| `patient-detail-edit-btn`                           | Edytuj dane                                | `patients/[id]/page.tsx`         |
-| `patient-form`                                      | Formularz pacjenta                         | `PatientForm.tsx`                |
-| `patient-form-firstname-input`                      | Imię                                       | `PatientForm.tsx`                |
-| `patient-form-lastname-input`                       | Nazwisko                                   | `PatientForm.tsx`                |
-| `patient-form-phone-input`                          | Telefon                                    | `PatientForm.tsx`                |
-| `patient-form-email-input`                          | Email                                      | `PatientForm.tsx`                |
-| `patient-form-context-input`                        | Etykieta kontekstu                         | `PatientForm.tsx`                |
-| `patient-form-submit-btn`                           | Zapisz                                     | `PatientForm.tsx`                |
-| `patient-form-cancel-btn`                           | Anuluj                                     | `PatientForm.tsx`                |
-| `patient-dialog`                                    | Dialog pacjenta                            | `PatientDialog.tsx`              |
-| `patient-dialog-title`                              | Tytuł dialogu                              | `PatientDialog.tsx`              |
-| `patient-assignment-{id}`                           | Karta przypisania                          | `PatientAssignmentCard.tsx`      |
-| `patient-assignment-status-badge-{id}`              | Główny badge statusu przypisania           | `PatientAssignmentCard.tsx`      |
-| `patient-assignment-premium-hint-{id}`              | Dodatkowy sygnał „Brak Premium”            | `PatientAssignmentCard.tsx`      |
-| `patient-assignment-{id}-edit-btn`                  | Edytuj harmonogram                         | `PatientAssignmentCard.tsx`      |
-| `patient-assignment-{id}-remove-btn`                | Usuń przypisanie                           | `PatientAssignmentCard.tsx`      |
-| `patient-assignment-{id}-pdf-btn`                   | Generuj PDF                                | `PatientAssignmentCard.tsx`      |
-| `patient-assignment-{id}-schedule-summary`          | Kompaktowy harmonogram (karta zwinięta)    | `PatientAssignmentCard.tsx`      |
-| `patient-assignment-expanded-{id}-schedule-summary` | Harmonogram szczegółowy (karta rozwinięta) | `PatientAssignmentCard.tsx`      |
-| `patient-qr-dialog`                                 | Dialog QR                                  | `PatientQRCodeDialog.tsx`        |
-| `patient-qr-code`                                   | Kod QR HTTPS; `data-qr-url` = payload      | `PatientQRCodeDialog.tsx`        |
-| `patient-qr-payload`                                | Ukryty canvas QR; `data-qr-url` = payload  | `PatientQRCodeDialog.tsx`        |
-| `patient-qr-unavailable`                            | Hint gdy brak patient/org/therapist        | `PatientQRCodeDialog.tsx`        |
-| `patient-qr-download-btn`                           | Pobierz QR                                 | `PatientQRCodeDialog.tsx`        |
-| `patient-qr-copy-btn`                               | Kopiuj link                                | `PatientQRCodeDialog.tsx`        |
-| `patient-qr-share-btn`                              | Wyślij link                                | `PatientQRCodeDialog.tsx`        |
-| `patient-override-dialog`                           | Dialog nadpisania                          | `EditExerciseOverrideDialog.tsx` |
-| `patient-override-sets-input`                       | Serie                                      | `EditExerciseOverrideDialog.tsx` |
-| `patient-override-reps-input`                       | Powtórzenia                                | `EditExerciseOverrideDialog.tsx` |
-| `patient-override-submit-btn`                       | Zapisz zmiany                              | `EditExerciseOverrideDialog.tsx` |
-| `patient-context-edit-btn`                          | Edytuj etykietę                            | `EditContextLabelDialog.tsx`     |
-| `patient-context-dialog`                            | Dialog etykiety                            | `EditContextLabelDialog.tsx`     |
-| `patient-context-submit-btn`                        | Zapisz etykietę                            | `EditContextLabelDialog.tsx`     |
-| `patient-premium-badge-{id}`                        | Badge statusu Premium                      | `PremiumStatusBadge.tsx`         |
-| `patient-premium-activate-btn-{id}`                 | Przycisk aktywacji Premium                 | `PremiumStatusBadge.tsx`         |
-| `patient-premium-confirm-dialog`                    | Dialog potwierdzenia aktywacji             | `ActivatePremiumDialog.tsx`      |
-| `patient-premium-confirm-dialog-title`              | Tytuł dialogu aktywacji                    | `ActivatePremiumDialog.tsx`      |
-| `patient-premium-confirm-dialog-confirm-btn`        | Przycisk potwierdzenia                     | `ActivatePremiumDialog.tsx`      |
-| `patient-premium-confirm-dialog-cancel-btn`         | Przycisk anulowania                        | `ActivatePremiumDialog.tsx`      |
+| data-testid                                         | Element                                                   | Plik                             |
+| --------------------------------------------------- | --------------------------------------------------------- | -------------------------------- |
+| `patient-page-title`                                | Tytuł strony                                              | `patients/page.tsx`              |
+| `patient-search-input`                              | Wyszukiwarka                                              | `patients/page.tsx`              |
+| `patient-sort-select`                               | Sortowanie listy (najdłużej bez treningu / A–Z)           | `patients/page.tsx`              |
+| `patient-compact-toggle-btn`                        | Widok zwarty listy                                        | `patients/page.tsx`              |
+| `patient-search-clear-btn`                          | Wyczyść wyszukiwanie                                      | `patients/page.tsx`              |
+| `patient-expandable-{id}-premium-btn`               | Aktywuj Premium w wierszu                                 | `PatientExpandableCard.tsx`      |
+| `patient-expandable-{id}-connect-btn`               | Połącz z aplikacją (pacjent bez konta)                    | `PatientExpandableCard.tsx`      |
+| `patient-filter-my-btn`                             | Filtr: Moi (Quick Stats)                                  | `patients/page.tsx`              |
+| `patient-filter-all-btn`                            | Filtr: Wszyscy (Quick Stats)                              | `patients/page.tsx`              |
+| `patient-filter-unassigned-btn`                     | Filtr: Nieprzypisani (Quick Stats)                        | `patients/page.tsx`              |
+| `patient-create-btn`                                | Dodaj pacjenta                                            | `patients/page.tsx`              |
+| `patient-card-{id}`                                 | Karta pacjenta                                            | `PatientCard.tsx`                |
+| `patient-card-{id}-menu-trigger`                    | Menu kontekstowe                                          | `PatientCard.tsx`                |
+| `patient-card-{id}-view-btn`                        | Podgląd                                                   | `PatientCard.tsx`                |
+| `patient-card-{id}-edit-btn`                        | Edytuj                                                    | `PatientCard.tsx`                |
+| `patient-card-{id}-assign-btn`                      | Personalizuj i przypisz                                   | `PatientCard.tsx`                |
+| `patient-card-{id}-delete-btn`                      | Usuń                                                      | `PatientCard.tsx`                |
+| `patient-card-therapist-badge`                      | Badge fizjoterapeuty                                      | `TherapistBadge.tsx`             |
+| `patient-card-therapist-badge-unassigned`           | Badge nieprzypisany                                       | `TherapistBadge.tsx`             |
+| `patient-takeover-btn`                              | Przejmij opiekę (przycisk)                                | `PatientExpandableCard.tsx`      |
+| `patient-takeover-dialog`                           | Dialog przejmowania opieki                                | `TakeOverDialog.tsx`             |
+| `patient-takeover-confirm-btn`                      | Potwierdź przejęcie                                       | `TakeOverDialog.tsx`             |
+| `patient-expandable-{id}`                           | Karta rozwijana                                           | `PatientExpandableCard.tsx`      |
+| `patient-expandable-{id}-assign-btn`                | Personalizuj i przypisz                                   | `PatientExpandableCard.tsx`      |
+| `patient-expandable-{id}-menu-trigger`              | Menu kontekstowe                                          | `PatientExpandableCard.tsx`      |
+| `patient-detail-back-btn`                           | Przycisk wstecz                                           | `patients/[id]/page.tsx`         |
+| `patient-detail-name`                               | Imię i nazwisko                                           | `patients/[id]/page.tsx`         |
+| `patient-detail-menu-trigger`                       | Menu akcji                                                | `patients/[id]/page.tsx`         |
+| `patient-detail-assign-btn`                         | Personalizuj i przypisz                                   | `patients/[id]/page.tsx`         |
+| `patient-detail-qr-btn`                             | Kod QR                                                    | `patients/[id]/page.tsx`         |
+| `patient-detail-edit-btn`                           | Edytuj dane                                               | `patients/[id]/page.tsx`         |
+| `patient-form`                                      | Formularz pacjenta                                        | `PatientForm.tsx`                |
+| `patient-form-firstname-input`                      | Imię                                                      | `PatientForm.tsx`                |
+| `patient-form-lastname-input`                       | Nazwisko                                                  | `PatientForm.tsx`                |
+| `patient-form-phone-input`                          | Telefon                                                   | `PatientForm.tsx`                |
+| `patient-form-email-input`                          | Email                                                     | `PatientForm.tsx`                |
+| `patient-form-context-input`                        | Etykieta kontekstu                                        | `PatientForm.tsx`                |
+| `patient-form-submit-btn`                           | Zapisz                                                    | `PatientForm.tsx`                |
+| `patient-form-cancel-btn`                           | Anuluj                                                    | `PatientForm.tsx`                |
+| `patient-dialog`                                    | Dialog pacjenta                                           | `PatientDialog.tsx`              |
+| `patient-dialog-title`                              | Tytuł dialogu                                             | `PatientDialog.tsx`              |
+| `patient-unified-invite-step`                       | Krok zaproszenia po `PATIENT_INVITE_REQUIRED`             | `UnifiedPatientInput.tsx`        |
+| `patient-unified-invite-back-btn`                   | Wróć / Dodaj kolejnego pacjenta                           | `UnifiedPatientInput.tsx`        |
+| `patient-unified-invite-close-btn`                  | Zamknij po utworzeniu zaproszenia                         | `UnifiedPatientInput.tsx`        |
+| `patient-invite-panel`                              | Formularz zaproszenia pacjenta                            | `PatientInvitePanel.tsx`         |
+| `patient-invite-email-input`                        | Email pacjenta do zaproszenia                             | `PatientInvitePanel.tsx`         |
+| `patient-invite-send-btn`                           | Wyślij zaproszenie                                        | `PatientInvitePanel.tsx`         |
+| `patient-invite-error`                              | Błąd walidacji lub zaproszenia                            | `PatientInvitePanel.tsx`         |
+| `patient-invite-pending`                            | Stan „Zaproszenie czeka na akceptację”                    | `PatientInvitePanel.tsx`         |
+| `patient-invitations-section`                       | Lista zaproszeń czekających na akceptację                 | `PendingPatientInvitations.tsx`  |
+| `patient-invitation-row`                            | Wiersz zaproszenia                                        | `PendingPatientInvitations.tsx`  |
+| `patient-invitation-revoke-btn`                     | Wycofaj zaproszenie                                       | `PendingPatientInvitations.tsx`  |
+| `patient-invitations-error`                         | Błąd pobrania zaproszeń                                   | `PendingPatientInvitations.tsx`  |
+| `patient-invitations-retry-btn`                     | Ponów pobranie zaproszeń                                  | `PendingPatientInvitations.tsx`  |
+| `edit-patient-email-conflict`                       | Komunikat `PATIENT_EMAIL_UNAVAILABLE` z akcją zaproszenia | `EditPatientDialog.tsx`          |
+| `patient-assignment-{id}`                           | Karta przypisania                                         | `PatientAssignmentCard.tsx`      |
+| `patient-assignment-status-badge-{id}`              | Główny badge statusu przypisania                          | `PatientAssignmentCard.tsx`      |
+| `patient-assignment-premium-hint-{id}`              | Dodatkowy sygnał „Brak Premium”                           | `PatientAssignmentCard.tsx`      |
+| `patient-assignment-{id}-edit-btn`                  | Edytuj harmonogram                                        | `PatientAssignmentCard.tsx`      |
+| `patient-assignment-{id}-remove-btn`                | Usuń przypisanie                                          | `PatientAssignmentCard.tsx`      |
+| `patient-assignment-{id}-pdf-btn`                   | Generuj PDF                                               | `PatientAssignmentCard.tsx`      |
+| `patient-assignment-{id}-schedule-summary`          | Kompaktowy harmonogram (karta zwinięta)                   | `PatientAssignmentCard.tsx`      |
+| `patient-assignment-expanded-{id}-schedule-summary` | Harmonogram szczegółowy (karta rozwinięta)                | `PatientAssignmentCard.tsx`      |
+| `patient-qr-dialog`                                 | Dialog QR                                                 | `PatientQRCodeDialog.tsx`        |
+| `patient-qr-code`                                   | Kod QR HTTPS; `data-qr-url` = payload                     | `PatientQRCodeDialog.tsx`        |
+| `patient-qr-payload`                                | Ukryty canvas QR; `data-qr-url` = payload                 | `PatientQRCodeDialog.tsx`        |
+| `patient-qr-unavailable`                            | Hint gdy brak patient/org/therapist                       | `PatientQRCodeDialog.tsx`        |
+| `patient-qr-download-btn`                           | Pobierz QR                                                | `PatientQRCodeDialog.tsx`        |
+| `patient-qr-copy-btn`                               | Kopiuj link                                               | `PatientQRCodeDialog.tsx`        |
+| `patient-qr-share-btn`                              | Wyślij link                                               | `PatientQRCodeDialog.tsx`        |
+| `patient-override-dialog`                           | Dialog nadpisania                                         | `EditExerciseOverrideDialog.tsx` |
+| `patient-override-sets-input`                       | Serie                                                     | `EditExerciseOverrideDialog.tsx` |
+| `patient-override-reps-input`                       | Powtórzenia                                               | `EditExerciseOverrideDialog.tsx` |
+| `patient-override-submit-btn`                       | Zapisz zmiany                                             | `EditExerciseOverrideDialog.tsx` |
+| `patient-context-edit-btn`                          | Edytuj etykietę                                           | `EditContextLabelDialog.tsx`     |
+| `patient-context-dialog`                            | Dialog etykiety                                           | `EditContextLabelDialog.tsx`     |
+| `patient-context-submit-btn`                        | Zapisz etykietę                                           | `EditContextLabelDialog.tsx`     |
+| `patient-premium-badge-{id}`                        | Badge statusu Premium                                     | `PremiumStatusBadge.tsx`         |
+| `patient-premium-activate-btn-{id}`                 | Przycisk aktywacji Premium                                | `PremiumStatusBadge.tsx`         |
+| `patient-premium-confirm-dialog`                    | Dialog potwierdzenia aktywacji                            | `ActivatePremiumDialog.tsx`      |
+| `patient-premium-confirm-dialog-title`              | Tytuł dialogu aktywacji                                   | `ActivatePremiumDialog.tsx`      |
+| `patient-premium-confirm-dialog-confirm-btn`        | Przycisk potwierdzenia                                    | `ActivatePremiumDialog.tsx`      |
+| `patient-premium-confirm-dialog-cancel-btn`         | Przycisk anulowania                                       | `ActivatePremiumDialog.tsx`      |
 
 ### 7. Przypisywanie zestawów (assign-)
 
@@ -680,42 +700,98 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `clinical-diagnosis-section`       | Sekcja diagnozy            | `DiagnosisSectionForm.tsx`     |
 | `clinical-treatment-section`       | Sekcja leczenia            | `TreatmentPlanSectionForm.tsx` |
 
-### 15. Centrum Weryfikacji (verification-)
+### 15. Weryfikacja ćwiczeń (verification-)
 
 #### Ekran powitalny (Intro)
 
-| data-testid                          | Element                                        | Plik                       |
-| ------------------------------------ | ---------------------------------------------- | -------------------------- |
-| `verification-media-upload-btn`      | Upload zdjęć w MasterVideoPlayer               | `MasterVideoPlayer.tsx`    |
-| `verification-media-ai-generate-btn` | Generuj AI w MasterVideoPlayer                 | `MasterVideoPlayer.tsx`    |
-| `verification-media-ai-style-group`  | Wybór stylu AI w weryfikacji                   | `MasterVideoPlayer.tsx`    |
-| `verification-intro-container`       | Kontener ekranu powitalnego                    | `VerificationIntro.tsx`    |
-| `verification-intro-hero-icon`       | Ikona hero                                     | `VerificationIntro.tsx`    |
-| `verification-intro-status-card`     | Karta statusu (wynik scan)                     | `VerificationIntro.tsx`    |
-| `verification-intro-load-btn`        | Przycisk "Załaduj ćwiczenia"                   | `VerificationIntro.tsx`    |
-| `reviewer-achievements-card`         | Karta osiągnięć recenzenta (wariant full)      | `ReviewerAchievements.tsx` |
-| `reviewer-achievements-compact`      | Kompaktowy element osiągnięć (wariant compact) | `ReviewerAchievements.tsx` |
+| data-testid                      | Element                                        | Plik                       |
+| -------------------------------- | ---------------------------------------------- | -------------------------- |
+| `verification-intro-container`   | Kontener ekranu powitalnego                    | `VerificationIntro.tsx`    |
+| `verification-intro-hero-icon`   | Ikona hero                                     | `VerificationIntro.tsx`    |
+| `verification-intro-status-card` | Karta statusu (wynik scan)                     | `VerificationIntro.tsx`    |
+| `verification-intro-load-btn`    | Przycisk "Załaduj ćwiczenia"                   | `VerificationIntro.tsx`    |
+| `reviewer-achievements-card`     | Karta osiągnięć recenzenta (wariant full)      | `ReviewerAchievements.tsx` |
+| `reviewer-achievements-compact`  | Kompaktowy element osiągnięć (wariant compact) | `ReviewerAchievements.tsx` |
 
 #### Widok pełny (z zadaniami)
 
-| data-testid                           | Element                              | Plik                         |
-| ------------------------------------- | ------------------------------------ | ---------------------------- |
-| `nav-link-verification`               | Link: Centrum Weryfikacji            | `Sidebar.tsx`                |
-| `nav-link-verification-organizations` | Link: Weryfikacja Organizacji        | `Sidebar.tsx`                |
-| `verification-search-input`           | Wyszukiwarka ćwiczeń                 | `verification/page.tsx`      |
-| `verification-stats-pending`          | Karta statystyk: Oczekujące          | `VerificationStatsCards.tsx` |
-| `verification-stats-changes`          | Karta statystyk: Do poprawy          | `VerificationStatsCards.tsx` |
-| `verification-stats-approved`         | Karta statystyk: Zatwierdzone        | `VerificationStatsCards.tsx` |
-| `verification-stats-published`        | Karta statystyk: Opublikowane        | `VerificationStatsCards.tsx` |
-| `verification-card-{id}`              | Karta zadania weryfikacji            | `VerificationTaskCard.tsx`   |
-| `verification-card-{id}-start-btn`    | Przycisk rozpoczęcia weryfikacji     | `VerificationTaskCard.tsx`   |
-| `verification-reject-dialog`          | Dialog odrzucenia                    | `RejectReasonDialog.tsx`     |
-| `verification-reject-reason-select`   | Dropdown wyboru powodu               | `RejectReasonDialog.tsx`     |
-| `verification-reject-notes-input`     | Textarea notatki (wymagana)          | `RejectReasonDialog.tsx`     |
-| `verification-reject-confirm-btn`     | Przycisk potwierdzenia odrzucenia    | `RejectReasonDialog.tsx`     |
-| `verification-approve-dialog`         | Dialog zatwierdzenia                 | `ApproveDialog.tsx`          |
-| `verification-approve-notes-input`    | Textarea notatki (opcjonalna)        | `ApproveDialog.tsx`          |
-| `verification-approve-confirm-btn`    | Przycisk potwierdzenia zatwierdzenia | `ApproveDialog.tsx`          |
+| data-testid                                                              | Element                                                                      | Plik                         |
+| ------------------------------------------------------------------------ | ---------------------------------------------------------------------------- | ---------------------------- |
+| `verification-scope-tabs`                                                | Pasek kolejek (gdy rola ma ≥2)                                               | `VerificationScopeTabs.tsx`  |
+| `nav-link-organization-verification`                                     | Zakładka: nazwa organizacji (fallback „Moja organizacja”)                    | `VerificationScopeTabs.tsx`  |
+| `{zakładka}-count`                                                       | Licznik oczekujących przy zakładce, np. `nav-link-verification-global-count` | `VerificationScopeTabs.tsx`  |
+| `verification-scope-tabs-moderation-label`                               | Podpis grupy „Moderacja FiziYo”                                              | `VerificationScopeTabs.tsx`  |
+| `verification-queue-hero` (`org-`, `cross-org-` dla pozostałych kolejek) | Panel: liczba oczekujących albo „Kolejka jest pusta”                         | `VerificationQueueHero.tsx`  |
+| `verification-start-queue-btn` (`org-`, `cross-org-`)                    | Zacznij weryfikację: pierwsze oczekujące                                     | `VerificationQueueHero.tsx`  |
+| `nav-link-verification-global`                                           | Zakładka: Katalog FiziYo                                                     | `VerificationScopeTabs.tsx`  |
+| `nav-link-verification-organizations`                                    | Zakładka: Organizacje klientów                                               | `VerificationScopeTabs.tsx`  |
+| `verification-search-input`                                              | Wyszukiwarka ćwiczeń                                                         | `verification/page.tsx`      |
+| `verification-stats-pending`                                             | Status (przełącznik): Oczekujące                                             | `VerificationStatsCards.tsx` |
+| `verification-stats-changes`                                             | Status (przełącznik): Do poprawy                                             | `VerificationStatsCards.tsx` |
+| `verification-stats-approved`                                            | Status (przełącznik): Zatwierdzone                                           | `VerificationStatsCards.tsx` |
+| `verification-stats-published`                                           | Status (przełącznik): Opublikowane                                           | `VerificationStatsCards.tsx` |
+| `verification-card-{id}`                                                 | Karta zadania weryfikacji                                                    | `VerificationTaskCard.tsx`   |
+| `verification-card-{id}-start-btn`                                       | Przycisk rozpoczęcia weryfikacji                                             | `VerificationTaskCard.tsx`   |
+| `verification-card-{id}-status-badge`                                    | Status na karcie (w kolejkach organizacji: status organizacyjny)             | `VerificationTaskCard.tsx`   |
+
+#### Etapy weryfikacji globalnej (`verification/[id]`, SPEC-030)
+
+Ekran globalny publikuje z paska, a jedyne wyjście bez publikacji to „To duplikat”; osobnych dialogów zatwierdzenia i odrzucenia już nie ma.
+
+| data-testid                                                                     | Element                                                     | Plik                          |
+| ------------------------------------------------------------------------------- | ----------------------------------------------------------- | ----------------------------- |
+| `verification-workspace`                                                        | Arkusz ekranu weryfikacji                                   | `VerificationWorkspace.tsx`   |
+| `verification-back-btn`                                                         | Powrót do listy (ikona, nazwa „Lista ćwiczeń”)              | `VerificationWorkspace.tsx`   |
+| `verification-destination-badge`                                                | Gdzie trafi ćwiczenie (Katalog FiziYo / Ćwiczenia gabinetu) | `VerificationWorkspace.tsx`   |
+| `verification-skip-btn`                                                         | Odłóż na później                                            | `VerificationWorkspace.tsx`   |
+| `verification-report-banner` / `-report-go-btn`                                 | Baner zgłoszenia / przejście do etapu                       | `VerificationWorkspace.tsx`   |
+| `verification-stage-nav`                                                        | Nawigacja etapów                                            | `VerificationStageNav.tsx`    |
+| `verification-stage-{material\|parameters\|instruction\|safety\|decision}-btn`  | Przejście do etapu                                          | `VerificationStageNav.tsx`    |
+| `verification-stage-{key}`                                                      | Kontener etapu                                              | `stages/*Stage.tsx`           |
+| `verification-floating-bar`                                                     | Pływający pasek akcji                                       | `VerificationFloatingBar.tsx` |
+| `verification-bar-primary-btn`                                                  | „… gotowe, dalej” / „Zatwierdź i opublikuj”                 | `VerificationFloatingBar.tsx` |
+| `verification-bar-duplicate-btn`                                                | „To duplikat”                                               | `VerificationFloatingBar.tsx` |
+| `verification-media-panel`                                                      | Panel nagrania i zdjęć                                      | `VerificationWorkspace.tsx`   |
+| `verification-reading-focus`                                                    | Tekst czytanego kroku pod panelem                           | `VerificationWorkspace.tsx`   |
+| `verification-media-stage-{image\|video}`                                       | Duże zdjęcie / nagranie w panelu                            | `MediaGallery.tsx`            |
+| `verification-reading-focus-flag-btn`                                           | Zdjęcie nie pasuje do opisu                                 | `VerificationWorkspace.tsx`   |
+| `verification-material-photo-{n}-{replace\|delete\|accept\|retry\|discard}-btn` | Akcje zdjęcia n                                             | `MaterialStage.tsx`           |
+| `verification-material-photo-{n}-preview-btn`                                   | Zdjęcie n w dużym rozmiarze w panelu                        | `MaterialStage.tsx`           |
+| `verification-material-photo-add-btn`                                           | Wgraj zdjęcie z dysku                                       | `MaterialStage.tsx`           |
+| `verification-material-photo-generate-btn`                                      | Wygeneruj nowe zdjęcie                                      | `MaterialStage.tsx`           |
+| `verification-material-video-edit-btn` / `-video-url-input`                     | Dodaj / wymień nagranie                                     | `MaterialStage.tsx`           |
+| `verification-photo-replace-dialog`                                             | Dialog nowego zdjęcia                                       | `PhotoReplaceDialog.tsx`      |
+| `verification-photo-replace-{generate\|upload\|cancel}-btn`                     | Akcje dialogu nowego zdjęcia                                | `PhotoReplaceDialog.tsx`      |
+| `verification-param-{sets\|reps\|repTime\|hold\|rest}-input`                    | Pole parametru                                              | `ParametersStage.tsx`         |
+| `verification-param-{sets\|reps\|repTime\|hold\|rest}-slider`                   | Suwak parametru (zmienia pole)                              | `ParametersStage.tsx`         |
+| `verification-param-{key}-fix-btn` / `-ack-btn`                                 | „Ustaw X” / „OK” pod polem                                  | `ParametersStage.tsx`         |
+| `verification-param-{key}-info-btn`, `-tempo\|load\|rom-info-btn`               | (i) z wyjaśnieniem pola                                     | `ParametersStage.tsx`         |
+| `verification-param-timer`                                                      | Czas ćwiczenia w rogu karty                                 | `ParametersStage.tsx`         |
+| `verification-param-session-note` / `-session-ack-btn`                          | Uwaga o czasie ćwiczenia / „OK”                             | `ParametersStage.tsx`         |
+| `verification-param-details`                                                    | Tempo, obciążenie, zakres (zawsze otwarte)                  | `ParametersStage.tsx`         |
+| `verification-param-side-select`                                                | Strona ciała                                                | `ParametersStage.tsx`         |
+| `verification-param-description-fix-btn`                                        | Zamiana liczby w opisie                                     | `ParametersStage.tsx`         |
+| `verification-instruction-description-input`                                    | Opis ćwiczenia (pacjent)                                    | `InstructionStage.tsx`        |
+| `verification-step-{n}-{input\|remove-btn}`                                     | Krok n                                                      | `InstructionStage.tsx`        |
+| `verification-cue-{n}-phase-{preparation\|work\|rest}-btn`                      | Faza wskazówki głosowej                                     | `InstructionStage.tsx`        |
+| `verification-proposal-{request\|insert\|dismiss}-btn`                          | Propozycja agenta                                           | `InstructionStage.tsx`        |
+| `verification-safety-stop-if-{add-btn\|input}`                                  | Przerwij, gdy…                                              | `SafetyStage.tsx`             |
+| `verification-safety-contraindications-section`                                 | Karta przeciwwskazań z nadzorem                             | `SafetyStage.tsx`             |
+| `verification-safety-therapist-description-input`                               | Opis dla fizjoterapeuty                                     | `SafetyStage.tsx`             |
+| `verification-safety-supervision-checkbox`                                      | Tylko pod nadzorem                                          | `SafetyStage.tsx`             |
+| `verification-decision-{key}-go-btn`                                            | Zmień / Popraw w podsumowaniu                               | `DecisionStage.tsx`           |
+| `verification-duplicate-dialog` / `-confirm-btn`                                | Oznacz jako duplikat                                        | `DuplicateDialog.tsx`         |
+
+Tor organizacji (`/organization/verification/[id]`) i moderacja cross-org (`/verification/organizations/[id]`) używają tego samego `VerificationWorkspace` z propem `organizationDecision`; stary trójkolumnowy detal (`VerdictPanel`, `MasterVideoPlayer`, `CollapsibleMediaPanel`) usunięty.
+
+| data-testid                                        | Element                              | Plik                                      |
+| -------------------------------------------------- | ------------------------------------ | ----------------------------------------- |
+| `org-verification-workspace`                       | Arkusz weryfikacji w gabinecie       | `organization/verification/[id]/page.tsx` |
+| `org-verification-back-btn`                        | Powrót do kolejki gabinetu           | `VerificationWorkspace.tsx`               |
+| `org-verification-archive-btn`                     | Archiwizuj (ćwiczenie zweryfikowane) | `VerificationWorkspace.tsx`               |
+| `org-verification-bar-request-changes-btn`         | „Odeślij do poprawek” w pasku        | `VerificationFloatingBar.tsx`             |
+| `org-verification-changes-dialog` / `-notes-input` | Dialog odesłania z notatką           | `RequestChangesDialog.tsx`                |
+| `org-verification-changes-{cancel\|confirm}-btn`   | Anuluj / Odeślij autorowi            | `RequestChangesDialog.tsx`                |
 
 #### Cross-org verification (SiteSuperAdmin)
 
@@ -742,12 +818,6 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `verification-details-audiocue`        | Inline edit: Audio cue      | `ExerciseDetailsPanel.tsx` |
 | `verification-details-media-toggle`    | Toggle: Media               | `ExerciseDetailsPanel.tsx` |
 | `verification-details-advanced-toggle` | Toggle: Zaawansowane        | `ExerciseDetailsPanel.tsx` |
-
-#### Publish Guardrails (NEW)
-
-| data-testid               | Element         | Plik                    |
-| ------------------------- | --------------- | ----------------------- |
-| `verification-guardrails` | Panel walidacji | `PublishGuardrails.tsx` |
 
 ### 16. Smart Validation (common-completion-, ghost-field-, smart-accordion-)
 
@@ -863,3 +933,18 @@ Przy dodawaniu nowych komponentów:
 2. Dodaj `data-testid` do interaktywnych elementów
 3. Zaktualizuj tę dokumentację
 4. Sprawdź unikalność identyfikatorów
+
+| `patient-detail-premium-btn` | Aktywuj Premium w nagłówku karty | `patients/[id]/page.tsx` |
+| `patient-detail-remove-from-list-btn` | Odepnij ode mnie (menu) | `patients/[id]/page.tsx` |
+
+### Design system v4 (SPEC-029) — nowe identyfikatory
+
+| data-testid                                                                                      | Element                                     | Plik                      |
+| ------------------------------------------------------------------------------------------------ | ------------------------------------------- | ------------------------- |
+| `set-search-clear-btn`, `set-filter-reset-btn`, `set-tags-clear-btn`, `set-tag-filter-clear-btn` | Czyszczenie wyszukiwania i filtrów zestawów | `exercise-sets/page.tsx`  |
+| `exercise-tags-add-btn`, `exercise-tags-tab-tags`, `exercise-tags-tab-categories`                | Tagi i kategorie                            | `exercises/tags/page.tsx` |
+| `appointments-notify-btn`                                                                        | Powiadom mnie (wizyty)                      | `appointments/page.tsx`   |
+| `finances-invite-now-btn`, `finances-invoices-back-btn`, `finances-payouts-back-btn`             | Finanse                                     | `finances/**`             |
+| `import-step-{id}-btn`, `import-back-btn`                                                        | Kroki i powrót importu                      | `import/page.tsx`         |
+| `patient-detail-not-found-back-btn`, `patient-detail-email-link`, `patient-detail-phone-link`    | Karta pacjenta                              | `patients/[id]/page.tsx`  |
+| `clinical-notes-editor-close-btn`                                                                | Zamknij edytor notatki                      | `ClinicalNotesList.tsx`   |

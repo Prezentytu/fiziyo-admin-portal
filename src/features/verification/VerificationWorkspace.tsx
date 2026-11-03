@@ -1,0 +1,1178 @@
+'use client';
+
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { useMutation } from '@apollo/client/react';
+import { useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
+import { Archive, ArrowLeft, FileText, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { MediaGallery, buildMediaItems } from '@/components/shared';
+import { PageSheet } from '@/components/shared/page';
+import { useExerciseEditorForm } from '@/features/exercises/useExerciseEditorForm';
+import { useExerciseImageGeneration } from '@/features/exercises/useExerciseImageGeneration';
+import { toV3 } from '@/features/verification/utils/enrichmentToV3';
+
+import { useVerificationHotkeys } from '@/hooks/useVerificationHotkeys';
+import { aiService } from '@/services/aiService';
+import { resolveExerciseReports } from '@/services/exerciseReportService';
+
+import {
+  APPROVE_EXERCISE_MUTATION,
+  REJECT_EXERCISE_MUTATION,
+  UPDATE_EXERCISE_FIELD_MUTATION,
+} from '@/graphql/mutations/adminExercises.mutations';
+import {
+  UPDATE_EXERCISE_MUTATION as UPDATE_EXERCISE_DETAILS_MUTATION,
+  UPLOAD_EXERCISE_IMAGE_MUTATION,
+  DELETE_EXERCISE_IMAGE_MUTATION,
+} from '@/graphql/mutations/exercises.mutations';
+import { GET_VERIFICATION_STATS_QUERY } from '@/graphql/queries/adminExercises.queries';
+
+import { getMediaUrl, getMediaUrls } from '@/utils/mediaUrl';
+import type {
+  AdminExercise,
+  ApproveExerciseResponse,
+  OrganizationVerificationStatus,
+  RejectExerciseResponse,
+} from '@/graphql/types/adminExercise.types';
+import type { ExerciseEnrichmentData, ExerciseEnrichmentPatientV3 } from '@/graphql/types/exerciseEnrichment.types';
+import type { ExerciseReport, ExerciseReportReasonCategory } from '@/types/exercise-report.types';
+
+import { DecisionStage, type DecisionRow } from './stages/DecisionStage';
+import { DuplicateDialog, type DuplicateTarget } from './stages/DuplicateDialog';
+import { InstructionStage } from './stages/InstructionStage';
+import { MaterialStage, type PendingPhoto } from './stages/MaterialStage';
+import { ParametersStage } from './stages/ParametersStage';
+import { PhotoReplaceDialog } from './stages/PhotoReplaceDialog';
+import { RequestChangesDialog } from './stages/RequestChangesDialog';
+import { SafetyStage } from './stages/SafetyStage';
+import { VerificationFloatingBar } from './stages/VerificationFloatingBar';
+import { VerificationStageNav, type StageNavItem, type StageNavState } from './stages/VerificationStageNav';
+import { summarizeChanges, toChangeSnapshot } from './utils/changeSummary';
+import {
+  applyInstructionProposal,
+  buildInstructionProposal,
+  type InstructionProposal,
+} from './utils/instructionProposal';
+import {
+  acknowledgeFinding,
+  buildPatientParameterLine,
+  createParameterReview,
+  deriveExecutionMode,
+  evaluateParameters,
+  findHardcodedNumbers,
+  formatSessionDuration,
+  markParameterEdited,
+  replaceHardcodedNumbers,
+  reviewValues,
+  toCoreUpdates,
+  type AcknowledgeKey,
+  type CoreParameterUpdates,
+  type ParameterKey,
+} from './utils/parameterRules';
+import {
+  canApproveOrganizationExercise,
+  canArchiveOrganizationExercise,
+  canRequestOrganizationChanges,
+} from './utils/orgStateMachine';
+import { MAX_PHOTOS, validatePhotoFile } from './utils/photoValidation';
+import { getVerificationStatusBadge } from './utils/statusBadge';
+import { buildStageCopy } from './utils/stageCopy';
+import {
+  describeReadingFocus,
+  resolveFocusedMedia,
+  type FocusedMedia,
+  keepExistingImages,
+  replaceLinkedImage,
+} from './utils/stepMedia';
+import {
+  STAGE_TITLES,
+  VERIFICATION_STAGES,
+  canDecideOnExercise,
+  computeVerificationStages,
+  parseStopIf,
+  pluralizePl,
+  type VerificationStageKey,
+} from './utils/verificationStages';
+
+const PRIMARY_LABELS: Record<VerificationStageKey, string> = {
+  material: 'Materiał gotowy, dalej',
+  parameters: 'Parametry gotowe, dalej',
+  instruction: 'Instrukcja gotowa, dalej',
+  safety: 'Bezpieczeństwo gotowe, dalej',
+  decision: 'Zatwierdź i opublikuj',
+};
+
+const REPORT_STAGE: Record<ExerciseReportReasonCategory, VerificationStageKey> = {
+  WRONG_DESCRIPTION: 'instruction',
+  WRONG_MEDIA: 'material',
+  CLINICAL_RISK: 'safety',
+  DUPLICATE: 'decision',
+  OUTDATED_CONTENT: 'instruction',
+  NEEDS_IMPROVEMENT: 'parameters',
+  OTHER: 'parameters',
+};
+
+/**
+ * Organization track (clinic queue and backoffice cross-org moderation): the page owns the mutations,
+ * the workspace owns stages, notes and navigation after the decision.
+ */
+export interface OrganizationDecision {
+  status: OrganizationVerificationStatus | undefined;
+  isBusy: boolean;
+  onApprove: () => Promise<void>;
+  onRequestChanges: (notes: string) => Promise<void>;
+  onArchive: () => Promise<void>;
+}
+
+interface VerificationWorkspaceProps {
+  exercise: AdminExercise;
+  queuePosition: number | null;
+  queueTotal: number;
+  nextExerciseId: string | null;
+  openReports?: ExerciseReport[];
+  listUrl: string;
+  buildDetailUrl: (exerciseId: string) => string;
+  reloadImages: () => Promise<string[]>;
+  /** Without it the workspace runs the global track (publish, duplicate). */
+  organizationDecision?: OrganizationDecision;
+  /** Overrides the default enrichment save (admin `updateExerciseField`). */
+  saveEnrichment?: (payload: ExerciseEnrichmentData) => Promise<void>;
+  onSaveError?: (error: unknown) => void;
+  backTestId?: string;
+  'data-testid'?: string;
+}
+
+const NO_REPORTS: ExerciseReport[] = [];
+
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+    reader.onerror = () => reject(reader.error ?? new Error('Nie udało się odczytać pliku'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function SaveStatus({ status }: Readonly<{ status: 'idle' | 'saving' | 'success' | 'error' }>) {
+  if (status === 'saving') {
+    return (
+      <span className="flex items-center gap-1.5 text-[13px] text-label-secondary" role="status">
+        <Loader2 className="h-3.5 w-3.5 animate-spin" /> Zapisywanie…
+      </span>
+    );
+  }
+  if (status === 'error') {
+    return (
+      <span className="text-[13px] font-semibold text-status-danger" role="status">
+        Nie zapisano zmian
+      </span>
+    );
+  }
+  if (status === 'success') {
+    return (
+      <span className="text-[13px] text-label-secondary" role="status">
+        Zapisano
+      </span>
+    );
+  }
+  return null;
+}
+
+export function VerificationWorkspace({
+  exercise,
+  queuePosition,
+  queueTotal,
+  nextExerciseId,
+  openReports = NO_REPORTS,
+  listUrl,
+  buildDetailUrl,
+  reloadImages,
+  organizationDecision,
+  saveEnrichment,
+  onSaveError,
+  backTestId = 'verification-back-btn',
+  'data-testid': rootTestId = 'verification-workspace',
+}: VerificationWorkspaceProps) {
+  const router = useRouter();
+  const { user } = useUser();
+  const rootRef = useRef<HTMLDivElement | null>(null);
+
+  // ============================================
+  // MUTATIONS
+  // ============================================
+
+  const [approveExercise, { loading: approving }] = useMutation<ApproveExerciseResponse>(APPROVE_EXERCISE_MUTATION, {
+    refetchQueries: [{ query: GET_VERIFICATION_STATS_QUERY }],
+  });
+  const [rejectExercise, { loading: rejecting }] = useMutation<RejectExerciseResponse>(REJECT_EXERCISE_MUTATION, {
+    refetchQueries: [{ query: GET_VERIFICATION_STATS_QUERY }],
+  });
+  const [updateExerciseField] = useMutation(UPDATE_EXERCISE_FIELD_MUTATION, {
+    onError: (error) => toast.error(`Błąd zapisu: ${error.message}`),
+  });
+  const [updateExerciseDetails] = useMutation(UPDATE_EXERCISE_DETAILS_MUTATION, {
+    onError: (error) => toast.error(`Błąd zapisu: ${error.message}`),
+  });
+  const [uploadExerciseImage] = useMutation(UPLOAD_EXERCISE_IMAGE_MUTATION, {
+    onError: (error) => toast.error(`Błąd uploadu zdjęcia: ${error.message}`),
+  });
+  const [deleteExerciseImage] = useMutation(DELETE_EXERCISE_IMAGE_MUTATION, {
+    onError: (error) => toast.error(`Błąd usuwania zdjęcia: ${error.message}`),
+  });
+
+  // ============================================
+  // FORM (autosave)
+  // ============================================
+
+  const updateCore = useCallback(
+    async (variables: Record<string, unknown>) => {
+      await updateExerciseDetails({ variables: { exerciseId: exercise.id, ...variables } });
+    },
+    [exercise.id, updateExerciseDetails]
+  );
+
+  const updateEnrichment = useCallback(
+    async (payload: ExerciseEnrichmentData) => {
+      if (saveEnrichment) {
+        await saveEnrichment(payload);
+        return;
+      }
+      await updateExerciseField({
+        variables: { exerciseId: exercise.id, fieldName: 'enrichmentData', value: JSON.stringify(payload ?? {}) },
+      });
+    },
+    [exercise.id, saveEnrichment, updateExerciseField]
+  );
+
+  const form = useExerciseEditorForm({
+    source: exercise,
+    updateCore,
+    updateEnrichment,
+    onError: onSaveError ?? (() => toast.error('Nie udało się zapisać zmian')),
+    autosaveDelayMs: 900,
+  });
+  const { core, enrichment, setCoreField, setEnrichmentPath, flush } = form;
+  const patient = useMemo<ExerciseEnrichmentPatientV3>(() => enrichment.patient ?? {}, [enrichment.patient]);
+
+  // ============================================
+  // STATE
+  // ============================================
+
+  const [stage, setStage] = useState<VerificationStageKey>('material');
+  const [visited, setVisited] = useState<ReadonlySet<VerificationStageKey>>(() => new Set(['material']));
+  const [parameterReview, setParameterReview] = useState(() => createParameterReview());
+  const [descriptionAcknowledged, setDescriptionAcknowledged] = useState(false);
+  const [proposal, setProposal] = useState<InstructionProposal | null>(null);
+  const [isGeneratingProposal, setIsGeneratingProposal] = useState(false);
+  const [photoDialogIndex, setPhotoDialogIndex] = useState<number | null>(null);
+  const [mediaIndex, setMediaIndex] = useState(0);
+  const [isMediaFollowingText, setIsMediaFollowingText] = useState(true);
+  const [focusedStep, setFocusedStep] = useState<number | null>(null);
+  const [generatingIndex, setGeneratingIndex] = useState<number | null>(null);
+  const [pendingPhoto, setPendingPhoto] = useState<PendingPhoto | null>(null);
+  const [isSavingPhoto, setIsSavingPhoto] = useState(false);
+  const [replacedPhotoCount, setReplacedPhotoCount] = useState(0);
+  const [isDuplicateOpen, setIsDuplicateOpen] = useState(false);
+  const [isChangesOpen, setIsChangesOpen] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
+  const lastPhotoRequestRef = useRef<{ index: number; problems: string[]; note: string } | null>(null);
+
+  const imageGeneration = useExerciseImageGeneration({ showSuccessToast: false });
+
+  // ============================================
+  // DERIVED
+  // ============================================
+
+  const photos = useMemo(() => (exercise.images ?? []).filter((url) => url.trim().length > 0), [exercise.images]);
+  const allMediaUrls = useMemo(
+    () => getMediaUrls([exercise.thumbnailUrl, exercise.imageUrl, ...(exercise.images ?? [])]),
+    [exercise.thumbnailUrl, exercise.imageUrl, exercise.images]
+  );
+  const hasVideo = Boolean(core.videoUrl.trim() || exercise.gifUrl);
+
+  const mediaItems = useMemo(
+    () =>
+      buildMediaItems({
+        thumbnailUrl: exercise.thumbnailUrl,
+        imageUrl: exercise.imageUrl,
+        images: exercise.images,
+        videoUrl: core.videoUrl.trim() || exercise.videoUrl,
+        gifUrl: exercise.gifUrl,
+        title: core.name,
+      }),
+    [
+      exercise.thumbnailUrl,
+      exercise.imageUrl,
+      exercise.images,
+      exercise.videoUrl,
+      exercise.gifUrl,
+      core.videoUrl,
+      core.name,
+    ]
+  );
+
+  const readingFocus = describeReadingFocus({
+    focusedStep,
+    steps: patient.steps ?? [],
+    stepImages: patient.step_images,
+    photos,
+    description: core.patientDescription,
+    hasVideo,
+  });
+  const isFollowingText = stage === 'instruction' && isMediaFollowingText;
+  const focusedMedia: FocusedMedia = isFollowingText
+    ? resolveFocusedMedia(mediaItems, { isDescription: readingFocus.isDescription, photoUrl: readingFocus.photoUrl })
+    : { kind: 'free' };
+  const galleryItems = focusedMedia.kind === 'empty' ? [] : mediaItems;
+  const galleryIndex =
+    focusedMedia.kind === 'item' ? focusedMedia.index : focusedMedia.kind === 'empty' ? 0 : mediaIndex;
+
+  const handleFocusStep = (stepIndex: number | null) => {
+    setFocusedStep(stepIndex);
+    setIsMediaFollowingText(true);
+  };
+
+  const handleGalleryIndexChange = (index: number) => {
+    if (index === galleryIndex) return;
+    setMediaIndex(index);
+    if (isFollowingText) setIsMediaFollowingText(false);
+  };
+
+  const handlePreviewPhoto = (url: string) => {
+    const index = mediaItems.findIndex((item) => item.kind === 'image' && item.src === getMediaUrl(url));
+    if (index >= 0) handleGalleryIndexChange(index);
+  };
+
+  const mode = deriveExecutionMode(core);
+  const parameterValues = useMemo(() => reviewValues(core), [core]);
+  const evaluation = useMemo(
+    () =>
+      evaluateParameters({
+        values: parameterValues,
+        mode,
+        side: core.side,
+        acknowledged: parameterReview.acknowledged,
+        acknowledgedSessionSeconds: parameterReview.acknowledgedSessionSeconds,
+        timing: {
+          tempo: core.tempo,
+          duration: core.duration,
+          restReps: core.restReps,
+          preparationTime: core.preparationTime,
+        },
+      }),
+    [
+      parameterValues,
+      mode,
+      core.side,
+      core.tempo,
+      core.duration,
+      core.restReps,
+      core.preparationTime,
+      parameterReview.acknowledged,
+      parameterReview.acknowledgedSessionSeconds,
+    ]
+  );
+  const descriptionNumbers = useMemo(
+    () => (descriptionAcknowledged ? [] : findHardcodedNumbers(core.patientDescription)),
+    [descriptionAcknowledged, core.patientDescription]
+  );
+  const stopIfCount = parseStopIf(enrichment.safety?.stop_if).length;
+
+  const stages = useMemo(
+    () =>
+      computeVerificationStages({
+        name: core.name,
+        patientDescription: core.patientDescription,
+        therapistDescription: core.clinicalDescription,
+        hasVideo,
+        imageCount: allMediaUrls.length,
+        hasPendingPhoto: pendingPhoto !== null,
+        parameters: evaluation,
+        descriptionNumberCount: descriptionNumbers.length,
+        hasPendingProposal: proposal !== null,
+        stopIfCount,
+      }),
+    [
+      core.name,
+      core.patientDescription,
+      core.clinicalDescription,
+      hasVideo,
+      allMediaUrls.length,
+      pendingPhoto,
+      evaluation,
+      descriptionNumbers.length,
+      proposal,
+      stopIfCount,
+    ]
+  );
+
+  const [initialSnapshot] = useState(() => toChangeSnapshot(core, photos.length, enrichment));
+
+  const changes = useMemo(
+    () => summarizeChanges(initialSnapshot, toChangeSnapshot(core, photos.length, enrichment), replacedPhotoCount),
+    [initialSnapshot, core, photos.length, enrichment, replacedPhotoCount]
+  );
+
+  const latestReport = useMemo(
+    () =>
+      openReports.length === 0 ? null : [...openReports].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0],
+    [openReports]
+  );
+
+  // ============================================
+  // NAVIGATION
+  // ============================================
+
+  const goToStage = useCallback((key: VerificationStageKey) => {
+    setStage(key);
+    if (key === 'instruction') setIsMediaFollowingText(true);
+    setVisited((previous) => new Set([...previous, key]));
+    rootRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }, []);
+
+  const leaveToNext = useCallback(() => {
+    router.push(nextExerciseId ? buildDetailUrl(nextExerciseId) : listUrl);
+  }, [buildDetailUrl, listUrl, nextExerciseId, router]);
+
+  const resolveReports = useCallback(
+    async (note: string) => {
+      if (!user?.id || openReports.length === 0) return;
+      await resolveExerciseReports({
+        exerciseId: exercise.id,
+        resolvedByUserId: user.id,
+        resolutionNote: note,
+      }).catch(() => undefined);
+    },
+    [exercise.id, openReports.length, user?.id]
+  );
+
+  // ============================================
+  // HANDLERS: parameters
+  // ============================================
+
+  const applyCoreUpdates = useCallback(
+    (updates: CoreParameterUpdates) => {
+      for (const [field, value] of Object.entries(updates) as [keyof CoreParameterUpdates, number | null][]) {
+        setCoreField(field, value);
+      }
+    },
+    [setCoreField]
+  );
+
+  const handleParameterChange = useCallback(
+    (key: ParameterKey, value: number | null) => {
+      applyCoreUpdates(toCoreUpdates(key, value, core));
+      setParameterReview((previous) => markParameterEdited(previous, key));
+    },
+    [applyCoreUpdates, core]
+  );
+
+  const handleAcknowledge = useCallback(
+    (key: AcknowledgeKey) => {
+      setParameterReview((previous) => acknowledgeFinding(previous, key, evaluation.sessionSeconds));
+    },
+    [evaluation.sessionSeconds]
+  );
+
+  // ============================================
+  // HANDLERS: photos
+  // ============================================
+
+  const replacePhotoAt = useCallback(
+    async (index: number, dataUrl: string) => {
+      const previousUrl = photos[index];
+      if (!previousUrl) return;
+      setIsSavingPhoto(true);
+      try {
+        await flush();
+        const nextImages = photos.map((url, imageIndex) => (imageIndex === index ? dataUrl : url));
+        await updateExerciseDetails({ variables: { exerciseId: exercise.id, images: nextImages } });
+        const savedImages = await reloadImages();
+        const nextUrl = savedImages[index];
+        if (nextUrl && nextUrl !== previousUrl) {
+          setEnrichmentPath('patient.step_images', replaceLinkedImage(patient.step_images, previousUrl, nextUrl));
+          if (!savedImages.includes(previousUrl)) {
+            await deleteExerciseImage({ variables: { exerciseId: exercise.id, imageUrl: previousUrl } }).catch(
+              () => undefined
+            );
+          }
+        }
+        setPendingPhoto(null);
+        setReplacedPhotoCount((count) => count + 1);
+        toast.success(`Zdjęcie ${index + 1} wymienione`);
+      } catch (error) {
+        console.error('Błąd wymiany zdjęcia:', error);
+        toast.error('Nie udało się wymienić zdjęcia');
+      } finally {
+        setIsSavingPhoto(false);
+      }
+    },
+    [
+      deleteExerciseImage,
+      exercise.id,
+      flush,
+      patient.step_images,
+      photos,
+      reloadImages,
+      setEnrichmentPath,
+      updateExerciseDetails,
+    ]
+  );
+
+  const appendPhoto = useCallback(
+    async (dataUrl: string) => {
+      setIsSavingPhoto(true);
+      try {
+        const [header, base64Image = ''] = dataUrl.split(',');
+        const contentType = /^data:([^;]+)/.exec(header ?? '')?.[1] ?? 'image/png';
+        await uploadExerciseImage({ variables: { exerciseId: exercise.id, base64Image, contentType } });
+        await reloadImages();
+        setPendingPhoto(null);
+        toast.success('Dodano zdjęcie');
+      } catch (error) {
+        console.error('Błąd dodawania zdjęcia:', error);
+        toast.error('Nie udało się dodać zdjęcia');
+      } finally {
+        setIsSavingPhoto(false);
+      }
+    },
+    [exercise.id, reloadImages, uploadExerciseImage]
+  );
+
+  const generatePhoto = useCallback(
+    async (index: number, problems: string[], note: string) => {
+      lastPhotoRequestRef.current = { index, problems, note };
+      setPhotoDialogIndex(null);
+      setGeneratingIndex(index);
+      const corrections = [problems.length > 0 ? `Popraw: ${problems.join(', ')}.` : '', note]
+        .filter(Boolean)
+        .join(' ');
+      const file = await imageGeneration.generate({
+        exerciseName: core.name,
+        exerciseDescription: [core.patientDescription, corrections].filter(Boolean).join(' '),
+        exerciseType: mode === 'hold' ? 'time' : 'reps',
+      });
+      setGeneratingIndex(null);
+      if (!file) return;
+      const previewUrl = await fileToDataUrl(file);
+      setPendingPhoto({ index, previewUrl });
+    },
+    [core.name, core.patientDescription, imageGeneration, mode]
+  );
+
+  const handleRetryPhoto = useCallback(() => {
+    const last = lastPhotoRequestRef.current;
+    if (last) void generatePhoto(last.index, last.problems, last.note);
+  }, [generatePhoto]);
+
+  const handleUploadOwnPhoto = useCallback(
+    async (file: File) => {
+      const index = photoDialogIndex;
+      setPhotoDialogIndex(null);
+      if (index == null) return;
+      const photoError = validatePhotoFile(file);
+      if (photoError) {
+        toast.error(photoError);
+        return;
+      }
+      await replacePhotoAt(index, await fileToDataUrl(file));
+    },
+    [photoDialogIndex, replacePhotoAt]
+  );
+
+  const handleAddPhotos = useCallback(
+    async (fileList: FileList) => {
+      const slots = Math.max(0, MAX_PHOTOS - photos.length);
+      const accepted = Array.from(fileList)
+        .filter((file) => {
+          const photoError = validatePhotoFile(file);
+          if (photoError) toast.error(photoError);
+          return photoError === null;
+        })
+        .slice(0, slots);
+      if (accepted.length === 0) return;
+      setIsSavingPhoto(true);
+      try {
+        for (const file of accepted) {
+          const dataUrl = await fileToDataUrl(file);
+          await uploadExerciseImage({
+            variables: { exerciseId: exercise.id, base64Image: dataUrl.split(',')[1] ?? '', contentType: file.type },
+          });
+        }
+        await reloadImages();
+        toast.success(accepted.length === 1 ? 'Dodano zdjęcie' : `Dodano zdjęcia: ${accepted.length}`);
+      } catch (error) {
+        console.error('Błąd dodawania zdjęć:', error);
+        toast.error('Nie udało się dodać wszystkich zdjęć');
+      } finally {
+        setIsSavingPhoto(false);
+      }
+    },
+    [exercise.id, photos.length, reloadImages, uploadExerciseImage]
+  );
+
+  const handleDeletePhoto = useCallback(
+    async (url: string) => {
+      setIsSavingPhoto(true);
+      try {
+        await deleteExerciseImage({ variables: { exerciseId: exercise.id, imageUrl: url } });
+        const savedImages = await reloadImages();
+        if (patient.step_images?.some((link) => link.url === url)) {
+          setEnrichmentPath('patient.step_images', keepExistingImages(patient.step_images, savedImages));
+        }
+      } finally {
+        setIsSavingPhoto(false);
+      }
+    },
+    [deleteExerciseImage, exercise.id, patient.step_images, reloadImages, setEnrichmentPath]
+  );
+
+  // ============================================
+  // HANDLERS: instruction proposal
+  // ============================================
+
+  const handleRequestProposal = useCallback(async () => {
+    setIsGeneratingProposal(true);
+    try {
+      const response = await aiService.generateEnrichment({
+        exerciseName: core.name,
+        patientDescription: core.patientDescription,
+        clinicalDescription: core.clinicalDescription,
+        type: mode === 'hold' ? 'time' : 'reps',
+        tags: [...core.mainTags, ...core.additionalTags],
+        existingEnrichmentJson: JSON.stringify(enrichment),
+      });
+      if (!response?.success || !response.enrichmentData) {
+        toast.error('Agent nie przygotował propozycji. Spróbuj ponownie.');
+        return;
+      }
+      const nextProposal = buildInstructionProposal(patient, toV3(response.enrichmentData).patient);
+      if (!nextProposal) {
+        toast.info('Agent nie ma nic nowego do dodania.');
+        return;
+      }
+      setProposal(nextProposal);
+    } finally {
+      setIsGeneratingProposal(false);
+    }
+  }, [core, enrichment, mode, patient]);
+
+  // ============================================
+  // HANDLERS: decisions
+  // ============================================
+
+  const isOrganization = organizationDecision !== undefined;
+  const organizationStatus = organizationDecision?.status;
+  const canDecide = isOrganization
+    ? canApproveOrganizationExercise(organizationStatus)
+    : canDecideOnExercise(exercise.status);
+  const canRequestChanges = isOrganization && canRequestOrganizationChanges(organizationStatus);
+  const canArchive = isOrganization && canArchiveOrganizationExercise(organizationStatus);
+
+  const handlePublish = useCallback(async () => {
+    if (!canDecide || !stages.canPublish) return;
+    setIsLeaving(true);
+    if (organizationDecision) {
+      try {
+        await flush();
+        await organizationDecision.onApprove();
+        toast.success('Ćwiczenie zweryfikowane w gabinecie');
+        leaveToNext();
+      } catch (error) {
+        console.error('Błąd zatwierdzania w organizacji:', error);
+        toast.error('Nie udało się zatwierdzić ćwiczenia');
+        setIsLeaving(false);
+      }
+      return;
+    }
+    try {
+      await flush();
+      await approveExercise({ variables: { exerciseId: exercise.id, reviewNotes: null } });
+      toast.success('Zweryfikowane i opublikowane w Katalogu FiziYo');
+      void resolveReports('Poprawione i opublikowane w weryfikacji');
+      leaveToNext();
+    } catch (error) {
+      console.error('Błąd zatwierdzania:', error);
+      toast.error('Nie udało się zatwierdzić ćwiczenia');
+      setIsLeaving(false);
+    }
+  }, [
+    approveExercise,
+    canDecide,
+    exercise.id,
+    flush,
+    leaveToNext,
+    organizationDecision,
+    resolveReports,
+    stages.canPublish,
+  ]);
+
+  const handleRequestChanges = useCallback(
+    async (notes: string) => {
+      if (!organizationDecision || !canRequestChanges) return;
+      setIsLeaving(true);
+      try {
+        await flush();
+        await organizationDecision.onRequestChanges(notes);
+        toast.success('Ćwiczenie odesłane do poprawek');
+        setIsChangesOpen(false);
+        leaveToNext();
+      } catch (error) {
+        console.error('Błąd odsyłania do poprawek:', error);
+        toast.error('Nie udało się odesłać ćwiczenia do poprawek');
+        setIsLeaving(false);
+      }
+    },
+    [canRequestChanges, flush, leaveToNext, organizationDecision]
+  );
+
+  const handleArchive = useCallback(async () => {
+    if (!organizationDecision || !canArchive) return;
+    setIsLeaving(true);
+    try {
+      await flush();
+      await organizationDecision.onArchive();
+      toast.success('Ćwiczenie zarchiwizowane');
+      router.push(listUrl);
+    } catch (error) {
+      console.error('Błąd archiwizacji:', error);
+      toast.error('Nie udało się zarchiwizować ćwiczenia');
+      setIsLeaving(false);
+    }
+  }, [canArchive, flush, listUrl, organizationDecision, router]);
+
+  const handleMarkDuplicate = useCallback(
+    async (target: DuplicateTarget) => {
+      if (!canDecide) return;
+      setIsLeaving(true);
+      const notes = `To ćwiczenie jest już w bazie jako „${target.name}” (ID: ${target.id}).`;
+      try {
+        await flush();
+        await rejectExercise({
+          variables: { exerciseId: exercise.id, rejectionReason: 'POTENTIAL_DUPLICATE', notes },
+        });
+        toast.success(`Oznaczono jako duplikat „${target.name}”`);
+        void resolveReports(notes);
+        setIsDuplicateOpen(false);
+        leaveToNext();
+      } catch (error) {
+        console.error('Błąd oznaczania duplikatu:', error);
+        toast.error('Nie udało się oznaczyć duplikatu');
+        setIsLeaving(false);
+      }
+    },
+    [canDecide, exercise.id, flush, leaveToNext, rejectExercise, resolveReports]
+  );
+
+  const handleSkip = useCallback(() => {
+    void flush().then(leaveToNext);
+  }, [flush, leaveToNext]);
+
+  const handleSave = useCallback(() => {
+    void flush().then(() => toast.success('Zmiany zapisane'));
+  }, [flush]);
+
+  const stageHasIssues = (key: VerificationStageKey) =>
+    key === 'decision' ? canDecide && !stages.canPublish : stages.issues[key].length > 0;
+  const isPrimaryBlocked = stageHasIssues(stage);
+
+  const handlePrimary = useCallback(() => {
+    if (isPrimaryBlocked || isLeaving) return;
+    if (stage === 'decision') {
+      if (canDecide) void handlePublish();
+      else handleSkip();
+      return;
+    }
+    const nextStage = VERIFICATION_STAGES[VERIFICATION_STAGES.indexOf(stage) + 1];
+    if (nextStage) goToStage(nextStage);
+  }, [canDecide, goToStage, handlePublish, handleSkip, isLeaving, isPrimaryBlocked, stage]);
+
+  const isDialogOpen = photoDialogIndex !== null || isDuplicateOpen || isChangesOpen;
+
+  useVerificationHotkeys({
+    onApproveAndNext: handlePrimary,
+    onSaveDraft: handleSave,
+    enabled: !isDialogOpen,
+  });
+
+  // ============================================
+  // VIEW MODEL
+  // ============================================
+
+  const sessionLine = `${parameterValues.sets ?? '–'} × ${
+    mode === 'reps' ? (parameterValues.reps ?? '–') : `${parameterValues.hold ?? '–'} s`
+  } · ≈ ${formatSessionDuration(evaluation.sessionSeconds)}`;
+  const photoLabel = pluralizePl(allMediaUrls.length, 'zdjęcie', 'zdjęcia', 'zdjęć');
+
+  const { subs, hints } = buildStageCopy({
+    stages,
+    parameters: evaluation,
+    hasPendingPhoto: pendingPhoto !== null,
+    hasPendingProposal: proposal !== null,
+    hasVideo,
+    photoLabel,
+    sessionLine,
+    stopIfCount,
+    canDecide,
+    signerName: user?.fullName ?? 'Twoje konto',
+    organization: isOrganization
+      ? {
+          statusLabel: getVerificationStatusBadge(
+            { status: exercise.status, organizationVerificationStatus: organizationStatus },
+            'organization'
+          ).label,
+        }
+      : undefined,
+  });
+
+  const navItems: StageNavItem[] = VERIFICATION_STAGES.map((key) => {
+    const hasIssues = stageHasIssues(key);
+    let state: StageNavState = 'todo';
+    if (key === stage) state = 'current';
+    else if (visited.has(key)) state = hasIssues ? 'problem' : 'done';
+    return { key, title: STAGE_TITLES[key], sub: subs[key], state, hasIssues };
+  });
+
+  const decisionRows: DecisionRow[] = [
+    {
+      key: 'material',
+      title: STAGE_TITLES.material,
+      summary: `${hasVideo ? 'Nagranie i ' : 'Bez nagrania, '}${photoLabel}`,
+      changes: changes.material,
+      issues: stages.issues.material,
+    },
+    {
+      key: 'parameters',
+      title: STAGE_TITLES.parameters,
+      summary: `${buildPatientParameterLine(parameterValues, mode, core.side)} · ≈ ${formatSessionDuration(evaluation.sessionSeconds)}`,
+      changes: changes.parameters,
+      issues: stages.issues.parameters,
+    },
+    {
+      key: 'instruction',
+      title: STAGE_TITLES.instruction,
+      summary: [
+        'Opis',
+        pluralizePl((patient.steps ?? []).filter(Boolean).length, 'krok', 'kroki', 'kroków'),
+        pluralizePl(
+          (patient.cues ?? []).filter(Boolean).length,
+          'wskazówka głosowa',
+          'wskazówki głosowe',
+          'wskazówek głosowych'
+        ),
+        pluralizePl((patient.mistakes ?? []).length, 'typowy błąd', 'typowe błędy', 'typowych błędów'),
+      ].join(', '),
+      changes: changes.instruction,
+      issues: stages.issues.instruction,
+    },
+    {
+      key: 'safety',
+      title: STAGE_TITLES.safety,
+      summary: [
+        parseStopIf(enrichment.safety?.stop_if).join(', '),
+        pluralizePl(
+          enrichment.therapist?.contraindications?.length ?? 0,
+          'przeciwwskazanie',
+          'przeciwwskazania',
+          'przeciwwskazań'
+        ),
+        enrichment.safety?.requires_supervision ? 'tylko pod nadzorem' : '',
+      ]
+        .filter(Boolean)
+        .join(' · '),
+      changes: changes.safety,
+      issues: stages.issues.safety,
+    },
+  ];
+
+  const reportStage = latestReport ? REPORT_STAGE[latestReport.reasonCategory] : null;
+  const previousNotes = isOrganization ? exercise.orgReviewNotes : exercise.adminReviewNotes;
+  const isBusy = isLeaving || approving || rejecting || Boolean(organizationDecision?.isBusy);
+
+  let primaryLabel = PRIMARY_LABELS[stage];
+  if (stage === 'decision' && !canDecide) primaryLabel = 'Gotowe, dalej';
+  else if (stage === 'decision' && isOrganization) primaryLabel = 'Zatwierdź w gabinecie';
+
+  let secondary: { label: string; testId: string; onClick: () => void } | undefined;
+  if (isOrganization) {
+    if (canRequestChanges) {
+      secondary = {
+        label: 'Odeślij do poprawek',
+        testId: 'org-verification-bar-request-changes-btn',
+        onClick: () => setIsChangesOpen(true),
+      };
+    }
+  } else if (canDecide) {
+    secondary = {
+      label: 'To duplikat',
+      testId: 'verification-bar-duplicate-btn',
+      onClick: () => setIsDuplicateOpen(true),
+    };
+  }
+
+  return (
+    <PageSheet contentClassName="gap-5" data-testid={rootTestId}>
+      <div ref={rootRef} className="scroll-mt-6" />
+
+      <header className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="-ml-2"
+          aria-label="Lista ćwiczeń"
+          title="Lista ćwiczeń"
+          onClick={() => router.push(listUrl)}
+          data-testid={backTestId}
+        >
+          <ArrowLeft />
+        </Button>
+        <h1 className="min-w-0 truncate text-[20px] font-semibold leading-[25px] text-foreground">
+          {core.name.trim() || 'Ćwiczenie bez nazwy'}
+        </h1>
+        <Badge variant="secondary" className="shrink-0" data-testid="verification-destination-badge">
+          {isOrganization ? 'Ćwiczenia gabinetu' : 'Katalog FiziYo'}
+        </Badge>
+        {queuePosition != null && queueTotal > 0 && (
+          <span className="shrink-0 text-[13px] tabular-nums text-label-secondary">
+            {queuePosition} z {queueTotal}
+          </span>
+        )}
+        <span className="flex-1" />
+        <SaveStatus status={form.saveStatus} />
+        {canArchive && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => void handleArchive()}
+            disabled={isBusy}
+            data-testid="org-verification-archive-btn"
+          >
+            <Archive />
+            Archiwizuj
+          </Button>
+        )}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={handleSkip}
+          disabled={isLeaving}
+          data-testid="verification-skip-btn"
+        >
+          Odłóż na później
+        </Button>
+      </header>
+
+      {latestReport && reportStage && (
+        <div
+          className="flex flex-wrap items-start gap-3 rounded-2xl bg-status-warning-muted px-4 py-3"
+          data-testid="verification-report-banner"
+        >
+          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-status-warning font-bold text-card">
+            !
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[15px] font-semibold text-foreground">
+              Zgłoszenie od {latestReport.reportedBy.name ?? latestReport.reportedBy.email}: „{latestReport.description}
+              ”
+            </p>
+            <p className="text-[13px] text-label-secondary">
+              {openReports.length > 1 ? `Otwarte zgłoszenia: ${openReports.length}. ` : ''}
+              Poprawka zmieni to ćwiczenie we wszystkich planach pacjentów po publikacji.
+            </p>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            onClick={() => goToStage(reportStage)}
+            data-testid="verification-report-go-btn"
+          >
+            Pokaż w etapie {STAGE_TITLES[reportStage]}
+          </Button>
+        </div>
+      )}
+
+      {previousNotes && (
+        <div
+          className="flex items-start gap-2 rounded-2xl bg-status-warning-muted px-4 py-3"
+          data-testid="verification-previous-notes"
+        >
+          <FileText className="mt-0.5 h-4 w-4 shrink-0 text-status-warning" />
+          <div className="min-w-0">
+            <p className="text-[13px] font-semibold text-status-warning">Poprzednie uwagi</p>
+            <p className="text-[15px] text-foreground">{previousNotes}</p>
+          </div>
+        </div>
+      )}
+
+      <VerificationStageNav items={navItems} onSelect={goToStage} />
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(260px,360px)_minmax(0,1fr)]">
+        <aside className="lg:sticky lg:top-[104px] lg:self-start" aria-label="Materiał ćwiczenia">
+          <MediaGallery
+            items={galleryItems}
+            title={core.name}
+            layout="stage"
+            aspectRatio="portrait"
+            rootTestId="verification-media-panel"
+            testIdPrefix="verification-media"
+            selectedIndex={galleryIndex}
+            onSelectedIndexChange={handleGalleryIndexChange}
+          />
+          {stage === 'instruction' && (
+            <div
+              aria-live="polite"
+              className="mt-2.5 flex flex-col gap-1 rounded-[16px] bg-grouped-tertiary p-3"
+              data-testid="verification-reading-focus"
+            >
+              <p className="text-[12px] font-semibold leading-4 text-tint">{readingFocus.label}</p>
+              <p className="text-[15px] leading-[21px] text-foreground">{readingFocus.text}</p>
+              {readingFocus.photoIndex !== null && (
+                <Button
+                  type="button"
+                  variant="plain"
+                  size="sm"
+                  className="-ml-3 mt-1 self-start"
+                  onClick={() => {
+                    const photoIndex = readingFocus.photoIndex;
+                    goToStage('material');
+                    setPhotoDialogIndex(photoIndex);
+                  }}
+                  data-testid="verification-reading-focus-flag-btn"
+                >
+                  Zdjęcie nie pasuje do opisu
+                </Button>
+              )}
+            </div>
+          )}
+        </aside>
+
+        <div className="flex min-w-0 flex-col gap-4">
+          {stage === 'material' && (
+            <MaterialStage
+              videoUrl={core.videoUrl}
+              hasVideo={hasVideo}
+              photos={photos}
+              stepImages={patient.step_images}
+              maxPhotos={MAX_PHOTOS}
+              pendingPhoto={pendingPhoto}
+              generatingIndex={generatingIndex}
+              isGenerating={imageGeneration.isGenerating}
+              isSavingPhoto={isSavingPhoto}
+              onVideoUrlChange={(value) => setCoreField('videoUrl', value)}
+              onPreviewPhoto={handlePreviewPhoto}
+              onReplacePhoto={setPhotoDialogIndex}
+              onDeletePhoto={(url) => void handleDeletePhoto(url)}
+              onAddPhotos={(files) => void handleAddPhotos(files)}
+              onGeneratePhoto={() => void generatePhoto(photos.length, [], '')}
+              onAcceptPending={() => {
+                if (!pendingPhoto) return;
+                if (pendingPhoto.index >= photos.length) void appendPhoto(pendingPhoto.previewUrl);
+                else void replacePhotoAt(pendingPhoto.index, pendingPhoto.previewUrl);
+              }}
+              onRetryPending={handleRetryPhoto}
+              onDiscardPending={() => setPendingPhoto(null)}
+            />
+          )}
+
+          {stage === 'parameters' && (
+            <ParametersStage
+              core={core}
+              mode={mode}
+              values={parameterValues}
+              evaluation={evaluation}
+              descriptionNumbers={descriptionNumbers}
+              onValueChange={handleParameterChange}
+              onAcknowledge={handleAcknowledge}
+              onFixDescription={() =>
+                setCoreField('patientDescription', replaceHardcodedNumbers(core.patientDescription))
+              }
+              onAcknowledgeDescription={() => setDescriptionAcknowledged(true)}
+              onCoreFieldChange={setCoreField}
+            />
+          )}
+
+          {stage === 'instruction' && (
+            <InstructionStage
+              name={core.name}
+              patientDescription={core.patientDescription}
+              patient={patient}
+              proposal={proposal}
+              isGeneratingProposal={isGeneratingProposal}
+              onCoreFieldChange={setCoreField}
+              onPatientChange={(nextPatient) => setEnrichmentPath('patient', nextPatient)}
+              onRequestProposal={() => void handleRequestProposal()}
+              onInsertProposal={() => {
+                if (!proposal) return;
+                setEnrichmentPath('patient', applyInstructionProposal(patient, proposal));
+                setProposal(null);
+              }}
+              onDismissProposal={() => setProposal(null)}
+              focusedStep={focusedStep}
+              onFocusStep={handleFocusStep}
+            />
+          )}
+
+          {stage === 'safety' && (
+            <SafetyStage
+              enrichment={enrichment}
+              therapistDescription={core.clinicalDescription}
+              onTherapistDescriptionChange={(value) => setCoreField('clinicalDescription', value)}
+              onEnrichmentPathChange={setEnrichmentPath}
+            />
+          )}
+
+          {stage === 'decision' && <DecisionStage rows={decisionRows} onGoToStage={goToStage} />}
+        </div>
+      </div>
+
+      <VerificationFloatingBar
+        hint={hints[stage]}
+        isBlocked={isPrimaryBlocked}
+        primaryLabel={primaryLabel}
+        onPrimary={handlePrimary}
+        isBusy={isBusy}
+        secondary={secondary}
+      />
+
+      <PhotoReplaceDialog
+        open={photoDialogIndex !== null}
+        photoLabel={photoDialogIndex !== null ? `zdjęcie ${photoDialogIndex + 1}` : ''}
+        isGenerating={imageGeneration.isGenerating}
+        onOpenChange={(open) => {
+          if (!open) setPhotoDialogIndex(null);
+        }}
+        onGenerate={(problems, note) => {
+          if (photoDialogIndex !== null) void generatePhoto(photoDialogIndex, problems, note);
+        }}
+        onUploadOwn={(file) => void handleUploadOwnPhoto(file)}
+      />
+
+      {isOrganization && (
+        <RequestChangesDialog
+          open={isChangesOpen}
+          initialNotes=""
+          isSubmitting={isBusy}
+          onOpenChange={setIsChangesOpen}
+          onConfirm={(notes) => void handleRequestChanges(notes)}
+        />
+      )}
+
+      <DuplicateDialog
+        open={isDuplicateOpen}
+        exerciseId={exercise.id}
+        exerciseName={core.name}
+        isSubmitting={rejecting || isLeaving}
+        onOpenChange={setIsDuplicateOpen}
+        onConfirm={(target) => void handleMarkDuplicate(target)}
+      />
+    </PageSheet>
+  );
+}

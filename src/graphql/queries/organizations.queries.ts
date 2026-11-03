@@ -125,3 +125,17 @@ export const GET_INVITATION_BY_TOKEN_QUERY = gql`
     }
   }
 `;
+
+// Oczekujące zaproszenia pacjentów organizacji z tokenu (bez argumentu: cache czyści zmiana organizacji)
+export const GET_PATIENT_INVITATIONS_QUERY = gql`
+  query GetPatientInvitations {
+    patientInvitations {
+      id
+      organizationId
+      email
+      status
+      createdAt
+      expiresAt
+    }
+  }
+`;

@@ -16,7 +16,7 @@ import { ScheduleSummary } from '@/components/shared';
 import { toast } from 'sonner';
 
 import { loadPdfRenderer } from '@/components/pdf/loadPdfRenderer';
-import { preloadPdfExerciseImages, resolvePdfExerciseImageUrl } from '@/components/pdf/pdfExerciseUtils';
+import { preloadPdfExerciseImages, toPdfExercise } from '@/components/pdf/pdfExerciseUtils';
 import type {
   PDFExerciseSet,
   PDFOrganization,
@@ -201,26 +201,7 @@ export function AssignmentSuccessDialog({
       };
 
       // Mapuj ćwiczenia z exerciseMappings
-      const pdfExercises: PDFExercise[] = (exerciseSet.exerciseMappings || []).map((mapping) => ({
-        id: mapping.id,
-        name: mapping.exercise?.name || 'Nieznane ćwiczenie',
-        description: mapping.exercise?.patientDescription || mapping.exercise?.description,
-        type: mapping.exercise?.type?.toLowerCase() as PDFExercise['type'],
-        exerciseSide: (mapping.exercise?.side?.toLowerCase() ||
-          mapping.exercise?.exerciseSide) as PDFExercise['exerciseSide'],
-        imageUrl: resolvePdfExerciseImageUrl(mapping.exercise),
-        images: mapping.exercise?.images,
-        notes: mapping.notes || mapping.exercise?.notes,
-        sets: mapping.sets ?? mapping.exercise?.defaultSets ?? mapping.exercise?.sets,
-        reps: mapping.reps ?? mapping.exercise?.defaultReps ?? mapping.exercise?.reps,
-        duration: mapping.duration ?? mapping.exercise?.defaultDuration ?? mapping.exercise?.duration,
-        restSets: mapping.restSets ?? mapping.exercise?.defaultRestBetweenSets ?? mapping.exercise?.restSets,
-        restReps: mapping.restReps ?? mapping.exercise?.defaultRestBetweenReps ?? mapping.exercise?.restReps,
-        executionTime: mapping.executionTime,
-        order: mapping.order,
-        customName: mapping.customName,
-        customDescription: mapping.customDescription,
-      }));
+      const pdfExercises: PDFExercise[] = (exerciseSet.exerciseMappings || []).map(toPdfExercise);
       await preloadPdfExerciseImages(pdfExercises);
 
       const pdfExerciseSet: PDFExerciseSet = {
@@ -472,17 +453,38 @@ export function AssignmentSuccessDialog({
               <Smartphone className="h-4 w-4 text-muted-foreground" />
               Aplikacja mobilna
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCopyLink}
-              disabled={!canRenderQr}
-              className="mt-3"
-              data-testid="assign-success-copy-link-btn"
-            >
-              {copied ? <Check className="h-3.5 w-3.5 mr-1.5 text-primary" /> : <Copy className="h-3.5 w-3.5 mr-1.5" />}
-              {copied ? 'Skopiowano link' : 'Kopiuj link'}
-            </Button>
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCopyLink}
+                disabled={!canRenderQr}
+                data-testid="assign-success-copy-link-btn"
+              >
+                {copied ? <Check className="h-3.5 w-3.5 mr-1.5 text-primary" /> : <Copy className="h-3.5 w-3.5 mr-1.5" />}
+                {copied ? 'Skopiowano link' : 'Kopiuj link'}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleShare}
+                disabled={!canRenderQr}
+                data-testid="assign-success-share-btn"
+              >
+                <Share2 className="h-3.5 w-3.5 mr-1.5" />
+                Wyślij link
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadPDF}
+                disabled={isGeneratingPDF || !organization || !exerciseSet}
+                data-testid="assign-success-download-pdf-btn"
+              >
+                <Download className="h-3.5 w-3.5 mr-1.5" />
+                Pobierz PDF
+              </Button>
+            </div>
           </div>
 
           <Collapsible
@@ -519,17 +521,6 @@ export function AssignmentSuccessDialog({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={handleShare}
-                  disabled={!canRenderQr}
-                  className="justify-start text-xs text-muted-foreground h-8"
-                  data-testid="assign-success-share-btn"
-                >
-                  <Share2 className="h-3 w-3 mr-1.5" />
-                  Wyślij link
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
                   onClick={handlePrintCard}
                   disabled={isGeneratingPDF || !organization || !exerciseSet}
                   className="justify-start text-xs text-muted-foreground h-8"
@@ -537,17 +528,6 @@ export function AssignmentSuccessDialog({
                 >
                   <Printer className="h-3 w-3 mr-1.5" />
                   Drukuj kartę
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleDownloadPDF}
-                  disabled={isGeneratingPDF || !organization || !exerciseSet}
-                  className="justify-start text-xs text-muted-foreground h-8"
-                  data-testid="assign-success-download-pdf-btn"
-                >
-                  <Download className="h-3 w-3 mr-1.5" />
-                  Pobierz PDF
                 </Button>
                 <Button
                   variant="ghost"

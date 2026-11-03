@@ -29,6 +29,34 @@ export const DEFAULT_PREFERENCES: AccessibilityPreferences = {
 
 export const STORAGE_KEY = 'fiziyo-accessibility';
 
+const THEMES: readonly Theme[] = ['dark', 'light', 'system'];
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+export function parseStoredPreferences(raw: string | null): AccessibilityPreferences {
+  if (!raw) return DEFAULT_PREFERENCES;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return DEFAULT_PREFERENCES;
+  }
+  if (!isRecord(parsed)) return DEFAULT_PREFERENCES;
+
+  const { theme, fontSize, highContrast, reducedMotion } = parsed;
+  return {
+    theme: THEMES.includes(theme as Theme) ? (theme as Theme) : DEFAULT_PREFERENCES.theme,
+    fontSize:
+      typeof fontSize === 'string' && fontSize in FONT_SIZE_VALUES
+        ? (fontSize as FontSize)
+        : DEFAULT_PREFERENCES.fontSize,
+    highContrast: typeof highContrast === 'boolean' ? highContrast : DEFAULT_PREFERENCES.highContrast,
+    reducedMotion: typeof reducedMotion === 'boolean' ? reducedMotion : DEFAULT_PREFERENCES.reducedMotion,
+  };
+}
+
 interface AccessibilityContextValue {
   preferences: AccessibilityPreferences;
   updatePreference: <K extends keyof AccessibilityPreferences>(key: K, value: AccessibilityPreferences[K]) => void;
@@ -90,16 +118,7 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
   // Wczytanie preferencji z localStorage przy montowaniu (client-side)
   // Odłożone do mikrotaska, żeby uniknąć synchronicznego setState w efekcie (cascading renders)
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    let prefsToApply = DEFAULT_PREFERENCES;
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved) as AccessibilityPreferences;
-        prefsToApply = parsed;
-      } catch {
-        // Ignore invalid JSON
-      }
-    }
+    const prefsToApply = parseStoredPreferences(localStorage.getItem(STORAGE_KEY));
     applyPreferences(prefsToApply);
     const prefsForState = prefsToApply;
     queueMicrotask(() => {

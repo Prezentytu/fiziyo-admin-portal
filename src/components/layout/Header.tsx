@@ -1,12 +1,11 @@
 'use client';
 
-import { ChevronRight, Home, Menu, Bell } from 'lucide-react';
+import { ChevronRight, Home, Menu, PanelLeftOpen } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { MobileOrgIndicator } from '@/components/layout/MobileOrgIndicator';
-import { FeedbackButton } from '@/components/shared/FeedbackButton';
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { HeaderActions } from '@/components/layout/HeaderActions';
 
 // Route name mappings
 const routeNames: Record<string, string> = {
@@ -19,7 +18,7 @@ const routeNames: Record<string, string> = {
   billing: 'Rozliczenia',
   settings: 'Ustawienia',
   tags: 'Tagi',
-  import: 'Import Dokumentów',
+  import: 'Import dokumentów',
   verification: 'Weryfikacja',
 };
 
@@ -46,7 +45,7 @@ function Breadcrumbs() {
       <Link
         href="/"
         data-testid="nav-breadcrumb-home"
-        className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded"
+        className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
       >
         <Home className="h-4 w-4" />
       </Link>
@@ -54,14 +53,17 @@ function Breadcrumbs() {
         <div key={crumb.href} className="flex items-center gap-1.5">
           <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
           {crumb.isLast ? (
-            <span data-testid={`nav-breadcrumb-item-${index}`} className="inline-flex items-center font-medium text-foreground">
+            <span
+              data-testid={`nav-breadcrumb-item-${index}`}
+              className="inline-flex items-center font-medium text-foreground"
+            >
               {crumb.label}
             </span>
           ) : (
             <Link
               href={crumb.href}
               data-testid={`nav-breadcrumb-item-${index}`}
-              className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded"
+              className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
             >
               {crumb.label}
             </Link>
@@ -74,77 +76,57 @@ function Breadcrumbs() {
 
 interface HeaderProps {
   readonly onMobileMenuToggle?: () => void;
+  /** Shown when the desktop sidebar is collapsed, so every page can bring it back. */
+  readonly onExpandSidebar?: () => void;
 }
 
-export function Header({ onMobileMenuToggle }: HeaderProps) {
-  // TODO: Replace with real notification count from backend
-  const notificationCount = 0;
-  const hasNotifications = notificationCount > 0;
-
+export function Header({ onMobileMenuToggle, onExpandSidebar }: HeaderProps) {
   return (
-    <TooltipProvider delayDuration={300}>
-      <header
-        data-testid="nav-header"
-        className="flex shrink-0 h-16 items-center justify-between border-b border-border bg-surface px-4 lg:px-6"
-      >
-        {/* Left side - Mobile menu + Org indicator + Breadcrumbs */}
-        <div className="flex items-center gap-3">
-          {/* Mobile menu button */}
-          {onMobileMenuToggle && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="xl:hidden"
-              onClick={onMobileMenuToggle}
-              aria-label="Otwórz menu"
-              data-testid="nav-mobile-menu-btn"
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-          )}
+    <header
+      data-testid="nav-header"
+      className="flex shrink-0 h-16 items-center justify-between bg-grouped px-4 lg:px-6"
+    >
+      {/* Left side - Mobile menu + Org indicator + Breadcrumbs */}
+      <div className="flex items-center gap-3">
+        {/* Mobile menu button */}
+        {onMobileMenuToggle && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="xl:hidden"
+            onClick={onMobileMenuToggle}
+            aria-label="Otwórz menu"
+            data-testid="nav-mobile-menu-btn"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+        )}
 
-          {/* Mobile organization indicator - visible when sidebar is overlay (tablet + mobile) */}
-          <div className="xl:hidden">
-            <MobileOrgIndicator />
-          </div>
+        {onExpandSidebar && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden lg:inline-flex"
+            onClick={onExpandSidebar}
+            aria-label="Rozwiń menu"
+            data-testid="nav-sidebar-expand-btn"
+          >
+            <PanelLeftOpen className="h-5 w-5" />
+          </Button>
+        )}
 
-          {/* Breadcrumbs - hidden on mobile */}
-          <div className="hidden sm:flex sm:items-center">
-            <Breadcrumbs />
-          </div>
+        {/* Mobile organization indicator - visible when sidebar is overlay (tablet + mobile) */}
+        <div className="xl:hidden">
+          <MobileOrgIndicator />
         </div>
 
-        {/* Right side - Notifications & Feedback (kontekst "tu i teraz") */}
-        <div className="flex items-center gap-1 sm:gap-2">
-          {/* Notifications - KLUCZOWE dla engagement */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative"
-                data-testid="nav-notifications-btn"
-                aria-label="Powiadomienia"
-              >
-                <Bell className="h-5 w-5 text-muted-foreground" />
-                {/* Notification badge */}
-                {hasNotifications && (
-                  <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-white">
-                    {notificationCount > 9 ? '9+' : notificationCount}
-                  </span>
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Powiadomienia</p>
-              <p className="text-xs text-muted-foreground">Wkrótce dostępne</p>
-            </TooltipContent>
-          </Tooltip>
-
-          {/* Feedback / Help */}
-          <FeedbackButton variant="icon" />
+        {/* Breadcrumbs - hidden on mobile */}
+        <div className="hidden sm:flex sm:items-center">
+          <Breadcrumbs />
         </div>
-      </header>
-    </TooltipProvider>
+      </div>
+
+      <HeaderActions />
+    </header>
   );
 }

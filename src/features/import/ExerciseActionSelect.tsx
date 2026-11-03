@@ -73,7 +73,7 @@ export function ExerciseActionSelect({
   const getIcon = () => {
     if (decision.action === 'skip') return <X className="h-4 w-4 text-muted-foreground" />;
     if (decision.action === 'create') return <Plus className="h-4 w-4 text-primary" />;
-    if (decision.action === 'reuse') return <Link2 className="h-4 w-4 text-blue-500" />;
+    if (decision.action === 'reuse') return <Link2 className="h-4 w-4 text-status-info" />;
     return null;
   };
 
@@ -82,7 +82,7 @@ export function ExerciseActionSelect({
       <SelectTrigger
         className={cn(
           'h-9 w-full min-w-[200px]',
-          decision.action === 'reuse' && 'border-blue-500/50 bg-blue-500/5',
+          decision.action === 'reuse' && 'border-status-info/50 bg-status-info-muted',
           decision.action === 'create' && 'border-primary/50 bg-primary/5',
           decision.action === 'skip' && 'border-border bg-muted/50 text-muted-foreground',
           className
@@ -105,7 +105,7 @@ export function ExerciseActionSelect({
                 className="cursor-pointer"
               >
                 <div className="flex items-center gap-2">
-                  <Link2 className="h-4 w-4 text-blue-500 shrink-0" />
+                  <Link2 className="h-4 w-4 text-status-info shrink-0" />
                   <span className="truncate">Połącz z: {match.existingExerciseName}</span>
                 </div>
               </SelectItem>

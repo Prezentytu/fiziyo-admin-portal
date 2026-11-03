@@ -16,10 +16,11 @@ import { ExerciseContentSections } from './ExerciseContentSections';
 import type { UseExerciseEditorFormResult } from './useExerciseEditorForm';
 
 import { aiService } from '@/services/aiService';
-import { cleanupEnrichment, parseEnrichmentJson, toFullShapeJson } from '@/features/verification/utils/enrichment';
+import { compactEnrichment, parseEnrichmentJson, toFullShapeJson } from '@/features/verification/utils/enrichment';
 import { toV3 } from '@/features/verification/utils/enrichmentToV3';
 import { computeCompleteness } from '@/features/verification/utils/enrichmentSkeleton';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
+import { normalizeExerciseType } from '@/utils/exerciseEnums';
 
 /**
  * Kontekst potrzebny do "Uzupełnij przez AI" — dane wejściowe do wygenerowania treści.
@@ -110,7 +111,7 @@ function AiFillBar({
       exerciseName: context.name,
       patientDescription: context.patientDescription,
       clinicalDescription: context.clinicalDescription,
-      type: context.type?.toLowerCase() === 'time' ? 'time' : 'reps',
+      type: normalizeExerciseType(context.type) ?? 'reps',
       tags,
       existingEnrichmentJson: JSON.stringify(enrichment),
     });
@@ -124,7 +125,7 @@ function AiFillBar({
 
     const aiData = toV3(response.enrichmentData as ExerciseEnrichmentData);
     const merged = deepMergeFillGaps(enrichment, aiData) as ExerciseEnrichmentData;
-    const cleanedMerged = (cleanupEnrichment(merged) ?? {}) as ExerciseEnrichmentData;
+    const cleanedMerged = compactEnrichment(merged) ?? {};
 
     const beforeFilled = computeCompleteness(enrichment).filled;
     const afterFilled = computeCompleteness(cleanedMerged).filled;
@@ -146,7 +147,7 @@ function AiFillBar({
     <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border/40 bg-surface/50 p-3">
       <p className="text-xs text-muted-foreground">
         Wypełnione{' '}
-        <span className={completeness.filled === completeness.total ? 'text-emerald-600 dark:text-emerald-400' : ''}>
+        <span className={completeness.filled === completeness.total ? 'text-status-success' : ''}>
           {completeness.filled}/{completeness.total}
         </span>{' '}
         sekcji rozszerzonych
@@ -199,7 +200,7 @@ function AdvancedJsonSection({
   const handleApply = () => {
     try {
       const parsed = parseEnrichmentJson(rawJson);
-      const cleaned = (cleanupEnrichment(toV3(parsed)) ?? {}) as ExerciseEnrichmentData;
+      const cleaned = compactEnrichment(toV3(parsed)) ?? {};
       onApply(cleaned);
       setError(null);
       toast.success('Dane JSON zostały zastosowane.');
@@ -292,6 +293,7 @@ export function ExerciseEditor({
         </h2>
         <ExerciseParametersEditor
           core={core}
+          exerciseType={form.exerciseType}
           isDirtyField={isCoreFieldDirty}
           disabled={disabled}
           onNumberChange={(field, value) => setCoreField(field, value)}

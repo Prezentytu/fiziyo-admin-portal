@@ -110,12 +110,9 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
 
     // Test czy mikrofon w ogóle działa
     try {
-      console.log('Testing microphone access...');
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      console.log('Microphone access OK, stopping stream...');
       stream.getTracks().forEach((track) => track.stop());
-    } catch (e) {
-      console.error('getUserMedia failed:', e);
+    } catch {
       setError('Nie można uzyskać dostępu do mikrofonu. Sprawdź ustawienia.');
       return;
     }
@@ -133,19 +130,16 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
     recognition.lang = language;
 
     recognition.onstart = () => {
-      console.log('🎤 Speech recognition started');
       setState('listening');
     };
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
-      console.log('🎤 Speech result received:', event.results);
       let interim = '';
       let final = '';
 
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i];
         const transcript = result[0].transcript;
-        console.log(`  Result ${i}: "${transcript}", isFinal: ${result.isFinal}`);
 
         if (result.isFinal) {
           final += transcript;
@@ -154,12 +148,9 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
         }
       }
 
-      console.log(`  Interim: "${interim}", Final: "${final}"`);
-
       if (final) {
         finalTranscriptRef.current += final;
         setFinalTranscript(finalTranscriptRef.current);
-        console.log('  Calling onTranscript with:', finalTranscriptRef.current);
         onTranscript?.(finalTranscriptRef.current);
       }
 

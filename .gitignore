@@ -37,6 +37,7 @@ yarn-error.log*
 # vercel
 .vercel
 .cursor/skills
+.claude/skills
 
 # typescript
 *.tsbuildinfo

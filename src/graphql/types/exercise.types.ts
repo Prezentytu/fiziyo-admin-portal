@@ -109,6 +109,7 @@ export interface Exercise {
 
   // Global submission tracking (nowy model weryfikacji)
   globalSubmissionId?: string;
+  globalSubmissionStatus?: ContentStatus | null;
   sourceOrganizationExerciseId?: string;
   submittedToGlobalAt?: string;
   organizationVerificationStatus?: OrganizationVerificationStatus;

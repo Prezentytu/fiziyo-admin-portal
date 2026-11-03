@@ -25,7 +25,14 @@ export {
   listOverriddenFieldKeys,
 } from './exerciseOverride';
 export type { AssignmentExerciseOverride, ExerciseOverrideFields } from './exerciseOverride';
-export { resolveEffectiveExerciseParams } from './resolveEffectiveExerciseParams';
+export {
+  estimateEffectiveExerciseSeconds,
+  resolveEffectiveExerciseParams,
+} from './resolveEffectiveExerciseParams';
+export {
+  EXERCISE_PARAM_DEFAULTS,
+  readExerciseTemplateParams,
+} from './exerciseParamDefaults';
 export type {
   EffectiveExerciseParams,
   EffectiveMappingSource,

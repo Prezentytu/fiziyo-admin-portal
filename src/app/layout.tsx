@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Outfit, JetBrains_Mono } from 'next/font/google';
+import { JetBrains_Mono } from 'next/font/google';
 import { ApolloWrapper } from '@/lib/apollo/provider';
 import { Toaster } from '@/components/ui/sonner';
 import { ClerkProviderWithRedirects } from '@/components/auth/ClerkProviderWithRedirects';
@@ -11,13 +11,6 @@ const developmentAppUrl =
   process.env.NEXT_PUBLIC_DEV_APP_URL ?? 'https://dev.portal.fiziyo.pl';
 const allowClerkPreviewRedirects =
   process.env.NEXT_PUBLIC_ENABLE_CLERK_PREVIEW_REDIRECTS === 'true';
-
-const outfit = Outfit({
-  subsets: ['latin', 'latin-ext'],
-  weight: ['300', '400', '500', '600', '700', '800'],
-  variable: '--font-sans',
-  display: 'swap',
-});
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin', 'latin-ext'],
@@ -49,7 +42,7 @@ const accessibilityScript = `
         root.classList.add(prefersDark ? 'dark-theme' : 'light-theme');
       }
       // Apply font size
-      var sizes = { small: '14px', normal: '16px', large: '18px', xlarge: '20px' };
+      var sizes = { small: '16px', normal: '18px', large: '20px', xlarge: '22px' };
       if (sizes[prefs.fontSize]) {
         root.style.fontSize = sizes[prefs.fontSize];
         root.style.setProperty('--base-font-size', sizes[prefs.fontSize]);
@@ -74,7 +67,7 @@ export default function RootLayout({
       developmentAppUrl={developmentAppUrl}
       allowPreviewRedirects={allowClerkPreviewRedirects}
     >
-      <html lang="pl" suppressHydrationWarning className={`${outfit.variable} ${jetbrainsMono.variable}`}>
+      <html lang="pl" suppressHydrationWarning className={jetbrainsMono.variable}>
         <head>
           <script dangerouslySetInnerHTML={{ __html: accessibilityScript }} />
         </head>

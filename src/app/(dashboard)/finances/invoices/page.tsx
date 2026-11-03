@@ -12,6 +12,7 @@ import {
   BillingDetailsCard,
   InvoicesHistoryCard,
 } from '@/components/billing';
+import { PageSheet } from '@/components/shared/page';
 
 // ========================================
 // Invoices Page - Faktury B2B (za korzystanie z systemu)
@@ -25,7 +26,7 @@ export default function InvoicesPage() {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-foreground">Faktury i Rozliczenia</h1>
+          <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground">Faktury i rozliczenia</h1>
         </div>
         <LoadingState type="text" count={3} />
       </div>
@@ -34,17 +35,17 @@ export default function InvoicesPage() {
 
   return (
     <AccessGuard requiredAccess="admin" fallbackUrl="/">
-      <div className="space-y-6">
+      <PageSheet contentClassName="gap-6">
         {/* Header with back button */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" asChild>
-              <Link href="/finances">
+            <Button variant="ghost" size="icon" asChild data-testid="finances-invoices-back-btn">
+              <Link href="/finances" aria-label="Wróć do finansów">
                 <ArrowLeft className="h-5 w-5" />
               </Link>
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Faktury i Rozliczenia</h1>
+              <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground">Faktury i rozliczenia</h1>
               <p className="text-sm text-muted-foreground">Opłaty za korzystanie z systemu FiziYo</p>
             </div>
           </div>
@@ -66,7 +67,7 @@ export default function InvoicesPage() {
             <InvoicesHistoryCard organizationId={organizationId} />
           </div>
         </div>
-      </div>
+      </PageSheet>
     </AccessGuard>
   );
 }

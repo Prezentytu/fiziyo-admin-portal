@@ -39,8 +39,8 @@ export function NewExercisesSection({
   return (
     <div className={cn('space-y-3', className)} data-testid="import-new-section">
       <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/20">
-          <Plus className="h-5 w-5 text-blue-500" />
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-status-info-muted">
+          <Plus className="h-5 w-5 text-status-info" />
         </div>
         <div>
           <h3 className="font-semibold text-foreground">Nowe ćwiczenia ({exercises.length})</h3>

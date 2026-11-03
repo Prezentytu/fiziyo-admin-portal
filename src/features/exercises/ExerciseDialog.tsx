@@ -25,7 +25,8 @@ import {
 } from '@/graphql/mutations/exercises.mutations';
 import {
   GET_ORGANIZATION_EXERCISES_QUERY,
-  GET_AVAILABLE_EXERCISES_QUERY,
+  GET_ORGANIZATION_EXERCISE_NAMES_QUERY,
+  EXERCISE_LIBRARY_REFETCH_QUERIES,
   GET_EXERCISE_BY_ID_QUERY,
 } from '@/graphql/queries/exercises.queries';
 import type { Exercise } from './ExerciseCard';
@@ -36,6 +37,7 @@ import { buildEnrichmentUpdateVariables, isExerciseSaveAuthError } from './utils
 import { useExerciseImageGeneration } from './useExerciseImageGeneration';
 import { ImageStylePicker } from './ImageStylePicker';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
+import { normalizeExerciseType } from '@/utils/exerciseEnums';
 
 export type ExerciseDialogSuccessEvent =
   | CreateExerciseWizardSuccessEvent
@@ -89,7 +91,7 @@ export function ExerciseDialog({
   const [isMediaStateReady, setIsMediaStateReady] = useState(false);
   const mediaFileInputRef = useRef<HTMLInputElement>(null);
   // Only needed for the copy-name suggestion; don't fetch the whole library while the dialog is closed.
-  const { data: organizationExercisesData } = useQuery(GET_ORGANIZATION_EXERCISES_QUERY, {
+  const { data: organizationExercisesData } = useQuery(GET_ORGANIZATION_EXERCISE_NAMES_QUERY, {
     variables: { organizationId },
     skip: !organizationId || !open,
   });
@@ -186,14 +188,14 @@ export function ExerciseDialog({
   const apolloClient = useApolloClient();
 
   const [updateExercise, { loading: updating }] = useMutation(UPDATE_EXERCISE_MUTATION, {
-    refetchQueries: [{ query: GET_ORGANIZATION_EXERCISES_QUERY, variables: { organizationId } }],
+    refetchQueries: [GET_ORGANIZATION_EXERCISES_QUERY],
   });
   const [uploadExerciseImage, { loading: uploadingMedia }] = useMutation(UPLOAD_EXERCISE_IMAGE_MUTATION);
   const [deleteExerciseImage, { loading: deletingMedia }] = useMutation(DELETE_EXERCISE_IMAGE_MUTATION);
 
   // Fork mutation - copy global exercise to organization
   const [copyExercise, { loading: copying }] = useMutation(COPY_EXERCISE_TEMPLATE_MUTATION, {
-    refetchQueries: [{ query: GET_AVAILABLE_EXERCISES_QUERY, variables: { organizationId } }],
+    refetchQueries: [...EXERCISE_LIBRARY_REFETCH_QUERIES, GET_ORGANIZATION_EXERCISE_NAMES_QUERY],
   });
   const organizationExerciseNames =
     ((organizationExercisesData as { organizationExercises?: { name?: string | null }[] } | undefined)
@@ -220,13 +222,13 @@ export function ExerciseDialog({
       await updateExercise({
         variables: { exerciseId: exercise.id, ...variables },
         refetchQueries: [
-          { query: GET_ORGANIZATION_EXERCISES_QUERY, variables: { organizationId } },
+          GET_ORGANIZATION_EXERCISES_QUERY,
           { query: GET_EXERCISE_BY_ID_QUERY, variables: { id: exercise.id } },
         ],
         awaitRefetchQueries: true,
       });
     },
-    [exercise, organizationId, updateExercise]
+    [exercise, updateExercise]
   );
 
   const updateEnrichment = useCallback(
@@ -311,7 +313,7 @@ export function ExerciseDialog({
     const generatedFile = await generateMediaWithAI({
       exerciseName: sourceName,
       exerciseDescription: description,
-      exerciseType: exercise?.type?.toLowerCase() === 'time' ? 'time' : 'reps',
+      exerciseType: normalizeExerciseType(exercise?.type) ?? 'reps',
       style: imageStyle,
     });
 
@@ -407,7 +409,7 @@ export function ExerciseDialog({
         mediaChangeSet.removedImageUrls.length > 0 || mediaChangeSet.filesToUpload.length > 0;
       if (hadMediaMutations) {
         await apolloClient.refetchQueries({
-          include: [GET_ORGANIZATION_EXERCISES_QUERY, GET_AVAILABLE_EXERCISES_QUERY],
+          include: [GET_ORGANIZATION_EXERCISES_QUERY, ...EXERCISE_LIBRARY_REFETCH_QUERIES],
         });
       }
 
@@ -503,7 +505,7 @@ export function ExerciseDialog({
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Lock className="h-5 w-5 text-amber-500" />
+              <Lock className="h-5 w-5 text-status-warning" />
               Ćwiczenie oczekuje na weryfikację
             </DialogTitle>
             <DialogDescription>
@@ -515,10 +517,10 @@ export function ExerciseDialog({
           </DialogHeader>
 
           <div className="py-6">
-            <div className="flex items-center justify-center gap-3 p-6 rounded-lg bg-amber-500/10 border border-amber-500/20">
-              <Clock className="h-8 w-8 text-amber-500" />
+            <div className="flex items-center justify-center gap-3 p-6 rounded-lg bg-status-warning-muted border border-status-warning/20">
+              <Clock className="h-8 w-8 text-status-warning" />
               <div>
-                <p className="font-medium text-amber-600">Edycja zablokowana</p>
+                <p className="font-medium text-status-warning">Edycja zablokowana</p>
                 <p className="text-sm text-muted-foreground mt-1">
                   Nie możesz edytować ćwiczenia podczas weryfikacji. Poczekaj na decyzję weryfikatora.
                 </p>
@@ -550,7 +552,7 @@ export function ExerciseDialog({
           <div className="flex items-center gap-2">
             <DialogTitle>{isFixMode ? 'Popraw ćwiczenie' : 'Edytuj ćwiczenie'}</DialogTitle>
             {isFixMode && (
-              <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20">
+              <Badge variant="outline" className="bg-status-warning-muted text-status-warning border-status-warning/20">
                 Do poprawy
               </Badge>
             )}
@@ -769,7 +771,7 @@ export function ExerciseDialog({
                     onOpenChange(false);
                     onSubmitToGlobal(exercise);
                   }}
-                  className="gap-2 bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90"
+                  className="gap-2 bg-gradient-to-r from-primary to-status-success hover:from-primary/90 hover:to-status-success-muted"
                 >
                   <Rocket className="h-4 w-4" />
                   {verificationCopy.submitGlobal}
@@ -781,7 +783,7 @@ export function ExerciseDialog({
                     onOpenChange(false);
                     onSubmitToOrganizationReview(exercise);
                   }}
-                  className="gap-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-600/90 hover:to-emerald-500/90"
+                  className="gap-2 bg-gradient-to-r from-status-success to-status-success hover:from-status-success-muted hover:to-status-success-muted"
                   data-testid="exercise-dialog-submit-org-review-btn"
                 >
                   <Rocket className="h-4 w-4" />

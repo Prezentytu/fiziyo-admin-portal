@@ -1,12 +1,14 @@
 import { useSubscription, useApolloClient } from '@apollo/client/react';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import {
   ON_EXERCISE_CREATED,
   ON_EXERCISE_UPDATED,
   ON_EXERCISE_DELETED,
   ON_GLOBAL_EXERCISE_PUBLISHED,
 } from '@/graphql/subscriptions';
-import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
+import { EXERCISE_LIBRARY_REFETCH_QUERIES } from '@/graphql/queries/exercises.queries';
+
+const REFETCH_DEBOUNCE_MS = 1000;
 
 interface UseRealtimeExercisesOptions {
   /** ID organizacji do subskrypcji */
@@ -28,7 +30,7 @@ interface UseRealtimeExercisesOptions {
  *
  * Subskrypcje zwracają tylko ID - hook automatycznie:
  * - Refetchuje listę przy created/updated
- * - Usuwa z cache przy deleted
+ * - Usuwa z cache i odświeża listę przy deleted
  *
  * Użycie:
  * ```tsx
@@ -53,9 +55,25 @@ export function useRealtimeExercises({
   const refetch = useCallback(() => {
     if (!organizationId) return;
     client.refetchQueries({
-      include: [GET_AVAILABLE_EXERCISES_QUERY],
+      include: EXERCISE_LIBRARY_REFETCH_QUERIES,
     });
   }, [client, organizationId]);
+
+  // Import i review publikują serię eventów naraz; jedno odświeżenie listy na serię zamiast na event.
+  const refetchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scheduleRefetch = useCallback(() => {
+    if (refetchTimer.current) clearTimeout(refetchTimer.current);
+    refetchTimer.current = setTimeout(() => {
+      refetchTimer.current = null;
+      refetch();
+    }, REFETCH_DEBOUNCE_MS);
+  }, [refetch]);
+  useEffect(
+    () => () => {
+      if (refetchTimer.current) clearTimeout(refetchTimer.current);
+    },
+    [],
+  );
 
   // Subskrypcja na nowe ćwiczenia
   useSubscription<{ onExerciseCreated: string }>(ON_EXERCISE_CREATED, {
@@ -66,7 +84,7 @@ export function useRealtimeExercises({
       if (!exerciseId) return;
 
       // Refetch listy żeby pobrać nowe ćwiczenie
-      refetch();
+      scheduleRefetch();
       onCreated?.(exerciseId);
     },
   });
@@ -80,7 +98,7 @@ export function useRealtimeExercises({
       if (!exerciseId) return;
 
       // Refetch żeby pobrać zaktualizowane dane
-      refetch();
+      scheduleRefetch();
       onUpdated?.(exerciseId);
     },
   });
@@ -98,6 +116,8 @@ export function useRealtimeExercises({
         id: client.cache.identify({ __typename: 'Exercise', id: exerciseId }),
       });
       client.cache.gc();
+      // The paged list has to pull the next record into the page and recount tabs.
+      scheduleRefetch();
 
       onDeleted?.(exerciseId);
     },
@@ -111,7 +131,7 @@ export function useRealtimeExercises({
       if (!exerciseId) return;
 
       // Refetch, żeby odświeżyć listę (w tym zakładkę "Baza FiziYo")
-      refetch();
+      scheduleRefetch();
       onGlobalPublished?.(exerciseId);
     },
   });

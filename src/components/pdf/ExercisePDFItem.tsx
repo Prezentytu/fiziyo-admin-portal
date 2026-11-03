@@ -32,6 +32,7 @@ export function ExercisePDFItem({ exercise, index, showImage, compact }: Exercis
     duration: exercise.duration,
     executionTime: exercise.executionTime,
     restSets: exercise.restSets,
+    type: exercise.type,
   });
   const allowWrap = shouldAllowExerciseRowWrap(displayDescription);
 

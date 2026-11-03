@@ -11,7 +11,8 @@ import {
 } from '@/components/shared/ExerciseSetBuilder';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
-import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
+import { GET_ORGANIZATION_EXERCISE_USAGE_QUERY } from '@/graphql/queries/exerciseSets.queries';
+import { countExerciseUsage } from '@/features/exercise-sets/utils/builderExercises';
 import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
 import type { ExerciseTagsResponse, TagCategoriesResponse, OrganizationExerciseSetsResponse } from '@/types/apollo';
 import type { Exercise, ExerciseMapping } from './types';
@@ -108,7 +109,7 @@ export function CustomizeSetStep({
   });
 
   // Load existing sets for popularity calculation
-  const { data: exerciseSetsData } = useQuery(GET_ORGANIZATION_EXERCISE_SETS_QUERY, {
+  const { data: exerciseUsageData } = useQuery<OrganizationExerciseSetsResponse>(GET_ORGANIZATION_EXERCISE_USAGE_QUERY, {
     variables: { organizationId },
     skip: !organizationId,
   });
@@ -132,22 +133,10 @@ export function CustomizeSetStep({
     }));
   }, [availableExercises, tagsMap]);
 
-  // Calculate exercise popularity from existing sets
-  const exerciseSets = useMemo(
-    () => (exerciseSetsData as OrganizationExerciseSetsResponse)?.exerciseSets || [],
-    [exerciseSetsData]
+  const exercisePopularity = useMemo(
+    () => countExerciseUsage(exerciseUsageData?.exerciseSets ?? []),
+    [exerciseUsageData]
   );
-  const exercisePopularity = useMemo(() => {
-    const popularity: Record<string, number> = {};
-    for (const set of exerciseSets) {
-      for (const mapping of set.exerciseMappings || []) {
-        if (mapping.exerciseId) {
-          popularity[mapping.exerciseId] = (popularity[mapping.exerciseId] || 0) + 1;
-        }
-      }
-    }
-    return popularity;
-  }, [exerciseSets]);
 
   // Convert tags to ExerciseTag format
   const builderTags: ExerciseTag[] = useMemo(() => {
@@ -169,16 +158,11 @@ export function CustomizeSetStep({
         : 'np. Rehabilitacja kolana - tydzień 1';
 
   const testIdPrefix = isCreatingNew ? 'create-set' : 'customize-set';
+  // Podgląd bez kolumn mappingu: parametry dziedziczy resolver z domyślnych ćwiczenia (kanon).
   const buildMappingForDetails = useCallback((exercise: BuilderExercise): ExerciseMapping => {
     return {
       id: `preview-${exercise.id}`,
       exerciseId: exercise.id,
-      sets: exercise.defaultSets ?? exercise.sets ?? 3,
-      reps: exercise.defaultReps ?? exercise.reps ?? 10,
-      duration: exercise.defaultDuration ?? exercise.duration,
-      restSets: exercise.defaultRestBetweenSets ?? exercise.restSets ?? 60,
-      restReps: exercise.defaultRestBetweenReps ?? exercise.restReps ?? 0,
-      executionTime: exercise.defaultExecutionTime,
       exercise: {
         id: exercise.id,
         name: exercise.name,
@@ -195,6 +179,8 @@ export function CustomizeSetStep({
         defaultExecutionTime: exercise.defaultExecutionTime,
         defaultRestBetweenSets: exercise.defaultRestBetweenSets,
         defaultRestBetweenReps: exercise.defaultRestBetweenReps,
+        preparationTime: exercise.preparationTime,
+        tempo: exercise.tempo,
         mainTags: exercise.mainTags?.map((tag) => tag.name),
         additionalTags: exercise.additionalTags?.map((tag) => tag.name),
         scope: exercise.scope,

@@ -82,3 +82,20 @@ describe('buildAssignmentOverrideDeltasFromBuilder', () => {
     expect(stringifyAssignmentOverrides({})).toBeNull();
   });
 });
+
+describe('buildAssignmentOverrideDeltasFromBuilder content not loaded', () => {
+  it('carries the inherited content override instead of clearing template steps', () => {
+    const exercises = [
+      { id: 'e1', name: 'Przysiad', enrichmentData: { $schema: 'fiziyo-exercise-v3', patient: { steps: ['Krok 1'] } } },
+    ];
+
+    const result = buildAssignmentOverrideDeltasFromBuilder(
+      [{ instanceId: 'i1', exerciseId: 'e1' }],
+      new Map([['i1', { enrichmentOverride: { patient: { cues: ['Wydech'] } } }]]),
+      exercises
+    );
+
+    expect(result.i1?.enrichment).toEqual({ patient: { cues: ['Wydech'] } });
+  });
+});
+

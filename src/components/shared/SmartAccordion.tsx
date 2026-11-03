@@ -83,14 +83,14 @@ export function SmartAccordion({
       return {
         count: criticalMissing,
         label: criticalMissing === 1 ? 'wymagane' : 'wymagane',
-        className: 'animate-pulse bg-red-500/20 text-red-500 border-red-500/30',
+        className: 'animate-pulse bg-status-danger-muted text-status-danger border-status-danger/30',
       };
     }
     if (recommendedMissing > 0) {
       return {
         count: recommendedMissing,
         label: 'sugerowane',
-        className: 'bg-amber-500/10 text-amber-500/70 border-amber-500/20',
+        className: 'bg-status-warning-muted text-status-warning border-status-warning/20',
       };
     }
     if (optionalMissing > 0) {
@@ -109,8 +109,8 @@ export function SmartAccordion({
   const containerClassName = cn(
     'rounded-xl border bg-surface/50 transition-all duration-300',
     {
-      'border-red-500/30 shadow-sm shadow-red-500/10': status === 'critical',
-      'border-amber-500/20': status === 'recommended',
+      'border-status-danger/30 shadow-sm shadow-status-danger/10': status === 'critical',
+      'border-status-warning/20': status === 'recommended',
       'border-border/60': status === 'optional' || status === 'complete',
     },
     className
@@ -118,15 +118,15 @@ export function SmartAccordion({
 
   // Header text styling based on status
   const headerTextClassName = cn('text-sm font-medium transition-colors duration-300', {
-    'text-red-500': status === 'critical',
-    'text-amber-500/80': status === 'recommended',
+    'text-status-danger': status === 'critical',
+    'text-status-warning': status === 'recommended',
     'text-muted-foreground': status === 'optional' || status === 'complete',
   });
 
   // Icon styling based on status
   const iconClassName = cn('h-4 w-4 transition-colors duration-300', {
-    'text-red-500': status === 'critical',
-    'text-amber-500/80': status === 'recommended',
+    'text-status-danger': status === 'critical',
+    'text-status-warning': status === 'recommended',
     'text-muted-foreground': status === 'optional' || status === 'complete',
   });
 

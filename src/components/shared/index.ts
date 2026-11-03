@@ -30,3 +30,4 @@ export { ErrorBoundary } from './ErrorBoundary';
 export { ExerciseExecutionCard } from './exercise';
 export type { ExerciseExecutionCardProps, ExerciseExecutionCardData, EditableField } from './exercise';
 export { isTimerExercise, isFieldEditable, fromExerciseMapping, fromBuilderExercise } from './exercise';
+export { PageSheet, PageHeader, SectionHeader, SECTION_LINK_CLASS, ActivityStatusLabel, InitialsAvatar } from './page';

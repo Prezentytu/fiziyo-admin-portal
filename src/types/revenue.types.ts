@@ -266,8 +266,8 @@ export const COMMISSION_TIERS = {
     minSubscribers: 0,
     maxSubscribers: 49,
     color: 'zinc',
-    gradientFrom: 'from-zinc-500',
-    gradientTo: 'to-zinc-600',
+    gradientFrom: 'from-separator',
+    gradientTo: 'to-separator',
   },
   PRO: {
     name: 'PRO',
@@ -275,8 +275,8 @@ export const COMMISSION_TIERS = {
     minSubscribers: 50,
     maxSubscribers: 99,
     color: 'amber',
-    gradientFrom: 'from-amber-500',
-    gradientTo: 'to-orange-600',
+    gradientFrom: 'from-status-warning',
+    gradientTo: 'to-status-warning',
   },
   EXPERT: {
     name: 'EXPERT',
@@ -284,8 +284,8 @@ export const COMMISSION_TIERS = {
     minSubscribers: 100,
     maxSubscribers: 299,
     color: 'emerald',
-    gradientFrom: 'from-emerald-500',
-    gradientTo: 'to-green-600',
+    gradientFrom: 'from-status-success',
+    gradientTo: 'to-status-success',
   },
   ELITE: {
     name: 'ELITE',
@@ -293,8 +293,8 @@ export const COMMISSION_TIERS = {
     minSubscribers: 300,
     maxSubscribers: null,
     color: 'violet',
-    gradientFrom: 'from-violet-500',
-    gradientTo: 'to-purple-600',
+    gradientFrom: 'from-violet/30',
+    gradientTo: 'to-violet/30',
   },
   PARTNER: {
     name: 'PARTNER',
@@ -303,7 +303,7 @@ export const COMMISSION_TIERS = {
     maxSubscribers: null,
     color: 'primary',
     gradientFrom: 'from-primary',
-    gradientTo: 'to-emerald-600',
+    gradientTo: 'to-status-success',
   },
 } as const;
 

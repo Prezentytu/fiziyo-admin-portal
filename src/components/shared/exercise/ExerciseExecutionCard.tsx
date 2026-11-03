@@ -8,6 +8,7 @@ import { LabeledStepper } from '@/components/shared/LabeledStepper';
 import { ExerciseThumbnail } from './ExerciseThumbnail';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { cn } from '@/lib/utils';
+import { polishPlural } from '@/utils/polishPlural';
 import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
 import {
   type ExerciseExecutionCardProps,
@@ -60,6 +61,9 @@ const CARD_FIELD_TESTID_MAP: Record<
   customName: { input: 'custom-name-input', info: 'help-customName' },
   customDescription: { input: 'custom-description-input', info: 'help-customDescription' },
 };
+
+const DURATION_TOOLTIP =
+  'Szacowany łączny czas wykonania ćwiczenia z uwzględnieniem serii, powtórzeń, przerw i przygotowania.';
 
 function exerciseToParameterValues(
   exercise: ExerciseExecutionCardProps['exercise']
@@ -166,8 +170,10 @@ export function ExerciseExecutionCard({
         preparationTime: exercise.preparationTime,
         tempo: exercise.tempo,
         side: exercise.side,
+        type: exercise.isTimeBased ? 'time' : 'reps',
       }),
     [
+      exercise.isTimeBased,
       exercise.duration,
       exercise.executionTime,
       exercise.preparationTime,
@@ -530,8 +536,7 @@ export function ExerciseExecutionCard({
                               </span>
                             </TooltipTrigger>
                             <TooltipContent side="top" className="max-w-[220px] text-xs">
-                              Szacowany laczny czas wykonania cwiczenia z uwzglednieniem serii, powtorzen, przerw i
-                              przygotowania.
+                              {DURATION_TOOLTIP}
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
@@ -613,8 +618,13 @@ export function ExerciseExecutionCard({
                 </TooltipProvider>
                 {showReadableView ? (
                   <p className="mt-1 text-xs text-muted-foreground whitespace-normal wrap-break-word">
-                    {exercise.sets} serie • {exercise.reps} powt.
-                    {durationBadgeLabel ? ` • Czas cwiczenia: ${durationBadgeLabel}` : ''}
+                    <span title={setsField.tooltip}>
+                      {exercise.sets} {polishPlural(exercise.sets, 'seria', 'serie', 'serii')}
+                    </span> •{' '}
+                    <span title={repsField.tooltip}>{exercise.reps} powt.</span>
+                    {durationBadgeLabel ? (
+                      <span title={DURATION_TOOLTIP}>{` • Czas ćwiczenia: ${durationBadgeLabel}`}</span>
+                    ) : null}
                     {showModifiedBadge ? ' • Zmienione' : ''}
                   </p>
                 ) : shouldShowDurationBadge || showModifiedBadge ? (
@@ -629,8 +639,7 @@ export function ExerciseExecutionCard({
                             </span>
                           </TooltipTrigger>
                           <TooltipContent side="top" className="text-xs max-w-[220px]">
-                            Szacowany laczny czas wykonania cwiczenia z uwzglednieniem serii, powtorzen, przerw i
-                            przygotowania.
+                            {DURATION_TOOLTIP}
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
@@ -650,7 +659,10 @@ export function ExerciseExecutionCard({
             </div>
             {viewVariant === 'compact' && (
               <div className="flex flex-col sm:flex-row sm:items-center justify-center sm:justify-end gap-1.5 sm:gap-3 text-sm font-semibold text-foreground shrink-0 ml-3 bg-surface-light/50 px-3 py-2 sm:py-1.5 rounded-lg border border-border/40 min-w-[80px] sm:min-w-[120px]">
-                <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-1.5 w-full sm:w-auto">
+                <div
+                  className="flex items-center justify-between sm:justify-start gap-3 sm:gap-1.5 w-full sm:w-auto"
+                  title={setsField.tooltip}
+                >
                   <span className="text-[10px] sm:hidden text-muted-foreground uppercase font-bold tracking-wide">
                     Serie
                   </span>
@@ -658,7 +670,10 @@ export function ExerciseExecutionCard({
                   <span className="text-muted-foreground text-xs font-normal hidden sm:inline ml-[-2px]">serie</span>
                 </div>
                 <div className="hidden sm:block text-muted-foreground/30 h-4 w-px bg-border/50"></div>
-                <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-1.5 w-full sm:w-auto">
+                <div
+                  className="flex items-center justify-between sm:justify-start gap-3 sm:gap-1.5 w-full sm:w-auto"
+                  title={repsField.tooltip}
+                >
                   <span className="text-[10px] sm:hidden text-muted-foreground uppercase font-bold tracking-wide">
                     Powt.
                   </span>
@@ -668,7 +683,10 @@ export function ExerciseExecutionCard({
                 {shouldShowDurationBadge && (
                   <>
                     <div className="hidden sm:block text-muted-foreground/30 h-4 w-px bg-border/50"></div>
-                    <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-1.5 w-full sm:w-auto">
+                    <div
+                      className="flex items-center justify-between sm:justify-start gap-3 sm:gap-1.5 w-full sm:w-auto"
+                      title={DURATION_TOOLTIP}
+                    >
                       <span className="text-[10px] sm:hidden text-muted-foreground uppercase font-bold tracking-wide">
                         Czas
                       </span>
@@ -686,6 +704,7 @@ export function ExerciseExecutionCard({
             <div className="w-full border-t border-border bg-surface/50 px-3 py-4 @[460px]:px-4 space-y-3">
               <ExerciseParametersFields
                 surface={cardSurface === 'patientPlan' ? 'patientPlan' : 'mapping'}
+                exerciseType={exercise.isTimeBased ? 'time' : 'reps'}
                 values={parameterValues}
                 onChange={handleParametersChange}
                 omitFields={omitFields}
@@ -710,7 +729,7 @@ export function ExerciseExecutionCard({
                     Instrukcje dla pacjenta
                     {enrichmentDirtyPaths.length > 0 ? (
                       <span
-                        className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300"
+                        className="rounded-full bg-status-warning-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-status-warning"
                         data-testid={`${testId}-instructions-dirty-badge`}
                       >
                         zmienione
@@ -747,7 +766,7 @@ export function ExerciseExecutionCard({
 
         {readOnlyReason && (
           <div className="px-3 pb-2 pt-1 bg-surface-light/10 border-t border-border/30">
-            <p className="text-[10px] text-amber-600 dark:text-amber-400 flex items-center gap-1">
+            <p className="text-[10px] text-status-warning flex items-center gap-1">
               <Clock className="h-3 w-3 shrink-0" />
               {readOnlyReason}
             </p>

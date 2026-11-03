@@ -24,6 +24,39 @@ const ruleOverrides = {
   "react-hooks/refs": "off",
   "react-hooks/set-state-in-effect": "off",
   "react-hooks/static-components": "off",
+  // Zasady z AGENTS.md (Smak) jako lint: komunikat mówi, co zamiast.
+  "no-restricted-imports": [
+    "error",
+    {
+      paths: ["@apollo/client", "@apollo/client/react"].map((name) => ({
+        name,
+        importNames: ["useLazyQuery"],
+        message: "Use useQuery with skip instead of useLazyQuery (AGENTS.md, Smak).",
+      })),
+    },
+  ],
+  // Apollo 4 throws CombinedGraphQLErrors; the Apollo 3 `graphQLErrors` field is always undefined.
+  "no-restricted-syntax": [
+    "error",
+    ...["MemberExpression[property.name='graphQLErrors']", "TSPropertySignature[key.name='graphQLErrors']"].map(
+      (selector) => ({
+        selector,
+        message:
+          "Apollo 4 has no error.graphQLErrors. Use CombinedGraphQLErrors.is / getGraphQLErrorCode from src/features/patients/utils/patientConsent.ts.",
+      }),
+    ),
+  ],
+  "@typescript-eslint/no-restricted-types": [
+    "error",
+    {
+      types: Object.fromEntries(
+        ["React.FC", "FC", "React.FunctionComponent", "FunctionComponent"].map((name) => [
+          name,
+          { message: "Components are plain functions with a props interface, not React.FC (AGENTS.md, Smak)." },
+        ]),
+      ),
+    },
+  ],
 };
 
 const config = [

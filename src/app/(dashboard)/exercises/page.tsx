@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
-import { useRouter } from 'next/navigation';
-import { Plus, Dumbbell, LayoutGrid, List, Search, Sparkles } from 'lucide-react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { Plus, Dumbbell, LayoutGrid, List, Search } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { LoadingState } from '@/components/shared/LoadingState';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { ListPagination } from '@/components/shared/ListPagination';
 import { ExerciseCard, Exercise } from '@/features/exercises/ExerciseCard';
 import { ExerciseDialog } from '@/features/exercises/ExerciseDialog';
 import { SubmitToGlobalDialog } from '@/features/exercises/SubmitToGlobalDialog';
@@ -22,7 +23,10 @@ import { ExerciseBuilderSidebar } from '@/components/exercise-builder/ExerciseBu
 import { ExerciseBuilderFAB } from '@/components/exercise-builder/ExerciseBuilderFAB';
 import { cn } from '@/lib/utils';
 
-import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
+import {
+  EXERCISE_LIBRARY_REFETCH_QUERIES,
+  GET_AVAILABLE_EXERCISES_PAGE_QUERY,
+} from '@/graphql/queries/exercises.queries';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
 import {
@@ -33,24 +37,32 @@ import {
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useExerciseBuilder, type BuilderExercise } from '@/contexts/ExerciseBuilderContext';
 import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
-import { useDataManagement } from '@/hooks/useDataManagement';
 import { useRealtimeExercises } from '@/hooks/useRealtimeExercises';
 import { ORG_VERIFICATION_REFETCH_QUERIES } from '@/hooks/useOrganizationVerificationRealtime';
-import type { AvailableExercisesResponse, ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
-import { sortExercisesByNewest } from '@/features/exercises/utils/sortExercisesByNewest';
-import { filterExercisesBySearch } from '@/features/exercises/utils/exerciseSearch';
+import type { AvailableExercisesPageResponse, ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
+import {
+  buildExerciseLibraryQueryString,
+  EXERCISE_LIBRARY_PAGE_SIZES,
+  parseExerciseLibraryUrlState,
+  toExerciseLibraryTab,
+  type ExerciseLibraryUrlState,
+} from '@/features/exercises/utils/exerciseLibraryUrlState';
 import { getExerciseDefaultParams } from '@/features/exercise-sets/utils/exerciseDefaults';
-
-// Typ dla filtra źródła ćwiczeń
-type ExerciseSourceFilter = 'all' | 'organization' | 'fiziyo';
+import { PageHeader } from '@/components/shared/page';
+import { useUrlSearchInput } from '@/features/exercises/useUrlSearchInput';
+import { getExerciseDialogSuccessRoute } from '@/features/exercises/utils/exerciseDialogSuccessRoute';
 
 export default function ExercisesPage() {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { currentOrganization } = useOrganization();
   const { toggleExercise, isInBuilder } = useExerciseBuilder();
-  const [searchQuery, setSearchQuery] = useState('');
+  // Filter, search and page live in the URL, so going back from an exercise returns to the same page.
+  const listState = useMemo(() => parseExerciseLibraryUrlState(searchParams), [searchParams]);
+  const { filter: sourceFilter, search: committedSearch } = listState;
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [sourceFilter, setSourceFilter] = useState<ExerciseSourceFilter>('all');
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
   const [deletingExercise, setDeletingExercise] = useState<Exercise | null>(null);
@@ -105,17 +117,45 @@ export default function ExercisesPage() {
     [toggleExercise]
   );
 
-  // Data management hook for importing examples
-  const { importExampleSets, isImporting, hasImportedExamples } = useDataManagement({
-    organizationId,
-  });
+  const updateListState = useCallback(
+    (patch: Partial<ExerciseLibraryUrlState>) => {
+      const query = buildExerciseLibraryQueryString({ ...listState, page: 1, ...patch });
+      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    },
+    [listState, pathname, router]
+  );
 
-  // Get exercises (includes organization, global, and personal exercises)
-  const { data, loading, error } = useQuery(GET_AVAILABLE_EXERCISES_QUERY, {
-    variables: { organizationId },
-    skip: !organizationId,
-    fetchPolicy: 'cache-and-network',
-  });
+  const commitSearch = useCallback((search: string) => updateListState({ search }), [updateListState]);
+  const {
+    input: searchQuery,
+    setInput: setSearchQuery,
+    clear: clearSearch,
+  } = useUrlSearchInput(committedSearch, commitSearch);
+
+  // One page of the library: tab, search, sorting and counts come from the API, not from 5k records in memory.
+  const { data, previousData, loading, error } = useQuery<AvailableExercisesPageResponse>(
+    GET_AVAILABLE_EXERCISES_PAGE_QUERY,
+    {
+      variables: {
+        organizationId,
+        tab: toExerciseLibraryTab(sourceFilter),
+        search: committedSearch || null,
+        page: listState.page,
+        pageSize: listState.pageSize,
+      },
+      skip: !organizationId,
+      fetchPolicy: 'cache-and-network',
+    }
+  );
+  // Keep the previous page on screen while the next one loads instead of flashing skeletons,
+  // but never another organization's exercises after switching organizations.
+  const [loadedOrganizationId, setLoadedOrganizationId] = useState(organizationId);
+  if (data && loadedOrganizationId !== organizationId) {
+    setLoadedOrganizationId(organizationId);
+  }
+  const libraryPage =
+    data?.availableExercisesPage ??
+    (loadedOrganizationId === organizationId ? previousData?.availableExercisesPage : undefined);
 
   // Real-time updates dla ćwiczeń (WebSocket subscriptions)
   // Automatycznie aktualizuje Apollo Cache - nie wymaga refetchQueries
@@ -138,43 +178,23 @@ export default function ExercisesPage() {
     skip: !organizationId,
   });
 
-  // Delete mutation
+  // The page and its counts change after a delete, so refetch the (small) page; the full library only if shown.
   const [deleteExercise, { loading: deleting }] = useMutation(DELETE_EXERCISE_MUTATION, {
-    refetchQueries: [
-      {
-        query: GET_AVAILABLE_EXERCISES_QUERY,
-        variables: { organizationId },
-      },
-    ],
+    refetchQueries: EXERCISE_LIBRARY_REFETCH_QUERIES,
   });
 
   // Submit to global review mutation
   const [submitToGlobalReview, { loading: submittingToGlobal }] = useMutation(SUBMIT_TO_GLOBAL_REVIEW_MUTATION, {
-    refetchQueries: [
-      {
-        query: GET_AVAILABLE_EXERCISES_QUERY,
-        variables: { organizationId },
-      },
-    ],
+    refetchQueries: EXERCISE_LIBRARY_REFETCH_QUERIES,
   });
   const [submitForOrganizationReview, { loading: submittingToOrganization }] = useMutation(
     SUBMIT_FOR_ORGANIZATION_REVIEW_MUTATION,
     {
-      refetchQueries: [
-        {
-          query: GET_AVAILABLE_EXERCISES_QUERY,
-          variables: { organizationId },
-        },
-        ...ORG_VERIFICATION_REFETCH_QUERIES,
-      ],
+      refetchQueries: [...EXERCISE_LIBRARY_REFETCH_QUERIES, ...ORG_VERIFICATION_REFETCH_QUERIES],
     }
   );
 
-  // Memoized so the tag mapping, sort and filters below don't rerun on every keystroke.
-  const rawExercises = useMemo<Exercise[]>(
-    () => (data as AvailableExercisesResponse)?.availableExercises || [],
-    [data]
-  );
+  const rawExercises = useMemo<Exercise[]>(() => libraryPage?.items ?? [], [libraryPage]);
   const tags = useMemo(() => (tagsData as ExerciseTagsResponse)?.exerciseTags || [], [tagsData]);
   const categories = useMemo(
     () => (categoriesData as TagCategoriesResponse)?.tagsByOrganizationId || [],
@@ -185,33 +205,16 @@ export default function ExercisesPage() {
   const tagsMap = useMemo(() => createTagsMap(tags, categories), [tags, categories]);
   const exercises = useMemo(() => mapExercisesWithTags(rawExercises, tagsMap), [rawExercises, tagsMap]);
 
-  // Filtrowanie po źródle (zakładki)
-  const sourceFilteredExercises = useMemo(() => {
-    if (sourceFilter === 'all') return exercises;
-    if (sourceFilter === 'organization') {
-      return exercises.filter((e) => e.scope === 'ORGANIZATION' || e.scope === 'PERSONAL');
-    }
-    if (sourceFilter === 'fiziyo') {
-      return exercises.filter((e) => e.scope === 'GLOBAL');
-    }
-    return exercises;
-  }, [exercises, sourceFilter]);
+  const counts = libraryPage?.counts;
+  const totalCount = counts?.all ?? 0;
+  const isSearching = searchQuery.trim().length > 0;
+  const isInitialLoading = loading && !libraryPage;
 
-  // Liczniki dla zakładek (po deduplikacji)
-  const organizationCount = useMemo(
-    () => exercises.filter((e) => e.scope === 'ORGANIZATION' || e.scope === 'PERSONAL').length,
-    [exercises]
-  );
-  const fiziyoCount = useMemo(() => exercises.filter((e) => e.scope === 'GLOBAL').length, [exercises]);
+  const handlePageChange = (page: number) => {
+    updateListState({ page });
+    scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
-  // Stats - łączna liczba (po deduplikacji)
-  const totalCount = exercises.length;
-
-  const sortedExercises = useMemo(() => sortExercisesByNewest(sourceFilteredExercises), [sourceFilteredExercises]);
-  const filteredExercises = useMemo(
-    () => filterExercisesBySearch(sortedExercises, searchQuery),
-    [sortedExercises, searchQuery]
-  );
 
   const handleView = (exercise: Exercise) => {
     router.push(`/exercises/${exercise.id}`);
@@ -277,179 +280,103 @@ export default function ExercisesPage() {
   }
 
   return (
-    <div className="flex overflow-hidden -m-4 lg:-m-6 2xl:-m-8 h-[calc(100%+2rem)] lg:h-[calc(100%+3rem)] 2xl:h-[calc(100%+4rem)]">
+    <div className="flex h-full overflow-hidden rounded-card bg-card">
       {/* Left Panel: Strefa Inspiracji (Grid) */}
-      <div className="flex-1 overflow-y-auto p-4 lg:p-6 scroll-smooth custom-scrollbar">
-        <div className="max-w-screen-2xl mx-auto space-y-6">
-          {/* Compact Header with Search + View Toggle */}
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <h1 data-testid="exercise-page-title" className="text-2xl font-bold text-foreground">
-              Ćwiczenia
-            </h1>
-            <div className="flex items-center gap-2">
-              {/* Search Input */}
-              <div className="relative w-full sm:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Szukaj ćwiczeń..."
-                  className="pl-9 bg-surface border-border/60"
-                  data-testid="exercise-search-input"
-                />
-              </div>
-              {/* View Toggle - Linear/Figma style */}
-              <div className="flex items-center rounded-lg border border-border/60 bg-surface p-1">
-                <button
-                  onClick={() => setViewMode('grid')}
-                  data-testid="exercise-view-grid-btn"
-                  className={cn(
-                    'p-1.5 rounded-md transition-all duration-200',
-                    viewMode === 'grid'
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-surface-light'
-                  )}
-                  title="Widok siatki"
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto px-4 py-6 sm:px-8 sm:py-8 xl:px-11 xl:py-9 scroll-smooth custom-scrollbar [--surface-card:var(--grouped-tertiary)]"
+      >
+        <div className="mx-auto flex max-w-[1160px] flex-col gap-6">
+          <PageHeader
+            title="Ćwiczenia"
+            titleTestId="exercise-page-title"
+            subtitle="Twoje ćwiczenia i baza FiziYo"
+            actions={
+              <>
+                <label className="relative w-full sm:w-[280px]">
+                  <span className="sr-only">Szukaj ćwiczeń</span>
+                  <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-label-secondary" aria-hidden="true" />
+                  <Input
+                    type="search"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Szukaj ćwiczeń"
+                    className="pl-10"
+                    data-testid="exercise-search-input"
+                  />
+                </label>
+                <div role="group" aria-label="Widok" className="flex h-9 items-center gap-0.5 rounded-[10px] bg-fill-tertiary p-0.5">
+                  {([
+                    { mode: 'grid', label: 'Widok siatki', Icon: LayoutGrid, testId: 'exercise-view-grid-btn' },
+                    { mode: 'list', label: 'Widok listy', Icon: List, testId: 'exercise-view-list-btn' },
+                  ] as const).map(({ mode, label, Icon, testId }) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => setViewMode(mode)}
+                      aria-pressed={viewMode === mode}
+                      aria-label={label}
+                      title={label}
+                      data-testid={testId}
+                      className={cn(
+                        'flex h-8 w-8 items-center justify-center rounded-[8px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                        viewMode === mode ? 'bg-elevated text-foreground shadow-raised' : 'text-label-secondary hover:text-foreground'
+                      )}
+                    >
+                      <Icon className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                  ))}
+                </div>
+                <Button
+                  onClick={() => setIsDialogOpen(true)}
+                  disabled={!organizationId}
+                  data-testid="exercise-create-btn"
                 >
-                  <LayoutGrid className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => setViewMode('list')}
-                  data-testid="exercise-view-list-btn"
-                  className={cn(
-                    'p-1.5 rounded-md transition-all duration-200',
-                    viewMode === 'list'
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-surface-light'
-                  )}
-                  title="Widok listy"
-                >
-                  <List className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          </div>
+                  <Plus aria-hidden="true" />
+                  Utwórz ćwiczenie
+                </Button>
+              </>
+            }
+          />
 
-          {/* Hero Action + Source Filters */}
-          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12">
-            {/* Hero Action - Dodaj ćwiczenie */}
-            <button
-              onClick={() => setIsDialogOpen(true)}
-              disabled={!organizationId}
-              data-testid="exercise-create-btn"
-              className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 sm:col-span-1 lg:col-span-4"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary-foreground/10 rounded-full blur-3xl group-hover:bg-primary-foreground/20 transition-all duration-500" />
-
-              <div className="relative flex items-center gap-4">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-foreground/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
-                  <Plus className="h-5 w-5 text-primary-foreground" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-base font-bold text-primary-foreground">Dodaj ćwiczenie</h3>
-                  <p className="text-sm text-primary-foreground/70">Utwórz własne</p>
-                </div>
-              </div>
-            </button>
-
-            {/* Source Filters - subtelne kafle */}
-            <div className="grid grid-cols-3 gap-3 sm:col-span-1 lg:col-span-8">
-              {/* Wszystkie */}
+          <div role="group" aria-label="Źródło ćwiczeń" className="flex gap-6 overflow-x-auto shadow-[inset_0_-0.5px_0_var(--separator)]">
+            {([
+              { id: 'all', label: 'Wszystkie', count: totalCount, testId: 'exercise-filter-all' },
+              { id: 'organization', label: 'Moje ćwiczenia', count: counts?.organization ?? 0, testId: 'exercise-filter-organization' },
+              { id: 'fiziyo', label: 'Baza FiziYo', count: counts?.fiziyo ?? 0, testId: 'exercise-filter-fiziyo' },
+              { id: 'needsChanges', label: 'Do poprawy', count: counts?.needsChanges ?? 0, testId: 'exercise-filter-needs-changes' },
+            ] as const).map((tab) => (
               <button
-                onClick={() => setSourceFilter('all')}
-                data-testid="exercise-filter-all"
+                key={tab.id}
+                type="button"
+                aria-pressed={sourceFilter === tab.id}
+                onClick={() => updateListState({ filter: tab.id })}
+                data-testid={tab.testId}
                 className={cn(
-                  'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
-                  sourceFilter === 'all'
-                    ? 'border-primary/40 bg-primary/10 ring-1 ring-primary/20'
-                    : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
+                  'h-11 shrink-0 whitespace-nowrap text-[15px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
+                  sourceFilter === tab.id
+                    ? 'text-foreground shadow-[inset_0_-2px_0_var(--tint)]'
+                    : 'text-label-secondary hover:text-foreground'
                 )}
               >
-                <div className="flex items-center gap-2">
-                  <Dumbbell
-                    className={cn('h-4 w-4', sourceFilter === 'all' ? 'text-primary' : 'text-muted-foreground')}
-                  />
-                  <span
-                    className={cn('text-2xl font-bold', sourceFilter === 'all' ? 'text-primary' : 'text-foreground')}
-                  >
-                    {totalCount}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">Wszystkie</p>
+                {tab.label}
+                <span className="ml-1.5 tabular-nums text-label-secondary">{tab.count}</span>
               </button>
-
-              {/* Moje ćwiczenia */}
-              <button
-                onClick={() => setSourceFilter('organization')}
-                data-testid="exercise-filter-organization"
-                className={cn(
-                  'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
-                  sourceFilter === 'organization'
-                    ? 'border-info/40 bg-info/10 ring-1 ring-info/20'
-                    : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
-                )}
-              >
-                <div className="flex items-center gap-2">
-                  <Dumbbell
-                    className={cn(
-                      'h-4 w-4',
-                      sourceFilter === 'organization' ? 'text-info' : 'text-muted-foreground'
-                    )}
-                  />
-                  <span
-                    className={cn(
-                      'text-2xl font-bold',
-                      sourceFilter === 'organization' ? 'text-info' : 'text-foreground'
-                    )}
-                  >
-                    {organizationCount}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">Moje ćwiczenia</p>
-              </button>
-
-              {/* Baza FiziYo */}
-              <button
-                onClick={() => setSourceFilter('fiziyo')}
-                data-testid="exercise-filter-fiziyo"
-                className={cn(
-                  'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
-                  sourceFilter === 'fiziyo'
-                    ? 'border-violet/40 bg-violet/10 ring-1 ring-violet/20'
-                    : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
-                )}
-              >
-                <div className="flex items-center gap-2">
-                  <Sparkles
-                    className={cn('h-4 w-4', sourceFilter === 'fiziyo' ? 'text-violet' : 'text-muted-foreground')}
-                  />
-                  <span
-                    className={cn(
-                      'text-2xl font-bold',
-                      sourceFilter === 'fiziyo' ? 'text-violet' : 'text-foreground'
-                    )}
-                  >
-                    {fiziyoCount}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">Baza FiziYo</p>
-              </button>
-            </div>
+            ))}
           </div>
 
           {/* Results info */}
-          {searchQuery && (
+          {isSearching && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span>Wyniki:</span>
               <Badge variant="secondary" className="text-xs">
-                {filteredExercises.length} z {totalCount}
+                {libraryPage?.totalCount ?? 0} z {totalCount}
               </Badge>
               <Button
                 variant="ghost"
                 size="sm"
                 className="h-6 px-2 text-xs"
-                onClick={() => setSearchQuery('')}
+                onClick={clearSearch}
                 data-testid="exercise-search-clear-btn"
               >
                 Wyczyść wyszukiwanie
@@ -458,7 +385,7 @@ export default function ExercisesPage() {
           )}
 
           {/* Content */}
-          {loading ? (
+          {isInitialLoading ? (
             <div
               className={cn(
                 viewMode === 'grid' ? 'grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'space-y-2',
@@ -467,28 +394,28 @@ export default function ExercisesPage() {
             >
               <LoadingState type={viewMode === 'grid' ? 'exercise' : 'exercise-row'} count={8} />
             </div>
-          ) : filteredExercises.length === 0 ? (
+          ) : exercises.length === 0 ? (
             <Card className="border-dashed border-border/60">
               <CardContent className="py-16">
                 <EmptyState
                   icon={Dumbbell}
-                  title={searchQuery ? 'Nie znaleziono ćwiczeń' : 'Brak ćwiczeń'}
+                  title={committedSearch ? 'Nie znaleziono ćwiczeń' : 'Brak ćwiczeń'}
                   description={
-                    searchQuery
+                    committedSearch
                       ? 'Spróbuj zmienić kryteria wyszukiwania'
-                      : 'Dodaj pierwsze ćwiczenie lub załaduj przykładowe zestawy'
+                      : 'Utwórz pierwsze ćwiczenie, a potem dodaj je do zestawu dla pacjenta.'
                   }
-                  actionLabel={!searchQuery ? 'Dodaj ćwiczenie' : undefined}
-                  onAction={!searchQuery ? () => setIsDialogOpen(true) : undefined}
-                  secondaryActionLabel={!searchQuery && !hasImportedExamples ? 'Załaduj przykłady' : undefined}
-                  onSecondaryAction={!searchQuery && !hasImportedExamples ? importExampleSets : undefined}
-                  secondaryActionLoading={isImporting}
+                  actionLabel={!committedSearch ? 'Dodaj ćwiczenie' : undefined}
+                  onAction={!committedSearch ? () => setIsDialogOpen(true) : undefined}
                 />
               </CardContent>
             </Card>
           ) : viewMode === 'grid' ? (
-            <div className={cn('grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 animate-stagger')}>
-              {filteredExercises.map((exercise) => (
+            <div
+              aria-busy={loading}
+              className={cn('grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 animate-stagger', loading && 'opacity-60')}
+            >
+              {exercises.map((exercise) => (
                 <ExerciseCard
                   key={exercise.id}
                   exercise={exercise}
@@ -505,8 +432,8 @@ export default function ExercisesPage() {
               ))}
             </div>
           ) : (
-            <div className="space-y-2 animate-stagger">
-              {filteredExercises.map((exercise) => (
+            <div aria-busy={loading} className={cn('space-y-2 animate-stagger', loading && 'opacity-60')}>
+              {exercises.map((exercise) => (
                 <ExerciseCard
                   key={exercise.id}
                   exercise={exercise}
@@ -523,6 +450,21 @@ export default function ExercisesPage() {
                 />
               ))}
             </div>
+          )}
+          {libraryPage && libraryPage.totalCount > 0 && (
+            <ListPagination
+              page={libraryPage.page}
+              totalPages={libraryPage.totalPages}
+              totalCount={libraryPage.totalCount}
+              visibleCount={exercises.length}
+              pageSize={libraryPage.pageSize}
+              pageSizeOptions={EXERCISE_LIBRARY_PAGE_SIZES}
+              hasPreviousPage={libraryPage.hasPreviousPage}
+              hasNextPage={libraryPage.hasNextPage}
+              onPageChange={handlePageChange}
+              onPageSizeChange={(pageSize) => updateListState({ pageSize })}
+              testIdPrefix="exercise"
+            />
           )}
         </div>
       </div>
@@ -543,9 +485,8 @@ export default function ExercisesPage() {
           onSubmitToGlobal={(exercise) => setSubmitToGlobalExercise(exercise)}
           onSubmitToOrganizationReview={(exercise) => setSubmitToOrganizationExercise(exercise)}
           onSuccess={(event) => {
-            if (event?.action === 'copied' && event.exerciseId) {
-              router.push(`/exercises/${event.exerciseId}`);
-            }
+            const route = getExerciseDialogSuccessRoute(event);
+            if (route) router.push(route);
           }}
         />
       )}

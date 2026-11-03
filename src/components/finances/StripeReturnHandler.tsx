@@ -60,7 +60,7 @@ export function StripeReturnHandler({ organizationId }: StripeReturnHandlerProps
           if (status?.onboardingComplete) {
             toast.success('Konto Stripe zostało pomyślnie skonfigurowane!', {
               description: 'Teraz możesz otrzymywać wypłaty prowizji od subskrypcji pacjentów.',
-              icon: <CheckCircle className="h-5 w-5 text-emerald-500" />,
+              icon: <CheckCircle className="h-5 w-5 text-status-success" />,
               duration: 5000,
             });
           } else if (status?.hasConnectedAccount) {

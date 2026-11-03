@@ -41,7 +41,7 @@ export function ImageStylePicker({
               'rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
               'disabled:cursor-not-allowed disabled:opacity-50',
               isActive
-                ? 'bg-primary text-primary-foreground shadow-sm'
+                ? 'bg-tint-fill text-on-tint shadow-sm'
                 : 'text-muted-foreground hover:text-foreground'
             )}
             aria-pressed={isActive}

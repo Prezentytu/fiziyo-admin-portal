@@ -245,7 +245,7 @@ export interface AssignmentWizardState {
 
 // Step definitions
 // Flow: select-set -> customize-set -> select-patients -> schedule -> summary
-export type WizardStep = 'select-set' | 'customize-set' | 'select-patients' | 'schedule' | 'summary';
+export type WizardStep = 'select-set' | 'customize-set' | 'select-patients' | 'schedule';
 
 export interface WizardStepConfig {
   id: WizardStep;
@@ -271,12 +271,7 @@ export function getWizardSteps(
       {
         id: 'schedule',
         label: 'Harmonogram',
-        description: 'Zmień częstotliwość',
-      },
-      {
-        id: 'summary',
-        label: 'Podsumowanie',
-        description: 'Potwierdź zmiany',
+        description: 'Zmień okres i sprawdź zmiany',
       },
     ];
   }
@@ -297,7 +292,7 @@ export function getWizardSteps(
   // This is where user can personalize exercises (add, remove, edit parameters)
   steps.push({
     id: 'customize-set',
-    label: isCreatingNewSet ? 'Tworzenie planu' : 'Personalizacja planu',
+    label: 'Plan',
     description: isCreatingNewSet ? 'Utwórz plan pacjenta' : 'Dostosuj plan pacjenta',
   });
 
@@ -310,18 +305,11 @@ export function getWizardSteps(
     });
   }
 
-  // Step 4: Schedule
+  // Step 4: Schedule with the summary aside (v4 design: four steps, no separate summary)
   steps.push({
     id: 'schedule',
     label: 'Harmonogram',
-    description: 'Ustal częstotliwość',
-  });
-
-  // Step 5: Summary
-  steps.push({
-    id: 'summary',
-    label: 'Podsumowanie',
-    description: 'Potwierdź',
+    description: 'Ustal okres i potwierdź',
   });
 
   return steps;

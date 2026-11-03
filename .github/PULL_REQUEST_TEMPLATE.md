@@ -31,4 +31,3 @@ Jak przetestowano zmianę.
 - [ ] Build przechodzi (`npm run build`)
 - [ ] data-testid dodane do nowych elementów interaktywnych
 - [ ] Zaktualizowano spec changelog (jeśli dotyczy)
-- [ ] PR ma zielony status `E2E Preview Smoke` przed merge

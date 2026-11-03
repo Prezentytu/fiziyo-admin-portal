@@ -9,7 +9,7 @@ describe('getWizardSteps', () => {
     expect(ids).toContain('customize-set');
     expect(ids).toContain('select-patients');
     expect(ids).toContain('schedule');
-    expect(ids).toContain('summary');
+    expect(ids).not.toContain('summary');
   });
 
   it('omits select-set when set is preselected (from-patient)', () => {
@@ -25,38 +25,35 @@ describe('getWizardSteps', () => {
     expect(ids).not.toContain('select-patients');
     expect(ids).toContain('customize-set');
     expect(ids).toContain('schedule');
-    expect(ids).toContain('summary');
   });
 
-  it('from-set with no preselected patient returns customize-set, select-patients, schedule, summary', () => {
+  it('from-set with no preselected patient returns customize-set, select-patients, schedule', () => {
     const steps = getWizardSteps('from-set', true, false, false);
     const ids = steps.map((s) => s.id);
     expect(ids).not.toContain('select-set');
-    expect(ids).toEqual(['customize-set', 'select-patients', 'schedule', 'summary']);
+    expect(ids).toEqual(['customize-set', 'select-patients', 'schedule']);
   });
 
-  it('customize-set label is "Tworzenie planu" when isCreatingNewSet is true', () => {
+  it('dashboard flow has the four v4 steps: Zestaw, Plan, Pacjenci, Harmonogram', () => {
+    const steps = getWizardSteps('from-patient', false, false, false);
+    expect(steps.map((step) => step.label)).toEqual(['Zestaw', 'Plan', 'Pacjenci', 'Harmonogram']);
+  });
+
+  it('customize-set is labelled "Plan" also when creating a new set', () => {
     const steps = getWizardSteps('from-patient', false, false, true);
     const customize = steps.find((s) => s.id === 'customize-set');
-    expect(customize?.label).toBe('Tworzenie planu');
+    expect(customize?.label).toBe('Plan');
     expect(customize?.description).toBe('Utwórz plan pacjenta');
   });
 
-  it('customize-set label is "Personalizacja planu" when isCreatingNewSet is false', () => {
-    const steps = getWizardSteps('from-patient', true, false, false);
-    const customize = steps.find((s) => s.id === 'customize-set');
-    expect(customize?.label).toBe('Personalizacja planu');
-    expect(customize?.description).toBe('Dostosuj plan pacjenta');
-  });
-
-  it('summary is always the last step', () => {
-    expect(getWizardSteps('from-patient', false, false, false).slice(-1)[0].id).toBe('summary');
-    expect(getWizardSteps('from-set', true, true, false).slice(-1)[0].id).toBe('summary');
+  it('schedule is always the last step (summary lives in its aside)', () => {
+    expect(getWizardSteps('from-patient', false, false, false).slice(-1)[0].id).toBe('schedule');
+    expect(getWizardSteps('from-set', true, true, false).slice(-1)[0].id).toBe('schedule');
   });
 
   it('returns edit flow steps when edit mode is enabled', () => {
     const steps = getWizardSteps('from-patient', true, true, false, true);
-    expect(steps.map((step) => step.id)).toEqual(['customize-set', 'schedule', 'summary']);
+    expect(steps.map((step) => step.id)).toEqual(['customize-set', 'schedule']);
     expect(steps[0]?.label).toBe('Plan');
   });
 });

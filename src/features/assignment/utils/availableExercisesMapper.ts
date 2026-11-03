@@ -1,4 +1,6 @@
 import type { Exercise, ExerciseLoad } from '../types';
+import { normalizeExerciseSide } from '@/utils/exerciseEnums';
+import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 
 interface RawLoadShape {
   loadWeightKg?: number | null;
@@ -46,6 +48,9 @@ export interface RawAvailableExercise {
   loadText?: string;
   scope?: string;
   status?: string;
+  updatedAt?: string | null;
+  /** Present only for exercises whose content was loaded (picker lists omit it). */
+  enrichmentData?: ExerciseEnrichmentData | null;
 }
 
 function normalizeLoadType(type?: string): ExerciseLoad['type'] {
@@ -108,7 +113,7 @@ export function mapAvailableExercises(rawExercises: RawAvailableExercise[] | und
         audioCue: exercise.audioCue,
         rangeOfMotion: exercise.rangeOfMotion,
         side: exercise.side,
-        exerciseSide: exercise.side?.toLowerCase() ?? exercise.exerciseSide,
+        exerciseSide: normalizeExerciseSide(exercise.side ?? exercise.exerciseSide),
         preparationTime: exercise.preparationTime,
         tempo: exercise.tempo,
         defaultExecutionTime: exercise.defaultExecutionTime,
@@ -134,6 +139,7 @@ export function mapAvailableExercises(rawExercises: RawAvailableExercise[] | und
         loadText: exercise.loadText,
         scope: exercise.scope,
         status: exercise.status,
+        ...(exercise.enrichmentData !== undefined ? { enrichmentData: exercise.enrichmentData } : {}),
       };
     });
 }

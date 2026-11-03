@@ -1,8 +1,9 @@
 /**
- * Inferuje ExerciseType dla mutacji create/update.
+ * Zgaduje ExerciseType dla SZKICU bez zapisanego typu (kreator tworzenia).
+ * `executionTime > 0` → time, inaczej reps.
  *
- * Reguła timerowa (zgodna z CreateExerciseWizard / ExerciseEditor):
- * `executionTime > 0` → time (timer w aplikacji pacjenta), inaczej reps.
+ * Dla zapisanego ćwiczenia typ jest wprost w `Exercise.type` i wygrywa
+ * (`normalizeExerciseType` z `@/utils/exerciseEnums`); nie wołaj tej funkcji.
  */
 export function inferExerciseType(executionTime: number | null | undefined): 'time' | 'reps' {
   return (executionTime ?? 0) > 0 ? 'time' : 'reps';

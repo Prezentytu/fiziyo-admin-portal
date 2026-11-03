@@ -4,7 +4,6 @@ import { useCallback, useMemo, useState, type KeyboardEvent } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Flag, Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { useUser } from '@clerk/nextjs';
 import { toast } from 'sonner';
 
@@ -16,22 +15,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { FileUpload } from '@/components/shared/FileUpload';
 import { createExerciseReport } from '@/services/exerciseReportService';
 import type { Exercise } from './ExerciseCard';
+import { reportExerciseSchema, type ReportExerciseFormValues } from './utils/reportExerciseSchema';
 import type { ExerciseReportReasonCategory } from '@/types/exercise-report.types';
-
-const reportExerciseSchema = z.object({
-  reasonCategory: z.enum([
-    'WRONG_DESCRIPTION',
-    'WRONG_MEDIA',
-    'CLINICAL_RISK',
-    'DUPLICATE',
-    'OUTDATED_CONTENT',
-    'NEEDS_IMPROVEMENT',
-    'OTHER',
-  ] as const),
-  description: z.string().trim().min(12, 'Opis musi mieć minimum 12 znaków').max(2000, 'Opis jest za długi'),
-});
-
-type ReportExerciseFormValues = z.infer<typeof reportExerciseSchema>;
 
 const reasonOptions: Array<{ value: ExerciseReportReasonCategory; label: string }> = [
   { value: 'WRONG_DESCRIPTION', label: 'Błędny opis' },
@@ -64,6 +49,7 @@ export function ReportExerciseDialog({
 
   const form = useForm<ReportExerciseFormValues>({
     resolver: zodResolver(reportExerciseSchema),
+    mode: 'onChange',
     defaultValues: {
       reasonCategory: 'WRONG_DESCRIPTION',
       description: '',
@@ -156,7 +142,7 @@ export function ReportExerciseDialog({
       <DialogContent className="max-w-xl" data-testid="exercise-report-dialog">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Flag className="h-5 w-5 text-amber-500" />
+            <Flag className="h-5 w-5 text-status-warning" />
             Zgłoś ćwiczenie do poprawki
           </DialogTitle>
           <DialogDescription>

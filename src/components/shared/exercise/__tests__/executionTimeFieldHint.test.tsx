@@ -17,7 +17,7 @@ const BASE_VALUES = {
 describe('ExerciseParametersFields execution time hint', () => {
   it('pokazuje podpowiedź pod czasem powtórzenia, a nie jako luźną frazę w sekcji', () => {
     render(
-      <ExerciseParametersFields surface="template" values={BASE_VALUES} onChange={vi.fn()} />
+      <ExerciseParametersFields exerciseType="draft" surface="template" values={BASE_VALUES} onChange={vi.fn()} />
     );
 
     const hint = screen.getByTestId('exercise-param-execution-time-hint');
@@ -30,7 +30,7 @@ describe('ExerciseParametersFields execution time hint', () => {
 
   it('przy włączonym timerze instruuje, jak go wyłączyć', () => {
     render(
-      <ExerciseParametersFields
+      <ExerciseParametersFields exerciseType="draft"
         surface="template"
         values={{ ...BASE_VALUES, executionTime: 8 }}
         onChange={vi.fn()}

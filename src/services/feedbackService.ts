@@ -50,7 +50,7 @@ function updateLastFeedbackTime(): void {
  * Pobiera wersję aplikacji z package.json (ustawiona w build time)
  */
 function getAppVersion(): string {
-  return process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0';
+  return process.env.NEXT_PUBLIC_APP_VERSION || '0.1.0';
 }
 
 /**

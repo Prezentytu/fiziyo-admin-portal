@@ -71,6 +71,7 @@ TIER 4: Przerwa między powt., Czas serii (`duration` — tylko w „Zaawansowan
 
 `Side`, `rangeOfMotion`, `difficultyLevel`, opisy/audio oraz `enrichment` (kroki/cues/safety) zapisuj w `overridesJson` (SPEC-023/024) — edytowalne na karcie, nie „odziedziczone”.
 Precedencja odczytu: `resolveEffectiveExerciseParams` (assignment > mapping.overridesJson > columns > szablon).
+Domyślne szablonu czyta `readExerciseTemplateParams` (`components/shared/exercise/exerciseParamDefaults.ts`, kanon: serie 3, przerwa 60, przerwa między powt. 0, przygotowanie 5); czas zestawu liczy `estimateEffectiveExerciseSeconds`. Nie pisz w widokach łańcuchów `a || b || 30`.
 Nie buduj lokalnych siatek parametrów ani sekcji enrichment w dialogach zestawu — zawsze `ExerciseExecutionCard` / `ExerciseParametersFields` / `ExercisePatientContentFields`.
 
 ## Referencje

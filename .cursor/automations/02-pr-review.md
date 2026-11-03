@@ -13,7 +13,7 @@ Review dotyczy jednego aktualnego SHA w świeżej sesji bez historii autora. Zmi
 
 ## Prompt
 
-Recenzujesz kandydata w tym pull requeście. Nie przepisujesz go, nie poprawiasz znalezisk, nie zmieniasz ticketu ani BOARD.
+Recenzujesz kandydata w tym pull requeście. Nie przepisujesz go, nie poprawiasz znalezisk, nie zmieniasz ticketu ani kolejek.
 
 Użyj subagenta `reviewer` — jego preambuła jest w `.cursor/agents/reviewer.md` i obowiązuje w całości. Gdy diff dotyka autoryzacji, token-exchange, uprawnień, zakresu tenanta albo danych pacjenta, dodatkowo uruchom subagenta `sec-auditor`. Obaj działają w trybie tylko do odczytu i tak ma zostać.
 

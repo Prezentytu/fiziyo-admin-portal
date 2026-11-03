@@ -51,3 +51,17 @@ export const GET_BILLING_DETAILS_QUERY = gql`
     }
   }
 `;
+
+/** AI credits left this month (chat sidebar footer). */
+export const GET_AI_CREDITS_STATUS_QUERY = gql`
+  query GetAICreditsStatus($organizationId: String!) {
+    aiCreditsStatus(organizationId: $organizationId) {
+      monthlyLimit
+      monthlyUsed
+      monthlyRemaining
+      addonCredits
+      totalRemaining
+      resetDate
+    }
+  }
+`;

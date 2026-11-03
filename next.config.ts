@@ -1,12 +1,17 @@
 import type { NextConfig } from "next";
 import bundleAnalyzer from "@next/bundle-analyzer";
-import { buildReleaseHeaders } from "./src/lib/release/build-identity";
+import { buildAppVersionLabel, buildReleaseHeaders } from "./src/lib/release/build-identity";
+import packageJson from "./package.json";
 
 const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === "true",
 });
 
 const nextConfig: NextConfig = {
+  env: {
+    // Zgłoszenia podają ten tekst w „Wersja:” (src/services/feedbackService.ts).
+    NEXT_PUBLIC_APP_VERSION: buildAppVersionLabel(process.env, packageJson.version),
+  },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "images.fiziyo.com", pathname: "/**" },

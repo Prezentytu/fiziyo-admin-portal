@@ -64,6 +64,19 @@ interface OrganizationProviderProps {
   children: React.ReactNode;
 }
 
+/**
+ * The current organization is picked in an effect after the query resolves, so for one render
+ * the query is done but nothing is selected yet. Treat that gap as loading, otherwise role guards
+ * see "no role" and redirect on a hard refresh.
+ */
+export function isOrganizationContextLoading(
+  queryLoading: boolean,
+  organizationCount: number,
+  hasCurrentOrganization: boolean
+): boolean {
+  return queryLoading || (organizationCount > 0 && !hasCurrentOrganization);
+}
+
 export function OrganizationProvider({ children }: OrganizationProviderProps) {
   const apolloClient = useApolloClient();
   const [currentOrgId, setCurrentOrgId] = useState<string | null>(null);
@@ -204,7 +217,7 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
     () => ({
       currentOrganization,
       organizations,
-      isLoading,
+      isLoading: isOrganizationContextLoading(isLoading, organizations.length, currentOrganization !== null),
       isSwitching,
       switchOrganization,
       refreshOrganizations,

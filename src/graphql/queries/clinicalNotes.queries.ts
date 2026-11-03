@@ -145,3 +145,31 @@ export const GET_CLINICAL_NOTE_BY_ID_QUERY = gql`
   }
   ${CLINICAL_NOTE_FULL_FRAGMENT}
 `;
+
+/** Visits of the signed-in therapist in a date range (chat home "Dziś"). */
+export const GET_THERAPIST_VISIT_NOTES_QUERY = gql`
+  query GetTherapistVisitNotes($therapistId: String!, $organizationId: String!, $from: DateTime!, $to: DateTime!) {
+    therapistClinicalNotes(
+      therapistId: $therapistId
+      organizationId: $organizationId
+      where: { visitDate: { gte: $from, lt: $to } }
+      order: [{ visitDate: ASC }]
+    ) {
+      id
+      patientId
+      visitDate
+      title
+    }
+  }
+`;
+
+/** Most recent visit of a patient in the organization (chat context panel). */
+export const GET_PATIENT_LAST_VISIT_QUERY = gql`
+  query GetPatientLastVisit($patientId: String!, $organizationId: String!) {
+    patientClinicalNotes(patientId: $patientId, organizationId: $organizationId, take: 1, order: [{ visitDate: DESC }]) {
+      id
+      visitDate
+      title
+    }
+  }
+`;

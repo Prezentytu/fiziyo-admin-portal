@@ -165,7 +165,7 @@ export function TherapistBillingTable({ organizationId, className }: TherapistBi
               <TrendingUp className="h-4.5 w-4.5 text-info" />
             </div>
             <span>Efektywność Zespołu</span>
-            <Badge variant="secondary" className="ml-1 bg-emerald-500/10 text-emerald-500 font-medium">
+            <Badge variant="secondary" className="ml-1 bg-status-success-muted text-status-success font-medium">
               {therapists.length} osób
             </Badge>
           </CardTitle>
@@ -188,7 +188,7 @@ export function TherapistBillingTable({ organizationId, className }: TherapistBi
                 key={therapist.therapistId}
                 className={cn(
                   'group flex items-center gap-3 p-3 rounded-xl transition-all duration-200',
-                  isHovered ? 'bg-emerald-500/5' : 'hover:bg-surface-light'
+                  isHovered ? 'bg-status-success-muted' : 'hover:bg-surface-light'
                 )}
                 onMouseEnter={() => setHoveredId(therapist.therapistId)}
                 onMouseLeave={() => setHoveredId(null)}
@@ -199,7 +199,7 @@ export function TherapistBillingTable({ organizationId, className }: TherapistBi
                   <Avatar
                     className={cn(
                       'h-10 w-10 ring-2 transition-all',
-                      isHovered ? 'ring-emerald-500/50' : 'ring-border/20 group-hover:ring-primary/30'
+                      isHovered ? 'ring-status-success/50' : 'ring-border/20 group-hover:ring-primary/30'
                     )}
                   >
                     <AvatarImage src={therapist.therapistImage} />
@@ -215,7 +215,7 @@ export function TherapistBillingTable({ organizationId, className }: TherapistBi
                     <p
                       className={cn(
                         'font-medium text-sm truncate transition-colors',
-                        isHovered ? 'text-emerald-500' : 'text-foreground group-hover:text-primary'
+                        isHovered ? 'text-status-success' : 'text-foreground group-hover:text-primary'
                       )}
                     >
                       {therapist.therapistName || 'Nieznany'}
@@ -231,7 +231,7 @@ export function TherapistBillingTable({ organizationId, className }: TherapistBi
                       <div
                         className={cn(
                           'h-full rounded-full transition-all duration-500',
-                          isHovered ? 'bg-emerald-500' : 'bg-primary'
+                          isHovered ? 'bg-tint-fill' : 'bg-primary'
                         )}
                         style={{ width: `${sharePercent}%` }}
                       />
@@ -239,7 +239,7 @@ export function TherapistBillingTable({ organizationId, className }: TherapistBi
                     <span
                       className={cn(
                         'text-xs font-medium tabular-nums w-8 text-right',
-                        isHovered ? 'text-emerald-500' : 'text-muted-foreground'
+                        isHovered ? 'text-status-success' : 'text-muted-foreground'
                       )}
                     >
                       {sharePercent}%
@@ -252,7 +252,7 @@ export function TherapistBillingTable({ organizationId, className }: TherapistBi
                   <p
                     className={cn(
                       'text-sm font-semibold tabular-nums transition-colors',
-                      isHovered ? 'text-emerald-400' : 'text-primary'
+                      isHovered ? 'text-status-success' : 'text-primary'
                     )}
                   >
                     {formatCurrency(therapist.estimatedAmount)}
@@ -264,7 +264,7 @@ export function TherapistBillingTable({ organizationId, className }: TherapistBi
                   className={cn(
                     'h-4 w-4 transition-all shrink-0',
                     isHovered
-                      ? 'text-emerald-500 translate-x-0.5'
+                      ? 'text-status-success translate-x-0.5'
                       : 'text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5'
                   )}
                 />

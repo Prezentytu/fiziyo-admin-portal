@@ -50,17 +50,6 @@ export const UNPUBLISH_EXERCISE_MUTATION = gql`
   ${ADMIN_EXERCISE_FRAGMENT}
 `;
 
-export const BATCH_ARCHIVE_EXERCISES_MUTATION = gql`
-  mutation BatchArchiveExercises($exerciseIds: [String!]!, $reason: String) {
-    batchArchiveExercises(exerciseIds: $exerciseIds, reason: $reason) {
-      totalRequested
-      successCount
-      failedIds
-      errors
-    }
-  }
-`;
-
 /**
  * Scan exercise repository - checks how many new exercises are available
  * Used before importing to show user what will be imported
@@ -139,17 +128,6 @@ export const ARCHIVE_ORGANIZATION_EXERCISE_MUTATION = gql`
     }
   }
   ${ORG_VERIFICATION_MUTATION_RESULT_FRAGMENT}
-`;
-
-export const BATCH_ARCHIVE_ORGANIZATION_EXERCISES_MUTATION = gql`
-  mutation BatchArchiveOrganizationExercises($organizationId: String!, $exerciseIds: [String!]!, $reason: String) {
-    batchArchiveOrganizationExercises(organizationId: $organizationId, exerciseIds: $exerciseIds, reason: $reason) {
-      totalRequested
-      successCount
-      failedIds
-      errors
-    }
-  }
 `;
 
 // ============================================

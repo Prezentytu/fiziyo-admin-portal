@@ -1,4 +1,5 @@
 import { formatExerciseSideLabel } from './exerciseSideLabels';
+import { normalizeExerciseType } from './exerciseEnums';
 
 /**
  * Oblicza szacowany czas wykonania ćwiczenia w sekundach.
@@ -6,6 +7,7 @@ import { formatExerciseSideLabel } from './exerciseSideLabels';
  * Priorytet:
  * 1) executionTime > 0: seria = reps * executionTime + mikroprzerwy
  * 2) duration > 0: duration traktujemy jako override czasu jednej serii
+ *    (nie dla zapisanego REPS: tak jak player, pozostałe `duration` nie liczy się do czasu)
  * 3) fallback: 3 sekundy na powtórzenie
  */
 export function calculateEstimatedTime(params: {
@@ -18,8 +20,10 @@ export function calculateEstimatedTime(params: {
   side?: string;
   preparationTime?: number;
   tempo?: string;
+  type?: string;
 }): number {
-  const { sets, reps, duration, executionTime, rest = 60, restReps = 0, side, preparationTime, tempo } = params;
+  const { sets, reps, duration, executionTime, rest = 60, restReps = 0, side, preparationTime, tempo, type } =
+    params;
   return calculateExerciseTotalSeconds({
     sets,
     reps,
@@ -30,6 +34,7 @@ export function calculateEstimatedTime(params: {
     side,
     preparationTime,
     tempo,
+    type,
   }).seconds;
 }
 
@@ -53,6 +58,11 @@ export function parseTempo(tempo: string | undefined): number | null {
   //      CreateExerciseWizard (input akceptuje tylko cyfry, max 4) oraz backend AI
   //      (prompt nakazuje "DOKLADNIE 4 cyfry bez separatorow"). Bez tej galezi
   //      "3010" parsowalo sie jako 3010 sekund/powt. → totalDuration ~1208 min.
+  //   Inny ciag samych cyfr ("30", "20103") to literowka, nie sekundy na powtorzenie.
+  //   Blizniaczy parser: fizjo-app utils/exerciseSetDuration.ts (szacowany czas w aplikacji pacjenta); zmieniaj oba razem.
+  if (/^\d{2}$|^\d{5,}$/.test(normalizedTempo)) {
+    return null;
+  }
   const segments =
     !normalizedTempo.includes('-') && /^\d{3,4}$/.test(normalizedTempo)
       ? [...normalizedTempo]
@@ -84,6 +94,8 @@ export function calculateExerciseTotalSeconds(params: {
   preparationTime?: number;
   tempo?: string;
   side?: string;
+  /** Zapisany typ ćwiczenia. REPS ignoruje `duration` (player mobile). Brak typu: szkic, `duration` działa. */
+  type?: string;
 }): { seconds: number; isEstimate: boolean } {
   const sets = Math.max(0, Math.floor(params.sets));
   if (sets <= 0) {
@@ -97,7 +109,8 @@ export function calculateExerciseTotalSeconds(params: {
   const preparationTime = normalizePositiveNumber(params.preparationTime);
   const restSets = normalizePositiveNumber(params.restSets);
   const restReps = normalizePositiveNumber(params.restReps);
-  const durationOverride = normalizePositiveNumber(params.duration);
+  const durationOverride =
+    normalizeExerciseType(params.type) === 'reps' ? 0 : normalizePositiveNumber(params.duration);
   const executionTime = normalizePositiveNumber(params.executionTime);
   const tempoExecutionTime = parseTempo(params.tempo);
 
@@ -114,15 +127,28 @@ export function calculateExerciseTotalSeconds(params: {
 
   const setsTime = sets * workOneSideOfOneSet * sideMultiplier;
   const interSetRestTime = Math.max(0, sets - 1) * restSets;
+  // BOTH: player mobile odlicza przygotowanie także przed prawą stroną każdej serii (fizjo-app #191).
+  const sideChangePreparationTime = side === 'both' ? preparationTime * sets : 0;
 
   return {
-    seconds: preparationTime + setsTime + interSetRestTime,
+    seconds: preparationTime + sideChangePreparationTime + setsTime + interSetRestTime,
     isEstimate,
   };
 }
 
+function formatMinutes(totalMinutes: number): string {
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours === 0) return `${minutes} min`;
+  return minutes === 0 ? `${hours} h` : `${hours} h ${minutes} min`;
+}
+
+function finiteSeconds(seconds: number): number {
+  return Number.isFinite(seconds) ? Math.max(0, Math.round(seconds)) : 0;
+}
+
 export function formatExerciseDuration(seconds: number, isEstimate: boolean): string {
-  const normalizedSeconds = Math.max(0, Math.round(seconds));
+  const normalizedSeconds = finiteSeconds(seconds);
   const estimatePrefix = isEstimate ? '~' : '';
 
   if (normalizedSeconds < 60) {
@@ -133,11 +159,11 @@ export function formatExerciseDuration(seconds: number, isEstimate: boolean): st
   const remainingSeconds = normalizedSeconds % 60;
 
   if (isEstimate) {
-    return `${estimatePrefix}${Math.max(1, Math.round(normalizedSeconds / 60))} min`;
+    return `${estimatePrefix}${formatMinutes(Math.max(1, Math.round(normalizedSeconds / 60)))}`;
   }
 
-  if (remainingSeconds === 0) {
-    return `${minutes} min`;
+  if (remainingSeconds === 0 || minutes >= 60) {
+    return formatMinutes(minutes);
   }
 
   return `${minutes} min ${remainingSeconds} s`;
@@ -152,15 +178,10 @@ export function formatExerciseDuration(seconds: number, isEstimate: boolean): st
  * - 180 sekund → "~3 min"
  */
 export function formatEstimatedTime(seconds: number): string {
-  if (seconds <= 0) return '~0 min';
+  const normalizedSeconds = finiteSeconds(seconds);
+  if (normalizedSeconds <= 0) return '~0 min';
 
-  const minutes = Math.round(seconds / 60);
-
-  if (minutes < 1) {
-    return '~1 min';
-  }
-
-  return `~${minutes} min`;
+  return `~${formatMinutes(Math.max(1, Math.round(normalizedSeconds / 60)))}`;
 }
 
 /**

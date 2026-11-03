@@ -106,7 +106,7 @@ export function ImportProgress({ className }: ImportProgressProps) {
                 className={cn(
                   'flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all duration-300',
                   isComplete
-                    ? 'bg-primary text-primary-foreground'
+                    ? 'bg-tint-fill text-on-tint'
                     : isActive
                       ? 'bg-primary/20 text-primary'
                       : 'bg-surface-light text-muted-foreground'

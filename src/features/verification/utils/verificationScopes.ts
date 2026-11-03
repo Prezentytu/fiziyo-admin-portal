@@ -1,0 +1,82 @@
+export type VerificationScopeKey = 'organization' | 'global' | 'cross-org';
+
+export type VerificationScopeGroup = 'own' | 'moderation';
+
+export interface VerificationScope {
+  key: VerificationScopeKey;
+  label: string;
+  /** Who sees an exercise once it is approved in this queue. */
+  audience: string;
+  group: VerificationScopeGroup;
+  href: string;
+  testId: string;
+}
+
+export interface VerificationScopeAccess {
+  canManageOrganization: boolean;
+  canReviewExercises: boolean;
+  isSiteSuperAdmin: boolean;
+}
+
+const VERIFICATION_SCOPES: ReadonlyArray<
+  VerificationScope & { isAvailable: (access: VerificationScopeAccess) => boolean }
+> = [
+  {
+    key: 'organization',
+    label: 'Moja organizacja',
+    audience: 'Widzi tylko Twój zespół',
+    group: 'own',
+    href: '/organization/verification',
+    testId: 'nav-link-organization-verification',
+    isAvailable: (access) => access.canManageOrganization,
+  },
+  {
+    key: 'global',
+    label: 'Katalog FiziYo',
+    audience: 'Widzą wszystkie gabinety',
+    group: 'moderation',
+    href: '/verification',
+    testId: 'nav-link-verification-global',
+    isAvailable: (access) => access.canReviewExercises,
+  },
+  {
+    key: 'cross-org',
+    label: 'Organizacje klientów',
+    audience: 'Widzi tylko dany klient',
+    group: 'moderation',
+    href: '/verification/organizations',
+    testId: 'nav-link-verification-organizations',
+    isAvailable: (access) => access.isSiteSuperAdmin,
+  },
+];
+
+/** Verification queues the user can open, in navigation order. */
+export function getVerificationScopes(
+  access: VerificationScopeAccess,
+  organizationName?: string | null
+): VerificationScope[] {
+  const ownLabel = organizationName?.trim();
+  return VERIFICATION_SCOPES.filter((scope) => scope.isAvailable(access)).map(
+    ({ key, label, audience, group, href, testId }) => ({
+      key,
+      label: key === 'organization' && ownLabel ? ownLabel : label,
+      audience,
+      group,
+      href,
+      testId,
+    })
+  );
+}
+
+export type VerificationPendingCounts = Partial<Record<VerificationScopeKey, number>>;
+
+/**
+ * Pending items across the queues the user can open; drives the navigation badge.
+ * The cross-org queue spans every organization, the user's own included, so once its count is known it replaces the own count.
+ */
+export function sumPendingCounts(scopes: ReadonlyArray<VerificationScope>, counts: VerificationPendingCounts): number {
+  const includesCrossOrg = scopes.some((scope) => scope.key === 'cross-org') && typeof counts['cross-org'] === 'number';
+  return scopes
+    .filter((scope) => !(includesCrossOrg && scope.key === 'organization'))
+    .reduce((total, scope) => total + (counts[scope.key] ?? 0), 0);
+}

@@ -14,6 +14,7 @@ import { GET_STRIPE_CONNECT_STATUS_QUERY, GET_REVENUE_HISTORY_QUERY } from '@/gr
 import type { GetStripeConnectStatusResponse, GetRevenueHistoryResponse } from '@/types/apollo';
 import { formatCurrency } from '@/types/revenue.types';
 import { cn } from '@/lib/utils';
+import { PageSheet } from '@/components/shared/page';
 
 // ========================================
 // Payouts Page - Historia wypłat ze Stripe
@@ -54,7 +55,7 @@ export default function PayoutsPage() {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-foreground">Historia Wypłat</h1>
+          <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground">Historia wypłat</h1>
         </div>
         <LoadingState type="text" count={3} />
       </div>
@@ -63,17 +64,17 @@ export default function PayoutsPage() {
 
   return (
     <AccessGuard requiredAccess="admin" fallbackUrl="/">
-      <div className="space-y-6">
+      <PageSheet contentClassName="gap-6">
         {/* Header with back button */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" asChild>
-              <Link href="/finances">
+            <Button variant="ghost" size="icon" asChild data-testid="finances-payouts-back-btn">
+              <Link href="/finances" aria-label="Wróć do finansów">
                 <ArrowLeft className="h-5 w-5" />
               </Link>
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Historia Wypłat</h1>
+              <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground">Historia wypłat</h1>
               <p className="text-sm text-muted-foreground">Przelewy ze Stripe Connect na Twoje konto bankowe</p>
             </div>
           </div>
@@ -104,8 +105,8 @@ export default function PayoutsPage() {
           <Card>
             <CardContent className="p-5">
               <div className="flex items-center gap-3 mb-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/20">
-                  <Clock className="h-5 w-5 text-amber-500" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-status-warning-muted">
+                  <Clock className="h-5 w-5 text-status-warning" />
                 </div>
                 <span className="text-sm text-muted-foreground">Oczekujące</span>
               </div>
@@ -123,14 +124,14 @@ export default function PayoutsPage() {
           <Card>
             <CardContent className="p-5">
               <div className="flex items-center gap-3 mb-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/20">
-                  <TrendingUp className="h-5 w-5 text-emerald-500" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-status-success-muted">
+                  <TrendingUp className="h-5 w-5 text-status-success" />
                 </div>
                 <span className="text-sm text-muted-foreground">Status konta</span>
               </div>
               {stripeLoading && <Skeleton className="h-6 w-24" />}
               {!stripeLoading && stripeStatus?.payoutsEnabled && (
-                <Badge className="bg-emerald-500/20 text-emerald-500 border-0">
+                <Badge className="bg-status-success-muted text-status-success border-0">
                   <CheckCircle className="h-3 w-3 mr-1" />
                   Wypłaty aktywne
                 </Badge>
@@ -183,13 +184,13 @@ export default function PayoutsPage() {
                       <div
                         className={cn(
                           'flex h-10 w-10 items-center justify-center rounded-full',
-                          payout.status === 'completed' ? 'bg-emerald-500/20' : 'bg-amber-500/20'
+                          payout.status === 'completed' ? 'bg-status-success-muted' : 'bg-status-warning-muted'
                         )}
                       >
                         {payout.status === 'completed' ? (
-                          <CheckCircle className="h-5 w-5 text-emerald-500" />
+                          <CheckCircle className="h-5 w-5 text-status-success" />
                         ) : (
-                          <Clock className="h-5 w-5 text-amber-500" />
+                          <Clock className="h-5 w-5 text-status-warning" />
                         )}
                       </div>
                       <div>
@@ -205,7 +206,7 @@ export default function PayoutsPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-lg font-bold text-emerald-500 tabular-nums">
+                      <p className="text-lg font-bold text-status-success tabular-nums">
                         +{formatCurrency(payout.netAmount, payout.currency)}
                       </p>
                       <Badge variant={payout.status === 'completed' ? 'default' : 'secondary'} className="text-xs">
@@ -218,7 +219,7 @@ export default function PayoutsPage() {
             )}
           </CardContent>
         </Card>
-      </div>
+      </PageSheet>
     </AccessGuard>
   );
 }

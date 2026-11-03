@@ -22,6 +22,7 @@ import { DELETE_CLINIC_MUTATION } from '@/graphql/mutations/clinics.mutations';
 import { GET_ORGANIZATION_CLINICS_QUERY } from '@/graphql/queries/clinics.queries';
 import { matchesSearchQuery } from '@/utils/textUtils';
 import { cn } from '@/lib/utils';
+import { polishPlural } from '@/utils/polishPlural';
 
 export interface Clinic {
   id: string;
@@ -115,7 +116,7 @@ export function ClinicsSection({
           <div>
             <h3 className="text-lg font-semibold text-foreground">Twoje Gabinety</h3>
             <p className="text-sm text-muted-foreground">
-              {clinics.length} {clinics.length === 1 ? 'lokalizacja' : 'lokalizacji'} w organizacji
+              {clinics.length} {polishPlural(clinics.length, 'lokalizacja', 'lokalizacje', 'lokalizacji')} w organizacji
             </p>
           </div>
         </div>

@@ -109,7 +109,7 @@ export function EarningsChart({ organizationId, className }: EarningsChartProps)
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-emerald-400" />
+            <BarChart3 className="h-5 w-5 text-status-success" />
             <h3 className="text-lg font-semibold text-foreground">Historia Zarobków</h3>
           </div>
           <div className="flex items-center gap-3">
@@ -119,7 +119,7 @@ export function EarningsChart({ organizationId, className }: EarningsChartProps)
                 variant="outline"
                 className={cn(
                   'text-xs border-0',
-                  chartData.trend > 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
+                  chartData.trend > 0 ? 'bg-status-success-muted text-status-success' : 'bg-status-danger-muted text-status-danger'
                 )}
               >
                 {chartData.trend > 0 ? (
@@ -151,7 +151,7 @@ export function EarningsChart({ organizationId, className }: EarningsChartProps)
                       className={cn(
                         'w-full rounded-t-md transition-all duration-300',
                         month.earnings > 0
-                          ? 'bg-gradient-to-t from-emerald-600 to-emerald-400 group-hover:from-emerald-500 group-hover:to-emerald-300 group-hover:shadow-lg group-hover:shadow-emerald-500/20'
+                          ? 'bg-gradient-to-t from-status-success to-status-success group-hover:from-status-success group-hover:to-status-success group-hover:shadow-lg group-hover:shadow-status-success/20'
                           : 'bg-surface-light'
                       )}
                       style={{
@@ -190,7 +190,7 @@ export function EarningsChart({ organizationId, className }: EarningsChartProps)
         {/* Legend */}
         <div className="mt-6 pt-4 border-t border-border flex items-center justify-center gap-6 text-xs text-muted-foreground">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-sm bg-gradient-to-t from-emerald-600 to-emerald-400" />
+            <div className="w-3 h-3 rounded-sm bg-gradient-to-t from-status-success to-status-success" />
             <span>Zarobki (prowizje)</span>
           </div>
           <span className="text-text-tertiary">|</span>

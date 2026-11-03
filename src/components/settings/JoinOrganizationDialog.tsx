@@ -229,10 +229,10 @@ export function JoinOrganizationDialog({ open, onOpenChange, onSuccess }: JoinOr
 
           {/* Validation states */}
           {validationState === 'expired' && (
-            <Card className="border-amber-500/30 bg-amber-500/5">
+            <Card className="border-status-warning/30 bg-status-warning-muted">
               <CardContent className="flex items-center gap-3 p-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-500/20">
-                  <Clock className="h-5 w-5 text-amber-500" />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-status-warning-muted">
+                  <Clock className="h-5 w-5 text-status-warning" />
                 </div>
                 <div>
                   <p className="font-medium text-foreground">Zaproszenie wygasło</p>

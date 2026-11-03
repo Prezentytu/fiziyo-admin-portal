@@ -48,6 +48,7 @@ import { CreateSetWizard } from '@/features/exercise-sets';
 import { SubmitToGlobalDialog } from '@/features/exercises/SubmitToGlobalDialog';
 import { SubmitToOrganizationDialog } from '@/features/exercises/SubmitToOrganizationDialog';
 import { FeedbackBanner } from '@/features/exercises/FeedbackBanner';
+import { resolveExerciseReviewFeedback } from '@/features/exercises/utils/resolveExerciseReviewFeedback';
 import { ReportExerciseDialog } from '@/features/exercises/ReportExerciseDialog';
 import { MediaGallery, buildMediaItems } from '@/components/shared';
 import {
@@ -60,7 +61,11 @@ import {
 import { cn } from '@/lib/utils';
 import { normalizeExerciseFieldValues } from '@/components/shared/exercise';
 
-import { GET_EXERCISE_BY_ID_QUERY, GET_ORGANIZATION_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
+import {
+  GET_EXERCISE_BY_ID_QUERY,
+  GET_ORGANIZATION_EXERCISES_QUERY,
+  GET_ORGANIZATION_EXERCISE_NAMES_QUERY,
+} from '@/graphql/queries/exercises.queries';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
 import {
@@ -90,10 +95,12 @@ import {
 } from '@/features/exercises/utils/buildEnrichmentUpdateVariables';
 import { getNextExerciseCopyName } from '@/features/exercises/utils/getNextExerciseCopyName';
 import { buildCreateExerciseVariables } from '@/features/exercises/utils/buildCreateExerciseVariables';
+import { normalizeExerciseType } from '@/utils/exerciseEnums';
 import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
 import { resolveLoadKg } from '@/utils/exerciseLoadMutation';
 import { verificationCopy } from '@/features/verification/verificationCopy';
 import { ORG_VERIFICATION_REFETCH_QUERIES } from '@/hooks/useOrganizationVerificationRealtime';
+import { PageSheet } from '@/components/shared/page';
 
 interface ExerciseDetailPageProps {
   params: Promise<{ id: string }>;
@@ -135,7 +142,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const { data, loading, error } = useQuery(GET_EXERCISE_BY_ID_QUERY, {
     variables: { id },
   });
-  const { data: organizationExercisesData } = useQuery(GET_ORGANIZATION_EXERCISES_QUERY, {
+  const { data: organizationExercisesData } = useQuery(GET_ORGANIZATION_EXERCISE_NAMES_QUERY, {
     variables: { organizationId },
     skip: !organizationId,
   });
@@ -155,14 +162,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const [deleteExerciseImage] = useMutation(DELETE_EXERCISE_IMAGE_MUTATION);
 
   const [deleteExercise, { loading: deleting }] = useMutation(DELETE_EXERCISE_MUTATION, {
-    refetchQueries: organizationId
-      ? [
-          {
-            query: GET_ORGANIZATION_EXERCISES_QUERY,
-            variables: { organizationId },
-          },
-        ]
-      : [],
+    refetchQueries: [GET_ORGANIZATION_EXERCISES_QUERY, GET_ORGANIZATION_EXERCISE_NAMES_QUERY],
   });
 
   const [submitToGlobalReview, { loading: submittingToGlobal }] = useMutation(SUBMIT_TO_GLOBAL_REVIEW_MUTATION, {
@@ -179,9 +179,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
     refetchQueries: [{ query: GET_EXERCISE_BY_ID_QUERY, variables: { id } }],
   });
   const [createExercise, { loading: duplicating }] = useMutation(CREATE_EXERCISE_MUTATION, {
-    refetchQueries: organizationId
-      ? [{ query: GET_ORGANIZATION_EXERCISES_QUERY, variables: { organizationId } }]
-      : [],
+    refetchQueries: [GET_ORGANIZATION_EXERCISES_QUERY, GET_ORGANIZATION_EXERCISE_NAMES_QUERY],
   });
 
   const rawExercise = (data as ExerciseByIdResponse)?.exerciseById;
@@ -327,16 +325,18 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
             audioCue: exercise.audioCue,
             tempo: exercise.tempo,
             rangeOfMotion: exercise.rangeOfMotion,
+            type: exercise.type,
             side: exercise.side || exercise.exerciseSide,
             difficultyLevel: exercise.difficultyLevel,
             videoUrl: exercise.videoUrl,
-            sets: exercise.defaultSets ?? exercise.sets ?? null,
-            reps: exercise.defaultReps ?? exercise.reps ?? null,
-            duration: exercise.defaultDuration ?? exercise.duration ?? null,
-            restSets: exercise.defaultRestBetweenSets ?? exercise.restSets ?? null,
-            restReps: exercise.defaultRestBetweenReps ?? exercise.restReps ?? null,
+            // GraphQL Exercise ma tylko pola default* (bez sets/restSets/executionTime).
+            sets: exercise.defaultSets ?? null,
+            reps: exercise.defaultReps ?? null,
+            duration: exercise.defaultDuration ?? null,
+            restSets: exercise.defaultRestBetweenSets ?? null,
+            restReps: exercise.defaultRestBetweenReps ?? null,
             preparationTime: exercise.preparationTime ?? null,
-            executionTime: exercise.defaultExecutionTime ?? exercise.executionTime ?? null,
+            executionTime: exercise.defaultExecutionTime ?? null,
             loadKg,
             images: exercise.images?.length ? exercise.images : null,
             mainTags: normalizeTagIds(exercise.mainTags),
@@ -444,7 +444,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
     const generatedFile = await generateAiImage({
       exerciseName: exercise.name,
       exerciseDescription: description,
-      exerciseType: exercise.type?.toLowerCase() === 'time' ? 'time' : 'reps',
+      exerciseType: normalizeExerciseType(exercise.type) ?? 'reps',
       style: imageStyle,
     });
 
@@ -514,6 +514,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const isChangesRequested = exercise.status === 'CHANGES_REQUESTED';
   const isSubmittedToGlobal = hasGlobalSubmission && exercise.scope === 'ORGANIZATION';
   const canResubmit = isChangesRequested && hasGlobalSubmission;
+  const reviewFeedback = resolveExerciseReviewFeedback(exercise);
 
   const normalizedFields = normalizeExerciseFieldValues(exercise);
 
@@ -527,6 +528,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
     preparationTime: normalizedFields.preparationTime,
     tempo: normalizedFields.tempo ?? undefined,
     side: normalizedFields.side ?? undefined,
+    type: exercise.type,
   });
 
   const exerciseDurationSummary =
@@ -572,7 +574,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   });
 
   return (
-    <div className={cn('space-y-6', isEditing && 'pb-24')}>
+    <PageSheet contentClassName="gap-6" className={isEditing ? 'pb-24' : undefined}>
       {/* Compact Header */}
       <div className="flex items-center justify-between">
         <Button
@@ -628,7 +630,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={() => setIsSubmitToOrganizationDialogOpen(true)}
-                    className="text-emerald-600 focus:text-emerald-600"
+                    className="text-status-success focus:text-status-success"
                     data-testid="exercise-detail-submit-org-btn"
                   >
                     <Rocket className="mr-2 h-4 w-4" />
@@ -654,7 +656,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
               <DropdownMenuItem
                 onClick={() => setIsReportDialogOpen(true)}
                 data-testid="exercise-detail-report-btn"
-                className="text-amber-500 focus:text-amber-500 focus:bg-amber-500/10"
+                className="text-status-warning focus:text-status-warning focus:bg-status-warning-muted"
               >
                 <Flag className="mr-2 h-4 w-4" />
                 Zgłoś do poprawki
@@ -688,7 +690,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
           {isSubmittedToGlobal && !isPendingReview && !isChangesRequested && !isGlobalExercise && (
             <Badge
               variant="outline"
-              className="text-[10px] uppercase font-bold tracking-wider bg-blue-500/10 text-blue-600 border-blue-500/20"
+              className="text-[10px] uppercase font-bold tracking-wider bg-status-info-muted text-status-info border-status-info/20"
             >
               <Globe className="mr-1 h-3 w-3" />W FiziYo
             </Badge>
@@ -696,7 +698,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
           {isPendingReview && (
             <Badge
               variant="outline"
-              className="text-[10px] uppercase font-bold tracking-wider bg-amber-500/10 text-amber-600 border-amber-500/20"
+              className="text-[10px] uppercase font-bold tracking-wider bg-status-warning-muted text-status-warning border-status-warning/20"
             >
               <Clock className="mr-1 h-3 w-3" />
               Weryfikacja
@@ -705,7 +707,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
           {isChangesRequested && (
             <Badge
               variant="outline"
-              className="text-[10px] uppercase font-bold tracking-wider bg-orange-500/10 text-orange-600 border-orange-500/20"
+              className="text-[10px] uppercase font-bold tracking-wider bg-status-warning-muted text-status-warning border-status-warning/20"
             >
               <AlertCircle className="mr-1 h-3 w-3" />
               Do poprawy
@@ -720,38 +722,36 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
             onChange={(event) => setCoreField('name', event.target.value)}
           />
         ) : (
-          <h1 className="text-2xl font-bold text-foreground" data-testid="exercise-detail-name">
+          <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground" data-testid="exercise-detail-name">
             {exercise.name}
           </h1>
         )}
       </div>
 
-      {isChangesRequested && exercise.adminReviewNotes && (
-        <FeedbackBanner adminReviewNotes={exercise.adminReviewNotes} updatedAt={exercise.updatedAt} />
-      )}
+      {reviewFeedback && <FeedbackBanner adminReviewNotes={reviewFeedback.notes} updatedAt={reviewFeedback.updatedAt} />}
 
       {/* Hero Actions */}
       <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12">
         <button
           onClick={handleAddToSet}
           className={cn(
-            'group relative overflow-hidden rounded-2xl bg-linear-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer sm:col-span-1',
+            'group relative overflow-hidden rounded-2xl bg-tint-fill hover:bg-tint-fill-hover p-5 text-left transition-all duration-300 cursor-pointer sm:col-span-1',
             isLocked ? 'lg:col-span-6' : 'lg:col-span-4'
           )}
           data-testid="exercise-detail-add-to-set-btn"
         >
           <div className="absolute inset-0 bg-linear-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary-foreground/10 rounded-full blur-3xl group-hover:bg-primary-foreground/20 transition-all duration-500" />
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-on-tint/10 rounded-full blur-3xl group-hover:bg-on-tint/20 transition-all duration-500" />
 
           <div className="relative flex items-center gap-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-foreground/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
-              <FolderPlus className="h-5 w-5 text-primary-foreground" />
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-on-tint/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
+              <FolderPlus className="h-5 w-5 text-on-tint" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-base font-bold text-primary-foreground">Dodaj do zestawu</h3>
-              <p className="text-sm text-primary-foreground/70">Użyj w programie</p>
+              <h3 className="text-base font-bold text-on-tint">Dodaj do zestawu</h3>
+              <p className="text-sm text-on-tint/70">Użyj w programie</p>
             </div>
-            <Plus className="h-5 w-5 text-primary-foreground/60 group-hover:text-primary-foreground transition-colors shrink-0" />
+            <Plus className="h-5 w-5 text-on-tint/60 group-hover:text-on-tint transition-colors shrink-0" />
           </div>
         </button>
 
@@ -759,12 +759,12 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
           data-testid="exercise-detail-report-hero-btn"
           onClick={() => setIsReportDialogOpen(true)}
           className={cn(
-            'group relative overflow-hidden rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5 text-left transition-all duration-300 hover:shadow-lg hover:shadow-amber-500/20 hover:scale-[1.01] cursor-pointer sm:col-span-1',
+            'group relative overflow-hidden rounded-2xl border border-status-warning/30 bg-status-warning-muted p-5 text-left transition-all duration-300 hover:shadow-lg hover:shadow-status-warning/20 hover:scale-[1.01] cursor-pointer sm:col-span-1',
             isLocked ? 'lg:col-span-6' : 'lg:col-span-4'
           )}
         >
           <div className="relative flex items-center gap-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/20 text-amber-600 shrink-0 group-hover:scale-110 transition-transform duration-300">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-status-warning-muted text-status-warning shrink-0 group-hover:scale-110 transition-transform duration-300">
               <Flag className="h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1">
@@ -780,7 +780,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
             className={cn(
               'group relative overflow-hidden rounded-2xl border p-5 text-left transition-all duration-300 hover:shadow-lg hover:scale-[1.01] cursor-pointer sm:col-span-2 lg:col-span-4',
               isEditing
-                ? 'border-emerald-500/30 bg-emerald-500/10 hover:shadow-emerald-500/20'
+                ? 'border-status-success/30 bg-status-success-muted hover:shadow-status-success/20'
                 : 'border-border/40 bg-surface/50 hover:shadow-primary/10'
             )}
             data-testid="exercise-detail-edit-btn"
@@ -789,7 +789,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
               <div
                 className={cn(
                   'flex h-11 w-11 items-center justify-center rounded-xl shrink-0 group-hover:scale-110 transition-transform duration-300',
-                  isEditing ? 'bg-emerald-500/20 text-emerald-600' : 'bg-primary/10 text-primary'
+                  isEditing ? 'bg-status-success-muted text-status-success' : 'bg-primary/10 text-primary'
                 )}
               >
                 {isEditing ? <Check className="h-5 w-5" /> : <Pencil className="h-5 w-5" />}
@@ -806,9 +806,9 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
       </div>
 
       {hasMissingCoreInformation && !isEditing && (
-        <div className="rounded-2xl border border-sky-500/20 bg-sky-50/50 p-4 dark:bg-sky-500/5">
+        <div className="rounded-2xl border border-status-info/20 bg-status-info-muted p-4">
           <div className="flex items-start gap-3">
-            <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-sky-500" />
+            <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-status-info" />
             <div>
               <p className="text-sm font-semibold text-foreground">To ćwiczenie może być jeszcze lepsze</p>
               <p className="text-sm text-muted-foreground">
@@ -1015,17 +1015,17 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                 </span>
               ) : saveBarKind === 'dirty' ? (
                 <span className="flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-amber-500" />
+                  <span className="h-2 w-2 rounded-full bg-status-warning-fill" />
                   Masz niezapisane zmiany
                 </span>
               ) : saveBarKind === 'media-persisted' ? (
                 <span className="flex items-center gap-1.5" data-testid="exercise-detail-save-media-notice">
-                  <Check className="h-4 w-4 text-emerald-600" />
+                  <Check className="h-4 w-4 text-status-success" />
                   {mediaPersistNotice}
                 </span>
               ) : (
                 <span className="flex items-center gap-1.5">
-                  <Check className="h-4 w-4 text-emerald-600" />
+                  <Check className="h-4 w-4 text-status-success" />
                   Wszystko zapisane
                 </span>
               )}
@@ -1095,6 +1095,6 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         exercise={exercise}
         organizationId={organizationId}
       />
-    </div>
+    </PageSheet>
   );
 }
