@@ -450,15 +450,21 @@ export function ActivityReport({
               <p className="font-semibold">{qualitySummary.total}</p>
             </div>
             <div>
-              <p className="text-muted-foreground">Pełne evidence</p>
+              <p className="text-muted-foreground" title="Pacjent przeszedł ćwiczenie w playerze bez pominięć">
+                Pełny zapis
+              </p>
               <p className="font-semibold">{qualitySummary.full}</p>
             </div>
             <div>
-              <p className="text-muted-foreground">Assisted</p>
+              <p className="text-muted-foreground" title="Pacjent ćwiczył w playerze, ale pominął część serii albo przerw">
+                Z pominięciami
+              </p>
               <p className="font-semibold">{qualitySummary.assisted}</p>
             </div>
             <div>
-              <p className="text-muted-foreground">Manual</p>
+              <p className="text-muted-foreground" title="Pacjent oznaczył ćwiczenie jako wykonane bez playera">
+                Wpis ręczny
+              </p>
               <p className="font-semibold">{qualitySummary.manual}</p>
             </div>
           </div>
