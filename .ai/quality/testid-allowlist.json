@@ -65,7 +65,6 @@
     "src/components/ui/input.tsx:7:input",
     "src/components/ui/phone-input.tsx:133:input",
     "src/components/ui/textarea.tsx:7:textarea",
-    "src/features/assignment/ExerciseDetailsDialog.tsx:130:a",
     "src/features/assignment/ScheduleStep.tsx:63:input",
     "src/features/assignment/SelectPatientsStep.tsx:157:button",
     "src/features/assignment/SelectPatientsStep.tsx:209:Checkbox",

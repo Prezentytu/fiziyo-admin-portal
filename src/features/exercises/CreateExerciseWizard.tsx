@@ -76,11 +76,11 @@ import type { ExerciseCoreDraft } from './useExerciseEditorForm';
 // QUICK PRESETS (Unified - shows all params)
 // ============================================================
 const QUICK_PRESETS = [
-  { label: '3×10', sets: 3, reps: 10, executionTime: null, duration: null, rest: 60 },
-  { label: '3×15', sets: 3, reps: 15, executionTime: null, duration: null, rest: 45 },
-  { label: '4×8', sets: 4, reps: 8, executionTime: null, duration: null, rest: 90 },
-  { label: '30s×3', sets: 3, reps: 1, executionTime: 30, duration: null, rest: 30 },
-  { label: '45s×3', sets: 3, reps: 1, executionTime: 45, duration: null, rest: 30 },
+  { label: '3×10', hint: '3 serie po 10 powtórzeń, przerwa 60 s', sets: 3, reps: 10, executionTime: null, duration: null, rest: 60 },
+  { label: '3×15', hint: '3 serie po 15 powtórzeń, przerwa 45 s', sets: 3, reps: 15, executionTime: null, duration: null, rest: 45 },
+  { label: '4×8', hint: '4 serie po 8 powtórzeń, przerwa 90 s', sets: 4, reps: 8, executionTime: null, duration: null, rest: 90 },
+  { label: '30s×3', hint: '3 serie po 30 s utrzymania, przerwa 30 s', sets: 3, reps: 1, executionTime: 30, duration: null, rest: 30 },
+  { label: '45s×3', hint: '3 serie po 45 s utrzymania, przerwa 30 s', sets: 3, reps: 1, executionTime: 45, duration: null, rest: 30 },
 ];
 
 // ============================================================
@@ -370,7 +370,7 @@ function AIDiffDrawer({
 }: AIDiffDrawerProps) {
   if (isLoading) {
     return (
-      <div className="w-[420px] border-l border-border bg-dark p-6 flex flex-col items-center justify-center gap-4">
+      <div className="w-[420px] border-l border-border bg-card p-6 flex flex-col items-center justify-center gap-4">
         <div className="relative">
           <Loader2 className="h-10 w-10 animate-spin text-secondary" />
           <Sparkles className="h-4 w-4 text-secondary absolute -top-1 -right-1 animate-pulse" />
@@ -385,7 +385,7 @@ function AIDiffDrawer({
 
   if (!suggestion) {
     return (
-      <div className="w-[420px] border-l border-border bg-dark p-6 flex flex-col items-center justify-center gap-4">
+      <div className="w-[420px] border-l border-border bg-card p-6 flex flex-col items-center justify-center gap-4">
         <AlertTriangle className="h-8 w-8 text-warning" />
         <p className="text-sm text-muted-foreground text-center">
           Nie udało się wygenerować sugestii.
@@ -445,7 +445,7 @@ function AIDiffDrawer({
   ].filter(Boolean).length;
 
   return (
-    <div className="w-[420px] border-l border-border bg-dark flex flex-col" data-testid="ai-diff-drawer">
+    <div className="w-[420px] border-l border-border bg-card flex flex-col" data-testid="ai-diff-drawer">
       {/* Header - Asystent Redakcyjny */}
       <div className="px-5 py-4 border-b border-border bg-gradient-to-r from-secondary/5 to-transparent">
         <div className="flex items-center justify-between mb-2">
@@ -1909,6 +1909,8 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                       key={idx}
                       type="button"
                       onClick={() => applyPreset(preset)}
+                      title={preset.hint}
+                      aria-label={`Wstaw ${preset.hint}`}
                       className={cn(
                         'text-[10px] bg-surface/50 border border-border text-muted-foreground',
                         'hover:text-foreground hover:border-primary/50 px-2 py-1 rounded',

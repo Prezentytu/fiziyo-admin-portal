@@ -65,7 +65,7 @@ function ProposalCard({
       )}
       {proposal.cues && (
         <div>
-          <p className="text-[13px] text-label-secondary">Wskazówki głosowe</p>
+          <p className="text-[13px] text-label-secondary">Wskazówki</p>
           <ul className="list-disc pl-5 text-[15px] text-foreground">
             {proposal.cues.map((cue) => (
               <li key={cue}>{cue}</li>
@@ -244,7 +244,7 @@ export function InstructionStage({
         </Button>
       </StageSection>
 
-      <StageSection title="Wskazówki głosowe" data-testid="verification-instruction-cues">
+      <StageSection title="Wskazówki" data-testid="verification-instruction-cues">
         <ul className="flex flex-col gap-2">
           {cues.map((cue, index) => {
             const phase = getCuePhase(patient.cue_phases, index);

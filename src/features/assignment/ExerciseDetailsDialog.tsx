@@ -7,7 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { VideoEmbed } from '@/components/shared/VideoEmbed';
 import { getMediaUrl } from '@/utils/mediaUrl';
+import { canOpenVideoOutsidePortal } from '@/utils/videoEmbed';
 import type { ExerciseMapping } from './types';
 import { buildExerciseDetailsViewModel } from './exerciseDetailsViewModel';
 import {
@@ -127,14 +129,21 @@ export function ExerciseDetailsDialog({ open, mapping, onOpenChange }: Readonly<
             {viewModel?.videoUrl && (
               <div className="space-y-2" data-testid="assign-set-preview-exercise-details-video">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">Film instruktażowy</p>
-                <a
-                  href={viewModel.videoUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center text-sm text-primary hover:underline"
-                >
-                  Otwórz film
-                </a>
+                {canOpenVideoOutsidePortal(viewModel.videoUrl) ? (
+                  <a
+                    href={viewModel.videoUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center text-sm text-primary hover:underline"
+                    data-testid="assign-set-preview-exercise-details-video-link"
+                  >
+                    Otwórz film
+                  </a>
+                ) : (
+                  <div className="aspect-video w-full">
+                    <VideoEmbed url={viewModel.videoUrl} title={viewModel.displayName} />
+                  </div>
+                )}
               </div>
             )}
 

@@ -100,7 +100,7 @@ export const ENRICHMENT_SECTIONS: EnrichmentSectionMeta[] = [
   },
   {
     id: 'cues',
-    label: 'Wskazówki (cues)',
+    label: 'Wskazówki dla pacjenta',
     isFilled: (data) => hasArrayItems(data.patient?.cues),
   },
   {

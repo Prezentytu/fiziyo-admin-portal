@@ -304,7 +304,7 @@ Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu r
 | `exercise-param-summary-stat-info`           | Info tooltip przy podsumowującym stat                    | `ExerciseParametersPanel.tsx` |
 | `exercise-param-{key}-input`                 | Edycja parametru (liczba/tekst)                          | `ExerciseParametersPanel.tsx` |
 | `exercise-param-{key}-select`                | Edycja parametru (select: strona/trudność)               | `ExerciseParametersPanel.tsx` |
-| `exercise-audio-cues`                        | Sekcja "Wskazówki głosowe"                               | `ExerciseAudioCues.tsx`       |
+| `exercise-audio-cues`                        | Sekcja "Wskazówki"                                       | `ExerciseAudioCues.tsx`       |
 | `exercise-audio-cue-main`                    | Kontener komendy TTS (widok/edycja)                      | `ExerciseAudioCues.tsx`       |
 | `exercise-audio-cue-input`                   | Edycja komendy TTS (tryb edycji)                         | `ExerciseAudioCues.tsx`       |
 | `exercise-audio-cues-list`                   | Lista wskazówek AI (coaching cues, widok)                | `ExerciseAudioCues.tsx`       |
