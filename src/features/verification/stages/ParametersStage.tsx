@@ -134,11 +134,7 @@ function ParameterRow({
   const isWarning = field.level === 'warning';
   const note = describeFieldNote(field);
   const info = FIELD_INFO[field.key];
-  const showNote =
-    isWarning ||
-    field.level === 'acknowledged' ||
-    (isError && field.level !== 'empty') ||
-    (field.level === 'empty' && field.key !== 'rest');
+  const showNote = isError || isWarning || field.level === 'acknowledged';
 
   return (
     <div className="flex flex-col gap-2 border-t-[0.5px] border-separator py-3 first:border-t-0 first:pt-0">

@@ -77,6 +77,16 @@ describe('evaluateParameters', () => {
     expect(singleSet.findings.map((finding) => finding.key)).toEqual(['sets']);
   });
 
+  it('pusta przerwa jest błędem tylko wtedy, gdy jest wymagana', () => {
+    const restLevel = (sets: number) =>
+      evaluateParameters({ values: { ...typicalReps, sets, rest: null }, mode: 'reps', side: 'none' }).fields.find(
+        (field) => field.key === 'rest'
+      )?.level;
+
+    expect(restLevel(1)).toBe('default');
+    expect(restLevel(3)).toBe('empty');
+  });
+
   it('ostrzega o długim ćwiczeniu, choć każde pole mieści się w limicie', () => {
     const result = evaluateParameters({
       values: { sets: 5, reps: 20, repTime: 6, hold: null, rest: 120 },

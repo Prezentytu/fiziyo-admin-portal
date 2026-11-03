@@ -321,7 +321,7 @@ function evaluateField(
 
   if (isEmpty(key, value)) {
     if (!isRequired(key, values)) {
-      return { field: { key, value: null, level: key === 'repTime' ? 'default' : 'empty' }, finding: null };
+      return { field: { key, value: null, level: 'default' }, finding: null };
     }
     return {
       field: { key, value: null, level: 'empty' },
