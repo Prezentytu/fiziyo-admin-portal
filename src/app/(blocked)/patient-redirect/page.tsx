@@ -1,33 +1,32 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import { useClerk } from '@clerk/nextjs';
 import { QRCodeSVG } from 'qrcode.react';
 import { Smartphone, LogOut, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import {
-  ANDROID_PLAY_STORE_URL,
-  detectMobilePlatform,
-  IOS_APP_STORE_URL,
-  PATIENT_APP_DOWNLOAD_URL,
-} from '@/lib/mobileApp';
+import { ANDROID_PLAY_STORE_URL, detectMobilePlatform, IOS_APP_STORE_URL, type MobilePlatform } from '@/lib/mobileApp';
 import { clearBackendToken } from '@/lib/tokenCache';
 
 const SUPPORT_MAILTO_URL = 'mailto:kontakt@fiziyo.pl?subject=Problem%20z%20logowaniem%20do%20panelu';
+
+const STORE_QR_CODES = [
+  { label: 'iPhone', url: IOS_APP_STORE_URL },
+  { label: 'Android', url: ANDROID_PLAY_STORE_URL },
+] as const;
+
+const subscribeToPlatform = () => () => {};
+const readClientPlatform = (): MobilePlatform => detectMobilePlatform(navigator.userAgent, navigator.maxTouchPoints);
+// The server cannot see the device, so it renders the desktop layout and the client switches after hydration.
+const readServerPlatform = (): MobilePlatform => 'desktop';
 
 export default function PatientRedirectPage() {
   const router = useRouter();
   const { signOut } = useClerk();
 
-  const deviceType = useMemo(
-    () =>
-      typeof navigator === 'undefined'
-        ? 'desktop'
-        : detectMobilePlatform(navigator.userAgent, navigator.maxTouchPoints),
-    []
-  );
+  const deviceType = useSyncExternalStore(subscribeToPlatform, readClientPlatform, readServerPlatform);
 
   const handleSignOut = async () => {
     clearBackendToken();
@@ -75,9 +74,16 @@ export default function PatientRedirectPage() {
 
         {deviceType === 'desktop' && (
           <div className="rounded-xl border border-border bg-card p-4">
-            <p className="mb-3 text-sm text-muted-foreground">Zeskanuj kod QR telefonem:</p>
-            <div className="inline-flex rounded-lg bg-white p-2" data-testid="patient-redirect-qr">
-              <QRCodeSVG value={PATIENT_APP_DOWNLOAD_URL} size={160} />
+            <p className="mb-3 text-sm text-muted-foreground">Zeskanuj kod telefonem:</p>
+            <div className="flex flex-wrap gap-4" data-testid="patient-redirect-qr">
+              {STORE_QR_CODES.map(({ label, url }) => (
+                <figure key={label} className="space-y-2 text-center">
+                  <div className="inline-flex rounded-lg bg-white p-2">
+                    <QRCodeSVG value={url} size={128} />
+                  </div>
+                  <figcaption className="text-sm text-muted-foreground">{label}</figcaption>
+                </figure>
+              ))}
             </div>
           </div>
         )}
