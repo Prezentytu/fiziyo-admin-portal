@@ -88,7 +88,7 @@ describe('formatStageCount', () => {
   });
 });
 
-describe('długie ćwiczenie potwierdzone „Tak ma być”', () => {
+describe('długie ćwiczenie potwierdzone „OK”', () => {
   it('nie blokuje publikacji po potwierdzeniu', () => {
     const longExercise = { sets: 5, reps: 20, repTime: 6, hold: null, rest: 120 };
     const open = computeVerificationStages({

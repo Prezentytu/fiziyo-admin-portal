@@ -16,7 +16,6 @@ function renderStage(onValueChange = vi.fn()) {
       values={values}
       evaluation={evaluateParameters({ values, mode: 'reps', side: 'none' })}
       descriptionNumbers={[]}
-      onModeChange={vi.fn()}
       onValueChange={onValueChange}
       onAcknowledge={vi.fn()}
       onFixDescription={vi.fn()}

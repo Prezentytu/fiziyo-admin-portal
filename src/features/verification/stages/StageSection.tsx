@@ -5,13 +5,23 @@ interface StageSectionProps {
   title: string;
   hint?: string;
   required?: boolean;
+  /** Right side of the header, e.g. the exercise timer. */
+  aside?: React.ReactNode;
   className?: string;
   children: React.ReactNode;
   'data-testid'?: string;
 }
 
 /** Grey tile inside the verification sheet. Fields inside use the card colour so they stand out from the tile. */
-export function StageSection({ title, hint, required, className, children, 'data-testid': testId }: StageSectionProps) {
+export function StageSection({
+  title,
+  hint,
+  required,
+  aside,
+  className,
+  children,
+  'data-testid': testId,
+}: StageSectionProps) {
   return (
     <section
       className={cn(
@@ -20,12 +30,15 @@ export function StageSection({ title, hint, required, className, children, 'data
       )}
       data-testid={testId}
     >
-      <header className="flex flex-col gap-1">
-        <div className="flex items-center gap-2">
-          <h3 className="text-[17px] font-semibold leading-[22px] text-foreground">{title}</h3>
-          {required && <Badge variant="secondary">Wymagane</Badge>}
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <h3 className="text-[17px] font-semibold leading-[22px] text-foreground">{title}</h3>
+            {required && <Badge variant="secondary">Wymagane</Badge>}
+          </div>
+          {hint && <p className="text-[13px] leading-[18px] text-label-secondary">{hint}</p>}
         </div>
-        {hint && <p className="text-[13px] leading-[18px] text-label-secondary">{hint}</p>}
+        {aside}
       </header>
       {children}
     </section>

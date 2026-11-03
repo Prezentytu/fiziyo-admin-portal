@@ -30,12 +30,7 @@ export function SafetyStage({
 
   return (
     <div className="flex flex-col gap-4" data-testid="verification-stage-safety">
-      <StageSection
-        title="Przerwij, gdy…"
-        hint="Pacjent zobaczy te objawy przed ćwiczeniem i w trakcie."
-        required
-        data-testid="verification-safety-stop-if"
-      >
+      <StageSection title="Przerwij, gdy…" required data-testid="verification-safety-stop-if">
         <ChipListEditor
           items={stopIf}
           onChange={(items) => onEnrichmentPathChange('safety.stop_if', serializeStopIf(items))}
@@ -46,20 +41,37 @@ export function SafetyStage({
         />
       </StageSection>
 
-      <StageSection
-        title="Dla fizjoterapeuty"
-        hint="Widzą to tylko fizjoterapeuci, którzy dobierają ćwiczenie do planu."
-      >
+      <StageSection title="Przeciwwskazania" data-testid="verification-safety-contraindications-section">
+        <ChipListEditor
+          items={contraindications}
+          onChange={(items) => onEnrichmentPathChange('therapist.contraindications', items)}
+          addLabel="Dodaj"
+          inputLabel="Nowe przeciwwskazanie"
+          testIdPrefix="verification-safety-contraindications"
+        />
+        <div className="flex items-center gap-3 border-t-[0.5px] border-separator pt-3">
+          <Checkbox
+            id="verification-safety-supervision"
+            checked={requiresSupervision}
+            onCheckedChange={(checked) => onEnrichmentPathChange('safety.requires_supervision', checked === true)}
+            data-testid="verification-safety-supervision-checkbox"
+          />
+          <Label htmlFor="verification-safety-supervision" className="text-[15px] font-normal text-foreground">
+            Tylko pod nadzorem fizjoterapeuty, nie do ćwiczeń w domu
+          </Label>
+        </div>
+      </StageSection>
+
+      <StageSection title="Dla fizjoterapeuty" hint="Pacjent tego nie widzi.">
         <div className="flex flex-col gap-1.5">
-          <div className="flex items-center gap-2">
-            <Label htmlFor="verification-safety-therapist-description" className="text-[13px] text-label-secondary">
-              Opis dla fizjoterapeuty
-            </Label>
-          </div>
+          <Label htmlFor="verification-safety-therapist-description" className="text-[13px] text-label-secondary">
+            Opis dla fizjoterapeuty
+          </Label>
           <Textarea
             id="verification-safety-therapist-description"
             value={therapistDescription}
             rows={3}
+            className="field-sizing-content"
             onChange={(event) => onTherapistDescriptionChange(event.target.value)}
             aria-describedby="verification-safety-therapist-description-count"
             data-testid="verification-safety-therapist-description-input"
@@ -80,27 +92,6 @@ export function SafetyStage({
             inputLabel="Nowe wskazanie"
             testIdPrefix="verification-safety-indications"
           />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <p className="text-[13px] text-label-secondary">Przeciwwskazania</p>
-          <ChipListEditor
-            items={contraindications}
-            onChange={(items) => onEnrichmentPathChange('therapist.contraindications', items)}
-            addLabel="Dodaj"
-            inputLabel="Nowe przeciwwskazanie"
-            testIdPrefix="verification-safety-contraindications"
-          />
-        </div>
-        <div className="flex items-center gap-3 border-t-[0.5px] border-separator pt-3">
-          <Checkbox
-            id="verification-safety-supervision"
-            checked={requiresSupervision}
-            onCheckedChange={(checked) => onEnrichmentPathChange('safety.requires_supervision', checked === true)}
-            data-testid="verification-safety-supervision-checkbox"
-          />
-          <Label htmlFor="verification-safety-supervision" className="text-[15px] font-normal text-foreground">
-            Tylko pod nadzorem fizjoterapeuty, nie do ćwiczeń w domu
-          </Label>
         </div>
       </StageSection>
     </div>

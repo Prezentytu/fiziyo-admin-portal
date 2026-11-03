@@ -6,14 +6,13 @@ import {
   createParameterReview,
   markParameterEdited,
   reviewValues,
-  switchExecutionMode,
+  describeFieldNote,
   toCoreUpdates,
   computeSessionSeconds,
   deriveExecutionMode,
   evaluateParameters,
   findHardcodedNumbers,
   fromSliderValue,
-  planModeSwitch,
   replaceHardcodedNumbers,
   sideFactor,
   sliderPercent,
@@ -46,7 +45,7 @@ describe('evaluateParameters', () => {
     expect(result.fields.map((field) => field.level)).toEqual(['ok', 'ok', 'ok', 'ok']);
   });
 
-  it('wartość nietypowa wymaga poprawy albo „Tak ma być”', () => {
+  it('wartość nietypowa wymaga poprawy albo „OK”', () => {
     const values = { ...typicalReps, sets: 8 };
 
     const open = evaluateParameters({ values, mode: 'reps', side: 'none' });
@@ -76,6 +75,16 @@ describe('evaluateParameters', () => {
       side: 'none',
     });
     expect(singleSet.findings.map((finding) => finding.key)).toEqual(['sets']);
+  });
+
+  it('pusta przerwa jest błędem tylko wtedy, gdy jest wymagana', () => {
+    const restLevel = (sets: number) =>
+      evaluateParameters({ values: { ...typicalReps, sets, rest: null }, mode: 'reps', side: 'none' }).fields.find(
+        (field) => field.key === 'rest'
+      )?.level;
+
+    expect(restLevel(1)).toBe('default');
+    expect(restLevel(3)).toBe('empty');
   });
 
   it('ostrzega o długim ćwiczeniu, choć każde pole mieści się w limicie', () => {
@@ -108,7 +117,7 @@ describe('evaluateParameters', () => {
     expect(changedAfterAck.findings.at(-1)).toMatchObject({ key: 'session', canAcknowledge: true });
   });
 
-  it('ćwiczenia ponad godzinę nie da się potwierdzić „Tak ma być”', () => {
+  it('ćwiczenia ponad godzinę nie da się potwierdzić „OK”', () => {
     const result = evaluateParameters({
       values: { sets: 20, reps: 20, repTime: 10, hold: null, rest: 120 },
       mode: 'reps',
@@ -188,7 +197,21 @@ describe('deriveExecutionMode / toParameterValues', () => {
 
   it('mapuje czas utrzymania z executionTime', () => {
     const values = toParameterValues({ sets: 3, reps: 1, executionTime: 30, restSets: 60, side: 'none' }, 'hold');
-    expect(values).toEqual({ sets: 3, reps: null, repTime: null, hold: 30, rest: 60 });
+    expect(values).toEqual({ sets: 3, reps: 1, repTime: null, hold: 30, rest: 60 });
+  });
+
+  it('pokazuje powtórzenia także przy utrzymaniu pozycji i nie traktuje 1 jako „mało”', () => {
+    const values = reviewValues({ sets: 3, reps: 1, executionTime: 30, restSets: 60, side: 'none' });
+    const result = evaluateParameters({ values, mode: 'hold', side: 'none' });
+
+    expect(result.fields.map((field) => field.key)).toEqual(['sets', 'reps', 'hold', 'rest']);
+    expect(result.fields.find((field) => field.key === 'reps')?.level).toBe('ok');
+    expect(result.findings).toEqual([]);
+  });
+
+  it('tryb wynika z wartości: 1 powtórzenie trzymane 10 s i dłużej to utrzymanie', () => {
+    expect(reviewValues({ sets: 3, reps: 1, executionTime: 30, restSets: 60, side: 'none' }).hold).toBe(30);
+    expect(reviewValues({ sets: 3, reps: 1, executionTime: 3, restSets: 60, side: 'none' }).repTime).toBe(3);
   });
 
   it('strona „Na każdą stronę” podwaja czas', () => {
@@ -220,49 +243,6 @@ describe('hardcoded numbers in patient description', () => {
   });
 });
 
-describe('planModeSwitch', () => {
-  const repsExercise = { reps: 12, executionTime: 3, duration: null };
-
-  it('nie zapisuje 1 powtórzenia, dopóki nie ma czasu utrzymania', () => {
-    const plan = planModeSwitch({ current: repsExercise, from: 'reps', to: 'hold', stash: {} });
-
-    expect(plan.values).toBeNull();
-    expect(plan.stash.reps).toEqual({ reps: 12, executionTime: 3 });
-  });
-
-  it('pomyłkowe przełączenie i powrót przywraca oryginalne parametry', () => {
-    const toHold = planModeSwitch({ current: repsExercise, from: 'reps', to: 'hold', stash: {} });
-    const back = planModeSwitch({
-      current: repsExercise,
-      from: 'hold',
-      to: 'reps',
-      stash: toHold.stash,
-      isCurrentPending: true,
-    });
-
-    expect(back.values).toEqual({ reps: 12, executionTime: 3 });
-    expect(back.stash.hold).toBeUndefined();
-  });
-
-  it('bierze czas utrzymania z legacy duration', () => {
-    const plan = planModeSwitch({ current: { ...repsExercise, duration: 30 }, from: 'reps', to: 'hold', stash: {} });
-
-    expect(plan.values).toEqual({ reps: 1, executionTime: 30 });
-  });
-
-  it('z utrzymania bez zapamiętanych powtórzeń ustawia domyślny czas powtórzenia, nie zero', () => {
-    const plan = planModeSwitch({
-      current: { reps: 1, executionTime: 30, duration: null },
-      from: 'hold',
-      to: 'reps',
-      stash: {},
-    });
-
-    expect(plan.values).toEqual({ reps: null, executionTime: 3 });
-    expect(plan.stash.hold).toEqual({ reps: 1, executionTime: 30 });
-  });
-});
-
 describe('toCoreUpdates', () => {
   it('maps tile fields to exercise fields', () => {
     const current = { reps: 12, executionTime: 3 };
@@ -278,49 +258,19 @@ describe('toCoreUpdates', () => {
 });
 
 describe('parameter review state', () => {
-  const source = { sets: 3, reps: 12, executionTime: 3, restSets: 60, side: 'none' };
-
-  it('starts from the mode derived from the exercise', () => {
-    expect(createParameterReview({ reps: 1, executionTime: 30 }).mode).toBe('hold');
-    expect(createParameterReview(source).mode).toBe('reps');
-  });
-
   it('reopens an acknowledged field after it is edited', () => {
-    const review = acknowledgeFinding(createParameterReview(source), 'reps', 0);
+    const review = acknowledgeFinding(createParameterReview(), 'reps', 0);
     expect(review.acknowledged.has('reps')).toBe(true);
     expect(markParameterEdited(review, 'reps').acknowledged.has('reps')).toBe(false);
   });
 
   it('keeps the same object when an edit changes nothing in the review', () => {
-    const review = createParameterReview(source);
+    const review = createParameterReview();
     expect(markParameterEdited(review, 'sets')).toBe(review);
   });
 
   it('remembers the confirmed session length', () => {
-    expect(acknowledgeFinding(createParameterReview(source), 'session', 1200).acknowledgedSessionSeconds).toBe(1200);
-  });
-
-  it('switches to hold without saving until seconds are entered', () => {
-    const { review, updates } = switchExecutionMode(createParameterReview(source), source, 'hold');
-    expect(updates).toEqual({});
-    expect(review.isHoldPending).toBe(true);
-    expect(reviewValues(source, review).hold).toBeNull();
-    expect(markParameterEdited(review, 'hold').isHoldPending).toBe(false);
-  });
-
-  it('restores the previous values when switching back and clears acknowledgements', () => {
-    const held = { reps: 1, executionTime: 30, sets: 3, restSets: 60, side: 'none' };
-    const start = acknowledgeFinding(createParameterReview(held), 'session', 900);
-    const toReps = switchExecutionMode(start, held, 'reps');
-    expect(toReps.updates).toEqual({ reps: null, executionTime: 3 });
-    expect(toReps.review.acknowledgedSessionSeconds).toBeNull();
-    const back = switchExecutionMode(toReps.review, { ...held, reps: null, executionTime: 3 }, 'hold');
-    expect(back.updates).toEqual({ reps: 1, executionTime: 30 });
-  });
-
-  it('does nothing when the mode is already selected', () => {
-    const review = createParameterReview(source);
-    expect(switchExecutionMode(review, source, 'reps')).toEqual({ review, updates: {} });
+    expect(acknowledgeFinding(createParameterReview(), 'session', 1200).acknowledgedSessionSeconds).toBe(1200);
   });
 });
 
@@ -345,5 +295,15 @@ describe('suwak parametru', () => {
     expect(fromSliderValue('rest', '75')).toBe(75);
     expect(fromSliderValue('rest', '83')).toBe(90);
     expect(fromSliderValue('sets', '4')).toBe(4);
+  });
+});
+
+describe('describeFieldNote', () => {
+  it('mówi krótko, czego dotyczy sugestia albo błąd', () => {
+    expect(describeFieldNote({ key: 'sets', value: 1, level: 'warning' })).toBe('Mało, zwykle 2–5');
+    expect(describeFieldNote({ key: 'rest', value: 180, level: 'warning' })).toBe('Dużo, zwykle 30–120 s');
+    expect(describeFieldNote({ key: 'sets', value: 100, level: 'limit' })).toBe('Maks. 20');
+    expect(describeFieldNote({ key: 'sets', value: null, level: 'empty' })).toBe('Puste');
+    expect(describeFieldNote({ key: 'sets', value: 3, level: 'ok' })).toBe('');
   });
 });

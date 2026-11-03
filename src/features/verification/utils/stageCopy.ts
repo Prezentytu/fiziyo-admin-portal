@@ -71,7 +71,7 @@ function parametersHint({ stages, parameters, hasVideo }: StageCopyInput): strin
   ).length;
   if (blockingFieldCount > 0) return `Popraw zaznaczone parametry: ${blockingFieldCount}.`;
   if (parameters.sessionLevel === 'limit') return 'Za długie ćwiczenie: zmniejsz serie, powtórzenia albo przerwę.';
-  if (stages.issues.parameters.length > 0) return 'Popraw albo potwierdź „Tak ma być”.';
+  if (stages.issues.parameters.length > 0) return 'Popraw albo potwierdź „OK”.';
   return hasVideo ? 'Porównaj parametry z nagraniem.' : 'Porównaj parametry ze zdjęciami.';
 }
 
