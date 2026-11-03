@@ -4,6 +4,7 @@ import { useClerk } from '@clerk/nextjs';
 import { useCallback } from 'react';
 import { clearBackendToken } from '@/lib/tokenCache';
 import { clearStoredConversations } from '@/features/ai-view/utils/conversationStore';
+import { resetTelemetryUser } from '@/lib/telemetry/client';
 
 /**
  * Jedyny poprawny sposób wylogowania w panelu webowym.
@@ -20,6 +21,7 @@ export function useAppSignOut() {
     async (redirectUrl: string = '/sign-in') => {
       clearBackendToken();
       clearStoredConversations();
+      resetTelemetryUser();
       await signOut({ redirectUrl });
     },
     [signOut]

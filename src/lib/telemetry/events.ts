@@ -1,0 +1,55 @@
+/**
+ * Tracking plan v1 for the therapist panel. Names follow `area:object_action` in snake_case and
+ * must match the mobile app and backend (fizjo-app docs/telemetry/tracking-plan.md).
+ */
+export type TelemetryEventName =
+  | 'assignment_wizard:open'
+  | 'assignment_wizard:step_view'
+  | 'assignment_wizard:complete'
+  | 'assignment_wizard:abandon'
+  | 'patient:search'
+  | 'exercise_catalog:search'
+  | 'telemetry:consent_change';
+
+export type TelemetryPropertyValue = string | number | boolean | null;
+
+export type TelemetryProperties = Readonly<Record<string, TelemetryPropertyValue | undefined>>;
+
+const MAX_STRING_LENGTH = 120;
+
+/**
+ * Keys that could carry personal or clinical data. Telemetry never sends them, even if a caller
+ * passes them by mistake (GDPR art. 9: clinics' patient data must not reach analytics).
+ */
+const FORBIDDEN_KEY_PATTERN =
+  /(e-?mail|name|phone|note|diagnos|message|comment|description|address|pesel|birth|token|password)/i;
+
+export function isForbiddenPropertyKey(key: string): boolean {
+  return FORBIDDEN_KEY_PATTERN.test(key);
+}
+
+export function sanitizeProperties(
+  properties: TelemetryProperties | undefined
+): Record<string, TelemetryPropertyValue> {
+  const result: Record<string, TelemetryPropertyValue> = {};
+  if (!properties) {
+    return result;
+  }
+
+  for (const [key, value] of Object.entries(properties)) {
+    if (value === undefined || isForbiddenPropertyKey(key)) {
+      continue;
+    }
+    result[key] = typeof value === 'string' ? value.slice(0, MAX_STRING_LENGTH) : value;
+  }
+
+  return result;
+}
+
+/**
+ * Query strings and hashes can hold search phrases (patient names), so URLs keep only the path.
+ */
+export function stripUrlQuery(url: string): string {
+  const cutAt = url.search(/[?#]/);
+  return cutAt === -1 ? url : url.slice(0, cutAt);
+}

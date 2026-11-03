@@ -35,6 +35,7 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { DashboardRouteLoading } from '@/components/layout/DashboardRouteLoading';
 import type { UserByClerkIdResponse, OrganizationPatientsResponse, OrganizationPatientDto } from '@/types/apollo';
 import { useRealtimePatients } from '@/hooks/useRealtimePatients';
+import { useSearchTelemetry } from '@/lib/telemetry/useSearchTelemetry';
 
 type TherapyFilterType = 'my' | 'all' | 'needs_attention' | 'subscription';
 
@@ -166,6 +167,12 @@ export default function PatientsPage() {
   });
 
   const filteredPatients = sortPatients(searchFilteredPatients, sort, therapistId);
+  useSearchTelemetry({
+    event: 'patient:search',
+    query: searchQuery,
+    resultsCount: filteredPatients.length,
+    includeQuery: false,
+  });
 
   const tabCounts: Record<TherapyFilterType, number> = {
     my: myCount,

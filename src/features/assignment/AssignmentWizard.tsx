@@ -102,6 +102,11 @@ import type {
 } from '@/graphql/types/operation-responses';
 import { isTemplateSet } from '@/features/exercise-sets/utils/setKind';
 import { polishPlural } from '@/utils/polishPlural';
+import {
+  trackAssignmentWizardAbandon,
+  trackAssignmentWizardComplete,
+  useAssignmentWizardTelemetry,
+} from './useAssignmentWizardTelemetry';
 
 // Success dialog data type
 interface SuccessDialogData {
@@ -130,6 +135,7 @@ export function AssignmentWizard(props: AssignmentWizardProps) {
     if (hasChanges) {
       setShowCloseConfirm(true);
     } else {
+      trackAssignmentWizardAbandon();
       onOpenChange(false);
     }
   }, [hasChanges, onOpenChange]);
@@ -137,13 +143,14 @@ export function AssignmentWizard(props: AssignmentWizardProps) {
   const handleConfirmClose = useCallback(() => {
     setShowCloseConfirm(false);
     setHasChanges(false);
+    trackAssignmentWizardAbandon();
     onOpenChange(false);
   }, [onOpenChange]);
 
   // Callback for AssignmentWizardContent to show success dialog
   const handleAssignmentSuccess = useCallback(
     (data: SuccessDialogData) => {
-      // Close the wizard dialog
+      trackAssignmentWizardComplete(data.patients.length);
       onOpenChange(false);
       setSuccessData(data);
       setShowSuccessDialog(true);
@@ -260,6 +267,13 @@ function AssignmentWizardContent({
   // State - initialized directly from props (no useEffect needed)
   const [currentStep, setCurrentStep] = useState<WizardStep>(firstStepId);
   const [completedSteps, setCompletedSteps] = useState<Set<WizardStep>>(new Set());
+  useAssignmentWizardTelemetry({
+    currentStep,
+    stepIndex: steps.findIndex((s) => s.id === currentStep),
+    stepCount: steps.length,
+    mode,
+    isEditMode,
+  });
   const [selectedSet, setSelectedSet] = useState<ExerciseSet | null>(preselectedSet || null);
   const [selectedPatients, setSelectedPatients] = useState<Patient[]>(preselectedPatient ? [preselectedPatient] : []);
   const [startDate, setStartDate] = useState<Date>(() => new Date());

@@ -11,6 +11,8 @@ const isPublicRoute = createRouteMatcher([
   '/terms',
   '/privacy',
   '/support',
+  // Analytics ingest proxy (next.config.ts rewrites); consent is checked in the browser SDK.
+  '/ingest(.*)',
 ]);
 
 export default clerkMiddleware(async (auth, req) => {

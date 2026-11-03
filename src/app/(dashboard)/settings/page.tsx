@@ -13,6 +13,7 @@ import { ProfileForm, UserProfile } from '@/components/settings/ProfileForm';
 import { OrganizationsList, UserOrganization } from '@/components/settings/OrganizationsList';
 import { AccessibilitySettings } from '@/components/settings/AccessibilitySettings';
 import { ChatModeSettings } from '@/features/ai-view/ChatModeSettings';
+import { TelemetrySettings } from '@/components/settings/TelemetrySettings';
 import { CatalogBundleImportCard } from '@/components/organization/CatalogBundleImportCard';
 import { SettingsTab } from '@/components/organization/SettingsTab';
 
@@ -252,6 +253,7 @@ export default function SettingsPage() {
             <TabsContent value="accessibility" className="mt-0 space-y-6 outline-none">
               <ChatModeSettings />
               <AccessibilitySettings />
+              <TelemetrySettings />
             </TabsContent>
           </div>
         </div>
