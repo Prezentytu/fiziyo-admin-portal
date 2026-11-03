@@ -76,11 +76,11 @@ import type { ExerciseCoreDraft } from './useExerciseEditorForm';
 // QUICK PRESETS (Unified - shows all params)
 // ============================================================
 const QUICK_PRESETS = [
-  { label: '3×10', sets: 3, reps: 10, executionTime: null, duration: null, rest: 60 },
-  { label: '3×15', sets: 3, reps: 15, executionTime: null, duration: null, rest: 45 },
-  { label: '4×8', sets: 4, reps: 8, executionTime: null, duration: null, rest: 90 },
-  { label: '30s×3', sets: 3, reps: 1, executionTime: 30, duration: null, rest: 30 },
-  { label: '45s×3', sets: 3, reps: 1, executionTime: 45, duration: null, rest: 30 },
+  { label: '3×10', hint: '3 serie po 10 powtórzeń, przerwa 60 s', sets: 3, reps: 10, executionTime: null, duration: null, rest: 60 },
+  { label: '3×15', hint: '3 serie po 15 powtórzeń, przerwa 45 s', sets: 3, reps: 15, executionTime: null, duration: null, rest: 45 },
+  { label: '4×8', hint: '4 serie po 8 powtórzeń, przerwa 90 s', sets: 4, reps: 8, executionTime: null, duration: null, rest: 90 },
+  { label: '30s×3', hint: '3 serie po 30 s utrzymania, przerwa 30 s', sets: 3, reps: 1, executionTime: 30, duration: null, rest: 30 },
+  { label: '45s×3', hint: '3 serie po 45 s utrzymania, przerwa 30 s', sets: 3, reps: 1, executionTime: 45, duration: null, rest: 30 },
 ];
 
 // ============================================================
@@ -1909,6 +1909,8 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                       key={idx}
                       type="button"
                       onClick={() => applyPreset(preset)}
+                      title={preset.hint}
+                      aria-label={`Wstaw ${preset.hint}`}
                       className={cn(
                         'text-[10px] bg-surface/50 border border-border text-muted-foreground',
                         'hover:text-foreground hover:border-primary/50 px-2 py-1 rounded',
