@@ -32,6 +32,7 @@ import {
   type ExerciseProgressData,
   type PatientAssignmentData,
 } from '@/lib/therapyStatus';
+import { summarizeCompletionQuality } from './utils/completionQualitySummary';
 
 interface ActivityReportProps {
   readonly patientId: string;
@@ -284,17 +285,7 @@ export function ActivityReport({
     (adherenceData as PatientWeeklyAdherenceQueryResponse | undefined)?.patientWeeklyAdherence || [];
 
   const qualitySummary = useMemo(() => {
-    const events = workoutSessions.flatMap((session) => session.events || []);
-    if (events.length === 0) return null;
-    const manual = events.filter((event) => event.completionMethod === 'manual').length;
-    const assisted = events.filter((event) => event.completionMethod === 'assisted').length;
-    const full = events.filter((event) => event.completionQuality === 'full').length;
-    return {
-      total: events.length,
-      manual,
-      assisted,
-      full,
-    };
+    return summarizeCompletionQuality(workoutSessions.flatMap((session) => session.events || []));
   }, [workoutSessions]);
 
   const assignmentsForStatus: PatientAssignmentData[] = rawAssignments.map((assignment) => ({
@@ -450,22 +441,22 @@ export function ActivityReport({
               <p className="font-semibold">{qualitySummary.total}</p>
             </div>
             <div>
-              <p className="text-muted-foreground" title="Pacjent przeszedł ćwiczenie w playerze bez pominięć">
+              <p className="text-muted-foreground" title="Ćwiczenie w aplikacji bez pominięć, z co najmniej 80% planowanego czasu">
                 Pełny zapis
               </p>
               <p className="font-semibold">{qualitySummary.full}</p>
             </div>
             <div>
-              <p className="text-muted-foreground" title="Pacjent ćwiczył w playerze, ale pominął część serii albo przerw">
-                Z pominięciami
+              <p className="text-muted-foreground" title="Ćwiczenie w aplikacji z pominięciami albo krócej niż 80% planowanego czasu">
+                Skrócony zapis
               </p>
-              <p className="font-semibold">{qualitySummary.assisted}</p>
+              <p className="font-semibold">{qualitySummary.partial}</p>
             </div>
             <div>
-              <p className="text-muted-foreground" title="Pacjent oznaczył ćwiczenie jako wykonane bez playera">
-                Wpis ręczny
+              <p className="text-muted-foreground" title="Pacjent oznaczył ćwiczenie jako zrobione bez pomiaru w aplikacji">
+                Poza aplikacją
               </p>
-              <p className="font-semibold">{qualitySummary.manual}</p>
+              <p className="font-semibold">{qualitySummary.manualOnly}</p>
             </div>
           </div>
         </div>
