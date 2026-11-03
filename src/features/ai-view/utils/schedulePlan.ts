@@ -2,7 +2,11 @@ import { addDays, startOfDay } from 'date-fns';
 
 import type { Frequency } from '@/features/assignment/types';
 import { normalizeFrequencySeed } from '@/features/assignment/utils/scheduleFrequencyUtils';
-import { getDefaultDaysForFrequency, type WeekDays } from '@/features/assignment/utils/scheduleUtils';
+import {
+  DEFAULT_PLAN_WEEKS,
+  getDefaultDaysForFrequency,
+  type WeekDays,
+} from '@/features/assignment/utils/scheduleUtils';
 import { polishPlural } from '@/utils/polishPlural';
 
 export type PlanStart = 'today' | 'tomorrow' | 'monday';
@@ -14,7 +18,8 @@ export interface SchedulePlan {
   rhythm: PlanRhythm;
 }
 
-export const DEFAULT_SCHEDULE_PLAN: SchedulePlan = { start: 'tomorrow', weeks: 4, rhythm: 'daily' };
+// Same default period as the assignment wizard, so the chat and the wizard propose one plan.
+export const DEFAULT_SCHEDULE_PLAN: SchedulePlan = { start: 'tomorrow', weeks: DEFAULT_PLAN_WEEKS, rhythm: 'daily' };
 
 export const PLAN_STARTS: ReadonlyArray<{ value: PlanStart; label: string }> = [
   { value: 'today', label: 'Dziś' },
