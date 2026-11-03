@@ -8,7 +8,9 @@
  *
  * Mirror logiki backendowego `EnrichmentNormalizer` (fizjo-app,
  * backend/FizjoApp.Api/Services/EnrichmentNormalizer.cs) — patrz
- * docs/architecture/admin-enrichment-v3-migration-plan.md.
+ * docs/architecture/admin-enrichment-v3-migration-plan.md. Wyjątek: kroki
+ * pacjenta sięgają też po warianty `instruction_steps_simple/_technical/_child`,
+ * a backend kopiuje tylko `instruction_steps`.
  */
 import type {
   EnrichmentPatientMistakeV3,
