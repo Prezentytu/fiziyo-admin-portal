@@ -295,6 +295,7 @@ export function VerificationWorkspace({
     [exercise.thumbnailUrl, exercise.imageUrl, exercise.images]
   );
   const hasVideo = Boolean(core.videoUrl.trim() || exercise.gifUrl);
+  const patientHasVideo = hasPatientVideo({ videoUrl: core.videoUrl, gifUrl: exercise.gifUrl });
 
   const mediaItems = useMemo(
     () =>
@@ -390,7 +391,7 @@ export function VerificationWorkspace({
         name: core.name,
         patientDescription: core.patientDescription,
         therapistDescription: core.clinicalDescription,
-        hasVideo: hasPatientVideo({ videoUrl: core.videoUrl, gifUrl: exercise.gifUrl }),
+        hasVideo: patientHasVideo,
         imageCount: allMediaUrls.length,
         hasPendingPhoto: pendingPhoto !== null,
         parameters: evaluation,
@@ -402,8 +403,7 @@ export function VerificationWorkspace({
       core.name,
       core.patientDescription,
       core.clinicalDescription,
-      core.videoUrl,
-      exercise.gifUrl,
+      patientHasVideo,
       allMediaUrls.length,
       pendingPhoto,
       evaluation,
@@ -844,7 +844,7 @@ export function VerificationWorkspace({
     {
       key: 'material',
       title: STAGE_TITLES.material,
-      summary: `${hasVideo ? 'Nagranie i ' : 'Bez nagrania, '}${photoLabel}`,
+      summary: `${patientHasVideo ? 'Nagranie i ' : 'Bez nagrania, '}${photoLabel}`,
       changes: changes.material,
       issues: stages.issues.material,
     },

@@ -155,4 +155,40 @@ describe('ParametersStage', () => {
 
     expect(screen.getByTestId('verification-param-reps-input')).toHaveValue('15');
   });
+
+  it('tekst, który nie jest liczbą, nie zmienia szkicu i po wyjściu z pola wraca do zapisanej wartości', () => {
+    const onCoreFieldChange = vi.fn();
+    render(
+      <ParametersStage
+        core={{ ...core, loadKg: 10 }}
+        mode="reps"
+        values={values}
+        evaluation={evaluateParameters({ values, mode: 'reps', side: 'none' })}
+        descriptionNumbers={[]}
+        onValueChange={vi.fn()}
+        onAcknowledge={vi.fn()}
+        onFixDescription={vi.fn()}
+        onAcknowledgeDescription={vi.fn()}
+        onCoreFieldChange={onCoreFieldChange}
+      />
+    );
+    const input = screen.getByTestId('verification-param-load-input');
+
+    fireEvent.change(input, { target: { value: '5 kg' } });
+    fireEvent.blur(input);
+
+    expect(onCoreFieldChange).not.toHaveBeenCalled();
+    expect(input).toHaveValue('10');
+  });
+
+  it('serie i powtórzenia przyjmują tylko liczby całkowite, bo player pacjenta liczy całe powtórzenia', () => {
+    const onValueChange = renderStage();
+    const input = screen.getByTestId('verification-param-reps-input');
+
+    fireEvent.change(input, { target: { value: '10,5' } });
+    fireEvent.blur(input);
+
+    expect(onValueChange).not.toHaveBeenCalled();
+    expect(input).toHaveValue('10');
+  });
 });

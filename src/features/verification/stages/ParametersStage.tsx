@@ -87,18 +87,33 @@ type DecimalInputProps = Omit<ComponentProps<typeof Input>, 'value' | 'onChange'
   onValueChange: (value: number | null) => void;
   /** What an empty field means, e.g. 0 where the backend reads null as „keep the old value”. */
   emptyValue?: number | null;
+  /** Sets and reps: the patient player counts whole repetitions. */
+  integer?: boolean;
 };
 
 /**
  * Keeps the typed text, so „2,” stays on screen until the next digit instead of collapsing to 2,
- * and resyncs only when the value changes from outside (slider, reset).
+ * and resyncs when the value changes from outside (slider, reset) or on blur after text that is not a number.
  */
-function DecimalInput({ testId, value, onValueChange, emptyValue = null, ...props }: DecimalInputProps) {
-  const [text, setText] = useState(value == null ? '' : String(value));
+function DecimalInput({
+  testId,
+  value,
+  onValueChange,
+  emptyValue = null,
+  integer = false,
+  onBlur,
+  ...props
+}: DecimalInputProps) {
+  const format = (next: number | null | undefined) => (next == null ? '' : String(next));
+  const parse = (raw: string) => {
+    const parsed = parseNumber(raw);
+    return parsed !== null && (!integer || Number.isInteger(parsed)) ? parsed : null;
+  };
+  const [text, setText] = useState(format(value));
   const [syncedValue, setSyncedValue] = useState(value);
   if (value !== syncedValue) {
     setSyncedValue(value);
-    if ((parseNumber(text) ?? emptyValue) !== value) setText(value == null ? '' : String(value));
+    if ((parse(text) ?? emptyValue) !== value) setText(format(value));
   }
 
   return (
@@ -111,9 +126,13 @@ function DecimalInput({ testId, value, onValueChange, emptyValue = null, ...prop
         setText(raw);
         if (raw.trim() === '') onValueChange(emptyValue);
         else {
-          const parsed = parseNumber(raw);
+          const parsed = parse(raw);
           if (parsed !== null) onValueChange(parsed);
         }
+      }}
+      onBlur={(event) => {
+        if (text.trim() !== '' && parse(text) === null) setText(format(value));
+        onBlur?.(event);
       }}
     />
   );
@@ -203,7 +222,8 @@ function ParameterRow({
           <DecimalInput
             id={inputId}
             testId={`verification-param-${field.key}-input`}
-            inputMode="decimal"
+            inputMode={field.key === 'sets' || field.key === 'reps' ? 'numeric' : 'decimal'}
+            integer={field.key === 'sets' || field.key === 'reps'}
             value={field.value}
             placeholder={field.key === 'repTime' ? String(DEFAULT_REP_SECONDS) : undefined}
             aria-invalid={isError || undefined}
