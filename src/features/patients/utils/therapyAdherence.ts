@@ -115,9 +115,11 @@ export function evaluateTherapyAdherence(metrics: TherapyAdherenceMetrics): Ther
   }
 
   // Days with a training, not a percentage: "Realizacja planu" next to it is a percentage of exercises.
+  // requiredSoFar sums weekly targets of all plans, so it can exceed the days in the window.
+  const plannedDays = Math.min(metrics.requiredSoFar, metrics.daysSinceStart);
   const trainingDays =
-    metrics.requiredSoFar > 0 && metrics.activeDays < metrics.requiredSoFar
-      ? ` (${metrics.activeDays} z ${metrics.requiredSoFar} ${polishPlural(metrics.requiredSoFar, 'dnia', 'dni', 'dni')} z treningiem)`
+    plannedDays > 0 && metrics.activeDays < plannedDays
+      ? ` (${metrics.activeDays} z ${plannedDays} ${polishPlural(plannedDays, 'dnia', 'dni', 'dni')} z treningiem)`
       : '';
 
   return {

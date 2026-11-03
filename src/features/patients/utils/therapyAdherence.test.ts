@@ -93,4 +93,17 @@ describe('calculateTherapyStatus', () => {
     expect(result.description).toBe('Pacjent realizuje plan zgodnie z założeniami (1 z 2 dni z treningiem).');
     expect(result.description).not.toMatch(/%/);
   });
+  it('never names more planned days than days in the window when targets of two plans add up', () => {
+    const result = evaluateTherapyAdherence({
+      daysSinceStart: 7,
+      daysSinceLastActivity: 0,
+      missedTrainings: 1,
+      hardCount: 0,
+      hasDiscomfort: false,
+      requiredSoFar: 8,
+      activeDays: 7,
+    });
+
+    expect(result.description).toBe('Pacjent realizuje plan zgodnie z założeniami.');
+  });
 });
