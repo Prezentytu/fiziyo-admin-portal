@@ -1,7 +1,7 @@
 import posthog, { type CaptureResult } from 'posthog-js';
 import { readTelemetryConsent, writeTelemetryConsent, type TelemetryConsent } from './consent';
 import { getTelemetryConfig, type TelemetryConfig } from './config';
-import { sanitizeProperties, stripUrlQuery, type TelemetryEventName, type TelemetryProperties } from './events';
+import { sanitizeProperties, redactUrl, type TelemetryEventName, type TelemetryProperties } from './events';
 
 interface TelemetryIdentity {
   userId: string;
@@ -12,7 +12,14 @@ interface TelemetryIdentity {
 let activeConfig: TelemetryConfig | null = null;
 let started = false;
 
-const URL_PROPERTIES = ['$current_url', '$referrer', '$initial_current_url', '$initial_referrer'] as const;
+const URL_PROPERTIES = [
+  '$current_url',
+  '$referrer',
+  '$initial_current_url',
+  '$initial_referrer',
+  '$pathname',
+  '$initial_pathname',
+] as const;
 
 function stripUrls(event: CaptureResult | null): CaptureResult | null {
   if (!event) {
@@ -21,7 +28,7 @@ function stripUrls(event: CaptureResult | null): CaptureResult | null {
   for (const key of URL_PROPERTIES) {
     const value = event.properties[key];
     if (typeof value === 'string') {
-      event.properties[key] = stripUrlQuery(value);
+      event.properties[key] = redactUrl(value);
     }
   }
   return event;
@@ -107,7 +114,7 @@ export function trackPageView(path: string): void {
   if (!started) {
     return;
   }
-  posthog.capture('$pageview', { $current_url: `${window.location.origin}${stripUrlQuery(path)}` });
+  posthog.capture('$pageview', { $current_url: `${window.location.origin}${redactUrl(path)}` });
 }
 
 /** Identity is our internal user id from the backend JWT (`sub`), never e-mail or name. */

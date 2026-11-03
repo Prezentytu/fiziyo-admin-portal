@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isForbiddenPropertyKey, sanitizeProperties, stripUrlQuery } from '../events';
+import { isForbiddenPropertyKey, sanitizeProperties, redactUrl } from '../events';
 
 describe('sanitizeProperties', () => {
   it('drops keys that could carry personal or clinical data', () => {
@@ -32,13 +32,22 @@ describe('sanitizeProperties', () => {
   });
 });
 
-describe('stripUrlQuery', () => {
+describe('redactUrl', () => {
   it('removes query string and hash that can hold search phrases', () => {
-    expect(stripUrlQuery('https://portal.fiziyo.pl/patients?search=Kowalski#top')).toBe('https://portal.fiziyo.pl/patients');
-    expect(stripUrlQuery('/exercises#x')).toBe('/exercises');
+    expect(redactUrl('https://portal.fiziyo.pl/patients?search=Kowalski#top')).toBe('https://portal.fiziyo.pl/patients');
+    expect(redactUrl('/exercises#x')).toBe('/exercises');
   });
 
-  it('keeps a URL without query untouched', () => {
-    expect(stripUrlQuery('/patients/123')).toBe('/patients/123');
+  it('replaces record ids so a pageview never names a patient or exercise', () => {
+    expect(redactUrl('https://portal.fiziyo.pl/patients/3f2a9c1e-5b7d-4e8a-9c21-7d4e5f6a8b90?tab=plan')).toBe(
+      'https://portal.fiziyo.pl/patients/:id',
+    );
+    expect(redactUrl('/exercises/a1b2c3d4e5f6789012345678901234ab')).toBe('/exercises/:id');
+    expect(redactUrl('/verification/organizations/65f1a2b3c4d5e6f708192a3b')).toBe('/verification/organizations/:id');
+  });
+
+  it('keeps plain routes untouched', () => {
+    expect(redactUrl('/patients')).toBe('/patients');
+    expect(redactUrl('https://portal.fiziyo.pl/')).toBe('https://portal.fiziyo.pl/');
   });
 });

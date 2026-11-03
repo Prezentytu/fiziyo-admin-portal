@@ -49,7 +49,21 @@ export function sanitizeProperties(
 /**
  * Query strings and hashes can hold search phrases (patient names), so URLs keep only the path.
  */
-export function stripUrlQuery(url: string): string {
+const ID_SEGMENT_PATTERN = /^(?:[0-9a-f]{8}-[0-9a-f-]{27,}|[0-9a-f]{32}|[0-9a-f]{24}|\d+)$/i;
+const ORIGIN_PATTERN = /^[a-z][a-z0-9+.-]*:\/\/[^/]*/i;
+
+/**
+ * Drops query and hash (search phrases) and replaces record ids with `:id`, so `/patients/<id>`
+ * groups by route and never ties a therapist to a patient record.
+ */
+export function redactUrl(url: string): string {
   const cutAt = url.search(/[?#]/);
-  return cutAt === -1 ? url : url.slice(0, cutAt);
+  const withoutQuery = cutAt === -1 ? url : url.slice(0, cutAt);
+  const origin = ORIGIN_PATTERN.exec(withoutQuery)?.[0] ?? '';
+  const path = withoutQuery
+    .slice(origin.length)
+    .split('/')
+    .map((segment) => (ID_SEGMENT_PATTERN.test(segment) ? ':id' : segment))
+    .join('/');
+  return `${origin}${path}`;
 }
