@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useQuery } from '@apollo/client/react';
+import Link from 'next/link';
 import { Users, UserPlus, ChevronRight, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -143,9 +144,11 @@ export function TherapistBillingTable({ organizationId, className }: TherapistBi
             <p className="text-xs text-muted-foreground/70 mb-4 max-w-xs">
               Zaproś terapeutów do organizacji, aby śledzić ich wyniki i efektywność
             </p>
-            <Button size="sm" className="h-8 text-xs gap-2">
-              <UserPlus className="h-3.5 w-3.5" />
-              Zaproś terapeutę
+            <Button size="sm" className="h-8 text-xs gap-2" asChild data-testid="billing-therapist-invite-btn">
+              <Link href="/organization">
+                <UserPlus className="h-3.5 w-3.5" />
+                Zaproś terapeutę
+              </Link>
             </Button>
           </div>
         </CardContent>

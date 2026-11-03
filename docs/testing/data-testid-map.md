@@ -603,16 +603,17 @@ Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu r
 
 ### 11. Rozliczenia Pay-as-you-go (billing-)
 
-| data-testid                      | Element                              | Plik                        |
-| -------------------------------- | ------------------------------------ | --------------------------- |
-| `dashboard-billing-status-bar`   | Pasek rozliczeń (Dashboard bottom)   | `BillingStatusBar.tsx`      |
-| `finances-billing-page`          | Strona Finanse: rozliczenie z FiziYo | `finances/page.tsx`         |
-| `billing-hero-card`              | Należność za bieżący miesiąc         | `BillingHeroCard.tsx`       |
-| `billing-hero-amount`            | Kwota należności                     | `BillingHeroCard.tsx`       |
-| `billing-hero-patients`          | Liczba aktywnych pacjentów           | `BillingHeroCard.tsx`       |
-| `billing-therapist-table`        | Tabela terapeutów                    | `TherapistBillingTable.tsx` |
-| `billing-therapist-search-input` | Wyszukiwarka terapeutów              | `TherapistBillingTable.tsx` |
-| `billing-therapist-row-{id}`     | Wiersz terapeuty                     | `TherapistBillingTable.tsx` |
+| data-testid                      | Element                                          | Plik                        |
+| -------------------------------- | ------------------------------------------------ | --------------------------- |
+| `dashboard-billing-status-bar`   | Pasek rozliczeń (Dashboard bottom)               | `BillingStatusBar.tsx`      |
+| `finances-billing-page`          | Strona Finanse: rozliczenie z FiziYo             | `finances/page.tsx`         |
+| `billing-hero-card`              | Należność za bieżący miesiąc                     | `BillingHeroCard.tsx`       |
+| `billing-hero-amount`            | Kwota należności                                 | `BillingHeroCard.tsx`       |
+| `billing-hero-patients`          | Liczba aktywnych pacjentów                       | `BillingHeroCard.tsx`       |
+| `billing-therapist-table`        | Tabela terapeutów                                | `TherapistBillingTable.tsx` |
+| `billing-therapist-search-input` | Wyszukiwarka terapeutów                          | `TherapistBillingTable.tsx` |
+| `billing-therapist-row-{id}`     | Wiersz terapeuty                                 | `TherapistBillingTable.tsx` |
+| `billing-therapist-invite-btn`   | Zaproś terapeutę (pusta tabela), link do Zespołu | `TherapistBillingTable.tsx` |
 
 ### 11A. Przychody gabinetu przez Stripe (finance-/finances-), tylko przy `STRIPE_CONNECT_ROLLOUT`
 

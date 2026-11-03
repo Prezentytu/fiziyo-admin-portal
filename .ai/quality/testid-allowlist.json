@@ -12,7 +12,6 @@
     "src/app/(blocked)/patient-redirect/page.tsx:59:a",
     "src/app/(blocked)/patient-redirect/page.tsx:67:a",
     "src/app/(dashboard)/verification/page.tsx:953:Select",
-    "src/components/billing/TherapistBillingTable.tsx:146:Button",
     "src/components/clinical/ClinicalNoteEditor.tsx:305:Select",
     "src/components/finances/RevenueHistoryTable.tsx:186:Button",
     "src/components/finances/RevenueHistoryTable.tsx:231:Button",
