@@ -16,8 +16,10 @@ Preview zawsze dostaje nowy build `target: production`.
 Gałąź `dev` nie jest w pociągu (D-09-06-b). `vercel.json` wyłącza jej deploye.
 Workflow `pin-devportal.yml` przy `deployment_status` przestawia alias
 `devportal.fiziyo.pl` na Preview z `main` i nie aliasuje leftover `dev`.
-Preview PR (deployment Vercel z `githubCommitRef` ≠ `main`) kończy się skipem
-`feature-preview` bez aliasu — to nie shared DEV.
+Job z `VERCEL_TOKEN` startuje tylko dla wdrożeń, których commit jest w `main`
+(job `czy-main` porównuje SHA w API bez sekretów), i zawsze checkoutuje `main`,
+więc kod z gałęzi PR nie dostaje tokenu. Skrypt dodatkowo kończy Preview PR
+(`githubCommitRef` ≠ `main`) skipem `feature-preview` bez aliasu.
 `e2e-trigger` odmawia certyfikatu, gdy live SHA nie należy do `main`.
 Wymaga tych samych sekretów Vercel co Promote (`VERCEL_TOKEN`, `VERCEL_PROJECT_ID`).
 
@@ -29,7 +31,7 @@ Wymaga tych samych sekretów Vercel co Promote (`VERCEL_TOKEN`, `VERCEL_PROJECT_
 | Settings → Domains → `devportal.fiziyo.pl`             | Preview, Git Branch `main`                                            | Domena bez Git Branch jest domeną **Production** i po każdym deployu produkcji pokazuje build z API/Clerk PROD |
 | Settings → Domains → `portal.fiziyo.pl`                | Production (bez Git Branch)                                           | Jedyna domena produkcji                                                                                        |
 
-`pin-devportal.yml` sprawdza te warunki przy każdym deployu (także Production)
+`pin-devportal.yml` sprawdza te warunki przy każdym deployu z `main` (także Production)
 i świeci na czerwono, gdy `devportal` serwuje inne API niż
 `https://fizjo-app-api.azurewebsites.net`.
 
