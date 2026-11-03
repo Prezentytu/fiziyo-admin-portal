@@ -8,7 +8,9 @@
  *
  * Mirror logiki backendowego `EnrichmentNormalizer` (fizjo-app,
  * backend/FizjoApp.Api/Services/EnrichmentNormalizer.cs) — patrz
- * docs/architecture/admin-enrichment-v3-migration-plan.md.
+ * docs/architecture/admin-enrichment-v3-migration-plan.md. Wyjątek: kroki
+ * pacjenta sięgają też po warianty `instruction_steps_simple/_technical/_child`,
+ * a backend kopiuje tylko `instruction_steps`.
  */
 import type {
   EnrichmentPatientMistakeV3,
@@ -39,9 +41,13 @@ function buildPatientV3(data: ExerciseEnrichmentData): ExerciseEnrichmentPatient
     trimmedOrUndefined(preExercise?.quick_summary) ??
     trimmedOrUndefined(data.simplified_instruction);
 
+  // Ćwiczenia z AI bywają zapisane tylko w wariancie kroków (simple/technical/child), bez `instruction_steps`.
   const steps =
     trimmedStringArray(data.patient?.steps) ??
-    trimmedStringArray(preExercise?.instruction_steps?.map((step) => step.text));
+    trimmedStringArray(preExercise?.instruction_steps?.map((step) => step.text)) ??
+    trimmedStringArray(preExercise?.instruction_steps_simple?.map((step) => step.text)) ??
+    trimmedStringArray(preExercise?.instruction_steps_technical?.map((step) => step.text)) ??
+    trimmedStringArray(preExercise?.instruction_steps_child?.map((step) => step.text));
 
   const cuesFromCoaching = data.therapist_notes?.coaching_cues?.map((cue) => cue.text) ?? [];
   const cuesFromReminders = data.patient_notes?.technique_reminders ?? [];
