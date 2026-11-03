@@ -99,6 +99,26 @@ describe('portal telemetry consent', () => {
     );
   });
 
+  it('redacts every address the SDK attaches before an event leaves the browser', async () => {
+    const telemetry = await loadClient();
+    telemetry.setTelemetryUser(therapistA);
+    telemetry.setTelemetryConsent('granted');
+    const config = sdk.posthog.init.mock.lastCall?.[1] as {
+      before_send: (event: Record<string, unknown>) => Record<string, unknown> | null;
+    };
+
+    const sent = config.before_send({
+      event: '$pageview',
+      properties: {
+        $current_url: 'https://portal.fiziyo.pl/patients/65f1a2b3c4d5e6f708192a3b?tab=plan',
+        $session_entry_url: 'https://portal.fiziyo.pl/exercises?q=lopatka',
+      },
+      $set_once: { $current_url: 'https://portal.fiziyo.pl/patients/65f1a2b3c4d5e6f708192a3b' },
+    });
+
+    expect(JSON.stringify(sent)).not.toMatch(/65f1a2b3c4d5e6f708192a3b|lopatka/);
+  });
+
   it('resumes for the therapist who opted in, under their own id', async () => {
     const telemetry = await loadClient();
     telemetry.setTelemetryUser(therapistA);

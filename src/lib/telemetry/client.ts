@@ -1,7 +1,13 @@
 import posthog, { type CaptureResult } from 'posthog-js';
 import { readTelemetryConsent, writeTelemetryConsent, type TelemetryConsent } from './consent';
 import { getTelemetryConfig, type TelemetryConfig } from './config';
-import { sanitizeProperties, redactUrl, type TelemetryEventName, type TelemetryProperties } from './events';
+import {
+  redactUrl,
+  redactUrlsDeep,
+  sanitizeProperties,
+  type TelemetryEventName,
+  type TelemetryProperties,
+} from './events';
 
 export interface TelemetryUser {
   userId: string;
@@ -15,25 +21,20 @@ let activeUser: TelemetryUser | null = null;
 let consent: TelemetryConsent | null = null;
 const listeners = new Set<() => void>();
 
-const URL_PROPERTIES = [
-  '$current_url',
-  '$referrer',
-  '$initial_current_url',
-  '$initial_referrer',
-  '$pathname',
-  '$initial_pathname',
-] as const;
+type EventProperties = CaptureResult['properties'];
 
+function redactProperties<T extends EventProperties | undefined>(properties: T): T {
+  return properties ? (redactUrlsDeep(properties) as T) : properties;
+}
+
+/** Last stop before the network: no URL in any field keeps a query or a record id. */
 function stripUrls(event: CaptureResult | null): CaptureResult | null {
   if (!event) {
     return null;
   }
-  for (const key of URL_PROPERTIES) {
-    const value = event.properties[key];
-    if (typeof value === 'string') {
-      event.properties[key] = redactUrl(value);
-    }
-  }
+  event.properties = redactProperties(event.properties);
+  event.$set = redactProperties(event.$set);
+  event.$set_once = redactProperties(event.$set_once);
   return event;
 }
 
@@ -58,6 +59,8 @@ function ensureInitialized(config: TelemetryConfig): void {
     // Element text and attributes can contain patient names; heatmaps and rage clicks still work.
     mask_all_text: true,
     mask_all_element_attributes: true,
+    // Drops query parameters from the URLs the SDK stores on the person profile.
+    mask_personal_data_properties: true,
     // Replay records DOM attributes (href="mailto:…", record ids), which text masking does not
     // cover, so it stays off whatever the PostHog project enables.
     disable_session_recording: true,

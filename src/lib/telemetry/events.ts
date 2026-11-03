@@ -67,3 +67,33 @@ export function redactUrl(url: string): string {
     .join('/');
   return `${origin}${path}`;
 }
+
+const URL_LIKE_PATTERN = /^(?:https?:\/\/|\/)/i;
+
+const EMBEDDED_ID_SEGMENT_PATTERN =
+  /\/(?:[0-9a-f]{8}-[0-9a-f-]{27,}|[0-9a-f]{32}|[0-9a-f]{24})(?=$|[/?#\s"'])/gi;
+
+/** Whole URLs lose query and ids; free text (exception messages) loses embedded record ids. */
+function redactIfUrl(value: string): string {
+  return URL_LIKE_PATTERN.test(value) ? redactUrl(value) : value.replace(EMBEDDED_ID_SEGMENT_PATTERN, '/:id');
+}
+
+/**
+ * Applies `redactUrl` to every URL-like string and object key, at any depth. The SDK copies the
+ * address into fields we do not name ($session_entry_url, $set_once, $heatmap_data keys), so a
+ * list of known keys always misses one.
+ */
+export function redactUrlsDeep(value: unknown): unknown {
+  if (typeof value === 'string') {
+    return redactIfUrl(value);
+  }
+  if (Array.isArray(value)) {
+    return value.map(redactUrlsDeep);
+  }
+  if (value !== null && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, nested]) => [redactIfUrl(key), redactUrlsDeep(nested)]),
+    );
+  }
+  return value;
+}
