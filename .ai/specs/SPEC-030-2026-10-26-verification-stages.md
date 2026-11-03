@@ -66,7 +66,8 @@ Poziomy: powyżej limitu albo brak wymaganej wartości = „Błąd” (czerwony,
 | Bramka liczy objawy (`countStopIfSymptoms`), bez nagłówków kończących się „:” | Nagłówek grupy to nie objaw.                                                                                   |
 | Braki treści z `listContentGaps`, tak samo na karcie ćwiczenia                | Karta i bramka publikacji mają jedną listę wymagań.                                                            |
 | Czas ćwiczenia formatem karty (`formatExerciseDuration`)                      | Weryfikacja i karta pokazują ten sam czas, np. „6 min 38 s”, a szacunek z „~”.                                 |
-| Zapisane obciążenie spoza kilogramów pokazane przy polu kg                    | Mobile zapisuje gumę czy RPE; pole kg tego nie pokaże, a wpis kg je zastępuje.                                 |
+| Zapisane obciążenie spoza kilogramów pokazane przy polu kg                    | Mobile zapisuje gumę, RPE czy funty; pole kg tego nie pokaże, a wpis kg je zastępuje.                          |
+| Materiał w bramce: tylko nagranie albo zdjęcie widoczne dla pacjenta          | Player pacjenta nie pokazuje `gifUrl`, więc sam GIF nie zdejmuje braku (`hasPatientVideo`).                    |
 
 ## Interfejsy
 
@@ -123,4 +124,4 @@ Zdjęcie przy czytanym kroku ma test integracyjny `VerificationWorkspace.reading
 
 - 2026-10-26: Pierwsza wersja (etapy, ocena parametrów, zdjęcia przy krokach, fazy wskazówek, duplikat).
 - 2026-10-27: Testy zdjęć przy krokach (integracyjne i E2E), test ID dużego medium w panelu.
-- 2026-11-03: Pozostałe treści karty w etapie Decyzja, przerwa między powtórzeniami i czas przygotowania w Parametrach, liczniki bez pustych pozycji, „Przerwij, gdy…” jako tekst, wspólne braki treści z kartą ćwiczenia, jeden format czasu, zapisane obciążenie spoza kg, wspólne etykiety pól (`enrichmentFieldLabels.ts`).
+- 2026-11-03: Pozostałe treści karty w etapie Decyzja, przerwa między powtórzeniami i czas przygotowania w Parametrach, liczniki bez pustych pozycji, „Przerwij, gdy…” jako tekst, wspólne braki treści z kartą ćwiczenia, jeden format czasu, zapisane obciążenie spoza kg, wspólne etykiety pól (`enrichmentFieldLabels.ts`); sam GIF nie spełnia wymogu materiału, pola liczb w Parametrach trzymają wpisany ułamek.

@@ -10,19 +10,21 @@ export interface SavedLoadSource {
   loadUnit?: string | null;
 }
 
-function isKilograms(source: SavedLoadSource): boolean {
+/** Load in kilograms, or null when it is saved some other way (band, RPE, pounds, text). */
+export function readSavedLoadKg(source: SavedLoadSource): number | null {
   const load = source.defaultLoad;
-  if (load?.loadWeightKg != null) return true;
-  if (load?.value != null && (load.unit === 'kg' || load.type === 'weight')) return true;
-  return source.loadValue != null && source.loadUnit === 'kg';
+  if (load?.loadWeightKg != null && !Number.isNaN(load.loadWeightKg)) return load.loadWeightKg;
+  if (load?.value != null && (load.unit === 'kg' || (load.type === 'weight' && !load.unit))) return load.value;
+  if (source.loadValue != null && source.loadUnit === 'kg') return source.loadValue;
+  return null;
 }
 
 /**
- * Load saved in a form the kilogram field cannot show (band colour, RPE, free text),
+ * Load saved in a form the kilogram field cannot show (band colour, RPE, pounds, free text),
  * e.g. written by the mobile app. Null when there is none or it is in kilograms.
  */
 export function describeSavedNonKgLoad(source: SavedLoadSource | null | undefined): string | null {
-  if (!source || isKilograms(source)) return null;
+  if (!source || readSavedLoadKg(source) != null) return null;
   const load = source.defaultLoad;
   const text = load?.text?.trim();
   if (text) return text;

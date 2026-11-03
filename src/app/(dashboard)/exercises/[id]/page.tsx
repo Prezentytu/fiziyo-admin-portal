@@ -99,7 +99,7 @@ import { normalizeExerciseType } from '@/utils/exerciseEnums';
 import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
 import { resolveLoadKg } from '@/utils/exerciseLoadMutation';
 import { verificationCopy } from '@/features/verification/verificationCopy';
-import { countStopIfSymptoms, listContentGaps } from '@/features/verification/utils/verificationStages';
+import { countStopIfSymptoms, hasPatientVideo, listContentGaps } from '@/features/verification/utils/verificationStages';
 import { useSystemRole } from '@/hooks/useSystemRole';
 import { ORG_VERIFICATION_REFETCH_QUERIES } from '@/hooks/useOrganizationVerificationRealtime';
 import { PageSheet } from '@/components/shared/page';
@@ -551,7 +551,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
     // Same sources as the verification gate (useExerciseEditorForm + VerificationWorkspace).
     patientDescription: exercise.patientDescription ?? exercise.description ?? '',
     therapistDescription: physiotherapistDescription,
-    hasVideo: Boolean(exercise.videoUrl?.trim() || exercise.gifUrl),
+    hasVideo: hasPatientVideo(exercise),
     imageCount: imageItemsCount,
     stopIfCount: countStopIfSymptoms(enrichment.safety?.stop_if),
   });

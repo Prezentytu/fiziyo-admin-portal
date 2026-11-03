@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { evaluateParameters } from '../parameterRules';
 import {
+  hasPatientVideo,
   canDecideOnExercise,
   computeVerificationStages,
   formatStageCount,
@@ -124,6 +125,14 @@ describe('canDecideOnExercise', () => {
     expect(canDecideOnExercise('ARCHIVED_GLOBAL')).toBe(false);
     expect(canDecideOnExercise('PENDING_REVIEW')).toBe(true);
     expect(canDecideOnExercise('CHANGES_REQUESTED')).toBe(true);
+  });
+});
+
+describe('hasPatientVideo', () => {
+  it('sam GIF nie zdejmuje braku nagrania, bo player pacjenta go nie pokazuje', () => {
+    expect(hasPatientVideo({ videoUrl: null, gifUrl: 'https://cdn.example.com/ruch.gif' })).toBe(false);
+    expect(hasPatientVideo({ videoUrl: '  ', gifUrl: null })).toBe(false);
+    expect(hasPatientVideo({ videoUrl: 'https://cdn.example.com/film.mp4', gifUrl: null })).toBe(true);
   });
 });
 

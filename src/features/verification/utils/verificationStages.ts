@@ -44,6 +44,14 @@ export interface VerificationStagesResult {
   canPublish: boolean;
 }
 
+/**
+ * Video for the content gate: only what the patient player shows. The mobile player builds media
+ * from `videoUrl` and photos only, so a GIF alone leaves the patient without material.
+ */
+export function hasPatientVideo(media: { videoUrl?: string | null; gifUrl?: string | null }): boolean {
+  return Boolean(media.videoUrl?.trim());
+}
+
 /** Content an exercise needs before it can be published; the exercise page shows the same gaps. */
 export type ContentGapsInput = Pick<
   VerificationStagesInput,

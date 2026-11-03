@@ -12,7 +12,7 @@ import {
 import { shouldRehydrateExerciseEditorDraft } from './utils/shouldRehydrateExerciseEditorDraft';
 import { normalizeExerciseType } from '@/utils/exerciseEnums';
 import type { ExerciseParametersTimingType } from '@/components/shared/exercise/ExerciseParametersFields';
-import { describeSavedNonKgLoad } from './utils/describeSavedLoad';
+import { describeSavedNonKgLoad, readSavedLoadKg } from './utils/describeSavedLoad';
 
 /**
  * Pojedynczy model formularza edytora ćwiczenia (v3).
@@ -130,20 +130,6 @@ function firstNumber(...values: Array<number | null | undefined>): number | null
   return null;
 }
 
-function deriveLoadKg(source: ExerciseEditorSource): number | null {
-  const load = source.defaultLoad;
-  if (load?.loadWeightKg != null && !Number.isNaN(load.loadWeightKg)) {
-    return load.loadWeightKg;
-  }
-  if (load && load.value != null && (load.unit === 'kg' || load.type === 'weight')) {
-    return load.value;
-  }
-  if (source.loadValue != null && source.loadUnit === 'kg') {
-    return source.loadValue;
-  }
-  return null;
-}
-
 function deriveCoreDraft(source: ExerciseEditorSource | null | undefined): ExerciseCoreDraft {
   return {
     name: source?.name ?? '',
@@ -163,7 +149,7 @@ function deriveCoreDraft(source: ExerciseEditorSource | null | undefined): Exerc
     restReps: firstNumber(source?.defaultRestBetweenReps, source?.restReps),
     preparationTime: firstNumber(source?.preparationTime),
     duration: firstNumber(source?.defaultDuration, source?.duration),
-    loadKg: source ? deriveLoadKg(source) : null,
+    loadKg: source ? readSavedLoadKg(source) : null,
     mainTags: normalizeTagIds(source?.mainTags),
     additionalTags: normalizeTagIds(source?.additionalTags),
   };

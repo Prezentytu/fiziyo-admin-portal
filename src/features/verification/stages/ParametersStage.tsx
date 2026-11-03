@@ -1,6 +1,7 @@
 'use client';
 
 import { Info, Timer } from 'lucide-react';
+import { useState, type ComponentProps } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -78,6 +79,44 @@ function parseNumber(raw: string): number | null {
   if (normalized === '') return null;
   const parsed = Number(normalized);
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+}
+
+type DecimalInputProps = Omit<ComponentProps<typeof Input>, 'value' | 'onChange'> & {
+  testId: string;
+  value: number | null | undefined;
+  onValueChange: (value: number | null) => void;
+  /** What an empty field means, e.g. 0 where the backend reads null as „keep the old value”. */
+  emptyValue?: number | null;
+};
+
+/**
+ * Keeps the typed text, so „2,” stays on screen until the next digit instead of collapsing to 2,
+ * and resyncs only when the value changes from outside (slider, reset).
+ */
+function DecimalInput({ testId, value, onValueChange, emptyValue = null, ...props }: DecimalInputProps) {
+  const [text, setText] = useState(value == null ? '' : String(value));
+  const [syncedValue, setSyncedValue] = useState(value);
+  if (value !== syncedValue) {
+    setSyncedValue(value);
+    if ((parseNumber(text) ?? emptyValue) !== value) setText(value == null ? '' : String(value));
+  }
+
+  return (
+    <Input
+      {...props}
+      data-testid={testId}
+      value={text}
+      onChange={(event) => {
+        const raw = event.target.value;
+        setText(raw);
+        if (raw.trim() === '') onValueChange(emptyValue);
+        else {
+          const parsed = parseNumber(raw);
+          if (parsed !== null) onValueChange(parsed);
+        }
+      }}
+    />
+  );
 }
 
 function InfoButton({ label, text, testId }: Readonly<{ label: string; text: string; testId: string }>) {
@@ -161,15 +200,15 @@ function ParameterRow({
           {info && <InfoButton label={rule.label} text={info} testId={`verification-param-${field.key}-info-btn`} />}
         </div>
         <div className="relative">
-          <Input
+          <DecimalInput
             id={inputId}
-            data-testid={`verification-param-${field.key}-input`}
+            testId={`verification-param-${field.key}-input`}
             inputMode="decimal"
-            value={field.value ?? ''}
+            value={field.value}
             placeholder={field.key === 'repTime' ? String(DEFAULT_REP_SECONDS) : undefined}
             aria-invalid={isError || undefined}
             aria-describedby={showNote ? `${inputId}-note` : undefined}
-            onChange={(event) => onChange(parseNumber(event.target.value))}
+            onValueChange={onChange}
             className={cn(
               'pr-8 tabular-nums',
               isWarning && 'ring-2 ring-status-warning/50',
@@ -421,13 +460,13 @@ export function ParametersStage({
               </Label>
               <InfoButton label="Obciążenie" text={DETAIL_INFO.load} testId="verification-param-load-info-btn" />
             </div>
-            <Input
+            <DecimalInput
               id="verification-param-load"
               inputMode="decimal"
-              value={core.loadKg ?? ''}
+              value={core.loadKg}
               placeholder={savedLoadLabel ?? 'masa ciała'}
-              onChange={(event) => onCoreFieldChange('loadKg', parseNumber(event.target.value))}
-              data-testid="verification-param-load-input"
+              onValueChange={(value) => onCoreFieldChange('loadKg', value)}
+              testId="verification-param-load-input"
             />
             {savedLoadLabel && (
               <p className="text-[13px] text-label-secondary" data-testid="verification-param-saved-load-note">
@@ -462,14 +501,14 @@ export function ParametersStage({
                 </Label>
                 <InfoButton label={label} text={info} testId={`verification-param-${field}-info-btn`} />
               </div>
-              <Input
+              <DecimalInput
                 id={`verification-param-${field}`}
-                inputMode="numeric"
-                value={core[field] ?? ''}
+                inputMode="decimal"
+                value={core[field]}
                 placeholder="0"
-                // An empty field saves 0: the backend reads null as „keep the old value”.
-                onChange={(event) => onCoreFieldChange(field, parseNumber(event.target.value) ?? 0)}
-                data-testid={`verification-param-${field}-input`}
+                emptyValue={0}
+                onValueChange={(value) => onCoreFieldChange(field, value ?? 0)}
+                testId={`verification-param-${field}-input`}
               />
             </div>
           ))}
