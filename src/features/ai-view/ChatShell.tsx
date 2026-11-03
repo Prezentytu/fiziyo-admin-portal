@@ -26,8 +26,7 @@ export function ChatShell({
   closeMobile,
 }: ChatShellProps) {
   const isChatHome = usePathname() === '/';
-  // Only the chat home has the top bar with an expand button, so other pages keep the sidebar open.
-  const collapsed = isChatHome && isCollapsed;
+  const collapsed = isCollapsed;
 
   return (
     <ChatSessionProvider>
@@ -37,7 +36,7 @@ export function ChatShell({
         <div className="flex h-dvh bg-grouped">
           <ChatSidebar
             isCollapsed={collapsed}
-            onToggleCollapse={isChatHome ? toggleCollapsed : undefined}
+            onToggleCollapse={toggleCollapsed}
             isMobileOpen={isMobileOpen}
             onMobileClose={closeMobile}
           />
@@ -46,7 +45,7 @@ export function ChatShell({
               <main className="flex min-h-0 flex-1 flex-col">{children}</main>
             ) : (
               <>
-                <Header onMobileMenuToggle={toggleMobile} />
+                <Header onMobileMenuToggle={toggleMobile} onExpandSidebar={collapsed ? toggleCollapsed : undefined} />
                 <main
                   className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-grouped p-4 lg:p-6 2xl:p-8"
                   style={{ scrollbarGutter: 'stable' }}

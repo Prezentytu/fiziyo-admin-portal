@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronRight, Home, Menu } from 'lucide-react';
+import { ChevronRight, Home, Menu, PanelLeftOpen } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -76,9 +76,11 @@ function Breadcrumbs() {
 
 interface HeaderProps {
   readonly onMobileMenuToggle?: () => void;
+  /** Shown when the desktop sidebar is collapsed, so every page can bring it back. */
+  readonly onExpandSidebar?: () => void;
 }
 
-export function Header({ onMobileMenuToggle }: HeaderProps) {
+export function Header({ onMobileMenuToggle, onExpandSidebar }: HeaderProps) {
   return (
     <header
       data-testid="nav-header"
@@ -97,6 +99,19 @@ export function Header({ onMobileMenuToggle }: HeaderProps) {
             data-testid="nav-mobile-menu-btn"
           >
             <Menu className="h-5 w-5" />
+          </Button>
+        )}
+
+        {onExpandSidebar && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden lg:inline-flex"
+            onClick={onExpandSidebar}
+            aria-label="Rozwiń menu"
+            data-testid="nav-sidebar-expand-btn"
+          >
+            <PanelLeftOpen className="h-5 w-5" />
           </Button>
         )}
 
