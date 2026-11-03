@@ -40,6 +40,16 @@ describe('evaluateParameters', () => {
     expect(result.findings[0]).toMatchObject({ key: 'sets', suggested: 3, canAcknowledge: false });
   });
 
+  it('ułamek serii albo powtórzeń zapisany wcześniej blokuje publikację, bo player liczy całe powtórzenia', () => {
+    const result = evaluateParameters({ values: { ...typicalReps, reps: 10.5 }, mode: 'reps', side: 'none' });
+    const reps = result.fields.find((field) => field.key === 'reps');
+
+    expect(reps?.level).toBe('limit');
+    expect(describeFieldNote(reps!)).toBe('Liczba całkowita');
+    expect(result.findings[0]).toMatchObject({ key: 'reps', level: 'limit', suggested: 11, canAcknowledge: false });
+    expect(result.blockingCount).toBe(1);
+  });
+
   it('typowe parametry nie mają uwag', () => {
     const result = evaluateParameters({ values: typicalReps, mode: 'reps', side: 'none' });
 

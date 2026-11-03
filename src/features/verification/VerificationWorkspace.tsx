@@ -816,7 +816,7 @@ export function VerificationWorkspace({
     parameters: evaluation,
     hasPendingPhoto: pendingPhoto !== null,
     hasPendingProposal: proposal !== null,
-    hasVideo,
+    hasVideo: patientHasVideo,
     photoLabel,
     sessionLine,
     stopIfCount,

@@ -191,4 +191,38 @@ describe('ParametersStage', () => {
     expect(onValueChange).not.toHaveBeenCalled();
     expect(input).toHaveValue('10');
   });
+
+  it('ułamek wpisywany znak po znaku w powtórzeniach po wyjściu z pola wraca do liczby sprzed edycji', () => {
+    const onValueChange = vi.fn();
+    function Stateful() {
+      const [current, setCurrent] = useState<ParameterValues>({ ...values, reps: 15 });
+      return (
+        <ParametersStage
+          core={core}
+          mode="reps"
+          values={current}
+          evaluation={evaluateParameters({ values: current, mode: 'reps', side: 'none' })}
+          descriptionNumbers={[]}
+          onValueChange={(key, value) => {
+            onValueChange(key, value);
+            setCurrent((previous) => ({ ...previous, [key]: value }));
+          }}
+          onAcknowledge={vi.fn()}
+          onFixDescription={vi.fn()}
+          onAcknowledgeDescription={vi.fn()}
+          onCoreFieldChange={vi.fn()}
+        />
+      );
+    }
+    render(<Stateful />);
+    const input = screen.getByTestId('verification-param-reps-input');
+
+    fireEvent.focus(input);
+    for (const text of ['1', '10', '10,', '10,5']) fireEvent.change(input, { target: { value: text } });
+    expect(onValueChange).not.toHaveBeenCalledWith('reps', 10.5);
+    fireEvent.blur(input);
+
+    expect(onValueChange).toHaveBeenLastCalledWith('reps', 15);
+    expect(input).toHaveValue('15');
+  });
 });

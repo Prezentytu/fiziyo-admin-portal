@@ -18,6 +18,8 @@ interface ParameterRule {
   typicalMin: number;
   typicalMax: number;
   suggested: number;
+  /** Whole numbers only: the patient player counts whole sets and repetitions. */
+  integer?: boolean;
   /** Slider scale. Narrower than `hardMax`, so the typical band is wide enough to drag precisely. */
   slider: { min: number; max: number; step: number };
 }
@@ -30,6 +32,7 @@ export const PARAMETER_RULES: Record<ParameterKey, ParameterRule> = {
   sets: {
     label: 'Serie',
     unit: '',
+    integer: true,
     hardMax: 20,
     typicalMin: 2,
     typicalMax: 5,
@@ -39,6 +42,7 @@ export const PARAMETER_RULES: Record<ParameterKey, ParameterRule> = {
   reps: {
     label: 'Powtórzenia w serii',
     unit: '',
+    integer: true,
     hardMax: 200,
     typicalMin: 6,
     typicalMax: 20,
@@ -343,6 +347,18 @@ function evaluateField(
   }
 
   const numeric = value as number;
+  if (rule.integer && !Number.isInteger(numeric)) {
+    return {
+      field: { key, value: numeric, level: 'limit' },
+      finding: {
+        key,
+        level: 'limit',
+        text: `${rule.label}: ${formatWithUnit(numeric, rule.unit)}. Wpisz liczbę całkowitą.`,
+        suggested: Math.max(1, Math.round(numeric)),
+        canAcknowledge: false,
+      },
+    };
+  }
   if (numeric > rule.hardMax) {
     return {
       field: { key, value: numeric, level: 'limit' },
@@ -438,6 +454,7 @@ export function describeFieldNote(field: ParameterFieldState): string {
     case 'empty':
       return 'Puste';
     case 'limit':
+      if (rule.integer && field.value != null && !Number.isInteger(field.value)) return 'Liczba całkowita';
       return `Maks. ${formatWithUnit(rule.hardMax, rule.unit)}`;
     case 'warning':
       return `${(field.value ?? 0) < rule.typicalMin ? 'Mało' : 'Dużo'}, zwykle ${range}`;

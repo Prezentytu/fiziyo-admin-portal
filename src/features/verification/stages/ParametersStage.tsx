@@ -93,7 +93,8 @@ type DecimalInputProps = Omit<ComponentProps<typeof Input>, 'value' | 'onChange'
 
 /**
  * Keeps the typed text, so „2,” stays on screen until the next digit instead of collapsing to 2,
- * and resyncs when the value changes from outside (slider, reset) or on blur after text that is not a number.
+ * and resyncs when the value changes from outside (slider, reset). Text that is not a number reverts on blur
+ * to the value from before focus.
  */
 function DecimalInput({
   testId,
@@ -101,16 +102,15 @@ function DecimalInput({
   onValueChange,
   emptyValue = null,
   integer = false,
+  onFocus,
   onBlur,
   ...props
 }: DecimalInputProps) {
   const format = (next: number | null | undefined) => (next == null ? '' : String(next));
-  const parse = (raw: string) => {
-    const parsed = parseNumber(raw);
-    return parsed !== null && (!integer || Number.isInteger(parsed)) ? parsed : null;
-  };
+  const parse = (raw: string) => (integer && !/^\s*\d+\s*$/.test(raw) ? null : parseNumber(raw));
   const [text, setText] = useState(format(value));
   const [syncedValue, setSyncedValue] = useState(value);
+  const [focusValue, setFocusValue] = useState(value);
   if (value !== syncedValue) {
     setSyncedValue(value);
     if ((parse(text) ?? emptyValue) !== value) setText(format(value));
@@ -130,8 +130,16 @@ function DecimalInput({
           if (parsed !== null) onValueChange(parsed);
         }
       }}
+      onFocus={(event) => {
+        setFocusValue(value);
+        onFocus?.(event);
+      }}
       onBlur={(event) => {
-        if (text.trim() !== '' && parse(text) === null) setText(format(value));
+        if (text.trim() !== '' && parse(text) === null) {
+          // Partial keystrokes may have saved a prefix (e.g. „10” from „10,5”); undo the whole attempt.
+          setText(format(focusValue));
+          if (focusValue !== value) onValueChange(focusValue ?? emptyValue);
+        }
         onBlur?.(event);
       }}
     />
