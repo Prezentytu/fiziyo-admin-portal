@@ -10,7 +10,8 @@ const FILES = {
   "vercel.json": JSON.stringify({ git: { deploymentEnabled: { dev: false } } }),
   ".github/workflows/ci.yml": "on:\n  pull_request:\n    branches: [main]\n",
   ".github/workflows/e2e-trigger.yml": "env:\n  REPO_READ_TOKEN: token\nscript: compare/${sha}...main\nif (ref === 'dev') return;\n",
-  ".github/workflows/pin-devportal.yml": "name: Pin DEV portal to main\n",
+  ".github/workflows/pin-devportal.yml":
+    "name: Pin DEV portal to main\nsteps:\n  - uses: actions/checkout@v7\n    with:\n      ref: main\n",
   "scripts/pin-devportal-domain.mjs":
     'export const LEGACY_INTEGRATION_BRANCH = "dev";\nexport const TRUNK_BRANCH = "main";\nproject?.link?.productionBranch\nenvironment === "Preview" ? "feature-preview" : ""\n',
   ".github/PULL_REQUEST_TEMPLATE.md": "- [ ] PR targetuje `main`\n",
@@ -77,6 +78,22 @@ test("flags pin that skips no PR Preview or excludes the DEV Preview from the wo
     const errors = checkTrunkMain(root).join("\n");
     assert.match(errors, /skip Vercel Preview deployments/);
     assert.match(errors, /must run on Preview deployments/);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("flags secrets reachable from branch code in PR build and pin", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "trunk-"));
+  try {
+    writeTree(root, {
+      ".github/workflows/ci.yml":
+        "on:\n  pull_request:\n    branches: [main]\nenv:\n  CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}\n",
+      ".github/workflows/pin-devportal.yml": "name: Pin DEV portal to main\nsteps:\n  - uses: actions/checkout@v7\n",
+    });
+    const errors = checkTrunkMain(root).join("\n");
+    assert.match(errors, /PR build must not receive CLERK_SECRET_KEY/);
+    assert.match(errors, /must check out main/);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }

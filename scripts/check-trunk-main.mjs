@@ -73,6 +73,14 @@ export function checkTrunkMain(root) {
     if (/environment\s*!=\s*'Preview'/.test(pinWorkflowText)) {
       errors.push("Pin DEV workflow must run on Preview deployments: DEV is the Preview of main");
     }
+    if (!/actions\/checkout@[^\n]*\n\s+with:\s*\n\s+ref:\s*main\b/.test(pinWorkflowText)) {
+      errors.push("Pin DEV workflow must check out main: deployment_status otherwise runs branch code with VERCEL_TOKEN");
+    }
+  }
+
+  const ciText = fs.readFileSync(path.join(root, ".github/workflows/ci.yml"), "utf8");
+  if (/secrets\.CLERK_SECRET_KEY/.test(ciText)) {
+    errors.push("PR build must not receive CLERK_SECRET_KEY: CI builds branch code, including agent-written code");
   }
 
   for (const [relative, pattern, message] of FORBIDDEN_SNIPPETS) {

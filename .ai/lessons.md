@@ -39,6 +39,13 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 - **Przyczyna**: Etapy powstały jako ręczny wybór pól, bez związku ze schematem enrichment, więc nowe pole schematu nie miało miejsca w weryfikacji.
 - **Rozwiązanie**: Pola spoza etapów opisuje `EXTRA_CONTENT_GROUPS` w `utils/extraContent.ts`, renderowane w etapie Decyzja; test porównuje je z `enrichmentSchema`.
 - **Reguła**: Nowe pole w `enrichmentSchema` dostaje miejsce w etapie albo w `EXTRA_CONTENT_GROUPS`, inaczej test pada. [egzekwowane: src/features/verification/utils/__tests__/extraContent.test.ts]
+### 2026-11-03 - Kod z gałęzi PR dostawał sekrety Clerk i Vercel
+
+- **Kategoria**: `CI` | `Security`
+- **Problem**: Build w CI miał `CLERK_SECRET_KEY`, a `pin-devportal.yml` przy `deployment_status` preview każdej gałęzi (także `skrzynka/*` z kodem modelu) uruchamiał `scripts/pin-devportal-domain.mjs` z tej gałęzi z `VERCEL_TOKEN`.
+- **Przyczyna**: `pull_request` z tego samego repo dostaje sekrety, a `deployment_status` checkoutuje domyślnie commit wdrożenia, nie `main`.
+- **Rozwiązanie**: Build PR tylko z kluczem publicznym; pin startuje dla commitów z `main` (porównanie w API bez sekretów) i checkoutuje `ref: main`.
+- **Reguła**: Krok z sekretem nigdy nie wykonuje kodu z gałęzi PR; workflow `deployment_status` z sekretem checkoutuje `main`. [egzekwowane: scripts/check-trunk-main.mjs]
 
 ### 2026-11-02 - Suwaki parametrów w weryfikacji wyglądały na klikalne, ale były rysunkiem
 
