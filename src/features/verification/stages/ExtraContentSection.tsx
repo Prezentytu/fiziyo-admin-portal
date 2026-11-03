@@ -31,7 +31,8 @@ export function ExtraContentSection({
   return (
     <div className="flex flex-col gap-4" data-testid="verification-extra-content">
       <p className="px-1 text-[13px] text-label-secondary" data-testid="verification-extra-content-count">
-        Pozostałe treści z karty ćwiczenia, wypełnione: {filled} z {total}. Fizjoterapeuci widzą je w katalogu.
+        Pozostałe treści z karty ćwiczenia, wypełnione: {filled} z {total}. Fizjoterapeuci widzą je w katalogu, a pola
+        dla pacjenta także pacjent.
       </p>
       {EXTRA_CONTENT_GROUPS.map((group) => (
         <StageSection key={group.id} title={group.title} data-testid={`verification-extra-${group.id}`}>
@@ -68,6 +69,9 @@ export function ExtraContentSection({
                   }
                   data-testid={`${inputId}-input`}
                 />
+                {field.source === 'core' && field.hint && (
+                  <p className="text-[13px] text-label-secondary">{field.hint}</p>
+                )}
               </div>
             );
           })}

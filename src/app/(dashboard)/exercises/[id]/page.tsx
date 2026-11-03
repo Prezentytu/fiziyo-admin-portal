@@ -548,9 +548,10 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const audioCue = (exercise as { audioCue?: string }).audioCue || '';
   const contentGaps = listContentGaps({
     name: exercise.name ?? '',
-    patientDescription,
+    // Same sources as the verification gate (useExerciseEditorForm + VerificationWorkspace).
+    patientDescription: exercise.patientDescription ?? exercise.description ?? '',
     therapistDescription: physiotherapistDescription,
-    hasVideo: Boolean(exercise.videoUrl?.trim()),
+    hasVideo: Boolean(exercise.videoUrl?.trim() || exercise.gifUrl),
     imageCount: imageItemsCount,
     stopIfCount: countStopIfSymptoms(enrichment.safety?.stop_if),
   });

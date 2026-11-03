@@ -467,7 +467,8 @@ export function ParametersStage({
                 inputMode="numeric"
                 value={core[field] ?? ''}
                 placeholder="0"
-                onChange={(event) => onCoreFieldChange(field, parseNumber(event.target.value))}
+                // An empty field saves 0: the backend reads null as „keep the old value”.
+                onChange={(event) => onCoreFieldChange(field, parseNumber(event.target.value) ?? 0)}
                 data-testid={`verification-param-${field}-input`}
               />
             </div>

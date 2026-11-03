@@ -1,4 +1,7 @@
-import { EXERCISE_CONTENT_LABELS as LABELS } from '@/components/shared/enrichment/enrichmentFieldLabels';
+import {
+  EXERCISE_CONTENT_LABELS as LABELS,
+  EXERCISE_NOTES_HINT,
+} from '@/components/shared/enrichment/enrichmentFieldLabels';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 
 /** Core scalars that the exercise page shows but the five verification stages do not edit. */
@@ -7,7 +10,7 @@ export type ExtraCoreField = 'audioCue' | 'notes';
 export type ExtraContentField =
   | { id: string; label: string; kind: 'text'; source: 'enrichment'; path: string }
   | { id: string; label: string; kind: 'list'; source: 'enrichment'; path: string }
-  | { id: string; label: string; kind: 'text'; source: 'core'; field: ExtraCoreField };
+  | { id: string; label: string; kind: 'text'; source: 'core'; field: ExtraCoreField; hint?: string };
 
 export interface ExtraContentGroup {
   id: 'patient' | 'therapist' | 'search';
@@ -49,7 +52,7 @@ export const EXTRA_CONTENT_GROUPS: ExtraContentGroup[] = [
         path: 'safety.intensity_guide',
       },
       { id: 'audio-cue', label: LABELS.audioCue, kind: 'text', source: 'core', field: 'audioCue' },
-      { id: 'notes', label: LABELS.notes, kind: 'text', source: 'core', field: 'notes' },
+      { id: 'notes', label: LABELS.notes, kind: 'text', source: 'core', field: 'notes', hint: EXERCISE_NOTES_HINT },
     ],
   },
   {

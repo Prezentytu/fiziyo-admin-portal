@@ -53,6 +53,7 @@ describe('ParametersStage', () => {
 
     expect(onCoreFieldChange).toHaveBeenCalledWith('restReps', 5);
     expect(onCoreFieldChange).toHaveBeenCalledWith('preparationTime', 10);
+
   });
 
   it('pokazuje zapisane obciążenie, którego nie da się wpisać w kilogramach', () => {
@@ -60,5 +61,27 @@ describe('ParametersStage', () => {
 
     expect(screen.getByTestId('verification-param-saved-load-note')).toHaveTextContent('guma czerwona');
     expect(screen.getByTestId('verification-param-load-input')).toHaveAttribute('placeholder', 'guma czerwona');
+  });
+
+  it('wyczyszczony czas przygotowania zapisuje 0, bo null backend czyta jako „bez zmian”', () => {
+    const onCoreFieldChange = vi.fn();
+    render(
+      <ParametersStage
+        core={{ ...core, preparationTime: 10 }}
+        mode="reps"
+        values={values}
+        evaluation={evaluateParameters({ values, mode: 'reps', side: 'none' })}
+        descriptionNumbers={[]}
+        onValueChange={vi.fn()}
+        onAcknowledge={vi.fn()}
+        onFixDescription={vi.fn()}
+        onAcknowledgeDescription={vi.fn()}
+        onCoreFieldChange={onCoreFieldChange}
+      />
+    );
+
+    fireEvent.change(screen.getByTestId('verification-param-preparationTime-input'), { target: { value: '' } });
+
+    expect(onCoreFieldChange).toHaveBeenCalledWith('preparationTime', 0);
   });
 });
