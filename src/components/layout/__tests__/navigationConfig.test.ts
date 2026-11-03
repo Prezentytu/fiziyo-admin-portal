@@ -55,11 +55,7 @@ describe('buildNavigationItems', () => {
 
 describe('buildAccountNavigationItems', () => {
   it('gives organization pages only to admins', () => {
-    expect(buildAccountNavigationItems(false, true)).toEqual([]);
-    expect(buildAccountNavigationItems(true, true).map((item) => item.href)).toEqual(['/organization', '/finances']);
-  });
-
-  it('hides finances while the Stripe-backed module is off', () => {
-    expect(buildAccountNavigationItems(true, false).map((item) => item.href)).toEqual(['/organization']);
+    expect(buildAccountNavigationItems(false)).toEqual([]);
+    expect(buildAccountNavigationItems(true).map((item) => item.href)).toEqual(['/organization', '/finances']);
   });
 });

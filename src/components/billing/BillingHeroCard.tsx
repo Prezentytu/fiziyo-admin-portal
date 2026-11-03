@@ -2,9 +2,8 @@
 
 import { useMemo } from 'react';
 import { useQuery } from '@apollo/client/react';
-import { CreditCard, Users, Tag, FileText, Calendar } from 'lucide-react';
+import { CreditCard, Users, Tag, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -42,6 +41,13 @@ function formatPolishMonthYear(month: number, year: number): string {
   return `${months[month - 1]} ${year}`;
 }
 
+/** Faktura za dany miesiąc wychodzi pierwszego dnia kolejnego. */
+export function formatInvoiceDate(month: number, year: number): string {
+  const nextMonth = month === 12 ? 1 : month + 1;
+  const invoiceYear = month === 12 ? year + 1 : year;
+  return `01.${String(nextMonth).padStart(2, '0')}.${invoiceYear}`;
+}
+
 function formatCurrency(amount: number): string {
   return amount.toLocaleString('pl-PL', {
     minimumFractionDigits: 2,
@@ -76,6 +82,7 @@ export function BillingHeroCard({ organizationId, className }: BillingHeroCardPr
       currency,
       period: formatPolishMonthYear(month, year),
       formattedAmount: formatCurrency(estimatedTotal),
+      invoiceDate: formatInvoiceDate(month, year),
     };
   }, [billingStatus]);
 
@@ -161,7 +168,7 @@ export function BillingHeroCard({ organizationId, className }: BillingHeroCardPr
               <TooltipTrigger asChild>
                 <div className="cursor-help">
                   <p
-                    className="text-4xl sm:text-5xl font-bold text-white tabular-nums tracking-tight"
+                    className="text-4xl sm:text-5xl font-bold text-foreground tabular-nums tracking-tight"
                     data-testid="billing-hero-amount"
                   >
                     {displayData.formattedAmount}
@@ -179,8 +186,7 @@ export function BillingHeroCard({ organizationId, className }: BillingHeroCardPr
           </TooltipProvider>
 
           <p className="text-sm text-text-tertiary">
-            Należność netto • Faktura 01.{String(billingStatus?.month || 1).padStart(2, '0')}.
-            {(billingStatus?.year || 2026) + (billingStatus?.month === 12 ? 1 : 0)}
+            Należność netto • Faktura {displayData.invoiceDate} na dane do faktury, płatność przelewem
           </p>
         </div>
 
@@ -192,7 +198,7 @@ export function BillingHeroCard({ organizationId, className }: BillingHeroCardPr
               <Users className="h-4 w-4 text-info" />
             </div>
             <div>
-              <p className="text-xl font-bold text-white tabular-nums" data-testid="billing-hero-patients">
+              <p className="text-xl font-bold text-foreground tabular-nums" data-testid="billing-hero-patients">
                 {displayData.activePatients}
               </p>
               <p className="text-xs text-muted-foreground">Aktywnych Pacjentów</p>
@@ -205,23 +211,13 @@ export function BillingHeroCard({ organizationId, className }: BillingHeroCardPr
               <Tag className="h-4 w-4 text-status-success" />
             </div>
             <div>
-              <p className="text-xl font-bold text-white tabular-nums">
+              <p className="text-xl font-bold text-foreground tabular-nums">
                 {displayData.pricePerPatient} {displayData.currency}
               </p>
               <p className="text-xs text-muted-foreground">Stawka / Licencja</p>
             </div>
           </div>
 
-          {/* Proforma button */}
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-auto py-3 px-4 rounded-xl border-border bg-surface-light/30 text-foreground hover:bg-surface-light hover:text-white hover:border-border-light transition-all"
-            data-testid="billing-hero-proforma-btn"
-          >
-            <FileText className="h-4 w-4 mr-2" />
-            Pobierz proformę
-          </Button>
         </div>
       </div>
     </div>

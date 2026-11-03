@@ -2,9 +2,12 @@
 
 ## Zakres
 
-Użyj `finances/` do stron `(dashboard)/finances` (portfel, Stripe, zaproszenia
-pacjentów, wykresy). Użyj `src/components/billing/` do widgetu planu gabinetu
-(SPEC-002): pasek statusu, KPI, faktury, tabela terapeutów.
+`/finances` pokazuje, ile gabinet płaci FiziYo w tym miesiącu (`src/components/billing/`,
+SPEC-002): należność, tabela terapeutów, dane do faktury. Stripe nie działa u żadnego
+gabinetu; rozliczamy się zwykłą fakturą poza aplikacją, więc ta strona jest zawsze w menu
+konta Owner/Admin. Użyj `finances/` do stron Stripe w `(dashboard)/finances/(stripe)`
+(`/finances/earnings`, `/finances/payouts`: portfel, zaproszenia Premium, wykresy, wypłaty);
+ich layout przekierowuje na `/finances`, dopóki `STRIPE_CONNECT_ROLLOUT` jest wyłączone.
 Nie mieszaj tych dwóch drzew w jednym commicie bez powodu.
 
 ## MUST
@@ -25,7 +28,7 @@ Nie mieszaj tych dwóch drzew w jednym commicie bez powodu.
 
 ## Gdy dodajesz plik
 
-1. Strona `(dashboard)/finances` → komponent w `finances/`.
+1. Strona Stripe w `(dashboard)/finances/(stripe)` → komponent w `finances/`; rozliczenie z FiziYo → `billing/`.
 2. Widget na dashboardzie / settings Owner → `billing/`.
 3. Zmiana kontraktu rozliczeń = Ask First (cross-repo).
 
