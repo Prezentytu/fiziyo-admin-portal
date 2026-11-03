@@ -101,7 +101,7 @@ export function buildNavigationItems({
 }
 
 /** Organization admin pages shown in the account menu, above account settings. */
-export function buildAccountNavigationItems(canManageOrganization: boolean): NavigationItem[] {
+export function buildAccountNavigationItems(canManageOrganization: boolean, showFinances: boolean): NavigationItem[] {
   if (!canManageOrganization) {
     return [];
   }
@@ -114,12 +114,16 @@ export function buildAccountNavigationItems(canManageOrganization: boolean): Nav
       testId: 'nav-link-organization',
       mobileTestId: 'nav-mobile-link-organization',
     }),
-    navigationItem({
-      name: 'Finanse',
-      href: '/finances',
-      icon: Wallet,
-      testId: 'nav-link-finances',
-      mobileTestId: 'nav-mobile-link-billing',
-    }),
+    ...(showFinances
+      ? [
+          navigationItem({
+            name: 'Finanse',
+            href: '/finances',
+            icon: Wallet,
+            testId: 'nav-link-finances',
+            mobileTestId: 'nav-mobile-link-billing',
+          }),
+        ]
+      : []),
   ];
 }

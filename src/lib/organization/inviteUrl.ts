@@ -1,4 +1,4 @@
-const FALLBACK_ORIGIN = 'https://app.fizjo.pl';
+const FALLBACK_ORIGIN = 'https://portal.fiziyo.pl';
 
 /** Link do zaproszenia członka organizacji, budowany na aktualnym originie portalu. */
 export function buildInviteUrl(token: string): string {

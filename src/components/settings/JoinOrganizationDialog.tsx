@@ -205,7 +205,7 @@ export function JoinOrganizationDialog({ open, onOpenChange, onSuccess }: JoinOr
               <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 data-testid="settings-join-org-token-input"
-                placeholder="https://app.fiziyo.pl/invite?token=..."
+                placeholder="https://portal.fiziyo.pl/invite?token=..."
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 className="pl-9 pr-10"

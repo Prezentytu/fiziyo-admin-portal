@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 
 import { useRoleAccess } from '@/hooks/useRoleAccess';
+import { isFeatureEnabled } from '@/lib/featureFlags';
 import { useVerificationPendingCounts, useVerificationScopes } from '@/features/verification/useVerificationScopes';
 import { buildAccountNavigationItems, buildNavigationItems, type NavigationItem } from './navigationConfig';
 
@@ -21,5 +22,8 @@ export function useNavigationItems(): { items: NavigationItem[]; matchHrefs: str
 export function useAccountNavigationItems(): NavigationItem[] {
   const { canManageOrganization } = useRoleAccess();
 
-  return useMemo(() => buildAccountNavigationItems(canManageOrganization), [canManageOrganization]);
+  return useMemo(
+    () => buildAccountNavigationItems(canManageOrganization, isFeatureEnabled('FINANCES_MODULE')),
+    [canManageOrganization]
+  );
 }
