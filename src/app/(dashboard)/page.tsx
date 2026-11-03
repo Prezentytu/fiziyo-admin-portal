@@ -27,6 +27,7 @@ import { ActivatePremiumDialog } from '@/features/patients/ActivatePremiumDialog
 import { DashboardSkeleton } from '@/components/shared/DashboardSkeleton';
 import { GettingStartedCard } from '@/components/onboarding/GettingStartedCard';
 import { BillingStatusBar } from '@/components/billing';
+import { isFeatureEnabled } from '@/lib/featureFlags';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
 import { usePatientPremium } from '@/hooks/usePatientPremium';
@@ -460,7 +461,7 @@ function ClassicDashboard() {
             </>
           )}
 
-          {canViewBilling && organizationId && (
+          {canViewBilling && organizationId && isFeatureEnabled('FINANCES_MODULE') && (
             <div className="mt-5">
               <BillingStatusBar organizationId={organizationId} />
             </div>

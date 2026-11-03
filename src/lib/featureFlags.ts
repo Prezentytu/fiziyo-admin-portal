@@ -23,6 +23,12 @@ export const FEATURE_FLAGS = {
    * TODO: Set to true when payout onboarding flow is enabled for customers.
    */
   STRIPE_CONNECT_ROLLOUT: process.env.NEXT_PUBLIC_STRIPE_CONNECT_ENABLED === 'true',
+
+  /**
+   * Finances module (wallet, earnings, Premium patient invites, payouts) runs on Stripe,
+   * which is not live for any clinic yet, so the page and every link to it stay hidden.
+   */
+  FINANCES_MODULE: process.env.NEXT_PUBLIC_FINANCES_ENABLED === 'true',
 } as const;
 
 // Type-safe feature flag getter
