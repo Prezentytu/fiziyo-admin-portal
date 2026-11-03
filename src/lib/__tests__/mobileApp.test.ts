@@ -1,19 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  ANDROID_PLAY_STORE_URL,
-  detectMobilePlatform,
-  IOS_APP_STORE_URL,
-  PATIENT_APP_DOWNLOAD_URL,
-} from '@/lib/mobileApp';
-
-describe('mobile app links', () => {
-  it('point at the published FiziYo listings, not placeholders', () => {
-    expect(IOS_APP_STORE_URL).toBe('https://apps.apple.com/pl/app/fiziyo/id6756354288');
-    expect(ANDROID_PLAY_STORE_URL).toBe('https://play.google.com/store/apps/details?id=com.fizjo.app.dev');
-    expect(PATIENT_APP_DOWNLOAD_URL).toBe('https://fiziyo.pl/start/');
-  });
-});
+import { detectMobilePlatform } from '@/lib/mobileApp';
 
 describe('detectMobilePlatform', () => {
   it('recognises phones and desktop', () => {

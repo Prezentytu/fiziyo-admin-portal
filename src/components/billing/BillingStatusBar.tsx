@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Wallet, ChevronRight, Sparkles, Gift } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import { isFeatureEnabled } from '@/lib/featureFlags';
 import { cn } from '@/lib/utils';
 import { GET_CURRENT_BILLING_STATUS_QUERY } from '@/graphql/queries/billing.queries';
 import type { GetCurrentBillingStatusResponse } from '@/types/apollo';
@@ -27,13 +28,18 @@ interface BillingStatusBarProps {
  * Wyświetlany na dole dashboardu, działa jako separator i link do /finances.
  */
 export function BillingStatusBar({ organizationId, className }: Readonly<BillingStatusBarProps>) {
+  const isFinancesEnabled = isFeatureEnabled('FINANCES_MODULE');
   const { data, loading, error } = useQuery<GetCurrentBillingStatusResponse>(GET_CURRENT_BILLING_STATUS_QUERY, {
     variables: { organizationId },
-    skip: !organizationId,
+    skip: !organizationId || !isFinancesEnabled,
     errorPolicy: 'all',
   });
 
   const billingStatus = data?.currentBillingStatus;
+
+  if (!isFinancesEnabled) {
+    return null;
+  }
 
   // Loading state
   if (loading) {

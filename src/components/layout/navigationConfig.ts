@@ -106,7 +106,7 @@ export function buildAccountNavigationItems(canManageOrganization: boolean, show
     return [];
   }
 
-  const items = [
+  return [
     navigationItem({
       name: 'Zespół',
       href: '/organization',
@@ -114,19 +114,16 @@ export function buildAccountNavigationItems(canManageOrganization: boolean, show
       testId: 'nav-link-organization',
       mobileTestId: 'nav-mobile-link-organization',
     }),
+    ...(showFinances
+      ? [
+          navigationItem({
+            name: 'Finanse',
+            href: '/finances',
+            icon: Wallet,
+            testId: 'nav-link-finances',
+            mobileTestId: 'nav-mobile-link-billing',
+          }),
+        ]
+      : []),
   ];
-
-  if (showFinances) {
-    items.push(
-      navigationItem({
-        name: 'Finanse',
-        href: '/finances',
-        icon: Wallet,
-        testId: 'nav-link-finances',
-        mobileTestId: 'nav-mobile-link-billing',
-      })
-    );
-  }
-
-  return items;
 }
