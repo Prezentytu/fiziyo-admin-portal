@@ -8,7 +8,7 @@ type ParameterLevel = 'ok' | 'empty' | 'default' | 'warning' | 'acknowledged' | 
 
 type FindingLevel = 'limit' | 'warning';
 
-/** What the therapist can confirm with „Tak ma być”: an unusual field or a long (not over-limit) exercise. */
+/** What the therapist can confirm with „OK”: an unusual field or a long (not over-limit) exercise. */
 export type AcknowledgeKey = ParameterKey | 'session';
 
 interface ParameterRule {
@@ -37,7 +37,7 @@ export const PARAMETER_RULES: Record<ParameterKey, ParameterRule> = {
     slider: { min: 1, max: 10, step: 1 },
   },
   reps: {
-    label: 'Powtórzenia',
+    label: 'Powtórzenia w serii',
     unit: '',
     hardMax: 200,
     typicalMin: 6,
@@ -46,7 +46,7 @@ export const PARAMETER_RULES: Record<ParameterKey, ParameterRule> = {
     slider: { min: 1, max: 40, step: 1 },
   },
   repTime: {
-    label: 'Czas powtórzenia',
+    label: 'Czas jednego powtórzenia',
     unit: 's',
     hardMax: 60,
     typicalMin: 2,
@@ -76,7 +76,7 @@ export const PARAMETER_RULES: Record<ParameterKey, ParameterRule> = {
 
 export const MODE_PARAMETERS: Record<ExecutionMode, ParameterKey[]> = {
   reps: ['sets', 'reps', 'repTime', 'rest'],
-  hold: ['sets', 'hold', 'rest'],
+  hold: ['sets', 'reps', 'hold', 'rest'],
 };
 
 export const DEFAULT_REP_SECONDS = 3;
@@ -148,7 +148,7 @@ export function toParameterValues(source: ParameterSource, mode: ExecutionMode):
   if (mode === 'hold') {
     return {
       sets: source.sets,
-      reps: null,
+      reps: source.reps,
       repTime: null,
       hold: positive(source.executionTime) ?? positive(source.duration),
       rest: source.restSets,
@@ -166,47 +166,6 @@ export function toParameterValues(source: ParameterSource, mode: ExecutionMode):
 interface ModeCoreValues {
   reps: number | null;
   executionTime: number | null;
-}
-
-type ModeStash = Partial<Record<ExecutionMode, ModeCoreValues>>;
-
-interface PlanModeSwitchInput {
-  current: ModeCoreValues & { duration?: number | null };
-  from: ExecutionMode;
-  to: ExecutionMode;
-  stash: ModeStash;
-  /** The current mode has no saved values yet (hold picked, seconds not entered). */
-  isCurrentPending?: boolean;
-}
-
-interface ModeSwitchPlan {
-  /** Values to write; null means nothing is saved until the therapist enters the hold time. */
-  values: ModeCoreValues | null;
-  stash: ModeStash;
-}
-
-/**
- * Switching modes must never autosave a half-filled record (e.g. reps: 1 with the old 3 s)
- * and a mistaken click must be reversible, so each mode remembers its last values.
- */
-export function planModeSwitch({
-  current,
-  from,
-  to,
-  stash,
-  isCurrentPending = false,
-}: PlanModeSwitchInput): ModeSwitchPlan {
-  const nextStash: ModeStash = isCurrentPending
-    ? stash
-    : { ...stash, [from]: { reps: current.reps, executionTime: current.executionTime } };
-  const remembered = stash[to];
-  if (remembered) return { values: remembered, stash: nextStash };
-  if (to === 'hold') {
-    const holdSeconds =
-      (current.executionTime ?? 0) >= HOLD_MODE_MIN_SECONDS ? current.executionTime : positive(current.duration);
-    return { values: holdSeconds ? { reps: 1, executionTime: holdSeconds } : null, stash: nextStash };
-  }
-  return { values: { reps: null, executionTime: DEFAULT_REP_SECONDS }, stash: nextStash };
 }
 
 export interface CoreParameterUpdates {
@@ -232,42 +191,29 @@ export function toCoreUpdates(key: ParameterKey, value: number | null, current: 
   }
 }
 
-/** Everything the therapist decided on the parameter tile that is not stored on the exercise. */
+/**
+ * What the therapist confirmed on the parameter tile; not stored on the exercise.
+ * The mode is not part of it: one repetition held for 10 s or more is a hold, so it follows the values.
+ */
 interface ParameterReviewState {
-  mode: ExecutionMode;
-  stash: ModeStash;
-  /** Hold picked but its seconds not entered yet, so nothing was saved. */
-  isHoldPending: boolean;
   acknowledged: ReadonlySet<ParameterKey>;
   acknowledgedSessionSeconds: number | null;
 }
 
-export function createParameterReview(
-  source: Pick<ParameterSource, 'reps' | 'executionTime' | 'duration'>
-): ParameterReviewState {
-  return {
-    mode: deriveExecutionMode(source),
-    stash: {},
-    isHoldPending: false,
-    acknowledged: new Set(),
-    acknowledgedSessionSeconds: null,
-  };
+export function createParameterReview(): ParameterReviewState {
+  return { acknowledged: new Set(), acknowledgedSessionSeconds: null };
 }
 
-export function reviewValues(source: ParameterSource, review: ParameterReviewState): ParameterValues {
-  const values = toParameterValues(source, review.mode);
-  return review.isHoldPending ? { ...values, hold: null } : values;
+export function reviewValues(source: ParameterSource): ParameterValues {
+  return toParameterValues(source, deriveExecutionMode(source));
 }
 
-/** An edited field needs a fresh look, so its „Tak ma być” no longer applies. */
+/** An edited field needs a fresh look, so its „OK” no longer applies. */
 export function markParameterEdited(review: ParameterReviewState, key: ParameterKey): ParameterReviewState {
-  const isHoldPending = key === 'hold' ? false : review.isHoldPending;
-  if (!review.acknowledged.has(key)) {
-    return isHoldPending === review.isHoldPending ? review : { ...review, isHoldPending };
-  }
+  if (!review.acknowledged.has(key)) return review;
   const acknowledged = new Set(review.acknowledged);
   acknowledged.delete(key);
-  return { ...review, isHoldPending, acknowledged };
+  return { ...review, acknowledged };
 }
 
 export function acknowledgeFinding(
@@ -277,41 +223,6 @@ export function acknowledgeFinding(
 ): ParameterReviewState {
   if (key === 'session') return { ...review, acknowledgedSessionSeconds: sessionSeconds };
   return { ...review, acknowledged: new Set([...review.acknowledged, key]) };
-}
-
-interface ModeSwitchResult {
-  review: ParameterReviewState;
-  updates: CoreParameterUpdates;
-}
-
-export function switchExecutionMode(
-  review: ParameterReviewState,
-  current: ModeCoreValues & { duration?: number | null },
-  to: ExecutionMode
-): ModeSwitchResult {
-  if (to === review.mode) return { review, updates: {} };
-  const plan = planModeSwitch({
-    current,
-    from: review.mode,
-    to,
-    stash: review.stash,
-    isCurrentPending: review.isHoldPending,
-  });
-  const updates: CoreParameterUpdates = {};
-  if (plan.values && plan.values.reps !== current.reps) updates.reps = plan.values.reps;
-  if (plan.values && plan.values.executionTime !== current.executionTime) {
-    updates.executionTime = plan.values.executionTime;
-  }
-  return {
-    review: {
-      mode: to,
-      stash: plan.stash,
-      isHoldPending: to === 'hold' && plan.values === null,
-      acknowledged: new Set(),
-      acknowledgedSessionSeconds: null,
-    },
-    updates,
-  };
 }
 
 /** Fields outside the parameter tile that still drive the patient timer. */
@@ -399,10 +310,14 @@ function isEmpty(key: ParameterKey, value: number | null): boolean {
 function evaluateField(
   key: ParameterKey,
   values: ParameterValues,
-  acknowledged: ReadonlySet<ParameterKey>
+  acknowledged: ReadonlySet<ParameterKey>,
+  mode: ExecutionMode
 ): { field: ParameterFieldState; finding: ParameterFinding | null } {
   const rule = PARAMETER_RULES[key];
   const value = values[key];
+
+  // A hold is stored as one repetition; that single repetition is the shape, not an unusual count.
+  if (mode === 'hold' && key === 'reps') return { field: { key, value, level: 'ok' }, finding: null };
 
   if (isEmpty(key, value)) {
     if (!isRequired(key, values)) {
@@ -459,7 +374,7 @@ interface EvaluateParametersInput {
   mode: ExecutionMode;
   side: string;
   acknowledged?: ReadonlySet<ParameterKey>;
-  /** Session length the therapist confirmed with „Tak ma być”; any change in seconds reopens it. */
+  /** Session length the therapist confirmed with „OK”; any change in seconds reopens it. */
   acknowledgedSessionSeconds?: number | null;
   timing?: SessionTiming;
 }
@@ -476,7 +391,7 @@ export function evaluateParameters({
   const findings: ParameterFinding[] = [];
 
   for (const key of MODE_PARAMETERS[mode]) {
-    const { field, finding } = evaluateField(key, values, acknowledged);
+    const { field, finding } = evaluateField(key, values, acknowledged, mode);
     fields.push(field);
     if (finding) findings.push(finding);
   }
@@ -491,7 +406,7 @@ export function evaluateParameters({
     findings.push({
       key: 'session',
       level: sessionLevel,
-      text: `Całe ćwiczenie trwałoby około ${formatSessionDuration(sessionSeconds)}. W planie to zwykle 3–10 min.`,
+      text: sessionLevel === 'limit' ? 'Ponad godzinę: sprawdź serie i przerwy' : 'Zwykle 3–10 min',
       canAcknowledge: sessionLevel === 'warning',
     });
   }
@@ -505,6 +420,24 @@ export function evaluateParameters({
     sessionLevel,
     blockingCount,
   };
+}
+
+/** Short note under a parameter field: the reason in a few words, the action sits in the buttons next to it. */
+export function describeFieldNote(field: ParameterFieldState): string {
+  const rule = PARAMETER_RULES[field.key];
+  const range = `${rule.typicalMin}–${formatWithUnit(rule.typicalMax, rule.unit)}`;
+  switch (field.level) {
+    case 'empty':
+      return 'Puste';
+    case 'limit':
+      return `Maks. ${formatWithUnit(rule.hardMax, rule.unit)}`;
+    case 'warning':
+      return `${(field.value ?? 0) < rule.typicalMin ? 'Mało' : 'Dużo'}, zwykle ${range}`;
+    case 'acknowledged':
+      return `Zostawione poza zakresem ${range}`;
+    default:
+      return '';
+  }
 }
 
 export function buildPatientParameterLine(values: ParameterValues, mode: ExecutionMode, side: string): string {
