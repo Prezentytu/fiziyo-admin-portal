@@ -370,7 +370,7 @@ function AIDiffDrawer({
 }: AIDiffDrawerProps) {
   if (isLoading) {
     return (
-      <div className="w-[420px] border-l border-border bg-dark p-6 flex flex-col items-center justify-center gap-4">
+      <div className="w-[420px] border-l border-border bg-card p-6 flex flex-col items-center justify-center gap-4">
         <div className="relative">
           <Loader2 className="h-10 w-10 animate-spin text-secondary" />
           <Sparkles className="h-4 w-4 text-secondary absolute -top-1 -right-1 animate-pulse" />
@@ -385,7 +385,7 @@ function AIDiffDrawer({
 
   if (!suggestion) {
     return (
-      <div className="w-[420px] border-l border-border bg-dark p-6 flex flex-col items-center justify-center gap-4">
+      <div className="w-[420px] border-l border-border bg-card p-6 flex flex-col items-center justify-center gap-4">
         <AlertTriangle className="h-8 w-8 text-warning" />
         <p className="text-sm text-muted-foreground text-center">
           Nie udało się wygenerować sugestii.
@@ -445,7 +445,7 @@ function AIDiffDrawer({
   ].filter(Boolean).length;
 
   return (
-    <div className="w-[420px] border-l border-border bg-dark flex flex-col" data-testid="ai-diff-drawer">
+    <div className="w-[420px] border-l border-border bg-card flex flex-col" data-testid="ai-diff-drawer">
       {/* Header - Asystent Redakcyjny */}
       <div className="px-5 py-4 border-b border-border bg-gradient-to-r from-secondary/5 to-transparent">
         <div className="flex items-center justify-between mb-2">
