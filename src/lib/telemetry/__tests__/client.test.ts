@@ -87,6 +87,18 @@ describe('portal telemetry consent', () => {
     expect(sdk.state.calls).toEqual([]);
   });
 
+  it('never records sessions, whose DOM attributes hold patient e-mails, phones and ids', async () => {
+    const telemetry = await loadClient();
+
+    telemetry.setTelemetryUser(therapistA);
+    telemetry.setTelemetryConsent('granted');
+
+    expect(sdk.posthog.init).toHaveBeenLastCalledWith(
+      'phc_test',
+      expect.objectContaining({ disable_session_recording: true, mask_all_element_attributes: true }),
+    );
+  });
+
   it('resumes for the therapist who opted in, under their own id', async () => {
     const telemetry = await loadClient();
     telemetry.setTelemetryUser(therapistA);

@@ -58,10 +58,9 @@ function ensureInitialized(config: TelemetryConfig): void {
     // Element text and attributes can contain patient names; heatmaps and rage clicks still work.
     mask_all_text: true,
     mask_all_element_attributes: true,
-    session_recording: {
-      maskAllInputs: true,
-      maskTextSelector: '*',
-    },
+    // Replay records DOM attributes (href="mailto:…", record ids), which text masking does not
+    // cover, so it stays off whatever the PostHog project enables.
+    disable_session_recording: true,
     before_send: stripUrls,
   });
   initialized = true;
