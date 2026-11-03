@@ -75,6 +75,21 @@ describe('toV3', () => {
     expect(result.ai?.keywords).toEqual(['core', 'stabilizacja']);
   });
 
+  it('bierze kroki z wariantu instruction_steps_simple, gdy brak instruction_steps', () => {
+    const result = toV3({
+      patient_instruction: {
+        pre_exercise: {
+          instruction_steps_simple: [
+            { step: 1, text: 'Połóż się na plecach' },
+            { step: 2, text: 'Unieś biodra' },
+          ],
+        },
+      },
+    });
+
+    expect(result.patient?.steps).toEqual(['Połóż się na plecach', 'Unieś biodra']);
+  });
+
   it('używa simplified_instruction gdy brak quick_summary', () => {
     const result = toV3({ simplified_instruction: 'Opis zapasowy' });
     expect(result.patient?.summary).toBe('Opis zapasowy');

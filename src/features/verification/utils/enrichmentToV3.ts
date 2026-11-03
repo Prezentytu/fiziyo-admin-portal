@@ -39,9 +39,13 @@ function buildPatientV3(data: ExerciseEnrichmentData): ExerciseEnrichmentPatient
     trimmedOrUndefined(preExercise?.quick_summary) ??
     trimmedOrUndefined(data.simplified_instruction);
 
+  // Ćwiczenia z AI bywają zapisane tylko w wariancie kroków (simple/technical/child), bez `instruction_steps`.
   const steps =
     trimmedStringArray(data.patient?.steps) ??
-    trimmedStringArray(preExercise?.instruction_steps?.map((step) => step.text));
+    trimmedStringArray(preExercise?.instruction_steps?.map((step) => step.text)) ??
+    trimmedStringArray(preExercise?.instruction_steps_simple?.map((step) => step.text)) ??
+    trimmedStringArray(preExercise?.instruction_steps_technical?.map((step) => step.text)) ??
+    trimmedStringArray(preExercise?.instruction_steps_child?.map((step) => step.text));
 
   const cuesFromCoaching = data.therapist_notes?.coaching_cues?.map((cue) => cue.text) ?? [];
   const cuesFromReminders = data.patient_notes?.technique_reminders ?? [];
