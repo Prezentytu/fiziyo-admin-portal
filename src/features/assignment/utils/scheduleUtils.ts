@@ -74,8 +74,8 @@ export function getDefaultDaysForFrequency(timesPerWeek: number): WeekDays {
   };
 }
 
-/** Plan length the wizard starts with; the end date matches the preselected "4 tygodnie" option. */
-export const DEFAULT_PLAN_WEEKS = 4;
+/** Plan length the wizard starts with; the end date matches the preselected "2 tygodnie" option. */
+export const DEFAULT_PLAN_WEEKS = 2;
 
 export function getDefaultPlanEndDate(startDate: Date): Date {
   return addWeeks(startDate, DEFAULT_PLAN_WEEKS);

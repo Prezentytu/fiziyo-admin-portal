@@ -83,8 +83,8 @@ describe('getDefaultDaysForFrequency', () => {
 });
 
 describe('getDefaultPlanEndDate', () => {
-  it('ends the default plan exactly four weeks after the start, like the "4 tygodnie" option', () => {
+  it('ends the default plan exactly two weeks after the start, like the "2 tygodnie" option', () => {
     const start = new Date(2026, 10, 2);
-    expect(differenceInDays(getDefaultPlanEndDate(start), start)).toBe(28);
+    expect(differenceInDays(getDefaultPlanEndDate(start), start)).toBe(14);
   });
 });
