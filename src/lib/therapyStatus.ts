@@ -311,6 +311,17 @@ export function calculateTherapyStatus(
 }
 
 /**
+ * Odczucie całego dnia: dowolne ćwiczenie ocenione jako trudne daje „Ciężko”,
+ * inaczej średnia z ocenionych ćwiczeń. Kalendarz i dziennik używają tej samej reguły.
+ */
+export function getDayFeeling(dayProgress: ExerciseProgressData[]): FeelingType | null {
+  if (dayProgress.some((p) => isHardDifficulty(p.difficultyLevel))) return 'hard';
+  const rated = dayProgress.filter((p) => p.difficultyLevel && p.difficultyLevel > 0);
+  if (rated.length === 0) return null;
+  return mapDifficultyToFeeling(rated.reduce((sum, p) => sum + (p.difficultyLevel || 0), 0) / rated.length);
+}
+
+/**
  * Generuje dane dla heatmapy (ostatnie 4 tygodnie)
  * Uwzględnia przypisania - datę rozpoczęcia i zaplanowane dni
  */
@@ -377,24 +388,13 @@ export function generateHeatmapData(
     if (dayProgress.length > 0) {
       // Użyj najgorszego statusu z dnia
       const hasDiscomfort = dayProgress.some((p) => isDiscomfortPain(p.painLevel));
-      const hasHard = dayProgress.some((p) => isHardDifficulty(p.difficultyLevel));
       const notes = dayProgress.find((p) => p.patientNotes)?.patientNotes;
 
-      let feeling: FeelingType | null;
+      const feeling = getDayFeeling(dayProgress);
       let wellbeing: WellbeingType = 'ok';
 
       if (hasDiscomfort) {
         wellbeing = 'discomfort';
-      }
-
-      if (hasHard) {
-        feeling = 'hard';
-      } else {
-        // Użyj średniej trudności
-        const rated = dayProgress.filter((p) => p.difficultyLevel && p.difficultyLevel > 0);
-        const avgDifficulty =
-          rated.length > 0 ? rated.reduce((sum, p) => sum + (p.difficultyLevel || 0), 0) / rated.length : null;
-        feeling = mapDifficultyToFeeling(avgDifficulty);
       }
 
       result.push({

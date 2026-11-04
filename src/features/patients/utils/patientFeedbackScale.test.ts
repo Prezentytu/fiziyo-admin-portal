@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { calculateTherapyStatus, generateHeatmapData } from '@/lib/therapyStatus';
+import { calculateTherapyStatus, generateHeatmapData, getDayFeeling } from '@/lib/therapyStatus';
 
 import {
   formatFeedbackLevel,
@@ -74,5 +74,17 @@ describe('hard sessions in therapy status', () => {
     const status = calculateTherapyStatus(progress, [{ id: 'assignment-1', status: 'active', startDate: today }]);
 
     expect(status.reason).not.toBe('high_difficulty');
+  });
+});
+
+describe('getDayFeeling', () => {
+  it('reads a day with one easy and one hard exercise as hard, whatever the order', () => {
+    const easyFirst = [
+      { id: 'a', status: 'completed', difficultyLevel: 5 },
+      { id: 'b', status: 'completed', difficultyLevel: 1 },
+    ];
+
+    expect(getDayFeeling(easyFirst)).toBe('hard');
+    expect(getDayFeeling([{ id: 'c', status: 'completed', difficultyLevel: 0 }])).toBeNull();
   });
 });

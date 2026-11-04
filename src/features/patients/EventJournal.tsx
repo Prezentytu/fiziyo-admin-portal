@@ -3,7 +3,7 @@
 import { History } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
-import { formatDateWithTime, mapDifficultyToFeeling, getFeelingLabel } from '@/lib/therapyStatus';
+import { formatDateWithTime, getDayFeeling, getFeelingLabel } from '@/lib/therapyStatus';
 import { isDiscomfortPain } from './utils/patientFeedbackScale';
 import type { ExerciseProgressData } from '@/lib/therapyStatus';
 
@@ -109,9 +109,8 @@ function progressToEvents(progress: ExerciseProgressData[], maxDays: number = 7)
 
     // Sprawdź notatki (wiadomości)
     const messageEvent = dayProgress.find((p) => p.patientNotes && p.patientNotes.trim().length > 0);
+    const feelingLabel = getFeelingLabel(getDayFeeling(dayProgress));
     if (messageEvent) {
-      const feeling = mapDifficultyToFeeling(messageEvent.difficultyLevel);
-      const feelingLabel = getFeelingLabel(feeling);
       events.push({
         id: `message-${messageEvent.id}`,
         type: 'training',
@@ -125,8 +124,6 @@ function progressToEvents(progress: ExerciseProgressData[], maxDays: number = 7)
 
     // Zwykły trening
     const firstProgress = dayProgress[0];
-    const feeling = mapDifficultyToFeeling(firstProgress.difficultyLevel);
-    const feelingLabel = getFeelingLabel(feeling);
 
     events.push({
       id: `training-${firstProgress.id}`,
