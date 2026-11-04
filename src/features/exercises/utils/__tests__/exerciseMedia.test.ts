@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildExerciseMediaChangeSet, getExerciseMediaGalleryUrls } from '../exerciseMedia';
+import {
+  buildExerciseMediaChangeSet,
+  getExerciseMediaGalleryUrls,
+  insertGeneratedImage,
+  nextGeneratedImagePhase,
+} from '../exerciseMedia';
 
 describe('getExerciseMediaGalleryUrls', () => {
   it('returns thumbnail fallback when only thumbnail exists', () => {
@@ -53,5 +58,21 @@ describe('buildExerciseMediaChangeSet', () => {
 
     expect(result.removedImageUrls).toEqual([]);
     expect(result.filesToUpload).toEqual([]);
+  });
+});
+
+describe('obrazy Start i Koniec z AI', () => {
+  it('pierwszy obraz to faza start, drugi faza end, dalsze bez fazy', () => {
+    expect(nextGeneratedImagePhase(0)).toBe('start');
+    expect(nextGeneratedImagePhase(1)).toBe('end');
+    expect(nextGeneratedImagePhase(2)).toBeUndefined();
+  });
+
+  it('obraz końcowy ląduje za startowym, żeby etykiety Start i Koniec pasowały do treści', () => {
+    const start = insertGeneratedImage<string>([], 'start.png', 'start');
+    const both = insertGeneratedImage(start, 'end.png', 'end');
+
+    expect(both).toEqual(['start.png', 'end.png']);
+    expect(insertGeneratedImage(both, 'extra.png', undefined)).toEqual(['extra.png', 'start.png', 'end.png']);
   });
 });
