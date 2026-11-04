@@ -32,6 +32,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ImageLightbox } from '@/components/shared/ImageLightbox';
 import { TagPicker } from './TagPicker';
@@ -1920,26 +1921,32 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                 <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
                   Parametry
                 </label>
-                <div className="flex gap-1.5">
-                  {QUICK_PRESETS.map((preset, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => applyPreset(preset)}
-                      title={preset.hint}
-                      aria-label={`Wstaw ${preset.hint}`}
-                      className={cn(
-                        'text-[10px] bg-surface/50 border border-border text-muted-foreground',
-                        'hover:text-foreground hover:border-primary/50 px-2 py-1 rounded',
-                        'transition-colors flex items-center gap-1'
-                      )}
-                      data-testid={`exercise-preset-${idx}`}
-                    >
-                      {idx === 0 && <Zap className="w-3 h-3 text-warning" />}
-                      {preset.label}
-                    </button>
-                  ))}
-                </div>
+                <TooltipProvider delayDuration={150}>
+                  <div className="flex gap-1.5">
+                    {QUICK_PRESETS.map((preset, idx) => (
+                      <Tooltip key={preset.label}>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="button"
+                            onClick={() => applyPreset(preset)}
+                            aria-label={`Wstaw ${preset.hint}`}
+                            className={cn(
+                              'text-[10px] bg-surface/50 border border-border text-muted-foreground',
+                              'hover:text-foreground hover:border-primary/50 px-2 py-1 rounded',
+                              'transition-colors flex items-center gap-1',
+                              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tint focus-visible:ring-offset-2 focus-visible:ring-offset-card'
+                            )}
+                            data-testid={`exercise-preset-${idx}`}
+                          >
+                            {idx === 0 && <Zap className="w-3 h-3 text-warning" />}
+                            {preset.label}
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>{preset.hint}</TooltipContent>
+                      </Tooltip>
+                    ))}
+                  </div>
+                </TooltipProvider>
               </div>
 
               <ExerciseParametersEditor
