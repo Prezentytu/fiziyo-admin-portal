@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import type { DraftDose } from './setDraft';
+
 export const NAVIGATE_ROUTES = {
   patients: { href: '/patients', label: 'Pacjenci' },
   'patient-new': { href: '/patients', label: 'Dodaj pacjenta' },
@@ -16,13 +18,28 @@ export const MAX_CLARIFY_OPTIONS = 4;
 const MAX_IDS = 20;
 
 export type ChatViewSpec =
-  | { component: 'SetDraft'; patientId?: string; setId?: string; exerciseIds: string[]; note?: string }
+  | {
+      component: 'SetDraft';
+      patientId?: string;
+      setId?: string;
+      exerciseIds: string[];
+      note?: string;
+      /** Only from the thread itself (a scanned note), never from the model. */
+      doses?: Record<string, DraftDose>;
+    }
   | { component: 'AssignSummary'; patientId: string; setId: string }
   | { component: 'ExerciseResults'; query: string; exerciseIds: string[]; patientId?: string }
   | { component: 'PatientPeek'; patientId?: string; filter?: 'inactive' }
   | { component: 'Navigate'; route: NavigateRoute }
   | { component: 'Clarify'; question: string; options: string[] }
-  | { component: 'AddPatient'; name?: string }
+  | {
+      component: 'AddPatient';
+      name?: string;
+      /** From the therapist's message, never from the model (`newPatientDetails.ts`). */
+      phone?: string;
+      email?: string;
+      contextLabel?: string;
+    }
   | { component: 'CreateExercise'; name?: string; description?: string };
 
 export type ChatViewComponent = ChatViewSpec['component'];

@@ -2,6 +2,11 @@ import type { SchedulePlan } from './schedulePlan';
 import type { SetDraftPayload } from './setDraft';
 import type { ChatViewSpec } from './viewSpec';
 
+interface ThreadMessageLike {
+  role: 'user' | 'assistant';
+  spec?: ChatCardSpec;
+}
+
 /** One position of a document or visit note, matched to the catalog when the import found a match. */
 export interface DocumentItem {
   name: string;
@@ -11,6 +16,9 @@ export interface DocumentItem {
   duration?: number;
   matchedExerciseId?: string;
   matchedName?: string;
+  /** An uncertain match ("czy chodziło o…?"): used only after the therapist confirms it. */
+  suggestedExerciseId?: string;
+  suggestedName?: string;
 }
 
 /**
@@ -76,4 +84,15 @@ export function cardPatientId(spec: ChatCardSpec | undefined): string | undefine
     default:
       return undefined;
   }
+}
+
+/** The patient of the latest card that names one: whom the conversation is about right now. */
+export function latestCardPatientId(messages: readonly ThreadMessageLike[]): string | undefined {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (message.role !== 'assistant') continue;
+    const patientId = cardPatientId(message.spec);
+    if (patientId) return patientId;
+  }
+  return undefined;
 }

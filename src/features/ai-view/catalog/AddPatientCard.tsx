@@ -24,6 +24,7 @@ export function AddPatientCard({ spec, testId, messageId, chosen }: CardProps<'A
       <NewPatientForm
         testId={`${testId}-new`}
         defaultName={spec.name}
+        defaults={{ phone: spec.phone, email: spec.email, contextLabel: spec.contextLabel }}
         submitLabel="Dodaj pacjenta"
         busy={creating}
         onSubmit={async (values) => {

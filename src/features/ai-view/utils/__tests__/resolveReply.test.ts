@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { ChatDispatchError, replyText, resolveReply, type Dispatcher } from '../resolveReply';
+import { ChatDispatchError, guardCardPatient, replyText, resolveReply, type Dispatcher } from '../resolveReply';
 
 const CONTEXT = { patients: [{ id: 'p-jan', name: 'Jan Kowalski' }], sets: [] };
 
@@ -91,5 +91,51 @@ describe('replyText', () => {
 
   it('is empty for no text and no card', () => {
     expect(replyText(undefined, undefined, CONTEXT)).toBe('');
+  });
+});
+
+describe('guardCardPatient', () => {
+  const context = {
+    patients: [
+      { id: 'p-jan', name: 'Jan Czat-Kowalski' },
+      { id: 'p-e2e', name: 'E2E Pacjent' },
+    ],
+    sets: [],
+  };
+  const draftForE2e = { component: 'SetDraft' as const, patientId: 'p-e2e', exerciseIds: ['e1'] };
+
+  // Report 01.11 (P0-1): after "Dodano: Jan" the model put "clamshell, bird dog" on another patient's card.
+  it('drops a patient the message does not name when the conversation is about someone else', () => {
+    expect(guardCardPatient(draftForE2e, 'clamshell, bird dog', context, 'p-jan')).toEqual({
+      component: 'SetDraft',
+      patientId: undefined,
+      exerciseIds: ['e1'],
+    });
+    expect(
+      guardCardPatient({ component: 'AssignSummary', patientId: 'p-e2e', setId: 's1' }, 'ten sam', context, 'p-jan')
+    ).toEqual({ component: 'SetDraft', setId: 's1', exerciseIds: [] });
+  });
+
+  it('keeps the patient the message names, the conversation patient and cards without a context', () => {
+    expect(guardCardPatient(draftForE2e, 'zestaw dla E2E Pacjent', context, 'p-jan')).toBe(draftForE2e);
+    expect(guardCardPatient(draftForE2e, 'clamshell', context, 'p-e2e')).toBe(draftForE2e);
+    expect(guardCardPatient(draftForE2e, 'clamshell', context, undefined)).toBe(draftForE2e);
+  });
+
+  it('applies to AI replies and drops the model sentence about the removed patient', async () => {
+    const dispatch: Dispatcher = async () => ({
+      sessionId: 's',
+      text: 'Zestaw dla E2E Pacjent: clamshell.',
+      spec: draftForE2e,
+      creditsUsed: 1,
+    });
+    const reply = await resolveReply('clamshell, bird dog', {
+      useAi: true,
+      context,
+      dispatch,
+      contextPatientId: 'p-jan',
+    });
+    expect(reply.spec).toEqual({ component: 'SetDraft', patientId: undefined, exerciseIds: ['e1'] });
+    expect(reply.text).not.toContain('E2E Pacjent');
   });
 });

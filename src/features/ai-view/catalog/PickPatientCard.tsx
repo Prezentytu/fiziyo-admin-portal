@@ -22,18 +22,23 @@ const MAX_PATIENTS = 6;
  * organization's patients or a new one, without leaving the thread.
  */
 export function PickPatientCard({ spec, testId, messageId, chosen }: CardProps<'PickPatient'>) {
-  const { organizationId, patients, therapistId, appendExchange, markChosen } = useChatActions();
+  const { organizationId, patients, therapistId, contextPatient, appendExchange, markChosen } = useChatActions();
   const [query, setQuery] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const { create, creating } = useCreatePatient();
   const { saveTemplateSet, saving } = useSaveTemplateSet();
 
+  // The patient the conversation is about comes first (report 01.11: Anna from the chip was last).
   const ordered = useMemo(
     () =>
       [...patients]
-        .sort((left, right) => Number(right.therapistId === therapistId) - Number(left.therapistId === therapistId))
+        .sort(
+          (left, right) =>
+            Number(right.id === contextPatient?.id) - Number(left.id === contextPatient?.id) ||
+            Number(right.therapistId === therapistId) - Number(left.therapistId === therapistId)
+        )
         .map((patient) => ({ patient, searchName: normalizeSearchText(patient.name) })),
-    [patients, therapistId]
+    [contextPatient?.id, patients, therapistId]
   );
   const matches = useMemo(() => {
     const needle = normalizeSearchText(query).trim();

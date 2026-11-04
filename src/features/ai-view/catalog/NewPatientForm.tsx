@@ -38,6 +38,8 @@ function splitName(name: string | undefined): { firstName: string; lastName: str
 
 interface NewPatientFormProps {
   readonly defaultName?: string;
+  /** What the therapist already wrote (phone, e-mail, reason); the fields start filled with it. */
+  readonly defaults?: { phone?: string; email?: string; contextLabel?: string };
   readonly submitLabel: string;
   readonly busy: boolean;
   readonly onSubmit: (values: NewPatientInput) => void;
@@ -46,10 +48,24 @@ interface NewPatientFormProps {
 }
 
 /** The fields the patient dialog needs to create an account, inline in the thread. */
-export function NewPatientForm({ defaultName, submitLabel, busy, onSubmit, onCancel, testId }: NewPatientFormProps) {
+export function NewPatientForm({
+  defaultName,
+  defaults,
+  submitLabel,
+  busy,
+  onSubmit,
+  onCancel,
+  testId,
+}: NewPatientFormProps) {
   const form = useForm<NewPatientValues>({
     resolver: zodResolver(NEW_PATIENT_SCHEMA),
-    defaultValues: { ...splitName(defaultName), phone: '', email: '', contextLabel: '', sendActivationSms: false },
+    defaultValues: {
+      ...splitName(defaultName),
+      phone: defaults?.phone ?? '',
+      email: defaults?.email ?? '',
+      contextLabel: defaults?.contextLabel ?? '',
+      sendActivationSms: false,
+    },
   });
   const { errors } = form.formState;
   const sendSms = useWatch({ control: form.control, name: 'sendActivationSms' });
@@ -63,7 +79,7 @@ export function NewPatientForm({ defaultName, submitLabel, busy, onSubmit, onCan
   }> = [
     { name: 'firstName', label: 'Imię', autoComplete: 'off' },
     { name: 'lastName', label: 'Nazwisko', autoComplete: 'off' },
-    { name: 'phone', label: 'Telefon', type: 'tel', placeholder: '600 100 200' },
+    { name: 'phone', label: 'Telefon', type: 'tel' },
     { name: 'email', label: 'E-mail', type: 'email' },
     { name: 'contextLabel', label: 'Powód', placeholder: 'np. kolano po ACL' },
   ];

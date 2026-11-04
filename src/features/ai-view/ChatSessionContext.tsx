@@ -14,7 +14,7 @@ import type { UserByClerkIdResponse } from '@/types/apollo';
 import { useChatData, type ChatPatient } from './useChatData';
 import { useChatMode } from './useChatMode';
 import { newChatId, useChatThread, type AssistantReply, type ChatThreadMessage } from './useChatThread';
-import { cardPatientId } from './utils/chatCards';
+import { latestCardPatientId } from './utils/chatCards';
 import {
   conversationStorageKey,
   parseConversations,
@@ -200,11 +200,15 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
     return () => window.removeEventListener('ai-credits-changed', refetchCredits);
   }, [refetchCredits]);
 
+  // The chip's patient (set below) is what a model card is checked against when a message is sent.
+  const contextPatientIdRef = useRef<string | undefined>(undefined);
+  const getContextPatientId = useCallback(() => contextPatientIdRef.current, []);
   const thread = useChatThread({
     useAi: preference.useAi,
     context: intentContext,
     ready: isReady,
     scopeKey: organizationId,
+    getContextPatientId,
   });
   const { messages, reset, isBusy } = thread;
 
@@ -236,16 +240,11 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
   const [isContextOpen, setContextOpen] = useState(false);
   const [pinnedPatientId, setPinnedPatientId] = useState<string | undefined>(undefined);
 
-  const latestPatientId = useMemo(() => {
-    for (let index = messages.length - 1; index >= 0; index -= 1) {
-      const message = messages[index];
-      if (message.role !== 'assistant') continue;
-      const patientId = cardPatientId(message.spec);
-      if (patientId) return patientId;
-    }
-    return undefined;
-  }, [messages]);
+  const latestPatientId = useMemo(() => latestCardPatientId(messages), [messages]);
   const contextPatientId = pinnedPatientId ?? latestPatientId;
+  useEffect(() => {
+    contextPatientIdRef.current = contextPatientId;
+  }, [contextPatientId]);
   const contextPatient = contextPatientId ? patients.find((patient) => patient.id === contextPatientId) : undefined;
 
   const goHome = useCallback(() => {
