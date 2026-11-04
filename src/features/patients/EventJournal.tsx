@@ -4,6 +4,7 @@ import { History } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { formatDateWithTime, mapDifficultyToFeeling, getFeelingLabel } from '@/lib/therapyStatus';
+import { isDiscomfortPain } from './utils/patientFeedbackScale';
 import type { ExerciseProgressData } from '@/lib/therapyStatus';
 
 export type EventType = 'discomfort' | 'training' | 'message' | 'inactive';
@@ -94,7 +95,7 @@ function progressToEvents(progress: ExerciseProgressData[], maxDays: number = 7)
     }
 
     // Sprawdź dyskomfort
-    const discomfortEvent = dayProgress.find((p) => p.painLevel && p.painLevel > 5);
+    const discomfortEvent = dayProgress.find((p) => isDiscomfortPain(p.painLevel));
     if (discomfortEvent) {
       events.push({
         id: `discomfort-${discomfortEvent.id}`,

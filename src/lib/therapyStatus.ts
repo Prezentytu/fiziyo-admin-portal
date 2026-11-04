@@ -4,14 +4,19 @@
  */
 
 import {
-  ADHERENCE_THRESHOLDS,
+  isDiscomfortPain,
+  isHardDifficulty,
+  mapDifficultyToFeeling,
+  type FeelingType,
+} from '@/features/patients/utils/patientFeedbackScale';
+import {
   evaluateTherapyAdherence,
   type TherapyReason,
   type TherapyTone,
 } from '@/features/patients/utils/therapyAdherence';
 
 export type TherapyStatus = 'success' | 'warning' | 'alert';
-export type FeelingType = 'easy' | 'ok' | 'hard';
+export { mapDifficultyToFeeling, type FeelingType };
 export type WellbeingType = 'ok' | 'discomfort';
 
 export interface Frequency {
@@ -188,17 +193,7 @@ export function getRequiredWeeklyTrainings(assignments: PatientAssignmentData[])
  * Mapuje painLevel na status samopoczucia
  */
 export function mapPainToWellbeing(level: number | null | undefined): WellbeingType {
-  if (level === null || level === undefined || level <= 4) return 'ok';
-  return 'discomfort';
-}
-
-/**
- * Mapuje difficultyLevel na odczucie trudności
- */
-export function mapDifficultyToFeeling(level: number | null | undefined): FeelingType {
-  if (level === null || level === undefined || level <= 3) return 'easy';
-  if (level <= 6) return 'ok';
-  return 'hard';
+  return isDiscomfortPain(level) ? 'discomfort' : 'ok';
 }
 
 /**
@@ -282,14 +277,10 @@ export function calculateTherapyStatus(
   const requiredSoFar = requiredWeekly > 0 ? Math.ceil((requiredWeekly / 7) * daysSinceStart) : daysSinceStart;
 
   // Policz trudne treningi
-  const hardCount = recentProgress.filter(
-    (p) => p.difficultyLevel !== null && p.difficultyLevel !== undefined && p.difficultyLevel > ADHERENCE_THRESHOLDS.hardDifficultyLevel
-  ).length;
+  const hardCount = recentProgress.filter((p) => isHardDifficulty(p.difficultyLevel)).length;
 
   // Sprawdź czy jest dyskomfort
-  const hasDiscomfort = recentProgress.some(
-    (p) => p.painLevel !== null && p.painLevel !== undefined && p.painLevel > ADHERENCE_THRESHOLDS.discomfortPainLevel
-  );
+  const hasDiscomfort = recentProgress.some((p) => isDiscomfortPain(p.painLevel));
 
   const missedTrainings = Math.max(0, requiredSoFar - activeDays);
   const lastActivityAt = recentProgress[0]?.completedAt ?? undefined;
@@ -380,11 +371,11 @@ export function generateHeatmapData(
 
     if (dayProgress.length > 0) {
       // Użyj najgorszego statusu z dnia
-      const hasDiscomfort = dayProgress.some((p) => p.painLevel && p.painLevel > 5);
-      const hasHard = dayProgress.some((p) => p.difficultyLevel && p.difficultyLevel > 6);
+      const hasDiscomfort = dayProgress.some((p) => isDiscomfortPain(p.painLevel));
+      const hasHard = dayProgress.some((p) => isHardDifficulty(p.difficultyLevel));
       const notes = dayProgress.find((p) => p.patientNotes)?.patientNotes;
 
-      let feeling: FeelingType;
+      let feeling: FeelingType | null;
       let wellbeing: WellbeingType = 'ok';
 
       if (hasDiscomfort) {
@@ -395,10 +386,10 @@ export function generateHeatmapData(
         feeling = 'hard';
       } else {
         // Użyj średniej trudności
+        const rated = dayProgress.filter((p) => p.difficultyLevel && p.difficultyLevel > 0);
         const avgDifficulty =
-          dayProgress.filter((p) => p.difficultyLevel).reduce((sum, p) => sum + (p.difficultyLevel || 0), 0) /
-          dayProgress.length;
-        feeling = mapDifficultyToFeeling(avgDifficulty || null);
+          rated.length > 0 ? rated.reduce((sum, p) => sum + (p.difficultyLevel || 0), 0) / rated.length : null;
+        feeling = mapDifficultyToFeeling(avgDifficulty);
       }
 
       result.push({
@@ -438,7 +429,9 @@ export function getDominantFeeling(progress: ExerciseProgressData[]): FeelingTyp
   const feelings = completed.map((p) => mapDifficultyToFeeling(p.difficultyLevel));
   const counts = { easy: 0, ok: 0, hard: 0 };
 
-  feelings.forEach((f) => counts[f]++);
+  feelings.forEach((f) => {
+    if (f) counts[f]++;
+  });
 
   if (counts.hard > counts.ok && counts.hard > counts.easy) return 'hard';
   if (counts.easy > counts.ok) return 'easy';
