@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SIDE_OPTIONS } from '@/components/shared/exercise/fieldContract';
 import { Textarea } from '@/components/ui/textarea';
 import { useChatActions } from '../ChatSessionContext';
 import { useChatMode } from '../useChatMode';
@@ -27,6 +29,7 @@ const numberField = z.number({ message: 'Podaj liczbę' }).int().min(0).max(3600
 export const NEW_EXERCISE_SCHEMA = z.object({
   name: z.string().trim().min(3, 'Nazwa ma co najmniej 3 znaki').max(120),
   description: z.string().trim().min(10, 'Opisz w jednym, dwóch zdaniach, jak wykonać ćwiczenie').max(2000),
+  side: z.enum(['none', 'left', 'right', 'both', 'alternating']),
   sets: numberField.min(1),
   reps: numberField,
   executionTime: numberField,
@@ -66,6 +69,7 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
     defaultValues: {
       name: spec.name ?? '',
       description: spec.description ?? '',
+      side: CHAT_EXERCISE_DEFAULTS.side,
       sets: CHAT_EXERCISE_DEFAULTS.sets,
       reps: CHAT_EXERCISE_DEFAULTS.reps,
       executionTime: CHAT_EXERCISE_DEFAULTS.executionTime,
@@ -99,6 +103,7 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
       const params = paramsFromSuggestion(proposal.suggestion);
       exerciseType.current = params.type;
       for (const field of PARAM_FIELDS) fillNumber(field.name, params[field.name]);
+      if (!form.getFieldState('side').isDirty) form.setValue('side', params.side);
       if (!form.getValues('description').trim() && proposal.suggestion.description) {
         fillText('description', proposal.suggestion.description);
       }
@@ -112,13 +117,13 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
       name: values.name,
       type: resolveChatExerciseType(exerciseType.current, values.executionTime),
       patientDescription: values.description,
+      side: values.side,
       sets: values.sets,
       reps: values.reps,
       executionTime: values.executionTime || null,
       restSets: values.restSets,
       restReps: values.restReps,
       preparationTime: values.preparationTime,
-      tempo: proposal?.suggestion?.advancedParams?.tempo ?? null,
       enrichmentData: buildChatExerciseEnrichment(values.steps, values.cues),
     });
     if (!exercise) return;
@@ -194,6 +199,27 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
               />
             </label>
           ))}
+        </div>
+        <div className="flex flex-col gap-1.5 text-[13px] text-label-secondary">
+          <span id={`${testId}-side-label`}>Strona</span>
+          <Controller
+            control={form.control}
+            name="side"
+            render={({ field }) => (
+              <Select value={field.value} onValueChange={field.onChange} data-testid={`${testId}-side`}>
+                <SelectTrigger aria-labelledby={`${testId}-side-label`} data-testid={`${testId}-side-select`}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SIDE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
         </div>
         <label className="flex flex-col gap-1.5 text-[13px] text-label-secondary">
           Kroki wykonania (każdy krok w nowej linii)

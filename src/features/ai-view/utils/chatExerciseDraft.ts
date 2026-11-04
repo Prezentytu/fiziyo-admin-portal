@@ -6,6 +6,7 @@ import { ENRICHMENT_SCHEMA_V3 } from '@/features/verification/utils/enrichmentTo
 /** Parameters of a new exercise in the chat card. Times in seconds; 0 = not set. */
 export interface ChatExerciseParams {
   type: 'reps' | 'time';
+  side: ChatExerciseSide;
   sets: number;
   reps: number;
   executionTime: number;
@@ -14,9 +15,14 @@ export interface ChatExerciseParams {
   preparationTime: number;
 }
 
+export type ChatExerciseSide = ExerciseSuggestionResponse['exerciseSide'];
+
+const SIDES: readonly ChatExerciseSide[] = ['none', 'left', 'right', 'both', 'alternating'];
+
 /** Canonical defaults, so a card without AI is complete too (DOMAIN_MODEL: Exercise). */
 export const CHAT_EXERCISE_DEFAULTS: ChatExerciseParams = {
   type: 'reps',
+  side: 'none',
   sets: EXERCISE_PARAM_DEFAULTS.sets,
   reps: EXERCISE_PARAM_DEFAULTS.reps,
   executionTime: 0,
@@ -34,7 +40,10 @@ function positive(value: number | null | undefined): number | null {
  * still sees and saves them. A time exercise holds for `duration` seconds once per set.
  */
 export function paramsFromSuggestion(
-  suggestion: Pick<ExerciseSuggestionResponse, 'type' | 'sets' | 'reps' | 'duration' | 'restSets' | 'advancedParams'>,
+  suggestion: Pick<
+    ExerciseSuggestionResponse,
+    'type' | 'exerciseSide' | 'sets' | 'reps' | 'duration' | 'restSets' | 'advancedParams'
+  >,
   base: ChatExerciseParams = CHAT_EXERCISE_DEFAULTS
 ): ChatExerciseParams {
   const holdSeconds = positive(suggestion.duration);
@@ -46,6 +55,7 @@ export function paramsFromSuggestion(
 
   return {
     type,
+    side: SIDES.includes(suggestion.exerciseSide) ? suggestion.exerciseSide : base.side,
     sets: positive(suggestion.sets) ?? base.sets,
     reps: type === 'time' ? 1 : (positive(suggestion.reps) ?? base.reps),
     executionTime,

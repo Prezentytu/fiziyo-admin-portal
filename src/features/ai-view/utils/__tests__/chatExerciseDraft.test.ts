@@ -11,6 +11,7 @@ import {
 
 const SUGGESTION = {
   type: 'reps' as const,
+  exerciseSide: 'both' as const,
   sets: 4,
   reps: 12,
   duration: null,
@@ -22,6 +23,7 @@ describe('paramsFromSuggestion', () => {
   it('fills the full parameter set from the AI proposal, rest between reps from the defaults', () => {
     expect(paramsFromSuggestion(SUGGESTION)).toEqual({
       type: 'reps',
+      side: 'both',
       sets: 4,
       reps: 12,
       executionTime: 4,
