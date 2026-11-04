@@ -227,7 +227,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen }: CardProps<'Set
   const updateItem = (index: number, patch: Partial<DraftItem>) =>
     setItems(items.map((item, position) => (position === index ? { ...item, ...patch } : item)));
 
-  const name = proposeDraftName({ setName: set?.name, patientName: patient?.name });
+  const name = proposeDraftName({ setName: set?.name });
   const draft: SetDraftPayload = { name, patientId: patient?.id, sourceSetId: set?.id, items };
   const minutes = draftMinutes(items);
 
@@ -247,7 +247,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen }: CardProps<'Set
   };
 
   const handleSaveTemplate = async () => {
-    const saved = await saveTemplateSet(organizationId, set?.name ?? 'Nowy zestaw', items);
+    const saved = await saveTemplateSet(organizationId, name, items);
     if (!saved) return;
     markChosen(messageId, 'saved');
     appendExchange('Zapisz w katalogu', {

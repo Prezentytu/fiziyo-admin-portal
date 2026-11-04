@@ -43,6 +43,7 @@ import type { ExerciseTagsResponse, TagCategoriesResponse, OrganizationExerciseS
 import type { PatientClinicalNotesQueryData } from '@/graphql/types/operation-responses';
 import { getExerciseDefaultParams } from '@/features/exercise-sets/utils/exerciseDefaults';
 import { submitCreateTemplateSet } from '@/features/exercise-sets/utils/createSetSubmit';
+import { defaultSetName } from '@/features/exercise-sets/utils/defaultSetName';
 import { countExerciseUsage } from '@/features/exercise-sets/utils/builderExercises';
 import { buildMappingOverridesFromParams } from '@/features/exercise-sets/utils/buildMappingOverridesFromParams';
 
@@ -101,7 +102,7 @@ export function CreateSetWizard({
 
   useEffect(() => {
     if (open) {
-      setName(patientName ? `Zestaw dla ${patientName}` : '');
+      setName(defaultSetName({ forPatient: Boolean(patientName) }));
       setDescription('');
       setShowDescription(false);
       setSelectedInstances([]);
@@ -413,6 +414,7 @@ export function CreateSetWizard({
                   onClick={handleCloseAttempt}
                   className="h-9 w-9 min-w-9 shrink-0 text-muted-foreground hover:text-foreground rounded-md"
                   aria-label="Zamknij"
+                  data-testid="set-composer-close-btn"
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -457,6 +459,7 @@ export function CreateSetWizard({
             onClick={handleCloseAttempt}
             disabled={isLoading}
             className="text-muted-foreground hover:text-foreground"
+            data-testid="set-composer-cancel-btn"
           >
             Anuluj
           </Button>
