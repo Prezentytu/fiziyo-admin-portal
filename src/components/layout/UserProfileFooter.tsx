@@ -39,6 +39,7 @@ interface UserProfileFooterProps {
 export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
   const signOut = useAppSignOut();
   const [isOpen, setIsOpen] = useState(false);
+  const [isTooltipOpen, setIsTooltipOpen] = useState(false);
   const { isLoaded, avatarUrl, email, displayName, compactDisplayName, initials } = useCurrentUserDisplay();
   const accountNavigationItems = useAccountNavigationItems();
 
@@ -177,7 +178,8 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
   if (isCollapsed) {
     return (
       <div className="mx-3 border-t-[0.5px] border-separator py-2">
-        <Tooltip open={!isOpen}>
+        {/* Podpowiedź tylko przy najechaniu; zawsze otwarta zasłaniała panel przy wąskim oknie. */}
+        <Tooltip open={isTooltipOpen && !isOpen} onOpenChange={setIsTooltipOpen}>
           <TooltipTrigger asChild>
             <div>{menuContent}</div>
           </TooltipTrigger>
