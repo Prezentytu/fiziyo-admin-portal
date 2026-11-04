@@ -9,7 +9,7 @@ import { InitialsAvatar } from '@/components/shared/page';
 import { normalizeSearchText } from '@/features/exercises/utils/exerciseSearch';
 import { useChatActions } from '../ChatSessionContext';
 import { NO_PATIENT_OPTION } from '../utils/intentRouter';
-import { proposeDraftName, savedInCatalogText, scheduleQuestion, type SetDraftPayload } from '../utils/setDraft';
+import { savedInCatalogText, scheduleQuestion, type SetDraftPayload } from '../utils/setDraft';
 import type { CardProps } from './cardProps';
 import { ChatCard } from './ChatCard';
 import { NewPatientForm } from './NewPatientForm';
@@ -43,11 +43,7 @@ export function PickPatientCard({ spec, testId, messageId, chosen }: CardProps<'
 
   const continueWith = (patientId: string, name: string) => {
     markChosen(messageId, name);
-    const draft: SetDraftPayload = {
-      ...spec.draft,
-      patientId,
-      name: proposeDraftName({ setName: spec.draft.name.split(' · ')[0], patientName: name }),
-    };
+    const draft: SetDraftPayload = { ...spec.draft, patientId };
     appendExchange(name, {
       text: scheduleQuestion(draft.items),
       spec: { component: 'Schedule', draft },

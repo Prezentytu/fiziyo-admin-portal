@@ -693,9 +693,7 @@ function AssignmentWizardContent({
       ? searchQuery.trim()
       : 'Nowy zestaw';
 
-    const setNamePattern = preselectedPatient
-      ? `Plan dla ${preselectedPatient.name} - ${today}`
-      : `${baseName} - ${today}`;
+    const setNamePattern = `${baseName} - ${today}`;
 
     // Reset builder state for new set
     setBuilderInstances([]);
@@ -711,7 +709,7 @@ function AssignmentWizardContent({
     // Switch to creating-new mode and navigate to customize step
     setIsCreatingNewSet(true);
     setCurrentStep('customize-set');
-  }, [preselectedPatient]);
+  }, []);
 
   const restoreFocusAfterDialog = useCallback((selector: string) => {
     window.setTimeout(() => {

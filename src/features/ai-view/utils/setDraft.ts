@@ -2,6 +2,8 @@ import {
   getExerciseDefaultParams,
   type ExerciseLikeForDefaults,
 } from '@/features/exercise-sets/utils/exerciseDefaults';
+import { format } from 'date-fns';
+
 import { DEFAULT_SCHEDULE_PLAN, planWeeksLabel } from './schedulePlan';
 import type { ExerciseMappingSubmitInput } from '@/features/exercise-sets/utils/createSetSubmit';
 import type { ExerciseParameterValues } from '@/components/shared/exercise/ExerciseParametersFields';
@@ -193,10 +195,13 @@ export function savedInCatalogText(name: string): string {
 
 const MAX_NAME_LENGTH = 80;
 
-/** "Kolano po ACL · Jan Kowalski": the topic the therapist wrote, then whose plan it is. */
-export function proposeDraftName(options: { setName?: string; topic?: string; patientName?: string }): string {
-  const base = options.setName?.trim() || capitalize(options.topic?.trim()) || 'Nowy zestaw';
-  const name = options.patientName ? `${base} · ${options.patientName}` : base;
+// The name travels to the patient's app, the catalogue and the PDF, so it never carries
+// the patient's personal data; the assignment already says whose plan it is.
+export function proposeDraftName(options: { setName?: string; topic?: string; today?: Date }): string {
+  const name =
+    options.setName?.trim() ||
+    capitalize(options.topic?.trim()) ||
+    `Nowy zestaw · ${format(options.today ?? new Date(), 'dd.MM')}`;
   return name.slice(0, MAX_NAME_LENGTH);
 }
 

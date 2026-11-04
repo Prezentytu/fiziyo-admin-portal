@@ -59,12 +59,10 @@ describe('formatDraftParams', () => {
 });
 
 describe('proposeDraftName', () => {
-  it('uses the set name or topic, then the patient', () => {
-    expect(proposeDraftName({ setName: 'Kolano · faza 2', patientName: 'Jan Kowalski' })).toBe(
-      'Kolano · faza 2 · Jan Kowalski'
-    );
+  it('uses the set name or topic, never the patient', () => {
+    expect(proposeDraftName({ setName: 'Kolano · faza 2' })).toBe('Kolano · faza 2');
     expect(proposeDraftName({ topic: 'bark po urazie' })).toBe('Bark po urazie');
-    expect(proposeDraftName({})).toBe('Nowy zestaw');
+    expect(proposeDraftName({ today: new Date(2026, 10, 4) })).toBe('Nowy zestaw · 04.11');
   });
 
   it('keeps the name within 80 characters', () => {
