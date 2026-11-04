@@ -321,6 +321,26 @@ export function getDayFeeling(dayProgress: ExerciseProgressData[]): FeelingType 
   return mapDifficultyToFeeling(rated.reduce((sum, p) => sum + (p.difficultyLevel || 0), 0) / rated.length);
 }
 
+/** Pierwsza niepusta notatka pacjenta z dnia, niezależnie od tego, które ćwiczenie ją niesie. */
+export function getDayNote(dayProgress: ExerciseProgressData[]): string | undefined {
+  return dayProgress.map((p) => p.patientNotes?.trim()).find((note): note is string => Boolean(note));
+}
+
+/** Werdykt dnia w kalendarzu. Brak oceny (0) nie jest „OK”. */
+export function describeTrainingDay(day: Pick<DayData, 'wellbeing' | 'feeling'>): string {
+  if (day.wellbeing === 'discomfort') return 'Zgłoszono dyskomfort';
+  switch (day.feeling) {
+    case 'hard':
+      return 'Trening wykonany: Ciężko';
+    case 'easy':
+      return 'Trening wykonany: Lekko';
+    case 'ok':
+      return 'Trening wykonany: OK';
+    default:
+      return 'Trening wykonany, bez oceny';
+  }
+}
+
 /**
  * Generuje dane dla heatmapy (ostatnie 4 tygodnie)
  * Uwzględnia przypisania - datę rozpoczęcia i zaplanowane dni
@@ -388,7 +408,7 @@ export function generateHeatmapData(
     if (dayProgress.length > 0) {
       // Użyj najgorszego statusu z dnia
       const hasDiscomfort = dayProgress.some((p) => isDiscomfortPain(p.painLevel));
-      const notes = dayProgress.find((p) => p.patientNotes)?.patientNotes;
+      const notes = getDayNote(dayProgress);
 
       const feeling = getDayFeeling(dayProgress);
       let wellbeing: WellbeingType = 'ok';

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { calculateTherapyStatus, generateHeatmapData, getDayFeeling } from '@/lib/therapyStatus';
+import { calculateTherapyStatus, describeTrainingDay, generateHeatmapData, getDayFeeling } from '@/lib/therapyStatus';
+
+import { progressToEvents } from '../EventJournal';
 
 import {
   formatFeedbackLevel,
@@ -86,5 +88,29 @@ describe('getDayFeeling', () => {
 
     expect(getDayFeeling(easyFirst)).toBe('hard');
     expect(getDayFeeling([{ id: 'c', status: 'completed', difficultyLevel: 0 }])).toBeNull();
+  });
+});
+
+describe('a day without a difficulty answer', () => {
+  it('is not described as an OK training in the calendar', () => {
+    const label = describeTrainingDay({ wellbeing: 'ok', feeling: getDayFeeling([{ id: 'a', status: 'completed', difficultyLevel: 0 }]) });
+
+    expect(label).not.toMatch(/OK|Lekko/);
+    expect(describeTrainingDay({ wellbeing: 'ok', feeling: 'ok' })).toBe('Trening wykonany: OK');
+  });
+});
+
+describe('event journal on a discomfort day', () => {
+  it("keeps the patient's note when it sits on another exercise than the pain, whatever the order", () => {
+    const completedAt = new Date().toISOString();
+    const pain = { id: 'pain', status: 'completed', completedAt, painLevel: 5, patientNotes: '' };
+    const note = { id: 'note', status: 'completed', completedAt, painLevel: 0, patientNotes: 'Kolano bolało przy przysiadzie' };
+
+    for (const day of [[pain, note], [note, pain]]) {
+      const [today] = progressToEvents(day, 1);
+
+      expect(today.type).toBe('discomfort');
+      expect(today.description).toBe('Kolano bolało przy przysiadzie');
+    }
   });
 });

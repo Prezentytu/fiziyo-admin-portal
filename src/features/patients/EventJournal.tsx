@@ -3,7 +3,7 @@
 import { History } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
-import { formatDateWithTime, getDayFeeling, getFeelingLabel } from '@/lib/therapyStatus';
+import { formatDateWithTime, getDayFeeling, getDayNote, getFeelingLabel } from '@/lib/therapyStatus';
 import { isDiscomfortPain } from './utils/patientFeedbackScale';
 import type { ExerciseProgressData } from '@/lib/therapyStatus';
 
@@ -59,7 +59,7 @@ const eventConfig: Record<
 /**
  * Konwertuje postępy ćwiczeń na zdarzenia dziennika (z dniami bez aktywności)
  */
-function progressToEvents(progress: ExerciseProgressData[], maxDays: number = 7): JournalEvent[] {
+export function progressToEvents(progress: ExerciseProgressData[], maxDays: number = 7): JournalEvent[] {
   const events: JournalEvent[] = [];
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -102,7 +102,7 @@ function progressToEvents(progress: ExerciseProgressData[], maxDays: number = 7)
         type: 'discomfort',
         date: new Date(discomfortEvent.completedAt!),
         title: 'Zgłoszono dyskomfort',
-        description: discomfortEvent.patientNotes || undefined,
+        description: discomfortEvent.patientNotes?.trim() || getDayNote(dayProgress),
       });
       continue;
     }
