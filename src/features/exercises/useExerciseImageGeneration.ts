@@ -3,13 +3,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { aiService } from '@/services/aiService';
-import type { ExerciseImageErrorCode, ImageStyle } from '@/types/ai.types';
+import type { ExerciseImageErrorCode, ExerciseImagePhase, ImageStyle } from '@/types/ai.types';
 
 export interface GenerateExerciseImageParams {
   exerciseName: string;
   exerciseDescription?: string;
   exerciseType?: 'reps' | 'time';
   style?: ImageStyle;
+  /** Pozycja wyjściowa albo końcowa ruchu; brak = jeden najbardziej instruktażowy moment. */
+  phase?: ExerciseImagePhase;
 }
 
 export interface UseExerciseImageGenerationOptions {
@@ -87,7 +89,7 @@ export function useExerciseImageGeneration(options: UseExerciseImageGenerationOp
           params.exerciseDescription,
           params.exerciseType,
           params.style ?? imageStyle,
-          { signal: controller.signal }
+          { signal: controller.signal, phase: params.phase }
         );
 
         if (controller.signal.aborted) {

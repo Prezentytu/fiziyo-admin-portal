@@ -67,6 +67,7 @@ import {
 } from '@/features/exercises/utils/exerciseDuplicateCandidates';
 import { createExerciseSubmit } from './utils/createExerciseSubmit';
 import { inferExerciseType } from './utils/inferExerciseType';
+import { insertGeneratedImage, nextGeneratedImagePhase } from './utils/exerciseMedia';
 import { ExerciseParametersEditor } from './ExerciseParametersEditor';
 import { ExerciseContentSections } from './ExerciseContentSections';
 import { useEnrichmentDraft } from './useEnrichmentDraft';
@@ -1287,17 +1288,19 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
     }
 
     const inferredType = inferExerciseType(data.executionTime);
+    const phase = nextGeneratedImagePhase(mediaFiles.length);
     const file = await generateExerciseImage({
       exerciseName: data.name,
       exerciseDescription: data.description,
       exerciseType: inferredType,
       style: imageStyle,
+      phase,
     });
 
     if (file) {
-      setMediaFiles((prev) => [file, ...prev]);
+      setMediaFiles((prev) => insertGeneratedImage(prev, file, phase));
     }
-  }, [data.name, data.description, data.executionTime, generateExerciseImage, imageStyle]);
+  }, [data.name, data.description, data.executionTime, generateExerciseImage, imageStyle, mediaFiles.length]);
 
   // Remove image
   const handleRemoveImage = useCallback((index: number) => {

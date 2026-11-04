@@ -19,6 +19,7 @@ import type {
   PatientContext,
   ClinicalNoteAction,
   ExerciseImageRequest,
+  ExerciseImagePhase,
   ExerciseImageResponse,
   ExerciseImageErrorCode,
   GenerateExerciseImageResult,
@@ -366,7 +367,7 @@ class AIService {
     exerciseDescription?: string,
     exerciseType?: 'reps' | 'time',
     style: ImageStyle = 'illustration',
-    options?: { signal?: AbortSignal }
+    options?: { signal?: AbortSignal; phase?: ExerciseImagePhase }
   ): Promise<GenerateExerciseImageResult> {
     if (!exerciseName.trim() || exerciseName.length < 2) {
       return {
@@ -382,6 +383,7 @@ class AIService {
         exerciseDescription,
         exerciseType,
         style,
+        phase: options?.phase,
       };
 
       const response = await this.request<ExerciseImageResponse>('generate-image', request, {
