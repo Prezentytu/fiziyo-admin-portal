@@ -18,14 +18,6 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 
 ## Wpisy
 
-### 2026-11-04 - Opis presetu dostępny także z klawiatury
-
-- **Kategoria**: `UI/UX`
-- **Problem**: Opisy presetów w natywnym `title` nie pojawiały się po fokusie.
-- **Przyczyna**: Tooltip przeglądarki wymagał najechania myszą.
-- **Rozwiązanie**: Wspólny `Tooltip` obsługuje hover, fokus i Escape.
-- **Reguła**: Jeśli skrót wymaga wyjaśnienia, zawsze udostępnij je także po fokusie klawiatury.
-
 ### 2026-11-03 - „Przerwij, gdy…” traktowane jak lista linii gubiło strukturę
 
 - **Kategoria**: `Verification` | `Data`
