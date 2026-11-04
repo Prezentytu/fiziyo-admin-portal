@@ -37,10 +37,12 @@ export function paramsFromSuggestion(
   suggestion: Pick<ExerciseSuggestionResponse, 'type' | 'sets' | 'reps' | 'duration' | 'restSets' | 'advancedParams'>,
   base: ChatExerciseParams = CHAT_EXERCISE_DEFAULTS
 ): ChatExerciseParams {
-  const type = suggestion.type === 'time' ? 'time' : 'reps';
   const holdSeconds = positive(suggestion.duration);
   const executionTime =
-    positive(suggestion.advancedParams?.executionTime) ?? (type === 'time' ? holdSeconds : null) ?? base.executionTime;
+    positive(suggestion.advancedParams?.executionTime) ??
+    (suggestion.type === 'time' ? holdSeconds : null) ??
+    base.executionTime;
+  const type = resolveChatExerciseType(suggestion.type === 'time' ? 'time' : 'reps', executionTime);
 
   return {
     type,
@@ -69,27 +71,23 @@ export function itemsToLines(items: readonly string[] | null | undefined): strin
 }
 
 /**
- * Enrichment saved with the exercise: the AI proposal (v3) with the steps and cues the therapist
- * edited in the card. Null when there is nothing to save.
+ * A time exercise needs a hold time, or the player cannot start it. Without one it is saved as reps.
  */
-export function buildChatExerciseEnrichment(
-  aiProposal: ExerciseEnrichmentData | null,
-  stepsText: string,
-  cuesText: string
-): ExerciseEnrichmentData | null {
+export function resolveChatExerciseType(proposedType: 'reps' | 'time', executionTime: number): 'reps' | 'time' {
+  return proposedType === 'time' && executionTime > 0 ? 'time' : 'reps';
+}
+
+/**
+ * Enrichment saved with the exercise: only the steps and cues the therapist saw and edited in the
+ * card. Other AI sections (safety, mistakes, feelings) reach the patient, so they are not saved
+ * unseen. Null when there is nothing to save.
+ */
+export function buildChatExerciseEnrichment(stepsText: string, cuesText: string): ExerciseEnrichmentData | null {
   const steps = linesToItems(stepsText);
   const cues = linesToItems(cuesText);
-  const { steps: _aiSteps, cues: _aiCues, cue_phases: _aiCuePhases, ...patientRest } = aiProposal?.patient ?? {};
-  const patient = {
-    ...patientRest,
-    ...(steps.length > 0 ? { steps } : {}),
-    ...(cues.length > 0 ? { cues } : {}),
+  if (steps.length === 0 && cues.length === 0) return null;
+  return {
+    $schema: ENRICHMENT_SCHEMA_V3,
+    patient: { ...(steps.length > 0 ? { steps } : {}), ...(cues.length > 0 ? { cues } : {}) },
   };
-  const result: ExerciseEnrichmentData = {
-    ...(aiProposal ?? {}),
-    ...(Object.keys(patient).length > 0 ? { patient } : {}),
-  };
-  if (Object.keys(patient).length === 0) delete result.patient;
-  const hasContent = Object.keys(result).some((key) => key !== '$schema');
-  return hasContent ? { ...result, $schema: aiProposal?.$schema ?? ENRICHMENT_SCHEMA_V3 } : null;
 }

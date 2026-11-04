@@ -2,24 +2,27 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import { aiService } from '@/services/aiService';
 import type { ExerciseSuggestionResponse } from '@/types/ai.types';
 import { toV3 } from '@/features/verification/utils/enrichmentToV3';
 
+/** Only what the card shows: parameters, steps and cues. Other AI sections are not kept or saved. */
 export interface ExerciseProposal {
   suggestion: ExerciseSuggestionResponse | null;
-  enrichment: ExerciseEnrichmentData | null;
+  steps: string[];
+  cues: string[];
 }
 
 type ProposalState = { status: 'idle' | 'loading' | 'failed' } | { status: 'ready'; proposal: ExerciseProposal };
 
-const STORAGE_PREFIX = 'fiziyo-chat-exercise-proposal:';
+import { EXERCISE_PROPOSAL_KEY_PREFIX as STORAGE_PREFIX } from '../utils/conversationStore';
 
 function readStored(messageId: string): ExerciseProposal | null {
   try {
     const raw = window.localStorage.getItem(STORAGE_PREFIX + messageId);
-    return raw ? (JSON.parse(raw) as ExerciseProposal) : null;
+    const parsed = raw ? (JSON.parse(raw) as Partial<ExerciseProposal>) : null;
+    if (!parsed || !Array.isArray(parsed.steps) || !Array.isArray(parsed.cues)) return null;
+    return { suggestion: parsed.suggestion ?? null, steps: parsed.steps, cues: parsed.cues };
   } catch {
     return null;
   }
@@ -65,15 +68,15 @@ export function useExerciseProposal(input: {
       aiService.getExerciseSuggestion(exerciseName),
       aiService.generateEnrichment({ exerciseName, patientDescription: description?.trim() || undefined }),
     ]).then(([suggestion, enrichmentResponse]) => {
-      const enrichment =
+      const patient =
         enrichmentResponse?.success && enrichmentResponse.enrichmentData
-          ? toV3(enrichmentResponse.enrichmentData)
-          : null;
-      if (!suggestion && !enrichment) {
+          ? toV3(enrichmentResponse.enrichmentData).patient
+          : undefined;
+      const proposal: ExerciseProposal = { suggestion, steps: patient?.steps ?? [], cues: patient?.cues ?? [] };
+      if (!suggestion && proposal.steps.length === 0 && proposal.cues.length === 0) {
         setState({ status: 'failed' });
         return;
       }
-      const proposal = { suggestion, enrichment };
       store(messageId, proposal);
       setState({ status: 'ready', proposal });
     });

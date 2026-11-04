@@ -15,6 +15,7 @@ import {
   CHAT_EXERCISE_DEFAULTS,
   itemsToLines,
   paramsFromSuggestion,
+  resolveChatExerciseType,
 } from '../utils/chatExerciseDraft';
 import type { CardProps } from './cardProps';
 import { ChatCard } from './ChatCard';
@@ -102,14 +103,14 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
         fillText('description', proposal.suggestion.description);
       }
     }
-    fillText('steps', itemsToLines(proposal.enrichment?.patient?.steps));
-    fillText('cues', itemsToLines(proposal.enrichment?.patient?.cues));
+    fillText('steps', itemsToLines(proposal.steps));
+    fillText('cues', itemsToLines(proposal.cues));
   }, [form, proposal]);
 
   const submit = form.handleSubmit(async (values) => {
     const exercise = await create(organizationId, {
       name: values.name,
-      type: exerciseType.current,
+      type: resolveChatExerciseType(exerciseType.current, values.executionTime),
       patientDescription: values.description,
       sets: values.sets,
       reps: values.reps,
@@ -118,7 +119,7 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
       restReps: values.restReps,
       preparationTime: values.preparationTime,
       tempo: proposal?.suggestion?.advancedParams?.tempo ?? null,
-      enrichmentData: buildChatExerciseEnrichment(proposal?.enrichment ?? null, values.steps, values.cues),
+      enrichmentData: buildChatExerciseEnrichment(values.steps, values.cues),
     });
     if (!exercise) return;
     markChosen(messageId, 'created');

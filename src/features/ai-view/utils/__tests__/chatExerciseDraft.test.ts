@@ -6,6 +6,7 @@ import {
   itemsToLines,
   linesToItems,
   paramsFromSuggestion,
+  resolveChatExerciseType,
 } from '../chatExerciseDraft';
 
 const SUGGESTION = {
@@ -62,33 +63,29 @@ describe('steps and cues as lines', () => {
   });
 });
 
+describe('resolveChatExerciseType', () => {
+  it('saves a time exercise without a hold time as reps, so the player can start it', () => {
+    expect(resolveChatExerciseType('time', 0)).toBe('reps');
+    expect(resolveChatExerciseType('time', 30)).toBe('time');
+    expect(resolveChatExerciseType('reps', 30)).toBe('reps');
+  });
+
+  it('does not propose a time exercise when the AI gave no hold time', () => {
+    const params = paramsFromSuggestion({ ...SUGGESTION, type: 'time', duration: null, advancedParams: null });
+
+    expect(params.type).toBe('reps');
+  });
+});
+
 describe('buildChatExerciseEnrichment', () => {
-  it('saves the edited steps and cues over the AI proposal and keeps the rest of it', () => {
-    const enrichment = buildChatExerciseEnrichment(
-      {
-        $schema: 'fiziyo-exercise-v3',
-        patient: { steps: ['AI krok'], cues: ['AI wskazówka'], why: 'Wzmacnia kolano' },
-        therapist: { indications: ['ACL'] },
-      },
-      'Stań prosto\nUgnij kolana',
-      'Kolano nad stopą'
-    );
-
-    expect(enrichment).toEqual({
+  it('saves only the steps and cues shown in the card', () => {
+    expect(buildChatExerciseEnrichment('1. Stań prosto\nUgnij kolana', 'Kolano nad stopą')).toEqual({
       $schema: 'fiziyo-exercise-v3',
-      patient: { why: 'Wzmacnia kolano', steps: ['Stań prosto', 'Ugnij kolana'], cues: ['Kolano nad stopą'] },
-      therapist: { indications: ['ACL'] },
+      patient: { steps: ['Stań prosto', 'Ugnij kolana'], cues: ['Kolano nad stopą'] },
     });
   });
 
-  it('saves nothing when there is no proposal and the fields are empty', () => {
-    expect(buildChatExerciseEnrichment(null, ' \n', '')).toBeNull();
-  });
-
-  it('marks hand-written steps as v3', () => {
-    expect(buildChatExerciseEnrichment(null, 'Stań prosto', '')).toEqual({
-      $schema: 'fiziyo-exercise-v3',
-      patient: { steps: ['Stań prosto'] },
-    });
+  it('saves nothing when the fields are empty', () => {
+    expect(buildChatExerciseEnrichment(' \n', '')).toBeNull();
   });
 });
