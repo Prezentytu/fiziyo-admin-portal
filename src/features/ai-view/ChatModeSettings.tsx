@@ -11,10 +11,10 @@ export function ChatModeSettings() {
   return (
     <Card data-testid="settings-chat-mode-card">
       <CardHeader className="pb-4">
-        <CardTitle className="text-lg font-semibold tracking-tight">Tryb czatu (eksperymentalny)</CardTitle>
+        <CardTitle className="text-lg font-semibold tracking-tight">Tryb czatu</CardTitle>
         <CardDescription className="text-sm text-muted-foreground">
-          Zamiast pulpitu: piszesz, czego potrzebujesz, a asystent proponuje zestaw z Twojego katalogu. Klasyczne
-          tworzenie zestawów działa dalej.
+          Strona główna to czat: piszesz, czego potrzebujesz, a asystent proponuje zestaw z Twojego katalogu. Wyłącz,
+          żeby wrócić do klasycznego pulpitu.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-5">
