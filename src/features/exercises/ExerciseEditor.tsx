@@ -24,7 +24,7 @@ import { normalizeExerciseType } from '@/utils/exerciseEnums';
 
 /**
  * Kontekst potrzebny do "Uzupełnij przez AI" — dane wejściowe do wygenerowania treści.
- * Opcjonalny: gdy nie podany, przycisk AI-fill nie jest renderowany (np. na stronie ćwiczenia).
+ * Domyślnie pochodzi z bieżącego szkicu edytora.
  */
 export interface ExerciseEditorAiFillContext {
   name: string;
@@ -258,7 +258,12 @@ export function ExerciseEditor({
   form,
   disabled = false,
   showNameField = false,
-  aiFillContext,
+  aiFillContext = {
+    name: form.core.name,
+    patientDescription: form.core.patientDescription,
+    clinicalDescription: form.core.clinicalDescription,
+    type: form.exerciseType,
+  },
   showAdvancedJson = false,
   className,
 }: Readonly<ExerciseEditorProps>) {

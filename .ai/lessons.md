@@ -18,6 +18,14 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 
 ## Wpisy
 
+### 2026-11-04 - Narzędzie AI edytora niewłączone na żadnym wejściu
+
+- **Kategoria**: `UI/UX` | `React`
+- **Problem**: Szczegóły i dialog edycji nie pokazywały istniejącej akcji uzupełniania treści przez AI.
+- **Przyczyna**: Wspólny edytor uzależniał akcję od opcjonalnego kontekstu, którego żaden konsument nie przekazywał.
+- **Rozwiązanie**: Kontekst AI domyślnie pochodzi z aktualnego szkicu wspólnego edytora; propozycja czeka na ręczny zapis.
+- **Reguła**: Jeśli wspólna akcja zależy od danych dostępnych w szkicu, zawsze wyprowadź jej kontekst w edytorze i sprawdź, że wynik nie zapisuje się bez zatwierdzenia. [egzekwowane: src/features/exercises/__tests__/exerciseEditorAiFill.test.tsx]
+
 ### 2026-11-03 - „Przerwij, gdy…” traktowane jak lista linii gubiło strukturę
 
 - **Kategoria**: `Verification` | `Data`
