@@ -1,12 +1,12 @@
 export interface ChatModePreference {
-  /** Chat replaces the classic dashboard (DEC-20261030-01, experimental). */
+  /** Chat replaces the classic dashboard; on by default, the classic view is one toggle away. */
   enabled: boolean;
   /** Off = rule-based dispatcher only; nothing leaves the portal for a model. */
   useAi: boolean;
 }
 
 export const CHAT_MODE_STORAGE_KEY = 'fiziyo-chat-mode';
-export const DEFAULT_CHAT_MODE: ChatModePreference = { enabled: false, useAi: true };
+export const DEFAULT_CHAT_MODE: ChatModePreference = { enabled: true, useAi: true };
 
 export function parseChatModePreference(raw: string | null): ChatModePreference {
   if (!raw) return DEFAULT_CHAT_MODE;

@@ -317,6 +317,16 @@ export function ChatComposer({
           >
             <Paperclip aria-hidden="true" />
           </button>
+          <span className="flex-1" />
+          <span
+            className={cn(
+              'hidden select-none pr-2 text-[12px] text-label-tertiary transition-opacity duration-200 md:inline',
+              value.trim() && !busy ? 'opacity-100' : 'opacity-0'
+            )}
+            aria-hidden="true"
+          >
+            <kbd className="font-sans">↵</kbd> wyślij · <kbd className="font-sans">⇧↵</kbd> nowa linia
+          </span>
           {/* The hint sits on a wrapper: a disabled button gets no hover, so its own title never shows. */}
           <span
             className="inline-flex"
@@ -335,16 +345,6 @@ export function ChatComposer({
             >
               <Mic aria-hidden="true" />
             </button>
-          </span>
-          <span className="flex-1" />
-          <span
-            className={cn(
-              'hidden select-none pr-2 text-[12px] text-label-tertiary transition-opacity duration-200 md:inline',
-              value.trim() && !busy ? 'opacity-100' : 'opacity-0'
-            )}
-            aria-hidden="true"
-          >
-            <kbd className="font-sans">↵</kbd> wyślij · <kbd className="font-sans">⇧↵</kbd> nowa linia
           </span>
           {showStop ? (
             <button

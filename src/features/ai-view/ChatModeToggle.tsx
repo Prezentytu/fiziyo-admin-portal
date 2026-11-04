@@ -37,7 +37,7 @@ export function ChatModeToggle() {
           )}
         </Button>
       </TooltipTrigger>
-      <TooltipContent>{label} (eksperymentalny czat)</TooltipContent>
+      <TooltipContent>{label}</TooltipContent>
     </Tooltip>
   );
 }
