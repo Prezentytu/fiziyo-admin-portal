@@ -19,6 +19,8 @@ async function fixture(t) {
   await write('.ai/skills/manifest.json', JSON.stringify({ tiers: { core: ['demo'] } }));
   await write('.ai/skills/demo/SKILL.md', skill);
   await write('.ai/skills/demo/references/example.txt', 'reference');
+  await fs.mkdir(path.join(root, '.claude'));
+  await fs.symlink('../.ai/skills', path.join(root, '.claude/skills'));
   const run = (...args) => spawnSync(process.execPath, [script, ...args], { cwd: root, encoding: 'utf8' });
   return { root, write, run, read: (name) => fs.readFile(path.join(root, name), 'utf8') };
 }
@@ -38,6 +40,7 @@ test('lint is source-only; sync creates every mirror, overwrites canonical files
   failure(f.run('--check'), /Missing mirror/);
   success(f.run());
   for (const mirror of ['.cursor', '.agents', '.claude']) {
+    // .claude/skills is the committed symlink to the source, not a copy.
     assert.equal(await f.read(`${mirror}/skills/demo/SKILL.md`), skill);
     assert.equal(await f.read(`${mirror}/skills/demo/references/example.txt`), 'reference');
   }
@@ -103,4 +106,25 @@ test('rejects source symlinks and missing mirror entries', async (t) => {
   failure(f.run('--check'), /Mirror drift/);
   await fs.symlink('SKILL.md', path.join(f.root, '.ai/skills/demo/linked.md'));
   failure(f.run('--lint'), /symlink/);
+});
+
+test('.claude/skills must be the committed symlink to the source; sync restores a missing link', async (t) => {
+  const f = await fixture(t);
+  assert.equal(await fs.readlink(path.join(f.root, '.claude/skills')), '../.ai/skills');
+  await fs.unlink(path.join(f.root, '.claude/skills'));
+  failure(f.run('--lint'), /must be a symlink/);
+  success(f.run());
+  assert.equal(await fs.readlink(path.join(f.root, '.claude/skills')), '../.ai/skills');
+  assert.equal(await f.read('.claude/skills/demo/SKILL.md'), skill);
+  success(f.run('--check'));
+
+  await fs.unlink(path.join(f.root, '.claude/skills'));
+  await f.write('.claude/skills/demo/SKILL.md', 'old generated copy');
+  failure(f.run(), /must be a symlink.*rm -rf \.claude\/skills/);
+  failure(f.run('--check'), /must be a symlink/);
+  assert.equal(await f.read('.claude/skills/demo/SKILL.md'), 'old generated copy');
+
+  await fs.rm(path.join(f.root, '.claude/skills'), { recursive: true });
+  await fs.symlink('../elsewhere', path.join(f.root, '.claude/skills'));
+  failure(f.run('--lint'), /must be a symlink/);
 });
