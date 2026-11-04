@@ -1,11 +1,11 @@
 ---
 name: principle-sequence-verifiable-units
-description: 'Stosuj przy wielkroku, migracji, sweepie i układaniu commitów albo PR. Każda jednostka kończy się sprawdzeniem, zanim zacznie się następna. EN - sequence verifiable units, check before next step.'
+description: "Stosuj przy wielkroku, migracji, sweepie i układaniu commitów albo PR. Każda jednostka kończy się sprawdzeniem, zanim zacznie się następna. EN - sequence verifiable units, check before next step."
 ---
 
 # Sequence verifiable units
 
-> **Synchronizacja:** źródło w `fizjo-app/.ai/skills/principle-sequence-verifiable-units/SKILL.md`. Przy zmianie zaktualizuj oba repozytoria.
+> **Kopia z kanonu:** `fizjo-app/.agents/skills/principle-sequence-verifiable-units/SKILL.md` (origin/main). Nie edytuj tutaj: zmień w fizjo-app, potem `npm run principles:sync`.
 
 Praca wielokrokowa idzie małymi jednostkami. Każda kończy się stanem, który da się sprawdzić. Kolejność dostawy ma sama się tłumaczyć recenzentowi.
 

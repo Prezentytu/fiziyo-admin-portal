@@ -1,11 +1,11 @@
 ---
 name: principle-make-operations-idempotent
-description: 'Stosuj przy mutacji, imporcie, retry i pętli, która może paść w połowie. Ten sam stan końcowy niezależnie od częściowego przebiegu. EN - make operations idempotent, safe retry.'
+description: "Stosuj przy mutacji, imporcie, retry i pętli, która może paść w połowie. Ten sam stan końcowy niezależnie od częściowego przebiegu. EN - make operations idempotent, safe retry."
 ---
 
 # Make operations idempotent
 
-> **Synchronizacja:** źródło w `fizjo-app/.ai/skills/principle-make-operations-idempotent/SKILL.md`. Przy zmianie zaktualizuj oba repozytoria.
+> **Kopia z kanonu:** `fizjo-app/.agents/skills/principle-make-operations-idempotent/SKILL.md` (origin/main). Nie edytuj tutaj: zmień w fizjo-app, potem `npm run principles:sync`.
 
 Komenda, import i retry zbiegają do tego samego stanu, nawet gdy poprzedni przebieg urwał się w środku.
 

@@ -1,11 +1,11 @@
 ---
 name: principle-encode-lessons-in-structure
-description: 'Stosuj, gdy tę samą instrukcję piszesz drugi raz. Zamknij ją w teście, lincie, hooku albo skrypcie, nie w kolejnej linijce tekstu. EN - encode lessons in structure, lint instead of prose.'
+description: "Stosuj, gdy tę samą instrukcję piszesz drugi raz. Zamknij ją w teście, lincie, hooku albo skrypcie, nie w kolejnej linijce tekstu. EN - encode lessons in structure, lint instead of prose."
 ---
 
 # Encode lessons in structure
 
-> **Synchronizacja:** źródło w `fizjo-app/.ai/skills/principle-encode-lessons-in-structure/SKILL.md`. Przy zmianie zaktualizuj oba repozytoria.
+> **Kopia z kanonu:** `fizjo-app/.agents/skills/principle-encode-lessons-in-structure/SKILL.md` (origin/main). Nie edytuj tutaj: zmień w fizjo-app, potem `npm run principles:sync`.
 
 Tekst łatwo przegapić. Mechanizm nie wymaga współpracy.
 

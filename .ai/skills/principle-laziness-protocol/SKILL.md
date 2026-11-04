@@ -1,11 +1,11 @@
 ---
 name: principle-laziness-protocol
-description: 'Stosuj przy sizingu diffa, refaktorze albo pokusie nowej warstwy. Najmniejsza zmiana i kasowanie przed dodawaniem. EN - laziness protocol, smallest diff, prefer deletion.'
+description: "Stosuj przy sizingu diffa, refaktorze albo pokusie nowej warstwy. Najmniejsza zmiana i kasowanie przed dodawaniem. EN - laziness protocol, smallest diff, prefer deletion."
 ---
 
 # Laziness protocol
 
-> **Synchronizacja:** źródło w `fizjo-app/.ai/skills/principle-laziness-protocol/SKILL.md`. Przy zmianie zaktualizuj oba repozytoria.
+> **Kopia z kanonu:** `fizjo-app/.agents/skills/principle-laziness-protocol/SKILL.md` (origin/main). Nie edytuj tutaj: zmień w fizjo-app, potem `npm run principles:sync`.
 
 Cel to ten sam skutek przy mniejszej ilości kodu.
 

@@ -12,6 +12,8 @@
     "skills:lint": "node scripts/sync-cursor-skills.mjs --lint",
     "agent:check": "node scripts/check-agent-adapter.mjs && node scripts/check-specs-index.mjs && node scripts/check-agent-docs-graphql.mjs && node scripts/check-trunk-main.mjs && node scripts/check-agent-context.mjs",
     "docs:sync": "node scripts/sync-shared-docs.mjs",
+    "principles:sync": "node scripts/sync-principles.mjs",
+    "principles:check": "node scripts/sync-principles.mjs --check",
     "agent:test": "node --test scripts/*.test.mjs",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
