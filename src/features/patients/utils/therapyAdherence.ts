@@ -1,3 +1,5 @@
+import { polishPlural } from '@/utils/polishPlural';
+
 export const ADHERENCE_THRESHOLDS = {
   gentleNoticeDays: 3,
   sustainedGapDays: 5,
@@ -112,13 +114,19 @@ export function evaluateTherapyAdherence(metrics: TherapyAdherenceMetrics): Ther
     };
   }
 
-  const completionPercent = metrics.requiredSoFar > 0 ? Math.round((metrics.activeDays / metrics.requiredSoFar) * 100) : 100;
+  // Days with a training, not a percentage: "Realizacja planu" next to it is a percentage of exercises.
+  // requiredSoFar sums weekly targets of all plans, so it can exceed the days in the window.
+  const plannedDays = Math.min(metrics.requiredSoFar, metrics.daysSinceStart);
+  const trainingDays =
+    plannedDays > 0 && metrics.activeDays < plannedDays
+      ? ` (${metrics.activeDays} z ${plannedDays} ${polishPlural(plannedDays, 'dnia', 'dni', 'dni')} z treningiem)`
+      : '';
 
   return {
     tone: 'positive',
     reason: 'on_track',
     title: 'Regularna aktywność',
-    description: `Pacjent realizuje plan zgodnie z założeniami${completionPercent < 100 ? ` (${completionPercent}% wykonania)` : ''}.`,
+    description: `Pacjent realizuje plan zgodnie z założeniami${trainingDays}.`,
     nextStep: 'Brak pilnej interwencji',
     badgeLabel: 'W NORMIE',
     daysSinceLastActivity: metrics.daysSinceLastActivity,
