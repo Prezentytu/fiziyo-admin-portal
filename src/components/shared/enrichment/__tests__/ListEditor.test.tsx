@@ -59,4 +59,26 @@ describe('ListEditor', () => {
     await user.click(removeButton);
     expect(onChange).toHaveBeenCalledWith([]);
   });
+
+  it('podaje indeks usuniętego wiersza, żeby fazy wskazówek przesunęły się z listą', async () => {
+    const user = userEvent.setup();
+    const onRemoveItem = vi.fn();
+    render(
+      <ListEditor
+        title="Wskazówki"
+        items={['Pilnuj kolana', 'Oddychaj']}
+        placeholder="Np. „Pilnuj kolana”"
+        addLabel="Dodaj wskazówkę"
+        onChange={vi.fn()}
+        onRemoveItem={onRemoveItem}
+        renderItemAccessory={(index) => <span data-testid={`cues-phase-${index}`} />}
+        testIdPrefix="cues"
+      />
+    );
+
+    await user.click(screen.getByTestId('cues-remove-0'));
+
+    expect(onRemoveItem).toHaveBeenCalledWith(0);
+    expect(screen.getByTestId('cues-phase-1')).toBeInTheDocument();
+  });
 });

@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +18,10 @@ interface ListEditorProps {
   onChange: (items: string[]) => void;
   onBlur?: () => void;
   testIdPrefix?: string;
+  /** Extra control next to an existing item, e.g. the phase of a cue. */
+  renderItemAccessory?: (index: number) => ReactNode;
+  /** Called with the removed index, so data linked by index can shift with the list. */
+  onRemoveItem?: (index: number) => void;
 }
 
 function slugify(value: string): string {
@@ -38,6 +43,8 @@ export function ListEditor({
   onChange,
   onBlur,
   testIdPrefix,
+  renderItemAccessory,
+  onRemoveItem,
 }: Readonly<ListEditorProps>) {
   const safeItems = items.length > 0 ? items : [''];
   const prefix = testIdPrefix ?? (slugify(title) || 'list-editor');
@@ -66,36 +73,38 @@ export function ListEditor({
       {safeItems.map((item, index) => {
         const canRemove = canRemovePlaceholderRow(safeItems, index, isBlankText);
         return (
-        <div key={`${title}-${index}`} className="flex min-w-0 gap-2">
-          <Input
-            data-testid={`${prefix}-item-${index}`}
-            value={item}
-            disabled={disabled}
-            placeholder={placeholder}
-            className="min-w-0 w-full"
-            onChange={(event) => {
-              const next = [...safeItems];
-              next[index] = event.target.value;
-              onChange(next);
-            }}
-            onBlur={onBlur}
-          />
-          <Button
-            data-testid={`${prefix}-remove-${index}`}
-            type="button"
-            variant="ghost"
-            size="icon"
-            disabled={disabled || !canRemove}
-            aria-label={canRemove ? 'Usuń' : 'Brak treści do usunięcia'}
-            onClick={() => {
-              const next = safeItems.filter((_, entryIndex) => entryIndex !== index);
-              onChange(next);
-              onBlur?.();
-            }}
-          >
-            <Trash2 className={cn('h-4 w-4', canRemove ? 'text-destructive' : 'text-muted-foreground')} />
-          </Button>
-        </div>
+          <div key={`${title}-${index}`} className={cn('flex min-w-0 gap-2', renderItemAccessory && 'flex-wrap')}>
+            <Input
+              data-testid={`${prefix}-item-${index}`}
+              value={item}
+              disabled={disabled}
+              placeholder={placeholder}
+              className={cn('min-w-0 w-full', renderItemAccessory && 'min-w-[200px] flex-1')}
+              onChange={(event) => {
+                const next = [...safeItems];
+                next[index] = event.target.value;
+                onChange(next);
+              }}
+              onBlur={onBlur}
+            />
+            {renderItemAccessory && index < items.length ? renderItemAccessory(index) : null}
+            <Button
+              data-testid={`${prefix}-remove-${index}`}
+              type="button"
+              variant="ghost"
+              size="icon"
+              disabled={disabled || !canRemove}
+              aria-label={canRemove ? 'Usuń' : 'Brak treści do usunięcia'}
+              onClick={() => {
+                const next = safeItems.filter((_, entryIndex) => entryIndex !== index);
+                onChange(next);
+                if (index < items.length) onRemoveItem?.(index);
+                onBlur?.();
+              }}
+            >
+              <Trash2 className={cn('h-4 w-4', canRemove ? 'text-destructive' : 'text-muted-foreground')} />
+            </Button>
+          </div>
         );
       })}
     </div>

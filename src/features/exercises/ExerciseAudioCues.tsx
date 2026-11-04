@@ -6,8 +6,11 @@ import { ListEditor } from '@/components/shared/enrichment/ListEditor';
 import { cn } from '@/lib/utils';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import { EXERCISE_CONTENT_LABELS } from '@/components/shared/enrichment/enrichmentFieldLabels';
+import { SegmentedControl } from '@/components/ui/segmented-control';
+import { CUE_PHASE_OPTIONS, getCuePhase, removeCuePhaseAt, setCuePhase } from '@/features/verification/utils/stepMedia';
 
 const CUES_PATH = 'patient.cues';
+const CUE_PHASES_PATH = 'patient.cue_phases';
 
 interface ExerciseAudioCuesProps {
   audioCue?: string;
@@ -21,7 +24,7 @@ interface ExerciseAudioCuesProps {
   showTtsCue?: boolean;
 }
 
-function CueRow({ text, index }: { text: string; index: number }) {
+function CueRow({ text, index, phaseLabel }: { text: string; index: number; phaseLabel: string }) {
   const trimmed = text.trim();
   if (!trimmed) return null;
 
@@ -31,6 +34,9 @@ function CueRow({ text, index }: { text: string; index: number }) {
         <Volume2 className="h-3 w-3 text-primary" />
       </span>
       <p className="flex-1 min-w-0 text-sm text-foreground leading-snug">{trimmed}</p>
+      <span className="shrink-0 rounded-full bg-surface-light px-2 py-0.5 text-[11px] text-muted-foreground">
+        {phaseLabel}
+      </span>
     </li>
   );
 }
@@ -46,6 +52,9 @@ export function ExerciseAudioCues({
   showTtsCue = true,
 }: Readonly<ExerciseAudioCuesProps>) {
   const cues = enrichmentData?.patient?.cues ?? [];
+  const cuePhases = enrichmentData?.patient?.cue_phases;
+  const phaseLabel = (index: number) =>
+    CUE_PHASE_OPTIONS.find((option) => option.value === getCuePhase(cuePhases, index))?.label ?? '';
   const hasAudioCue = Boolean(audioCue?.trim());
   const hasCues = cues.some((cue) => cue.trim());
   const showTtsBlock = showTtsCue && (editable || hasAudioCue);
@@ -65,10 +74,7 @@ export function ExerciseAudioCues({
 
       {showTtsBlock && (
         <div
-          className={cn(
-            'rounded-xl p-3',
-            hasCues ? 'bg-primary/5 border border-primary/15' : 'bg-surface-light/30'
-          )}
+          className={cn('rounded-xl p-3', hasCues ? 'bg-primary/5 border border-primary/15' : 'bg-surface-light/30')}
           data-testid="exercise-audio-cue-main"
         >
           <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
@@ -113,13 +119,25 @@ export function ExerciseAudioCues({
           onChange={(items) => setPath?.(CUES_PATH, items)}
           onBlur={() => void persist?.()}
           testIdPrefix="exercise-audio-cues-editor"
+          onRemoveItem={(index) => setPath?.(CUE_PHASES_PATH, removeCuePhaseAt(cuePhases, index))}
+          renderItemAccessory={(index) => (
+            <SegmentedControl
+              label={`Faza wskazówki ${index + 1}`}
+              options={CUE_PHASE_OPTIONS}
+              value={getCuePhase(cuePhases, index)}
+              onChange={(phase) => setPath?.(CUE_PHASES_PATH, setCuePhase(cuePhases, index, phase))}
+              disabled={disabled}
+              shape="pill"
+              testId={`exercise-audio-cues-editor-phase-${index}`}
+            />
+          )}
         />
       ) : (
         <>
           {hasCues && (
             <ul className="space-y-3" data-testid="exercise-audio-cues-list">
               {cues.map((text, index) => (
-                <CueRow key={`cue-${text}-${index}`} text={text} index={index} />
+                <CueRow key={`cue-${text}-${index}`} text={text} index={index} phaseLabel={phaseLabel(index)} />
               ))}
             </ul>
           )}
