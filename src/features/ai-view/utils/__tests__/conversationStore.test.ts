@@ -115,10 +115,11 @@ describe('removeConversation', () => {
 });
 
 describe('clearStoredConversations', () => {
-  it('removes every chat history and nothing else', () => {
+  it('removes every chat history and card proposal and nothing else', () => {
     const entries = new Map<string, string>([
       [conversationStorageKey('u1', 'org-a'), '[]'],
       [conversationStorageKey('u2', 'org-b'), '[]'],
+      ['fiziyo-chat-exercise-proposal:m1', '{}'],
       ['fiziyo-chat-mode', '{"enabled":true}'],
     ]);
     const storage = {
@@ -133,6 +134,7 @@ describe('clearStoredConversations', () => {
     clearStoredConversations(storage);
     expect(entries.has(conversationStorageKey('u1', 'org-a'))).toBe(false);
     expect(entries.has(conversationStorageKey('u2', 'org-b'))).toBe(false);
+    expect(entries.has('fiziyo-chat-exercise-proposal:m1')).toBe(false);
     expect(entries.get('fiziyo-chat-mode')).toBe('{"enabled":true}');
   });
 });
