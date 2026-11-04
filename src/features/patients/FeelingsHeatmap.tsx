@@ -3,6 +3,7 @@
 import { CalendarDays } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import { describeTrainingDay } from '@/lib/therapyStatus';
 import type { DayData } from '@/lib/therapyStatus';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -79,18 +80,7 @@ export function FeelingsHeatmap({ data, className, title }: FeelingsHeatmapProps
     }
 
     if (day.hasActivity) {
-      let status = '';
-      if (day.wellbeing === 'discomfort') {
-        status = 'Zgłoszono dyskomfort';
-      } else if (day.feeling === 'hard') {
-        status = 'Trening wykonany: Ciężko';
-      } else if (day.feeling === 'easy') {
-        status = 'Trening wykonany: Lekko';
-      } else {
-        status = 'Trening wykonany: OK';
-      }
-
-      let tooltip = `${dateStr} - ${status}`;
+      let tooltip = `${dateStr} - ${describeTrainingDay(day)}`;
       if (day.notes) {
         tooltip += `\n"${day.notes}"`;
       }

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ActivityStatusLabel, InitialsAvatar } from '@/components/shared/page';
 import { getPatientActivityStatus } from '@/features/patients/utils/patientActivityStatus';
+import { PATIENT_FEEDBACK_SCALE_MAX } from '@/features/patients/utils/patientFeedbackScale';
 import { GET_PATIENT_LAST_VISIT_QUERY } from '@/graphql/queries/clinicalNotes.queries';
 import { GET_PATIENT_ACTIVITY_REPORT_QUERY } from '@/graphql/queries/therapists.queries';
 import { GET_PATIENT_WEEKLY_ADHERENCE_QUERY } from '@/graphql/queries/workoutSessions.queries';
@@ -98,7 +99,7 @@ function PatientFacts({ patient }: { readonly patient: ChatPatient }) {
         )}
         <Fact
           label="Ból"
-          value={pain !== undefined ? `${pain.toFixed(1)} / 10` : 'brak zgłoszeń'}
+          value={pain !== undefined ? `${pain.toFixed(1)} / ${PATIENT_FEEDBACK_SCALE_MAX}` : 'brak zgłoszeń'}
           testId="common-chat-context-pain"
         />
         <Fact label="Zestaw" value={sets[0]?.name ?? 'brak aktywnego'} testId="common-chat-context-set" />

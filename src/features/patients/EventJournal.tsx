@@ -3,7 +3,8 @@
 import { History } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
-import { formatDateWithTime, mapDifficultyToFeeling, getFeelingLabel } from '@/lib/therapyStatus';
+import { formatDateWithTime, getDayFeeling, getDayNote, getFeelingLabel } from '@/lib/therapyStatus';
+import { isDiscomfortPain } from './utils/patientFeedbackScale';
 import type { ExerciseProgressData } from '@/lib/therapyStatus';
 
 export type EventType = 'discomfort' | 'training' | 'message' | 'inactive';
@@ -58,7 +59,7 @@ const eventConfig: Record<
 /**
  * Konwertuje postępy ćwiczeń na zdarzenia dziennika (z dniami bez aktywności)
  */
-function progressToEvents(progress: ExerciseProgressData[], maxDays: number = 7): JournalEvent[] {
+export function progressToEvents(progress: ExerciseProgressData[], maxDays: number = 7): JournalEvent[] {
   const events: JournalEvent[] = [];
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -94,23 +95,22 @@ function progressToEvents(progress: ExerciseProgressData[], maxDays: number = 7)
     }
 
     // Sprawdź dyskomfort
-    const discomfortEvent = dayProgress.find((p) => p.painLevel && p.painLevel > 5);
+    const discomfortEvent = dayProgress.find((p) => isDiscomfortPain(p.painLevel));
     if (discomfortEvent) {
       events.push({
         id: `discomfort-${discomfortEvent.id}`,
         type: 'discomfort',
         date: new Date(discomfortEvent.completedAt!),
         title: 'Zgłoszono dyskomfort',
-        description: discomfortEvent.patientNotes || undefined,
+        description: discomfortEvent.patientNotes?.trim() || getDayNote(dayProgress),
       });
       continue;
     }
 
     // Sprawdź notatki (wiadomości)
     const messageEvent = dayProgress.find((p) => p.patientNotes && p.patientNotes.trim().length > 0);
+    const feelingLabel = getFeelingLabel(getDayFeeling(dayProgress));
     if (messageEvent) {
-      const feeling = mapDifficultyToFeeling(messageEvent.difficultyLevel);
-      const feelingLabel = getFeelingLabel(feeling);
       events.push({
         id: `message-${messageEvent.id}`,
         type: 'training',
@@ -124,8 +124,6 @@ function progressToEvents(progress: ExerciseProgressData[], maxDays: number = 7)
 
     // Zwykły trening
     const firstProgress = dayProgress[0];
-    const feeling = mapDifficultyToFeeling(firstProgress.difficultyLevel);
-    const feelingLabel = getFeelingLabel(feeling);
 
     events.push({
       id: `training-${firstProgress.id}`,

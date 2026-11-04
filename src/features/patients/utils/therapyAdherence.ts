@@ -5,8 +5,6 @@ export const ADHERENCE_THRESHOLDS = {
   sustainedGapDays: 5,
   contactSuggestedDays: 7,
   minPlanAgeDays: 3,
-  discomfortPainLevel: 5,
-  hardDifficultyLevel: 6,
   missedTrainingsWarning: 2,
   hardSessionsWarning: 3,
 } as const;
