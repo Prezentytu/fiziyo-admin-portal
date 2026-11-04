@@ -66,6 +66,7 @@ import {
   rankExerciseNamesForDuplicateCheck,
 } from '@/features/exercises/utils/exerciseDuplicateCandidates';
 import { createExerciseSubmit } from './utils/createExerciseSubmit';
+import { applyAiSuggestionParams } from './utils/aiSuggestionParams';
 import { inferExerciseType } from './utils/inferExerciseType';
 import { insertGeneratedImage, nextGeneratedImagePhase } from './utils/exerciseMedia';
 import { ExerciseParametersEditor } from './ExerciseParametersEditor';
@@ -1361,15 +1362,10 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
       name: aiSuggestion.correctedName || prev.name,
       // Opis
       description: aiSuggestion.description || prev.description,
-      // Parametry podstawowe
-      sets: aiSuggestion.sets,
-      reps: aiSuggestion.reps,
-      duration: aiSuggestion.duration,
-      restSets: aiSuggestion.restSets,
+      // Parametry podstawowe i czasy: puste pole AI nie kasuje wartości, ćwiczenie na czas dostaje czas powtórzenia
+      ...applyAiSuggestionParams(prev, aiSuggestion),
       exerciseSide: aiSuggestion.exerciseSide as ExerciseSide,
       // Pro Tuning fields
-      preparationTime: aiSuggestion.advancedParams?.preparationTime ?? prev.preparationTime,
-      executionTime: aiSuggestion.advancedParams?.executionTime ?? prev.executionTime,
       tempo: aiSuggestion.advancedParams?.tempo || prev.tempo,
       loadKg: parseAiWeightToLoadKg(aiSuggestion.advancedParams?.weight) ?? prev.loadKg,
       rangeOfMotion: aiSuggestion.advancedParams?.rangeOfMotion || prev.rangeOfMotion,
