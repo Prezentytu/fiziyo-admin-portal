@@ -59,7 +59,7 @@ export function buildMediaItems({
   return dedupeMediaItems(items);
 }
 
-function getYouTubePosterUrl(videoUrl: string): string | undefined {
+export function getYouTubePosterUrl(videoUrl: string): string | undefined {
   const youtubeId = extractYouTubeId(videoUrl);
   if (!youtubeId) {
     return undefined;

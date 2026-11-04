@@ -33,6 +33,7 @@ import { cn } from '@/lib/utils';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { ImageLightbox } from '@/components/shared/ImageLightbox';
 import { getMediaUrl } from '@/utils/mediaUrl';
+import { getExerciseCardPreview } from './utils/exerciseCardPreview';
 import { EXERCISE_FIELD_METADATA, HIDE_EXERCISE_TAGS } from '@/components/shared/exercise';
 import { verificationCopy } from '@/features/verification/verificationCopy';
 import { exerciseStatusBadgeVariant } from './utils/exerciseStatusBadgeVariant';
@@ -195,8 +196,8 @@ export function ExerciseCard({
     action();
   }, []);
 
-  const rawImageUrl = exercise.thumbnailUrl || exercise.imageUrl || exercise.images?.[0];
-  const imageUrl = getMediaUrl(rawImageUrl);
+  const { imageUrl, hasVideoWithoutFrame } = getExerciseCardPreview(exercise);
+  const placeholderType = hasVideoWithoutFrame ? 'video' : 'exercise';
 
   // Collect all images for gallery
   const allImages = [exercise.imageUrl, ...(exercise.images || [])]
@@ -249,7 +250,7 @@ export function ExerciseCard({
             {imageUrl ? (
               <Image src={imageUrl} alt={exercise.name} fill className="object-cover" sizes="56px" />
             ) : (
-              <ImagePlaceholder type="exercise" iconClassName="h-5 w-5" />
+              <ImagePlaceholder type={placeholderType} iconClassName="h-5 w-5" />
             )}
           </div>
 
@@ -546,7 +547,7 @@ export function ExerciseCard({
                 )}
               </>
             ) : (
-              <ImagePlaceholder type="exercise" className="aspect-4/3 bg-muted/50" iconClassName="h-12 w-12" />
+              <ImagePlaceholder type={placeholderType} className="aspect-4/3 bg-muted/50" iconClassName="h-12 w-12" />
             )}
 
             {/* Status badges - top left */}
