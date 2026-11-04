@@ -51,6 +51,7 @@ import { getExerciseDefaultParams } from '@/features/exercise-sets/utils/exercis
 import { PageHeader } from '@/components/shared/page';
 import { useUrlSearchInput } from '@/features/exercises/useUrlSearchInput';
 import { getExerciseDialogSuccessRoute } from '@/features/exercises/utils/exerciseDialogSuccessRoute';
+import { useSearchTelemetry } from '@/lib/telemetry/useSearchTelemetry';
 
 export default function ExercisesPage() {
   const router = useRouter();
@@ -209,6 +210,11 @@ export default function ExercisesPage() {
   const totalCount = counts?.all ?? 0;
   const isSearching = searchQuery.trim().length > 0;
   const isInitialLoading = loading && !libraryPage;
+  useSearchTelemetry({
+    event: 'exercise_catalog:search',
+    query: committedSearch,
+    resultsCount: loading || !libraryPage ? null : libraryPage.totalCount,
+  });
 
   const handlePageChange = (page: number) => {
     updateListState({ page });

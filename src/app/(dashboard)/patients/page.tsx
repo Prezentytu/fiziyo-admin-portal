@@ -20,7 +20,7 @@ import { PatientQRCodeDialog } from '@/features/patients/PatientQRCodeDialog';
 import { TakeOverDialog } from '@/features/patients/TakeOverDialog';
 import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
 import { getPatientActivityStatus, needsAttention } from '@/features/patients/utils/patientActivityStatus';
-import { sortPatients, type PatientSort } from '@/features/patients/utils/patientList';
+import { settledSearchResultsCount, sortPatients, type PatientSort } from '@/features/patients/utils/patientList';
 import type { Patient as AssignmentPatient } from '@/features/assignment/types';
 import { cn } from '@/lib/utils';
 
@@ -35,6 +35,7 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { DashboardRouteLoading } from '@/components/layout/DashboardRouteLoading';
 import type { UserByClerkIdResponse, OrganizationPatientsResponse, OrganizationPatientDto } from '@/types/apollo';
 import { useRealtimePatients } from '@/hooks/useRealtimePatients';
+import { useSearchTelemetry } from '@/lib/telemetry/useSearchTelemetry';
 
 type TherapyFilterType = 'my' | 'all' | 'needs_attention' | 'subscription';
 
@@ -166,6 +167,16 @@ export default function PatientsPage() {
   });
 
   const filteredPatients = sortPatients(searchFilteredPatients, sort, therapistId);
+  useSearchTelemetry({
+    event: 'patient:search',
+    query: searchQuery,
+    resultsCount: settledSearchResultsCount({
+      listLoaded: data !== undefined,
+      filtersByTherapist: patientFilter !== 'all',
+      therapistId,
+      count: filteredPatients.length,
+    }),
+  });
 
   const tabCounts: Record<TherapyFilterType, number> = {
     my: myCount,

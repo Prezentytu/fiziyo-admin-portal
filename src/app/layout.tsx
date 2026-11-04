@@ -4,6 +4,7 @@ import { ApolloWrapper } from '@/lib/apollo/provider';
 import { Toaster } from '@/components/ui/sonner';
 import { ClerkProviderWithRedirects } from '@/components/auth/ClerkProviderWithRedirects';
 import { AccessibilityProvider } from '@/contexts/AccessibilityContext';
+import { TelemetryPageViews } from '@/components/telemetry/TelemetryProvider';
 import './globals.css';
 
 const productionAppUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://portal.fiziyo.pl';
@@ -76,6 +77,7 @@ export default function RootLayout({
             <ApolloWrapper>{children}</ApolloWrapper>
           </AccessibilityProvider>
           <Toaster />
+          <TelemetryPageViews />
         </body>
       </html>
     </ClerkProviderWithRedirects>

@@ -9,6 +9,8 @@ import { OrganizationProvider } from '@/contexts/OrganizationContext';
 import { ExerciseBuilderProvider } from '@/contexts/ExerciseBuilderContext';
 import { useSidebarState } from '@/hooks/useSidebarState';
 import { ChatShell } from '@/features/ai-view/ChatShell';
+import { TelemetryIdentity } from '@/components/telemetry/TelemetryIdentity';
+import { TelemetryConsentPrompt } from '@/components/telemetry/TelemetryConsentPrompt';
 import { useChatMode } from '@/features/ai-view/useChatMode';
 
 export default function DashboardLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -30,6 +32,8 @@ export default function DashboardLayout({ children }: Readonly<{ children: React
   return (
     <OrganizationGuard>
       <OrganizationProvider>
+        <TelemetryIdentity />
+        <TelemetryConsentPrompt />
         <ExerciseBuilderProvider>
           {preference.enabled ? (
             <ChatShell

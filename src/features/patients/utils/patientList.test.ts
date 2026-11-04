@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getPatientAccess, sortPatients } from './patientList';
+import { getPatientAccess, settledSearchResultsCount, sortPatients } from './patientList';
 
 const NOW = new Date(2026, 9, 15, 12, 0);
 
@@ -52,5 +52,22 @@ describe('sortPatients', () => {
       'Piotr Zieliński',
       'Ewa Wiśniewska',
     ]);
+  });
+});
+
+describe('settledSearchResultsCount', () => {
+  const ready = { listLoaded: true, filtersByTherapist: true, therapistId: 't1', count: 0 };
+
+  it('waits for the patient list before reporting an empty search', () => {
+    expect(settledSearchResultsCount({ ...ready, listLoaded: false })).toBeNull();
+  });
+
+  it('waits for the therapist id on tabs that filter by it', () => {
+    expect(settledSearchResultsCount({ ...ready, therapistId: undefined })).toBeNull();
+  });
+
+  it('reports the visible count once the list can be shown', () => {
+    expect(settledSearchResultsCount(ready)).toBe(0);
+    expect(settledSearchResultsCount({ ...ready, filtersByTherapist: false, therapistId: null, count: 3 })).toBe(3);
   });
 });
