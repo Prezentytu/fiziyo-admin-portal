@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Skill: .ai/skills/ui-guardian/SKILL.md (krok 1 workflow). Raport trafia do .ai/reports/ui-health-<data>.txt.
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
