@@ -21,6 +21,8 @@ export interface AssistantReply {
 }
 
 interface ChatThreadOptions {
+  /** Patient on the header chip (pinned or latest card); the guard compares model cards with it. */
+  getContextPatientId?: () => string | undefined;
   useAi: boolean;
   context: IntentContext;
   /** False while patients and sets load: rules would answer from an empty context. */
@@ -35,7 +37,7 @@ export const STOPPED_TEXT = 'Zatrzymane. Napisz, co zrobić inaczej.';
  * One conversation: what the therapist wrote and what came back (a sentence and a card from the
  * dispatcher, AI or rules, or the next step of a flow the thread runs itself).
  */
-export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOptions) {
+export function useChatThread({ useAi, context, ready, scopeKey, getContextPatientId }: ChatThreadOptions) {
   const [messages, setMessages] = useState<ChatThreadMessage[]>([]);
   const [isBusy, setIsBusy] = useState(false);
   const [threadScope, setThreadScope] = useState(scopeKey);
@@ -113,7 +115,7 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
           context,
           dispatch: dispatchChatMessage,
           pendingCommand: pendingCommandRef.current,
-          contextPatientId: latestCardPatientId(messagesRef.current),
+          contextPatientId: getContextPatientId?.() ?? latestCardPatientId(messagesRef.current),
         });
         if (threadEpochRef.current !== epoch) return;
         // AI questions count too: if the next dispatch fails, rules finish the command.
@@ -146,7 +148,7 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
         }
       }
     },
-    [context, pushUser, ready, scopeKey, useAi]
+    [context, getContextPatientId, pushUser, ready, scopeKey, useAi]
   );
 
   /** What the therapist chose (a shortcut, a quick reply) and the thread's answer to it, both local. */

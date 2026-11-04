@@ -57,6 +57,18 @@ describe('seedDraftItems', () => {
     ).toBeNull();
   });
 
+  it('turns a held series from a note into one repetition of that time', () => {
+    const item = seedDraftItems({
+      exerciseIds: ['e1'],
+      doses: { e1: { sets: 3, duration: 30 } },
+      sets: [],
+      setsReady: false,
+      exercises: EXERCISES,
+      exercisesReady: true,
+    })?.items[0];
+    expect(item).toMatchObject({ sets: 3, reps: 1, executionTime: 30, duration: 0 });
+  });
+
   it('applies the numbers of a visit note over the exercise defaults', () => {
     expect(
       seedDraftItems({

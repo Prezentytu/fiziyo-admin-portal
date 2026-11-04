@@ -9,6 +9,8 @@ export const MAX_DOCUMENT_ITEMS = 20;
 const MIN_CONTENT_WORD = 4;
 const FILLER_WORDS = new Set(['przy', 'oraz', 'albo', 'jako', 'przez']);
 const SEARCH_CANDIDATES = 3;
+// Joining words only; every other token tells exercises apart, short ones too ("Noga L", "SLR P").
+const JOINING_WORDS = new Set(['w', 'we', 'na', 'z', 'ze', 'do', 'i', 'o', 'po', 'od', 'u', 'a', 'oraz', 'albo', 'przez']);
 
 // Words that change what the exercise is: position, side, equipment ("na brzuchu", "przy ścianie").
 function contentWords(name: string): string[] {
@@ -26,9 +28,14 @@ function covers(words: readonly string[], inName: readonly string[]): boolean {
  * "Unoszenie prostej nogi w leżeniu" is not "… w leżeniu na brzuchu" (report 01.11, P0-5).
  */
 export function namesAgree(noteName: string, catalogName: string): boolean {
-  const noteWords = contentWords(noteName);
-  const catalogWords = contentWords(catalogName);
+  const noteWords = distinguishingWords(noteName);
+  const catalogWords = distinguishingWords(catalogName);
+  if (noteWords.length === 0 || catalogWords.length === 0) return false;
   return covers(noteWords, catalogWords) && covers(catalogWords, noteWords);
+}
+
+function distinguishingWords(name: string): string[] {
+  return tokenizeWords(name).filter((word) => !JOINING_WORDS.has(word));
 }
 
 /**
@@ -49,19 +56,24 @@ export function toDocumentItems(
       duration: exercise.duration,
     };
     const best = result.matchSuggestions[exercise.tempId]?.[0];
-    if (best !== undefined && best.confidence >= IMPORT_CONFIDENT_MATCH_THRESHOLD) {
-      return namesAgree(exercise.name, best.existingExerciseName)
-        ? { ...item, matchedExerciseId: best.existingExerciseId, matchedName: best.existingExerciseName }
-        : { ...item, suggestedExerciseId: best.existingExerciseId, suggestedName: best.existingExerciseName };
+    const imported =
+      best !== undefined && best.confidence >= IMPORT_CONFIDENT_MATCH_THRESHOLD
+        ? { id: best.existingExerciseId, name: best.existingExerciseName }
+        : undefined;
+    if (imported && namesAgree(exercise.name, imported.name)) {
+      return { ...item, matchedExerciseId: imported.id, matchedName: imported.name };
     }
+    // The catalog may hold the exact exercise even when the import proposed another one.
     const noteWords = contentWords(exercise.name);
-    const found = searchExercises(catalog, exercise.name, SEARCH_CANDIDATES).find((candidate) =>
-      covers(noteWords, contentWords(candidate.name))
-    );
-    if (!found || noteWords.length === 0) return item;
-    return namesAgree(exercise.name, found.name)
-      ? { ...item, matchedExerciseId: found.id, matchedName: found.name }
-      : { ...item, suggestedExerciseId: found.id, suggestedName: found.name };
+    const candidates = searchExercises(catalog, exercise.name, SEARCH_CANDIDATES);
+    const exact = candidates.find((candidate) => namesAgree(exercise.name, candidate.name));
+    if (exact) return { ...item, matchedExerciseId: exact.id, matchedName: exact.name };
+    const suggested =
+      imported ??
+      (noteWords.length > 0
+        ? candidates.find((candidate) => covers(noteWords, contentWords(candidate.name)))
+        : undefined);
+    return suggested ? { ...item, suggestedExerciseId: suggested.id, suggestedName: suggested.name } : item;
   });
 }
 

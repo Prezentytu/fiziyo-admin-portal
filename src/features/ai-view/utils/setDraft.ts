@@ -34,12 +34,13 @@ export interface DraftDose {
 
 export function applyDose(item: DraftItem, dose: DraftDose | undefined): DraftItem {
   if (!dose) return item;
-  return {
-    ...item,
-    sets: dose.sets ?? item.sets,
-    reps: dose.reps ?? item.reps,
-    duration: dose.duration ?? item.duration,
-  };
+  const sets = dose.sets ?? item.sets;
+  // "3 × 30 s" without repetitions is one held repetition per series: the player counts
+  // `executionTime`, and `duration` is legacy, so the note's time goes there.
+  if (dose.duration !== undefined && dose.reps === undefined) {
+    return { ...item, sets, reps: 1, executionTime: dose.duration, duration: 0 };
+  }
+  return { ...item, sets, reps: dose.reps ?? item.reps };
 }
 
 /** A set the therapist is composing in the thread; JSON-safe, so it survives a reload of the conversation. */
@@ -161,10 +162,10 @@ export function scheduleQuestion(items: readonly DraftItem[]): string {
 
 /** "3 × 10 · 5 s powtórzenie" or "3 × 30 s" when a series is held for a time. */
 export function formatDraftParams(item: DraftItem): string {
-  const series =
-    item.duration > 0 && item.reps <= 1 ? `${item.sets} × ${item.duration} s` : `${item.sets} × ${item.reps}`;
-  const repetition =
-    item.executionTime > 0 && !(item.duration > 0 && item.reps <= 1) ? ` · ${item.executionTime} s powtórzenie` : '';
+  const heldSeconds = item.duration > 0 ? item.duration : item.executionTime;
+  const isHeld = item.reps <= 1 && heldSeconds > 0;
+  const series = isHeld ? `${item.sets} × ${heldSeconds} s` : `${item.sets} × ${item.reps}`;
+  const repetition = item.executionTime > 0 && !isHeld ? ` · ${item.executionTime} s powtórzenie` : '';
   const rest = item.restSets > 0 ? ` · przerwa ${item.restSets} s` : '';
   return `${series}${repetition}${rest}`;
 }

@@ -200,11 +200,15 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
     return () => window.removeEventListener('ai-credits-changed', refetchCredits);
   }, [refetchCredits]);
 
+  // The chip's patient (set below) is what a model card is checked against when a message is sent.
+  const contextPatientIdRef = useRef<string | undefined>(undefined);
+  const getContextPatientId = useCallback(() => contextPatientIdRef.current, []);
   const thread = useChatThread({
     useAi: preference.useAi,
     context: intentContext,
     ready: isReady,
     scopeKey: organizationId,
+    getContextPatientId,
   });
   const { messages, reset, isBusy } = thread;
 
@@ -238,6 +242,9 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
 
   const latestPatientId = useMemo(() => latestCardPatientId(messages), [messages]);
   const contextPatientId = pinnedPatientId ?? latestPatientId;
+  useEffect(() => {
+    contextPatientIdRef.current = contextPatientId;
+  }, [contextPatientId]);
   const contextPatient = contextPatientId ? patients.find((patient) => patient.id === contextPatientId) : undefined;
 
   const goHome = useCallback(() => {

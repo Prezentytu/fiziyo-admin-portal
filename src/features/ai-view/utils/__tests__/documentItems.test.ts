@@ -58,6 +58,42 @@ describe('toDocumentItems', () => {
     expect(items[1]).toMatchObject({ matchedExerciseId: 'e-bridge' });
   });
 
+  it('tells sides apart by short tokens too', () => {
+    const items = toDocumentItems(
+      analysis(
+        [
+          { tempId: 't1', name: 'Noga L' },
+          { tempId: 't2', name: 'SLR L' },
+        ],
+        {
+          t1: [{ existingExerciseId: 'e-right', existingExerciseName: 'Noga P', confidence: 0.95 }],
+          t2: [{ existingExerciseId: 'e-slr-right', existingExerciseName: 'SLR P', confidence: 0.95 }],
+        }
+      )
+    );
+    expect(items.map((item) => item.matchedExerciseId)).toEqual([undefined, undefined]);
+    expect(items.map((item) => item.suggestedExerciseId)).toEqual(['e-right', 'e-slr-right']);
+  });
+
+  it('prefers the exact catalog exercise over a different confident import match', () => {
+    const items = toDocumentItems(
+      analysis([{ tempId: 't1', name: 'Unoszenie prostej nogi w leżeniu' }], {
+        t1: [
+          {
+            existingExerciseId: 'e-prone',
+            existingExerciseName: 'Unoszenie prostej nogi w leżeniu na brzuchu',
+            confidence: 0.95,
+          },
+        ],
+      }),
+      [
+        { id: 'e-prone', name: 'Unoszenie prostej nogi w leżeniu na brzuchu' },
+        { id: 'e-supine', name: 'Unoszenie prostej nogi w leżeniu' },
+      ]
+    );
+    expect(items[0]).toMatchObject({ matchedExerciseId: 'e-supine' });
+  });
+
   // Report 01.11 (P0-5): "brak w katalogu" for exercises the chat search finds, so "Utwórz" made duplicates.
   it('finds what the import missed with the chat search', () => {
     const catalog = [

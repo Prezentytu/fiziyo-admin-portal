@@ -122,8 +122,13 @@ describe('guardCardPatient', () => {
     expect(guardCardPatient(draftForE2e, 'clamshell', context, undefined)).toBe(draftForE2e);
   });
 
-  it('applies to AI replies', async () => {
-    const dispatch: Dispatcher = async () => ({ sessionId: 's', spec: draftForE2e, creditsUsed: 1 });
+  it('applies to AI replies and drops the model sentence about the removed patient', async () => {
+    const dispatch: Dispatcher = async () => ({
+      sessionId: 's',
+      text: 'Zestaw dla E2E Pacjent: clamshell.',
+      spec: draftForE2e,
+      creditsUsed: 1,
+    });
     const reply = await resolveReply('clamshell, bird dog', {
       useAi: true,
       context,
@@ -131,5 +136,6 @@ describe('guardCardPatient', () => {
       contextPatientId: 'p-jan',
     });
     expect(reply.spec).toEqual({ component: 'SetDraft', patientId: undefined, exerciseIds: ['e1'] });
+    expect(reply.text).not.toContain('E2E Pacjent');
   });
 });

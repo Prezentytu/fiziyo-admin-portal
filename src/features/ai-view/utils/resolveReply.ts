@@ -65,8 +65,10 @@ export async function resolveReply(
         options.context,
         options.contextPatientId
       );
+      // A card the guard changed keeps no model sentence: it may name the patient just taken off.
+      const modelText = spec === result.spec ? result.text : undefined;
       return {
-        text: replyText(result.text, spec, options.context),
+        text: replyText(modelText, spec, options.context),
         spec,
         source: 'ai',
         sessionId: result.sessionId,

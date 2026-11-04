@@ -55,6 +55,7 @@ describe('formatDraftParams', () => {
 
   it('shows a held series as time', () => {
     expect(formatDraftParams({ ...ITEM, reps: 1, duration: 30, restSets: 0 })).toBe('3 × 30 s');
+    expect(formatDraftParams({ ...ITEM, reps: 1, duration: 0, executionTime: 30, restSets: 0 })).toBe('3 × 30 s');
   });
 });
 
