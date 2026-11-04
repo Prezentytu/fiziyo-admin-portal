@@ -11,7 +11,7 @@ Ten skill prowadzi implementacje odczytanej specyfikacji krok po kroku i wymusza
 
 1. Przeczytaj pelna specyfikacje z `.ai/specs/`.
 2. Przeczytaj root `AGENTS.md` oraz wszystkie pasujace AGENTS.md z Task Routera.
-3. Wyszukaj lessons przez `rg` w `.ai/lessons.md` i zanotuj ryzyka regresji.
+3. Wyszukaj lessons przez `rg` w `.ai/lessons*.md` (z archiwum) i zanotuj ryzyka regresji.
 4. Dla runów i cross-repo stosuj [workflow](../../../docs/architecture/agent-workflow.md): baseline, jeden writer, dowody per repo i handoff.
 5. Zmapuj fazy z dokumentu na konkretne pliki do modyfikacji.
 6. Potwierdz zakres z uzytkownikiem, jesli spec ma kilka wariantow implementacji.

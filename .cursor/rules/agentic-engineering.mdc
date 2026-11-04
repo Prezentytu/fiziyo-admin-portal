@@ -5,7 +5,7 @@ alwaysApply: true
 
 - Pracuj retrieval-first: najpierw czytaj `AGENTS.md` i pasujace guide'y z Task Routera, potem dopiero implementuj.
 - Dla zadan nietrywialnych pracuj spec-first: sprawdz `.ai/specs/`, a przy nowych funkcjonalnosciach tworz lub aktualizuj spec.
-- Przed implementacją wyszukaj słowa zadania przez `rg` w `.ai/lessons.md`.
+- Przed implementacją wyszukaj słowa zadania przez `rg` w `.ai/lessons*.md`.
 - Skille mają źródło w `.ai/skills` i lokalne kopie w `.cursor/skills` oraz `.agents/skills`; odpowiadają za kluczowe tryby pracy:
   - `product-designer` dla UI/UX i accessibility
   - `code-review` dla review zmian

@@ -25,7 +25,7 @@ AGENTS.md                      -> glowny router zadan i workflow
 
 - Zaczynaj od `AGENTS.md` i Task Routera.
 - Dla zadan nietrywialnych pracuj spec-first.
-- Przed implementacją wyszukaj słowa zadania przez `rg` w `.ai/lessons.md`.
+- Przed implementacją wyszukaj słowa zadania przez `rg` w `.ai/lessons*.md` (z archiwum).
 - Zmieniaj minimalnie, testuj proporcjonalnie do ryzyka.
 - Po istotnej korekcie dopisuj nowy lesson, jesli problem moze sie powtorzyc.
 
