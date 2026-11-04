@@ -65,3 +65,14 @@ describe('therapy status with the highest pain from the app', () => {
     expect(todayCell?.feeling).toBe('hard');
   });
 });
+
+describe('hard sessions in therapy status', () => {
+  it('counts one training with three hard exercises as one hard training, not three', () => {
+    const today = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const progress = ['a', 'b', 'c'].map((id) => ({ id, status: 'completed', completedAt: today, difficultyLevel: 1 }));
+
+    const status = calculateTherapyStatus(progress, [{ id: 'assignment-1', status: 'active', startDate: today }]);
+
+    expect(status.reason).not.toBe('high_difficulty');
+  });
+});

@@ -277,7 +277,12 @@ export function calculateTherapyStatus(
   const requiredSoFar = requiredWeekly > 0 ? Math.ceil((requiredWeekly / 7) * daysSinceStart) : daysSinceStart;
 
   // Policz trudne treningi
-  const hardCount = recentProgress.filter((p) => isHardDifficulty(p.difficultyLevel)).length;
+  // Days, not exercise rows: one training with three hard exercises is one hard training.
+  const hardCount = new Set(
+    recentProgress
+      .filter((p) => isHardDifficulty(p.difficultyLevel))
+      .map((p) => new Date(p.completedAt!).toDateString())
+  ).size;
 
   // Sprawdź czy jest dyskomfort
   const hasDiscomfort = recentProgress.some((p) => isDiscomfortPain(p.painLevel));
