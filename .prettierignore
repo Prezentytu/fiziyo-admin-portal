@@ -1,2 +1,5 @@
 # Read by scripts/check-agent-context.mjs: Prettier would turn bare __tests__ in paths into **tests**.
 .ai/lessons.md
+# Kopie kanonu z fizjo-app (npm run principles:sync): Prettier zmieniłby cudzysłowy i principles:check widziałby dryf.
+.ai/skills/principle-*/SKILL.md
+.ai/skills/sec-report/SKILL.md

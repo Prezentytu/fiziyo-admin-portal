@@ -1,11 +1,11 @@
 ---
 name: principle-subtract-before-you-add
-description: 'Stosuj przy dodawaniu, wycofaniu albo refaktorze. Najpierw zdejmij martwy ciężar, potem buduj na prostszym. EN - subtract before you add, migrate callers then delete.'
+description: "Stosuj przy dodawaniu, wycofaniu albo refaktorze. Najpierw zdejmij martwy ciężar, potem buduj na prostszym. EN - subtract before you add, migrate callers then delete."
 ---
 
 # Subtract before you add
 
-> **Synchronizacja:** źródło w `fizjo-app/.ai/skills/principle-subtract-before-you-add/SKILL.md`. Przy zmianie zaktualizuj oba repozytoria.
+> **Kopia z kanonu:** `fizjo-app/.agents/skills/principle-subtract-before-you-add/SKILL.md` (origin/main). Nie edytuj tutaj: zmień w fizjo-app, potem `npm run principles:sync`.
 
 Najpierw usuń martwy kod, zbędne walidatory i puste referencje. Potem buduj na tym, co zostało.
 

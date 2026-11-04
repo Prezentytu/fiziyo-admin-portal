@@ -1,13 +1,16 @@
 # 04 — Triage CI i E2E
 
-| Pole          | Wartość                                                              |
-| ------------- | -------------------------------------------------------------------- |
-| Trigger       | GitHub → GitHub Only → Workflow run completed (wynik: failure)       |
-| Repozytoria   | `fiziyo-tests`, `fizjo-app`, `fiziyo-admin-portal`                   |
-| Wejście       | **niezaufane** — log CI                                              |
-| Tools         | Comment on pull request; computer use **tak**; bez Memories, bez MCP |
-| Model         | średni                                                               |
-| Produkt pracy | jedno issue z kartą zadania albo komentarz „znane"                   |
+| Pole          | Wartość                                                                            |
+| ------------- | ---------------------------------------------------------------------------------- |
+| Trigger       | GitHub → GitHub Only → Workflow run completed (wynik: failure)                     |
+| Repozytoria   | `fiziyo-tests`, `fizjo-app`, `fiziyo-admin-portal`                                 |
+| Wejście       | **niezaufane** — log CI                                                            |
+| Tools         | Comment on pull request; computer use **tak**; bez Memories, bez MCP               |
+| Model         | średni                                                                             |
+| Produkt pracy | jedno issue z kartą zadania albo komentarz „znane"                                 |
+| Aktywacja     | unverified — projekt konfiguracji, nie dowód usługi                                |
+| Limit         | 90 minut na przebieg (wspólne zasady w README)                                     |
+| Bez człowieka | nikt nie odpowie w tym przebiegu; nie pytasz, przy braku danych stajesz z raportem |
 
 Computer use jest tu włączone, bo zrzut ekranu z nieudanego przebiegu E2E **jest** produktem pracy. Obowiązuje twarda zasada: wyłącznie konta testowe na DEV, nigdy PROD, żadnych zrzutów z danymi o kształcie danych pacjenta.
 

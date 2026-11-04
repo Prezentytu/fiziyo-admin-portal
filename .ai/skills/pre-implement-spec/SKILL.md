@@ -19,7 +19,7 @@ Ten skill sluzy do przygotowania bezpiecznej implementacji jeszcze przed pierwsz
 
 1. Przeczytaj spec z `.ai/specs/`.
 2. Przeczytaj root `AGENTS.md` i pasujace AGENTS.md modulowe.
-3. Przeczytaj `.ai/lessons.md`.
+3. Wyszukaj słowa zadania przez `rg` w `.ai/lessons*.md` (z archiwum); nie czytaj całości.
 4. Zidentyfikuj obszary kodu, ktore spec dotyka bezposrednio.
 
 ### 2) Completeness check

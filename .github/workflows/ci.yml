@@ -37,6 +37,10 @@ jobs:
       - name: Data-testid guard
         run: npm run check:testids
 
+      # Baza długu może tylko maleć: nowy hex albo paleta Tailwinda poza tokenami blokuje PR (AGENTS.md, Validation Commands).
+      - name: Design tokens guard
+        run: npm run check:design-tokens
+
       - name: Type check
         run: npm run type-check
 

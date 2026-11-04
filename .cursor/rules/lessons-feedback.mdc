@@ -6,6 +6,6 @@ globs:
 alwaysApply: false
 ---
 
-- Gdy poprawiasz blad lub regresje, sprawdz czy podobny przypadek jest juz w `.ai/lessons.md`.
+- Gdy poprawiasz blad lub regresje, sprawdz `rg` w `.ai/lessons*.md` (z archiwum), czy podobny przypadek juz byl.
 - Po istotnej korekcie dodaj nowy wpis w `.ai/lessons.md` (problem, przyczyna, rozwiazanie, regula).
 - Preferuj zasady zapobiegajace powtorce bledu zamiast jednorazowego fixu.

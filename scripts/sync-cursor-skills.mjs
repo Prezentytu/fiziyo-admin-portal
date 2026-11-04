@@ -3,8 +3,11 @@ import path from 'node:path';
 
 const ROOT_DIR = process.cwd();
 const SOURCE_ROOT = path.join(ROOT_DIR, '.ai/skills');
-// Claude Code czyta skille projektu tylko z .claude/skills.
-const TARGET_ROOTS = ['.cursor/skills', '.agents/skills', '.claude/skills'].map((dir) => path.join(ROOT_DIR, dir));
+const TARGET_ROOTS = ['.cursor/skills', '.agents/skills'].map((dir) => path.join(ROOT_DIR, dir));
+// Claude Code czyta skille projektu tylko z .claude/skills. To commitowany symlink na źródło,
+// więc Claude Code widzi skille zaraz po klonie, bez sync i bez kopii, która może się rozjechać.
+const CLAUDE_LINK = path.join(ROOT_DIR, '.claude/skills');
+const CLAUDE_LINK_TARGET = '../.ai/skills';
 const MANIFEST_PATH = path.join(SOURCE_ROOT, 'manifest.json');
 const LINT_MODE = process.argv.includes('--lint');
 const CHECK_MODE = process.argv.includes('--check');
@@ -59,6 +62,21 @@ async function preflight(targetRoot, sourceEntries) {
       }
     }
   }
+}
+
+// Returns true when sync should create the link; any other state than the expected symlink fails.
+async function claudeLinkMissing({ allowMissing }) {
+  const stat = await statOrMissing(CLAUDE_LINK);
+  if (!stat && allowMissing) {
+    await assertDirectory(path.dirname(CLAUDE_LINK));
+    return true;
+  }
+  if (!stat?.isSymbolicLink() || (await fs.readlink(CLAUDE_LINK)) !== CLAUDE_LINK_TARGET) {
+    throw new Error(
+      `.claude/skills must be a symlink to ${CLAUDE_LINK_TARGET}; an old generated copy goes away with: rm -rf .claude/skills && git checkout -- .claude/skills`
+    );
+  }
+  return false;
 }
 
 function parseFrontmatter(skillContent, skillName) {
@@ -188,6 +206,8 @@ async function main() {
   }
   const validationSummary = await validateSkills(declaredSkills);
 
+  const createClaudeLink = await claudeLinkMissing({ allowMissing: !LINT_MODE && !CHECK_MODE });
+
   if (LINT_MODE) {
     console.log(`skills:lint OK (${validationSummary.length} skills, manifest version ${manifest.version ?? 'n/a'}).`);
     return;
@@ -199,6 +219,10 @@ async function main() {
     return;
   }
 
+  if (createClaudeLink) {
+    await fs.mkdir(path.dirname(CLAUDE_LINK), { recursive: true });
+    await fs.symlink(CLAUDE_LINK_TARGET, CLAUDE_LINK);
+  }
   // OS errors or concurrent edits can still interrupt this copy; it is not atomic.
   for (const targetRoot of TARGET_ROOTS) {
     await fs.mkdir(targetRoot, { recursive: true });
@@ -209,7 +233,7 @@ async function main() {
     }
   }
   console.log(
-    `Synced ${validationSummary.length} skills to .cursor/skills, .agents/skills and .claude/skills (manifest version ${manifest.version ?? 'n/a'}).`
+    `Synced ${validationSummary.length} skills to .cursor/skills and .agents/skills; .claude/skills links to the source (manifest version ${manifest.version ?? 'n/a'}).`
   );
 }
 

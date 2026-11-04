@@ -10,7 +10,7 @@ Ten plik jest szczegółowym uzupełnieniem root `AGENTS.md`.
 ## Workflow operacyjny
 
 1. **Task Router first**: znajdź wszystkie pasujące guide'y i przeczytaj je przed kodowaniem.
-2. **Lessons-first**: wyszukaj słowa zadania przez `rg` w `.ai/lessons.md`.
+2. **Lessons-first**: wyszukaj słowa zadania przez `rg` w `.ai/lessons*.md` (z archiwum).
 3. **Spec-first**: dla zmian 3+ kroki lub architektonicznych sprawdź `.ai/specs/` i aktualizuj spec.
 4. **Compatibility gate**: przy kontraktach czytaj `BACKWARD_COMPATIBILITY.md`.
 5. **Verification**: uruchom odpowiednie komendy jakości.

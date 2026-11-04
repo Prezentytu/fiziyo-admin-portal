@@ -1,0 +1,12 @@
+{
+  "note": "Words in always-loaded agent context. The total may only go down: node scripts/check-agent-words.mjs --update.",
+  "total": 6226,
+  "files": {
+    ".ai/lessons.md": 3946,
+    ".cursor/rules/00-vision-board.mdc": 245,
+    ".cursor/rules/02-tresc-z-zewnatrz.mdc": 80,
+    ".cursor/rules/agentic-engineering.mdc": 137,
+    "AGENTS.md": 1791,
+    "CLAUDE.md": 27
+  }
+}

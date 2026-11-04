@@ -33,7 +33,8 @@ Panel gabinetu, wielotenantowy, ze wspólnym GraphQL. Recenzja jest niezależną
 
 ## UI portalu
 
-- Nowe interaktywne elementy mają `data-testid` z prefiksem modułu.
+- Nowe interaktywne elementy mają `data-testid` według konwencji w
+  `docs/testing/data-testid-map.md`.
 - Style buduj na tokenach (`bg-surface`, `text-foreground`, `border-border`).
   Hardcoded `zinc`/`gray`/`slate`/`white`/`black` na kontenerach blokuje, gdy
   psuje light albo dark.

@@ -4,7 +4,7 @@ Panel gabinetu FiziYo dla fizjoterapeuty: katalog ćwiczeń z weryfikacją treś
 
 Kierunek: `.ai/VISION.md` (kopia kanonu [`fizjo-app/.ai/VISION.md`](https://github.com/Prezentytu/fizjo-app/blob/main/.ai/VISION.md) z nagłówkiem SHA, odświeżana `npm run docs:sync`): fizjoterapeuta nie wpisuje nic ręcznie, a na końcu drogi zestaw powstaje w locie z opisu na wizycie; katalog jest etapem, nie warunkiem. Gdzie jest praca: zgłoszenia do poprawki idą z Discord #feedback do Skrzynki ([Prezentytu/skrzynka](https://github.com/Prezentytu/skrzynka), repo prywatne, bez dostępu ticket masz w zadaniu albo opisie draft PR; ticket `T-00nn`, draft PR; Trello to tylko widok); zobowiązania z calli w [`baza-wiedzy/spotkania/agenci/zadania.md`](https://github.com/Prezentytu/baza-wiedzy/blob/main/spotkania/agenci/zadania.md) (`BW-FZ-n`), decyzje zespołu w [`decyzje.md`](https://github.com/Prezentytu/baza-wiedzy/blob/main/spotkania/agenci/decyzje.md), sekcja Obowiązujące; większa praca to spec ze statusem w `.ai/specs/README.md`. Zgłoszeń nie kopiujesz do zadania.md, BOARD ani Issues. Szczegóły: `.cursor/rules/00-vision-board.mdc`.
 
-Next.js 16, React 19 i Apollo Client 4 mogą być nowsze niż twoja wiedza. Przy zadaniach Next.js i React sprawdzaj API w `node_modules/next/dist/docs/`, nie w pamięci. Przykład: middleware w Next 16 nazywa się `src/proxy.ts`.
+Next.js 16, React 19, Apollo Client 4 i Tailwind 4 mogą być nowsze niż twoja wiedza. Przy zadaniach Next.js i React sprawdzaj API w `node_modules/next/dist/docs/`, nie w pamięci. Przykład: middleware w Next 16 nazywa się `src/proxy.ts`.
 
 ## Czego nie poświęcamy
 
@@ -44,15 +44,7 @@ Zanim zmienisz kontrakt GraphQL, model danych współdzielony z mobile lub backe
 
 ## Dotknij każdej powierzchni
 
-Najczęstszy defekt tutaj to zmiana, która działa w widoku, który sprawdziłeś, a brakuje jej gdzie indziej. Zanim powiesz „zrobione”, przejdź listę i napisz, które punkty dotyczyły zmiany:
-
-- **Widoki tej samej encji.** Ćwiczenie ma dwie ścieżki z osobnym stanem. Edycja (strona ćwiczenia, dialog, workspace weryfikacji, kolejki weryfikacji organizacji) idzie przez `src/features/exercises/useExerciseEditorForm.ts`. Tworzenie idzie przez `CreateExerciseWizard` z własnym `useState` i `useEnrichmentDraft`; hooka edycji nie woła. Poprawka pola dotyka obu ścieżek; poprawka w jednym widoku to nie poprawka funkcji.
-- **Role i tory.** Owner, admin, therapist, staff i backoffice widzą co innego; weryfikacja ma tor organizacyjny i globalny.
-- **Mobile i backend.** Ta sama operacja zwykle istnieje w `fizjo-app`. Typy TS są duplikowane, nie generowane, więc zmiana schematu dotyczy obu klientów. JSONB (`ExerciseLoad`, enrichment) czyta inaczej formularz panelu i player mobile.
-- **E2E.** Każdy element interaktywny ma `data-testid` w formacie `[moduł]-[komponent]-[element]-[akcja?]` z prefiksem `auth-`, `nav-`, `exercise-`, `set-`, `patient-`, `org-`, `settings-` albo `common-`, np. `exercise-form-submit-btn`. Test ID zmieniasz additive-first, z planem deprecacji. Zmiana roli, etykiety lub tekstu oznacza aktualizację Page Objectu i `TEST_PLAN.md` w `fiziyo-tests`.
-- **Motyw i klawiatura.** Jasny i ciemny. Domyślny ma być jasny (DEC-20261020-01), ale `src/contexts/AccessibilityContext.tsx` ma jeszcze `theme: 'dark'`; domyślny zmieniasz tylko z osobnego issue. Dialog obsługuje `Cmd/Ctrl + Enter` dla głównej akcji i `Escape`.
-- **Stany.** Ładowanie, pusto, błąd, paginacja. Selekcja masowa resetuje się przy zmianie filtra, wyszukiwania i strony. Jeśli dodajesz wejście (archiwizuj), dodaj wyjście (przywróć).
-- **Dokumentacja.** Sprawdź, czy zmiana nie czyni nieprawdziwym `.ai/ECOSYSTEM.md`, `.ai/DATA_FLOWS.md`, `.ai/DOMAIN_MODEL.md`, specu albo modułowego `AGENTS.md`.
+Najczęstszy defekt: zmiana działa w widoku, który sprawdziłeś, a brakuje jej gdzie indziej. Przed „zrobione” przy zmianie produktu przejdź listę w [`.ai/docs/dotknij-kazdej-powierzchni.md`](.ai/docs/dotknij-kazdej-powierzchni.md) i napisz, które punkty dotyczyły zmiany.
 
 ## Validation Commands
 
@@ -77,7 +69,7 @@ Najczęstszy defekt tutaj to zmiana, która działa w widoku, który sprawdziłe
 - Zmiana nietrywialna (3+ kroki albo architektura) idzie spec-first w `.ai/specs/`; sprawdź istniejący spec (np. [SPEC-001 Assignment Wizard](.ai/specs/SPEC-001-2026-02-04-assignment-wizard.md), [SPEC-002 Billing Widget](.ai/specs/SPEC-002-2026-02-04-billing-widget.md)). Indeks i status specu żyją tylko w `.ai/specs/README.md`; wytyczne w `.ai/specs/AGENTS.md`. Przy znaczącej zmianie generuj albo aktualizuj spec nawet bez prośby, z decyzjami architektonicznymi; gdy implementacja odchodzi od specu, zaktualizuj go w tym samym PR.
 - Nietrywialne zadanie prowadzi jeden run `.ai/runs/<data>-<slug>.md` według `docs/architecture/agent-workflow.md`: zakres, baseline Git, dowody, następny krok; po zweryfikowanym etapie zaktualizuj run. Wznawiasz po porównaniu repo, brancha, HEAD i brudnego diffu. Reviewer jest niezależny od autora i ocenia wskazanego kandydata tylko do odczytu. Koordynator sprawdza acceptance; zakończenie procesu nie zamyka zadania.
 - Nie opisuj każdej funkcji, nie opowiadaj przepływu sterowania i nie dopisuj historii PR. Gdy decyzja się zmienia, przepisz tekst zamiast dopisywać drugą wersję.
-- Po istotnej korekcie dopisz wpis na górze sekcji Wpisy w `.ai/lessons.md` (`###`, Kategoria, Problem, Przyczyna, Rozwiązanie, Reguła). Gdy przypadek łapie istniejący test, lint albo check, dopisz na końcu linii Reguła `[egzekwowane: <ścieżka>]`; `agent:check` sprawdza, że plik istnieje. Szukaj przez `rg`, nie czytaj całości. Drugi raz ten sam wzorzec zamyka się testem, lintem albo hookiem (skill `principle-encode-lessons-in-structure`).
+- Po istotnej korekcie dopisz wpis na górze sekcji Wpisy w `.ai/lessons.md` (`###`, Kategoria, Problem, Przyczyna, Rozwiązanie, Reguła). Gdy przypadek łapie istniejący test, lint albo check, dopisz na końcu linii Reguła `[egzekwowane: <ścieżka>]`; `agent:check` sprawdza, że plik istnieje. Szukaj przez `rg` w `.ai/lessons*.md`, nie czytaj całości. Powtórzony wzorzec zamyka się testem, lintem albo hookiem (skill `principle-encode-lessons-in-structure`).
 
 ## Jak to działa
 
@@ -85,15 +77,7 @@ Najczęstszy defekt tutaj to zmiana, która działa w widoku, który sprawdziłe
 
 ## Smak
 
-- Lint pilnuje: `any`, `React.FC`, `useLazyQuery` (komunikat mówi, co zamiast); `npm run check:design-tokens` pilnuje surowych kolorów. Kolejność w komponencie: hooki, handlery, warunki, render. `'use client'` zawsze w pierwszej linii, przed importami.
-- Wszystkie dane wejściowe walidujesz `zod`; formularze to `react-hook-form` + `zod`, typ przez `z.infer`. Schematy create i update oraz DTO definiujesz raz schematem i używasz w formularzu i wywołaniu. Wspólne typy w `@/types/`. Auth zawsze przez token exchange (Clerk → własny JWT).
-- Czyste funkcje zamiast klas; minimalna liczba eksportów, wszystkie typowane.
-- Dialog jest zawsze renderowany i przyjmuje `null` jako encję. Stopka: `Anuluj` po lewej, główne CTA po prawej (`flex items-center justify-between`). Pole opcjonalne ma samą nazwę, bez gwiazdki i bez „opcjonalnie”.
-- Layout action-first (styl Linear/Vercel): kompaktowy header z tytułem, wyszukiwaniem i opcjami, pod nim hero action i kilka statystyk, niżej główna treść.
-- Wygląd z `docs/design-system.md`; wartości kolorów tylko w `src/app/globals.css`. Bazy z tokenów semantycznych (`bg-surface`, `bg-card`, `text-foreground`, `text-muted-foreground`, `border-border`), nie z `zinc`, `gray`, `slate`, `white` czy `black`; wyjątki status i media tylko z wariantem `dark:`. Karty z overlayami i pływającymi akcjami mają tła i bordery theme-aware (np. `bg-background/90 dark:bg-black/40`). Nowy kolor, promień albo wariant dodajesz w tokenach albo w `src/components/ui/*`, nie w feature. Prymitywu z `src/components/ui/` nie przestylowujesz przez `className` (np. `<Button className="bg-primary text-white rounded-lg h-9">`): wybierz wariant albo dodaj go w komponencie; klasy układu (szerokość, flex, margines) są w porządku. Hover i focus nie obniżają kontrastu.
-- Reużywaj: najpierw `@/components/ui/` i `@/components/shared/`, sprawdź istniejące wzorce przed nowym UI. `src/components/shared/DataTable.tsx` dla tabel, `src/components/shared/exercise/ExerciseExecutionCard.tsx` z adapterami dla kafelków ćwiczeń, bez lokalnych klonów layoutu. Nie pisz „ćwiczenie czasowe/powtórzeniowe”; semantyka wynika z `executionTime`.
-- Bez jednoliterowych nazw poza `i` i `j`. Nazwy: komponenty PascalCase, utils camelCase, stałe i operacje GraphQL UPPER_SNAKE (`GET_ORGANIZATION_EXERCISES_QUERY`), foldery kebab-case. Importy: zewnętrzne, `@/components/ui`, wewnętrzne, GraphQL, utils i typy.
-- Domyślnie bez komentarza w kodzie; gdy potrzebny, po angielsku i tylko o ograniczeniu, którego kod nie pokazuje. Komunikaty błędów auth nie zdradzają, czy e-mail istnieje.
+Przed pisaniem albo review kodu w `src/` przeczytaj [`.ai/docs/smak.md`](.ai/docs/smak.md): konwencje kodu i wyglądu ponad to, co łapie lint.
 
 ## Task Router
 
@@ -116,4 +100,4 @@ Przed implementacją dopasuj zadanie i przeczytaj wszystkie pasujące pliki. Gdy
 | Agent w chmurze                                                             | `docs/architecture/cloud-agent-policy.md`                                                                                                                                                                                  |
 | Szczegóły: wizard, billing, mapa test ID                                    | `docs/assignment-wizard-overview.md`, `docs/billing-widget-readme.md`, `docs/testing/data-testid-map.md`                                                                                                                   |
 
-Źródło skilli to `.ai/skills/` z `manifest.json` (indeks: `.ai/skills/README.md`); `.agents/skills/`, `.cursor/skills/` i `.claude/skills/` (Claude Code czyta tylko ten) to generowane, ignorowane kopie (`npm run skills:sync`). Zasady inżynierskie (`.ai/skills/principle-*/`, źródło w `fizjo-app`) cytujesz tylko wtedy, gdy w tej sesji przeczytałeś ich `SKILL.md`. Szczegóły operacyjne: `.ai/docs/agent-rules.md`.
+Źródło skilli to `.ai/skills/` z `manifest.json` (indeks: `.ai/skills/README.md`). `.claude/skills` to commitowany symlink na źródło, więc Claude Code widzi skille po klonie; `.agents/skills/` i `.cursor/skills/` to ignorowane kopie z `npm run skills:sync`. Zasady (`principle-*`) i `sec-report` to kopie kanonu z fizjo-app (`npm run principles:sync`); cytujesz je tylko wtedy, gdy w tej sesji przeczytałeś ich `SKILL.md`. Szczegóły operacyjne: `.ai/docs/agent-rules.md`.

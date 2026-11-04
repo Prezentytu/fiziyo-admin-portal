@@ -24,14 +24,14 @@ const ruleOverrides = {
   "react-hooks/refs": "off",
   "react-hooks/set-state-in-effect": "off",
   "react-hooks/static-components": "off",
-  // Zasady z AGENTS.md (Smak) jako lint: komunikat mówi, co zamiast.
+  // Zasady z .ai/docs/smak.md jako lint: komunikat mówi, co zamiast.
   "no-restricted-imports": [
     "error",
     {
       paths: ["@apollo/client", "@apollo/client/react"].map((name) => ({
         name,
         importNames: ["useLazyQuery"],
-        message: "Use useQuery with skip instead of useLazyQuery (AGENTS.md, Smak).",
+        message: "Use useQuery with skip instead of useLazyQuery (.ai/docs/smak.md).",
       })),
     },
   ],
@@ -52,7 +52,7 @@ const ruleOverrides = {
       types: Object.fromEntries(
         ["React.FC", "FC", "React.FunctionComponent", "FunctionComponent"].map((name) => [
           name,
-          { message: "Components are plain functions with a props interface, not React.FC (AGENTS.md, Smak)." },
+          { message: "Components are plain functions with a props interface, not React.FC (.ai/docs/smak.md)." },
         ]),
       ),
     },

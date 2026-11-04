@@ -1,5 +1,14 @@
 # 03 — Ślad merge i weryfikacji wdrożenia
 
+| Pole          | Wartość                                                                            |
+| ------------- | ---------------------------------------------------------------------------------- |
+| Trigger       | merged PR, zakończony deployment DEV, zakończony test tego deploymentu (osobno)    |
+| Wejście       | niezaufane — webhook, status i tekst PR                                            |
+| Aktywacja     | unverified — projekt konfiguracji, nie dowód usługi                                |
+| Limit         | 90 minut na przebieg (wspólne zasady w README)                                     |
+| Bez człowieka | nikt nie odpowie w tym przebiegu; nie pytasz, przy braku danych stajesz z raportem |
+| Produkt pracy | aktualizacja odsyłacza do dowodu                                                   |
+
 Wyzwalacze są rozdzielone: merged PR, zakończony deployment DEV, zakończony test
 tego deploymentu. Wynikiem jest aktualizacja odsyłacza do dowodu, bez uruchamiania
 wdrożenia. Kolejek (Skrzynka, `zadania.md`) nie edytujesz. To projekt konfiguracji;

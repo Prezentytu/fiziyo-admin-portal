@@ -5,7 +5,7 @@ description: "Stosuj, gdy kusi pytanie 'czy zrobić X' przy odwracalnej pracy. F
 
 # Never block on the human
 
-> **Synchronizacja:** źródło w `fizjo-app/.ai/skills/principle-never-block-on-the-human/SKILL.md`. Przy zmianie zaktualizuj oba repozytoria.
+> **Kopia z kanonu:** `fizjo-app/.agents/skills/principle-never-block-on-the-human/SKILL.md` (origin/main). Nie edytuj tutaj: zmień w fizjo-app, potem `npm run principles:sync`.
 
 Nadzór jest asynchroniczny. Wykonanie nie czeka na potwierdzenie odwracalnej pracy.
 

@@ -32,7 +32,7 @@ Umiejętności (skills) to specjalistyczne przewodniki dla AI agentów pracując
 | [principle-sequence-verifiable-units](principle-sequence-verifiable-units/SKILL.md)     | Jednostka kończy się sprawdzeniem                      | Wielokrok, commity, check                            |
 | [principle-never-block-on-the-human](principle-never-block-on-the-human/SKILL.md)       | Fakt obserwowalny sprawdzasz, nie pytasz               | Ask First i akcje nieodwracalne bez zmian            |
 
-Źródło zasad: `fizjo-app/.ai/skills/principle-*/SKILL.md`. Przy zmianie zaktualizuj oba repo.
+Zasady (`principle-*`) i `sec-report` to kopie kanonu `fizjo-app/.agents/skills/<nazwa>/SKILL.md` z `origin/main`. Nie edytujesz ich tutaj: zmiana w fizjo-app, potem `npm run principles:sync` (`principles:check` zwraca 1 przy różnicy; tylko lokalnie, CI nie widzi prywatnego fizjo-app).
 
 ## Dokumentacja ekosystemowa (.ai/)
 
@@ -48,7 +48,7 @@ Oprócz skills, folder `.ai/` zawiera dokumentację kontekstową:
 
 ## Integracja z klientami agentów
 
-Skille projektowe mają lokalne punkty wykrywania w `.cursor/skills/`, `.agents/skills/` i `.claude/skills/` (Claude Code, od 2026-11-02). Wszystkie są ignorowane przez Git; nowy checkout wymaga `npm run skills:sync`.
+Claude Code czyta skille z `.claude/skills/`: to commitowany symlink na `.ai/skills/`, działa zaraz po klonie. `.cursor/skills/` i `.agents/skills/` to kopie ignorowane przez Git; nowy checkout wymaga `npm run skills:sync`.
 Canonical source pozostaje w `.ai/skills/`, a workflow agentow jest spinany przez `AGENTS.md` oraz `.cursor/rules/*.mdc`.
 
 ### Source of truth
@@ -58,7 +58,7 @@ Canonical source pozostaje w `.ai/skills/`, a workflow agentow jest spinany prze
 - Frontmatter każdego `SKILL.md` musi mieć `name` i auto-trigger `description` (PL+EN).
 - Uruchamiaj `npm run skills:lint` aby wykryć dryf manifestu i brakujące frontmatter.
 - Synchronizuj obie kopie: `npm run skills:sync`, potem sprawdź `npm run skills:check`.
-- Nie edytuj ręcznie kopii `.cursor/skills/`, `.agents/skills/` i `.claude/skills/`. Sync nie usuwa obcych plików; konflikt wymaga przeglądu.
+- Nie edytuj ręcznie kopii `.cursor/skills/` i `.agents/skills/` ani nie zamieniaj symlinku `.claude/skills/` na katalog. Sync nie usuwa obcych plików; konflikt wymaga przeglądu.
 
 ## Struktura skilla
 
