@@ -1,6 +1,6 @@
 # AGENTS.md — Widok czatu
 
-Spec: [SPEC-031](../../../.ai/specs/SPEC-031-2026-10-30-chat-view.md). Eksperyment za przełącznikiem (DEC-20261030-01); klasyczny dashboard i tworzenie zestawu zostają.
+Spec: [SPEC-031](../../../.ai/specs/SPEC-031-2026-10-30-chat-view.md). Czat jest domyślnym widokiem strony głównej (od 04.11, wcześniej eksperyment DEC-20261030-01); klasyczny dashboard jest jednym przełącznikiem i tworzenie zestawu zostaje.
 
 ## Zasady
 
