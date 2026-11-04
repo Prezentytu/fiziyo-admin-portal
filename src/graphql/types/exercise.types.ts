@@ -12,19 +12,10 @@ export type ExerciseSide = 'NONE' | 'LEFT' | 'RIGHT' | 'BOTH' | 'ALTERNATING';
 export type ExerciseScope = 'PERSONAL' | 'ORGANIZATION' | 'GLOBAL';
 export type ContentStatus = 'DRAFT' | 'PENDING_REVIEW' | 'CHANGES_REQUESTED' | 'APPROVED' | 'PUBLISHED';
 export type OrganizationVerificationStatus =
-  | 'NOT_SUBMITTED'
-  | 'PENDING_ORG_REVIEW'
-  | 'ORG_VERIFIED'
-  | 'ORG_CHANGES_REQUESTED'
-  | 'ORG_ARCHIVED';
+  'NOT_SUBMITTED' | 'PENDING_ORG_REVIEW' | 'ORG_VERIFIED' | 'ORG_CHANGES_REQUESTED' | 'ORG_ARCHIVED';
 export type MediaType = 'VIDEO' | 'IMAGE' | 'AUDIO';
 export type MediaContext =
-  | 'MAIN_DEMO'
-  | 'THUMBNAIL'
-  | 'COMMON_MISTAKE'
-  | 'STEP_BY_STEP'
-  | 'ANATOMY_VIEW'
-  | 'PATIENT_MATERIAL';
+  'MAIN_DEMO' | 'THUMBNAIL' | 'COMMON_MISTAKE' | 'STEP_BY_STEP' | 'ANATOMY_VIEW' | 'PATIENT_MATERIAL';
 export type DifficultyLevel = 'UNKNOWN' | 'EASY' | 'MEDIUM' | 'HARD' | 'EXPERT';
 
 export interface ExerciseLoad {
@@ -172,6 +163,7 @@ export interface CreateExerciseVariables {
   loadText?: string | null;
   loadWeightKg?: number | null;
   loadSource?: string | null;
+  enrichmentDataJson?: string | null;
 }
 
 export interface CreateExerciseMutationResult {

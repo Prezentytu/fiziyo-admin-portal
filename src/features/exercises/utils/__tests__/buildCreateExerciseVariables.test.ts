@@ -16,6 +16,17 @@ describe('inferExerciseType', () => {
 });
 
 describe('buildCreateExerciseVariables', () => {
+  it('zapisuje kroki i wskazówki od razu przy tworzeniu', () => {
+    const result = buildCreateExerciseVariables({
+      organizationId: 'org-1',
+      draft: { name: 'Przysiad', enrichmentData: { patient: { steps: ['Stań prosto'] } } },
+    });
+    expect(JSON.parse(result.enrichmentDataJson ?? 'null')).toEqual({ patient: { steps: ['Stań prosto'] } });
+    expect(
+      buildCreateExerciseVariables({ organizationId: 'org-1', draft: { name: 'Szkic' } }).enrichmentDataJson
+    ).toBeNull();
+  });
+
   it('duplikacja: zapisany REPS z executionTime > 0 zostaje reps', () => {
     const result = buildCreateExerciseVariables({
       organizationId: 'org-1',

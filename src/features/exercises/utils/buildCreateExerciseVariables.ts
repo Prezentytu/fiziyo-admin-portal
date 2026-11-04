@@ -1,4 +1,5 @@
 import type { CreateExerciseVariables, DifficultyLevel, ExerciseScope } from '@/graphql/types/exercise.types';
+import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
 import { normalizeExerciseType } from '@/utils/exerciseEnums';
 import { inferExerciseType } from './inferExerciseType';
@@ -32,6 +33,8 @@ export interface CreateExerciseDraft {
   gifUrl?: string | null;
   imageUrl?: string | null;
   exerciseSetId?: string | null;
+  /** Kroki, wskazówki i reszta treści v3 zapisane od razu przy tworzeniu (np. propozycja AI z czatu). */
+  enrichmentData?: ExerciseEnrichmentData | null;
 }
 
 interface BuildCreateExerciseVariablesInput {
@@ -79,8 +82,7 @@ export function buildCreateExerciseVariables({
 }: BuildCreateExerciseVariablesInput): CreateExerciseVariables {
   const description = (draft.patientDescription ?? draft.description ?? '').trim();
   const side = draft.side ?? draft.exerciseSide;
-  const loadKg =
-    draft.loadKg != null && !Number.isNaN(draft.loadKg) && draft.loadKg > 0 ? draft.loadKg : null;
+  const loadKg = draft.loadKg != null && !Number.isNaN(draft.loadKg) && draft.loadKg > 0 ? draft.loadKg : null;
 
   return {
     organizationId,
@@ -110,6 +112,7 @@ export function buildCreateExerciseVariables({
     audioCue: asText(draft.audioCue),
     difficultyLevel: normalizeDifficulty(draft.difficultyLevel),
     rangeOfMotion: asText(draft.rangeOfMotion),
+    enrichmentDataJson: draft.enrichmentData ? JSON.stringify(draft.enrichmentData) : null,
     ...buildExerciseLoadMutationVars(loadKg),
   };
 }

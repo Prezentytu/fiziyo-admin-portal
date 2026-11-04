@@ -41,6 +41,7 @@ export const CREATE_EXERCISE_MUTATION = gql`
     $loadText: String
     $loadWeightKg: Decimal
     $loadSource: String
+    $enrichmentDataJson: String
   ) {
     createExercise(
       organizationId: $organizationId
@@ -76,6 +77,7 @@ export const CREATE_EXERCISE_MUTATION = gql`
       loadText: $loadText
       loadWeightKg: $loadWeightKg
       loadSource: $loadSource
+      enrichmentDataJson: $enrichmentDataJson
     ) {
       id
       organizationId
@@ -400,7 +402,13 @@ export const UPDATE_TAG_CATEGORY_MUTATION = gql`
     $description: String!
     $icon: String!
   ) {
-    updateTagCategory: updateOrganizationTagCategory(categoryId: $categoryId, name: $name, color: $color, description: $description, icon: $icon) {
+    updateTagCategory: updateOrganizationTagCategory(
+      categoryId: $categoryId
+      name: $name
+      color: $color
+      description: $description
+      icon: $icon
+    ) {
       id
       name
       color
