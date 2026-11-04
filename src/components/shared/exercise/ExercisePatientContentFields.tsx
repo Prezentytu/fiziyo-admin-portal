@@ -108,7 +108,6 @@ export function ExercisePatientContentFields({
       {sectionIds.has('executionSteps') ? (
         <ExerciseExecutionSteps
           enrichmentData={enrichment}
-          patientDescription={patientDescription}
           editable
           disabled={disabled}
           setPath={setPath}
