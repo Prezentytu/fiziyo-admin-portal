@@ -8,7 +8,7 @@
 | Tools         | draft PR albo issue; bez Memories, bez MCP, bez computer use                       |
 | Aktywacja     | unverified — projekt konfiguracji, nie dowód usługi                                |
 | Produkt pracy | jedno odtwarzalne zgłoszenie albo draft PR w istniejącym zakresie                  |
-| Limit         | 90 minut na przebieg                                                               |
+| Limit         | 90 minut na przebieg (wspólne zasady w README)                                     |
 | Bez człowieka | nikt nie odpowie w tym przebiegu; nie pytasz, przy braku danych stajesz z raportem |
 
 ## Prompt

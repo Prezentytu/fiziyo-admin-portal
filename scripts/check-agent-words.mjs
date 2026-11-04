@@ -1,8 +1,9 @@
 // Zapadka słów w kontekście ładowanym zawsze: AGENTS.md, CLAUDE.md, reguły Cursora z `alwaysApply: true`
-// i .ai/lessons.md. Każdy plik ma limit w .ai/quality/agent-words-baseline.json; limit wolno tylko obniżać.
+// i .ai/lessons.md. Limitem jest suma słów (`total` w .ai/quality/agent-words-baseline.json); wolno ją tylko obniżać.
+// Liczby per plik w baseline służą do raportu, co urosło; nową lekcję albo regułę opłacasz skróceniem dowolnego pliku.
 //
-//   node scripts/check-agent-words.mjs            exit 1, gdy plik przekracza limit albo nie ma limitu
-//   node scripts/check-agent-words.mjs --update   zapisz obecne liczby; odmawia podniesienia limitu
+//   node scripts/check-agent-words.mjs            exit 1, gdy suma przekracza limit
+//   node scripts/check-agent-words.mjs --update   zapisz obecne liczby; odmawia podniesienia sumy
 //                                                 (bez pliku limitów tworzy go z obecnych liczb)
 //
 // Nowa treść wchodzi kosztem starej: skróć, przenieś do pliku czytanego na żądanie albo zarchiwizuj lekcję.
@@ -41,42 +42,48 @@ export function measure(root) {
   );
 }
 
-export function compare(counts, limits) {
+const sum = (counts) => Object.values(counts).reduce((total, count) => total + count, 0);
+
+// Files that grew against their recorded count; a file missing from the baseline counts from 0.
+export function grown(counts, files) {
   return Object.entries(counts)
-    .filter(([file, count]) => count > (limits[file] ?? 0))
-    .map(([file, count]) => ({ file, count, limit: limits[file] ?? 0 }));
+    .filter(([file, count]) => count > (files[file] ?? 0))
+    .map(([file, count]) => ({ file, count, before: files[file] ?? 0 }));
 }
 
-export function readLimits(root) {
+export function readBaseline(root) {
   const file = path.join(root, BASELINE);
-  return fs.existsSync(file) ? (JSON.parse(fs.readFileSync(file, 'utf8')).files ?? {}) : {};
+  if (!fs.existsSync(file)) return null;
+  const { total, files = {} } = JSON.parse(fs.readFileSync(file, 'utf8'));
+  return { total, files };
 }
 
 export function run(root, { update = false } = {}) {
   const counts = measure(root);
-  const bootstrap = !fs.existsSync(path.join(root, BASELINE));
-  const over = compare(counts, readLimits(root));
+  const total = sum(counts);
+  const baseline = readBaseline(root);
+  const limit = baseline?.total ?? 0;
+  const over = total > limit;
+  const details = { total, limit, grown: grown(counts, baseline?.files ?? {}) };
   if (update) {
-    if (over.length && !bootstrap) return { ok: false, over, message: 'Refusing to raise the word limit:' };
-    const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
+    if (over && baseline) return { ok: false, ...details, message: 'Refusing to raise the word limit:' };
     const payload = {
-      note: 'Words in always-loaded agent context. Limits may only go down: node scripts/check-agent-words.mjs --update.',
+      note: 'Words in always-loaded agent context. The total may only go down: node scripts/check-agent-words.mjs --update.',
       total,
       files: counts,
     };
     fs.mkdirSync(path.dirname(path.join(root, BASELINE)), { recursive: true });
     fs.writeFileSync(path.join(root, BASELINE), `${JSON.stringify(payload, null, 2)}\n`);
-    return { ok: true, over: [], message: `Agent word limits updated: ${total} words.` };
+    return { ok: true, ...details, limit: total, message: `Agent word limit updated: ${total} words.` };
   }
-  if (over.length) {
+  if (over) {
     return {
       ok: false,
-      over,
-      message: 'Always-loaded agent context grew. Shorten, move to a file read on demand, or archive old lessons:',
+      ...details,
+      message: `Always-loaded agent context grew to ${total} words (limit ${limit}). Shorten any of these files, move text to a file read on demand, or archive old lessons:`,
     };
   }
-  const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
-  return { ok: true, over: [], message: `Agent context within word limits (${total} words).` };
+  return { ok: true, ...details, message: `Agent context within word limit (${total}/${limit} words).` };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -84,7 +91,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   if (result.ok) console.log(result.message);
   else {
     console.error(result.message);
-    for (const { file, count, limit } of result.over) console.error(`  ${file}: ${count} words (limit ${limit})`);
+    for (const { file, count, before } of result.grown) console.error(`  ${file}: ${before} → ${count} words`);
     process.exitCode = 1;
   }
 }

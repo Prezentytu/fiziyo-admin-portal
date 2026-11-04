@@ -1,10 +1,10 @@
 # Lessons Learned
 
-Nie czytaj całości: szukaj `rg -n '<słowo kluczowe>' .ai/lessons.md .ai/lessons-archiwum.md` (np. `organizationId`, `data-testid`, `executionTime`, `Clerk`, `overridesJson`, `skills:sync`). Wzorzec, który wraca drugi raz, przestaje być wpisem i staje się testem, lintem albo checkiem z markerem `[egzekwowane: <ścieżka>]` (skill `principle-encode-lessons-in-structure`).
+Nie czytaj całości: szukaj `rg -n '<słowo kluczowe>' .ai/lessons.md .ai/lessons-archiwum.md` (np. `organizationId`, `data-testid`, `executionTime`, `Clerk`, `additive`, `overridesJson`, `canManageOrganization`, `useLazyQuery`, `agent:check`, `skills:sync`, `trunk`). Wzorzec, który wraca drugi raz, przestaje być wpisem i staje się testem, lintem albo checkiem z markerem `[egzekwowane: <ścieżka>]` (skill `principle-encode-lessons-in-structure`).
 
 ## Format wpisu
 
-Nowy wpis dodajesz na górze sekcji Wpisy. Gdy limit słów z `npm run agent:check` nie pozwala go dopisać, przenieś starsze niż 30 dni wpisy bez markera do `.ai/lessons-archiwum.md` (bez kasowania).
+Nowy wpis dodajesz na górze sekcji Wpisy. Gdy limit słów z `npm run agent:check` nie pozwala go dopisać, przenieś najstarsze wpisy bez markera do `.ai/lessons-archiwum.md` (bez kasowania) albo skróć dowolny plik ładowany zawsze; limit dotyczy sumy.
 
 ### YYYY-MM-DD - Krótki tytuł
 
