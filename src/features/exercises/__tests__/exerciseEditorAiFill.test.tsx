@@ -18,7 +18,7 @@ const source: ExerciseEditorSource = {
 function Editor({ disabled = false }: { disabled?: boolean }) {
   const form = useExerciseEditorForm({ source, updateCore, updateEnrichment });
   return <TooltipProvider><ExerciseEditor form={form} disabled={disabled} showNameField />
-    <button onClick={() => void form.save()}>Zapisz szkic</button>
+    <button data-testid="exercise-editor-test-save-btn" onClick={() => void form.save()}>Zapisz szkic</button>
   </TooltipProvider>;
 }
 
