@@ -76,6 +76,7 @@ import type { ExerciseCoreDraft } from './useExerciseEditorForm';
 // QUICK PRESETS (Unified - shows all params)
 // ============================================================
 const QUICK_PRESETS = [
+  { label: '2×10', hint: '2 serie po 10 powtórzeń, przerwa 60 s', sets: 2, reps: 10, executionTime: null, duration: null, rest: 60 },
   { label: '3×10', hint: '3 serie po 10 powtórzeń, przerwa 60 s', sets: 3, reps: 10, executionTime: null, duration: null, rest: 60 },
   { label: '3×15', hint: '3 serie po 15 powtórzeń, przerwa 45 s', sets: 3, reps: 15, executionTime: null, duration: null, rest: 45 },
   { label: '4×8', hint: '4 serie po 8 powtórzeń, przerwa 90 s', sets: 4, reps: 8, executionTime: null, duration: null, rest: 90 },
@@ -162,7 +163,8 @@ const DEFAULT_DATA: ExerciseData = {
   audioCue: '',
   exerciseSide: 'none',
   difficultyLevel: 'UNKNOWN',
-  sets: 3,
+  // Fizjoterapeuci zaczynają zwykle od 2 serii; pierwszy preset (2×10) odpowiada temu startowi.
+  sets: 2,
   reps: 10,
   duration: null,
   restSets: 60,
