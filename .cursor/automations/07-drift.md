@@ -1,13 +1,15 @@
 # 07 — Dryf speców
 
-| Pole          | Wartość                                                           |
-| ------------- | ----------------------------------------------------------------- |
-| Trigger       | cron niedziela 18:00 Europe/Warsaw                                |
-| Repozytoria   | `fiziyo-admin-portal`                                             |
-| Wejście       | własne repo                                                       |
-| Tools         | draft PR `agent/drift-…`; bez Memories, bez MCP, bez computer use |
-| Aktywacja     | unverified — projekt konfiguracji, nie dowód usługi               |
-| Produkt pracy | raport dryfu i mechaniczne poprawki indeksu                       |
+| Pole          | Wartość                                                                            |
+| ------------- | ---------------------------------------------------------------------------------- |
+| Trigger       | cron niedziela 18:00 Europe/Warsaw                                                 |
+| Repozytoria   | `fiziyo-admin-portal`                                                              |
+| Wejście       | własne repo                                                                        |
+| Tools         | draft PR `agent/drift-…`; bez Memories, bez MCP, bez computer use                  |
+| Aktywacja     | unverified — projekt konfiguracji, nie dowód usługi                                |
+| Produkt pracy | raport dryfu i mechaniczne poprawki indeksu                                        |
+| Limit         | 90 minut na przebieg (wspólne zasady w README)                                     |
+| Bez człowieka | nikt nie odpowie w tym przebiegu; nie pytasz, przy braku danych stajesz z raportem |
 
 ## Prompt
 
