@@ -66,7 +66,11 @@ import {
   rankExerciseNamesForDuplicateCheck,
 } from '@/features/exercises/utils/exerciseDuplicateCandidates';
 import { createExerciseSubmit } from './utils/createExerciseSubmit';
-import { applyAiSuggestionParams } from './utils/aiSuggestionParams';
+import {
+  applyAiDurationSuggestion,
+  applyAiSuggestionParams,
+  currentAiDurationValue,
+} from './utils/aiSuggestionParams';
 import { inferExerciseType } from './utils/inferExerciseType';
 import { insertGeneratedImage, nextGeneratedImagePhase } from './utils/exerciseMedia';
 import { ExerciseParametersEditor } from './ExerciseParametersEditor';
@@ -418,7 +422,8 @@ function AIDiffDrawer({
   // Standard diff checks
   const hasDifferentSets = suggestion.sets !== currentData.sets;
   const hasDifferentReps = suggestion.reps !== currentData.reps;
-  const hasDifferentDuration = suggestion.duration !== currentData.duration;
+  const currentDuration = currentAiDurationValue(currentData, suggestion.type);
+  const hasDifferentDuration = suggestion.duration !== currentDuration;
   const hasDifferentExecutionTime =
     (suggestion.advancedParams?.executionTime ?? null) !== (currentData.executionTime ?? null);
   const hasDifferentPreparationTime =
@@ -655,7 +660,7 @@ function AIDiffDrawer({
             {hasDifferentDuration && suggestion.duration && (
               <SuggestionCard
                 label="Czas serii"
-                currentValue={currentData.duration ? formatDurationPolish(currentData.duration) : '—'}
+                currentValue={currentDuration ? formatDurationPolish(currentDuration) : '—'}
                 suggestedValue={formatDurationPolish(suggestion.duration)}
                 reason="Sugerowany czas serii dla wariantu time-based"
                 onAccept={() => onAcceptField('duration', suggestion.duration)}
@@ -1347,10 +1352,21 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
   }, [data.name, tags, existingExercises]);
 
   // Accept single AI field
-  const handleAcceptAIField = useCallback(<K extends keyof ExerciseData>(field: K, value: unknown) => {
-    setData((prev) => ({ ...prev, [field]: value as ExerciseData[K] }));
-    toast.success('Zaakceptowano sugestię');
-  }, []);
+  const handleAcceptAIField = useCallback(
+    <K extends keyof ExerciseData>(field: K, value: unknown) => {
+      if (field === 'duration' && aiSuggestion) {
+        // Czas z AI dla ćwiczenia na czas trafia do czasu powtórzenia, jak w „Zastosuj wszystko”.
+        setData((prev) => ({
+          ...prev,
+          ...applyAiDurationSuggestion(prev, aiSuggestion.type, value as number | null),
+        }));
+      } else {
+        setData((prev) => ({ ...prev, [field]: value as ExerciseData[K] }));
+      }
+      toast.success('Zaakceptowano sugestię');
+    },
+    [aiSuggestion]
+  );
 
   // Accept all AI suggestions
   const handleAcceptAllAI = useCallback(() => {

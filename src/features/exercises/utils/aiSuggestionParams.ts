@@ -50,3 +50,30 @@ export function applyAiSuggestionParams(
     executionTime: advancedExecutionTime ?? prev.executionTime,
   };
 }
+
+/**
+ * Pojedyncza karta „Czas serii” z AI. Dla ćwiczenia na czas ten sam zapis co „Zastosuj wszystko”:
+ * czas powtórzenia, `reps = 1`, bez legacy `duration`.
+ */
+export function applyAiDurationSuggestion(
+  prev: AiSuggestionParamsTarget,
+  type: ExerciseSuggestionResponse['type'],
+  seconds: number | null | undefined
+): AiSuggestionParamsTarget {
+  const value = positiveOrNull(seconds);
+  if (value === null) {
+    return prev;
+  }
+  if (type === 'time') {
+    return { ...prev, reps: 1, executionTime: value, duration: null };
+  }
+  return { ...prev, duration: value };
+}
+
+/** Wartość w kreatorze, z którą karta „Czas serii” porównuje sugestię AI. */
+export function currentAiDurationValue(
+  current: Pick<AiSuggestionParamsTarget, 'duration' | 'executionTime'>,
+  type: ExerciseSuggestionResponse['type']
+): number | null {
+  return type === 'time' ? current.executionTime : current.duration;
+}

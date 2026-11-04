@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { applyAiSuggestionParams, type AiSuggestionParamsTarget } from '../aiSuggestionParams';
+import {
+  applyAiDurationSuggestion,
+  applyAiSuggestionParams,
+  currentAiDurationValue,
+  type AiSuggestionParamsTarget,
+} from '../aiSuggestionParams';
 
 const wizardDefaults: AiSuggestionParamsTarget = {
   sets: 2,
@@ -62,5 +67,27 @@ describe('applyAiSuggestionParams', () => {
     });
 
     expect(result).toMatchObject({ reps: 1, executionTime: 45, duration: null });
+  });
+});
+
+describe('applyAiDurationSuggestion', () => {
+  it('stores a time-based duration as execution time', () => {
+    expect(applyAiDurationSuggestion(wizardDefaults, 'time', 40)).toMatchObject({
+      reps: 1,
+      executionTime: 40,
+      duration: null,
+    });
+  });
+
+  it('ignores empty or invalid seconds', () => {
+    expect(applyAiDurationSuggestion(wizardDefaults, 'time', Number.NaN)).toEqual(wizardDefaults);
+    expect(applyAiDurationSuggestion(wizardDefaults, 'time', -5)).toEqual(wizardDefaults);
+  });
+
+  it('compares the card with execution time for a time-based suggestion', () => {
+    const current = { duration: null, executionTime: 30 };
+
+    expect(currentAiDurationValue(current, 'time')).toBe(30);
+    expect(currentAiDurationValue(current, 'reps')).toBeNull();
   });
 });
