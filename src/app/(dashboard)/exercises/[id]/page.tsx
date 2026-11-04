@@ -544,7 +544,6 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         }
       : undefined;
 
-  const patientDescription = exercise.patientDescription || exercise.description || '';
   const physiotherapistDescription = exercise.clinicalDescription || '';
   const audioCue = (exercise as { audioCue?: string }).audioCue || '';
   const contentGaps = listContentGaps({
@@ -988,7 +987,6 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
 
               <ExerciseExecutionSteps
                 enrichmentData={enrichment}
-                patientDescription={patientDescription}
                 editable={false}
               />
 

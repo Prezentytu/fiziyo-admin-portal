@@ -8,7 +8,6 @@ import { getMediaUrl } from '@/utils/mediaUrl';
 
 interface ExerciseExecutionStepsProps {
   enrichmentData?: ExerciseEnrichmentData | null;
-  patientDescription?: string;
   editable?: boolean;
   disabled?: boolean;
   setPath?: (path: string, value: unknown) => void;
@@ -19,7 +18,6 @@ const STEPS_PATH = 'patient.steps';
 
 export function ExerciseExecutionSteps({
   enrichmentData,
-  patientDescription,
   editable = false,
   disabled = false,
   setPath,
@@ -80,11 +78,6 @@ export function ExerciseExecutionSteps({
             );
           })}
         </ol>
-      ) : patientDescription ? (
-        <div className="rounded-xl bg-surface-light/30 p-4 space-y-2">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">Opis ćwiczenia</p>
-          <p className="whitespace-pre-wrap text-sm text-muted-foreground leading-relaxed">{patientDescription}</p>
-        </div>
       ) : (
         <p className="text-sm text-muted-foreground">Brak kroków wykonania dla tego ćwiczenia.</p>
       )}
