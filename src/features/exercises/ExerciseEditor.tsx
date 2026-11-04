@@ -79,6 +79,22 @@ function deepMergeFillGaps(currentValue: unknown, aiValue: unknown): unknown {
   return currentValue;
 }
 
+function revertUnchangedAiValues(current: unknown, before: unknown, after: unknown): unknown {
+  if (JSON.stringify(current) === JSON.stringify(after)) return before;
+  if (!current || typeof current !== 'object' || Array.isArray(current)) return current;
+  const currentFields = current as Record<string, unknown>;
+  const beforeFields = (before && typeof before === 'object' ? before : {}) as Record<string, unknown>;
+  const afterFields = (after && typeof after === 'object' ? after : {}) as Record<string, unknown>;
+  return Object.fromEntries(Object.entries(currentFields)
+    .map(([key, value]) => [key, revertUnchangedAiValues(value, beforeFields[key], afterFields[key])])
+    .filter(([, value]) => value !== undefined));
+}
+
+interface AiFillChange {
+  before: ExerciseEnrichmentData;
+  after: ExerciseEnrichmentData;
+}
+
 function AiFillBar({
   context,
   enrichment,
@@ -91,20 +107,19 @@ function AiFillBar({
   onApply: (data: ExerciseEnrichmentData) => void;
 }>) {
   const [isGenerating, setIsGenerating] = useState(false);
-  const preAiSnapshotRef = useRef<ExerciseEnrichmentData | null>(null);
+  const enrichmentRef = useRef(enrichment);
+  enrichmentRef.current = enrichment;
   const completeness = useMemo(() => computeCompleteness(enrichment), [enrichment]);
 
-  const handleDiscard = useCallback(() => {
-    const snapshot = preAiSnapshotRef.current;
-    if (!snapshot) return;
-    onApply(snapshot);
-    toast.info('Przywrócono dane sprzed AI.');
+  const handleDiscard = useCallback((change: AiFillChange) => {
+    const restored = revertUnchangedAiValues(enrichmentRef.current, change.before, change.after);
+    onApply(compactEnrichment(restored as ExerciseEnrichmentData) ?? {});
+    toast.info('Cofnięto propozycję AI, zachowując ręczne zmiany.');
   }, [onApply]);
 
   const handleGenerate = useCallback(async () => {
     if (isGenerating || disabled) return;
     setIsGenerating(true);
-    preAiSnapshotRef.current = enrichment;
 
     const tags = [...(context.mainTags ?? []), ...(context.additionalTags ?? [])];
     const response = await aiService.generateEnrichment({
@@ -124,10 +139,11 @@ function AiFillBar({
     }
 
     const aiData = toV3(response.enrichmentData as ExerciseEnrichmentData);
-    const merged = deepMergeFillGaps(enrichment, aiData) as ExerciseEnrichmentData;
+    const currentEnrichment = enrichmentRef.current;
+    const merged = deepMergeFillGaps(currentEnrichment, aiData) as ExerciseEnrichmentData;
     const cleanedMerged = compactEnrichment(merged) ?? {};
 
-    const beforeFilled = computeCompleteness(enrichment).filled;
+    const beforeFilled = computeCompleteness(currentEnrichment).filled;
     const afterFilled = computeCompleteness(cleanedMerged).filled;
     const newSections = afterFilled - beforeFilled;
 
@@ -137,7 +153,10 @@ function AiFillBar({
         ? `AI uzupełniło ${newSections} ${newSections === 1 ? 'sekcję' : 'sekcji'}.`
         : 'AI przejrzało ćwiczenie — wszystkie sekcje były już wypełnione.',
       {
-        action: newSections > 0 ? { label: 'Cofnij', onClick: handleDiscard } : undefined,
+        action: newSections > 0 ? {
+          label: 'Cofnij',
+          onClick: () => handleDiscard({ before: currentEnrichment, after: cleanedMerged }),
+        } : undefined,
         duration: 7000,
       }
     );

@@ -1,12 +1,13 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ExerciseEditor } from '../ExerciseEditor';
 import { useExerciseEditorForm, type ExerciseEditorSource } from '../useExerciseEditorForm';
 
-const { generateEnrichment, updateCore, updateEnrichment } = vi.hoisted(() => ({
-  generateEnrichment: vi.fn(), updateCore: vi.fn(), updateEnrichment: vi.fn(),
+const { generateEnrichment, updateCore, updateEnrichment, toastSuccess } = vi.hoisted(() => ({
+  toastSuccess: vi.fn(), generateEnrichment: vi.fn(), updateCore: vi.fn(), updateEnrichment: vi.fn(),
 }));
+vi.mock('sonner', () => ({ toast: { success: toastSuccess, error: vi.fn(), info: vi.fn() } }));
 vi.mock('@/services/aiService', () => ({ aiService: { generateEnrichment } }));
 
 const source: ExerciseEditorSource = {
@@ -48,6 +49,39 @@ describe('AI w edycji ćwiczenia', () => {
       patient: expect.objectContaining({ steps: ['Zachowaj mój krok.'], cues: ['Nowa wskazówka AI.'] }),
     })));
   });
+  it('nie nadpisuje treści zmienionej podczas oczekiwania na AI', async () => {
+    let finish: (value: unknown) => void = () => undefined;
+    generateEnrichment.mockReturnValue(new Promise((resolve) => { finish = resolve; }));
+    render(<Editor />);
+    fireEvent.click(screen.getByRole('button', { name: 'Uzupełnij przez AI' }));
+    fireEvent.change(screen.getByDisplayValue('Zachowaj mój krok.'), { target: { value: 'Krok zmieniony podczas generowania.' } });
+    await act(async () => { finish({ success: true, enrichmentData: { patient: { cues: ['Nowa wskazówka AI.'] } } }); });
+    expect(screen.getByDisplayValue('Krok zmieniony podczas generowania.')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Nowa wskazówka AI.')).toBeInTheDocument();
+  });
+
+  it('Cofnij usuwa tylko propozycję AI i zachowuje późniejsze ręczne zmiany', async () => {
+    render(<Editor />);
+    fireEvent.click(screen.getByRole('button', { name: 'Uzupełnij przez AI' }));
+    await screen.findByDisplayValue('Nowa wskazówka AI.');
+    fireEvent.change(screen.getByDisplayValue('Zachowaj mój krok.'), { target: { value: 'Krok poprawiony po AI.' } });
+    const undo = toastSuccess.mock.calls.at(-1)?.[1].action.onClick;
+    expect(undo).toBeTypeOf('function');
+    act(() => undo());
+    expect(screen.getByDisplayValue('Krok poprawiony po AI.')).toBeInTheDocument();
+    expect(screen.queryByDisplayValue('Nowa wskazówka AI.')).not.toBeInTheDocument();
+  });
+
+  it('Cofnij zachowuje wskazówkę AI poprawioną ręcznie', async () => {
+    render(<Editor />);
+    fireEvent.click(screen.getByRole('button', { name: 'Uzupełnij przez AI' }));
+    await screen.findByDisplayValue('Nowa wskazówka AI.');
+    fireEvent.change(screen.getByDisplayValue('Nowa wskazówka AI.'), { target: { value: 'Wskazówka poprawiona przez fizjoterapeutę.' } });
+    const undo = toastSuccess.mock.calls.at(-1)?.[1].action.onClick;
+    act(() => undo());
+    expect(screen.getByDisplayValue('Wskazówka poprawiona przez fizjoterapeutę.')).toBeInTheDocument();
+  });
+
   it('nie generuje propozycji przy zablokowanej edycji', () => {
     render(<Editor disabled />);
     expect(screen.getByRole('button', { name: 'Uzupełnij przez AI' })).toBeDisabled();

@@ -9,6 +9,6 @@
 - Wykluczenia: kontrakt, auth, kredyty, backend, deploy, PROD.
 - Acceptance: akcja AI dostępna bez dodatkowych props w detalu i dialogu, używa aktualnego szkicu, chroni wpisane treści i wymaga ręcznego zapisu.
 - Baseline: origin/main 9eff13fa, codex/fix-exercise-ai-edit, czyste drzewo.
-- Dowód różnicujący: test na baseline pada (brak przycisku AI); po zmianie 2 testy przechodzą na Node 24.
+- Dowód różnicujący: test na baseline pada (brak przycisku AI); po zmianie testy przechodzą na Node 24. Niezależne review odtworzyło race odpowiedzi AI i Cofnij; dodatkowe scenariusze padały na 0625935, poprawka scala wynik z bieżącym szkicem i cofa tylko niezmienione wartości AI.
 - UI: /private/tmp/fiziyo-ai-edit-evidence/{before,after}-{light,dark}.png, rzeczywisty edytor i tokeny CSS, syntetyczny fixture i stub AI; nie jest to E2E zalogowanego portalu.
 - Następny krok: validate na czystym kandydacie i niezależny reviewer; potem draft PR.
