@@ -31,23 +31,24 @@ Wygląd: canvas „Czat v2 AJ” (https://claude.ai/artifact/QGoTcDeTx2JX2yDq86R
 
 ### Logika (czyste funkcje, testy Vitest)
 
-| Plik                            | Co liczy                                                                                                                                                    |
-| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `utils/textMatch.ts`            | Normalizacja i dopasowanie słów z odmianą (Kowalskiemu → Kowalski)                                                                                          |
-| `utils/patientMatch.ts`         | Pacjent z tekstu: brak, jeden, kilku                                                                                                                        |
-| `utils/intentRouter.ts`         | Reguły: polecenie → karta                                                                                                                                   |
-| `utils/viewSpec.ts`             | Zamknięty katalog kart, `parseDispatchReply` (tekst + karta, limit 1200 znaków)                                                                             |
-| `utils/replyText.ts`            | Zdanie nad kartą, gdy nie ma tekstu modelu; bez form rodzajowych                                                                                            |
-| `utils/resolveReply.ts`         | AI najpierw, reguły jako zapas z powodem; pytanie `Clarify` dopisane do tekstu                                                                              |
-| `utils/setDraft.ts`             | Szkic zestawu: parametry z mappingu albo domyślne (z tempem, obciążeniem, notatką), minuty dziennie, nazwa; edycja przez wspólne `ExerciseParametersFields` |
-| `utils/schedulePlan.ts`         | Start, liczba tygodni, rytm → daty i `Frequency`                                                                                                            |
-| `utils/sendPlan.ts`             | Kolejność zapisów przy wysyłce planu                                                                                                                        |
-| `utils/conversationStore.ts`    | Historia rozmów: odczyt, tytuł, limity, czyszczenie przy wylogowaniu                                                                                        |
-| `utils/todayAgenda.ts`          | „Dziś”: wizyty z notatek z dzisiejszą datą, nieaktywni (≥4 dni), plan wygasa wg reguły listy pacjentów (`resolveAssignmentDisplayStatus`)                   |
-| `utils/exerciseAlternatives.ts` | Zamienniki ćwiczenia po wspólnych tagach                                                                                                                    |
-| `utils/documentItems.ts`        | Ćwiczenia z dokumentu albo notatki z wizyty i ich pewne dopasowania w katalogu                                                                              |
-| `utils/exerciseLookup.ts`       | Wyszukiwanie ćwiczeń w puli organizacji                                                                                                                     |
-| `utils/chatModePreference.ts`   | Odczyt i walidacja preferencji                                                                                                                              |
+| Plik                            | Co liczy                                                                                                                                                      |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `utils/textMatch.ts`            | Normalizacja i dopasowanie słów z odmianą (Kowalskiemu → Kowalski)                                                                                            |
+| `utils/patientMatch.ts`         | Pacjent z tekstu: brak, jeden, kilku                                                                                                                          |
+| `utils/intentRouter.ts`         | Reguły: polecenie → karta                                                                                                                                     |
+| `utils/viewSpec.ts`             | Zamknięty katalog kart, `parseDispatchReply` (tekst + karta, limit 1200 znaków)                                                                               |
+| `utils/replyText.ts`            | Zdanie nad kartą, gdy nie ma tekstu modelu; bez form rodzajowych                                                                                              |
+| `utils/resolveReply.ts`         | AI najpierw, reguły jako zapas z powodem; pytanie `Clarify` dopisane do tekstu                                                                                |
+| `utils/setDraft.ts`             | Szkic zestawu: parametry z mappingu albo domyślne (z tempem, obciążeniem, notatką), minuty dziennie, nazwa; edycja przez wspólne `ExerciseParametersFields`   |
+| `utils/schedulePlan.ts`         | Start, liczba tygodni, rytm → daty i `Frequency`                                                                                                              |
+| `utils/sendPlan.ts`             | Kolejność zapisów przy wysyłce planu                                                                                                                          |
+| `utils/conversationStore.ts`    | Historia rozmów: odczyt, tytuł, limity, czyszczenie przy wylogowaniu                                                                                          |
+| `utils/todayAgenda.ts`          | „Dziś”: wizyty z notatek z dzisiejszą datą, nieaktywni (≥4 dni), plan wygasa wg reguły listy pacjentów (`resolveAssignmentDisplayStatus`)                     |
+| `utils/exerciseAlternatives.ts` | Zamienniki ćwiczenia po wspólnych tagach                                                                                                                      |
+| `utils/documentItems.ts`        | Ćwiczenia z dokumentu albo notatki z wizyty: pewne dopasowanie tylko przy zgodnej nazwie, inaczej „czy chodziło o…?”; serie i powtórzenia z notatki do szkicu |
+| `utils/newPatientDetails.ts`    | Imię, telefon, e-mail i powód z wiadomości terapeuty do formularza nowego pacjenta                                                                            |
+| `utils/exerciseLookup.ts`       | Wyszukiwanie ćwiczeń w puli organizacji                                                                                                                       |
+| `utils/chatModePreference.ts`   | Odczyt i walidacja preferencji                                                                                                                                |
 
 ### Decyzje
 
@@ -58,6 +59,9 @@ Wygląd: canvas „Czat v2 AJ” (https://claude.ai/artifact/QGoTcDeTx2JX2yDq86R
 - „Dla kogo?” zaczyna się od „Bez pacjenta” (zestaw zapisany w katalogu gabinetu, np. żeby wypróbować aplikację), potem pacjenci. Zestaw ułożony w wątku nie jest zestawem z katalogu i karta tak go nie nazywa (`draftNote`, `planNote` w `utils/setDraft.ts`).
 - „Kto nie ćwiczy” pokazuje pacjentów zalogowanego fizjoterapeuty; pytanie o konkretnego pacjenta szuka w całej organizacji (opieka zespołowa).
 - Kilku pacjentów o tym samym imieniu: backend pyta „O kogo chodzi?” bez wołania modelu.
+- Tekst modelu nie ogłasza zapisu: `ChatViewSpecValidator.WithoutWriteClaims` usuwa zdania typu „zapisuję”, „ustawiłem”, „wysłałem” (poza zdaniem o tym, co zrobi kliknięcie), a tekst z nieznanym aliasem albo o „aliasach” nie dochodzi do terapeuty (wtedy zdanie pisze panel). Nieznany alias w pytaniu daje „O którego pacjenta chodzi?”, a w odpowiedziach do kliknięcia znika.
+- Pacjent karty musi być tym, o którym mówi tekst: gdy tekst nazywa innego pacjenta, backend zdejmuje pacjenta z karty; gdy rozmowa jest o innym pacjencie (ostatnia karta), a wiadomość nikogo nie nazywa, panel robi to samo (`guardCardPatient`). Karta pyta wtedy „Dla kogo?”, z pacjentem rozmowy na początku listy.
+- Narzędzia modelu widzą tylko aliasy: nazwy zestawów z imieniem pacjenta wracają z aliasem (`ChatDispatchTools`), a plany pacjenta daje `FindPatientSets` (nazwy ćwiczeń bez parametrów, bo plan może mieć indywidualne zmiany).
 - Model: `Chat:OpenApiModelDispatcher` (domyślnie Haiku przez OpenRouter), osobny klucz klienta bez logowania promptów.
 
 ## Interfejsy
@@ -90,7 +94,7 @@ Błędy: `400 invalid_message`, `400 insufficient_credits`, `403 forbidden`, `50
 
 - Powłoka: `nav-chat-sidebar`, `nav-chat-mobile-sidebar`, `nav-chat-sidebar-collapse-btn`, `nav-chat-new-btn`, `nav-chat-{patients,sets,exercises}-link`, `nav-chat-inactive-count`, `nav-chat-scan-btn`, `nav-chat-recent-list`, `nav-chat-recent-item-<id>`, `nav-chat-recent-delete-btn-<id>`, `nav-chat-credits`, `nav-chat-user-menu-btn`, `nav-chat-{settings,organization}-link`, `nav-chat-classic-btn`, `nav-chat-sign-out-btn`.
 - Widok: `common-chat-view`, `common-chat-thread`, `common-chat-thinking`, `common-chat-menu-btn`, `common-chat-sidebar-expand-btn`, `common-chat-ai-toggle-btn`, `common-chat-context-chip-btn`, `common-chat-new-btn`, `common-chat-shortcut-{set,patient,scan}-btn`, `common-chat-today-{btn,list,visit,inactive,ending}`, `common-chat-composer`, `common-chat-composer-{input,send-btn,stop-btn,attach-btn,file-input,mic-btn,dictation-cancel-btn}`, `common-chat-scroll-bottom-btn`, `common-chat-drop-overlay`, `common-chat-message-<id>-{edit,copy}-btn`, `common-chat-reply-<id>-copy-btn`, `common-chat-context-{panel,close-btn,reason,week,pain,set,visit,set-btn,open-link}`.
-- Odpowiedź: `common-chat-reply-<id>-<karta>` z elementami `-primary-btn`, `-option-<n>-btn`, `-item-<exerciseId>`, `-remove-<exerciseId>-btn`, `-undo-btn`, `-form`, `-<pole>-input`, `-submit-btn`, `-open-link` i innymi w kartach.
+- Odpowiedź: `common-chat-reply-<id>-<karta>` z elementami `-primary-btn`, `-option-<n>-btn`, `-confirm-<n>-btn` (skan: „Tak” przy niepewnym dopasowaniu), `-item-<exerciseId>`, `-remove-<exerciseId>-btn`, `-undo-btn`, `-form`, `-<pole>-input`, `-submit-btn`, `-open-link` i innymi w kartach.
 - Ustawienia: `nav-chat-mode-toggle-btn`, `settings-chat-mode-card`, `settings-chat-mode-switch`, `settings-chat-ai-switch`.
 - Usunięty: `common-chat-shortcut-inactive-btn` (skrót zastąpiły „Dziś” i licznik w sidebarze); scenariuszy czatu nie ma jeszcze w `fiziyo-tests`.
 
@@ -108,6 +112,10 @@ Błędy: `400 invalid_message`, `400 insufficient_credits`, `403 forbidden`, `50
 - Prawdziwe strumieniowanie z modelu (dziś odpowiedź wchodzi animacją po przyjściu całości); historia rozmów po stronie serwera (dziś tylko przeglądarka).
 
 ## Changelog
+
+### 2026-11-04
+
+- Poprawki P0 z testu użyteczności 01.11 (raport w PR #171): podwójne nazwisko jednym aliasem (bez „Anna Czat-Nowak-Anna Czat-Nowak”), bez „pacjent” i „alias” w tekście i przyciskach, bez zdań o zapisie, którego nie było, pacjent karty zgodny z tekstem i rozmową, plany pacjenta dla modelu (`FindPatientSets`), formularz nowego pacjenta wypełniony z wiadomości i bez przykładowego numeru w polu, skan wizyty z „czy chodziło o…?” zamiast błędnego ✓, wyszukiwaniem czatu dla pozycji bez dopasowania i dawkami z notatki; ikony wiersza zestawu widoczne bez najechania na tablecie.
 
 ### 2026-10-31
 

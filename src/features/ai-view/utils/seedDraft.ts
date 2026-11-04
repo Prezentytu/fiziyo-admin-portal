@@ -1,7 +1,7 @@
 import { sortMappingsByOrder } from '@/features/assignment/utils/sortMappingsByOrder';
 import type { ExerciseLikeForDefaults } from '@/features/exercise-sets/utils/exerciseDefaults';
 import { pickExercisesById } from './exerciseLookup';
-import { draftItemFromExercise, draftItemFromMapping, type DraftItem } from './setDraft';
+import { applyDose, draftItemFromExercise, draftItemFromMapping, type DraftDose, type DraftItem } from './setDraft';
 
 type SeedExercise = ExerciseLikeForDefaults & { id: string };
 type SeedMapping = Parameters<typeof draftItemFromMapping>[0] & { order?: number | null };
@@ -9,6 +9,8 @@ type SeedMapping = Parameters<typeof draftItemFromMapping>[0] & { order?: number
 interface SeedInput {
   setId?: string;
   exerciseIds: readonly string[];
+  /** Per exercise id; numbers from a visit note or document. */
+  doses?: Readonly<Record<string, DraftDose>>;
   sets: ReadonlyArray<{ id: string; exerciseMappings?: readonly SeedMapping[] | null }>;
   setsReady: boolean;
   exercises: readonly SeedExercise[];
@@ -23,7 +25,9 @@ export function seedDraftItems(input: SeedInput): { items: DraftItem[]; missingS
   if (!input.exercisesReady) return null;
   if (!input.setId) {
     return {
-      items: pickExercisesById(input.exercises, input.exerciseIds).map((exercise) => draftItemFromExercise(exercise)),
+      items: pickExercisesById(input.exercises, input.exerciseIds).map((exercise) =>
+        applyDose(draftItemFromExercise(exercise), input.doses?.[exercise.id])
+      ),
       missingSet: false,
     };
   }

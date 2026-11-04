@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { dispatchChatMessage } from './chatDispatchClient';
-import type { ChatCardSpec } from './utils/chatCards';
+import { latestCardPatientId, type ChatCardSpec } from './utils/chatCards';
 import type { ChatThreadMessage } from './utils/conversationStore';
 import type { IntentContext } from './utils/intentRouter';
 import { resolveReply } from './utils/resolveReply';
@@ -48,6 +48,11 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
   // isBusy only blocks after a render; a double click lands before it.
   const inFlightRef = useRef(false);
   const abortRef = useRef<AbortController | undefined>(undefined);
+  // Read when a message is sent, not a render dependency of `send`.
+  const messagesRef = useRef<ChatThreadMessage[]>(messages);
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   if (threadScope !== scopeKey) {
     setThreadScope(scopeKey);
@@ -108,6 +113,7 @@ export function useChatThread({ useAi, context, ready, scopeKey }: ChatThreadOpt
           context,
           dispatch: dispatchChatMessage,
           pendingCommand: pendingCommandRef.current,
+          contextPatientId: latestCardPatientId(messagesRef.current),
         });
         if (threadEpochRef.current !== epoch) return;
         // AI questions count too: if the next dispatch fails, rules finish the command.

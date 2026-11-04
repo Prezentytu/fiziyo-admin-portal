@@ -56,4 +56,20 @@ describe('seedDraftItems', () => {
       seedDraftItems({ exerciseIds: ['e1'], sets: [], setsReady: true, exercises: [], exercisesReady: false })
     ).toBeNull();
   });
+
+  it('applies the numbers of a visit note over the exercise defaults', () => {
+    expect(
+      seedDraftItems({
+        exerciseIds: ['e1', 'e2'],
+        doses: { e1: { sets: 3, reps: 15 } },
+        sets: [],
+        setsReady: false,
+        exercises: EXERCISES,
+        exercisesReady: true,
+      })?.items.map((item) => [item.exerciseId, item.sets, item.reps])
+    ).toEqual([
+      ['e1', 3, 15],
+      ['e2', 2, 12],
+    ]);
+  });
 });

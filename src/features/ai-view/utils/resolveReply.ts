@@ -1,4 +1,6 @@
 import { routeIntent, type IntentContext } from './intentRouter';
+import { matchPatients } from './patientMatch';
+import { withNewPatientDetails } from './newPatientDetails';
 import { describeSpec } from './replyText';
 import type { ChatViewSpec } from './viewSpec';
 
@@ -50,21 +52,29 @@ export async function resolveReply(
     signal?: AbortSignal;
     /** The command a previous question was about; only rules use it, the model keeps its own history. */
     pendingCommand?: string;
+    /** Patient of the conversation (latest card); a model card for someone else needs the message to name them. */
+    contextPatientId?: string;
   }
 ): Promise<ResolvedReply> {
   if (options.useAi) {
     try {
       const result = await options.dispatch(text, options.sessionId, options.signal);
+      const spec = guardCardPatient(
+        withNewPatientDetails(result.spec, text),
+        text,
+        options.context,
+        options.contextPatientId
+      );
       return {
-        text: replyText(result.text, result.spec, options.context),
-        spec: result.spec,
+        text: replyText(result.text, spec, options.context),
+        spec,
         source: 'ai',
         sessionId: result.sessionId,
         creditsUsed: result.creditsUsed,
       };
     } catch (error) {
       const fallbackReason = error instanceof ChatDispatchError ? error.reason : 'unavailable';
-      const spec = routeIntent(text, options.context, options.pendingCommand);
+      const spec = withNewPatientDetails(routeIntent(text, options.context, options.pendingCommand), text);
       return {
         text: replyText(undefined, spec, options.context),
         spec,
@@ -74,7 +84,7 @@ export async function resolveReply(
       };
     }
   }
-  const spec = routeIntent(text, options.context, options.pendingCommand);
+  const spec = withNewPatientDetails(routeIntent(text, options.context, options.pendingCommand), text);
   return { text: replyText(undefined, spec, options.context), spec, source: 'rules', creditsUsed: 0 };
 }
 
@@ -97,4 +107,24 @@ export function replyText(
   if (!text) return fallback;
   if (spec?.component === 'Clarify' && !text.includes(spec.question)) return `${text}\n\n${spec.question}`;
   return text;
+}
+
+/**
+ * A model card for another patient than the conversation is about, while the message names no one,
+ * is a guess: after "Dodano: Jan" and "clamshell, bird dog" the model once put the set on another
+ * patient's card (report 01.11, P0-1). The card then asks "Dla kogo?" instead of guessing.
+ */
+export function guardCardPatient(
+  spec: ChatViewSpec | undefined,
+  message: string,
+  context: IntentContext,
+  contextPatientId: string | undefined
+): ChatViewSpec | undefined {
+  if (spec?.component !== 'SetDraft' && spec?.component !== 'AssignSummary') return spec;
+  if (!contextPatientId || spec.patientId === contextPatientId) return spec;
+  const named = matchPatients(message, context.patients);
+  if (named.kind === 'one' && named.patient.id === spec.patientId) return spec;
+  if (named.kind === 'many' && named.patients.some((patient) => patient.id === spec.patientId)) return spec;
+  if (spec.component === 'AssignSummary') return { component: 'SetDraft', setId: spec.setId, exerciseIds: [] };
+  return { ...spec, patientId: undefined };
 }

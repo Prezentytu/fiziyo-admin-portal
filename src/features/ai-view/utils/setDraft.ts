@@ -25,6 +25,23 @@ export interface DraftItem {
   notes?: string;
 }
 
+/** Numbers a source wrote for an exercise (a visit note's "3×15"); they win over the catalog defaults. */
+export interface DraftDose {
+  sets?: number;
+  reps?: number;
+  duration?: number;
+}
+
+export function applyDose(item: DraftItem, dose: DraftDose | undefined): DraftItem {
+  if (!dose) return item;
+  return {
+    ...item,
+    sets: dose.sets ?? item.sets,
+    reps: dose.reps ?? item.reps,
+    duration: dose.duration ?? item.duration,
+  };
+}
+
 /** A set the therapist is composing in the thread; JSON-safe, so it survives a reload of the conversation. */
 export interface SetDraftPayload {
   name: string;

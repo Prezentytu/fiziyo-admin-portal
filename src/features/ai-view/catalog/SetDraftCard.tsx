@@ -76,7 +76,7 @@ function DraftRow({ item, exercise, alternatives, locked, testId, onRemove, onSw
           </p>
         </div>
         {!locked && (
-          <div className="flex shrink-0 items-center opacity-100 transition-opacity sm:opacity-0 sm:group-focus-within:opacity-100 sm:group-hover:opacity-100">
+          <div className="flex shrink-0 items-center opacity-100 transition-opacity pointer-fine:opacity-0 pointer-fine:group-focus-within:opacity-100 pointer-fine:group-hover:opacity-100">
             <Button
               variant="ghost"
               size="icon"
@@ -178,6 +178,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen }: CardProps<'Set
     const seed = seedDraftItems({
       setId: spec.setId,
       exerciseIds: spec.exerciseIds,
+      doses: spec.doses,
       sets: organizationSets,
       setsReady,
       exercises,
