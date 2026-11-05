@@ -321,7 +321,7 @@ function ChatHome({
   readonly onSend: (text: string) => void;
   readonly onAttach: (file: File) => void;
 }) {
-  const { firstName, isBusy, isReady } = useChatSession();
+  const { firstName, isBusy, isReady, isLoading } = useChatSession();
   const shortcuts = useChatShortcuts();
   const [now] = useState(() => new Date());
 
@@ -342,7 +342,7 @@ function ChatHome({
         onAttach={onAttach}
         busy={isBusy}
         disabled={!isReady}
-        loading={!isReady}
+        loading={isLoading}
         large
       />
       <div className="flex flex-col gap-5">
@@ -455,7 +455,7 @@ function hasDraggedFile(event: DragEvent): boolean {
 
 /** Chat-first home (DEC-20261029-02, design "Czat v2"): one conversation, cards with the app's actions. */
 export function ChatView() {
-  const { messages, isBusy, isReady, sendMessage, stopReply, isContextOpen, setContextOpen, activeConversationId } =
+  const { messages, isBusy, isReady, isLoading, sendMessage, stopReply, isContextOpen, setContextOpen, activeConversationId } =
     useChatSession();
   const { analyzeFile } = useDocumentAnalysis();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -572,7 +572,7 @@ export function ChatView() {
                 onStop={stopReply}
                 busy={isBusy}
                 disabled={!isReady}
-                loading={!isReady}
+                loading={isLoading}
                 lastUserText={lastUser?.role === 'user' ? lastUser.text : undefined}
               />
               <p className="text-center text-[12px] text-label-tertiary">
