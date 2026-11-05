@@ -2,12 +2,11 @@ import { describe, expect, it } from 'vitest';
 
 import {
   aiSuggestionParamDiffs,
-  applyAiDurationSuggestion,
   applyAiExecutionTimeSuggestion,
+  aiSuggestionLoadKg,
   aiSuggestionSide,
   applyAiRepsSuggestion,
   applyAiSuggestionParams,
-  currentAiDurationValue,
   positiveAiNumber,
   type AiSuggestionParamsTarget,
 } from '../aiSuggestionParams';
@@ -75,34 +74,13 @@ describe('applyAiSuggestionParams', () => {
   });
 });
 
-describe('applyAiDurationSuggestion', () => {
-  it('stores a time-based duration as execution time', () => {
-    expect(applyAiDurationSuggestion(wizardDefaults, 'time', 40)).toMatchObject({
-      reps: 1,
-      executionTime: 40,
-      duration: null,
-    });
-  });
-
-  it('ignores empty or invalid seconds', () => {
-    expect(applyAiDurationSuggestion(wizardDefaults, 'time', Number.NaN)).toEqual(wizardDefaults);
-    expect(applyAiDurationSuggestion(wizardDefaults, 'time', -5)).toEqual(wizardDefaults);
-  });
-
-  it('compares the card with execution time for a time-based suggestion', () => {
-    const current = { duration: null, executionTime: 30 };
-
-    expect(currentAiDurationValue(current, 'time')).toBe(30);
-    expect(currentAiDurationValue(current, 'reps')).toBeNull();
-  });
-});
-
 describe('applyAiExecutionTimeSuggestion', () => {
-  it('stores a time-based execution time as one repetition, like the duration card', () => {
+  it('stores a time-based execution time as one repetition, like apply-all', () => {
     const prev = { ...wizardDefaults, duration: 20 };
 
-    expect(applyAiExecutionTimeSuggestion(prev, 'time', 45)).toEqual(applyAiDurationSuggestion(prev, 'time', 45));
     expect(applyAiExecutionTimeSuggestion(prev, 'time', 45)).toMatchObject({ reps: 1, executionTime: 45, duration: null });
+    expect(applyAiExecutionTimeSuggestion(prev, 'time', Number.NaN)).toEqual(prev);
+    expect(applyAiExecutionTimeSuggestion(prev, 'time', -5)).toEqual(prev);
   });
 
   it('keeps repetitions for a rep-based exercise', () => {
@@ -230,5 +208,23 @@ describe('aiSuggestionSide', () => {
   it('keeps the wizard side when AI proposes none, as the side card is hidden then', () => {
     expect(aiSuggestionSide('none', 'left')).toBe('left');
     expect(aiSuggestionSide('both', 'left')).toBe('both');
+  });
+});
+
+describe('legacy duration from AI', () => {
+  it('is never written for a rep-based suggestion, so a hold cannot be left half in duration', () => {
+    const suggestion = { type: 'reps' as const, sets: 3, reps: 10, duration: 40, restSets: 60, advancedParams: null };
+
+    expect(applyAiSuggestionParams(wizardDefaults, suggestion).duration).toBeNull();
+    expect(aiSuggestionParamDiffs(suggestion, wizardDefaults).duration).toBe(false);
+  });
+});
+
+describe('aiSuggestionLoadKg', () => {
+  it('reads kilograms and gives null for a load without a number, so the field is not cleared', () => {
+    expect(aiSuggestionLoadKg('20kg')).toBe(20);
+    expect(aiSuggestionLoadKg('2,5 kg')).toBe(2.5);
+    expect(aiSuggestionLoadKg('masa ciała')).toBeNull();
+    expect(aiSuggestionLoadKg(null)).toBeNull();
   });
 });

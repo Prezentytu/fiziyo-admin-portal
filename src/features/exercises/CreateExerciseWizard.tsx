@@ -69,13 +69,12 @@ import {
 import { createExerciseSubmit } from './utils/createExerciseSubmit';
 import {
   aiSuggestedReps,
+  aiSuggestionLoadKg,
   aiSuggestionParamDiffs,
   aiSuggestionSide,
-  applyAiDurationSuggestion,
   applyAiExecutionTimeSuggestion,
   applyAiRepsSuggestion,
   applyAiSuggestionParams,
-  currentAiDurationValue,
   positiveAiNumber,
 } from './utils/aiSuggestionParams';
 import { inferExerciseType } from './utils/inferExerciseType';
@@ -123,14 +122,6 @@ interface ExerciseData {
   tempo: string;
   loadKg: number | null;
   rangeOfMotion: string;
-}
-
-function parseAiWeightToLoadKg(weight: string | null | undefined): number | null {
-  if (!weight) return null;
-  const match = weight.replace(',', '.').match(/-?\d+(\.\d+)?/);
-  if (!match) return null;
-  const parsed = Number(match[0]);
-  return !Number.isNaN(parsed) && parsed > 0 ? parsed : null;
 }
 
 // Interface for existing exercises from API
@@ -426,13 +417,13 @@ function AIDiffDrawer({
   const suggestedRest = positiveAiNumber(suggestion.restSets);
   const hasDifferentSets = paramDiffs.sets;
   const hasDifferentReps = paramDiffs.reps;
-  const currentDuration = currentAiDurationValue(currentData, suggestion.type);
   const hasDifferentDuration = paramDiffs.duration;
   const hasDifferentExecutionTime = paramDiffs.executionTime;
   const hasDifferentPreparationTime = paramDiffs.preparationTime;
   const hasDifferentRest = paramDiffs.restSets;
   const advancedExecutionTime = positiveAiNumber(suggestion.advancedParams?.executionTime);
   const advancedPreparationTime = positiveAiNumber(suggestion.advancedParams?.preparationTime);
+  const suggestedLoadKg = aiSuggestionLoadKg(suggestion.advancedParams?.weight);
   const hasAdvancedParams =
     suggestion.advancedParams &&
     (suggestion.advancedParams.tempo ||
@@ -674,7 +665,7 @@ function AIDiffDrawer({
             {hasDifferentDuration && suggestedDuration !== null && (
               <SuggestionCard
                 label="Czas serii"
-                currentValue={currentDuration ? formatDurationPolish(currentDuration) : '—'}
+                currentValue={currentData.executionTime ? formatDurationPolish(currentData.executionTime) : '—'}
                 suggestedValue={formatDurationPolish(suggestedDuration)}
                 reason="Sugerowany czas serii dla wariantu time-based"
                 onAccept={() => onAcceptField('duration', suggestedDuration)}
@@ -755,14 +746,15 @@ function AIDiffDrawer({
                 <div className="p-2.5 rounded-lg bg-surface/50 border border-border">
                   <p className="text-[9px] text-muted-foreground uppercase mb-1">Obciążenie</p>
                   <p className="text-sm font-medium text-foreground">{suggestion.advancedParams.weight}</p>
-                  <button
-                    onClick={() =>
-                      onAcceptField('loadKg', parseAiWeightToLoadKg(suggestion.advancedParams?.weight))
-                    }
-                    className="text-[9px] text-secondary hover:text-secondary/80 mt-1"
-                  >
-                    ← Użyj
-                  </button>
+                  {/* Obciążenie bez liczby kg (np. „masa ciała”) nie ma czego wpisać i nie kasuje pola. */}
+                  {suggestedLoadKg !== null && (
+                    <button
+                      onClick={() => onAcceptField('loadKg', suggestedLoadKg)}
+                      className="text-[9px] text-secondary hover:text-secondary/80 mt-1"
+                    >
+                      ← Użyj
+                    </button>
+                  )}
                 </div>
               )}
               {suggestion.advancedParams?.rangeOfMotion && (
@@ -1373,8 +1365,10 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
         setData((prev) => ({ ...prev, ...applyAiRepsSuggestion(prev, aiSuggestion) }));
       } else if ((field === 'duration' || field === 'executionTime') && aiSuggestion) {
         // Czas z AI dla ćwiczenia na czas trafia do czasu powtórzenia z reps = 1, jak w „Zastosuj wszystko”.
-        const applyTime = field === 'duration' ? applyAiDurationSuggestion : applyAiExecutionTimeSuggestion;
-        setData((prev) => ({ ...prev, ...applyTime(prev, aiSuggestion.type, value as number | null) }));
+        setData((prev) => ({
+          ...prev,
+          ...applyAiExecutionTimeSuggestion(prev, aiSuggestion.type, value as number | null),
+        }));
       } else {
         setData((prev) => ({ ...prev, [field]: value as ExerciseData[K] }));
       }
@@ -1398,7 +1392,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
       exerciseSide: aiSuggestionSide(aiSuggestion.exerciseSide as ExerciseSide, prev.exerciseSide),
       // Pro Tuning fields
       tempo: aiSuggestion.advancedParams?.tempo || prev.tempo,
-      loadKg: parseAiWeightToLoadKg(aiSuggestion.advancedParams?.weight) ?? prev.loadKg,
+      loadKg: aiSuggestionLoadKg(aiSuggestion.advancedParams?.weight) ?? prev.loadKg,
       rangeOfMotion: aiSuggestion.advancedParams?.rangeOfMotion || prev.rangeOfMotion,
     }));
 
