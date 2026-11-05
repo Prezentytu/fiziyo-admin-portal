@@ -1,6 +1,7 @@
 import { EXERCISE_PARAM_DEFAULTS } from '@/components/shared/exercise/exerciseParamDefaults';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import type { ExerciseSuggestionResponse } from '@/types/ai.types';
+import { aiSuggestionExecutionTime, positiveAiNumber } from '@/features/exercises/utils/aiSuggestionParams';
 import { ENRICHMENT_SCHEMA_V3 } from '@/features/verification/utils/enrichmentToV3';
 
 /** Parameters of a new exercise in the chat card. Times in seconds; 0 = not set. */
@@ -31,10 +32,6 @@ export const CHAT_EXERCISE_DEFAULTS: ChatExerciseParams = {
   preparationTime: EXERCISE_PARAM_DEFAULTS.preparationTime,
 };
 
-function positive(value: number | null | undefined): number | null {
-  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.round(value) : null;
-}
-
 /**
  * AI proposal for the card's parameters. Only values the AI gave replace the defaults; the therapist
  * still sees and saves them. A time exercise holds for `duration` seconds once per set.
@@ -46,22 +43,18 @@ export function paramsFromSuggestion(
   >,
   base: ChatExerciseParams = CHAT_EXERCISE_DEFAULTS
 ): ChatExerciseParams {
-  const holdSeconds = positive(suggestion.duration);
-  const executionTime =
-    positive(suggestion.advancedParams?.executionTime) ??
-    (suggestion.type === 'time' ? holdSeconds : null) ??
-    base.executionTime;
+  const executionTime = aiSuggestionExecutionTime(suggestion) ?? base.executionTime;
   const type = resolveChatExerciseType(suggestion.type === 'time' ? 'time' : 'reps', executionTime);
 
   return {
     type,
     side: SIDES.includes(suggestion.exerciseSide) ? suggestion.exerciseSide : base.side,
-    sets: positive(suggestion.sets) ?? base.sets,
-    reps: type === 'time' ? 1 : (positive(suggestion.reps) ?? base.reps),
+    sets: positiveAiNumber(suggestion.sets) ?? base.sets,
+    reps: type === 'time' ? 1 : (positiveAiNumber(suggestion.reps) ?? base.reps),
     executionTime,
-    restSets: positive(suggestion.restSets) ?? base.restSets,
+    restSets: positiveAiNumber(suggestion.restSets) ?? base.restSets,
     restReps: base.restReps,
-    preparationTime: positive(suggestion.advancedParams?.preparationTime) ?? base.preparationTime,
+    preparationTime: positiveAiNumber(suggestion.advancedParams?.preparationTime) ?? base.preparationTime,
   };
 }
 

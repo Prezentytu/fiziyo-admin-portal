@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  aiSuggestionParamDiffs,
   applyAiDurationSuggestion,
+  applyAiExecutionTimeSuggestion,
   applyAiSuggestionParams,
   currentAiDurationValue,
   type AiSuggestionParamsTarget,
@@ -89,5 +91,101 @@ describe('applyAiDurationSuggestion', () => {
 
     expect(currentAiDurationValue(current, 'time')).toBe(30);
     expect(currentAiDurationValue(current, 'reps')).toBeNull();
+  });
+});
+
+describe('applyAiExecutionTimeSuggestion', () => {
+  it('stores a time-based execution time as one repetition, like the duration card', () => {
+    const prev = { ...wizardDefaults, duration: 20 };
+
+    expect(applyAiExecutionTimeSuggestion(prev, 'time', 45)).toEqual(applyAiDurationSuggestion(prev, 'time', 45));
+    expect(applyAiExecutionTimeSuggestion(prev, 'time', 45)).toMatchObject({ reps: 1, executionTime: 45, duration: null });
+  });
+
+  it('keeps repetitions for a rep-based exercise', () => {
+    expect(applyAiExecutionTimeSuggestion(wizardDefaults, 'reps', 3)).toEqual({ ...wizardDefaults, executionTime: 3 });
+    expect(applyAiExecutionTimeSuggestion(wizardDefaults, 'reps', 0)).toEqual(wizardDefaults);
+  });
+});
+
+describe('aiSuggestionParamDiffs', () => {
+  const noAdvanced = { tempo: null, weight: null, rangeOfMotion: null, preparationTime: null, executionTime: null };
+
+  it('does not count a duration card that is not rendered after the hold preset', () => {
+    const diffs = aiSuggestionParamDiffs(
+      {
+        type: 'time',
+        sets: 3,
+        reps: null,
+        duration: null,
+        restSets: 30,
+        advancedParams: { ...noAdvanced, executionTime: 30 },
+      },
+      { ...wizardDefaults, sets: 3, reps: 1, executionTime: 30, restSets: 30 }
+    );
+
+    expect(Object.values(diffs).some(Boolean)).toBe(false);
+  });
+
+  it('shows one time card when AI gives both duration and execution time for a time-based exercise', () => {
+    const diffs = aiSuggestionParamDiffs(
+      {
+        type: 'time',
+        sets: 2,
+        reps: null,
+        duration: 60,
+        restSets: 60,
+        advancedParams: { ...noAdvanced, executionTime: 45 },
+      },
+      wizardDefaults
+    );
+
+    expect(diffs).toMatchObject({ duration: false, executionTime: true, reps: false });
+  });
+
+  it('hides cards with empty or zero AI values, as apply-all ignores them', () => {
+    const diffs = aiSuggestionParamDiffs(
+      {
+        type: 'reps',
+        sets: 0,
+        reps: null,
+        duration: null,
+        restSets: 0,
+        advancedParams: { ...noAdvanced, preparationTime: 0, executionTime: 0 },
+      },
+      wizardDefaults
+    );
+
+    expect(diffs).toEqual({
+      sets: false,
+      reps: false,
+      duration: false,
+      executionTime: false,
+      preparationTime: false,
+      restSets: false,
+    });
+  });
+
+  it('marks positive values that differ from the wizard', () => {
+    const diffs = aiSuggestionParamDiffs(
+      {
+        type: 'reps',
+        sets: 3,
+        reps: 12,
+        duration: null,
+        restSets: 45,
+        advancedParams: { ...noAdvanced, preparationTime: 10, executionTime: 3 },
+      },
+      wizardDefaults
+    );
+
+    expect(diffs).toEqual({
+      sets: true,
+      reps: true,
+      duration: false,
+      executionTime: true,
+      preparationTime: true,
+      restSets: true,
+    });
   });
 });

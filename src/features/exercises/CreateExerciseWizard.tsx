@@ -68,9 +68,12 @@ import {
 } from '@/features/exercises/utils/exerciseDuplicateCandidates';
 import { createExerciseSubmit } from './utils/createExerciseSubmit';
 import {
+  aiSuggestionParamDiffs,
   applyAiDurationSuggestion,
+  applyAiExecutionTimeSuggestion,
   applyAiSuggestionParams,
   currentAiDurationValue,
+  positiveAiNumber,
 } from './utils/aiSuggestionParams';
 import { inferExerciseType } from './utils/inferExerciseType';
 import { insertGeneratedImage, nextGeneratedImagePhase } from './utils/exerciseMedia';
@@ -421,15 +424,16 @@ function AIDiffDrawer({
       suggestion.advancedParams.preparationTime);
 
   // Standard diff checks
-  const hasDifferentSets = suggestion.sets !== currentData.sets;
-  const hasDifferentReps = suggestion.reps !== currentData.reps;
+  const paramDiffs = aiSuggestionParamDiffs(suggestion, currentData);
+  const hasDifferentSets = paramDiffs.sets;
+  const hasDifferentReps = paramDiffs.reps;
   const currentDuration = currentAiDurationValue(currentData, suggestion.type);
-  const hasDifferentDuration = suggestion.duration !== currentDuration;
-  const hasDifferentExecutionTime =
-    (suggestion.advancedParams?.executionTime ?? null) !== (currentData.executionTime ?? null);
-  const hasDifferentPreparationTime =
-    (suggestion.advancedParams?.preparationTime ?? null) !== (currentData.preparationTime ?? null);
-  const hasDifferentRest = suggestion.restSets !== currentData.restSets;
+  const hasDifferentDuration = paramDiffs.duration;
+  const hasDifferentExecutionTime = paramDiffs.executionTime;
+  const hasDifferentPreparationTime = paramDiffs.preparationTime;
+  const hasDifferentRest = paramDiffs.restSets;
+  const advancedExecutionTime = positiveAiNumber(suggestion.advancedParams?.executionTime);
+  const advancedPreparationTime = positiveAiNumber(suggestion.advancedParams?.preparationTime);
   const hasDifferentSide = suggestion.exerciseSide !== currentData.exerciseSide;
   const hasSuggestedTags = suggestion.suggestedTags && suggestion.suggestedTags.length > 0;
 
@@ -634,13 +638,13 @@ function AIDiffDrawer({
                 currentValue={String(currentData.sets || 0)}
                 suggestedValue={String(suggestion.sets)}
                 reason="Optymalna liczba serii dla tego typu ćwiczenia"
-                onAccept={() => onAcceptField('sets', suggestion.sets)}
+                onAccept={() => onAcceptField('sets', positiveAiNumber(suggestion.sets))}
                 priority="low"
                 inline
               />
             )}
 
-            {hasDifferentReps && suggestion.reps && (
+            {hasDifferentReps && suggestion.reps !== null && (
               <SuggestionCard
                 label="Powtórzenia"
                 currentValue={String(currentData.reps || 0)}
@@ -652,43 +656,43 @@ function AIDiffDrawer({
                       ? 'Zakres hipertrofii (8-12 powt.)'
                       : 'Zakres wytrzymałościowy (12+ powt.)'
                 }
-                onAccept={() => onAcceptField('reps', suggestion.reps)}
+                onAccept={() => onAcceptField('reps', positiveAiNumber(suggestion.reps))}
                 priority="low"
                 inline
               />
             )}
 
-            {hasDifferentDuration && suggestion.duration && (
+            {hasDifferentDuration && suggestion.duration !== null && (
               <SuggestionCard
                 label="Czas serii"
                 currentValue={currentDuration ? formatDurationPolish(currentDuration) : '—'}
                 suggestedValue={formatDurationPolish(suggestion.duration)}
                 reason="Sugerowany czas serii dla wariantu time-based"
-                onAccept={() => onAcceptField('duration', suggestion.duration)}
+                onAccept={() => onAcceptField('duration', positiveAiNumber(suggestion.duration))}
                 priority="low"
                 inline
               />
             )}
 
-            {hasDifferentExecutionTime && suggestion.advancedParams?.executionTime != null && (
+            {hasDifferentExecutionTime && advancedExecutionTime !== null && (
               <SuggestionCard
                 label="Czas powtórzenia"
                 currentValue={`${currentData.executionTime || 0}s`}
-                suggestedValue={`${suggestion.advancedParams.executionTime}s`}
+                suggestedValue={`${advancedExecutionTime}s`}
                 reason="Sugerowany timer dla pojedynczego powtórzenia"
-                onAccept={() => onAcceptField('executionTime', suggestion.advancedParams?.executionTime)}
+                onAccept={() => onAcceptField('executionTime', advancedExecutionTime)}
                 priority="low"
                 inline
               />
             )}
 
-            {hasDifferentPreparationTime && suggestion.advancedParams?.preparationTime != null && (
+            {hasDifferentPreparationTime && advancedPreparationTime !== null && (
               <SuggestionCard
                 label="Czas przygotowania"
                 currentValue={`${currentData.preparationTime || 0}s`}
-                suggestedValue={`${suggestion.advancedParams.preparationTime}s`}
+                suggestedValue={`${advancedPreparationTime}s`}
                 reason="Sugerowany czas na przygotowanie pozycji"
-                onAccept={() => onAcceptField('preparationTime', suggestion.advancedParams?.preparationTime)}
+                onAccept={() => onAcceptField('preparationTime', advancedPreparationTime)}
                 priority="low"
                 inline
               />
@@ -700,7 +704,7 @@ function AIDiffDrawer({
                 currentValue={`${currentData.restSets || 0}s`}
                 suggestedValue={`${suggestion.restSets}s`}
                 reason="Odpowiedni czas regeneracji między seriami"
-                onAccept={() => onAcceptField('restSets', suggestion.restSets)}
+                onAccept={() => onAcceptField('restSets', positiveAiNumber(suggestion.restSets))}
                 priority="low"
                 inline
               />
@@ -764,24 +768,24 @@ function AIDiffDrawer({
                   </button>
                 </div>
               )}
-              {suggestion.advancedParams?.executionTime != null && (
+              {advancedExecutionTime !== null && (
                 <div className="p-2.5 rounded-lg bg-surface/50 border border-border">
                   <p className="text-[9px] text-muted-foreground uppercase mb-1">Czas powtórzenia</p>
-                  <p className="text-sm font-medium text-foreground">{suggestion.advancedParams.executionTime}s</p>
+                  <p className="text-sm font-medium text-foreground">{advancedExecutionTime}s</p>
                   <button
-                    onClick={() => onAcceptField('executionTime', suggestion.advancedParams?.executionTime)}
+                    onClick={() => onAcceptField('executionTime', advancedExecutionTime)}
                     className="text-[9px] text-secondary hover:text-secondary/80 mt-1"
                   >
                     ← Użyj
                   </button>
                 </div>
               )}
-              {suggestion.advancedParams?.preparationTime != null && (
+              {advancedPreparationTime !== null && (
                 <div className="p-2.5 rounded-lg bg-surface/50 border border-border">
                   <p className="text-[9px] text-muted-foreground uppercase mb-1">Czas przygotowania</p>
-                  <p className="text-sm font-medium text-foreground">{suggestion.advancedParams.preparationTime}s</p>
+                  <p className="text-sm font-medium text-foreground">{advancedPreparationTime}s</p>
                   <button
-                    onClick={() => onAcceptField('preparationTime', suggestion.advancedParams?.preparationTime)}
+                    onClick={() => onAcceptField('preparationTime', advancedPreparationTime)}
                     className="text-[9px] text-secondary hover:text-secondary/80 mt-1"
                   >
                     ← Użyj
@@ -1355,12 +1359,10 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
   // Accept single AI field
   const handleAcceptAIField = useCallback(
     <K extends keyof ExerciseData>(field: K, value: unknown) => {
-      if (field === 'duration' && aiSuggestion) {
-        // Czas z AI dla ćwiczenia na czas trafia do czasu powtórzenia, jak w „Zastosuj wszystko”.
-        setData((prev) => ({
-          ...prev,
-          ...applyAiDurationSuggestion(prev, aiSuggestion.type, value as number | null),
-        }));
+      if ((field === 'duration' || field === 'executionTime') && aiSuggestion) {
+        // Czas z AI dla ćwiczenia na czas trafia do czasu powtórzenia z reps = 1, jak w „Zastosuj wszystko”.
+        const applyTime = field === 'duration' ? applyAiDurationSuggestion : applyAiExecutionTimeSuggestion;
+        setData((prev) => ({ ...prev, ...applyTime(prev, aiSuggestion.type, value as number | null) }));
       } else {
         setData((prev) => ({ ...prev, [field]: value as ExerciseData[K] }));
       }
