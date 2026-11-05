@@ -10,7 +10,7 @@ import {
   type KeyboardEvent,
   type Ref,
 } from 'react';
-import { ArrowUp, Check, Mic, Paperclip, Square, X } from 'lucide-react';
+import { ArrowUp, Check, Loader2, Mic, Paperclip, Square, X } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
@@ -32,12 +32,18 @@ interface ChatComposerProps {
   readonly onStop?: () => void;
   readonly busy?: boolean;
   readonly disabled?: boolean;
+  /**
+   * Data the chat needs (patients, sets, the backend token) is still loading after sign-in. The field
+   * already takes text; the send button shows a spinner and works once loading ends.
+   */
+  readonly loading?: boolean;
   readonly large?: boolean;
   /** ArrowUp in an empty field brings back the last question, like a terminal. */
   readonly lastUserText?: string;
 }
 
 const MAX_HEIGHT_PX = 220;
+const LOADING_PLACEHOLDER = 'Wczytuję pacjentów i zestawy…';
 const TIP_INTERVAL_MS = 4000;
 
 /** Rotating hints on the empty composer: what one sentence can do here. */
@@ -84,6 +90,7 @@ export function ChatComposer({
   onStop,
   busy = false,
   disabled = false,
+  loading = false,
   large = false,
   lastUserText,
 }: ChatComposerProps) {
@@ -222,7 +229,13 @@ export function ChatComposer({
     placeCaretAtEnd();
   };
 
-  const placeholder = isListening ? 'Słucham…' : large ? COMPOSER_TIPS[tipIndex] : 'Napisz albo podyktuj, co zrobić';
+  const placeholder = isListening
+    ? 'Słucham…'
+    : loading
+      ? LOADING_PLACEHOLDER
+      : large
+        ? COMPOSER_TIPS[tipIndex]
+        : 'Napisz albo podyktuj, co zrobić';
   const showStop = busy && Boolean(onStop);
   // Words still being recognised read in place of the placeholder while the field is empty.
   const interimOverlay = isListening && Boolean(voice.interimTranscript) && !value;
@@ -356,6 +369,15 @@ export function ChatComposer({
             >
               <Square className="size-3 fill-current" aria-hidden="true" />
             </button>
+          ) : loading ? (
+            <span
+              role="status"
+              aria-label="Wczytywanie danych gabinetu"
+              data-testid="common-chat-composer-loading"
+              className="inline-flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-fill-tertiary text-label-secondary [&_svg]:size-[18px]"
+            >
+              <Loader2 className="animate-spin" aria-hidden="true" />
+            </span>
           ) : (
             <button
               type="submit"

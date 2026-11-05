@@ -336,7 +336,15 @@ function ChatHome({
         </h1>
         <p className="text-[16px] text-label-secondary">W czym pomóc między wizytami?</p>
       </div>
-      <ChatComposer ref={composerRef} onSend={onSend} onAttach={onAttach} busy={isBusy} disabled={!isReady} large />
+      <ChatComposer
+        ref={composerRef}
+        onSend={onSend}
+        onAttach={onAttach}
+        busy={isBusy}
+        disabled={!isReady}
+        loading={!isReady}
+        large
+      />
       <div className="flex flex-col gap-5">
         <div className="flex flex-wrap justify-center gap-2" role="group" aria-label="Skróty">
           <ChoiceChip onClick={shortcuts.createSet} disabled={!isReady} data-testid="common-chat-shortcut-set-btn">
@@ -564,6 +572,7 @@ export function ChatView() {
                 onStop={stopReply}
                 busy={isBusy}
                 disabled={!isReady}
+                loading={!isReady}
                 lastUserText={lastUser?.role === 'user' ? lastUser.text : undefined}
               />
               <p className="text-center text-[12px] text-label-tertiary">

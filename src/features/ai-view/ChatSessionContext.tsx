@@ -65,6 +65,8 @@ export interface ChatSession {
     attachmentName?: string
   ) => Promise<boolean>;
   conversations: readonly StoredConversation[];
+  /** History is read once the account and organization are known; until then the list is not empty, just unknown. */
+  conversationsReady: boolean;
   activeConversationId: string;
   title: string;
   startConversation: () => void;
@@ -391,6 +393,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       markChosen,
       runTask,
       conversations,
+      conversationsReady: storageKey !== undefined,
       activeConversationId,
       title,
       startConversation,
@@ -427,6 +430,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       markChosen,
       runTask,
       conversations,
+      storageKey,
       activeConversationId,
       title,
       startConversation,
