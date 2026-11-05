@@ -1957,6 +1957,8 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                 core={parametersCore}
                 isDirtyField={() => false}
                 onNumberChange={(field, value) => {
+                  // Kreator nie ma legacy czasu serii (core.duration = null), więc go nie zapisuje.
+                  if (field === 'duration') return;
                   setData((previous) => ({ ...previous, [field]: value }));
                 }}
                 onTextChange={(field, value) => {

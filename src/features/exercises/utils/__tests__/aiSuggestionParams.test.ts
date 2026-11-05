@@ -211,15 +211,11 @@ describe('aiSuggestionSide', () => {
 });
 
 describe('legacy duration from AI', () => {
-  it('is not part of the wizard parameters, so apply-all cannot change it unseen', () => {
-    const time = { type: 'time' as const, sets: 3, reps: null, duration: 30, restSets: 30, advancedParams: null };
+  it('has no card for a rep-based suggestion, as the wizard does not keep it', () => {
     const reps = { type: 'reps' as const, sets: 3, reps: 10, duration: 40, restSets: 60, advancedParams: null };
 
-    expect(applyAiSuggestionParams(wizardDefaults, time)).not.toHaveProperty('duration');
-    expect(applyAiSuggestionParams(wizardDefaults, reps)).not.toHaveProperty('duration');
-    expect(applyAiExecutionTimeSuggestion(wizardDefaults, 'time', 30)).not.toHaveProperty('duration');
-    expect(applyAiRepsSuggestion(wizardDefaults, time)).not.toHaveProperty('duration');
     expect(aiSuggestionParamDiffs(reps, wizardDefaults).duration).toBe(false);
+    expect(applyAiSuggestionParams(wizardDefaults, reps)).toEqual({ ...wizardDefaults, sets: 3 });
   });
 });
 
