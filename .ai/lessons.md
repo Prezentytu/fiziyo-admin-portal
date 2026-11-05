@@ -178,14 +178,6 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 - **Rozwiązanie**: Submit z klawiatury tylko `Cmd`/`Ctrl`+`Enter` (`wizardEnterSubmits`). Zwykły Enter na Harmonogramie zostaje lokalny.
 - **Reguła**: Jeśli krok z przyciskami dnia/+− staje się ostatni, globalny Enter nie może wołać submit.
 
-### 2026-10-15 - Etykiety UI to kontrakt z E2E
-
-- **Kategoria**: `Testing`
-- **Problem**: Przebudowa wg canvasu zmieniała widoczne teksty („Przypisz zestaw”, „Wymaga uwagi”), a `fiziyo-tests` szuka przycisków i zakładek po dostępnej nazwie (`getByRole(..., { name })`), nie tylko po `data-testid`.
-- **Przyczyna**: POM-y w `fiziyo-tests/src/pages/*` używają nazw jak „Personalizuj i przypisz zestaw ćwiczeń pacjentowi”, `/Brak aktywności/`, `/Nowy pacjent w systemie/`.
-- **Rozwiązanie**: Nazwy z E2E zostały w `aria-label` (z widocznym tekstem w środku) albo w etykiecie; zmiana tekstów idzie z równoległym PR w `fiziyo-tests`.
-- **Reguła**: Jeśli zmieniasz tekst przycisku, zakładki albo nagłówka, najpierw `git grep` w `fiziyo-tests` na `origin/main`. Zwykły string w Playwright = fragment bez wielkości liter (wielkość liter wolno zmienić), regex i `exact: true` = nie.
-
 ### 2026-10-15 - Jeden token koloru nie obsłuży tekstu i wypełnienia w dark
 
 - **Kategoria**: `UI/UX`
