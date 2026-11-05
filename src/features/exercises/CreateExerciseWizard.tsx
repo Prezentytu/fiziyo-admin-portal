@@ -68,9 +68,12 @@ import {
 } from '@/features/exercises/utils/exerciseDuplicateCandidates';
 import { createExerciseSubmit } from './utils/createExerciseSubmit';
 import {
+  aiSuggestedReps,
   aiSuggestionParamDiffs,
+  aiSuggestionSide,
   applyAiDurationSuggestion,
   applyAiExecutionTimeSuggestion,
+  applyAiRepsSuggestion,
   applyAiSuggestionParams,
   currentAiDurationValue,
   positiveAiNumber,
@@ -415,16 +418,12 @@ function AIDiffDrawer({
   const hasNameCorrection = suggestion.correctedName && suggestion.correctedName !== currentData.name;
   const hasDescription = suggestion.description && suggestion.description !== currentData.description;
   const hasHints = suggestion.warnings && suggestion.warnings.length > 0;
-  const hasAdvancedParams =
-    suggestion.advancedParams &&
-    (suggestion.advancedParams.tempo ||
-      suggestion.advancedParams.weight ||
-      suggestion.advancedParams.rangeOfMotion ||
-      suggestion.advancedParams.executionTime ||
-      suggestion.advancedParams.preparationTime);
-
   // Standard diff checks
   const paramDiffs = aiSuggestionParamDiffs(suggestion, currentData);
+  const suggestedSets = positiveAiNumber(suggestion.sets);
+  const suggestedReps = aiSuggestedReps(suggestion);
+  const suggestedDuration = positiveAiNumber(suggestion.duration);
+  const suggestedRest = positiveAiNumber(suggestion.restSets);
   const hasDifferentSets = paramDiffs.sets;
   const hasDifferentReps = paramDiffs.reps;
   const currentDuration = currentAiDurationValue(currentData, suggestion.type);
@@ -434,7 +433,15 @@ function AIDiffDrawer({
   const hasDifferentRest = paramDiffs.restSets;
   const advancedExecutionTime = positiveAiNumber(suggestion.advancedParams?.executionTime);
   const advancedPreparationTime = positiveAiNumber(suggestion.advancedParams?.preparationTime);
-  const hasDifferentSide = suggestion.exerciseSide !== currentData.exerciseSide;
+  const hasAdvancedParams =
+    suggestion.advancedParams &&
+    (suggestion.advancedParams.tempo ||
+      suggestion.advancedParams.weight ||
+      suggestion.advancedParams.rangeOfMotion ||
+      advancedExecutionTime !== null ||
+      advancedPreparationTime !== null);
+  const hasDifferentSide =
+    aiSuggestionSide(suggestion.exerciseSide, currentData.exerciseSide) !== currentData.exerciseSide;
   const hasSuggestedTags = suggestion.suggestedTags && suggestion.suggestedTags.length > 0;
 
   // Find matching tags from available tags
@@ -636,39 +643,41 @@ function AIDiffDrawer({
               <SuggestionCard
                 label="Serie"
                 currentValue={String(currentData.sets || 0)}
-                suggestedValue={String(suggestion.sets)}
+                suggestedValue={String(suggestedSets)}
                 reason="Optymalna liczba serii dla tego typu ćwiczenia"
-                onAccept={() => onAcceptField('sets', positiveAiNumber(suggestion.sets))}
+                onAccept={() => onAcceptField('sets', suggestedSets)}
                 priority="low"
                 inline
               />
             )}
 
-            {hasDifferentReps && suggestion.reps !== null && (
+            {hasDifferentReps && suggestedReps !== null && (
               <SuggestionCard
                 label="Powtórzenia"
                 currentValue={String(currentData.reps || 0)}
-                suggestedValue={String(suggestion.reps)}
+                suggestedValue={String(suggestedReps)}
                 reason={
-                  suggestion.reps <= 8
-                    ? 'Zakres siłowy (5-8 powt.)'
-                    : suggestion.reps <= 12
-                      ? 'Zakres hipertrofii (8-12 powt.)'
-                      : 'Zakres wytrzymałościowy (12+ powt.)'
+                  suggestedReps === 1 && suggestion.type === 'time'
+                    ? 'Ćwiczenie na czas: jedno utrzymanie w serii'
+                    : suggestedReps <= 8
+                      ? 'Zakres siłowy (5-8 powt.)'
+                      : suggestedReps <= 12
+                        ? 'Zakres hipertrofii (8-12 powt.)'
+                        : 'Zakres wytrzymałościowy (12+ powt.)'
                 }
-                onAccept={() => onAcceptField('reps', positiveAiNumber(suggestion.reps))}
+                onAccept={() => onAcceptField('reps', suggestedReps)}
                 priority="low"
                 inline
               />
             )}
 
-            {hasDifferentDuration && suggestion.duration !== null && (
+            {hasDifferentDuration && suggestedDuration !== null && (
               <SuggestionCard
                 label="Czas serii"
                 currentValue={currentDuration ? formatDurationPolish(currentDuration) : '—'}
-                suggestedValue={formatDurationPolish(suggestion.duration)}
+                suggestedValue={formatDurationPolish(suggestedDuration)}
                 reason="Sugerowany czas serii dla wariantu time-based"
-                onAccept={() => onAcceptField('duration', positiveAiNumber(suggestion.duration))}
+                onAccept={() => onAcceptField('duration', suggestedDuration)}
                 priority="low"
                 inline
               />
@@ -702,15 +711,15 @@ function AIDiffDrawer({
               <SuggestionCard
                 label="Przerwa"
                 currentValue={`${currentData.restSets || 0}s`}
-                suggestedValue={`${suggestion.restSets}s`}
+                suggestedValue={`${suggestedRest}s`}
                 reason="Odpowiedni czas regeneracji między seriami"
-                onAccept={() => onAcceptField('restSets', positiveAiNumber(suggestion.restSets))}
+                onAccept={() => onAcceptField('restSets', suggestedRest)}
                 priority="low"
                 inline
               />
             )}
 
-            {hasDifferentSide && suggestion.exerciseSide !== 'none' && (
+            {hasDifferentSide && (
               <SuggestionCard
                 label="Strona ciała"
                 currentValue={EXERCISE_SIDES.find((s) => s.value === currentData.exerciseSide)?.label || 'Razem'}
@@ -1359,7 +1368,10 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
   // Accept single AI field
   const handleAcceptAIField = useCallback(
     <K extends keyof ExerciseData>(field: K, value: unknown) => {
-      if ((field === 'duration' || field === 'executionTime') && aiSuggestion) {
+      if (field === 'reps' && aiSuggestion) {
+        // Ćwiczenie na czas: jedno utrzymanie w serii i czas powtórzenia, jak w „Zastosuj wszystko”.
+        setData((prev) => ({ ...prev, ...applyAiRepsSuggestion(prev, aiSuggestion) }));
+      } else if ((field === 'duration' || field === 'executionTime') && aiSuggestion) {
         // Czas z AI dla ćwiczenia na czas trafia do czasu powtórzenia z reps = 1, jak w „Zastosuj wszystko”.
         const applyTime = field === 'duration' ? applyAiDurationSuggestion : applyAiExecutionTimeSuggestion;
         setData((prev) => ({ ...prev, ...applyTime(prev, aiSuggestion.type, value as number | null) }));
@@ -1383,7 +1395,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
       description: aiSuggestion.description || prev.description,
       // Parametry podstawowe i czasy: puste pole AI nie kasuje wartości, ćwiczenie na czas dostaje czas powtórzenia
       ...applyAiSuggestionParams(prev, aiSuggestion),
-      exerciseSide: aiSuggestion.exerciseSide as ExerciseSide,
+      exerciseSide: aiSuggestionSide(aiSuggestion.exerciseSide as ExerciseSide, prev.exerciseSide),
       // Pro Tuning fields
       tempo: aiSuggestion.advancedParams?.tempo || prev.tempo,
       loadKg: parseAiWeightToLoadKg(aiSuggestion.advancedParams?.weight) ?? prev.loadKg,
