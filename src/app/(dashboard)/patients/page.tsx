@@ -522,6 +522,7 @@ export default function PatientsPage() {
           }
           therapistId={therapistId}
           organizationId={organizationId}
+          onCreatePlan={() => qrPatient && handleAssignSet(qrPatient)}
         />
       )}
     </PageSheet>

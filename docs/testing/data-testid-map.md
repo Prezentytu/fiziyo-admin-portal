@@ -465,7 +465,8 @@ Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu r
 | `patient-qr-unavailable`                            | Hint gdy brak patient/org/therapist                       | `PatientQRCodeDialog.tsx`        |
 | `patient-qr-download-btn`                           | Pobierz QR                                                | `PatientQRCodeDialog.tsx`        |
 | `patient-qr-copy-btn`                               | Kopiuj link                                               | `PatientQRCodeDialog.tsx`        |
-| `patient-qr-share-btn`                              | Wyślij link                                               | `PatientQRCodeDialog.tsx`        |
+| `patient-qr-share-btn`                              | Udostępnij link (Web Share, bez wsparcia kopiuje)         | `PatientQRCodeDialog.tsx`        |
+| `patient-qr-preview-btn`                            | Podgląd karty: PDF wybranego planu w nowej karcie         | `PatientQRCodeDialog.tsx`        |
 | `patient-override-dialog`                           | Dialog nadpisania                                         | `EditExerciseOverrideDialog.tsx` |
 | `patient-override-sets-input`                       | Serie                                                     | `EditExerciseOverrideDialog.tsx` |
 | `patient-override-reps-input`                       | Powtórzenia                                               | `EditExerciseOverrideDialog.tsx` |

@@ -16,7 +16,9 @@ import { ScheduleSummary } from '@/components/shared';
 import { toast } from 'sonner';
 
 import { loadPdfRenderer } from '@/components/pdf/loadPdfRenderer';
-import { preloadPdfExerciseImages, toPdfExercise } from '@/components/pdf/pdfExerciseUtils';
+import { preloadPdfExerciseImages, toPdfExercises } from '@/components/pdf/pdfExerciseUtils';
+import { downloadBlob, openPendingWindow, showPdfInWindow } from '@/components/pdf/pdfOutput';
+import { downloadQrSvgAsPng } from '@/lib/qrPng';
 import type {
   PDFExerciseSet,
   PDFOrganization,
@@ -143,46 +145,23 @@ export function AssignmentSuccessDialog({
     }
   };
 
-  const handleDownloadQR = () => {
+  const handleDownloadQR = async () => {
     const svg = qrContainerRef.current?.querySelector('svg');
     if (!svg) return;
-
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const svgData = new XMLSerializer().serializeToString(svg);
-    const img = new Image();
-
-    canvas.width = 400;
-    canvas.height = 400;
-
-    img.onload = () => {
-      if (ctx) {
-        ctx.fillStyle = 'white';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-        const pngUrl = canvas.toDataURL('image/png');
-        const downloadLink = document.createElement('a');
-        downloadLink.href = pngUrl;
-        downloadLink.download = `QR-${selectedPatient.name.replaceAll(/\s+/g, '-')}.png`;
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        downloadLink.remove();
-
-        toast.success('QR kod pobrany');
-      }
-    };
-
-    // Convert SVG to base64
-    const encoder = new TextEncoder();
-    const data = encoder.encode(svgData);
-    const base64 = btoa(String.fromCodePoint(...data));
-    img.src = 'data:image/svg+xml;base64,' + base64;
+    try {
+      await downloadQrSvgAsPng(svg, `QR-${selectedPatient.name.replaceAll(/\s+/g, '-')}.png`);
+      toast.success('QR kod pobrany');
+    } catch (error) {
+      toast.error('Nie udało się pobrać kodu QR', {
+        description: error instanceof Error ? error.message : undefined,
+      });
+    }
   };
 
   // Generuj PDF z kartą pacjenta
-  const generatePatientCardPDF = async (download: boolean = false) => {
+  const generatePatientCardPDF = async (download: boolean = false, pending: Window | null = null) => {
     if (!organization || !exerciseSet) {
+      pending?.close();
       toast.error('Brak danych do wygenerowania PDF');
       return;
     }
@@ -201,7 +180,7 @@ export function AssignmentSuccessDialog({
       };
 
       // Mapuj ćwiczenia z exerciseMappings
-      const pdfExercises: PDFExercise[] = (exerciseSet.exerciseMappings || []).map(toPdfExercise);
+      const pdfExercises: PDFExercise[] = toPdfExercises(exerciseSet.exerciseMappings);
       await preloadPdfExerciseImages(pdfExercises);
 
       const pdfExerciseSet: PDFExerciseSet = {
@@ -272,37 +251,13 @@ export function AssignmentSuccessDialog({
       const fileName = `Karta_Pacjenta_${safeName}${patientSuffix}.pdf`;
 
       if (download) {
-        // Pobierz plik
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        URL.revokeObjectURL(url);
+        downloadBlob(blob, fileName);
         toast.success('PDF pobrany');
-      } else {
-        // Otwórz w nowym oknie i drukuj
-        const url = URL.createObjectURL(blob);
-        const printWindow = window.open(url, '_blank');
-        if (printWindow) {
-          printWindow.onload = () => {
-            printWindow.print();
-          };
-        } else {
-          // Fallback - pobierz jeśli nie można otworzyć okna
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = fileName;
-          document.body.appendChild(link);
-          link.click();
-          link.remove();
-          toast.info('Pobrano PDF - otwórz i wydrukuj');
-        }
-        URL.revokeObjectURL(url);
+      } else if (showPdfInWindow(blob, pending, fileName, { print: true }) === 'downloaded') {
+        toast.info('Przeglądarka zablokowała nową kartę - pobrano PDF, otwórz i wydrukuj');
       }
     } catch (error) {
+      pending?.close();
       const message = error instanceof Error ? error.message : 'Nieznany błąd';
       toast.error('Nie udało się wygenerować PDF', { description: message });
     } finally {
@@ -310,7 +265,8 @@ export function AssignmentSuccessDialog({
     }
   };
 
-  const handlePrintCard = () => generatePatientCardPDF(false);
+  // Karta otwarta w geście kliknięcia; `window.open` po await blokuje popup blocker.
+  const handlePrintCard = () => void generatePatientCardPDF(false, openPendingWindow());
   const handleDownloadPDF = () => generatePatientCardPDF(true);
 
   const handleShare = async () => {
@@ -472,7 +428,7 @@ export function AssignmentSuccessDialog({
                 data-testid="assign-success-share-btn"
               >
                 <Share2 className="h-3.5 w-3.5 mr-1.5" />
-                Wyślij link
+                Udostępnij link
               </Button>
               <Button
                 variant="outline"
@@ -532,7 +488,7 @@ export function AssignmentSuccessDialog({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={handleDownloadQR}
+                  onClick={() => void handleDownloadQR()}
                   disabled={!canRenderQr}
                   className="justify-start text-xs text-muted-foreground h-8"
                   data-testid="assign-success-download-qr-btn"

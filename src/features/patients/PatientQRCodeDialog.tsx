@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 
 import { loadPdfRenderer } from '@/components/pdf/loadPdfRenderer';
-import { preloadPdfExerciseImages, toPdfExercise } from '@/components/pdf/pdfExerciseUtils';
+import { preloadPdfExerciseImages, toPdfExercises } from '@/components/pdf/pdfExerciseUtils';
+import { downloadBlob, openPendingWindow, showPdfInWindow } from '@/components/pdf/pdfOutput';
 import type {
   PDFExerciseSet,
   PDFOrganization,
@@ -26,72 +27,12 @@ import { GET_ORGANIZATION_BY_ID_QUERY } from '@/graphql/queries/organizations.qu
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import { isHttpsUrl, tryBuildPatientConnectUrl } from '@/lib/patientJoinUrl';
+import { downloadQrSvgAsPng } from '@/lib/qrPng';
+import { buildPatientAccessPlans } from './utils/patientAccessPlans';
 import type { OrganizationByIdResponse, UserByClerkIdResponse } from '@/types/apollo';
 import type { PatientAssignmentsByUserQueryData } from '@/graphql/types/operation-responses';
 
 // ==================== TYPY ====================
-
-interface ExerciseMapping {
-  id: string;
-  order?: number;
-  sets?: number;
-  reps?: number;
-  duration?: number;
-  restSets?: number;
-  restReps?: number;
-  executionTime?: number;
-  notes?: string;
-  customName?: string;
-  customDescription?: string;
-  exercise?: {
-    id: string;
-    name: string;
-    description?: string;
-    patientDescription?: string;
-    type?: string;
-    side?: string;
-    exerciseSide?: string;
-    thumbnailUrl?: string;
-    imageUrl?: string;
-    images?: string[];
-    notes?: string;
-    defaultSets?: number;
-    defaultReps?: number;
-    defaultDuration?: number;
-    defaultExecutionTime?: number;
-    defaultRestBetweenSets?: number;
-    defaultRestBetweenReps?: number;
-    sets?: number;
-    reps?: number;
-    duration?: number;
-    restSets?: number;
-    restReps?: number;
-  };
-}
-
-interface PatientPlan {
-  id: string;
-  name: string;
-  description?: string;
-  exerciseMappings?: ExerciseMapping[];
-  startDate?: string;
-  endDate?: string;
-  validUntil?: string;
-  createdAt?: string;
-  status?: 'active' | 'archived' | 'expired';
-  frequency?: {
-    timesPerDay?: number;
-    timesPerWeek?: number;
-    breakBetweenSets?: number;
-    monday?: boolean;
-    tuesday?: boolean;
-    wednesday?: boolean;
-    thursday?: boolean;
-    friday?: boolean;
-    saturday?: boolean;
-    sunday?: boolean;
-  };
-}
 
 interface PatientQRCodeDialogProps {
   open: boolean;
@@ -100,22 +41,10 @@ interface PatientQRCodeDialogProps {
     id: string;
     name: string;
     email?: string;
-    /** Plany mogą być zagnieżdżone w obiekcie pacjenta */
-    plans?: PatientPlan[];
-    assignedSets?: PatientPlan[];
-    exerciseSets?: PatientPlan[];
-    assignments?: Array<{
-      id: string;
-      exerciseSet?: PatientPlan;
-      validUntil?: string;
-      createdAt?: string;
-    }>;
   } | null;
   therapistId: string;
   organizationId: string;
-  /** Lista planów pacjenta (może być pusta) - nadpisuje dane z patient */
-  plans?: PatientPlan[];
-  /** Callback do tworzenia nowego planu */
+  /** Otwiera kreator przypisania dla tego pacjenta (stan „Brak aktywnego planu”). */
   onCreatePlan?: () => void;
 }
 
@@ -125,15 +54,26 @@ interface PatientQRCodeDialogProps {
  * Wizualna miniaturka PDF - "Live Preview"
  * Biała kartka A4 z akcentami nawiązującymi do designu PDF
  */
-function DocumentPreview({ exerciseCount = 0 }: Readonly<{ exerciseCount?: number }>) {
+function DocumentPreview({
+  exerciseCount = 0,
+  onClick,
+  disabled,
+}: Readonly<{ exerciseCount?: number; onClick: () => void; disabled?: boolean }>) {
   const rowCount = Math.min(exerciseCount, 3);
   return (
-    <div className="w-[110px] aspect-210/297 bg-white rounded-lg shadow-xl border border-border/30 flex flex-col overflow-hidden relative group cursor-default">
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label="Podgląd karty pacjenta w nowej karcie"
+      data-testid="patient-qr-preview-btn"
+      className="w-[110px] aspect-210/297 bg-white rounded-lg shadow-xl border border-border/30 flex flex-col overflow-hidden relative group cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-wait"
+    >
       {/* Zielony pasek (Header) - jak w prawdziwym PDF */}
       <div className="h-3 bg-primary w-full" />
 
       {/* Content area */}
-      <div className="p-2.5 flex-1 flex flex-col">
+      <div className="p-2.5 flex-1 flex flex-col w-full">
         {/* Tytuł */}
         <div className="h-2 w-3/4 bg-foreground/70 rounded-sm mb-2" />
         <div className="h-1.5 w-1/2 bg-muted-foreground/20 rounded-sm mb-3" />
@@ -142,25 +82,15 @@ function DocumentPreview({ exerciseCount = 0 }: Readonly<{ exerciseCount?: numbe
         <div className="h-5 w-full bg-muted/40 rounded mb-3" />
 
         {/* Ćwiczenia (rows) */}
-        {rowCount > 0 ? (
-          Array.from({ length: rowCount }, (_, i) => (
-            <div key={`row-${i}`} className="flex gap-2 mb-2.5">
-              <div className="w-5 h-5 bg-muted rounded border border-border/20 shrink-0" />
-              <div className="flex-1 space-y-1">
-                <div className="h-1.5 w-2/3 bg-foreground/30 rounded-sm" />
-                <div className="h-1 w-full bg-muted-foreground/15 rounded-sm" />
-              </div>
-            </div>
-          ))
-        ) : (
-          <div className="flex gap-2 mb-2.5">
+        {Array.from({ length: Math.max(rowCount, 1) }, (_, i) => (
+          <div key={`row-${i}`} className="flex gap-2 mb-2.5">
             <div className="w-5 h-5 bg-muted rounded border border-border/20 shrink-0" />
             <div className="flex-1 space-y-1">
               <div className="h-1.5 w-2/3 bg-foreground/30 rounded-sm" />
               <div className="h-1 w-full bg-muted-foreground/15 rounded-sm" />
             </div>
           </div>
-        )}
+        ))}
 
         {/* Spacer */}
         <div className="flex-1" />
@@ -175,11 +105,11 @@ function DocumentPreview({ exerciseCount = 0 }: Readonly<{ exerciseCount?: numbe
         </div>
       </div>
 
-      {/* Hover overlay */}
-      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+      {/* Hover / focus overlay */}
+      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 group-focus-visible:bg-black/5 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100">
         <div className="bg-white/95 px-2 py-1 rounded text-[9px] font-bold text-foreground shadow-sm">Podgląd</div>
       </div>
-    </div>
+    </button>
   );
 }
 
@@ -200,7 +130,6 @@ export function PatientQRCodeDialog({
   patient,
   therapistId,
   organizationId,
-  plans: propPlans,
   onCreatePlan,
 }: PatientQRCodeDialogProps) {
   const { user } = useUser();
@@ -211,133 +140,45 @@ export function PatientQRCodeDialog({
 
   // ==================== QUERIES (MUSZĄ BYĆ PRZED useMemo!) ====================
 
-  // Pobierz dane organizacji
   const { data: orgData } = useQuery(GET_ORGANIZATION_BY_ID_QUERY, {
     variables: { id: organizationId },
     skip: !organizationId || !open,
   });
 
-  // Pobierz dane terapeuty
   const { data: userData } = useQuery(GET_USER_BY_CLERK_ID_QUERY, {
     variables: { clerkId: user?.id },
     skip: !user?.id || !open,
   });
 
-  // ==================== KLUCZOWE: Pobierz przypisania pacjenta ====================
+  // Backend zawęża przypisania do organizacji z tokenu (AssignmentVisibilityService).
   const { data: assignmentsData, loading: loadingAssignments } = useQuery<PatientAssignmentsByUserQueryData>(
     GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY,
     {
-    variables: { userId: patient?.id },
-    skip: !patient?.id || !open,
-  });
+      variables: { userId: patient?.id },
+      skip: !patient?.id || !open,
+    }
+  );
 
   const organization = (orgData as OrganizationByIdResponse)?.organizationById;
   const therapistUser = (userData as UserByClerkIdResponse)?.userByClerkId;
 
-  // Wyciągnij przypisania z danych GraphQL
-  const fetchedAssignments = useMemo(
-    () => assignmentsData?.patientAssignments || [],
+  const plans = useMemo(
+    () => buildPatientAccessPlans(assignmentsData?.patientAssignments),
     [assignmentsData]
   );
 
-  // ==================== AUTO-DISCOVERY PLANÓW ====================
-  // Szukamy planów w różnych miejscach obiektu pacjenta
-  const discoveredPlans = useMemo((): PatientPlan[] => {
-    // 1. Jeśli przekazano plans jako prop - użyj ich
-    if (propPlans && propPlans.length > 0) {
-      return propPlans;
-    }
-
-    // 2. KLUCZOWE: Użyj danych z GraphQL (fetchedAssignments)
-    if (fetchedAssignments && fetchedAssignments.length > 0) {
-      return fetchedAssignments.flatMap((assignment) => {
-        const exerciseSet = assignment.exerciseSet;
-        if (!exerciseSet) {
-          return [];
-        }
-
-        const plan: PatientPlan = {
-          id: exerciseSet.id,
-          name: exerciseSet.name ?? '',
-          description: exerciseSet.description ?? undefined,
-          exerciseMappings: Array.isArray(exerciseSet.exerciseMappings)
-            ? (exerciseSet.exerciseMappings as PatientPlan['exerciseMappings'])
-            : undefined,
-          startDate: assignment.startDate ?? undefined,
-          endDate: assignment.endDate ?? undefined,
-          createdAt: assignment.assignedAt ?? exerciseSet.creationTime ?? undefined,
-          validUntil: assignment.endDate ?? undefined,
-          status: assignment.status === 'active' ? 'active' : undefined,
-          frequency: assignment.frequency,
-        };
-        return [plan];
-      });
-    }
-
-    if (!patient) return [];
-
-    // 3. Sprawdź patient.plans
-    if (patient.plans && patient.plans.length > 0) {
-      return patient.plans;
-    }
-
-    // 4. Sprawdź patient.assignedSets
-    if (patient.assignedSets && patient.assignedSets.length > 0) {
-      return patient.assignedSets;
-    }
-
-    // 5. Sprawdź patient.exerciseSets
-    if (patient.exerciseSets && patient.exerciseSets.length > 0) {
-      return patient.exerciseSets;
-    }
-
-    // 6. Sprawdź patient.assignments (zagnieżdżone w assignment)
-    if (patient.assignments && patient.assignments.length > 0) {
-      return patient.assignments
-        .filter((a) => a.exerciseSet)
-        .map((a) => ({
-          ...a.exerciseSet!,
-          validUntil: a.validUntil,
-          createdAt: a.createdAt || a.exerciseSet?.createdAt,
-        }));
-    }
-
-    return [];
-  }, [propPlans, fetchedAssignments, patient]);
-
-  // Filtruj aktywne plany
-  const activePlans = useMemo(
-    () => discoveredPlans.filter((p) => p.status === 'active' || !p.status),
-    [discoveredPlans]
-  );
-
-  // Stan wyboru planu
   const [selectedPlanId, setSelectedPlanId] = useState<string | undefined>(undefined);
 
-  // Auto-selekcja pierwszego planu przy otwarciu modala
+  // Reset przy zamknięciu; przy otwarciu domyślnie pierwszy plan (aktywne są na początku).
   useEffect(() => {
-    if (open && discoveredPlans.length > 0 && !selectedPlanId) {
-      // Wybierz pierwszy aktywny lub pierwszy dostępny
-      const defaultPlan = activePlans[0] || discoveredPlans[0];
-      setSelectedPlanId(defaultPlan?.id);
-    }
-  }, [open, discoveredPlans, activePlans, selectedPlanId]);
-
-  // Reset przy zamknięciu
-  useEffect(() => {
-    if (!open) {
-      setSelectedPlanId(undefined);
-    }
+    if (!open) setSelectedPlanId(undefined);
   }, [open]);
 
-  const selectedPlan = discoveredPlans.find((p) => p.id === selectedPlanId);
+  const selectedPlan = plans.find((plan) => plan.id === selectedPlanId) ?? plans[0];
 
-  // Generuj QR code data URL dla PDF
   const getQRCodeDataUrl = useCallback((): string | undefined => {
-    if (!qrCanvasRef.current) return undefined;
-    const canvas = qrCanvasRef.current.querySelector('canvas');
-    if (!canvas) return undefined;
-    return canvas.toDataURL('image/png');
+    const canvas = qrCanvasRef.current?.querySelector('canvas');
+    return canvas ? canvas.toDataURL('image/png') : undefined;
   }, []);
 
   // Early return after all hooks
@@ -350,9 +191,10 @@ export function PatientQRCodeDialog({
   });
   const canRenderQr = isHttpsUrl(joinUrl);
 
-  const hasPlans = discoveredPlans.length > 0;
-  const hasMultiplePlans = discoveredPlans.length > 1;
-  const exerciseCount = selectedPlan?.exerciseMappings?.length || 0;
+  const hasPlans = plans.length > 0;
+  const hasMultiplePlans = plans.length > 1;
+  const exerciseCount = selectedPlan ? toPdfExercises(selectedPlan.exerciseMappings, selectedPlan.exerciseOverrides).length : 0;
+  const canGeneratePdf = !isGeneratingPDF && !!organization && !!selectedPlan;
 
   const handleCopyLink = async () => {
     if (!joinUrl) {
@@ -369,144 +211,95 @@ export function PatientQRCodeDialog({
     }
   };
 
-  const handleDownloadQR = () => {
+  const handleDownloadQR = async () => {
     const svg = qrContainerRef.current?.querySelector('svg');
     if (!svg) return;
-
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const svgData = new XMLSerializer().serializeToString(svg);
-    const img = new Image();
-
-    canvas.width = 400;
-    canvas.height = 400;
-
-    img.onload = () => {
-      if (ctx) {
-        ctx.fillStyle = 'white';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-        const pngUrl = canvas.toDataURL('image/png');
-        const downloadLink = document.createElement('a');
-        downloadLink.href = pngUrl;
-        downloadLink.download = `QR-${patient.name.replaceAll(/\s+/g, '-')}.png`;
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        downloadLink.remove();
-
-        toast.success('QR kod pobrany');
-      }
-    };
-
-    const encoder = new TextEncoder();
-    const data = encoder.encode(svgData);
-    const base64 = btoa(String.fromCodePoint(...data));
-    img.src = 'data:image/svg+xml;base64,' + base64;
+    try {
+      await downloadQrSvgAsPng(svg, `QR-${patient.name.replaceAll(/\s+/g, '-')}.png`);
+      toast.success('QR kod pobrany');
+    } catch (error) {
+      toast.error('Nie udało się pobrać kodu QR', {
+        description: error instanceof Error ? error.message : undefined,
+      });
+    }
   };
 
-  // Generuj PDF z kartą pacjenta
-  const generatePatientCardPDF = async (download: boolean = false) => {
+  /** Składa PDF karty dla wybranego planu; null, gdy brakuje danych. */
+  const buildPatientCardPdf = async (): Promise<{ blob: Blob; fileName: string } | null> => {
     if (!organization || !selectedPlan) {
       toast.error('Brak danych do wygenerowania PDF');
-      return;
+      return null;
     }
 
+    const pdfOrganization: PDFOrganization = {
+      name: organization.name || 'Gabinet Fizjoterapii',
+      logoUrl: organization.logoUrl,
+      address: organization.address,
+      phone: organization.contactPhone,
+      email: organization.contactEmail,
+      website: organization.website,
+    };
+
+    const pdfExercises: PDFExercise[] = toPdfExercises(selectedPlan.exerciseMappings, selectedPlan.exerciseOverrides);
+    await preloadPdfExerciseImages(pdfExercises);
+
+    const pdfExerciseSet: PDFExerciseSet = {
+      id: selectedPlan.exerciseSetId,
+      name: selectedPlan.name,
+      description: selectedPlan.description,
+      exercises: pdfExercises,
+      frequency: selectedPlan.frequency,
+      startDate: selectedPlan.startDate || selectedPlan.assignedAt,
+      endDate: selectedPlan.endDate,
+    };
+
+    const pdfPatient: PDFPatient = { name: patient.name, email: patient.email };
+    const pdfTherapist: PDFTherapist | undefined = therapistUser?.fullname
+      ? { name: therapistUser.fullname }
+      : undefined;
+    const pdfOptions: PDFOptions = {
+      showImages: true,
+      showFrequency: !!selectedPlan.frequency,
+      showQRCode: true,
+      compactMode: false,
+      notes: undefined,
+    };
+
+    const { pdf, ExerciseSetPDF } = await loadPdfRenderer();
+    const blob = await pdf(
+      <ExerciseSetPDF
+        exerciseSet={pdfExerciseSet}
+        organization={pdfOrganization}
+        patient={pdfPatient}
+        therapist={pdfTherapist}
+        options={pdfOptions}
+        qrCodeDataUrl={getQRCodeDataUrl()}
+        joinUrl={joinUrl ?? undefined}
+      />
+    ).toBlob();
+
+    const safeName = selectedPlan.name
+      .replaceAll(/[^a-zA-Z0-9ąćęłńóśźżĄĆĘŁŃÓŚŹŻ\s-]/g, '')
+      .replaceAll(/\s+/g, '_')
+      .substring(0, 50);
+    const fileName = `Karta_Pacjenta_${safeName}_${patient.name.split(' ')[0]}.pdf`;
+    return { blob, fileName };
+  };
+
+  const runPdfAction = async (
+    action: (pdf: { blob: Blob; fileName: string }) => Promise<void> | void,
+    onFail?: () => void
+  ) => {
     setIsGeneratingPDF(true);
-
     try {
-      const pdfOrganization: PDFOrganization = {
-        name: organization.name || 'Gabinet Fizjoterapii',
-        logoUrl: organization.logoUrl,
-        address: organization.address,
-        phone: organization.contactPhone,
-        email: organization.contactEmail,
-        website: organization.website,
-      };
-
-      const pdfExercises: PDFExercise[] = (selectedPlan.exerciseMappings || []).map(toPdfExercise);
-      await preloadPdfExerciseImages(pdfExercises);
-
-      const pdfExerciseSet: PDFExerciseSet = {
-        id: selectedPlan.id,
-        name: selectedPlan.name,
-        description: selectedPlan.description,
-        exercises: pdfExercises,
-        frequency: selectedPlan.frequency,
-        startDate: selectedPlan.startDate || selectedPlan.createdAt,
-        endDate: selectedPlan.endDate || selectedPlan.validUntil,
-      };
-
-      const pdfPatient: PDFPatient = {
-        name: patient.name,
-        email: patient.email,
-      };
-
-      const pdfTherapist: PDFTherapist | undefined = therapistUser?.fullname
-        ? { name: therapistUser.fullname }
-        : undefined;
-
-      const pdfOptions: PDFOptions = {
-        showImages: true,
-        showFrequency: !!selectedPlan.frequency,
-        showQRCode: true,
-        compactMode: false,
-        notes: undefined,
-      };
-
-      const qrCodeDataUrl = getQRCodeDataUrl();
-
-      const { pdf, ExerciseSetPDF } = await loadPdfRenderer();
-      const doc = (
-        <ExerciseSetPDF
-          exerciseSet={pdfExerciseSet}
-          organization={pdfOrganization}
-          patient={pdfPatient}
-          therapist={pdfTherapist}
-          options={pdfOptions}
-          qrCodeDataUrl={qrCodeDataUrl}
-          joinUrl={joinUrl ?? undefined}
-        />
-      );
-
-      const blob = await pdf(doc).toBlob();
-
-      const safeName = selectedPlan.name
-        .replaceAll(/[^a-zA-Z0-9ąćęłńóśźżĄĆĘŁŃÓŚŹŻ\s-]/g, '')
-        .replaceAll(/\s+/g, '_')
-        .substring(0, 50);
-      const patientSuffix = `_${patient.name.split(' ')[0]}`;
-      const fileName = `Karta_Pacjenta_${safeName}${patientSuffix}.pdf`;
-
-      if (download) {
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        URL.revokeObjectURL(url);
-        toast.success('PDF pobrany');
-      } else {
-        const url = URL.createObjectURL(blob);
-        const printWindow = window.open(url, '_blank');
-        if (printWindow) {
-          printWindow.onload = () => {
-            printWindow.print();
-          };
-        } else {
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = fileName;
-          document.body.appendChild(link);
-          link.click();
-          link.remove();
-          toast.info('Pobrano PDF - otwórz i wydrukuj');
-        }
-        URL.revokeObjectURL(url);
+      const result = await buildPatientCardPdf();
+      if (!result) {
+        onFail?.();
+        return;
       }
+      await action(result);
     } catch (error) {
+      onFail?.();
       const message = error instanceof Error ? error.message : 'Nieznany błąd';
       toast.error('Nie udało się wygenerować PDF', { description: message });
     } finally {
@@ -514,8 +307,32 @@ export function PatientQRCodeDialog({
     }
   };
 
-  const handlePrintCard = () => generatePatientCardPDF(false);
-  const handleDownloadPDF = () => generatePatientCardPDF(true);
+  /** Karta otwarta w geście kliknięcia; `window.open` po await blokuje popup blocker. */
+  const openPdfTab = (print: boolean) => {
+    const pending = openPendingWindow();
+    void runPdfAction(
+      ({ blob, fileName }) => {
+        if (showPdfInWindow(blob, pending, fileName, { print }) === 'downloaded') {
+          toast.info(
+            print
+              ? 'Przeglądarka zablokowała nową kartę - pobrano PDF, otwórz i wydrukuj'
+              : 'Przeglądarka zablokowała nową kartę - pobrano PDF'
+          );
+        }
+      },
+      () => pending?.close()
+    );
+  };
+
+  const handlePrintCard = () => openPdfTab(true);
+
+  const handleDownloadPDF = () =>
+    runPdfAction(({ blob, fileName }) => {
+      downloadBlob(blob, fileName);
+      toast.success('PDF pobrany');
+    });
+
+  const handlePreviewPDF = () => openPdfTab(false);
 
   const handleShare = async () => {
     if (!joinUrl) {
@@ -527,13 +344,13 @@ export function PatientQRCodeDialog({
         await navigator.share({
           title: `FiziYo - Program ćwiczeń dla ${patient.name}`,
           text: 'Pobierz aplikację FiziYo, aby ćwiczyć w domu',
-          url: joinUrl ?? undefined,
+          url: joinUrl,
         });
       } catch {
         // User cancelled
       }
     } else {
-      handleCopyLink();
+      await handleCopyLink();
     }
   };
 
@@ -616,7 +433,7 @@ export function PatientQRCodeDialog({
                   data-testid="patient-qr-share-btn"
                 >
                   <Share2 className="h-3.5 w-3.5" />
-                  Wyślij link SMS-em
+                  Udostępnij link
                 </Button>
                 <Button
                   variant="ghost"
@@ -650,7 +467,7 @@ export function PatientQRCodeDialog({
                     <div className="mb-2">
                       <Select
                         data-testid="patient-qr-plan-select-root"
-                        value={selectedPlanId}
+                        value={selectedPlan?.id}
                         onValueChange={setSelectedPlanId}
                       >
                         <SelectTrigger
@@ -660,13 +477,12 @@ export function PatientQRCodeDialog({
                           <SelectValue placeholder="Wybierz plan" />
                         </SelectTrigger>
                         <SelectContent>
-                          {discoveredPlans.map((plan) => (
+                          {plans.map((plan) => (
                             <SelectItem key={plan.id} value={plan.id}>
                               <div className="flex items-center gap-2">
-                                {(plan.status === 'active' || !plan.status) && (
-                                  <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                                )}
+                                {plan.isActive && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
                                 <span className="truncate max-w-[180px]">{plan.name}</span>
+                                {!plan.isActive && <span className="text-muted-foreground">· nieaktywny</span>}
                               </div>
                             </SelectItem>
                           ))}
@@ -678,7 +494,11 @@ export function PatientQRCodeDialog({
                   {/* 2. PREVIEW - CENTRUM */}
                   <div className="flex-1 flex flex-col items-center justify-center">
                     <div className="mb-4 hover:scale-105 transition-transform duration-300">
-                      <DocumentPreview exerciseCount={exerciseCount} />
+                      <DocumentPreview
+                        exerciseCount={exerciseCount}
+                        onClick={handlePreviewPDF}
+                        disabled={!canGeneratePdf}
+                      />
                     </div>
 
                     <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-1">
@@ -695,7 +515,7 @@ export function PatientQRCodeDialog({
                     <Button
                       size="sm"
                       onClick={handlePrintCard}
-                      disabled={isGeneratingPDF || !organization}
+                      disabled={!canGeneratePdf}
                       className="w-full gap-2"
                       data-testid="patient-qr-print-btn"
                     >
@@ -706,7 +526,7 @@ export function PatientQRCodeDialog({
                       variant="ghost"
                       size="sm"
                       onClick={handleDownloadPDF}
-                      disabled={isGeneratingPDF || !organization}
+                      disabled={!canGeneratePdf}
                       className="w-full gap-2"
                       data-testid="patient-qr-download-pdf-btn"
                     >
@@ -759,7 +579,7 @@ export function PatientQRCodeDialog({
             <Button
               variant="ghost"
               size="sm"
-              onClick={handleDownloadQR}
+              onClick={() => void handleDownloadQR()}
               disabled={!canRenderQr}
               className="text-xs text-muted-foreground"
               data-testid="patient-qr-download-btn"
