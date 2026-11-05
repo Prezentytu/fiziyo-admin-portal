@@ -82,6 +82,21 @@ describe('AI w edycji ćwiczenia', () => {
     expect(screen.getByDisplayValue('Wskazówka poprawiona przez fizjoterapeutę.')).toBeInTheDocument();
   });
 
+  it('Cofnij zachowuje wskazówkę, której fizjoterapeuta zmienił tylko fazę', async () => {
+    render(<Editor />);
+    fireEvent.click(screen.getByRole('button', { name: 'Uzupełnij przez AI' }));
+    await screen.findByDisplayValue('Nowa wskazówka AI.');
+    fireEvent.click(screen.getByTestId('exercise-audio-cues-editor-phase-0-rest-btn'));
+    const undo = toastSuccess.mock.calls.at(-1)?.[1].action.onClick;
+    act(() => undo());
+    expect(screen.getByDisplayValue('Nowa wskazówka AI.')).toBeInTheDocument();
+    expect(screen.getByTestId('exercise-audio-cues-editor-phase-0-rest-btn')).toHaveAttribute('aria-checked', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'Zapisz szkic' }));
+    await waitFor(() => expect(updateEnrichment).toHaveBeenCalledWith(expect.objectContaining({
+      patient: expect.objectContaining({ cues: ['Nowa wskazówka AI.'], cue_phases: [{ cue: 0, phase: 'rest' }] }),
+    })));
+  });
+
   it('nie generuje propozycji przy zablokowanej edycji', () => {
     render(<Editor disabled />);
     expect(screen.getByRole('button', { name: 'Uzupełnij przez AI' })).toBeDisabled();

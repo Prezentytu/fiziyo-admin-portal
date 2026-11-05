@@ -23,7 +23,7 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 - **Kategoria**: `UI/UX` | `React`
 - **Problem**: Szczegóły i dialog edycji nie pokazywały istniejącej akcji uzupełniania treści przez AI.
 - **Przyczyna**: Wspólny edytor uzależniał akcję od opcjonalnego kontekstu, którego żaden konsument nie przekazywał.
-- **Rozwiązanie**: Kontekst AI domyślnie pochodzi z aktualnego szkicu wspólnego edytora; propozycja czeka na ręczny zapis. Wynik scala się z aktualnym szkicem, a Cofnij usuwa tylko niezmienione wartości AI.
+- **Rozwiązanie**: Kontekst AI domyślnie pochodzi z aktualnego szkicu wspólnego edytora; propozycja czeka na ręczny zapis. Wynik scala się z aktualnym szkicem, a Cofnij usuwa tylko niezmienione wartości AI. Tekst wskazówek i przypisane do nich fazy są jedną jednostką cofania.
 - **Reguła**: Jeśli wspólna akcja zależy od danych dostępnych w szkicu, zawsze wyprowadź jej kontekst w edytorze i sprawdź, że wynik nie zapisuje się bez zatwierdzenia. [egzekwowane: src/features/exercises/__tests__/exerciseEditorAiFill.test.tsx]
 
 ### 2026-11-03 - „Przerwij, gdy…” traktowane jak lista linii gubiło strukturę

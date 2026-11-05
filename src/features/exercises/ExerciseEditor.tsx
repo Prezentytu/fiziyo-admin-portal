@@ -112,8 +112,18 @@ function AiFillBar({
   const completeness = useMemo(() => computeCompleteness(enrichment), [enrichment]);
 
   const handleDiscard = useCallback((change: AiFillChange) => {
-    const restored = revertUnchangedAiValues(enrichmentRef.current, change.before, change.after);
-    onApply(compactEnrichment(restored as ExerciseEnrichmentData) ?? {});
+    const current = enrichmentRef.current;
+    const restored = revertUnchangedAiValues(current, change.before, change.after) as ExerciseEnrichmentData;
+    const cuesChanged = JSON.stringify(current.patient?.cues) !== JSON.stringify(change.after.patient?.cues);
+    const cuePhasesChanged = JSON.stringify(current.patient?.cue_phases) !== JSON.stringify(change.after.patient?.cue_phases);
+    if (cuesChanged || cuePhasesChanged) {
+      restored.patient = {
+        ...restored.patient,
+        cues: current.patient?.cues,
+        cue_phases: current.patient?.cue_phases,
+      };
+    }
+    onApply(compactEnrichment(restored) ?? {});
     toast.info('Cofnięto propozycję AI, zachowując ręczne zmiany.');
   }, [onApply]);
 
