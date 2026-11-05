@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   canProceedFromStep,
+  toAssignmentNotePayload,
   wizardEnterAdvances,
   wizardEnterSubmits,
   type CanProceedContext,
@@ -97,5 +98,16 @@ describe('wizardEnterAdvances', () => {
 
   it('does not advance on the last step', () => {
     expect(wizardEnterAdvances({ isLastStep: true, canProceed: true, shiftKey: false })).toBe(false);
+  });
+});
+
+describe('toAssignmentNotePayload', () => {
+  it('trims the note for the patient', () => {
+    expect(toAssignmentNotePayload('  Ćwicz wolno.\n')).toBe('Ćwicz wolno.');
+  });
+
+  it('sends no note when the field is blank', () => {
+    expect(toAssignmentNotePayload('')).toBeNull();
+    expect(toAssignmentNotePayload('   ')).toBeNull();
   });
 });

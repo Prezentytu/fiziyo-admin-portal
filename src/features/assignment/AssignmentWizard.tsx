@@ -26,7 +26,12 @@ import { ScheduleStep } from './ScheduleStep';
 import { SummaryStep } from './SummaryStep';
 import { AssignmentSuccessDialog } from './AssignmentSuccessDialog';
 import type { ExerciseInstance, ExerciseParams } from '@/components/shared/ExerciseSetBuilder';
-import { canProceedFromStep, wizardEnterAdvances, wizardEnterSubmits } from './utils/assignmentWizardUtils';
+import {
+  canProceedFromStep,
+  toAssignmentNotePayload,
+  wizardEnterAdvances,
+  wizardEnterSubmits,
+} from './utils/assignmentWizardUtils';
 import { decideAssignmentPlanMode, type AssignmentExecutionMode } from './utils/assignmentPlanDecision';
 import {
   buildAssignmentOverrideDeltasFromBuilder,
@@ -277,6 +282,7 @@ function AssignmentWizardContent({
   const [selectedSet, setSelectedSet] = useState<ExerciseSet | null>(preselectedSet || null);
   const [selectedPatients, setSelectedPatients] = useState<Patient[]>(preselectedPatient ? [preselectedPatient] : []);
   const [startDate, setStartDate] = useState<Date>(() => new Date());
+  const [assignmentNote, setAssignmentNote] = useState('');
   const [endDate, setEndDate] = useState<Date>(() => getDefaultPlanEndDate(new Date()));
   const [frequency, setFrequency] = useState<Frequency>(() => normalizeFrequencySeed(defaultFrequency));
   const [isCreatingSet, setIsCreatingSet] = useState(false);
@@ -1482,6 +1488,7 @@ function AssignmentWizardContent({
             startDate: startDate.toISOString(),
             endDate: endDate.toISOString(),
             frequency: frequencyPayload,
+            notes: toAssignmentNotePayload(assignmentNote),
           },
         });
         assignedAnyPatient = true;
@@ -1700,6 +1707,8 @@ function AssignmentWizardContent({
                 onStartDateChange={setStartDate}
                 onEndDateChange={setEndDate}
                 onFrequencyChange={setFrequency}
+                note={assignmentNote}
+                onNoteChange={isEditMode ? undefined : setAssignmentNote}
               />
             </div>
             {summaryExerciseSet && (
