@@ -45,3 +45,12 @@ export function wizardEnterSubmits(input: WizardEnterKeyInput): boolean {
 export function wizardEnterAdvances(input: Pick<WizardEnterKeyInput, 'isLastStep' | 'canProceed' | 'shiftKey'>): boolean {
   return !input.isLastStep && input.canProceed && !input.shiftKey;
 }
+
+/** Limit notatki do zestawu; ten sam co w backendzie (`TherapistsMutation.AssignmentNoteMaxLength`). */
+export const ASSIGNMENT_NOTE_MAX_LENGTH = 1000;
+
+/** Notatka do przypisania wysyłana do API: przycięta, pusta = brak notatki. */
+export function toAssignmentNotePayload(note: string): string | null {
+  const trimmed = note.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}

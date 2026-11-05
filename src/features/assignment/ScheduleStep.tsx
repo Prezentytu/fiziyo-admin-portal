@@ -1,13 +1,15 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Calendar, Zap, ArrowRight, Minus, Plus } from 'lucide-react';
+import { Calendar, Zap, ArrowRight, Minus, Plus, MessageSquareText } from 'lucide-react';
 import { addWeeks, differenceInDays, format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { ScheduleSummary } from '@/components/shared';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { formatEstimatedTime } from '@/utils/exerciseTime';
 import { getDefaultDaysForFrequency, getDefaultPlanEndDate } from './utils/scheduleUtils';
+import { ASSIGNMENT_NOTE_MAX_LENGTH } from './utils/assignmentWizardUtils';
 import type { Frequency } from './types';
 
 interface ScheduleStepProps {
@@ -18,6 +20,9 @@ interface ScheduleStepProps {
   readonly onStartDateChange: (date: Date) => void;
   readonly onEndDateChange: (date: Date) => void;
   readonly onFrequencyChange: (frequency: Frequency) => void;
+  /** Notatka do zestawu widoczna dla pacjenta. Bez `onNoteChange` pole jest ukryte (edycja planu). */
+  readonly note?: string;
+  readonly onNoteChange?: (note: string) => void;
 }
 
 const DAYS = [
@@ -60,7 +65,15 @@ function CardOption({ checked, label, onSelect, name, testId }: CardOptionProps)
       )}
       data-testid={testId}
     >
-      <input type="radio" className="sr-only" checked={checked} onChange={onSelect} name={name} aria-label={label} />
+      <input
+        type="radio"
+        className="sr-only"
+        checked={checked}
+        onChange={onSelect}
+        name={name}
+        aria-label={label}
+        data-testid={`${testId}-input`}
+      />
       <span>{label}</span>
     </label>
   );
@@ -154,6 +167,8 @@ export function ScheduleStep({
   onStartDateChange,
   onEndDateChange,
   onFrequencyChange,
+  note = '',
+  onNoteChange,
 }: ScheduleStepProps) {
   const [durationType, setDurationType] = useState<DurationType>(() => detectDurationType(startDate, endDate));
   const [isCustomDateDirty, setIsCustomDateDirty] = useState(false);
@@ -479,6 +494,33 @@ export function ScheduleStep({
           showStartInDays
           testIdPrefix="assign"
         />
+
+        {onNoteChange ? (
+          <div className="shrink-0 bg-surface border border-border/60 rounded-2xl shadow-sm p-6 flex flex-col gap-3">
+            <label
+              htmlFor="assign-schedule-note"
+              className="text-base font-semibold text-foreground flex items-center gap-2"
+            >
+              <MessageSquareText className="w-5 h-5 text-muted-foreground" /> Notatka dla pacjenta
+              <span className="text-xs font-normal text-muted-foreground">(opcjonalnie)</span>
+            </label>
+            <Textarea
+              id="assign-schedule-note"
+              value={note}
+              maxLength={ASSIGNMENT_NOTE_MAX_LENGTH}
+              onChange={(event) => onNoteChange(event.target.value)}
+              placeholder="Np. ćwicz wolno, przerwij, gdy ból przekroczy 3/10."
+              aria-describedby="assign-schedule-note-hint"
+              data-testid="assign-schedule-note"
+            />
+            <p id="assign-schedule-note-hint" className="text-xs text-muted-foreground flex justify-between gap-3">
+              <span>Pacjent zobaczy ją w aplikacji nad listą ćwiczeń.</span>
+              <span className="tabular-nums shrink-0">
+                {note.length}/{ASSIGNMENT_NOTE_MAX_LENGTH}
+              </span>
+            </p>
+          </div>
+        ) : null}
       </div>
 
       <div className="sr-only" data-testid="assign-schedule-payload-preview">

@@ -441,6 +441,7 @@ export const ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION = gql`
     $startDate: DateTime!
     $endDate: DateTime!
     $frequency: FrequencyInput!
+    $notes: String
   ) {
     assignExerciseSetToPatient(
       exerciseSetId: $exerciseSetId
@@ -448,6 +449,7 @@ export const ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION = gql`
       startDate: $startDate
       endDate: $endDate
       frequency: $frequency
+      notes: $notes
     ) {
       id
       userId
