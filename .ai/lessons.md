@@ -18,6 +18,14 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 
 ## Wpisy
 
+### 2026-11-05 - Karta pacjenta drukowała zestaw zamiast planu pacjenta
+
+- **Kategoria**: `Data` | `UI/UX`
+- **Problem**: Dialog „Dostęp” drukował parametry mappingu bez `exerciseOverrides` przypisania (także ćwiczenia ukryte), liczył zakończone i anulowane przypisania jako aktywne i kluczował plany po `exerciseSet.id`; „Podgląd” nic nie robił, a druk otwierał pustą kartę.
+- **Przyczyna**: Dialog składał plan z zestawu, a nie z przypisania, i miał własną regułę statusu zamiast `resolveAssignmentDisplayStatus`.
+- **Rozwiązanie**: `buildPatientAccessPlans` (plan = przypisanie, status z reguły badge'a), `toPdfExercises(mappings, exerciseOverrides)` pomija `hidden`, druk przez iframe i wspólne `pdfOutput`, podgląd otwiera prawdziwy PDF.
+- **Reguła**: PDF dla pacjenta zawsze składaj z przypisania przez `toPdfExercises` z jego `exerciseOverrides`, nigdy z gołego zestawu. [egzekwowane: src/components/pdf/__tests__/toPdfExercise.test.ts]
+
 ### 2026-11-03 - „Przerwij, gdy…” traktowane jak lista linii gubiło strukturę
 
 - **Kategoria**: `Verification` | `Data`
