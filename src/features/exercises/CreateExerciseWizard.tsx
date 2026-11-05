@@ -88,12 +88,12 @@ import type { ExerciseCoreDraft } from './useExerciseEditorForm';
 // QUICK PRESETS (Unified - shows all params)
 // ============================================================
 const QUICK_PRESETS = [
-  { label: '2×10', hint: '2 serie po 10 powtórzeń, przerwa 60 s', sets: 2, reps: 10, executionTime: null, duration: null, rest: 60 },
-  { label: '3×10', hint: '3 serie po 10 powtórzeń, przerwa 60 s', sets: 3, reps: 10, executionTime: null, duration: null, rest: 60 },
-  { label: '3×15', hint: '3 serie po 15 powtórzeń, przerwa 45 s', sets: 3, reps: 15, executionTime: null, duration: null, rest: 45 },
-  { label: '4×8', hint: '4 serie po 8 powtórzeń, przerwa 90 s', sets: 4, reps: 8, executionTime: null, duration: null, rest: 90 },
-  { label: '30s×3', hint: '3 serie po 30 s utrzymania, przerwa 30 s', sets: 3, reps: 1, executionTime: 30, duration: null, rest: 30 },
-  { label: '45s×3', hint: '3 serie po 45 s utrzymania, przerwa 30 s', sets: 3, reps: 1, executionTime: 45, duration: null, rest: 30 },
+  { label: '2×10', hint: '2 serie po 10 powtórzeń, przerwa 60 s', sets: 2, reps: 10, executionTime: null, rest: 60 },
+  { label: '3×10', hint: '3 serie po 10 powtórzeń, przerwa 60 s', sets: 3, reps: 10, executionTime: null, rest: 60 },
+  { label: '3×15', hint: '3 serie po 15 powtórzeń, przerwa 45 s', sets: 3, reps: 15, executionTime: null, rest: 45 },
+  { label: '4×8', hint: '4 serie po 8 powtórzeń, przerwa 90 s', sets: 4, reps: 8, executionTime: null, rest: 90 },
+  { label: '30s×3', hint: '3 serie po 30 s utrzymania, przerwa 30 s', sets: 3, reps: 1, executionTime: 30, rest: 30 },
+  { label: '45s×3', hint: '3 serie po 45 s utrzymania, przerwa 30 s', sets: 3, reps: 1, executionTime: 45, rest: 30 },
 ];
 
 // ============================================================
@@ -110,7 +110,6 @@ interface ExerciseData {
   difficultyLevel: string;
   sets: number | null;
   reps: number | null;
-  duration: number | null;
   restSets: number | null;
   restReps: number | null;
   preparationTime: number | null;
@@ -170,7 +169,6 @@ const DEFAULT_DATA: ExerciseData = {
   // Fizjoterapeuci zaczynają zwykle od 2 serii; pierwszy preset (2×10) odpowiada temu startowi.
   sets: 2,
   reps: 10,
-  duration: null,
   restSets: 60,
   restReps: 0,
   preparationTime: 5,
@@ -668,7 +666,7 @@ function AIDiffDrawer({
                 currentValue={currentData.executionTime ? formatDurationPolish(currentData.executionTime) : '—'}
                 suggestedValue={formatDurationPolish(suggestedDuration)}
                 reason="Sugerowany czas serii dla wariantu time-based"
-                onAccept={() => onAcceptField('duration', suggestedDuration)}
+                onAccept={() => onAcceptField('executionTime', suggestedDuration)}
                 priority="low"
                 inline
               />
@@ -1105,7 +1103,6 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
       calculateExerciseTotalSeconds({
         sets: data.sets ?? 0,
         reps: data.reps ?? undefined,
-        duration: data.duration ?? undefined,
         executionTime: data.executionTime ?? undefined,
         restSets: data.restSets ?? undefined,
         restReps: data.restReps ?? undefined,
@@ -1116,7 +1113,6 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
     [
       data.sets,
       data.reps,
-      data.duration,
       data.executionTime,
       data.restSets,
       data.restReps,
@@ -1212,7 +1208,8 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
       restSets: data.restSets,
       restReps: data.restReps,
       preparationTime: data.preparationTime,
-      duration: data.duration,
+      // Kreator nie ma legacy czasu serii; czas ćwiczenia na czas jest w executionTime.
+      duration: null,
       loadKg: data.loadKg,
       mainTags: data.mainTags,
       additionalTags: data.additionalTags,
@@ -1226,7 +1223,6 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
       sets: number;
       reps: number | null;
       executionTime: number | null;
-      duration: number | null;
       rest: number;
     }) => {
       setData((prev) => ({
@@ -1234,7 +1230,6 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
         sets: preset.sets,
         reps: preset.reps,
         executionTime: preset.executionTime,
-        duration: preset.duration,
         restSets: preset.rest,
       }));
       toast.success('Preset zastosowany');
@@ -1363,7 +1358,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
       if (field === 'reps' && aiSuggestion) {
         // Ćwiczenie na czas: jedno utrzymanie w serii i czas powtórzenia, jak w „Zastosuj wszystko”.
         setData((prev) => ({ ...prev, ...applyAiRepsSuggestion(prev, aiSuggestion) }));
-      } else if ((field === 'duration' || field === 'executionTime') && aiSuggestion) {
+      } else if (field === 'executionTime' && aiSuggestion) {
         // Czas z AI dla ćwiczenia na czas trafia do czasu powtórzenia z reps = 1, jak w „Zastosuj wszystko”.
         setData((prev) => ({
           ...prev,
@@ -1472,7 +1467,6 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
           difficultyLevel: data.difficultyLevel,
           sets: data.sets,
           reps: data.reps,
-          duration: data.duration,
           restSets: data.restSets,
           restReps: data.restReps,
           preparationTime: data.preparationTime,

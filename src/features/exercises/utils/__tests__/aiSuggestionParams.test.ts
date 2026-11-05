@@ -14,7 +14,6 @@ import {
 const wizardDefaults: AiSuggestionParamsTarget = {
   sets: 2,
   reps: 10,
-  duration: null,
   restSets: 60,
   preparationTime: 5,
   executionTime: null,
@@ -31,7 +30,7 @@ describe('applyAiSuggestionParams', () => {
       advancedParams: null,
     });
 
-    expect(result).toMatchObject({ sets: 3, reps: 1, executionTime: 30, duration: null, restSets: 30 });
+    expect(result).toMatchObject({ sets: 3, reps: 1, executionTime: 30, restSets: 30 });
   });
 
   it('keeps wizard values when the suggestion leaves fields empty or zero', () => {
@@ -70,15 +69,15 @@ describe('applyAiSuggestionParams', () => {
       advancedParams: { tempo: null, weight: null, rangeOfMotion: null, preparationTime: null, executionTime: 45 },
     });
 
-    expect(result).toMatchObject({ reps: 1, executionTime: 45, duration: null });
+    expect(result).toMatchObject({ reps: 1, executionTime: 45 });
   });
 });
 
 describe('applyAiExecutionTimeSuggestion', () => {
   it('stores a time-based execution time as one repetition, like apply-all', () => {
-    const prev = { ...wizardDefaults, duration: 20 };
+    const prev = { ...wizardDefaults, executionTime: 20 };
 
-    expect(applyAiExecutionTimeSuggestion(prev, 'time', 45)).toMatchObject({ reps: 1, executionTime: 45, duration: null });
+    expect(applyAiExecutionTimeSuggestion(prev, 'time', 45)).toEqual({ ...prev, reps: 1, executionTime: 45 });
     expect(applyAiExecutionTimeSuggestion(prev, 'time', Number.NaN)).toEqual(prev);
     expect(applyAiExecutionTimeSuggestion(prev, 'time', -5)).toEqual(prev);
   });
@@ -212,11 +211,15 @@ describe('aiSuggestionSide', () => {
 });
 
 describe('legacy duration from AI', () => {
-  it('is never written for a rep-based suggestion, so a hold cannot be left half in duration', () => {
-    const suggestion = { type: 'reps' as const, sets: 3, reps: 10, duration: 40, restSets: 60, advancedParams: null };
+  it('is not part of the wizard parameters, so apply-all cannot change it unseen', () => {
+    const time = { type: 'time' as const, sets: 3, reps: null, duration: 30, restSets: 30, advancedParams: null };
+    const reps = { type: 'reps' as const, sets: 3, reps: 10, duration: 40, restSets: 60, advancedParams: null };
 
-    expect(applyAiSuggestionParams(wizardDefaults, suggestion).duration).toBeNull();
-    expect(aiSuggestionParamDiffs(suggestion, wizardDefaults).duration).toBe(false);
+    expect(applyAiSuggestionParams(wizardDefaults, time)).not.toHaveProperty('duration');
+    expect(applyAiSuggestionParams(wizardDefaults, reps)).not.toHaveProperty('duration');
+    expect(applyAiExecutionTimeSuggestion(wizardDefaults, 'time', 30)).not.toHaveProperty('duration');
+    expect(applyAiRepsSuggestion(wizardDefaults, time)).not.toHaveProperty('duration');
+    expect(aiSuggestionParamDiffs(reps, wizardDefaults).duration).toBe(false);
   });
 });
 

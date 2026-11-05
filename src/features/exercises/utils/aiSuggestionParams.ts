@@ -3,7 +3,6 @@ import type { ExerciseSuggestionResponse } from '@/types/ai.types';
 export interface AiSuggestionParamsTarget {
   sets: number | null;
   reps: number | null;
-  duration: number | null;
   restSets: number | null;
   preparationTime: number | null;
   executionTime: number | null;
@@ -66,9 +65,9 @@ export function aiSuggestionSide<T extends string>(suggested: T, current: T): T 
  * Parametry ćwiczenia po „Zastosuj wszystko” z AI.
  *
  * - Brak albo zero w sugestii nie kasuje wartości, którą kreator już ma.
- * - Ćwiczenie na czas zapisuje czas w `executionTime` (jak preset „30s×3”), z `reps = 1`
- *   i bez legacy `duration`. Inaczej czas powtórzenia zostaje pusty.
- * - AI nie zapisuje legacy `duration`; `duration` z sugestii znaczy tylko czas utrzymania.
+ * - Ćwiczenie na czas zapisuje czas w `executionTime` (jak preset „30s×3”), z `reps = 1`.
+ *   Inaczej czas powtórzenia zostaje pusty.
+ * - Kreator nie ma legacy `duration`; `duration` z sugestii znaczy tylko czas utrzymania.
  */
 export function applyAiSuggestionParams(
   prev: AiSuggestionParamsTarget,
@@ -84,20 +83,19 @@ export function applyAiSuggestionParams(
   };
 
   if (timeBasedSeconds !== null) {
-    return { ...base, reps: 1, executionTime: timeBasedSeconds, duration: null };
+    return { ...base, reps: 1, executionTime: timeBasedSeconds };
   }
 
   return {
     ...base,
     reps: positiveAiNumber(suggestion.reps) ?? prev.reps,
-    duration: prev.duration,
     executionTime: executionTime ?? prev.executionTime,
   };
 }
 
 /**
  * Pojedyncze karty „Czas powtórzenia” i „Czas serii” z AI. Dla ćwiczenia na czas ten sam zapis
- * co „Zastosuj wszystko”: czas powtórzenia, `reps = 1`, bez legacy `duration`.
+ * co „Zastosuj wszystko”: czas powtórzenia i `reps = 1`.
  */
 export function applyAiExecutionTimeSuggestion(
   prev: AiSuggestionParamsTarget,
@@ -109,7 +107,7 @@ export function applyAiExecutionTimeSuggestion(
     return prev;
   }
   if (type === 'time') {
-    return { ...prev, reps: 1, executionTime: value, duration: null };
+    return { ...prev, reps: 1, executionTime: value };
   }
   return { ...prev, executionTime: value };
 }
