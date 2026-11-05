@@ -24,7 +24,8 @@ import { cn } from '@/lib/utils';
 
 import { loadPdfRenderer } from '@/components/pdf/loadPdfRenderer';
 import { formatExercises } from '@/components/pdf/polishUtils';
-import { preloadPdfExerciseImages, resolvePdfExerciseImageUrl, toPdfExercise } from '@/components/pdf/pdfExerciseUtils';
+import { preloadPdfExerciseImages, toPdfExercises } from '@/components/pdf/pdfExerciseUtils';
+import { downloadBlob } from '@/components/pdf/pdfOutput';
 import { preloadPdfImages } from '@/components/pdf/pdfImagePreloader';
 import type {
   PDFExerciseSet,
@@ -116,6 +117,8 @@ interface GeneratePDFDialogProps {
   onOpenChange: (open: boolean) => void;
   exerciseSet: ExerciseSetInput;
   patient?: PatientInput;
+  /** `exerciseOverrides` przypisania, gdy PDF jest kartą pacjenta; wygrywa z mappingiem. */
+  exerciseOverrides?: string | null;
   organizationId: string;
   therapistId?: string;
 }
@@ -127,6 +130,7 @@ export function GeneratePDFDialog({
   onOpenChange,
   exerciseSet,
   patient,
+  exerciseOverrides,
   organizationId,
   therapistId,
 }: GeneratePDFDialogProps) {
@@ -189,7 +193,7 @@ export function GeneratePDFDialog({
       };
 
       // Mapuj ćwiczenia
-      const pdfExercises: PDFExercise[] = (exerciseSet.exerciseMappings || []).map(toPdfExercise);
+      const pdfExercises: PDFExercise[] = toPdfExercises(exerciseSet.exerciseMappings, exerciseOverrides);
 
       // Preload images via server-side proxy → base64 dataURL.
       // Bypasses browser CORS with Azure CDN and converts WebP/AVIF to PNG.
@@ -255,15 +259,7 @@ export function GeneratePDFDialog({
 
       const fileName = `${safeName}${patientSuffix}_program.pdf`;
 
-      // Pobierz plik
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      downloadBlob(blob, fileName);
 
       toast.success('Pobrano PDF');
       if (process.env.NODE_ENV !== 'production' && shouldPreload && imageStats.total > 0) {
@@ -294,12 +290,12 @@ export function GeneratePDFDialog({
     }
   }, [open]);
 
-  const exerciseCount = exerciseSet.exerciseMappings?.length || 0;
+  // Liczniki z tych samych ćwiczeń co PDF: bez ukrytych dla pacjenta.
+  const printableExercises = toPdfExercises(exerciseSet.exerciseMappings, exerciseOverrides);
+  const exerciseCount = printableExercises.length;
   const exerciseCountText = formatExercises(exerciseCount);
 
-  const exercisesWithImageCount = (exerciseSet.exerciseMappings || []).filter(
-    (mapping) => !!resolvePdfExerciseImageUrl(mapping.exercise)
-  ).length;
+  const exercisesWithImageCount = printableExercises.filter((exercise) => !!exercise.imageUrl).length;
   const noImagesAvailable = exerciseCount > 0 && exercisesWithImageCount === 0;
 
   useEffect(() => {

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('../pdfImagePreloader', () => ({ preloadPdfImages: vi.fn() }));
 
-import { toPdfExercise } from '../pdfExerciseUtils';
+import { toPdfExercise, toPdfExercises } from '../pdfExerciseUtils';
 import { formatExecutionParameters } from '../pdfPageUtils';
 
 function pdfParams(mapping: Parameters<typeof toPdfExercise>[0]) {
@@ -40,5 +40,30 @@ describe('toPdfExercise + formatExecutionParameters (review #137, runda 3)', () 
     expect(items).toContainEqual({ label: 'Serie', value: '3' });
     expect(items).toContainEqual({ label: 'Powtórzenia', value: '10' });
     expect(items.find((item) => item.label === 'Czas')).toBeUndefined();
+  });
+});
+
+describe('toPdfExercises: personalizacja przypisania (exerciseOverrides)', () => {
+  const mappings = [
+    { id: 'm-1', order: 1, sets: 3, reps: 10, exercise: { name: 'Przysiad', type: 'REPS' } },
+    { id: 'm-2', order: 2, sets: 2, reps: 8, exercise: { name: 'Wykrok', type: 'REPS' } },
+  ];
+
+  it('override przypisania wygrywa z mappingiem zestawu', () => {
+    const [squat] = toPdfExercises(mappings, '{"m-1":{"sets":5,"reps":12,"customName":"Przysiad do krzesła"}}');
+    expect(squat.sets).toBe(5);
+    expect(squat.reps).toBe(12);
+    expect(squat.customName).toBe('Przysiad do krzesła');
+  });
+
+  it('ćwiczenie ukryte dla pacjenta nie trafia na kartę', () => {
+    const exercises = toPdfExercises(mappings, '{"m-2":{"hidden":true}}');
+    expect(exercises.map((exercise) => exercise.id)).toEqual(['m-1']);
+  });
+
+  it('bez overrides zostają parametry mappingu', () => {
+    const [squat] = toPdfExercises(mappings, null);
+    expect(squat.sets).toBe(3);
+    expect(squat.reps).toBe(10);
   });
 });
