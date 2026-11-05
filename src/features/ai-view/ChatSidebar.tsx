@@ -198,13 +198,14 @@ function SidebarBody({
         {!conversationsReady ? (
           <>
             <h2 className="px-2.5 pb-1.5 text-[12px] font-semibold text-label-tertiary">Ostatnie</h2>
-            <ul aria-busy="true" aria-label="Wczytywanie rozmów" data-testid="nav-chat-recent-loading">
+            <div role="status" data-testid="nav-chat-recent-loading">
+              <span className="sr-only">Wczytuję rozmowy</span>
               {RECENT_SKELETON_WIDTHS.map((width) => (
-                <li key={width} className="flex h-9 items-center px-2.5">
+                <div key={width} className="flex h-9 items-center px-2.5" aria-hidden="true">
                   <Skeleton className="h-3.5 rounded-full" style={{ width }} />
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
           </>
         ) : conversations.length === 0 ? (
           <>

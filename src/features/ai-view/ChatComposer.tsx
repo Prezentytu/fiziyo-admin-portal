@@ -338,7 +338,13 @@ export function ChatComposer({
             )}
             aria-hidden="true"
           >
-            <kbd className="font-sans">↵</kbd> wyślij · <kbd className="font-sans">⇧↵</kbd> nowa linia
+            {loading ? (
+              'Wyślesz po wczytaniu danych'
+            ) : (
+              <>
+                <kbd className="font-sans">↵</kbd> wyślij · <kbd className="font-sans">⇧↵</kbd> nowa linia
+              </>
+            )}
           </span>
           {/* The hint sits on a wrapper: a disabled button gets no hover, so its own title never shows. */}
           <span
@@ -372,11 +378,11 @@ export function ChatComposer({
           ) : loading ? (
             <span
               role="status"
-              aria-label="Wczytywanie danych gabinetu"
               data-testid="common-chat-composer-loading"
               className="inline-flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-fill-tertiary text-label-secondary [&_svg]:size-[18px]"
             >
               <Loader2 className="animate-spin" aria-hidden="true" />
+              <span className="sr-only">Wczytuję dane gabinetu</span>
             </span>
           ) : (
             <button
