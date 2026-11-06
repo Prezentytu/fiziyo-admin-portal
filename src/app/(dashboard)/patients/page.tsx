@@ -517,11 +517,13 @@ export default function PatientsPage() {
                   id: qrPatient.id,
                   name: qrPatient.fullname || 'Nieznany pacjent',
                   email: qrPatient.email,
+                  isShadowUser: qrPatient.isShadowUser,
                 }
               : null
           }
           therapistId={therapistId}
           organizationId={organizationId}
+          onCreatePlan={() => qrPatient && handleAssignSet(qrPatient)}
         />
       )}
     </PageSheet>

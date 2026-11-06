@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { toPdfExercises } from '@/components/pdf/pdfExerciseUtils';
 import { buildExerciseSetFromBuilder } from '../buildExerciseSetFromBuilder';
+import { buildAssignmentOverrideDeltasFromBuilder, stringifyAssignmentOverrides } from '../buildAssignmentOverrideDeltas';
 
 describe('buildExerciseSetFromBuilder', () => {
   it('maps all builder instances to exerciseMappings for PDF/success flows', () => {
@@ -39,5 +41,23 @@ describe('buildExerciseSetFromBuilder', () => {
       notes: 'Spokojne tempo',
       exercise: { id: 'exercise-2', name: 'Plank bokiem' },
     });
+  });
+
+  it('karta z ekranu sukcesu łączy mappingi buildera z deltami przypisania po instanceId', () => {
+    const builderInstances = [{ instanceId: 'instance-1', exerciseId: 'exercise-1' }];
+    const builderParams = new Map([
+      ['instance-1', { sets: 3, reps: 10, patientDescription: 'Opis dla pacjenta', exerciseSide: 'left' }],
+    ]);
+    const availableExercises = [{ id: 'exercise-1', name: 'Wykrok', type: 'reps', side: 'both' }];
+
+    const set = buildExerciseSetFromBuilder({ setId: 'set-1', setName: 'Plan', builderInstances, builderParams, availableExercises });
+    const overrides = stringifyAssignmentOverrides(
+      buildAssignmentOverrideDeltasFromBuilder(builderInstances, builderParams, availableExercises)
+    );
+    const [exercise] = toPdfExercises(set.exerciseMappings, overrides);
+
+    expect(exercise.description).toBe('Opis dla pacjenta');
+    expect(exercise.exerciseSide).toBe('left');
+    expect(exercise.sets).toBe(3);
   });
 });

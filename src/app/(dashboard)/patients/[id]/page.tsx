@@ -632,6 +632,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
             frequency: pdfAssignment.frequency,
           }}
           patient={{ id: patient.id, name: displayName, email: patient.email }}
+          exerciseOverrides={pdfAssignment.exerciseOverrides}
           organizationId={organizationId}
           therapistId={therapistId}
         />
@@ -646,9 +647,11 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
             id: patient.id,
             name: displayName,
             email: patient.email,
+            isShadowUser: patient.isShadowUser,
           }}
           therapistId={therapistId}
           organizationId={organizationId}
+          onCreatePlan={() => setIsAssignDialogOpen(true)}
         />
       )}
 

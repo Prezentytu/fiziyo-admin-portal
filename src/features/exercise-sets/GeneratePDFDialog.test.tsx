@@ -35,7 +35,6 @@ vi.mock('@/components/pdf', () => ({
   ExerciseSetPDF: () => null,
   formatExercises: (count: number) => `${count} ćwiczeń`,
   preloadPdfExerciseImages: vi.fn(async () => ({ total: 0, loaded: 0 })),
-  resolvePdfExerciseImageUrl: vi.fn(() => undefined),
 }));
 
 vi.mock('@/components/pdf/pdfImagePreloader', () => ({

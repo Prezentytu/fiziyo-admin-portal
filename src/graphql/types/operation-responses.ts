@@ -44,6 +44,7 @@ export interface PatientAssignmentListItem {
   startDate?: string | null;
   endDate?: string | null;
   status?: string | null;
+  exerciseOverrides?: string | null;
   frequency?: PatientAssignmentFrequency;
   exerciseSet?: {
     id: string;

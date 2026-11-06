@@ -45,7 +45,7 @@ export interface EffectiveTemplateSource {
     value?: number;
     unit?: string;
     text?: string;
-  };
+  } | null;
   loadType?: string;
   loadValue?: number;
   loadUnit?: string;
@@ -75,7 +75,7 @@ export interface EffectiveMappingSource {
     value?: number;
     unit?: string;
     text?: string;
-  };
+  } | null;
   loadType?: string;
   loadValue?: number;
   loadUnit?: string;

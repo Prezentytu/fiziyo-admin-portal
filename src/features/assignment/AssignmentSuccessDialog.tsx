@@ -13,18 +13,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ScheduleSummary } from '@/components/shared';
+import { patientInviteShareData } from '@/features/patients/utils/patientInviteMessage';
 import { toast } from 'sonner';
 
-import { loadPdfRenderer } from '@/components/pdf/loadPdfRenderer';
-import { preloadPdfExerciseImages, toPdfExercise } from '@/components/pdf/pdfExerciseUtils';
-import type {
-  PDFExerciseSet,
-  PDFOrganization,
-  PDFPatient,
-  PDFTherapist,
-  PDFOptions,
-  PDFExercise,
-} from '@/components/pdf';
+import { buildPatientCardPdf } from '@/components/pdf/patientCardPdf';
+import { downloadBlob, openPendingWindow, PRINT_UNAVAILABLE_MESSAGE, showPdfInWindow } from '@/components/pdf/pdfOutput';
+import { downloadQrSvgAsPng } from '@/lib/qrPng';
 
 import { GET_ORGANIZATION_BY_ID_QUERY } from '@/graphql/queries/organizations.queries';
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
@@ -54,6 +48,8 @@ interface AssignmentSuccessDialogProps {
   organizationId: string;
   /** Zestaw ćwiczeń z exerciseMappings */
   exerciseSet?: ExerciseSet;
+  /** `exerciseOverrides` przypisania (personalizacja, ukrycie) po id mappingów z `exerciseSet` */
+  exerciseOverrides?: string | null;
   /** Częstotliwość ćwiczeń */
   frequency?: Frequency;
   /** Data startu planu pacjenta */
@@ -76,6 +72,7 @@ export function AssignmentSuccessDialog({
   therapistId,
   organizationId,
   exerciseSet,
+  exerciseOverrides,
   frequency,
   startDate,
   endDate,
@@ -143,166 +140,48 @@ export function AssignmentSuccessDialog({
     }
   };
 
-  const handleDownloadQR = () => {
+  const handleDownloadQR = async () => {
     const svg = qrContainerRef.current?.querySelector('svg');
     if (!svg) return;
-
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const svgData = new XMLSerializer().serializeToString(svg);
-    const img = new Image();
-
-    canvas.width = 400;
-    canvas.height = 400;
-
-    img.onload = () => {
-      if (ctx) {
-        ctx.fillStyle = 'white';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-        const pngUrl = canvas.toDataURL('image/png');
-        const downloadLink = document.createElement('a');
-        downloadLink.href = pngUrl;
-        downloadLink.download = `QR-${selectedPatient.name.replaceAll(/\s+/g, '-')}.png`;
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        downloadLink.remove();
-
-        toast.success('QR kod pobrany');
-      }
-    };
-
-    // Convert SVG to base64
-    const encoder = new TextEncoder();
-    const data = encoder.encode(svgData);
-    const base64 = btoa(String.fromCodePoint(...data));
-    img.src = 'data:image/svg+xml;base64,' + base64;
+    try {
+      await downloadQrSvgAsPng(svg, `QR-${selectedPatient.name.replaceAll(/\s+/g, '-')}.png`);
+      toast.success('QR kod pobrany');
+    } catch (error) {
+      toast.error('Nie udało się pobrać kodu QR', {
+        description: error instanceof Error ? error.message : undefined,
+      });
+    }
   };
 
-  // Generuj PDF z kartą pacjenta
-  const generatePatientCardPDF = async (download: boolean = false) => {
+  const runPdfAction = async (action: (pdf: { blob: Blob; fileName: string }) => void, pending: Window | null = null) => {
     if (!organization || !exerciseSet) {
+      pending?.close();
       toast.error('Brak danych do wygenerowania PDF');
       return;
     }
-
     setIsGeneratingPDF(true);
-
     try {
-      // Przygotuj dane organizacji
-      const pdfOrganization: PDFOrganization = {
-        name: organization.name || 'Gabinet Fizjoterapii',
-        logoUrl: organization.logoUrl,
-        address: organization.address,
-        phone: organization.contactPhone,
-        email: organization.contactEmail,
-        website: organization.website,
-      };
-
-      // Mapuj ćwiczenia z exerciseMappings
-      const pdfExercises: PDFExercise[] = (exerciseSet.exerciseMappings || []).map(toPdfExercise);
-      await preloadPdfExerciseImages(pdfExercises);
-
-      const pdfExerciseSet: PDFExerciseSet = {
-        id: exerciseSet.id,
-        name: setName || exerciseSet.name,
-        description: exerciseSet.description,
-        exercises: pdfExercises,
-        startDate: startDate?.toISOString(),
-        endDate: endDate?.toISOString(),
-        frequency: frequency
-          ? {
-              timesPerDay: frequency.timesPerDay,
-              timesPerWeek: frequency.timesPerWeek,
-              breakBetweenSets: frequency.breakBetweenSets,
-              monday: frequency.monday,
-              tuesday: frequency.tuesday,
-              wednesday: frequency.wednesday,
-              thursday: frequency.thursday,
-              friday: frequency.friday,
-              saturday: frequency.saturday,
-              sunday: frequency.sunday,
-            }
-          : undefined,
-      };
-
-      const pdfPatient: PDFPatient = {
-        name: selectedPatient.name,
-        email: selectedPatient.email,
-      };
-
-      const pdfTherapist: PDFTherapist | undefined = therapistUser?.fullname
-        ? { name: therapistUser.fullname }
-        : undefined;
-
-      const pdfOptions: PDFOptions = {
-        showImages: true,
-        showFrequency: !!frequency,
-        showQRCode: true,
-        compactMode: false,
-        notes: undefined,
-      };
-
-      // Pobierz QR code
-      const qrCodeDataUrl = getQRCodeDataUrl();
-
-      // Generuj dokument PDF
-      const { pdf, ExerciseSetPDF } = await loadPdfRenderer();
-      const doc = (
-        <ExerciseSetPDF
-          exerciseSet={pdfExerciseSet}
-          organization={pdfOrganization}
-          patient={pdfPatient}
-          therapist={pdfTherapist}
-          options={pdfOptions}
-          qrCodeDataUrl={qrCodeDataUrl}
-          joinUrl={joinUrl ?? undefined}
-        />
+      action(
+        await buildPatientCardPdf({
+          organization,
+          patient: selectedPatient,
+          therapistName: therapistUser?.fullname,
+          plan: {
+            id: exerciseSet.id,
+            name: setName || exerciseSet.name,
+            description: exerciseSet.description,
+            exerciseMappings: exerciseSet.exerciseMappings,
+            exerciseOverrides,
+            frequency,
+            startDate: startDate?.toISOString(),
+            endDate: endDate?.toISOString(),
+          },
+          qrCodeDataUrl: getQRCodeDataUrl(),
+          joinUrl: joinUrl ?? undefined,
+        })
       );
-
-      const blob = await pdf(doc).toBlob();
-
-      // Przygotuj nazwę pliku
-      const safeName = setName
-        .replaceAll(/[^a-zA-Z0-9ąćęłńóśźżĄĆĘŁŃÓŚŹŻ\s-]/g, '')
-        .replaceAll(/\s+/g, '_')
-        .substring(0, 50);
-      const patientSuffix = `_${selectedPatient.name.split(' ')[0]}`;
-      const fileName = `Karta_Pacjenta_${safeName}${patientSuffix}.pdf`;
-
-      if (download) {
-        // Pobierz plik
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        URL.revokeObjectURL(url);
-        toast.success('PDF pobrany');
-      } else {
-        // Otwórz w nowym oknie i drukuj
-        const url = URL.createObjectURL(blob);
-        const printWindow = window.open(url, '_blank');
-        if (printWindow) {
-          printWindow.onload = () => {
-            printWindow.print();
-          };
-        } else {
-          // Fallback - pobierz jeśli nie można otworzyć okna
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = fileName;
-          document.body.appendChild(link);
-          link.click();
-          link.remove();
-          toast.info('Pobrano PDF - otwórz i wydrukuj');
-        }
-        URL.revokeObjectURL(url);
-      }
     } catch (error) {
+      pending?.close();
       const message = error instanceof Error ? error.message : 'Nieznany błąd';
       toast.error('Nie udało się wygenerować PDF', { description: message });
     } finally {
@@ -310,8 +189,22 @@ export function AssignmentSuccessDialog({
     }
   };
 
-  const handlePrintCard = () => generatePatientCardPDF(false);
-  const handleDownloadPDF = () => generatePatientCardPDF(true);
+  // Karta otwarta w geście kliknięcia; `window.open` po await blokuje popup blocker.
+  const handlePrintCard = () => {
+    const pending = openPendingWindow();
+    void runPdfAction(({ blob, fileName }) => {
+      const onPrintUnavailable = () => toast.info(PRINT_UNAVAILABLE_MESSAGE);
+      if (showPdfInWindow(blob, pending, fileName, { print: true, onPrintUnavailable }) === 'downloaded') {
+        toast.info('Przeglądarka zablokowała nową kartę - pobrano PDF, otwórz i wydrukuj');
+      }
+    }, pending);
+  };
+
+  const handleDownloadPDF = () =>
+    runPdfAction(({ blob, fileName }) => {
+      downloadBlob(blob, fileName);
+      toast.success('PDF pobrany');
+    });
 
   const handleShare = async () => {
     if (!joinUrl) {
@@ -320,11 +213,9 @@ export function AssignmentSuccessDialog({
     }
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: `FiziYo - Program ćwiczeń dla ${selectedPatient.name}`,
-          text: 'Zeskanuj kod QR lub kliknij link, aby połączyć się z aplikacją FiziYo',
-          url: joinUrl ?? undefined,
-        });
+        await navigator.share(
+          patientInviteShareData({ patientName: selectedPatient.name, organizationName: organization?.name, joinUrl })
+        );
       } catch {
         // User cancelled
       }
@@ -472,7 +363,7 @@ export function AssignmentSuccessDialog({
                 data-testid="assign-success-share-btn"
               >
                 <Share2 className="h-3.5 w-3.5 mr-1.5" />
-                Wyślij link
+                Udostępnij link
               </Button>
               <Button
                 variant="outline"
@@ -532,7 +423,7 @@ export function AssignmentSuccessDialog({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={handleDownloadQR}
+                  onClick={() => void handleDownloadQR()}
                   disabled={!canRenderQr}
                   className="justify-start text-xs text-muted-foreground h-8"
                   data-testid="assign-success-download-qr-btn"

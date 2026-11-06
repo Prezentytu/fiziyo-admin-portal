@@ -120,6 +120,8 @@ interface SuccessDialogData {
   assignmentMode: AssignmentExecutionMode;
   premiumValidUntil: string | null;
   exerciseSet: ExerciseSet;
+  /** Delty przypisania kluczowane `instanceId`, czyli tym samym id co `exerciseSet.exerciseMappings` z buildera. */
+  exerciseOverrides: string | null;
   frequency: Frequency;
   startDate: Date;
   endDate: Date;
@@ -209,6 +211,7 @@ export function AssignmentWizard(props: AssignmentWizardProps) {
           therapistId={therapistId}
           organizationId={organizationId}
           exerciseSet={successData.exerciseSet}
+          exerciseOverrides={successData.exerciseOverrides}
           frequency={successData.frequency}
           startDate={successData.startDate}
           endDate={successData.endDate}
@@ -1533,6 +1536,7 @@ function AssignmentWizardContent({
         assignmentMode: assignmentPlanDecision.mode,
         premiumValidUntil: lastPremiumValidUntil,
         exerciseSet: effectiveSetForSuccess,
+        exerciseOverrides: stringifyAssignmentOverrides(deltasByInstanceId),
         frequency,
         startDate,
         endDate,

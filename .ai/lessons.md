@@ -18,6 +18,14 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 
 ## Wpisy
 
+### 2026-11-05 - Karta pacjenta drukowała zestaw zamiast planu pacjenta
+
+- **Kategoria**: `Data` | `UI/UX`
+- **Problem**: Dialog „Dostęp” pomijał `exerciseOverrides` i ukryte ćwiczenia przypisania, a zakończone plany pokazywał jako aktywne.
+- **Przyczyna**: Plan składany z zestawu zamiast z przypisania, z własną regułą statusu.
+- **Rozwiązanie**: `buildPatientAccessPlans` i `toPdfExercises(mappings, exerciseOverrides)`.
+- **Reguła**: PDF dla pacjenta składaj z przypisania przez `toPdfExercises`. [egzekwowane: src/components/pdf/__tests__/toPdfExercise.test.ts]
+
 ### 2026-11-04 - Narzędzie AI edytora niewłączone na żadnym wejściu
 
 - **Kategoria**: `UI/UX` | `React`
@@ -281,13 +289,5 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 - **Przyczyna**: Trzy niezależne artefakty formularza z lokalnymi listami pól zamiast jednego field-setu z intencją (Salesforce page-layout tax).
 - **Rozwiązanie**: `fieldContract.ts` jako SSOT (tier, surfaces, zod, options) + etykiety z `displayRegistry`; `ExerciseParametersEditor` / `ExerciseEditor` współdzielone; create = lean subset; usunięto `ExerciseForm` i martwe legacy edytory.
 - **Reguła**: Dla danych domenowych edytowanych w wielu miejscach utrzymuj jeden kontrakt pól. Powierzchnia może różnić layout i podzbiór (create-as-prefix), nigdy etykietę, walidację ani mapowanie na mutację. Guardrail: test kompletności kontraktu + integralność testid. [egzekwowane: src/components/shared/exercise/__tests__/fieldContract.test.ts]
-
-### 2026-06-12 - Ekosystem skilli wymaga source-of-truth i automatycznego linta
-
-- **Kategoria**: `Build/Tooling`
-- **Problem**: Skille były rozwijane ręcznie bez jednego źródła prawdy i bez automatycznego wykrywania dryfu między katalogami, frontmatter i warstwą `.cursor/skills`.
-- **Przyczyna**: `skills:sync` kopiował pliki, ale nie walidował manifestu tierów ani obowiązkowych pól (`name`, `description`) i nie miał dedykowanego gate'a CI.
-- **Rozwiązanie**: Dodano `.ai/skills/manifest.json`, walidację frontmatter + dryf manifestu w `scripts/sync-cursor-skills.mjs`, nowy krok `skills:lint` oraz egzekwowanie go w CI.
-- **Reguła**: Jeśli proces opiera się na katalogu instrukcji (skills/rules), zawsze utrzymuj manifest jako source-of-truth i uruchamiaj lint governance w CI; sama synchronizacja plików nie wystarcza. [egzekwowane: .github/workflows/ci.yml `skills:lint`]
 
 <!-- Nowe wpisy dodawaj na górze sekcji Wpisy, nie tutaj. -->
