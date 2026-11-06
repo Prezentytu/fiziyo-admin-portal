@@ -43,6 +43,23 @@ vi.mock('@/components/pdf', () => ({
 
 const patient = { id: 'pat-1', name: 'Jan Testowy', email: 'jan@example.com' };
 
+const MAPPINGS = [{ id: 'm-1', order: 1, sets: 3, reps: 10, exercise: { name: 'Przysiad', type: 'REPS' } }];
+
+function assignment(overrides: Record<string, unknown> = {}) {
+  return {
+    id: 'a-1',
+    status: 'assigned',
+    exerciseSet: { id: 'set-1', name: 'Plan kolano', exerciseMappings: MAPPINGS },
+    ...overrides,
+  };
+}
+
+function renderDialog() {
+  return render(
+    <PatientQRCodeDialog open onOpenChange={vi.fn()} patient={patient} organizationId="org-9" therapistId="th-2" />
+  );
+}
+
 describe('PatientQRCodeDialog QR payload', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -117,13 +134,7 @@ describe('PatientQRCodeDialog karta pacjenta', () => {
   });
 
   it('podgląd otwiera kartę od razu w geście kliknięcia', () => {
-    queryState.patientAssignments = [
-      {
-        id: 'a-1',
-        status: 'assigned',
-        exerciseSet: { id: 'set-1', name: 'Plan kolano', exerciseMappings: [] },
-      },
-    ];
+    queryState.patientAssignments = [assignment()];
     const pending = { document: { title: '', body: { textContent: '' } }, close: vi.fn(), closed: false };
     const openSpy = vi.spyOn(window, 'open').mockReturnValue(pending as unknown as Window);
 
@@ -134,5 +145,23 @@ describe('PatientQRCodeDialog karta pacjenta', () => {
     fireEvent.click(screen.getByTestId('patient-qr-preview-btn'));
     expect(openSpy).toHaveBeenCalledWith('', '_blank');
     openSpy.mockRestore();
+  });
+
+  it('jedyny plan nieaktywny jest oznaczony także bez listy wyboru', () => {
+    queryState.patientAssignments = [assignment({ status: 'completed' })];
+    renderDialog();
+
+    expect(screen.queryByTestId('patient-qr-plan-select')).not.toBeInTheDocument();
+    expect(screen.getByTestId('patient-qr-plan-inactive')).toBeInTheDocument();
+  });
+
+  it('plan z samymi ukrytymi ćwiczeniami nie drukuje pustej karty', () => {
+    queryState.patientAssignments = [assignment({ exerciseOverrides: '{"m-1":{"hidden":true}}' })];
+    renderDialog();
+
+    expect(screen.getByTestId('patient-qr-plan-empty')).toBeInTheDocument();
+    expect(screen.getByTestId('patient-qr-print-btn')).toBeDisabled();
+    expect(screen.getByTestId('patient-qr-download-pdf-btn')).toBeDisabled();
+    expect(screen.getByTestId('patient-qr-preview-btn')).toBeDisabled();
   });
 });

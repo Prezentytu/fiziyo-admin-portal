@@ -34,17 +34,27 @@ export function openPendingWindow(): Window | null {
   return pending;
 }
 
+export const PRINT_UNAVAILABLE_MESSAGE = 'Karta jest otwarta. Wydrukuj ją z przeglądarki (Ctrl+P albo ⌘P).';
+
 const PRINT_POLL_MS = 200;
 const PRINT_POLL_LIMIT = 50;
 
-/** Woła `print()`, gdy karta skończy ładować PDF; przy braku dostępu zostawia druk użytkownikowi. */
-function printWhenLoaded(target: Window, url: string) {
+/**
+ * Woła `print()`, gdy karta skończy ładować PDF.
+ * Gdy się nie da (limit czasu, brak dostępu do karty), mówi o tym przez `onUnavailable`, żeby druk nie przepadł po cichu.
+ */
+function printWhenLoaded(target: Window, url: string, onUnavailable?: () => void) {
   let attempts = 0;
   const timer = setInterval(() => {
     attempts += 1;
     try {
-      if (target.closed || attempts > PRINT_POLL_LIMIT) {
+      if (target.closed) {
         clearInterval(timer);
+        return;
+      }
+      if (attempts > PRINT_POLL_LIMIT) {
+        clearInterval(timer);
+        onUnavailable?.();
         return;
       }
       if (target.location.href === url && target.document.readyState === 'complete') {
@@ -54,6 +64,7 @@ function printWhenLoaded(target: Window, url: string) {
       }
     } catch {
       clearInterval(timer);
+      onUnavailable?.();
     }
   }, PRINT_POLL_MS);
 }
@@ -66,7 +77,7 @@ export function showPdfInWindow(
   blob: Blob,
   pending: Window | null,
   fileName: string,
-  options: { print?: boolean } = {}
+  options: { print?: boolean; onPrintUnavailable?: () => void } = {}
 ): 'opened' | 'downloaded' {
   if (!pending || pending.closed) {
     downloadBlob(blob, fileName);
@@ -74,7 +85,7 @@ export function showPdfInWindow(
   }
   const url = URL.createObjectURL(blob);
   pending.location.href = url;
-  if (options.print) printWhenLoaded(pending, url);
+  if (options.print) printWhenLoaded(pending, url, options.onPrintUnavailable);
   revokeLater(url);
   return 'opened';
 }

@@ -56,6 +56,23 @@ describe('toPdfExercises: personalizacja przypisania (exerciseOverrides)', () =>
     expect(squat.customName).toBe('Przysiad do krzesła');
   });
 
+  it('opis z personalizacji przypisania wygrywa z opisem zestawu i nic go nie nadpisuje na wydruku', () => {
+    const [squat] = toPdfExercises(
+      [{ ...mappings[0], customDescription: 'Opis zestawu' }],
+      '{"m-1":{"patientDescription":"Opis dla pacjenta"}}'
+    );
+    expect(squat.description).toBe('Opis dla pacjenta');
+    // ExercisePDFItem pokazuje tylko `description`; drugie pole z opisem mappingu wygrywało z personalizacją.
+    expect(Object.keys(squat)).not.toContain('customDescription');
+  });
+
+  it('bez personalizacji opis zestawu wygrywa z opisem ćwiczenia', () => {
+    const [squat] = toPdfExercises([
+      { ...mappings[0], customDescription: 'Opis zestawu', exercise: { ...mappings[0].exercise, description: 'Szablon' } },
+    ]);
+    expect(squat.description).toBe('Opis zestawu');
+  });
+
   it('ćwiczenie ukryte dla pacjenta nie trafia na kartę', () => {
     const exercises = toPdfExercises(mappings, '{"m-2":{"hidden":true}}');
     expect(exercises.map((exercise) => exercise.id)).toEqual(['m-1']);

@@ -86,7 +86,6 @@ export function toPdfExercise(mapping: PdfMappingSource, override?: ExerciseOver
     restReps: effective.restReps,
     order: mapping.order,
     customName: effective.customName,
-    customDescription: effective.customDescription,
   };
 }
 

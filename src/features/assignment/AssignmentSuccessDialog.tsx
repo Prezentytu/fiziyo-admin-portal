@@ -17,7 +17,7 @@ import { toast } from 'sonner';
 
 import { loadPdfRenderer } from '@/components/pdf/loadPdfRenderer';
 import { preloadPdfExerciseImages, toPdfExercises } from '@/components/pdf/pdfExerciseUtils';
-import { downloadBlob, openPendingWindow, showPdfInWindow } from '@/components/pdf/pdfOutput';
+import { downloadBlob, openPendingWindow, PRINT_UNAVAILABLE_MESSAGE, showPdfInWindow } from '@/components/pdf/pdfOutput';
 import { downloadQrSvgAsPng } from '@/lib/qrPng';
 import type {
   PDFExerciseSet,
@@ -56,6 +56,8 @@ interface AssignmentSuccessDialogProps {
   organizationId: string;
   /** Zestaw ćwiczeń z exerciseMappings */
   exerciseSet?: ExerciseSet;
+  /** `exerciseOverrides` przypisania (personalizacja, ukrycie) po id mappingów z `exerciseSet` */
+  exerciseOverrides?: string | null;
   /** Częstotliwość ćwiczeń */
   frequency?: Frequency;
   /** Data startu planu pacjenta */
@@ -78,6 +80,7 @@ export function AssignmentSuccessDialog({
   therapistId,
   organizationId,
   exerciseSet,
+  exerciseOverrides,
   frequency,
   startDate,
   endDate,
@@ -180,7 +183,7 @@ export function AssignmentSuccessDialog({
       };
 
       // Mapuj ćwiczenia z exerciseMappings
-      const pdfExercises: PDFExercise[] = toPdfExercises(exerciseSet.exerciseMappings);
+      const pdfExercises: PDFExercise[] = toPdfExercises(exerciseSet.exerciseMappings, exerciseOverrides);
       await preloadPdfExerciseImages(pdfExercises);
 
       const pdfExerciseSet: PDFExerciseSet = {
@@ -253,7 +256,10 @@ export function AssignmentSuccessDialog({
       if (download) {
         downloadBlob(blob, fileName);
         toast.success('PDF pobrany');
-      } else if (showPdfInWindow(blob, pending, fileName, { print: true }) === 'downloaded') {
+      } else if (showPdfInWindow(blob, pending, fileName, {
+          print: true,
+          onPrintUnavailable: () => toast.info(PRINT_UNAVAILABLE_MESSAGE),
+        }) === 'downloaded') {
         toast.info('Przeglądarka zablokowała nową kartę - pobrano PDF, otwórz i wydrukuj');
       }
     } catch (error) {

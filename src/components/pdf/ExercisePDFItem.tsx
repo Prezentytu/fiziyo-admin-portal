@@ -21,7 +21,7 @@ interface ExercisePDFItemProps {
  */
 export function ExercisePDFItem({ exercise, index, showImage, compact }: ExercisePDFItemProps) {
   const displayName = exercise.customName || exercise.name;
-  const displayDescription = exercise.customDescription || exercise.description;
+  const displayDescription = exercise.description;
   const imageUrl = exercise.imageUrl?.startsWith('data:')
     ? exercise.imageUrl
     : getMediaUrl(exercise.imageUrl);

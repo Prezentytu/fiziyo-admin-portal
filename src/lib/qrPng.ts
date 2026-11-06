@@ -1,7 +1,8 @@
 /**
  * Eksport kodu QR (SVG z qrcode.react) do PNG.
  * SVG wczytany przez <img> nie pobiera zewnętrznych zasobów, więc logo w środku kodu
- * trzeba wcześniej wpisać jako data URL; inaczej w PNG zostaje biała dziura.
+ * trzeba wcześniej wpisać jako data URL. Logo to dekoracja: gdy się nie pobierze, znika,
+ * a kod (poziom korekcji H, wycięte tło) dalej się skanuje.
  */
 
 function blobToDataUrl(blob: Blob): Promise<string> {
@@ -20,7 +21,7 @@ async function toDataUrl(href: string): Promise<string> {
   return blobToDataUrl(await response.blob());
 }
 
-/** Kopia SVG z obrazami wpisanymi jako data URL. Oryginał w DOM zostaje bez zmian. */
+/** Kopia SVG z obrazami wpisanymi jako data URL; obraz, którego nie da się pobrać, jest usuwany. Oryginał w DOM zostaje bez zmian. */
 export async function inlineSvgImages(svg: SVGSVGElement): Promise<SVGSVGElement> {
   const clone = svg.cloneNode(true) as SVGSVGElement;
   const images = Array.from(clone.querySelectorAll('image'));
@@ -28,8 +29,12 @@ export async function inlineSvgImages(svg: SVGSVGElement): Promise<SVGSVGElement
     images.map(async (image) => {
       const href = image.getAttribute('href') ?? image.getAttribute('xlink:href');
       if (!href) return;
-      image.setAttribute('href', await toDataUrl(href));
-      image.removeAttribute('xlink:href');
+      try {
+        image.setAttribute('href', await toDataUrl(href));
+        image.removeAttribute('xlink:href');
+      } catch {
+        image.remove();
+      }
     })
   );
   return clone;

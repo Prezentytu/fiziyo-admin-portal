@@ -25,9 +25,12 @@ describe('inlineSvgImages', () => {
     expect(svg.querySelector('image')?.getAttribute('href')).toBe('/images/icon.png');
   });
 
-  it('nieudane pobranie logo kończy się błędem zamiast cichego PNG z dziurą', async () => {
+  it('nieudane pobranie logo usuwa logo, a kod zostaje (poziom korekcji H skanuje się bez niego)', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(null, { status: 404 })));
 
-    await expect(inlineSvgImages(qrSvgWithLogo('/images/icon.png'))).rejects.toThrow('/images/icon.png');
+    const inlined = await inlineSvgImages(qrSvgWithLogo('/images/icon.png'));
+
+    expect(inlined.querySelector('image')).toBeNull();
+    expect(inlined.querySelector('path')).not.toBeNull();
   });
 });

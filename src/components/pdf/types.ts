@@ -18,7 +18,6 @@ export interface PDFExercise {
   restReps?: number;
   order?: number;
   customName?: string;
-  customDescription?: string;
 }
 
 export interface PDFFrequency {

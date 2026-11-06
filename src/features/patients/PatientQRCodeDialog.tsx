@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 
 import { loadPdfRenderer } from '@/components/pdf/loadPdfRenderer';
 import { preloadPdfExerciseImages, toPdfExercises } from '@/components/pdf/pdfExerciseUtils';
-import { downloadBlob, openPendingWindow, showPdfInWindow } from '@/components/pdf/pdfOutput';
+import { PRINT_UNAVAILABLE_MESSAGE, downloadBlob, openPendingWindow, showPdfInWindow } from '@/components/pdf/pdfOutput';
 import type {
   PDFExerciseSet,
   PDFOrganization,
@@ -194,7 +194,8 @@ export function PatientQRCodeDialog({
   const hasPlans = plans.length > 0;
   const hasMultiplePlans = plans.length > 1;
   const exerciseCount = selectedPlan ? toPdfExercises(selectedPlan.exerciseMappings, selectedPlan.exerciseOverrides).length : 0;
-  const canGeneratePdf = !isGeneratingPDF && !!organization && !!selectedPlan;
+  // Karta bez ćwiczeń (wszystkie ukryte dla pacjenta) nie ma czego pokazać.
+  const canGeneratePdf = !isGeneratingPDF && !!organization && !!selectedPlan && exerciseCount > 0;
 
   const handleCopyLink = async () => {
     if (!joinUrl) {
@@ -312,7 +313,8 @@ export function PatientQRCodeDialog({
     const pending = openPendingWindow();
     void runPdfAction(
       ({ blob, fileName }) => {
-        if (showPdfInWindow(blob, pending, fileName, { print }) === 'downloaded') {
+        const onPrintUnavailable = () => toast.info(PRINT_UNAVAILABLE_MESSAGE);
+        if (showPdfInWindow(blob, pending, fileName, { print, onPrintUnavailable }) === 'downloaded') {
           toast.info(
             print
               ? 'Przeglądarka zablokowała nową kartę - pobrano PDF, otwórz i wydrukuj'
@@ -508,6 +510,16 @@ export function PatientQRCodeDialog({
                     <p className="text-xs text-muted-foreground text-center max-w-[180px]">
                       {selectedPlan?.name || 'Wydruk A4 z Twoim logo.'}
                     </p>
+                    {selectedPlan && !selectedPlan.isActive && (
+                      <p className="text-xs text-muted-foreground mt-1" data-testid="patient-qr-plan-inactive">
+                        Plan nieaktywny
+                      </p>
+                    )}
+                    {selectedPlan && exerciseCount === 0 && (
+                      <p className="text-xs text-muted-foreground mt-1" data-testid="patient-qr-plan-empty">
+                        Wszystkie ćwiczenia są ukryte dla pacjenta
+                      </p>
+                    )}
                   </div>
 
                   {/* 3. AKCJE - identyczna struktura jak lewa */}
