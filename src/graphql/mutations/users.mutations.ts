@@ -133,8 +133,6 @@ export const CREATE_SHADOW_PATIENT_MUTATION = gql`
       email
       isShadowUser
       hasPassword
-      activationToken
-      activationTokenExpiry
       systemRole
       defaultOrganizationId
       organizationIds

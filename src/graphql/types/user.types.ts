@@ -51,8 +51,6 @@ export interface User {
   defaultOrganizationId?: string;
   isShadowUser?: boolean;
   hasPassword: boolean;
-  activationToken?: string;
-  activationTokenExpiry?: string;
   personalData: PersonalDataUser;
   contactData: ContactData;
   isActive: boolean;
