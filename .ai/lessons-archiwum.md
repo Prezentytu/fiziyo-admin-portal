@@ -1,6 +1,6 @@
 # Lessons — archiwum
 
-Wpisy przeniesione z `.ai/lessons.md`: starsze niż 30 dni w chwili przeniesienia i bez markera `[egzekwowane:]`. Szukasz tu tak samo, `rg` po słowie kluczowym, bez czytania całości. Kolejność jak w źródle.
+Wpisy przeniesione z `.ai/lessons.md`: starsze niż 30 dni w chwili przeniesienia, najpierw bez markera `[egzekwowane:]`, a gdy takich brak, najstarsze z markerem (ich przypadek łapie wskazany check). Szukasz tu tak samo, `rg` po słowie kluczowym, bez czytania całości. Kolejność jak w źródle.
 
 ## Wpisy
 
@@ -1091,3 +1091,19 @@ Wpisy przeniesione z `.ai/lessons.md`: starsze niż 30 dni w chwili przeniesieni
 - **Przyczyna**: `duration` to legacy override time-based; encja mapping nie miała kolumn klasyfikacji/treści — tylko assignment `exerciseOverrides`.
 - **Rozwiązanie**: `duration` → `DEPRECATED_FIELD_KEYS` + legacy clear row; addytywne `ExerciseSetMapping.overridesJson` zawsze w kontrakcie admina (deploy razem z backendem). Precedencja resolvera: assignment > mapping JSON > columns > template.
 - **Reguła**: Czas serii pokazuj jako wyliczenie; edytuj `executionTime`. Personalizacja szablonu zestawu ≠ personalizacja pacjenta — osobne warstwy JSON, ten sam kształt kluczy. Addytywne pola GraphQL wdrażaj razem z backendem.
+
+### 2026-10-15 - Etykiety UI to kontrakt z E2E
+
+- **Kategoria**: `Testing`
+- **Problem**: Przebudowa wg canvasu zmieniała widoczne teksty („Przypisz zestaw”, „Wymaga uwagi”), a `fiziyo-tests` szuka przycisków i zakładek po dostępnej nazwie (`getByRole(..., { name })`), nie tylko po `data-testid`.
+- **Przyczyna**: POM-y w `fiziyo-tests/src/pages/*` używają nazw jak „Personalizuj i przypisz zestaw ćwiczeń pacjentowi”, `/Brak aktywności/`, `/Nowy pacjent w systemie/`.
+- **Rozwiązanie**: Nazwy z E2E zostały w `aria-label` (z widocznym tekstem w środku) albo w etykiecie; zmiana tekstów idzie z równoległym PR w `fiziyo-tests`.
+- **Reguła**: Jeśli zmieniasz tekst przycisku, zakładki albo nagłówka, najpierw `git grep` w `fiziyo-tests` na `origin/main`. Zwykły string w Playwright = fragment bez wielkości liter (wielkość liter wolno zmienić), regex i `exact: true` = nie.
+
+### 2026-06-12 - Ekosystem skilli wymaga source-of-truth i automatycznego linta
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: Skille były rozwijane ręcznie bez jednego źródła prawdy i bez automatycznego wykrywania dryfu między katalogami, frontmatter i warstwą `.cursor/skills`.
+- **Przyczyna**: `skills:sync` kopiował pliki, ale nie walidował manifestu tierów ani obowiązkowych pól (`name`, `description`) i nie miał dedykowanego gate'a CI.
+- **Rozwiązanie**: Dodano `.ai/skills/manifest.json`, walidację frontmatter + dryf manifestu w `scripts/sync-cursor-skills.mjs`, nowy krok `skills:lint` oraz egzekwowanie go w CI.
+- **Reguła**: Jeśli proces opiera się na katalogu instrukcji (skills/rules), zawsze utrzymuj manifest jako source-of-truth i uruchamiaj lint governance w CI; sama synchronizacja plików nie wystarcza. [egzekwowane: .github/workflows/ci.yml `skills:lint`]

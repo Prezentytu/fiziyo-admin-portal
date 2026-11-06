@@ -29,6 +29,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Logo } from '@/components/shared/Logo';
 import { NavCountBadge } from '@/components/layout/NavCountBadge';
 import { OrganizationSwitchMenuItems } from '@/components/layout/OrganizationSwitchMenuItems';
@@ -66,6 +67,9 @@ const NAV_ROWS: readonly NavRow[] = [
   { label: 'Ćwiczenia', href: '/exercises', icon: Dumbbell, testId: 'nav-chat-exercises-link' },
 ];
 
+/** Rows of different length read as titles, not as a progress bar. */
+const RECENT_SKELETON_WIDTHS = ['72%', '54%', '80%', '46%', '64%'] as const;
+
 const MENU_ICON_CLASS = 'size-[18px] shrink-0 text-label-secondary';
 
 const ROW_CLASS =
@@ -88,6 +92,7 @@ function SidebarBody({
     inactiveCount,
     credits,
     conversations,
+    conversationsReady,
     activeConversationId,
     startConversation,
     openConversation,
@@ -190,7 +195,19 @@ function SidebarBody({
       </nav>
 
       <section aria-label="Ostatnie rozmowy" className="mt-4 flex min-h-0 flex-1 flex-col">
-        {conversations.length === 0 ? (
+        {!conversationsReady ? (
+          <>
+            <h2 className="px-2.5 pb-1.5 text-[12px] font-semibold text-label-tertiary">Ostatnie</h2>
+            <div role="status" data-testid="nav-chat-recent-loading">
+              <span className="sr-only">Wczytuję rozmowy</span>
+              {RECENT_SKELETON_WIDTHS.map((width) => (
+                <div key={width} className="flex h-9 items-center px-2.5" aria-hidden="true">
+                  <Skeleton className="h-3.5 rounded-full" style={{ width }} />
+                </div>
+              ))}
+            </div>
+          </>
+        ) : conversations.length === 0 ? (
           <>
             <h2 className="px-2.5 pb-1.5 text-[12px] font-semibold text-label-tertiary">Ostatnie</h2>
             <p className="px-2.5 text-[13px] text-label-tertiary">Tu pojawią się Twoje rozmowy.</p>

@@ -172,11 +172,15 @@ export interface VoiceParseResponse {
 
 export type ImageStyle = 'illustration' | 'diagram' | 'photo';
 
+/** Faza ruchu na obrazie: pozycja wyjściowa albo końcowa. */
+export type ExerciseImagePhase = 'start' | 'end';
+
 export interface ExerciseImageRequest {
   exerciseName: string;
   exerciseDescription?: string;
   exerciseType?: 'reps' | 'time';
   style?: ImageStyle;
+  phase?: ExerciseImagePhase;
 }
 
 export type ExerciseImageErrorCode =

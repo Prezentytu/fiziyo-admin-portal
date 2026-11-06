@@ -40,6 +40,8 @@ export interface ChatSession {
   therapistId?: string;
   firstName?: string;
   isReady: boolean;
+  /** The organization or the chat data are still loading; false once loading ends, ready or not. */
+  isLoading: boolean;
   useAi: boolean;
   setUseAi: (useAi: boolean) => void;
   patients: readonly ChatPatient[];
@@ -65,6 +67,8 @@ export interface ChatSession {
     attachmentName?: string
   ) => Promise<boolean>;
   conversations: readonly StoredConversation[];
+  /** History is read once the account and organization are known; until then the list is not empty, just unknown. */
+  conversationsReady: boolean;
   activeConversationId: string;
   title: string;
   startConversation: () => void;
@@ -161,7 +165,7 @@ export function toWizardPatient(patient: ChatPatient | undefined): Patient | und
  * other screens and remembered per browser for the signed-in user and organization.
  */
 export function ChatSessionProvider({ children }: { readonly children: ReactNode }) {
-  const { currentOrganization } = useOrganization();
+  const { currentOrganization, isLoading: isOrganizationLoading } = useOrganization();
   const organizationId = currentOrganization?.organizationId ?? '';
   const { user } = useUser();
   const router = useRouter();
@@ -172,6 +176,8 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
     pathname === '/'
   );
   const isReady = Boolean(organizationId) && !loading;
+  // Without an organization nothing is loading: the chat stays unavailable, but must not spin forever.
+  const isLoading = isOrganizationLoading || (Boolean(organizationId) && loading);
 
   const { data: userData } = useQuery<UserByClerkIdResponse>(GET_USER_BY_CLERK_ID_QUERY, {
     variables: { clerkId: user?.id },
@@ -373,6 +379,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       therapistId,
       firstName,
       isReady,
+      isLoading,
       useAi: preference.useAi,
       setUseAi,
       patients,
@@ -391,6 +398,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       markChosen,
       runTask,
       conversations,
+      conversationsReady: storageKey !== undefined || (!isOrganizationLoading && !organizationId),
       activeConversationId,
       title,
       startConversation,
@@ -409,6 +417,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       therapistId,
       firstName,
       isReady,
+      isLoading,
       preference.useAi,
       setUseAi,
       patients,
@@ -427,6 +436,8 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       markChosen,
       runTask,
       conversations,
+      storageKey,
+      isOrganizationLoading,
       activeConversationId,
       title,
       startConversation,

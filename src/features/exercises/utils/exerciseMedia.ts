@@ -1,4 +1,5 @@
 import { getMediaUrls } from '@/utils/mediaUrl';
+import type { ExerciseImagePhase } from '@/types/ai.types';
 
 export interface ExerciseMediaSources {
   thumbnailUrl?: string | null;
@@ -35,4 +36,16 @@ export function buildExerciseMediaChangeSet({
     removedImageUrls,
     filesToUpload: newFiles,
   };
+}
+
+/** Faza ruchu na kolejnym obrazie z AI: pierwszy slot to „Start”, drugi „Koniec”, dalsze bez fazy. */
+export function nextGeneratedImagePhase(existingCount: number): ExerciseImagePhase | undefined {
+  if (existingCount === 0) return 'start';
+  if (existingCount === 1) return 'end';
+  return undefined;
+}
+
+/** Obraz „Koniec” trafia za „Start”; pozostałe wygenerowane obrazy zostają na początku galerii. */
+export function insertGeneratedImage<T>(files: T[], file: T, phase: ExerciseImagePhase | undefined): T[] {
+  return phase === 'end' ? [...files, file] : [file, ...files];
 }

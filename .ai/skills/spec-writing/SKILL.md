@@ -103,7 +103,7 @@ board:
 
 ## Data-testid
 
-{Lista identyfikatorów dla testów E2E — format: [moduł]-[komponent]-[element]}
+{Lista identyfikatorów dla testów E2E — format i prefiksy według `docs/testing/data-testid-map.md`}
 
 ## Risk Assessment
 

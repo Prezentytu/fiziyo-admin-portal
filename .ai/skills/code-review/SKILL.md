@@ -126,7 +126,7 @@ Critical i High dają `send back` tylko wtedy, gdy są udowodnione (`file:line` 
 
 - [ ] Komponenty: PascalCase
 - [ ] Zapytania GraphQL: UPPER_SNAKE
-- [ ] data-testid: `[moduł]-[komponent]-[element]-[akcja?]`
+- [ ] data-testid zgodny z konwencją w [mapie data-testid](../../../docs/testing/data-testid-map.md) (jedno źródło formatu i prefiksów)
 
 ## Pytanie końcowe
 

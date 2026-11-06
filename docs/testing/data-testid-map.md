@@ -500,6 +500,8 @@ Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu r
 | `assign-customize-{id}-reps-input`      | Powtórzenia                               | `CustomizeExercisesStep.tsx`  |
 | `assign-schedule-start-date`            | Data rozpoczęcia                          | `ScheduleStep.tsx`            |
 | `assign-schedule-end-date`              | Data zakończenia                          | `ScheduleStep.tsx`            |
+| `assign-schedule-note`                  | Notatka dla pacjenta (opcjonalna)         | `ScheduleStep.tsx`            |
+| `assign-schedule-*-input`               | Ukryte radio w opcjach harmonogramu       | `ScheduleStep.tsx`            |
 | `assign-schedule-summary`               | Stopka podsumowania harmonogramu          | `ScheduleStep.tsx`            |
 | `assign-schedule-frequency`             | Częstotliwość                             | `ScheduleStep.tsx`            |
 | `assign-schedule-save-template-toggle`  | Kontener: zapisz jako szablon             | `AssignmentWizard.tsx`        |

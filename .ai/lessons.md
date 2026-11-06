@@ -21,10 +21,18 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 ### 2026-11-05 - Karta pacjenta drukowała zestaw zamiast planu pacjenta
 
 - **Kategoria**: `Data` | `UI/UX`
-- **Problem**: Dialog „Dostęp” drukował parametry mappingu bez `exerciseOverrides` przypisania (także ćwiczenia ukryte), liczył zakończone i anulowane przypisania jako aktywne i kluczował plany po `exerciseSet.id`; „Podgląd” nic nie robił, a druk otwierał pustą kartę.
-- **Przyczyna**: Dialog składał plan z zestawu, a nie z przypisania, i miał własną regułę statusu zamiast `resolveAssignmentDisplayStatus`.
-- **Rozwiązanie**: `buildPatientAccessPlans` (plan = przypisanie, status z reguły badge'a), `toPdfExercises(mappings, exerciseOverrides)` pomija `hidden`, druk przez iframe i wspólne `pdfOutput`, podgląd otwiera prawdziwy PDF.
-- **Reguła**: PDF dla pacjenta zawsze składaj z przypisania przez `toPdfExercises` z jego `exerciseOverrides`, nigdy z gołego zestawu. [egzekwowane: src/components/pdf/__tests__/toPdfExercise.test.ts]
+- **Problem**: Dialog „Dostęp” pomijał `exerciseOverrides` i ukryte ćwiczenia przypisania, a zakończone plany pokazywał jako aktywne.
+- **Przyczyna**: Plan składany z zestawu zamiast z przypisania, z własną regułą statusu.
+- **Rozwiązanie**: `buildPatientAccessPlans` i `toPdfExercises(mappings, exerciseOverrides)`.
+- **Reguła**: PDF dla pacjenta składaj z przypisania przez `toPdfExercises`. [egzekwowane: src/components/pdf/__tests__/toPdfExercise.test.ts]
+
+### 2026-11-04 - Narzędzie AI edytora niewłączone na żadnym wejściu
+
+- **Kategoria**: `UI/UX` | `React`
+- **Problem**: Szczegóły i dialog edycji nie pokazywały istniejącej akcji uzupełniania treści przez AI.
+- **Przyczyna**: Wspólny edytor uzależniał akcję od opcjonalnego kontekstu, którego żaden konsument nie przekazywał.
+- **Rozwiązanie**: Kontekst AI domyślnie pochodzi z aktualnego szkicu wspólnego edytora; propozycja czeka na ręczny zapis. Wynik scala się z aktualnym szkicem, a Cofnij usuwa tylko niezmienione wartości AI. Tekst wskazówek i przypisane do nich fazy są jedną jednostką cofania.
+- **Reguła**: Jeśli wspólna akcja zależy od danych dostępnych w szkicu, zawsze wyprowadź jej kontekst w edytorze i sprawdź, że wynik nie zapisuje się bez zatwierdzenia. [egzekwowane: src/features/exercises/__tests__/exerciseEditorAiFill.test.tsx]
 
 ### 2026-11-03 - „Przerwij, gdy…” traktowane jak lista linii gubiło strukturę
 
@@ -178,14 +186,6 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 - **Rozwiązanie**: Submit z klawiatury tylko `Cmd`/`Ctrl`+`Enter` (`wizardEnterSubmits`). Zwykły Enter na Harmonogramie zostaje lokalny.
 - **Reguła**: Jeśli krok z przyciskami dnia/+− staje się ostatni, globalny Enter nie może wołać submit.
 
-### 2026-10-15 - Etykiety UI to kontrakt z E2E
-
-- **Kategoria**: `Testing`
-- **Problem**: Przebudowa wg canvasu zmieniała widoczne teksty („Przypisz zestaw”, „Wymaga uwagi”), a `fiziyo-tests` szuka przycisków i zakładek po dostępnej nazwie (`getByRole(..., { name })`), nie tylko po `data-testid`.
-- **Przyczyna**: POM-y w `fiziyo-tests/src/pages/*` używają nazw jak „Personalizuj i przypisz zestaw ćwiczeń pacjentowi”, `/Brak aktywności/`, `/Nowy pacjent w systemie/`.
-- **Rozwiązanie**: Nazwy z E2E zostały w `aria-label` (z widocznym tekstem w środku) albo w etykiecie; zmiana tekstów idzie z równoległym PR w `fiziyo-tests`.
-- **Reguła**: Jeśli zmieniasz tekst przycisku, zakładki albo nagłówka, najpierw `git grep` w `fiziyo-tests` na `origin/main`. Zwykły string w Playwright = fragment bez wielkości liter (wielkość liter wolno zmienić), regex i `exact: true` = nie.
-
 ### 2026-10-15 - Jeden token koloru nie obsłuży tekstu i wypełnienia w dark
 
 - **Kategoria**: `UI/UX`
@@ -289,13 +289,5 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 - **Przyczyna**: Trzy niezależne artefakty formularza z lokalnymi listami pól zamiast jednego field-setu z intencją (Salesforce page-layout tax).
 - **Rozwiązanie**: `fieldContract.ts` jako SSOT (tier, surfaces, zod, options) + etykiety z `displayRegistry`; `ExerciseParametersEditor` / `ExerciseEditor` współdzielone; create = lean subset; usunięto `ExerciseForm` i martwe legacy edytory.
 - **Reguła**: Dla danych domenowych edytowanych w wielu miejscach utrzymuj jeden kontrakt pól. Powierzchnia może różnić layout i podzbiór (create-as-prefix), nigdy etykietę, walidację ani mapowanie na mutację. Guardrail: test kompletności kontraktu + integralność testid. [egzekwowane: src/components/shared/exercise/__tests__/fieldContract.test.ts]
-
-### 2026-06-12 - Ekosystem skilli wymaga source-of-truth i automatycznego linta
-
-- **Kategoria**: `Build/Tooling`
-- **Problem**: Skille były rozwijane ręcznie bez jednego źródła prawdy i bez automatycznego wykrywania dryfu między katalogami, frontmatter i warstwą `.cursor/skills`.
-- **Przyczyna**: `skills:sync` kopiował pliki, ale nie walidował manifestu tierów ani obowiązkowych pól (`name`, `description`) i nie miał dedykowanego gate'a CI.
-- **Rozwiązanie**: Dodano `.ai/skills/manifest.json`, walidację frontmatter + dryf manifestu w `scripts/sync-cursor-skills.mjs`, nowy krok `skills:lint` oraz egzekwowanie go w CI.
-- **Reguła**: Jeśli proces opiera się na katalogu instrukcji (skills/rules), zawsze utrzymuj manifest jako source-of-truth i uruchamiaj lint governance w CI; sama synchronizacja plików nie wystarcza. [egzekwowane: .github/workflows/ci.yml `skills:lint`]
 
 <!-- Nowe wpisy dodawaj na górze sekcji Wpisy, nie tutaj. -->

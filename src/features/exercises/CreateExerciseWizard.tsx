@@ -32,6 +32,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ImageLightbox } from '@/components/shared/ImageLightbox';
 import { TagPicker } from './TagPicker';
@@ -66,7 +67,18 @@ import {
   rankExerciseNamesForDuplicateCheck,
 } from '@/features/exercises/utils/exerciseDuplicateCandidates';
 import { createExerciseSubmit } from './utils/createExerciseSubmit';
+import {
+  aiSuggestedReps,
+  aiSuggestionLoadKg,
+  aiSuggestionParamDiffs,
+  aiSuggestionSide,
+  applyAiExecutionTimeSuggestion,
+  applyAiRepsSuggestion,
+  applyAiSuggestionParams,
+  positiveAiNumber,
+} from './utils/aiSuggestionParams';
 import { inferExerciseType } from './utils/inferExerciseType';
+import { insertGeneratedImage, nextGeneratedImagePhase } from './utils/exerciseMedia';
 import { ExerciseParametersEditor } from './ExerciseParametersEditor';
 import { ExerciseContentSections } from './ExerciseContentSections';
 import { useEnrichmentDraft } from './useEnrichmentDraft';
@@ -76,12 +88,12 @@ import type { ExerciseCoreDraft } from './useExerciseEditorForm';
 // QUICK PRESETS (Unified - shows all params)
 // ============================================================
 const QUICK_PRESETS = [
-  { label: '2×10', hint: '2 serie po 10 powtórzeń, przerwa 60 s', sets: 2, reps: 10, executionTime: null, duration: null, rest: 60 },
-  { label: '3×10', hint: '3 serie po 10 powtórzeń, przerwa 60 s', sets: 3, reps: 10, executionTime: null, duration: null, rest: 60 },
-  { label: '3×15', hint: '3 serie po 15 powtórzeń, przerwa 45 s', sets: 3, reps: 15, executionTime: null, duration: null, rest: 45 },
-  { label: '4×8', hint: '4 serie po 8 powtórzeń, przerwa 90 s', sets: 4, reps: 8, executionTime: null, duration: null, rest: 90 },
-  { label: '30s×3', hint: '3 serie po 30 s utrzymania, przerwa 30 s', sets: 3, reps: 1, executionTime: 30, duration: null, rest: 30 },
-  { label: '45s×3', hint: '3 serie po 45 s utrzymania, przerwa 30 s', sets: 3, reps: 1, executionTime: 45, duration: null, rest: 30 },
+  { label: '2×10', hint: '2 serie po 10 powtórzeń, przerwa 60 s', sets: 2, reps: 10, executionTime: null, rest: 60 },
+  { label: '3×10', hint: '3 serie po 10 powtórzeń, przerwa 60 s', sets: 3, reps: 10, executionTime: null, rest: 60 },
+  { label: '3×15', hint: '3 serie po 15 powtórzeń, przerwa 45 s', sets: 3, reps: 15, executionTime: null, rest: 45 },
+  { label: '4×8', hint: '4 serie po 8 powtórzeń, przerwa 90 s', sets: 4, reps: 8, executionTime: null, rest: 90 },
+  { label: '30s×3', hint: '3 serie po 30 s utrzymania, przerwa 30 s', sets: 3, reps: 1, executionTime: 30, rest: 30 },
+  { label: '45s×3', hint: '3 serie po 45 s utrzymania, przerwa 30 s', sets: 3, reps: 1, executionTime: 45, rest: 30 },
 ];
 
 // ============================================================
@@ -98,7 +110,6 @@ interface ExerciseData {
   difficultyLevel: string;
   sets: number | null;
   reps: number | null;
-  duration: number | null;
   restSets: number | null;
   restReps: number | null;
   preparationTime: number | null;
@@ -110,14 +121,6 @@ interface ExerciseData {
   tempo: string;
   loadKg: number | null;
   rangeOfMotion: string;
-}
-
-function parseAiWeightToLoadKg(weight: string | null | undefined): number | null {
-  if (!weight) return null;
-  const match = weight.replace(',', '.').match(/-?\d+(\.\d+)?/);
-  if (!match) return null;
-  const parsed = Number(match[0]);
-  return !Number.isNaN(parsed) && parsed > 0 ? parsed : null;
 }
 
 // Interface for existing exercises from API
@@ -166,7 +169,6 @@ const DEFAULT_DATA: ExerciseData = {
   // Fizjoterapeuci zaczynają zwykle od 2 serii; pierwszy preset (2×10) odpowiada temu startowi.
   sets: 2,
   reps: 10,
-  duration: null,
   restSets: 60,
   restReps: 0,
   preparationTime: 5,
@@ -405,24 +407,30 @@ function AIDiffDrawer({
   const hasNameCorrection = suggestion.correctedName && suggestion.correctedName !== currentData.name;
   const hasDescription = suggestion.description && suggestion.description !== currentData.description;
   const hasHints = suggestion.warnings && suggestion.warnings.length > 0;
+  // Standard diff checks
+  const paramDiffs = aiSuggestionParamDiffs(suggestion, currentData);
+  const suggestedSets = positiveAiNumber(suggestion.sets);
+  const suggestedReps = aiSuggestedReps(suggestion);
+  const suggestedDuration = positiveAiNumber(suggestion.duration);
+  const suggestedRest = positiveAiNumber(suggestion.restSets);
+  const hasDifferentSets = paramDiffs.sets;
+  const hasDifferentReps = paramDiffs.reps;
+  const hasDifferentDuration = paramDiffs.duration;
+  const hasDifferentExecutionTime = paramDiffs.executionTime;
+  const hasDifferentPreparationTime = paramDiffs.preparationTime;
+  const hasDifferentRest = paramDiffs.restSets;
+  const advancedExecutionTime = positiveAiNumber(suggestion.advancedParams?.executionTime);
+  const advancedPreparationTime = positiveAiNumber(suggestion.advancedParams?.preparationTime);
+  const suggestedLoadKg = aiSuggestionLoadKg(suggestion.advancedParams?.weight);
   const hasAdvancedParams =
     suggestion.advancedParams &&
     (suggestion.advancedParams.tempo ||
       suggestion.advancedParams.weight ||
       suggestion.advancedParams.rangeOfMotion ||
-      suggestion.advancedParams.executionTime ||
-      suggestion.advancedParams.preparationTime);
-
-  // Standard diff checks
-  const hasDifferentSets = suggestion.sets !== currentData.sets;
-  const hasDifferentReps = suggestion.reps !== currentData.reps;
-  const hasDifferentDuration = suggestion.duration !== currentData.duration;
-  const hasDifferentExecutionTime =
-    (suggestion.advancedParams?.executionTime ?? null) !== (currentData.executionTime ?? null);
-  const hasDifferentPreparationTime =
-    (suggestion.advancedParams?.preparationTime ?? null) !== (currentData.preparationTime ?? null);
-  const hasDifferentRest = suggestion.restSets !== currentData.restSets;
-  const hasDifferentSide = suggestion.exerciseSide !== currentData.exerciseSide;
+      advancedExecutionTime !== null ||
+      advancedPreparationTime !== null);
+  const hasDifferentSide =
+    aiSuggestionSide(suggestion.exerciseSide, currentData.exerciseSide) !== currentData.exerciseSide;
   const hasSuggestedTags = suggestion.suggestedTags && suggestion.suggestedTags.length > 0;
 
   // Find matching tags from available tags
@@ -624,63 +632,65 @@ function AIDiffDrawer({
               <SuggestionCard
                 label="Serie"
                 currentValue={String(currentData.sets || 0)}
-                suggestedValue={String(suggestion.sets)}
+                suggestedValue={String(suggestedSets)}
                 reason="Optymalna liczba serii dla tego typu ćwiczenia"
-                onAccept={() => onAcceptField('sets', suggestion.sets)}
+                onAccept={() => onAcceptField('sets', suggestedSets)}
                 priority="low"
                 inline
               />
             )}
 
-            {hasDifferentReps && suggestion.reps && (
+            {hasDifferentReps && suggestedReps !== null && (
               <SuggestionCard
                 label="Powtórzenia"
                 currentValue={String(currentData.reps || 0)}
-                suggestedValue={String(suggestion.reps)}
+                suggestedValue={String(suggestedReps)}
                 reason={
-                  suggestion.reps <= 8
-                    ? 'Zakres siłowy (5-8 powt.)'
-                    : suggestion.reps <= 12
-                      ? 'Zakres hipertrofii (8-12 powt.)'
-                      : 'Zakres wytrzymałościowy (12+ powt.)'
+                  suggestedReps === 1 && suggestion.type === 'time'
+                    ? 'Ćwiczenie na czas: jedno utrzymanie w serii'
+                    : suggestedReps <= 8
+                      ? 'Zakres siłowy (5-8 powt.)'
+                      : suggestedReps <= 12
+                        ? 'Zakres hipertrofii (8-12 powt.)'
+                        : 'Zakres wytrzymałościowy (12+ powt.)'
                 }
-                onAccept={() => onAcceptField('reps', suggestion.reps)}
+                onAccept={() => onAcceptField('reps', suggestedReps)}
                 priority="low"
                 inline
               />
             )}
 
-            {hasDifferentDuration && suggestion.duration && (
+            {hasDifferentDuration && suggestedDuration !== null && (
               <SuggestionCard
                 label="Czas serii"
-                currentValue={currentData.duration ? formatDurationPolish(currentData.duration) : '—'}
-                suggestedValue={formatDurationPolish(suggestion.duration)}
+                currentValue={currentData.executionTime ? formatDurationPolish(currentData.executionTime) : '—'}
+                suggestedValue={formatDurationPolish(suggestedDuration)}
                 reason="Sugerowany czas serii dla wariantu time-based"
-                onAccept={() => onAcceptField('duration', suggestion.duration)}
+                onAccept={() => onAcceptField('executionTime', suggestedDuration)}
                 priority="low"
                 inline
               />
             )}
 
-            {hasDifferentExecutionTime && suggestion.advancedParams?.executionTime != null && (
+            {hasDifferentExecutionTime && advancedExecutionTime !== null && (
               <SuggestionCard
                 label="Czas powtórzenia"
                 currentValue={`${currentData.executionTime || 0}s`}
-                suggestedValue={`${suggestion.advancedParams.executionTime}s`}
+                suggestedValue={`${advancedExecutionTime}s`}
                 reason="Sugerowany timer dla pojedynczego powtórzenia"
-                onAccept={() => onAcceptField('executionTime', suggestion.advancedParams?.executionTime)}
+                onAccept={() => onAcceptField('executionTime', advancedExecutionTime)}
                 priority="low"
                 inline
               />
             )}
 
-            {hasDifferentPreparationTime && suggestion.advancedParams?.preparationTime != null && (
+            {hasDifferentPreparationTime && advancedPreparationTime !== null && (
               <SuggestionCard
                 label="Czas przygotowania"
                 currentValue={`${currentData.preparationTime || 0}s`}
-                suggestedValue={`${suggestion.advancedParams.preparationTime}s`}
+                suggestedValue={`${advancedPreparationTime}s`}
                 reason="Sugerowany czas na przygotowanie pozycji"
-                onAccept={() => onAcceptField('preparationTime', suggestion.advancedParams?.preparationTime)}
+                onAccept={() => onAcceptField('preparationTime', advancedPreparationTime)}
                 priority="low"
                 inline
               />
@@ -690,15 +700,15 @@ function AIDiffDrawer({
               <SuggestionCard
                 label="Przerwa"
                 currentValue={`${currentData.restSets || 0}s`}
-                suggestedValue={`${suggestion.restSets}s`}
+                suggestedValue={`${suggestedRest}s`}
                 reason="Odpowiedni czas regeneracji między seriami"
-                onAccept={() => onAcceptField('restSets', suggestion.restSets)}
+                onAccept={() => onAcceptField('restSets', suggestedRest)}
                 priority="low"
                 inline
               />
             )}
 
-            {hasDifferentSide && suggestion.exerciseSide !== 'none' && (
+            {hasDifferentSide && (
               <SuggestionCard
                 label="Strona ciała"
                 currentValue={EXERCISE_SIDES.find((s) => s.value === currentData.exerciseSide)?.label || 'Razem'}
@@ -734,14 +744,15 @@ function AIDiffDrawer({
                 <div className="p-2.5 rounded-lg bg-surface/50 border border-border">
                   <p className="text-[9px] text-muted-foreground uppercase mb-1">Obciążenie</p>
                   <p className="text-sm font-medium text-foreground">{suggestion.advancedParams.weight}</p>
-                  <button
-                    onClick={() =>
-                      onAcceptField('loadKg', parseAiWeightToLoadKg(suggestion.advancedParams?.weight))
-                    }
-                    className="text-[9px] text-secondary hover:text-secondary/80 mt-1"
-                  >
-                    ← Użyj
-                  </button>
+                  {/* Obciążenie bez liczby kg (np. „masa ciała”) nie ma czego wpisać i nie kasuje pola. */}
+                  {suggestedLoadKg !== null && (
+                    <button
+                      onClick={() => onAcceptField('loadKg', suggestedLoadKg)}
+                      className="text-[9px] text-secondary hover:text-secondary/80 mt-1"
+                    >
+                      ← Użyj
+                    </button>
+                  )}
                 </div>
               )}
               {suggestion.advancedParams?.rangeOfMotion && (
@@ -756,24 +767,24 @@ function AIDiffDrawer({
                   </button>
                 </div>
               )}
-              {suggestion.advancedParams?.executionTime != null && (
+              {advancedExecutionTime !== null && (
                 <div className="p-2.5 rounded-lg bg-surface/50 border border-border">
                   <p className="text-[9px] text-muted-foreground uppercase mb-1">Czas powtórzenia</p>
-                  <p className="text-sm font-medium text-foreground">{suggestion.advancedParams.executionTime}s</p>
+                  <p className="text-sm font-medium text-foreground">{advancedExecutionTime}s</p>
                   <button
-                    onClick={() => onAcceptField('executionTime', suggestion.advancedParams?.executionTime)}
+                    onClick={() => onAcceptField('executionTime', advancedExecutionTime)}
                     className="text-[9px] text-secondary hover:text-secondary/80 mt-1"
                   >
                     ← Użyj
                   </button>
                 </div>
               )}
-              {suggestion.advancedParams?.preparationTime != null && (
+              {advancedPreparationTime !== null && (
                 <div className="p-2.5 rounded-lg bg-surface/50 border border-border">
                   <p className="text-[9px] text-muted-foreground uppercase mb-1">Czas przygotowania</p>
-                  <p className="text-sm font-medium text-foreground">{suggestion.advancedParams.preparationTime}s</p>
+                  <p className="text-sm font-medium text-foreground">{advancedPreparationTime}s</p>
                   <button
-                    onClick={() => onAcceptField('preparationTime', suggestion.advancedParams?.preparationTime)}
+                    onClick={() => onAcceptField('preparationTime', advancedPreparationTime)}
                     className="text-[9px] text-secondary hover:text-secondary/80 mt-1"
                   >
                     ← Użyj
@@ -1092,7 +1103,6 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
       calculateExerciseTotalSeconds({
         sets: data.sets ?? 0,
         reps: data.reps ?? undefined,
-        duration: data.duration ?? undefined,
         executionTime: data.executionTime ?? undefined,
         restSets: data.restSets ?? undefined,
         restReps: data.restReps ?? undefined,
@@ -1103,7 +1113,6 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
     [
       data.sets,
       data.reps,
-      data.duration,
       data.executionTime,
       data.restSets,
       data.restReps,
@@ -1199,7 +1208,8 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
       restSets: data.restSets,
       restReps: data.restReps,
       preparationTime: data.preparationTime,
-      duration: data.duration,
+      // Kreator nie ma legacy czasu serii; czas ćwiczenia na czas jest w executionTime.
+      duration: null,
       loadKg: data.loadKg,
       mainTags: data.mainTags,
       additionalTags: data.additionalTags,
@@ -1213,7 +1223,6 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
       sets: number;
       reps: number | null;
       executionTime: number | null;
-      duration: number | null;
       rest: number;
     }) => {
       setData((prev) => ({
@@ -1221,7 +1230,6 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
         sets: preset.sets,
         reps: preset.reps,
         executionTime: preset.executionTime,
-        duration: preset.duration,
         restSets: preset.rest,
       }));
       toast.success('Preset zastosowany');
@@ -1287,17 +1295,19 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
     }
 
     const inferredType = inferExerciseType(data.executionTime);
+    const phase = nextGeneratedImagePhase(mediaFiles.length);
     const file = await generateExerciseImage({
       exerciseName: data.name,
       exerciseDescription: data.description,
       exerciseType: inferredType,
       style: imageStyle,
+      phase,
     });
 
     if (file) {
-      setMediaFiles((prev) => [file, ...prev]);
+      setMediaFiles((prev) => insertGeneratedImage(prev, file, phase));
     }
-  }, [data.name, data.description, data.executionTime, generateExerciseImage, imageStyle]);
+  }, [data.name, data.description, data.executionTime, generateExerciseImage, imageStyle, mediaFiles.length]);
 
   // Remove image
   const handleRemoveImage = useCallback((index: number) => {
@@ -1343,10 +1353,24 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
   }, [data.name, tags, existingExercises]);
 
   // Accept single AI field
-  const handleAcceptAIField = useCallback(<K extends keyof ExerciseData>(field: K, value: unknown) => {
-    setData((prev) => ({ ...prev, [field]: value as ExerciseData[K] }));
-    toast.success('Zaakceptowano sugestię');
-  }, []);
+  const handleAcceptAIField = useCallback(
+    <K extends keyof ExerciseData>(field: K, value: unknown) => {
+      if (field === 'reps' && aiSuggestion) {
+        // Ćwiczenie na czas: jedno utrzymanie w serii i czas powtórzenia, jak w „Zastosuj wszystko”.
+        setData((prev) => ({ ...prev, ...applyAiRepsSuggestion(prev, aiSuggestion) }));
+      } else if (field === 'executionTime' && aiSuggestion) {
+        // Czas z AI dla ćwiczenia na czas trafia do czasu powtórzenia z reps = 1, jak w „Zastosuj wszystko”.
+        setData((prev) => ({
+          ...prev,
+          ...applyAiExecutionTimeSuggestion(prev, aiSuggestion.type, value as number | null),
+        }));
+      } else {
+        setData((prev) => ({ ...prev, [field]: value as ExerciseData[K] }));
+      }
+      toast.success('Zaakceptowano sugestię');
+    },
+    [aiSuggestion]
+  );
 
   // Accept all AI suggestions
   const handleAcceptAllAI = useCallback(() => {
@@ -1358,17 +1382,12 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
       name: aiSuggestion.correctedName || prev.name,
       // Opis
       description: aiSuggestion.description || prev.description,
-      // Parametry podstawowe
-      sets: aiSuggestion.sets,
-      reps: aiSuggestion.reps,
-      duration: aiSuggestion.duration,
-      restSets: aiSuggestion.restSets,
-      exerciseSide: aiSuggestion.exerciseSide as ExerciseSide,
+      // Parametry podstawowe i czasy: puste pole AI nie kasuje wartości, ćwiczenie na czas dostaje czas powtórzenia
+      ...applyAiSuggestionParams(prev, aiSuggestion),
+      exerciseSide: aiSuggestionSide(aiSuggestion.exerciseSide as ExerciseSide, prev.exerciseSide),
       // Pro Tuning fields
-      preparationTime: aiSuggestion.advancedParams?.preparationTime ?? prev.preparationTime,
-      executionTime: aiSuggestion.advancedParams?.executionTime ?? prev.executionTime,
       tempo: aiSuggestion.advancedParams?.tempo || prev.tempo,
-      loadKg: parseAiWeightToLoadKg(aiSuggestion.advancedParams?.weight) ?? prev.loadKg,
+      loadKg: aiSuggestionLoadKg(aiSuggestion.advancedParams?.weight) ?? prev.loadKg,
       rangeOfMotion: aiSuggestion.advancedParams?.rangeOfMotion || prev.rangeOfMotion,
     }));
 
@@ -1448,7 +1467,6 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
           difficultyLevel: data.difficultyLevel,
           sets: data.sets,
           reps: data.reps,
-          duration: data.duration,
           restSets: data.restSets,
           restReps: data.restReps,
           preparationTime: data.preparationTime,
@@ -1905,26 +1923,32 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                 <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
                   Parametry
                 </label>
-                <div className="flex gap-1.5">
-                  {QUICK_PRESETS.map((preset, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => applyPreset(preset)}
-                      title={preset.hint}
-                      aria-label={`Wstaw ${preset.hint}`}
-                      className={cn(
-                        'text-[10px] bg-surface/50 border border-border text-muted-foreground',
-                        'hover:text-foreground hover:border-primary/50 px-2 py-1 rounded',
-                        'transition-colors flex items-center gap-1'
-                      )}
-                      data-testid={`exercise-preset-${idx}`}
-                    >
-                      {idx === 0 && <Zap className="w-3 h-3 text-warning" />}
-                      {preset.label}
-                    </button>
-                  ))}
-                </div>
+                <TooltipProvider delayDuration={150}>
+                  <div className="flex gap-1.5">
+                    {QUICK_PRESETS.map((preset, idx) => (
+                      <Tooltip key={preset.label}>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="button"
+                            onClick={() => applyPreset(preset)}
+                            aria-label={`Wstaw ${preset.hint}`}
+                            className={cn(
+                              'text-[10px] bg-surface/50 border border-border text-muted-foreground',
+                              'hover:text-foreground hover:border-primary/50 px-2 py-1 rounded',
+                              'transition-colors flex items-center gap-1',
+                              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tint focus-visible:ring-offset-2 focus-visible:ring-offset-card'
+                            )}
+                            data-testid={`exercise-preset-${idx}`}
+                          >
+                            {idx === 0 && <Zap className="w-3 h-3 text-warning" />}
+                            {preset.label}
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>{preset.hint}</TooltipContent>
+                      </Tooltip>
+                    ))}
+                  </div>
+                </TooltipProvider>
               </div>
 
               <ExerciseParametersEditor
@@ -1933,6 +1957,8 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                 core={parametersCore}
                 isDirtyField={() => false}
                 onNumberChange={(field, value) => {
+                  // Kreator nie ma legacy czasu serii (core.duration = null), więc go nie zapisuje.
+                  if (field === 'duration') return;
                   setData((previous) => ({ ...previous, [field]: value }));
                 }}
                 onTextChange={(field, value) => {

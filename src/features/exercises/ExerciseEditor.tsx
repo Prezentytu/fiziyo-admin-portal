@@ -24,7 +24,7 @@ import { normalizeExerciseType } from '@/utils/exerciseEnums';
 
 /**
  * Kontekst potrzebny do "Uzupełnij przez AI" — dane wejściowe do wygenerowania treści.
- * Opcjonalny: gdy nie podany, przycisk AI-fill nie jest renderowany (np. na stronie ćwiczenia).
+ * Domyślnie pochodzi z bieżącego szkicu edytora.
  */
 export interface ExerciseEditorAiFillContext {
   name: string;
@@ -79,6 +79,22 @@ function deepMergeFillGaps(currentValue: unknown, aiValue: unknown): unknown {
   return currentValue;
 }
 
+function revertUnchangedAiValues(current: unknown, before: unknown, after: unknown): unknown {
+  if (JSON.stringify(current) === JSON.stringify(after)) return before;
+  if (!current || typeof current !== 'object' || Array.isArray(current)) return current;
+  const currentFields = current as Record<string, unknown>;
+  const beforeFields = (before && typeof before === 'object' ? before : {}) as Record<string, unknown>;
+  const afterFields = (after && typeof after === 'object' ? after : {}) as Record<string, unknown>;
+  return Object.fromEntries(Object.entries(currentFields)
+    .map(([key, value]) => [key, revertUnchangedAiValues(value, beforeFields[key], afterFields[key])])
+    .filter(([, value]) => value !== undefined));
+}
+
+interface AiFillChange {
+  before: ExerciseEnrichmentData;
+  after: ExerciseEnrichmentData;
+}
+
 function AiFillBar({
   context,
   enrichment,
@@ -91,20 +107,29 @@ function AiFillBar({
   onApply: (data: ExerciseEnrichmentData) => void;
 }>) {
   const [isGenerating, setIsGenerating] = useState(false);
-  const preAiSnapshotRef = useRef<ExerciseEnrichmentData | null>(null);
+  const enrichmentRef = useRef(enrichment);
+  enrichmentRef.current = enrichment;
   const completeness = useMemo(() => computeCompleteness(enrichment), [enrichment]);
 
-  const handleDiscard = useCallback(() => {
-    const snapshot = preAiSnapshotRef.current;
-    if (!snapshot) return;
-    onApply(snapshot);
-    toast.info('Przywrócono dane sprzed AI.');
+  const handleDiscard = useCallback((change: AiFillChange) => {
+    const current = enrichmentRef.current;
+    const restored = revertUnchangedAiValues(current, change.before, change.after) as ExerciseEnrichmentData;
+    const cuesChanged = JSON.stringify(current.patient?.cues) !== JSON.stringify(change.after.patient?.cues);
+    const cuePhasesChanged = JSON.stringify(current.patient?.cue_phases) !== JSON.stringify(change.after.patient?.cue_phases);
+    if (cuesChanged || cuePhasesChanged) {
+      restored.patient = {
+        ...restored.patient,
+        cues: current.patient?.cues,
+        cue_phases: current.patient?.cue_phases,
+      };
+    }
+    onApply(compactEnrichment(restored) ?? {});
+    toast.info('Cofnięto propozycję AI, zachowując ręczne zmiany.');
   }, [onApply]);
 
   const handleGenerate = useCallback(async () => {
     if (isGenerating || disabled) return;
     setIsGenerating(true);
-    preAiSnapshotRef.current = enrichment;
 
     const tags = [...(context.mainTags ?? []), ...(context.additionalTags ?? [])];
     const response = await aiService.generateEnrichment({
@@ -124,10 +149,11 @@ function AiFillBar({
     }
 
     const aiData = toV3(response.enrichmentData as ExerciseEnrichmentData);
-    const merged = deepMergeFillGaps(enrichment, aiData) as ExerciseEnrichmentData;
+    const currentEnrichment = enrichmentRef.current;
+    const merged = deepMergeFillGaps(currentEnrichment, aiData) as ExerciseEnrichmentData;
     const cleanedMerged = compactEnrichment(merged) ?? {};
 
-    const beforeFilled = computeCompleteness(enrichment).filled;
+    const beforeFilled = computeCompleteness(currentEnrichment).filled;
     const afterFilled = computeCompleteness(cleanedMerged).filled;
     const newSections = afterFilled - beforeFilled;
 
@@ -137,7 +163,10 @@ function AiFillBar({
         ? `AI uzupełniło ${newSections} ${newSections === 1 ? 'sekcję' : 'sekcji'}.`
         : 'AI przejrzało ćwiczenie — wszystkie sekcje były już wypełnione.',
       {
-        action: newSections > 0 ? { label: 'Cofnij', onClick: handleDiscard } : undefined,
+        action: newSections > 0 ? {
+          label: 'Cofnij',
+          onClick: () => handleDiscard({ before: currentEnrichment, after: cleanedMerged }),
+        } : undefined,
         duration: 7000,
       }
     );
@@ -258,7 +287,12 @@ export function ExerciseEditor({
   form,
   disabled = false,
   showNameField = false,
-  aiFillContext,
+  aiFillContext = {
+    name: form.core.name,
+    patientDescription: form.core.patientDescription,
+    clinicalDescription: form.core.clinicalDescription,
+    type: form.exerciseType,
+  },
   showAdvancedJson = false,
   className,
 }: Readonly<ExerciseEditorProps>) {
