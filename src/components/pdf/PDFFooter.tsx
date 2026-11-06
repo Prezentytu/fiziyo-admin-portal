@@ -9,7 +9,7 @@ interface PDFFooterProps {
 }
 
 /**
- * App Banner Footer — QR + https join URL so a patient without the app can still open a browser.
+ * App Banner Footer: QR i link https; bez aplikacji strona /start prowadzi do sklepu.
  */
 export function PDFFooter({ generatedAt, qrCodeDataUrl, therapistName, joinUrl }: PDFFooterProps) {
   if (qrCodeDataUrl) {
@@ -22,7 +22,7 @@ export function PDFFooter({ generatedAt, qrCodeDataUrl, therapistName, joinUrl }
         <View style={pdfStyles.appBannerContent}>
           <Text style={pdfStyles.appBannerTitle}>OTWÓRZ PLAN W FIZIYO</Text>
           <Text style={pdfStyles.appBannerSubtitle}>
-            Zeskanuj kod albo wpisz link. Bez apki zobaczysz instrukcję; z apką — timer i wideo.
+            Zeskanuj kod telefonem albo wpisz link, zainstaluj FiziYo i załóż konto na e-mail lub telefon podany w gabinecie.
           </Text>
           <View style={pdfStyles.appBannerFeatures}>
             <Text style={pdfStyles.appBannerFeature}>• Timer (ćwicz bez liczenia w głowie)</Text>

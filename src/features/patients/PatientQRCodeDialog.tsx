@@ -21,6 +21,7 @@ import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patient
 import { isHttpsUrl, tryBuildPatientConnectUrl } from '@/lib/patientJoinUrl';
 import { downloadQrSvgAsPng } from '@/lib/qrPng';
 import { buildPatientAccessPlans } from './utils/patientAccessPlans';
+import { patientInviteShareData } from './utils/patientInviteMessage';
 import type { OrganizationByIdResponse, UserByClerkIdResponse } from '@/types/apollo';
 import type { PatientAssignmentsByUserQueryData } from '@/graphql/types/operation-responses';
 
@@ -33,6 +34,8 @@ interface PatientQRCodeDialogProps {
     id: string;
     name: string;
     email?: string;
+    /** Konto-cień bez logowania w aplikacji; brak wartości = nie pokazujemy stanu. */
+    isShadowUser?: boolean;
   } | null;
   therapistId: string;
   organizationId: string;
@@ -296,11 +299,9 @@ export function PatientQRCodeDialog({
     }
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: `FiziYo - Program ćwiczeń dla ${patient.name}`,
-          text: 'Pobierz aplikację FiziYo, aby ćwiczyć w domu',
-          url: joinUrl,
-        });
+        await navigator.share(
+          patientInviteShareData({ patientName: patient.name, organizationName: organization?.name, joinUrl })
+        );
       } catch {
         // User cancelled
       }
@@ -375,6 +376,17 @@ export function PatientQRCodeDialog({
                 <p className="text-xs text-muted-foreground text-center max-w-[180px]">
                   Wideo, timer i historia postępów.
                 </p>
+                {patient.isShadowUser === undefined ? null : (
+                  <p
+                    className="mt-2 text-xs text-center text-muted-foreground max-w-[200px]"
+                    data-testid="patient-qr-account-status"
+                    data-state={patient.isShadowUser ? 'waiting' : 'active'}
+                  >
+                    {patient.isShadowUser
+                      ? 'Czeka na pierwsze logowanie: pacjent zakłada konto na e-mail albo telefon z karty.'
+                      : 'Ma konto w aplikacji.'}
+                  </p>
+                )}
               </div>
 
               {/* Przyciski */}

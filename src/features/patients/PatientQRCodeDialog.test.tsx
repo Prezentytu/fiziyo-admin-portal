@@ -179,3 +179,53 @@ describe('PatientQRCodeDialog karta pacjenta', () => {
     );
   });
 });
+
+describe('PatientQRCodeDialog konto pacjenta i udostępnianie', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    queryState.patientAssignments = [];
+  });
+
+  it.each([
+    [true, 'waiting', /Czeka na pierwsze logowanie/],
+    [false, 'active', /Ma konto w aplikacji/],
+  ])('isShadowUser=%s pokazuje stan konta %s', (isShadowUser, state, text) => {
+    render(
+      <PatientQRCodeDialog
+        open
+        onOpenChange={vi.fn()}
+        patient={{ ...patient, isShadowUser }}
+        organizationId="org-9"
+        therapistId="th-2"
+      />
+    );
+
+    const status = screen.getByTestId('patient-qr-account-status');
+    expect(status).toHaveAttribute('data-state', state);
+    expect(status).toHaveTextContent(text);
+  });
+
+  it('bez informacji o koncie nie zgaduje stanu', () => {
+    renderDialog();
+    expect(screen.queryByTestId('patient-qr-account-status')).not.toBeInTheDocument();
+  });
+
+  it('„Udostępnij link” wysyła wiadomość z nazwą gabinetu i wskazówką, czym założyć konto', async () => {
+    const share = vi.fn(async () => undefined);
+    Object.defineProperty(navigator, 'share', { value: share, configurable: true });
+    try {
+      renderDialog();
+      fireEvent.click(screen.getByTestId('patient-qr-share-btn'));
+
+      await waitFor(() => expect(share).toHaveBeenCalledTimes(1));
+      expect(share).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: 'https://fiziyo.pl/start?patient=pat-1&org=org-9&therapist=th-2',
+          text: expect.stringContaining('Gabinet Test'),
+        })
+      );
+    } finally {
+      Reflect.deleteProperty(navigator, 'share');
+    }
+  });
+});

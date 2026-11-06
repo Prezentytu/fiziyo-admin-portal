@@ -466,6 +466,7 @@ Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu r
 | `patient-qr-download-btn`                           | Pobierz QR                                                | `PatientQRCodeDialog.tsx`        |
 | `patient-qr-copy-btn`                               | Kopiuj link                                               | `PatientQRCodeDialog.tsx`        |
 | `patient-qr-share-btn`                              | Udostępnij link (Web Share, bez wsparcia kopiuje)         | `PatientQRCodeDialog.tsx`        |
+| `patient-qr-account-status`                         | Stan konta pacjenta (`data-state` waiting/active)         | `PatientQRCodeDialog.tsx`        |
 | `patient-qr-preview-btn`                            | Podgląd karty: PDF wybranego planu w nowej karcie         | `PatientQRCodeDialog.tsx`        |
 | `patient-qr-plan-inactive`                          | Wybrany plan jest nieaktywny                              | `PatientQRCodeDialog.tsx`        |
 | `patient-qr-plan-empty`                             | Plan bez widocznych ćwiczeń (karta wyłączona)             | `PatientQRCodeDialog.tsx`        |

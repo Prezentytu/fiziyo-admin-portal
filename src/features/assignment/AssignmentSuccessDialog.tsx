@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ScheduleSummary } from '@/components/shared';
+import { patientInviteShareData } from '@/features/patients/utils/patientInviteMessage';
 import { toast } from 'sonner';
 
 import { buildPatientCardPdf } from '@/components/pdf/patientCardPdf';
@@ -212,11 +213,9 @@ export function AssignmentSuccessDialog({
     }
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: `FiziYo - Program ćwiczeń dla ${selectedPatient.name}`,
-          text: 'Zeskanuj kod QR lub kliknij link, aby połączyć się z aplikacją FiziYo',
-          url: joinUrl ?? undefined,
-        });
+        await navigator.share(
+          patientInviteShareData({ patientName: selectedPatient.name, organizationName: organization?.name, joinUrl })
+        );
       } catch {
         // User cancelled
       }

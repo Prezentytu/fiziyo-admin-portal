@@ -647,6 +647,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
             id: patient.id,
             name: displayName,
             email: patient.email,
+            isShadowUser: patient.isShadowUser,
           }}
           therapistId={therapistId}
           organizationId={organizationId}
