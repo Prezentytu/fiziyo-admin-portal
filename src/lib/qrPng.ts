@@ -5,6 +5,8 @@
  * a kod (poziom korekcji H, wycięte tło) dalej się skanuje.
  */
 
+import { clickDownloadLink } from './download';
+
 function blobToDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -68,11 +70,5 @@ export async function renderQrSvgToPng(svg: SVGSVGElement, size = 400): Promise<
 }
 
 export async function downloadQrSvgAsPng(svg: SVGSVGElement, fileName: string, size = 400): Promise<void> {
-  const pngUrl = await renderQrSvgToPng(svg, size);
-  const link = document.createElement('a');
-  link.href = pngUrl;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
+  clickDownloadLink(await renderQrSvgToPng(svg, size), fileName);
 }

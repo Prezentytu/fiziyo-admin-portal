@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { PatientQRCodeDialog } from './PatientQRCodeDialog';
@@ -38,8 +38,10 @@ vi.mock('@react-pdf/renderer', () => ({
 vi.mock('@/components/pdf', () => ({
   ExerciseSetPDF: () => null,
   preloadPdfExerciseImages: vi.fn(async () => ({ total: 0, loaded: 0 })),
-  resolvePdfExerciseImageUrl: vi.fn(() => undefined),
 }));
+
+const download = vi.hoisted(() => ({ clickDownloadLink: vi.fn() }));
+vi.mock('@/lib/download', () => download);
 
 const patient = { id: 'pat-1', name: 'Jan Testowy', email: 'jan@example.com' };
 
@@ -163,5 +165,17 @@ describe('PatientQRCodeDialog karta pacjenta', () => {
     expect(screen.getByTestId('patient-qr-print-btn')).toBeDisabled();
     expect(screen.getByTestId('patient-qr-download-pdf-btn')).toBeDisabled();
     expect(screen.getByTestId('patient-qr-preview-btn')).toBeDisabled();
+  });
+
+  it('pobiera kartę wybranego planu z nazwą pliku z planu i imienia', async () => {
+    queryState.patientAssignments = [assignment()];
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:karta');
+    renderDialog();
+
+    fireEvent.click(screen.getByTestId('patient-qr-download-pdf-btn'));
+
+    await waitFor(() =>
+      expect(download.clickDownloadLink).toHaveBeenCalledWith('blob:karta', 'Karta_Pacjenta_Plan_kolano_Jan.pdf')
+    );
   });
 });

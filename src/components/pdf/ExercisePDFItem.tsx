@@ -21,7 +21,6 @@ interface ExercisePDFItemProps {
  */
 export function ExercisePDFItem({ exercise, index, showImage, compact }: ExercisePDFItemProps) {
   const displayName = exercise.customName || exercise.name;
-  const displayDescription = exercise.description;
   const imageUrl = exercise.imageUrl?.startsWith('data:')
     ? exercise.imageUrl
     : getMediaUrl(exercise.imageUrl);
@@ -34,7 +33,7 @@ export function ExercisePDFItem({ exercise, index, showImage, compact }: Exercis
     restSets: exercise.restSets,
     type: exercise.type,
   });
-  const allowWrap = shouldAllowExerciseRowWrap(displayDescription);
+  const allowWrap = shouldAllowExerciseRowWrap(exercise.description);
 
   if (compact) {
     return (
@@ -74,8 +73,8 @@ export function ExercisePDFItem({ exercise, index, showImage, compact }: Exercis
           {sideLabel && <Text style={pdfStyles.exerciseSideTagClean}>{sideLabel}</Text>}
         </View>
 
-        {displayDescription ? (
-          <Text style={pdfStyles.exerciseDescriptionClean}>{displayDescription}</Text>
+        {exercise.description ? (
+          <Text style={pdfStyles.exerciseDescriptionClean}>{exercise.description}</Text>
         ) : (
           <Text style={pdfStyles.exerciseDescriptionClean}>
             Wykonuj ćwiczenie zgodnie z instrukcjami terapeuty. Pamiętaj o prawidłowym oddychaniu.

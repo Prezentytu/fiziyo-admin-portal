@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useQuery } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
 import { QRCodeCanvas } from 'qrcode.react';
@@ -24,12 +24,12 @@ import { cn } from '@/lib/utils';
 
 import { loadPdfRenderer } from '@/components/pdf/loadPdfRenderer';
 import { formatExercises } from '@/components/pdf/polishUtils';
-import { preloadPdfExerciseImages, toPdfExercises } from '@/components/pdf/pdfExerciseUtils';
+import { preloadPdfExerciseImages, toPdfExercises, type PdfMappingSource } from '@/components/pdf/pdfExerciseUtils';
+import { toPdfOrganization } from '@/components/pdf/patientCardPdf';
 import { downloadBlob } from '@/components/pdf/pdfOutput';
 import { preloadPdfImages } from '@/components/pdf/pdfImagePreloader';
 import type {
   PDFExerciseSet,
-  PDFOrganization,
   PDFPatient,
   PDFTherapist,
   PDFOptions,
@@ -41,40 +41,6 @@ import { isHttpsUrl, tryBuildPatientConnectUrl } from '@/lib/patientJoinUrl';
 import { GET_ORGANIZATION_BY_ID_QUERY } from '@/graphql/queries/organizations.queries';
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import type { OrganizationByIdResponse, UserByClerkIdResponse } from '@/types/apollo';
-
-interface ExerciseMapping {
-  id: string;
-  exerciseId: string;
-  order?: number;
-  sets?: number;
-  reps?: number;
-  duration?: number;
-  restSets?: number;
-  restReps?: number;
-  executionTime?: number;
-  tempo?: string;
-  notes?: string;
-  customName?: string;
-  customDescription?: string;
-  exercise?: {
-    id: string;
-    name: string;
-    // Nowe pola
-    patientDescription?: string;
-    side?: string;
-    thumbnailUrl?: string;
-    defaultSets?: number;
-    defaultReps?: number;
-    defaultDuration?: number;
-    // Legacy aliasy
-    description?: string;
-    type?: string;
-    imageUrl?: string;
-    images?: string[];
-    exerciseSide?: string;
-    notes?: string;
-  };
-}
 
 /**
  * Returns base64 logo when preload succeeds, undefined when there is no logo,
@@ -91,7 +57,7 @@ interface ExerciseSetInput {
   id: string;
   name: string;
   description?: string;
-  exerciseMappings?: ExerciseMapping[];
+  exerciseMappings?: PdfMappingSource[];
   frequency?: {
     timesPerDay?: number;
     timesPerWeek?: number;
@@ -183,14 +149,7 @@ export function GeneratePDFDialog({
 
     try {
       // Przygotuj dane organizacji
-      const pdfOrganization: PDFOrganization = {
-        name: organization.name || 'Gabinet Fizjoterapii',
-        logoUrl: organization.logoUrl,
-        address: organization.address,
-        phone: organization.contactPhone,
-        email: organization.contactEmail,
-        website: organization.website,
-      };
+      const pdfOrganization = toPdfOrganization(organization);
 
       // Mapuj ćwiczenia
       const pdfExercises: PDFExercise[] = toPdfExercises(exerciseSet.exerciseMappings, exerciseOverrides);
@@ -291,7 +250,10 @@ export function GeneratePDFDialog({
   }, [open]);
 
   // Liczniki z tych samych ćwiczeń co PDF: bez ukrytych dla pacjenta.
-  const printableExercises = toPdfExercises(exerciseSet.exerciseMappings, exerciseOverrides);
+  const printableExercises = useMemo(
+    () => toPdfExercises(exerciseSet.exerciseMappings, exerciseOverrides),
+    [exerciseSet.exerciseMappings, exerciseOverrides]
+  );
   const exerciseCount = printableExercises.length;
   const exerciseCountText = formatExercises(exerciseCount);
 

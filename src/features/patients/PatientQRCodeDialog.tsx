@@ -11,17 +11,9 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 
-import { loadPdfRenderer } from '@/components/pdf/loadPdfRenderer';
-import { preloadPdfExerciseImages, toPdfExercises } from '@/components/pdf/pdfExerciseUtils';
+import { buildPatientCardPdf } from '@/components/pdf/patientCardPdf';
+import { toPdfExercises } from '@/components/pdf/pdfExerciseUtils';
 import { PRINT_UNAVAILABLE_MESSAGE, downloadBlob, openPendingWindow, showPdfInWindow } from '@/components/pdf/pdfOutput';
-import type {
-  PDFExerciseSet,
-  PDFOrganization,
-  PDFPatient,
-  PDFTherapist,
-  PDFOptions,
-  PDFExercise,
-} from '@/components/pdf';
 
 import { GET_ORGANIZATION_BY_ID_QUERY } from '@/graphql/queries/organizations.queries';
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
@@ -175,6 +167,10 @@ export function PatientQRCodeDialog({
   }, [open]);
 
   const selectedPlan = plans.find((plan) => plan.id === selectedPlanId) ?? plans[0];
+  const exerciseCount = useMemo(
+    () => (selectedPlan ? toPdfExercises(selectedPlan.exerciseMappings, selectedPlan.exerciseOverrides).length : 0),
+    [selectedPlan]
+  );
 
   const getQRCodeDataUrl = useCallback((): string | undefined => {
     const canvas = qrCanvasRef.current?.querySelector('canvas');
@@ -193,7 +189,6 @@ export function PatientQRCodeDialog({
 
   const hasPlans = plans.length > 0;
   const hasMultiplePlans = plans.length > 1;
-  const exerciseCount = selectedPlan ? toPdfExercises(selectedPlan.exerciseMappings, selectedPlan.exerciseOverrides).length : 0;
   // Karta bez ćwiczeń (wszystkie ukryte dla pacjenta) nie ma czego pokazać.
   const canGeneratePdf = !isGeneratingPDF && !!organization && !!selectedPlan && exerciseCount > 0;
 
@@ -226,65 +221,23 @@ export function PatientQRCodeDialog({
   };
 
   /** Składa PDF karty dla wybranego planu; null, gdy brakuje danych. */
-  const buildPatientCardPdf = async (): Promise<{ blob: Blob; fileName: string } | null> => {
+  const buildCard = async (): Promise<{ blob: Blob; fileName: string } | null> => {
     if (!organization || !selectedPlan) {
       toast.error('Brak danych do wygenerowania PDF');
       return null;
     }
-
-    const pdfOrganization: PDFOrganization = {
-      name: organization.name || 'Gabinet Fizjoterapii',
-      logoUrl: organization.logoUrl,
-      address: organization.address,
-      phone: organization.contactPhone,
-      email: organization.contactEmail,
-      website: organization.website,
-    };
-
-    const pdfExercises: PDFExercise[] = toPdfExercises(selectedPlan.exerciseMappings, selectedPlan.exerciseOverrides);
-    await preloadPdfExerciseImages(pdfExercises);
-
-    const pdfExerciseSet: PDFExerciseSet = {
-      id: selectedPlan.exerciseSetId,
-      name: selectedPlan.name,
-      description: selectedPlan.description,
-      exercises: pdfExercises,
-      frequency: selectedPlan.frequency,
-      startDate: selectedPlan.startDate || selectedPlan.assignedAt,
-      endDate: selectedPlan.endDate,
-    };
-
-    const pdfPatient: PDFPatient = { name: patient.name, email: patient.email };
-    const pdfTherapist: PDFTherapist | undefined = therapistUser?.fullname
-      ? { name: therapistUser.fullname }
-      : undefined;
-    const pdfOptions: PDFOptions = {
-      showImages: true,
-      showFrequency: !!selectedPlan.frequency,
-      showQRCode: true,
-      compactMode: false,
-      notes: undefined,
-    };
-
-    const { pdf, ExerciseSetPDF } = await loadPdfRenderer();
-    const blob = await pdf(
-      <ExerciseSetPDF
-        exerciseSet={pdfExerciseSet}
-        organization={pdfOrganization}
-        patient={pdfPatient}
-        therapist={pdfTherapist}
-        options={pdfOptions}
-        qrCodeDataUrl={getQRCodeDataUrl()}
-        joinUrl={joinUrl ?? undefined}
-      />
-    ).toBlob();
-
-    const safeName = selectedPlan.name
-      .replaceAll(/[^a-zA-Z0-9ąćęłńóśźżĄĆĘŁŃÓŚŹŻ\s-]/g, '')
-      .replaceAll(/\s+/g, '_')
-      .substring(0, 50);
-    const fileName = `Karta_Pacjenta_${safeName}_${patient.name.split(' ')[0]}.pdf`;
-    return { blob, fileName };
+    return buildPatientCardPdf({
+      organization,
+      patient,
+      therapistName: therapistUser?.fullname,
+      plan: {
+        ...selectedPlan,
+        id: selectedPlan.exerciseSetId,
+        startDate: selectedPlan.startDate || selectedPlan.assignedAt,
+      },
+      qrCodeDataUrl: getQRCodeDataUrl(),
+      joinUrl: joinUrl ?? undefined,
+    });
   };
 
   const runPdfAction = async (
@@ -293,7 +246,7 @@ export function PatientQRCodeDialog({
   ) => {
     setIsGeneratingPDF(true);
     try {
-      const result = await buildPatientCardPdf();
+      const result = await buildCard();
       if (!result) {
         onFail?.();
         return;

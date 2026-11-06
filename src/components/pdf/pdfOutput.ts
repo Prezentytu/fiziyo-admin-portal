@@ -4,6 +4,8 @@
  * więc natychmiastowe `revokeObjectURL` dawało pustą kartę.
  */
 
+import { clickDownloadLink } from '@/lib/download';
+
 const BLOB_URL_TTL_MS = 60_000;
 
 function revokeLater(url: string) {
@@ -12,12 +14,7 @@ function revokeLater(url: string) {
 
 export function downloadBlob(blob: Blob, fileName: string) {
   const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
+  clickDownloadLink(url, fileName);
   revokeLater(url);
 }
 

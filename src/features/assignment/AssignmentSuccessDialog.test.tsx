@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -36,12 +36,14 @@ vi.mock('@react-pdf/renderer', () => ({
 vi.mock('@/components/pdf', () => ({
   ExerciseSetPDF: () => null,
   preloadPdfExerciseImages: vi.fn(async () => ({ total: 0, loaded: 0 })),
-  resolvePdfExerciseImageUrl: vi.fn(() => undefined),
 }));
 
 vi.mock('@/components/shared', () => ({
   ScheduleSummary: () => null,
 }));
+
+const download = vi.hoisted(() => ({ clickDownloadLink: vi.fn() }));
+vi.mock('@/lib/download', () => download);
 
 const patients = [{ id: 'pat-1', name: 'Jan Testowy', email: 'jan@example.com' }];
 
@@ -111,5 +113,31 @@ describe('AssignmentSuccessDialog QR payload', () => {
 
     await user.click(screen.getByTestId('assign-success-more-options-trigger'));
     expect(screen.getByTestId('assign-success-download-qr-btn')).toBeDisabled();
+  });
+
+  it('pobiera kartę z nazwą planu z kreatora i imieniem pacjenta', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:karta');
+    render(
+      <AssignmentSuccessDialog
+        open
+        onOpenChange={vi.fn()}
+        patients={patients}
+        setName="Plan testowy"
+        organizationId="org-9"
+        therapistId="th-2"
+        exerciseSet={{
+          id: 'set-1',
+          name: 'Zestaw',
+          exerciseMappings: [{ id: 'm-1', exerciseId: 'e-1', order: 1, exercise: { id: 'e-1', name: 'Przysiad' } }],
+        }}
+      />
+    );
+
+    await user.click(screen.getByTestId('assign-success-download-pdf-btn'));
+
+    await waitFor(() =>
+      expect(download.clickDownloadLink).toHaveBeenCalledWith('blob:karta', 'Karta_Pacjenta_Plan_testowy_Jan.pdf')
+    );
   });
 });
