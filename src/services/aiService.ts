@@ -213,21 +213,16 @@ class AIService {
     }
 
     try {
-      const response = await this.request<unknown>(
-        'exercise-variants',
-        { query: trimmed.slice(0, 300) },
-        { suppressErrorToast: true }
-      );
+      const response = await this.request<unknown>('exercise-variants', { query: trimmed.slice(0, 300) });
       return normalizeAiExerciseVariants(response);
     } catch (error) {
-      const aborted = error instanceof Error && (error.name === 'AbortError' || error.message.includes('aborted'));
-      if (!aborted) {
-        const unavailable = error instanceof Error && error.message.startsWith('AI_TEMPORARILY_UNAVAILABLE');
-        toast.error(
-          unavailable
-            ? 'Funkcja chwilowo niedostępna. Spróbuj ponownie za chwilę.'
-            : 'Nie udało się pobrać propozycji nazw. Spróbuj ponownie.'
-        );
+      const message = error instanceof Error ? error.message : '';
+      const aborted = error instanceof Error && (error.name === 'AbortError' || message.includes('aborted'));
+      // Known AI errors (credits, provider) were already shown by request(); the rest needs a message here.
+      const alreadyShown =
+        message.startsWith('AI_TEMPORARILY_UNAVAILABLE') || message.startsWith('AI_PROVIDER_FAILURE');
+      if (!aborted && !alreadyShown) {
+        toast.error('Nie udało się pobrać propozycji nazw. Spróbuj ponownie.');
       }
       if (isDev) {
         console.error('[AIService] suggestExerciseVariants error:', error);
