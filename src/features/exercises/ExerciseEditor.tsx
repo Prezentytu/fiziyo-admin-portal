@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 import { ExerciseParametersEditor } from './ExerciseParametersEditor';
 import { ExerciseContentSections } from './ExerciseContentSections';
 import type { UseExerciseEditorFormResult } from './useExerciseEditorForm';
-import { deepMergeFillGaps } from './utils/enrichmentFillGaps';
+import { deepMergeFillGaps, revertUnchangedAiValues } from './utils/enrichmentFillGaps';
 
 import { aiService } from '@/services/aiService';
 import { compactEnrichment, parseEnrichmentJson, toFullShapeJson } from '@/features/verification/utils/enrichment';
@@ -48,17 +48,6 @@ interface ExerciseEditorProps {
   /** Pokazuje zwijaną sekcję "Zaawansowane (JSON)" do edycji surowego enrichmentu. */
   showAdvancedJson?: boolean;
   className?: string;
-}
-
-function revertUnchangedAiValues(current: unknown, before: unknown, after: unknown): unknown {
-  if (JSON.stringify(current) === JSON.stringify(after)) return before;
-  if (!current || typeof current !== 'object' || Array.isArray(current)) return current;
-  const currentFields = current as Record<string, unknown>;
-  const beforeFields = (before && typeof before === 'object' ? before : {}) as Record<string, unknown>;
-  const afterFields = (after && typeof after === 'object' ? after : {}) as Record<string, unknown>;
-  return Object.fromEntries(Object.entries(currentFields)
-    .map(([key, value]) => [key, revertUnchangedAiValues(value, beforeFields[key], afterFields[key])])
-    .filter(([, value]) => value !== undefined));
 }
 
 interface AiFillChange {

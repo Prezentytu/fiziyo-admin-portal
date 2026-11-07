@@ -7,6 +7,7 @@ import {
   buildAiFullExerciseDraft,
   matchAiSuggestedTagIds,
   mergeAiEnrichment,
+  revertAiFill,
   normalizeAiExerciseVariants,
   sanitizeAiSuggestion,
   type AiFullExerciseTarget,
@@ -127,6 +128,7 @@ describe('sanitizeAiSuggestion', () => {
 describe('buildAiFullExerciseDraft', () => {
   it('fills the whole exercise from the chosen variant and suggestion at once', () => {
     const { next, filled } = buildAiFullExerciseDraft(wizardDefaults, {
+      defaults: wizardDefaults,
       suggestion: suggestion({
         advancedParams: {
           tempo: '2-0-1-0',
@@ -175,6 +177,7 @@ describe('buildAiFullExerciseDraft', () => {
     const prev = { ...wizardDefaults, description: 'Mój opis', rangeOfMotion: '0-45°' };
 
     const { next, filled } = buildAiFullExerciseDraft(prev, {
+      defaults: wizardDefaults,
       suggestion: suggestion({ sets: 99, reps: 0, restSets: 9999, exerciseSide: 'none', advancedParams: null }),
     });
 
@@ -186,6 +189,7 @@ describe('buildAiFullExerciseDraft', () => {
 
   it('maps a time-based suggestion to execution time with one rep, like the hold preset', () => {
     const { next } = buildAiFullExerciseDraft(wizardDefaults, {
+      defaults: wizardDefaults,
       suggestion: suggestion({ type: 'time', reps: null, duration: 30, sets: 3 }),
     });
 
@@ -196,11 +200,80 @@ describe('buildAiFullExerciseDraft', () => {
     const { next } = buildAiFullExerciseDraft(
       { ...wizardDefaults, name: 'hip trust' },
       {
+        defaults: wizardDefaults,
         suggestion: suggestion({ correctedName: 'Hip Thrust' }),
       }
     );
 
     expect(next.name).toBe('Hip Thrust');
+  });
+});
+
+describe('buildAiFullExerciseDraft keeps therapist values', () => {
+  it('fills only fields that still have the wizard default', () => {
+    const prev: AiFullExerciseTarget = {
+      ...wizardDefaults,
+      sets: 4,
+      restSets: 90,
+      tempo: '3010',
+      loadKg: 5,
+      exerciseSide: 'left',
+      difficultyLevel: 'HARD',
+    };
+
+    const { next, filled } = buildAiFullExerciseDraft(prev, {
+      defaults: wizardDefaults,
+      suggestion: suggestion({
+        advancedParams: { tempo: '2010', weight: '2', rangeOfMotion: null, preparationTime: 8, executionTime: null },
+      }),
+      variant: { name: 'Clamshell z gumą', position: null, equipment: null, side: 'both', level: 'easy' },
+    });
+
+    expect(next).toMatchObject({
+      sets: 4,
+      restSets: 90,
+      tempo: '3010',
+      loadKg: 5,
+      exerciseSide: 'left',
+      difficultyLevel: 'HARD',
+      reps: 12,
+      preparationTime: 8,
+    });
+    expect(filled).not.toContain('tempo');
+    expect(filled).not.toContain('strona ciała');
+  });
+
+  it('changes reps and execution time only together and only when both are defaults', () => {
+    const { next } = buildAiFullExerciseDraft(
+      { ...wizardDefaults, reps: 8 },
+      { defaults: wizardDefaults, suggestion: suggestion({ type: 'time', reps: null, duration: 30 }) }
+    );
+
+    expect(next).toMatchObject({ reps: 8, executionTime: null });
+  });
+});
+
+describe('revertAiFill', () => {
+  it('reverts AI values but keeps fields edited after the fill', () => {
+    const before = { ...wizardDefaults };
+    const after = { ...wizardDefaults, sets: 3, reps: 12, description: 'Opis AI', tempo: '2010' };
+    const current = { ...after, reps: 15, description: 'Mój opis' };
+
+    expect(revertAiFill(current, before, after)).toEqual({
+      ...wizardDefaults,
+      reps: 15,
+      description: 'Mój opis',
+    });
+  });
+
+  it('keeps manual edits inside the enrichment draft', () => {
+    const before = { patient: { cues: ['Moja wskazówka'] } };
+    const after = { patient: { cues: ['Moja wskazówka'], steps: ['AI krok'], mistakes: [{ mistake: 'AI' }] } };
+    const current = { patient: { cues: ['Moja wskazówka'], steps: ['Mój krok'], mistakes: [{ mistake: 'AI' }] } };
+
+    expect(revertAiFill(current, before, after)).toEqual({
+      patient: { cues: ['Moja wskazówka'], steps: ['Mój krok'] },
+    });
   });
 });
 
@@ -215,6 +288,13 @@ describe('matchAiSuggestedTagIds', () => {
     expect(matchAiSuggestedTagIds(['posladki', 'guma'], tags, [])).toEqual(['t1', 't2']);
     expect(matchAiSuggestedTagIds(['Pośladki', 'Guma oporowa'], tags, ['a', 'b'])).toEqual(['a', 'b', 't1']);
     expect(matchAiSuggestedTagIds(null, tags, ['a'])).toEqual(['a']);
+  });
+
+  it('never drops the therapist own tags', () => {
+    const tags = [{ id: 't1', name: 'Pośladki' }];
+
+    expect(matchAiSuggestedTagIds(['Pośladki'], tags, ['a', 'b', 'c', 'd'])).toEqual(['a', 'b', 'c', 'd']);
+    expect(matchAiSuggestedTagIds(['Pośladki'], tags, ['t1'])).toEqual(['t1']);
   });
 });
 

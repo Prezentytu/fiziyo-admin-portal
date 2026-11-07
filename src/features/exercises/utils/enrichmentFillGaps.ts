@@ -31,3 +31,20 @@ export function deepMergeFillGaps(currentValue: unknown, aiValue: unknown): unkn
 
   return currentValue;
 }
+
+/**
+ * Undo of an AI fill that keeps manual edits: a value still equal to what AI put there goes back
+ * to its value from before the fill; anything the therapist changed afterwards stays.
+ */
+export function revertUnchangedAiValues(current: unknown, before: unknown, after: unknown): unknown {
+  if (JSON.stringify(current) === JSON.stringify(after)) return before;
+  if (!current || typeof current !== 'object' || Array.isArray(current)) return current;
+  const currentFields = current as Record<string, unknown>;
+  const beforeFields = (before && typeof before === 'object' ? before : {}) as Record<string, unknown>;
+  const afterFields = (after && typeof after === 'object' ? after : {}) as Record<string, unknown>;
+  return Object.fromEntries(
+    Object.entries(currentFields)
+      .map(([key, value]) => [key, revertUnchangedAiValues(value, beforeFields[key], afterFields[key])])
+      .filter(([, value]) => value !== undefined)
+  );
+}

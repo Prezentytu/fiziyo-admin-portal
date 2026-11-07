@@ -87,6 +87,7 @@ import {
   buildAiFullExerciseDraft,
   matchAiSuggestedTagIds,
   mergeAiEnrichment,
+  revertAiFill,
   type AiExerciseVariant,
 } from './utils/aiFullExercise';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
@@ -1018,8 +1019,14 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
   const [isFillingAll, setIsFillingAll] = useState(false);
   const [fillingVariantName, setFillingVariantName] = useState<string | null>(null);
   const [aiFillSummary, setAiFillSummary] = useState<AiFullExerciseSummary | null>(null);
-  const aiFillUndoRef = useRef<{ data: ExerciseData; enrichment: ExerciseEnrichmentData } | null>(null);
+  const aiFillUndoRef = useRef<{
+    before: { data: ExerciseData; enrichment: ExerciseEnrichmentData };
+    after: { data: ExerciseData; enrichment: ExerciseEnrichmentData };
+  } | null>(null);
   const fillRunRef = useRef(0);
+  const lastVariantsQueryRef = useRef<string | null>(null);
+  // AI requests in flight from this wizard; closing it aborts them so the backend refunds credits.
+  const aiPendingRef = useRef(0);
 
   // Refs
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -1177,7 +1184,14 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
     setFillingVariantName(null);
     setAiFillSummary(null);
     aiFillUndoRef.current = null;
+    lastVariantsQueryRef.current = null;
     fillRunRef.current += 1;
+    if (aiPendingRef.current > 0) {
+      aiService.abortEndpoint('exercise-variants');
+      aiService.abortEndpoint('generate-enrichment');
+      aiService.abortEndpoint('exercise-suggest');
+      aiPendingRef.current = 0;
+    }
   }, []);
 
   // Handle close attempt
@@ -1361,6 +1375,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
 
     setIsLoadingAI(true);
     setShowAIDiff(true);
+    aiPendingRef.current += 1;
 
     try {
       const tagNames = tags.map((t) => t.name);
@@ -1372,6 +1387,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
       toast.error('Nie udało się uzyskać sugestii AI');
       setAiSuggestion(null);
     } finally {
+      aiPendingRef.current = Math.max(0, aiPendingRef.current - 1);
       setIsLoadingAI(false);
     }
   }, [data.name, tags, existingExercises]);
@@ -1444,13 +1460,6 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
     setIsLoadingAI(false);
   }, []);
 
-  // Cleanup gdy modal się zamyka w trakcie ładowania AI
-  useEffect(() => {
-    if (!open && isLoadingAI) {
-      aiService.abortEndpoint('exercise-suggest');
-    }
-  }, [open, isLoadingAI]);
-
   // Latest form state for async AI results; a result never overwrites edits made while it was loading.
   const dataRef = useRef(data);
   const enrichmentRef = useRef(enrichmentDraft.enrichment);
@@ -1465,14 +1474,32 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
       toast.error('Wpisz, jakiego ćwiczenia potrzebujesz (min. 2 znaki)');
       return;
     }
+    // Same text as the variants on screen: nothing new to ask (and pay) for.
+    if (aiVariants !== null && lastVariantsQueryRef.current === query) return;
 
     setIsLoadingVariants(true);
     const run = fillRunRef.current;
+    aiPendingRef.current += 1;
     const variants = await aiService.suggestExerciseVariants(query);
     if (run !== fillRunRef.current) return;
-    setAiVariants(variants);
+    aiPendingRef.current = Math.max(0, aiPendingRef.current - 1);
     setIsLoadingVariants(false);
-  }, [data.name]);
+    // null = request failed; aiService already told the therapist, so no "no variants" state.
+    lastVariantsQueryRef.current = variants ? query : null;
+    setAiVariants(variants);
+  }, [aiVariants, data.name]);
+
+  const handleNameChange = useCallback(
+    (value: string) => {
+      updateField('name', value);
+      // Variants describe the text they were asked for; a new text makes them stale.
+      if (lastVariantsQueryRef.current !== null && value.trim() !== lastVariantsQueryRef.current) {
+        lastVariantsQueryRef.current = null;
+        setAiVariants(null);
+      }
+    },
+    [updateField]
+  );
 
   const handleFillAll = useCallback(
     async (variant: AiExerciseVariant | null) => {
@@ -1486,6 +1513,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
       setFillingVariantName(variant?.name ?? null);
       setAiFillSummary(null);
       const run = fillRunRef.current;
+      aiPendingRef.current += 1;
 
       const tagNames = tags.map((t) => t.name);
       const existingNames = rankExerciseNamesForDuplicateCheck(exerciseName, existingExercises);
@@ -1499,6 +1527,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
         }),
       ]);
       if (run !== fillRunRef.current) return;
+      aiPendingRef.current = Math.max(0, aiPendingRef.current - 1);
 
       setIsFillingAll(false);
       setFillingVariantName(null);
@@ -1511,21 +1540,27 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
 
       const before = dataRef.current;
       const beforeEnrichment = enrichmentRef.current;
-      const core = buildAiFullExerciseDraft(before, { suggestion, variant });
+      const core = buildAiFullExerciseDraft(before, { suggestion, variant, defaults: DEFAULT_DATA });
       const filled = [...core.filled];
 
       const mainTags = matchAiSuggestedTagIds(suggestion?.suggestedTags, tags, before.mainTags);
-      if (mainTags.length !== before.mainTags.length) filled.push('tagi');
+      if (mainTags.length > before.mainTags.length) filled.push('tagi');
 
       const content = mergeAiEnrichment(beforeEnrichment, aiEnrichment);
       filled.push(...content.filled);
 
-      aiFillUndoRef.current = { data: before, enrichment: beforeEnrichment };
-      setData({ ...core.next, mainTags });
+      const afterData = { ...core.next, mainTags };
+      const afterEnrichment = content.filled.length > 0 ? content.next : beforeEnrichment;
+      aiFillUndoRef.current = {
+        before: { data: before, enrichment: beforeEnrichment },
+        after: { data: afterData, enrichment: afterEnrichment },
+      };
+      setData(afterData);
       if (content.filled.length > 0) {
-        enrichmentDraft.replace(content.next);
+        enrichmentDraft.replace(afterEnrichment);
         setShowAdvanced(true);
       }
+      lastVariantsQueryRef.current = null;
       setAiVariants(null);
       setAiFillSummary({ filled: [...new Set(filled)] });
     },
@@ -1545,21 +1580,15 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
   const handleUndoAiFill = useCallback(() => {
     const snapshot = aiFillUndoRef.current;
     if (!snapshot) return;
-    setData(snapshot.data);
-    enrichmentDraft.replace(snapshot.enrichment);
+    // Only values still equal to the AI draft go back; edits made after the fill stay.
+    setData(revertAiFill(dataRef.current, snapshot.before.data, snapshot.after.data));
+    enrichmentDraft.replace(
+      revertAiFill(enrichmentRef.current, snapshot.before.enrichment, snapshot.after.enrichment)
+    );
     aiFillUndoRef.current = null;
     setAiFillSummary(null);
     toast.info('Cofnięto szkic AI');
   }, [enrichmentDraft]);
-
-  // Abort whole-exercise requests when the dialog closes; the backend refunds cancelled credits.
-  useEffect(() => {
-    if (!open && (isFillingAll || isLoadingVariants)) {
-      aiService.abortEndpoint('exercise-variants');
-      aiService.abortEndpoint('generate-enrichment');
-      aiService.abortEndpoint('exercise-suggest');
-    }
-  }, [open, isFillingAll, isLoadingVariants]);
 
   // Validation
   const isValid = data.name.trim().length >= 2;
@@ -1743,7 +1772,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                 <Input
                   ref={nameInputRef}
                   value={voiceState === 'listening' ? interimTranscript || data.name : data.name}
-                  onChange={(e) => updateField('name', e.target.value)}
+                  onChange={(e) => handleNameChange(e.target.value)}
                   onKeyDown={handleNameKeyDown}
                   placeholder="np. Przysiad ze sztangą"
                   className={cn(

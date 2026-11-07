@@ -227,22 +227,35 @@ class AIService {
 
   /**
    * Pełne, precyzyjne nazwy i warianty ćwiczenia (pozycja, sprzęt, strona, poziom) z opisu potrzeby.
-   * Pusta lista przy błędzie; odpowiedź przechodzi przez `normalizeAiExerciseVariants`.
+   * `[]` = AI nie znalazło wariantów; `null` = zapytanie się nie udało (komunikat już pokazany).
    */
-  async suggestExerciseVariants(query: string): Promise<AiExerciseVariant[]> {
+  async suggestExerciseVariants(query: string): Promise<AiExerciseVariant[] | null> {
     const trimmed = query.trim();
     if (trimmed.length < 2) {
-      return [];
+      return null;
     }
 
     try {
-      const response = await this.request<unknown>('exercise-variants', { query: trimmed.slice(0, 300) });
+      const response = await this.request<unknown>(
+        'exercise-variants',
+        { query: trimmed.slice(0, 300) },
+        { suppressErrorToast: true }
+      );
       return normalizeAiExerciseVariants(response);
     } catch (error) {
+      const aborted = error instanceof Error && (error.name === 'AbortError' || error.message.includes('aborted'));
+      if (!aborted) {
+        const unavailable = error instanceof Error && error.message.startsWith('AI_TEMPORARILY_UNAVAILABLE');
+        toast.error(
+          unavailable
+            ? 'Funkcja chwilowo niedostępna. Spróbuj ponownie za chwilę.'
+            : 'Nie udało się pobrać propozycji nazw. Spróbuj ponownie.'
+        );
+      }
       if (isDev) {
         console.error('[AIService] suggestExerciseVariants error:', error);
       }
-      return [];
+      return null;
     }
   }
 

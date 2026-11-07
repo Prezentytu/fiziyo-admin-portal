@@ -4,7 +4,7 @@ import { computeCompleteness } from '@/features/verification/utils/enrichmentSke
 import { compactEnrichment } from '@/features/verification/utils/enrichment';
 import { toV3 } from '@/features/verification/utils/enrichmentToV3';
 import { aiSuggestionLoadKg, aiSuggestionSide, applyAiSuggestionParams } from './aiSuggestionParams';
-import { deepMergeFillGaps } from './enrichmentFillGaps';
+import { deepMergeFillGaps, revertUnchangedAiValues } from './enrichmentFillGaps';
 
 // ============================================================
 // Warianty nazwy (krok 1: „wpisz, czego potrzebujesz”)
@@ -188,6 +188,8 @@ export type AiFilledPart =
 export interface AiFullExerciseInput {
   suggestion: ExerciseSuggestionResponse | null;
   variant?: AiExerciseVariant | null;
+  /** Values the wizard starts with. Only a field still equal to its default is filled by AI. */
+  defaults: AiFullExerciseTarget;
 }
 
 export interface AiFullExerciseResult<T extends AiFullExerciseTarget> {
@@ -199,10 +201,12 @@ export interface AiFullExerciseResult<T extends AiFullExerciseTarget> {
  * Szkic całego ćwiczenia z sugestii AI i wybranego wariantu. Nic nie zapisuje: wynik trafia do
  * formularza kreatora, a fizjoterapeuta przegląda go i zapisuje sam.
  *
- * - Nazwa: wybrany wariant, inaczej korekta nazwy z AI.
- * - Opis: tylko gdy pole jest puste (tekst fizjoterapeuty wygrywa).
- * - Podstawowe parametry: z AI, bo kreator startuje z wartości domyślnych; wartości spoza
- *   `AI_PARAM_RANGES` i puste nie kasują tego, co jest.
+ * - Nazwa: wybrany wariant (wybór fizjoterapeuty), inaczej korekta nazwy z AI.
+ * - Każde inne pole AI wypełnia tylko wtedy, gdy ma jeszcze wartość startową kreatora
+ *   (`defaults`): wartość wpisana przez fizjoterapeutę zawsze zostaje.
+ * - Powtórzenia i czas powtórzenia idą parą (ćwiczenie na czas to `reps = 1` + czas), więc AI
+ *   zmienia je tylko, gdy obie mają wartość startową.
+ * - Puste i spoza `AI_PARAM_RANGES` wartości AI niczego nie zmieniają.
  * - Strona i poziom: najpierw wariant, potem sugestia; `none`/`unknown` niczego nie nadpisują.
  */
 export function buildAiFullExerciseDraft<T extends AiFullExerciseTarget>(
@@ -211,8 +215,10 @@ export function buildAiFullExerciseDraft<T extends AiFullExerciseTarget>(
 ): AiFullExerciseResult<T> {
   const filled: AiFilledPart[] = [];
   const next: T = { ...prev };
+  const { defaults } = input;
   const variant = input.variant ?? null;
   const suggestion = input.suggestion ? sanitizeAiSuggestion(input.suggestion) : null;
+  const untouched = (key: keyof AiFullExerciseTarget) => prev[key] === defaults[key];
 
   const name = variant?.name ?? sanitizeText(suggestion?.correctedName, MAX_VARIANT_NAME_LENGTH);
   if (name && name !== prev.name) {
@@ -228,33 +234,48 @@ export function buildAiFullExerciseDraft<T extends AiFullExerciseTarget>(
 
   if (suggestion) {
     const params = applyAiSuggestionParams(prev, suggestion);
-    const paramsChanged = (Object.keys(params) as (keyof typeof params)[]).some((key) => params[key] !== prev[key]);
-    Object.assign(next, params);
+    let paramsChanged = false;
+    const single = ['sets', 'restSets', 'preparationTime'] as const;
+    for (const key of single) {
+      if (untouched(key) && params[key] !== prev[key]) {
+        next[key] = params[key];
+        paramsChanged = true;
+      }
+    }
+    if (
+      untouched('reps') &&
+      untouched('executionTime') &&
+      (params.reps !== prev.reps || params.executionTime !== prev.executionTime)
+    ) {
+      next.reps = params.reps;
+      next.executionTime = params.executionTime;
+      paramsChanged = true;
+    }
     if (paramsChanged) filled.push('podstawowe parametry');
   }
 
   const variantSide = variant && variant.side !== 'none' ? variant.side : null;
   const side =
     variantSide ?? (suggestion ? aiSuggestionSide(suggestion.exerciseSide, prev.exerciseSide) : prev.exerciseSide);
-  if (side !== prev.exerciseSide) {
+  if (untouched('exerciseSide') && side !== prev.exerciseSide) {
     next.exerciseSide = side;
     filled.push('strona ciała');
   }
 
   const difficulty = variant ? LEVEL_TO_DIFFICULTY[variant.level] : null;
-  if (difficulty && difficulty !== prev.difficultyLevel) {
+  if (difficulty && untouched('difficultyLevel') && difficulty !== prev.difficultyLevel) {
     next.difficultyLevel = difficulty;
     filled.push('poziom trudności');
   }
 
   const advanced = suggestion?.advancedParams;
-  if (advanced?.tempo && advanced.tempo !== prev.tempo) {
+  if (advanced?.tempo && untouched('tempo') && advanced.tempo !== prev.tempo) {
     next.tempo = advanced.tempo;
     filled.push('tempo');
   }
 
   const loadKg = inRange(aiSuggestionLoadKg(advanced?.weight), AI_PARAM_RANGES.loadKg);
-  if (loadKg !== null && loadKg !== prev.loadKg) {
+  if (loadKg !== null && untouched('loadKg') && loadKg !== prev.loadKg) {
     next.loadKg = loadKg;
     filled.push('obciążenie');
   }
@@ -267,6 +288,11 @@ export function buildAiFullExerciseDraft<T extends AiFullExerciseTarget>(
   return { next, filled };
 }
 
+/** „Cofnij” po wypełnieniu: wraca tylko to, co nadal ma wartość z AI; późniejsze ręczne zmiany zostają. */
+export function revertAiFill<T>(current: T, before: T, after: T): T {
+  return revertUnchangedAiValues(current, before, after) as T;
+}
+
 interface MatchableTag {
   id: string;
   name: string;
@@ -276,7 +302,7 @@ function normalizeTagText(text: string): string {
   return text.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ł/g, 'l').trim();
 }
 
-/** Tagi organizacji pasujące do tagów z AI (po normalizacji polskich znaków), maks. `limit` łącznie z wybranymi. */
+/** Wybrane tagi plus pasujące tagi z AI (po normalizacji polskich znaków), dopełnione maks. do `limit`. */
 export function matchAiSuggestedTagIds(
   suggestedTags: readonly string[] | null | undefined,
   available: readonly MatchableTag[],
@@ -290,7 +316,9 @@ export function matchAiSuggestedTagIds(
       return name.length >= 3 && suggestions.some((s) => s.includes(name) || name.includes(s));
     })
     .map((tag) => tag.id);
-  return [...new Set([...selected, ...matched])].slice(0, limit);
+  const added = matched.filter((id, index) => !selected.includes(id) && matched.indexOf(id) === index);
+  // The therapist's own tags are never dropped; AI only tops up to the limit.
+  return [...selected, ...added.slice(0, Math.max(0, limit - selected.length))];
 }
 
 /**
