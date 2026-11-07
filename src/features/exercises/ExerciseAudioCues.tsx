@@ -3,6 +3,7 @@
 import { Lightbulb, Volume2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ListEditor } from '@/components/shared/enrichment/ListEditor';
+import { PlayerHintLengthCounter } from '@/components/shared/enrichment/PlayerHintLengthCounter';
 import { cn } from '@/lib/utils';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import { EXERCISE_CONTENT_LABELS } from '@/components/shared/enrichment/enrichmentFieldLabels';
@@ -120,6 +121,9 @@ export function ExerciseAudioCues({
           onBlur={() => void persist?.()}
           testIdPrefix="exercise-audio-cues-editor"
           onRemoveItem={(index) => setPath?.(CUE_PHASES_PATH, removeCuePhaseAt(cuePhases, index))}
+          renderItemFooter={(text, index) => (
+            <PlayerHintLengthCounter text={text} testId={`exercise-audio-cues-editor-length-${index}`} />
+          )}
           renderItemAccessory={(index) => (
             <SegmentedControl
               label={`Faza wskazówki ${index + 1}`}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
@@ -10,6 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SIDE_OPTIONS } from '@/components/shared/exercise/fieldContract';
 import { Textarea } from '@/components/ui/textarea';
+import { PlayerHintLengthCounter } from '@/components/shared/enrichment/PlayerHintLengthCounter';
+import { getLongestPlayerHint } from '@/features/exercises/utils/playerHintLength';
 import { useChatActions } from '../ChatSessionContext';
 import { useChatMode } from '../useChatMode';
 import {
@@ -81,6 +83,7 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
     },
   });
   const { errors } = form.formState;
+  const [stepsText, cuesText] = useWatch({ control: form.control, name: ['steps', 'cues'] });
   const proposalState = useExerciseProposal({
     messageId,
     name: spec.name,
@@ -224,10 +227,20 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
         <label className="flex flex-col gap-1.5 text-[13px] text-label-secondary">
           Kroki wykonania (każdy krok w nowej linii)
           <Textarea rows={4} data-testid={`${testId}-steps-input`} {...form.register('steps')} />
+          <PlayerHintLengthCounter
+            text={getLongestPlayerHint(stepsText.split('\n'))}
+            lead="Najdłuższy krok:"
+            testId={`${testId}-steps-player-length`}
+          />
         </label>
         <label className="flex flex-col gap-1.5 text-[13px] text-label-secondary">
           Wskazówki dla pacjenta (każda w nowej linii)
           <Textarea rows={3} data-testid={`${testId}-cues-input`} {...form.register('cues')} />
+          <PlayerHintLengthCounter
+            text={getLongestPlayerHint(cuesText.split('\n'))}
+            lead="Najdłuższa wskazówka:"
+            testId={`${testId}-cues-player-length`}
+          />
         </label>
         <div className="flex items-center justify-between gap-3">
           <span className="text-[13px] text-label-secondary">Trafi do katalogu Twojego gabinetu</span>

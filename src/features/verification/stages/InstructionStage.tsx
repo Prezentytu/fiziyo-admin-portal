@@ -7,6 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  DescriptionPlayerHintCounter,
+  PlayerHintLengthCounter,
+} from '@/components/shared/enrichment/PlayerHintLengthCounter';
 import type { ExerciseCoreDraft } from '@/features/exercises/useExerciseEditorForm';
 import type { EnrichmentPatientMistakeV3, ExerciseEnrichmentPatientV3 } from '@/graphql/types/exerciseEnrichment.types';
 import type { InstructionProposal } from '../utils/instructionProposal';
@@ -194,13 +198,18 @@ export function InstructionStage({
             length={descriptionLength}
             min={MIN_PATIENT_DESCRIPTION_LENGTH}
           />
+          <DescriptionPlayerHintCounter
+            description={patientDescription}
+            steps={steps}
+            testId="verification-instruction-description-player-length"
+          />
         </div>
       </StageSection>
 
       <StageSection title="Kroki" data-testid="verification-instruction-steps">
         <ol className="flex flex-col gap-2">
           {steps.map((step, index) => (
-            <li key={index} className="flex items-center gap-2">
+            <li key={index} className="flex flex-wrap items-center gap-2">
               <span className="w-5 shrink-0 text-right text-[13px] font-semibold text-label-secondary">
                 {index + 1}.
               </span>
@@ -213,6 +222,7 @@ export function InstructionStage({
                 onBlur={() => {
                   if (!step.trim()) removeStep(index);
                 }}
+                aria-describedby={`verification-step-${index + 1}-player-length`}
                 className="flex-1"
                 data-testid={`verification-step-${index + 1}-input`}
               />
@@ -226,6 +236,12 @@ export function InstructionStage({
               >
                 <X />
               </Button>
+              <PlayerHintLengthCounter
+                id={`verification-step-${index + 1}-player-length`}
+                text={step}
+                testId={`verification-step-${index + 1}-player-length`}
+                className="basis-full pl-7"
+              />
             </li>
           ))}
         </ol>
@@ -258,6 +274,7 @@ export function InstructionStage({
                   onBlur={() => {
                     if (!cue.trim()) removeCue(index);
                   }}
+                  aria-describedby={`verification-cue-${index + 1}-player-length`}
                   className="h-10 min-w-[200px] flex-1"
                   data-testid={`verification-cue-${index + 1}-input`}
                 />
@@ -280,6 +297,12 @@ export function InstructionStage({
                 >
                   <X />
                 </Button>
+                <PlayerHintLengthCounter
+                  id={`verification-cue-${index + 1}-player-length`}
+                  text={cue}
+                  testId={`verification-cue-${index + 1}-player-length`}
+                  className="basis-full px-2 pb-0.5"
+                />
               </li>
             );
           })}

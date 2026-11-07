@@ -2,6 +2,7 @@
 
 import { ListOrdered } from 'lucide-react';
 import { ListEditor } from '@/components/shared/enrichment/ListEditor';
+import { PlayerHintLengthCounter } from '@/components/shared/enrichment/PlayerHintLengthCounter';
 import { getStepImage } from '@/features/verification/utils/stepMedia';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import { getMediaUrl } from '@/utils/mediaUrl';
@@ -50,6 +51,9 @@ export function ExerciseExecutionSteps({
           onChange={commitSteps}
           onBlur={() => void persist?.()}
           testIdPrefix="exercise-execution-steps-editor"
+          renderItemFooter={(text, index) => (
+            <PlayerHintLengthCounter text={text} testId={`exercise-execution-steps-editor-length-${index}`} />
+          )}
         />
       ) : hasSteps ? (
         <ol className="space-y-3" data-testid="exercise-execution-steps-list">
