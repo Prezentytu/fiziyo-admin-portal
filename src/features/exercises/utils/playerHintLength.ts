@@ -8,8 +8,31 @@
  */
 export const PLAYER_HINT_MAX_CHARS = 120;
 
-/** fizjo-app `buildExercisePlayerGuidance` takes at most this many description lines as hints. */
-const PLAYER_DESCRIPTION_HINT_LINES = 2;
+/** fizjo-app `buildExercisePlayerGuidance` shows only the first 2 steps (or description lines) and 4 cues. */
+export const PLAYER_STEP_HINTS = 2;
+export const PLAYER_CUE_HINTS = 4;
+
+export type PlayerHintKind = 'step' | 'cue';
+
+const PLAYER_HINT_LIMITS: Record<PlayerHintKind, number> = { step: PLAYER_STEP_HINTS, cue: PLAYER_CUE_HINTS };
+
+/**
+ * Whether the item at `index` of an editor list reaches the player. The player drops blank items
+ * before taking the first N, so blank rows above do not count.
+ */
+export function isShownInPlayer(items: readonly string[], index: number, kind: PlayerHintKind): boolean {
+  if (!items[index]?.trim()) return false;
+  const filledBefore = items.slice(0, index).filter((item) => item.trim().length > 0).length;
+  return filledBefore < PLAYER_HINT_LIMITS[kind];
+}
+
+/** Items of a list the player actually shows, in order. */
+export function getPlayerHints(items: readonly string[], kind: PlayerHintKind): string[] {
+  return items
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, PLAYER_HINT_LIMITS[kind]);
+}
 
 export type PlayerHintLengthStatus = 'empty' | 'fits' | 'too-long';
 
@@ -37,12 +60,9 @@ export function getDescriptionPlayerHints(
   const hasSteps = (steps ?? []).some((step) => step.trim().length > 0);
   if (hasSteps || !description?.trim()) return [];
 
-  const lines = description
-    .split(/\r?\n/)
-    .map((line) => line.replace(/^\s*\d+[.)-]\s*/, '').trim())
-    .filter(Boolean);
+  const lines = description.split(/\r?\n/).map((line) => line.replace(/^\s*\d+[.)-]\s*/, ''));
 
-  return lines.slice(0, PLAYER_DESCRIPTION_HINT_LINES);
+  return getPlayerHints(lines, 'step');
 }
 
 /** The description hint that is closest to being cut, so one counter can speak for all of them. */

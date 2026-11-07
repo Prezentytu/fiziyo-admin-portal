@@ -23,6 +23,7 @@ import {
   setCuePhase,
 } from '../utils/stepMedia';
 import { MIN_NAME_LENGTH, MIN_PATIENT_DESCRIPTION_LENGTH } from '../utils/verificationStages';
+import { isShownInPlayer } from '@/features/exercises/utils/playerHintLength';
 import { LengthHint } from './LengthHint';
 import { SegmentedControl } from './SegmentedControl';
 import { StageSection } from './StageSection';
@@ -190,7 +191,7 @@ export function InstructionStage({
             className="field-sizing-content"
             onChange={(event) => onCoreFieldChange('patientDescription', event.target.value)}
             onFocus={() => onFocusStep(null)}
-            aria-describedby="verification-instruction-description-count"
+            aria-describedby="verification-instruction-description-count verification-instruction-description-player-length"
             data-testid="verification-instruction-description-input"
           />
           <LengthHint
@@ -199,6 +200,7 @@ export function InstructionStage({
             min={MIN_PATIENT_DESCRIPTION_LENGTH}
           />
           <DescriptionPlayerHintCounter
+            id="verification-instruction-description-player-length"
             description={patientDescription}
             steps={steps}
             testId="verification-instruction-description-player-length"
@@ -215,6 +217,7 @@ export function InstructionStage({
               </span>
               <Input
                 autoFocus={addedRow === `step-${index}`}
+                data-testid={`verification-step-${index + 1}-input`}
                 value={step}
                 aria-label={`Krok ${index + 1}`}
                 onChange={(event) => updateStep(index, event.target.value)}
@@ -222,9 +225,10 @@ export function InstructionStage({
                 onBlur={() => {
                   if (!step.trim()) removeStep(index);
                 }}
-                aria-describedby={`verification-step-${index + 1}-player-length`}
+                aria-describedby={
+                  isShownInPlayer(steps, index, 'step') ? `verification-step-${index + 1}-player-length` : undefined
+                }
                 className="flex-1"
-                data-testid={`verification-step-${index + 1}-input`}
               />
               <Button
                 type="button"
@@ -236,12 +240,14 @@ export function InstructionStage({
               >
                 <X />
               </Button>
-              <PlayerHintLengthCounter
-                id={`verification-step-${index + 1}-player-length`}
-                text={step}
-                testId={`verification-step-${index + 1}-player-length`}
-                className="basis-full pl-7"
-              />
+              {isShownInPlayer(steps, index, 'step') ? (
+                <PlayerHintLengthCounter
+                  id={`verification-step-${index + 1}-player-length`}
+                  text={step}
+                  testId={`verification-step-${index + 1}-player-length`}
+                  className="basis-full pl-7"
+                />
+              ) : null}
             </li>
           ))}
         </ol>
@@ -274,7 +280,9 @@ export function InstructionStage({
                   onBlur={() => {
                     if (!cue.trim()) removeCue(index);
                   }}
-                  aria-describedby={`verification-cue-${index + 1}-player-length`}
+                  aria-describedby={
+                    isShownInPlayer(cues, index, 'cue') ? `verification-cue-${index + 1}-player-length` : undefined
+                  }
                   className="h-10 min-w-[200px] flex-1"
                   data-testid={`verification-cue-${index + 1}-input`}
                 />
@@ -297,12 +305,14 @@ export function InstructionStage({
                 >
                   <X />
                 </Button>
-                <PlayerHintLengthCounter
-                  id={`verification-cue-${index + 1}-player-length`}
-                  text={cue}
-                  testId={`verification-cue-${index + 1}-player-length`}
-                  className="basis-full px-2 pb-0.5"
-                />
+                {isShownInPlayer(cues, index, 'cue') ? (
+                  <PlayerHintLengthCounter
+                    id={`verification-cue-${index + 1}-player-length`}
+                    text={cue}
+                    testId={`verification-cue-${index + 1}-player-length`}
+                    className="basis-full px-2 pb-0.5"
+                  />
+                ) : null}
               </li>
             );
           })}

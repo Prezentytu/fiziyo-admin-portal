@@ -10,14 +10,18 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SIDE_OPTIONS } from '@/components/shared/exercise/fieldContract';
 import { Textarea } from '@/components/ui/textarea';
-import { PlayerHintLengthCounter } from '@/components/shared/enrichment/PlayerHintLengthCounter';
-import { getLongestPlayerHint } from '@/features/exercises/utils/playerHintLength';
+import {
+  DescriptionPlayerHintCounter,
+  PlayerHintLengthCounter,
+} from '@/components/shared/enrichment/PlayerHintLengthCounter';
+import { getLongestPlayerHint, getPlayerHints } from '@/features/exercises/utils/playerHintLength';
 import { useChatActions } from '../ChatSessionContext';
 import { useChatMode } from '../useChatMode';
 import {
   buildChatExerciseEnrichment,
   CHAT_EXERCISE_DEFAULTS,
   itemsToLines,
+  linesToItems,
   paramsFromSuggestion,
   resolveChatExerciseType,
 } from '../utils/chatExerciseDraft';
@@ -83,7 +87,12 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
     },
   });
   const { errors } = form.formState;
-  const [stepsText, cuesText] = useWatch({ control: form.control, name: ['steps', 'cues'] });
+  const [descriptionText, stepsText, cuesText] = useWatch({
+    control: form.control,
+    name: ['description', 'steps', 'cues'],
+  });
+  const playerSteps = getPlayerHints(linesToItems(stepsText), 'step');
+  const playerCues = getPlayerHints(linesToItems(cuesText), 'cue');
   const proposalState = useExerciseProposal({
     messageId,
     name: spec.name,
@@ -172,16 +181,25 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
           />
           {errors.name && <span className="text-[12px] text-status-danger">{errors.name.message}</span>}
         </label>
-        <label className="flex flex-col gap-1.5 text-[13px] text-label-secondary">
-          Jak wykonać (dla pacjenta)
-          <Textarea
-            rows={3}
-            aria-invalid={errors.description ? true : undefined}
-            data-testid={`${testId}-description-input`}
-            {...form.register('description')}
+        <div className="flex flex-col gap-1.5">
+          <label className="flex flex-col gap-1.5 text-[13px] text-label-secondary">
+            Jak wykonać (dla pacjenta)
+            <Textarea
+              rows={3}
+              aria-invalid={errors.description ? true : undefined}
+              aria-describedby={`${testId}-description-player-length`}
+              data-testid={`${testId}-description-input`}
+              {...form.register('description')}
+            />
+            {errors.description && <span className="text-[12px] text-status-danger">{errors.description.message}</span>}
+          </label>
+          <DescriptionPlayerHintCounter
+            id={`${testId}-description-player-length`}
+            description={descriptionText}
+            steps={playerSteps}
+            testId={`${testId}-description-player-length`}
           />
-          {errors.description && <span className="text-[12px] text-status-danger">{errors.description.message}</span>}
-        </label>
+        </div>
         {proposalState.status !== 'idle' && (
           <p className="text-[13px] text-label-secondary" role="status" data-testid={`${testId}-proposal-status`}>
             {PROPOSAL_STATUS[proposalState.status]}
@@ -224,24 +242,40 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
             )}
           />
         </div>
-        <label className="flex flex-col gap-1.5 text-[13px] text-label-secondary">
-          Kroki wykonania (każdy krok w nowej linii)
-          <Textarea rows={4} data-testid={`${testId}-steps-input`} {...form.register('steps')} />
+        <div className="flex flex-col gap-1.5">
+          <label className="flex flex-col gap-1.5 text-[13px] text-label-secondary">
+            Kroki wykonania (każdy krok w nowej linii)
+            <Textarea
+              rows={4}
+              aria-describedby={`${testId}-steps-player-length`}
+              data-testid={`${testId}-steps-input`}
+              {...form.register('steps')}
+            />
+          </label>
           <PlayerHintLengthCounter
-            text={getLongestPlayerHint(stepsText.split('\n'))}
-            lead="Najdłuższy krok:"
+            id={`${testId}-steps-player-length`}
+            text={getLongestPlayerHint(playerSteps)}
+            lead="Najdłuższy z 2 kroków w playerze:"
             testId={`${testId}-steps-player-length`}
           />
-        </label>
-        <label className="flex flex-col gap-1.5 text-[13px] text-label-secondary">
-          Wskazówki dla pacjenta (każda w nowej linii)
-          <Textarea rows={3} data-testid={`${testId}-cues-input`} {...form.register('cues')} />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="flex flex-col gap-1.5 text-[13px] text-label-secondary">
+            Wskazówki dla pacjenta (każda w nowej linii)
+            <Textarea
+              rows={3}
+              aria-describedby={`${testId}-cues-player-length`}
+              data-testid={`${testId}-cues-input`}
+              {...form.register('cues')}
+            />
+          </label>
           <PlayerHintLengthCounter
-            text={getLongestPlayerHint(cuesText.split('\n'))}
-            lead="Najdłuższa wskazówka:"
+            id={`${testId}-cues-player-length`}
+            text={getLongestPlayerHint(playerCues)}
+            lead="Najdłuższa z 4 wskazówek w playerze:"
             testId={`${testId}-cues-player-length`}
           />
-        </label>
+        </div>
         <div className="flex items-center justify-between gap-3">
           <span className="text-[13px] text-label-secondary">Trafi do katalogu Twojego gabinetu</span>
           <Button type="submit" disabled={creating} data-testid={`${testId}-submit-btn`}>

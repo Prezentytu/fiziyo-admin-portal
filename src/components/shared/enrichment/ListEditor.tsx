@@ -23,7 +23,7 @@ interface ListEditorProps {
   /** Called with the removed index, so data linked by index can shift with the list. */
   onRemoveItem?: (index: number) => void;
   /** Note under an item, e.g. how much of it fits in the patient player. */
-  renderItemFooter?: (item: string, index: number) => ReactNode;
+  renderItemFooter?: (item: string, index: number, footerId: string) => ReactNode;
 }
 
 function slugify(value: string): string {
@@ -80,6 +80,7 @@ export function ListEditor({
             <div className={cn('flex min-w-0 gap-2', renderItemAccessory && 'flex-wrap')}>
               <Input
                 data-testid={`${prefix}-item-${index}`}
+                aria-describedby={renderItemFooter ? `${prefix}-footer-${index}` : undefined}
                 value={item}
                 disabled={disabled}
                 placeholder={placeholder}
@@ -109,7 +110,7 @@ export function ListEditor({
                 <Trash2 className={cn('h-4 w-4', canRemove ? 'text-destructive' : 'text-muted-foreground')} />
               </Button>
             </div>
-            {renderItemFooter?.(item, index)}
+            {renderItemFooter?.(item, index, `${prefix}-footer-${index}`)}
           </Fragment>
         );
       })}

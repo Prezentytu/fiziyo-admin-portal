@@ -4,6 +4,8 @@ import {
   getDescriptionPlayerHints,
   getLongestPlayerHint,
   getPlayerHintLength,
+  getPlayerHints,
+  isShownInPlayer,
   PLAYER_HINT_MAX_CHARS,
 } from '../playerHintLength';
 
@@ -48,5 +50,32 @@ describe('getLongestPlayerHint', () => {
   it('wybiera najdłuższą linię, żeby jeden licznik ostrzegał za wszystkie', () => {
     expect(getLongestPlayerHint(['krótka', 'zdecydowanie dłuższa'])).toBe('zdecydowanie dłuższa');
     expect(getLongestPlayerHint([])).toBe('');
+  });
+});
+
+describe('isShownInPlayer', () => {
+  it('player pokazuje tylko 2 pierwsze kroki', () => {
+    const steps = ['Usiądź', 'Wyprostuj plecy', 'Oddychaj'];
+
+    expect(steps.map((_step, index) => isShownInPlayer(steps, index, 'step'))).toEqual([true, true, false]);
+  });
+
+  it('player pokazuje 4 pierwsze wskazówki, puste wiersze nie zajmują miejsca', () => {
+    const cues = ['A', '  ', 'B', 'C', 'D', 'E'];
+
+    expect(cues.map((_cue, index) => isShownInPlayer(cues, index, 'cue'))).toEqual([
+      true,
+      false,
+      true,
+      true,
+      true,
+      false,
+    ]);
+  });
+});
+
+describe('getPlayerHints', () => {
+  it('bierze tyle niepustych pozycji, ile pokaże player', () => {
+    expect(getPlayerHints(['', ' Krok 1 ', 'Krok 2', 'Krok 3'], 'step')).toEqual(['Krok 1', 'Krok 2']);
   });
 });
