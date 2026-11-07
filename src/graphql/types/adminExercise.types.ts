@@ -506,3 +506,11 @@ export interface SetExerciseRelationResponse {
 export interface RemoveExerciseRelationResponse {
   removeExerciseRelation: boolean;
 }
+
+export interface ExerciseInternalNotesResponse {
+  exerciseByIdForAdmin: { id: string; internalNotes: string | null } | null;
+}
+
+export interface UpdateExerciseInternalNotesResponse {
+  updateExerciseField: { id: string; internalNotes: string | null; updatedAt: string };
+}

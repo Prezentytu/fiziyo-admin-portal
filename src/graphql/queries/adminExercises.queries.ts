@@ -125,6 +125,19 @@ export const GET_EXERCISE_BY_ID_FOR_ADMIN_QUERY = gql`
 `;
 
 /**
+ * FiziYo team working notes (ContentManager, SiteSuperAdmin). Backend returns null to every other role,
+ * and exerciseByIdForAdmin itself rejects non-team callers, so run it only for canReviewExercises.
+ */
+export const GET_EXERCISE_INTERNAL_NOTES_QUERY = gql`
+  query GetExerciseInternalNotes($id: String!) {
+    exerciseByIdForAdmin(id: $id) {
+      id
+      internalNotes
+    }
+  }
+`;
+
+/**
  * Get exercise verification statistics
  * Used in dashboard stats cards
  */

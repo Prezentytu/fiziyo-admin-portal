@@ -99,6 +99,7 @@ import {
   pluralizePl,
   type VerificationStageKey,
 } from './utils/verificationStages';
+import { InternalNotesPanel } from '@/features/exercises/InternalNotesPanel';
 
 const PRIMARY_LABELS: Record<VerificationStageKey, string> = {
   material: 'Materiał gotowy, dalej',
@@ -1050,6 +1051,7 @@ export function VerificationWorkspace({
               )}
             </div>
           )}
+          <InternalNotesPanel exerciseId={exercise.id} className="mt-4" />
         </aside>
 
         <div className="flex min-w-0 flex-col gap-4">
