@@ -391,7 +391,33 @@ export interface GetSuggestedTagsResponse {
 /**
  * Typ relacji między ćwiczeniami
  */
-export type ExerciseRelationType = 'REGRESSION' | 'PROGRESSION' | 'ALTERNATIVE' | 'VARIATION';
+export type ExerciseRelationType = 'REGRESSION' | 'PROGRESSION' | 'ALTERNATIVE' | 'SIMILAR';
+
+/**
+ * Pozycja „Powiązane ćwiczenia” (query `relatedExercises`).
+ * `targetExerciseId` jest tylko, gdy czytający widzi cel; inaczej sama zapisana nazwa bez linku.
+ */
+export interface RelatedExercise {
+  id: string;
+  relationType: ExerciseRelationType;
+  targetExerciseId: string | null;
+  targetName: string;
+  targetThumbnailUrl: string | null;
+  isTargetAvailable: boolean;
+  difference: string | null;
+  whenToSwitch: string | null;
+  isVerified: boolean;
+  isAISuggested: boolean;
+}
+
+export interface RelatedExercisesResponse {
+  relatedExercises: RelatedExercise[];
+}
+
+export interface RelatedExercisesVariables {
+  organizationId: string;
+  exerciseId: string;
+}
 
 /**
  * Poziom trudności ćwiczenia (dla walidacji relacji)
@@ -437,8 +463,6 @@ export interface ExerciseRelation {
 export interface ExerciseRelationships {
   regression?: ExerciseRelation | null;
   progression?: ExerciseRelation | null;
-  alternatives?: ExerciseRelation[];
-  variations?: ExerciseRelation[];
 }
 
 /**

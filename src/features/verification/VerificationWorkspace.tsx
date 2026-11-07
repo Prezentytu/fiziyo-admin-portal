@@ -43,6 +43,8 @@ import type { ExerciseReport, ExerciseReportReasonCategory } from '@/types/exerc
 
 import { DecisionStage, type DecisionRow } from './stages/DecisionStage';
 import { DuplicateDialog, type DuplicateTarget } from './stages/DuplicateDialog';
+import { RelatedExercisesSection } from '@/features/exercises/RelatedExercisesSection';
+
 import { ExtraContentSection } from './stages/ExtraContentSection';
 import { InstructionStage } from './stages/InstructionStage';
 import { MaterialStage, type PendingPhoto } from './stages/MaterialStage';
@@ -145,6 +147,8 @@ interface VerificationWorkspaceProps {
   saveEnrichment?: (payload: ExerciseEnrichmentData) => Promise<void>;
   onSaveError?: (error: unknown) => void;
   backTestId?: string;
+  /** Active organization from the token; enables the related exercises section. */
+  organizationId?: string | null;
   'data-testid'?: string;
 }
 
@@ -197,6 +201,7 @@ export function VerificationWorkspace({
   saveEnrichment,
   onSaveError,
   backTestId = 'verification-back-btn',
+  organizationId = null,
   'data-testid': rootTestId = 'verification-workspace',
 }: VerificationWorkspaceProps) {
   const router = useRouter();
@@ -1137,6 +1142,13 @@ export function VerificationWorkspace({
                 onEnrichmentPathChange={setEnrichmentPath}
                 onCoreFieldChange={setCoreField}
               />
+              {organizationId && (
+                <RelatedExercisesSection
+                  organizationId={organizationId}
+                  exerciseId={exercise.id}
+                  testIdPrefix="verification-related"
+                />
+              )}
             </>
           )}
         </div>

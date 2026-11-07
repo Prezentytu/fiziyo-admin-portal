@@ -82,6 +82,15 @@ import { insertGeneratedImage, nextGeneratedImagePhase } from './utils/exerciseM
 import { ExerciseParametersEditor } from './ExerciseParametersEditor';
 import { ExerciseContentSections } from './ExerciseContentSections';
 import { useEnrichmentDraft } from './useEnrichmentDraft';
+import { AiFullExercisePanel, type AiFullExerciseSummary } from './AiFullExercisePanel';
+import {
+  buildAiFullExerciseDraft,
+  matchAiSuggestedTagIds,
+  mergeAiEnrichment,
+  revertAiFill,
+  type AiExerciseVariant,
+} from './utils/aiFullExercise';
+import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import type { ExerciseCoreDraft } from './useExerciseEditorForm';
 
 // ============================================================
@@ -1008,6 +1017,21 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
   const [aiSuggestion, setAiSuggestion] = useState<ExerciseSuggestionResponse | null>(null);
   const [isLoadingAI, setIsLoadingAI] = useState(false);
 
+  // Whole-exercise AI draft: name variants, then one fill of every field (reviewed before save).
+  const [aiVariants, setAiVariants] = useState<AiExerciseVariant[] | null>(null);
+  const [isLoadingVariants, setIsLoadingVariants] = useState(false);
+  const [isFillingAll, setIsFillingAll] = useState(false);
+  const [fillingVariantName, setFillingVariantName] = useState<string | null>(null);
+  const [aiFillSummary, setAiFillSummary] = useState<AiFullExerciseSummary | null>(null);
+  const aiFillUndoRef = useRef<{
+    before: { data: ExerciseData; enrichment: ExerciseEnrichmentData };
+    after: { data: ExerciseData; enrichment: ExerciseEnrichmentData };
+  } | null>(null);
+  const fillRunRef = useRef(0);
+  const lastVariantsQueryRef = useRef<string | null>(null);
+  // AI requests in flight from this wizard; closing it aborts them so the backend refunds credits.
+  const aiPendingRef = useRef(0);
+
   // Refs
   const nameInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1158,6 +1182,20 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
     setShowAIDiff(false);
     setAiSuggestion(null);
     setIsLoadingAI(false);
+    setAiVariants(null);
+    setIsLoadingVariants(false);
+    setIsFillingAll(false);
+    setFillingVariantName(null);
+    setAiFillSummary(null);
+    aiFillUndoRef.current = null;
+    lastVariantsQueryRef.current = null;
+    fillRunRef.current += 1;
+    if (aiPendingRef.current > 0) {
+      aiService.abortEndpoint('exercise-variants');
+      aiService.abortEndpoint('generate-enrichment');
+      aiService.abortEndpoint('exercise-suggest');
+      aiPendingRef.current = 0;
+    }
   }, []);
 
   // Handle close attempt
@@ -1343,6 +1381,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
 
     setIsLoadingAI(true);
     setShowAIDiff(true);
+    aiPendingRef.current += 1;
 
     try {
       const tagNames = tags.map((t) => t.name);
@@ -1354,6 +1393,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
       toast.error('Nie udało się uzyskać sugestii AI');
       setAiSuggestion(null);
     } finally {
+      aiPendingRef.current = Math.max(0, aiPendingRef.current - 1);
       setIsLoadingAI(false);
     }
   }, [data.name, tags, existingExercises]);
@@ -1426,12 +1466,135 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
     setIsLoadingAI(false);
   }, []);
 
-  // Cleanup gdy modal się zamyka w trakcie ładowania AI
+  // Latest form state for async AI results; a result never overwrites edits made while it was loading.
+  const dataRef = useRef(data);
+  const enrichmentRef = useRef(enrichmentDraft.enrichment);
   useEffect(() => {
-    if (!open && isLoadingAI) {
-      aiService.abortEndpoint('exercise-suggest');
+    dataRef.current = data;
+    enrichmentRef.current = enrichmentDraft.enrichment;
+  }, [data, enrichmentDraft.enrichment]);
+
+  const handleSuggestVariants = useCallback(async () => {
+    const query = data.name.trim();
+    if (query.length < 2) {
+      toast.error('Wpisz, jakiego ćwiczenia potrzebujesz (min. 2 znaki)');
+      return;
     }
-  }, [open, isLoadingAI]);
+    // Same text as the variants on screen: nothing new to ask (and pay) for.
+    if (aiVariants !== null && lastVariantsQueryRef.current === query) return;
+
+    setIsLoadingVariants(true);
+    const run = fillRunRef.current;
+    aiPendingRef.current += 1;
+    const variants = await aiService.suggestExerciseVariants(query);
+    if (run !== fillRunRef.current) return;
+    aiPendingRef.current = Math.max(0, aiPendingRef.current - 1);
+    setIsLoadingVariants(false);
+    // null = request failed; aiService already told the therapist, so no "no variants" state.
+    lastVariantsQueryRef.current = variants ? query : null;
+    setAiVariants(variants);
+  }, [aiVariants, data.name]);
+
+  const handleNameChange = useCallback(
+    (value: string) => {
+      updateField('name', value);
+      // Variants describe the text they were asked for; a new text makes them stale.
+      if (lastVariantsQueryRef.current !== null && value.trim() !== lastVariantsQueryRef.current) {
+        lastVariantsQueryRef.current = null;
+        setAiVariants(null);
+      }
+    },
+    [updateField]
+  );
+
+  const handleFillAll = useCallback(
+    async (variant: AiExerciseVariant | null) => {
+      const exerciseName = (variant?.name ?? data.name).trim();
+      if (exerciseName.length < 2) {
+        toast.error('Wpisz nazwę ćwiczenia (min. 2 znaki)');
+        return;
+      }
+
+      setIsFillingAll(true);
+      setFillingVariantName(variant?.name ?? null);
+      setAiFillSummary(null);
+      const run = fillRunRef.current;
+      aiPendingRef.current += 1;
+
+      const tagNames = tags.map((t) => t.name);
+      const existingNames = rankExerciseNamesForDuplicateCheck(exerciseName, existingExercises);
+      const [suggestion, enrichmentResponse] = await Promise.all([
+        aiService.getExerciseSuggestion(exerciseName, tagNames, existingNames),
+        aiService.generateEnrichment({
+          exerciseName,
+          patientDescription: dataRef.current.description.trim() || undefined,
+          clinicalDescription: dataRef.current.clinicalDescription.trim() || undefined,
+          existingEnrichmentJson: JSON.stringify(enrichmentRef.current),
+        }),
+      ]);
+      if (run !== fillRunRef.current) return;
+      aiPendingRef.current = Math.max(0, aiPendingRef.current - 1);
+
+      setIsFillingAll(false);
+      setFillingVariantName(null);
+
+      const aiEnrichment = enrichmentResponse?.success ? enrichmentResponse.enrichmentData : null;
+      if (!suggestion && !aiEnrichment) {
+        toast.error('Nie udało się przygotować ćwiczenia z AI. Spróbuj ponownie.');
+        return;
+      }
+
+      const before = dataRef.current;
+      const beforeEnrichment = enrichmentRef.current;
+      const core = buildAiFullExerciseDraft(before, { suggestion, variant, defaults: DEFAULT_DATA });
+      const filled = [...core.filled];
+
+      const mainTags = matchAiSuggestedTagIds(suggestion?.suggestedTags, tags, before.mainTags);
+      if (mainTags.length > before.mainTags.length) filled.push('tagi');
+
+      const content = mergeAiEnrichment(beforeEnrichment, aiEnrichment);
+      filled.push(...content.filled);
+
+      const afterData = { ...core.next, mainTags };
+      const afterEnrichment = content.filled.length > 0 ? content.next : beforeEnrichment;
+      aiFillUndoRef.current = {
+        before: { data: before, enrichment: beforeEnrichment },
+        after: { data: afterData, enrichment: afterEnrichment },
+      };
+      setData(afterData);
+      if (content.filled.length > 0) {
+        enrichmentDraft.replace(afterEnrichment);
+        setShowAdvanced(true);
+      }
+      lastVariantsQueryRef.current = null;
+      setAiVariants(null);
+      setAiFillSummary({ filled: [...new Set(filled)] });
+    },
+    [data.name, enrichmentDraft, existingExercises, tags]
+  );
+
+  // Enter in the name field asks for full names and variants of what the therapist typed.
+  const handleNameKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLInputElement>) => {
+      if (event.key !== 'Enter' || event.nativeEvent.isComposing || isLoadingVariants || isFillingAll) return;
+      event.preventDefault();
+      void handleSuggestVariants();
+    },
+    [handleSuggestVariants, isFillingAll, isLoadingVariants]
+  );
+
+  const handleUndoAiFill = useCallback(() => {
+    const snapshot = aiFillUndoRef.current;
+    if (!snapshot) return;
+    // Only values still equal to the AI draft go back; edits made after the fill stay.
+    setData(revertAiFill(dataRef.current, snapshot.before.data, snapshot.after.data));
+    enrichmentDraft.replace(
+      revertAiFill(enrichmentRef.current, snapshot.before.enrichment, snapshot.after.enrichment)
+    );
+    aiFillUndoRef.current = null;
+    setAiFillSummary(null);
+    toast.info('Cofnięto szkic AI');
+  }, [enrichmentDraft]);
 
   // Validation
   const isValid = data.name.trim().length >= 2;
@@ -1617,7 +1780,8 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                 <Input
                   ref={nameInputRef}
                   value={voiceState === 'listening' ? interimTranscript || data.name : data.name}
-                  onChange={(e) => updateField('name', e.target.value)}
+                  onChange={(e) => handleNameChange(e.target.value)}
+                  onKeyDown={handleNameKeyDown}
                   placeholder="np. Przysiad ze sztangą"
                   className={cn(
                     'h-12 text-lg font-semibold bg-surface border-border text-foreground placeholder:text-muted-foreground/50',
@@ -1656,6 +1820,21 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
 
               {/* INLINE LIBRARY GUARD - Similar Exercises Alert */}
               <SimilarExercisesAlert exercises={similarExercises} onUseExisting={handleUseExisting} />
+
+              <AiFullExercisePanel
+                canAsk={data.name.trim().length >= 2}
+                variants={aiVariants}
+                isLoadingVariants={isLoadingVariants}
+                isFilling={isFillingAll}
+                fillingVariantName={fillingVariantName}
+                summary={aiFillSummary}
+                canGenerateImage={mediaFiles.length === 0}
+                isGeneratingImage={isGeneratingImage}
+                onSuggestVariants={handleSuggestVariants}
+                onFillAll={handleFillAll}
+                onUndo={handleUndoAiFill}
+                onGenerateImage={handleGenerateImage}
+              />
 
               {/* Tagi */}
               <div className="flex flex-wrap items-center gap-2 mt-3">
