@@ -153,6 +153,8 @@ export function fromExerciseMapping(
     clinicalDescription: effective.clinicalDescription,
     audioCue: effective.audioCue,
     rangeOfMotion: effective.rangeOfMotion,
+    resistance: effective.resistance,
+    equipment: effective.equipment,
     difficultyLevel: effective.difficultyLevel,
     mainTags: effective.mainTags,
     additionalTags: effective.additionalTags,
@@ -178,6 +180,8 @@ export function fromBuilderExercise(
     clinicalDescription?: string;
     audioCue?: string;
     rangeOfMotion?: string;
+    resistance?: string | null;
+    equipment?: string | null;
     difficultyLevel?: string;
     thumbnailUrl?: string;
     imageUrl?: string;
@@ -210,6 +214,8 @@ export function fromBuilderExercise(
     notes?: string;
     exerciseSide?: string;
     rangeOfMotion?: string;
+    resistance?: string;
+    equipment?: string;
     difficultyLevel?: string;
     patientDescription?: string;
     clinicalDescription?: string;
@@ -272,6 +278,8 @@ export function fromBuilderExercise(
     clinicalDescription: params.clinicalDescription ?? exercise.clinicalDescription,
     audioCue: params.audioCue ?? exercise.audioCue,
     rangeOfMotion: params.rangeOfMotion ?? exercise.rangeOfMotion,
+    resistance: params.resistance ?? exercise.resistance ?? undefined,
+    equipment: params.equipment ?? exercise.equipment ?? undefined,
     difficultyLevel: params.difficultyLevel ?? exercise.difficultyLevel,
     mainTags: exercise.mainTags
       ?.map((tag) => (typeof tag === 'string' ? tag : tag.name))

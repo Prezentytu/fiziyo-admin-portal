@@ -27,6 +27,8 @@ export const EXERCISE_FULL_FRAGMENT = gql`
     audioCue
     tempo
     rangeOfMotion
+    resistance
+    equipment
     defaultLoad {
       loadWeightKg
       loadSource
@@ -173,6 +175,8 @@ export const EXERCISE_PICKER_FRAGMENT = gql`
     audioCue
     tempo
     rangeOfMotion
+    resistance
+    equipment
     side
     preparationTime
     defaultDuration

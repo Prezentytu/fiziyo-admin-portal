@@ -21,6 +21,8 @@ export interface RawAvailableExercise {
   clinicalDescription?: string;
   audioCue?: string;
   rangeOfMotion?: string;
+  resistance?: string | null;
+  equipment?: string | null;
   side?: string;
   exerciseSide?: string;
   preparationTime?: number;
@@ -112,6 +114,8 @@ export function mapAvailableExercises(rawExercises: RawAvailableExercise[] | und
         clinicalDescription: exercise.clinicalDescription,
         audioCue: exercise.audioCue,
         rangeOfMotion: exercise.rangeOfMotion,
+        resistance: exercise.resistance,
+        equipment: exercise.equipment,
         side: exercise.side,
         exerciseSide: normalizeExerciseSide(exercise.side ?? exercise.exerciseSide),
         preparationTime: exercise.preparationTime,

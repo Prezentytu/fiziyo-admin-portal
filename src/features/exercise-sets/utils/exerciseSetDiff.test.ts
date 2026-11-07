@@ -199,3 +199,41 @@ describe('hasExerciseSetChanges', () => {
     })).toBe(false);
   });
 });
+
+describe('computeExerciseSetDiff: pola z overridesJson', () => {
+  const baseParams = { sets: 3, reps: 10, notes: '', customName: '', customDescription: '', tempo: '', loadType: '', loadValue: 0, loadUnit: 'kg', loadText: '' };
+  const selectedInstances = [{ instanceId: 'existing-m1-0', exerciseId: 'e1' }];
+
+  it('zmiana tylko oporu daje jedną aktualizację', () => {
+    const initialMappings = [{ id: 'm1', exerciseId: 'e1', order: 1, sets: 3, reps: 10, notes: '', resistance: 'Lekki' }];
+    const exerciseParams = new Map([['existing-m1-0', { ...baseParams, resistance: 'Mocny' }]]);
+
+    const diff = computeExerciseSetDiff({ initialMappings, selectedInstances, exerciseParams });
+
+    expect(diff.toUpdate).toHaveLength(1);
+    expect(diff.toUpdate[0].params.resistance).toBe('Mocny');
+  });
+
+  it.each([
+    ['equipment', 'Guma', 'Guma, krzesło'],
+    ['exerciseSide', 'left', 'both'],
+    ['rangeOfMotion', 'Pełny', '0-90°'],
+    ['difficultyLevel', 'EASY', 'HARD'],
+  ] as const)('zmiana tylko %s daje jedną aktualizację', (key, before, after) => {
+    const initialMappings = [{ id: 'm1', exerciseId: 'e1', order: 1, sets: 3, reps: 10, notes: '', [key]: before }];
+    const exerciseParams = new Map([['existing-m1-0', { ...baseParams, [key]: after }]]);
+
+    const diff = computeExerciseSetDiff({ initialMappings, selectedInstances, exerciseParams });
+
+    expect(diff.toUpdate).toHaveLength(1);
+  });
+
+  it('bez zmiany pól z overridesJson nie ma aktualizacji', () => {
+    const initialMappings = [{ id: 'm1', exerciseId: 'e1', order: 1, sets: 3, reps: 10, notes: '', resistance: 'Lekki', equipment: 'Guma' }];
+    const exerciseParams = new Map([['existing-m1-0', { ...baseParams, resistance: 'Lekki', equipment: 'Guma' }]]);
+
+    const diff = computeExerciseSetDiff({ initialMappings, selectedInstances, exerciseParams });
+
+    expect(diff.toUpdate).toEqual([]);
+  });
+});

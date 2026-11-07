@@ -31,6 +31,8 @@ export interface PersonalizationPatch {
   side?: string | null;
   exerciseSide?: string | null;
   rangeOfMotion?: string | null;
+  resistance?: string | null;
+  equipment?: string | null;
   difficultyLevel?: string | null;
   patientDescription?: string | null;
   clinicalDescription?: string | null;
@@ -79,6 +81,8 @@ export type InheritedBaseline = Partial<{
   side: string;
   exerciseSide: string;
   rangeOfMotion: string;
+  resistance: string;
+  equipment: string;
   difficultyLevel: string;
   patientDescription: string;
   clinicalDescription: string;
@@ -202,6 +206,18 @@ export function splitPersonalization(patch: PersonalizationPatch): SplitPersonal
       overrideDelta.rangeOfMotion = rom;
     }
   }
+  if ('resistance' in patch && getPersistence('resistance') === 'assignmentOverride') {
+    const resistance = normalizeText(patch.resistance);
+    if (resistance !== undefined) {
+      overrideDelta.resistance = resistance;
+    }
+  }
+  if ('equipment' in patch && getPersistence('equipment') === 'assignmentOverride') {
+    const equipment = normalizeText(patch.equipment);
+    if (equipment !== undefined) {
+      overrideDelta.equipment = equipment;
+    }
+  }
   if ('difficultyLevel' in patch && getPersistence('difficultyLevel') === 'assignmentOverride') {
     const difficulty = normalizeDifficulty(patch.difficultyLevel);
     if (difficulty !== undefined) {
@@ -271,7 +287,16 @@ export function buildOverrideDelta(
   }
 
   const compareText = (
-    key: 'patientDescription' | 'clinicalDescription' | 'audioCue' | 'notes' | 'customName' | 'customDescription' | 'tempo',
+    key:
+      | 'patientDescription'
+      | 'clinicalDescription'
+      | 'audioCue'
+      | 'notes'
+      | 'customName'
+      | 'customDescription'
+      | 'tempo'
+      | 'resistance'
+      | 'equipment',
     overrideKey: keyof ExerciseOverrideFields = key
   ) => {
     if (!(key in desired)) return;
@@ -285,6 +310,8 @@ export function buildOverrideDelta(
   compareText('patientDescription');
   compareText('clinicalDescription');
   compareText('audioCue');
+  compareText('resistance');
+  compareText('equipment');
 
   // Dosage fields may also land in override (post-assign Edit dialog).
   const compareNumber = (

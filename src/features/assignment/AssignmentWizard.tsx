@@ -599,6 +599,8 @@ function AssignmentWizardContent({
               clinicalDescription: m.exercise.clinicalDescription,
               audioCue: m.exercise.audioCue,
               rangeOfMotion: m.exercise.rangeOfMotion,
+              resistance: m.exercise.resistance,
+              equipment: m.exercise.equipment,
               side: m.exercise.side,
               exerciseSide: normalizeExerciseSide(m.exercise.side ?? m.exercise.exerciseSide),
               imageUrl: m.exercise.thumbnailUrl || m.exercise.imageUrl,

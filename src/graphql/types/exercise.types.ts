@@ -69,6 +69,10 @@ export interface Exercise {
   preparationTime?: number;
   tempo?: string;
   rangeOfMotion?: string;
+  /** Opór (np. guma „Średni”); null na starszym API. */
+  resistance?: string | null;
+  /** Sprzęt (np. „Guma, krzesło”); null na starszym API. */
+  equipment?: string | null;
   defaultLoad?: ExerciseLoad;
   // Media (legacy + nowe)
   videoUrl?: string;
@@ -156,6 +160,10 @@ export interface CreateExerciseVariables {
   audioCue?: string | null;
   difficultyLevel?: DifficultyLevel | null;
   rangeOfMotion?: string | null;
+  /** null = bez zmian, '' = wyczyść. */
+  resistance?: string | null;
+  /** null = bez zmian, '' = wyczyść. */
+  equipment?: string | null;
   // Load fields
   loadType?: string | null;
   loadValue?: number | null;
@@ -198,6 +206,10 @@ export interface UpdateExerciseVariables {
   audioCue?: string | null;
   difficultyLevel?: DifficultyLevel | null;
   rangeOfMotion?: string | null;
+  /** null = bez zmian, '' = wyczyść. */
+  resistance?: string | null;
+  /** null = bez zmian, '' = wyczyść. */
+  equipment?: string | null;
   // Load fields
   loadType?: string | null;
   loadValue?: number | null;

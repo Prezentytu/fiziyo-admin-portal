@@ -130,6 +130,8 @@ interface ExerciseData {
   tempo: string;
   loadKg: number | null;
   rangeOfMotion: string;
+  resistance: string;
+  equipment: string;
 }
 
 // Interface for existing exercises from API
@@ -189,6 +191,8 @@ const DEFAULT_DATA: ExerciseData = {
   tempo: '',
   loadKg: null,
   rangeOfMotion: '',
+  resistance: '',
+  equipment: '',
 };
 
 // ============================================================
@@ -1237,6 +1241,8 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
       audioCue: data.audioCue,
       tempo: data.tempo,
       rangeOfMotion: data.rangeOfMotion,
+      resistance: data.resistance,
+      equipment: data.equipment,
       side: data.exerciseSide,
       difficultyLevel: data.difficultyLevel,
       videoUrl: data.videoUrl,
@@ -1637,6 +1643,8 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
           videoUrl: data.videoUrl,
           tempo: data.tempo,
           rangeOfMotion: data.rangeOfMotion,
+          resistance: data.resistance,
+          equipment: data.equipment,
           loadKg: data.loadKg,
           mainTags: data.mainTags,
           additionalTags: data.additionalTags,

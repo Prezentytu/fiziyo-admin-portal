@@ -125,6 +125,8 @@ export interface ExerciseMapping {
     defaultExecutionTime?: number;
     preparationTime?: number;
     rangeOfMotion?: string;
+    resistance?: string | null;
+    equipment?: string | null;
     difficultyLevel?: string;
     tempo?: string;
     exerciseSide?: string;
@@ -405,6 +407,8 @@ export function PatientAssignmentCard({
       tempo: effective.tempo,
       loadKg: effective.loadKg,
       rangeOfMotion: effective.rangeOfMotion,
+      resistance: effective.resistance,
+      equipment: effective.equipment,
       side: effective.side,
       notes: effective.notes,
       customName: effective.customName,

@@ -22,7 +22,7 @@ export interface ExerciseParameterGroup {
 
 const DOSAGE_KEYS: ExerciseFieldKey[] = ['sets', 'reps', 'executionTime'];
 const TIMING_KEYS: ExerciseFieldKey[] = ['tempo', 'restSets', 'restReps', 'preparationTime'];
-const POSITION_KEYS: ExerciseFieldKey[] = ['load', 'side', 'rangeOfMotion'];
+const POSITION_KEYS: ExerciseFieldKey[] = ['load', 'resistance', 'equipment', 'side', 'rangeOfMotion'];
 const CLASSIFICATION_KEYS: ExerciseFieldKey[] = ['difficultyLevel'];
 
 function buildItems(

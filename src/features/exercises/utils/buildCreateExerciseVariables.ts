@@ -15,6 +15,8 @@ export interface CreateExerciseDraft {
   audioCue?: string | null;
   tempo?: string | null;
   rangeOfMotion?: string | null;
+  resistance?: string | null;
+  equipment?: string | null;
   side?: string | null;
   exerciseSide?: string | null;
   difficultyLevel?: string | null;
@@ -112,6 +114,8 @@ export function buildCreateExerciseVariables({
     audioCue: asText(draft.audioCue),
     difficultyLevel: normalizeDifficulty(draft.difficultyLevel),
     rangeOfMotion: asText(draft.rangeOfMotion),
+    resistance: asText(draft.resistance),
+    equipment: asText(draft.equipment),
     enrichmentDataJson: draft.enrichmentData ? JSON.stringify(draft.enrichmentData) : null,
     ...buildExerciseLoadMutationVars(loadKg),
   };

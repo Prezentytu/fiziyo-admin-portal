@@ -50,6 +50,8 @@ const CARD_FIELD_TESTID_MAP: Record<
   preparationTime: { input: 'preparation-time-input', info: 'help-preparationTime' },
   duration: { input: 'duration-input', info: 'help-duration' },
   load: { input: 'load-input', info: 'help-load' },
+  resistance: { input: 'resistance-input', info: 'help-resistance' },
+  equipment: { input: 'equipment-input', info: 'help-equipment' },
   tempo: { input: 'tempo-input', info: 'help-tempo' },
   side: { input: 'side-select', info: 'help-side' },
   rangeOfMotion: { input: 'rom-input', info: 'help-rangeOfMotion' },
@@ -79,6 +81,8 @@ function exerciseToParameterValues(
     loadKg: exercise.loadKg ?? null,
     tempo: exercise.tempo ?? '',
     rangeOfMotion: exercise.rangeOfMotion ?? '',
+    resistance: exercise.resistance ?? '',
+    equipment: exercise.equipment ?? '',
     side: exercise.side ?? 'none',
     difficultyLevel: exercise.difficultyLevel ?? 'UNKNOWN',
     patientDescription: exercise.patientDescription ?? '',
@@ -106,6 +110,8 @@ function toCardPatch(patch: Partial<ExerciseParameterValues>): Partial<ExerciseE
   }
   if ('tempo' in patch) next.tempo = patch.tempo ?? undefined;
   if ('rangeOfMotion' in patch) next.rangeOfMotion = patch.rangeOfMotion ?? undefined;
+  if ('resistance' in patch) next.resistance = patch.resistance ?? undefined;
+  if ('equipment' in patch) next.equipment = patch.equipment ?? undefined;
   if ('side' in patch) next.side = patch.side ?? undefined;
   if ('difficultyLevel' in patch) next.difficultyLevel = patch.difficultyLevel ?? undefined;
   if ('patientDescription' in patch) next.patientDescription = patch.patientDescription ?? undefined;

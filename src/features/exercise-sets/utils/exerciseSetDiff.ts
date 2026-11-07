@@ -4,11 +4,25 @@
  */
 
 import type { ExerciseInstance, ExerciseParams } from '@/components/shared/ExerciseSetBuilder';
+import { MAPPING_OVERRIDES_JSON_KEYS, type MappingOverridesJsonKey } from '@/components/shared/exercise/mappingOverrides';
 
 const EXISTING_PREFIX = 'existing-';
 
-/** Mapping as returned by GET_EXERCISE_SET_WITH_ASSIGNMENTS (minimal shape for diff). */
-export interface InitialMapping {
+type MappingOverrideScalarKey = Exclude<MappingOverridesJsonKey, 'enrichment'>;
+
+/**
+ * Scalar keys saved in ExerciseSetMapping.overridesJson (strona, ROM, opór, sprzęt…).
+ * Without them in the diff, changing only one of these fields never reached toUpdate.
+ */
+export const MAPPING_OVERRIDE_SCALAR_KEYS: readonly MappingOverrideScalarKey[] = MAPPING_OVERRIDES_JSON_KEYS.filter(
+  (key): key is MappingOverrideScalarKey => key !== 'enrichment'
+);
+
+/**
+ * Mapping as returned by GET_EXERCISE_SET_WITH_ASSIGNMENTS (minimal shape for diff).
+ * overridesJson fields carry the values the builder was seeded with (seedBuilderParamsFromMapping).
+ */
+export interface InitialMapping extends Partial<Pick<ExerciseParams, MappingOverrideScalarKey>> {
   id: string;
   exerciseId: string;
   order?: number;
@@ -96,6 +110,7 @@ function paramsEqual(a: ExerciseParams, b: ExerciseParams): boolean {
     'loadText',
     'loadWeightKg',
     'loadSource',
+    ...MAPPING_OVERRIDE_SCALAR_KEYS,
   ];
   for (const key of keys) {
     const va = a[key];
@@ -130,7 +145,19 @@ function mappingToParams(m: InitialMapping): ExerciseParams {
     loadText: m.loadText ?? '',
     loadWeightKg: m.loadWeightKg ?? m.loadValue ?? undefined,
     loadSource: m.loadSource ?? undefined,
+    ...pickMappingOverrideScalars(m),
   };
+}
+
+/** Picks the overridesJson scalar fields (e.g. from seeded builder params). */
+export function pickMappingOverrideScalars(
+  source: Partial<Pick<ExerciseParams, MappingOverrideScalarKey>>
+): Partial<Pick<ExerciseParams, MappingOverrideScalarKey>> {
+  const picked: Partial<Pick<ExerciseParams, MappingOverrideScalarKey>> = {};
+  for (const key of MAPPING_OVERRIDE_SCALAR_KEYS) {
+    if (source[key] !== undefined) picked[key] = source[key];
+  }
+  return picked;
 }
 
 export interface ExerciseSetChangeInput {

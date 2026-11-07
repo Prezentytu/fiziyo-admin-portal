@@ -56,6 +56,8 @@ const ADD_FIELD_TESTID_MAP: Record<
   tempo: { input: 'add-exercise-tempo-input', info: 'add-exercise-tempo-info' },
   side: { input: 'add-exercise-side-select', info: 'add-exercise-side-info' },
   rangeOfMotion: { input: 'add-exercise-rom-input', info: 'add-exercise-rom-info' },
+  resistance: { input: 'add-exercise-resistance-input', info: 'add-exercise-resistance-info' },
+  equipment: { input: 'add-exercise-equipment-input', info: 'add-exercise-equipment-info' },
   difficultyLevel: { input: 'add-exercise-difficulty-select', info: 'add-exercise-difficulty-info' },
   patientDescription: {
     input: 'add-exercise-patient-description-input',
@@ -83,6 +85,8 @@ interface Exercise {
   clinicalDescription?: string;
   audioCue?: string;
   rangeOfMotion?: string;
+  resistance?: string | null;
+  equipment?: string | null;
   difficultyLevel?: string;
   type?: string;
   side?: string;
@@ -196,6 +200,8 @@ function AddExerciseToPatientDialogContent({
   const [notes, setNotes] = useState('');
   const [exerciseSide, setExerciseSide] = useState('both');
   const [rangeOfMotion, setRangeOfMotion] = useState('');
+  const [resistance, setResistance] = useState('');
+  const [equipment, setEquipment] = useState('');
   const [customName, setCustomName] = useState('');
   const [customDescription, setCustomDescription] = useState('');
   const [difficultyLevel, setDifficultyLevel] = useState('UNKNOWN');
@@ -215,6 +221,8 @@ function AddExerciseToPatientDialogContent({
       loadKg: loadWeightKg ?? null,
       tempo,
       rangeOfMotion,
+      resistance,
+      equipment,
       side: exerciseSide,
       difficultyLevel,
       patientDescription,
@@ -235,6 +243,8 @@ function AddExerciseToPatientDialogContent({
       loadWeightKg,
       tempo,
       rangeOfMotion,
+      resistance,
+      equipment,
       exerciseSide,
       difficultyLevel,
       patientDescription,
@@ -257,6 +267,8 @@ function AddExerciseToPatientDialogContent({
     if ('loadKg' in patch) setLoadWeightKg(patch.loadKg ?? undefined);
     if ('tempo' in patch) setTempo(patch.tempo ?? '');
     if ('rangeOfMotion' in patch) setRangeOfMotion(patch.rangeOfMotion ?? '');
+    if ('resistance' in patch) setResistance(patch.resistance ?? '');
+    if ('equipment' in patch) setEquipment(patch.equipment ?? '');
     if ('side' in patch && patch.side != null) setExerciseSide(patch.side);
     if ('difficultyLevel' in patch && patch.difficultyLevel != null) {
       setDifficultyLevel(patch.difficultyLevel);
@@ -341,6 +353,8 @@ function AddExerciseToPatientDialogContent({
       (exercise.side ?? exercise.exerciseSide ?? 'both').toString().toLowerCase()
     );
     setRangeOfMotion(exercise.rangeOfMotion ?? '');
+    setResistance(exercise.resistance ?? '');
+    setEquipment(exercise.equipment ?? '');
     setCustomName('');
     setCustomDescription('');
     setDifficultyLevel(exercise.difficultyLevel ?? 'UNKNOWN');
@@ -365,6 +379,8 @@ function AddExerciseToPatientDialogContent({
           side: selectedExercise.side ?? selectedExercise.exerciseSide,
           exerciseSide: selectedExercise.exerciseSide ?? selectedExercise.side,
           rangeOfMotion: selectedExercise.rangeOfMotion,
+          resistance: selectedExercise.resistance ?? undefined,
+          equipment: selectedExercise.equipment ?? undefined,
           difficultyLevel: selectedExercise.difficultyLevel,
           patientDescription: selectedExercise.patientDescription ?? selectedExercise.description,
           clinicalDescription: selectedExercise.clinicalDescription,
@@ -373,6 +389,8 @@ function AddExerciseToPatientDialogContent({
         {
           side: exerciseSide,
           rangeOfMotion: ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS ? rangeOfMotion : undefined,
+          resistance,
+          equipment,
           difficultyLevel: ENABLE_FULL_PATIENT_PERSONALIZATION ? difficultyLevel : undefined,
           patientDescription: ENABLE_FULL_PATIENT_PERSONALIZATION ? patientDescription : undefined,
           clinicalDescription: ENABLE_FULL_PATIENT_PERSONALIZATION

@@ -20,6 +20,8 @@ import {
 export const MAPPING_OVERRIDES_JSON_KEYS = [
   'exerciseSide',
   'rangeOfMotion',
+  'resistance',
+  'equipment',
   'difficultyLevel',
   'patientDescription',
   'clinicalDescription',

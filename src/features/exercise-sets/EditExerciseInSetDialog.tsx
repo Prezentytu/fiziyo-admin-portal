@@ -52,6 +52,8 @@ interface ExerciseMapping {
     clinicalDescription?: string;
     audioCue?: string;
     rangeOfMotion?: string;
+    resistance?: string | null;
+    equipment?: string | null;
     difficultyLevel?: string;
     side?: string;
     thumbnailUrl?: string;
@@ -178,6 +180,8 @@ function EditExerciseInSetDialogContent({
       (draft.loadKg ?? null) !== (initialData.loadKg ?? null) ||
       (draft.side ?? '') !== (initialData.side ?? '') ||
       (draft.rangeOfMotion ?? '') !== (initialData.rangeOfMotion ?? '') ||
+      (draft.resistance ?? '') !== (initialData.resistance ?? '') ||
+      (draft.equipment ?? '') !== (initialData.equipment ?? '') ||
       (draft.difficultyLevel ?? '') !== (initialData.difficultyLevel ?? '') ||
       (draft.patientDescription ?? '') !== (initialData.patientDescription ?? '') ||
       (draft.clinicalDescription ?? '') !== (initialData.clinicalDescription ?? '') ||
@@ -204,6 +208,8 @@ function EditExerciseInSetDialogContent({
           side: template?.side ?? template?.exerciseSide,
           exerciseSide: template?.exerciseSide ?? template?.side,
           rangeOfMotion: template?.rangeOfMotion,
+          resistance: template?.resistance ?? undefined,
+          equipment: template?.equipment ?? undefined,
           difficultyLevel: template?.difficultyLevel,
           patientDescription: template?.patientDescription ?? template?.description,
           clinicalDescription: template?.clinicalDescription,
@@ -212,6 +218,8 @@ function EditExerciseInSetDialogContent({
         {
           side: draft.side,
           rangeOfMotion: draft.rangeOfMotion,
+          resistance: draft.resistance,
+          equipment: draft.equipment,
           difficultyLevel: draft.difficultyLevel,
           patientDescription: draft.patientDescription,
           clinicalDescription: draft.clinicalDescription,

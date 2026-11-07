@@ -12,6 +12,8 @@ import {
   Volume2,
   Move,
   Info,
+  Activity,
+  Package,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -27,6 +29,8 @@ const ICON_MAP: Record<string, LucideIcon> = {
   pause: Timer,
   tempo: RefreshCw,
   load: Dumbbell,
+  resistance: Activity,
+  equipment: Package,
   side: ArrowLeftRight,
   range: Move,
   difficulty: Gauge,

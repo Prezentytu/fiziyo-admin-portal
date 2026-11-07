@@ -46,6 +46,7 @@ import type {
 import {
   computeExerciseSetDiff,
   hasExerciseSetChanges,
+  pickMappingOverrideScalars,
   type InitialMapping,
 } from '@/features/exercise-sets/utils/exerciseSetDiff';
 import { aiService } from '@/services/aiService';
@@ -181,6 +182,8 @@ export function EditExerciseSetFullDialog({
       loadText: m.loadText,
       loadWeightKg: m.load?.loadWeightKg ?? m.loadValue ?? undefined,
       loadSource: m.load?.loadSource ?? undefined,
+      // Same seed as the builder below, so a change of only side/ROM/opór/sprzęt shows up in the diff.
+      ...pickMappingOverrideScalars(seedBuilderParamsFromMapping(m as AssignmentExerciseMapping)),
     }));
     initialNameRef.current = set.name ?? '';
     initialDescriptionRef.current = set.description ?? '';

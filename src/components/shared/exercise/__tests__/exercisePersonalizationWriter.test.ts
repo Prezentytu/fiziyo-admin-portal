@@ -54,9 +54,27 @@ describe('fieldContract persistence routing', () => {
         'difficultyLevel',
         'patientDescription',
         'rangeOfMotion',
+        'resistance',
+        'equipment',
         'side',
       ].sort()
     );
+  });
+});
+
+describe('opór i sprzęt (resistance / equipment)', () => {
+  it('trafiają do delty nadpisania tylko gdy różnią się od szablonu, a wyczyszczenie to pusty tekst', () => {
+    expect(
+      buildOverrideDelta({ resistance: 'Lekki', equipment: 'Guma' }, { resistance: 'Mocny', equipment: 'Guma' })
+    ).toEqual({ resistance: 'Mocny' });
+    expect(buildOverrideDelta({ resistance: 'Lekki' }, { resistance: '' })).toEqual({ resistance: '' });
+    expect(buildOverrideDelta({ equipment: 'Guma' }, { equipment: 'Guma' })).toEqual({});
+  });
+
+  it('splitPersonalization kieruje je do exerciseOverrides, nie do kolumn mappingu', () => {
+    const result = splitPersonalization({ resistance: 'Średni', equipment: 'Step' });
+    expect(result.overrideDelta).toEqual({ resistance: 'Średni', equipment: 'Step' });
+    expect(result.mappingVariables).toEqual({});
   });
 });
 

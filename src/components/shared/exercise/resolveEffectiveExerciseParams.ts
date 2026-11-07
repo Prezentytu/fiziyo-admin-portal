@@ -23,6 +23,8 @@ export interface EffectiveTemplateSource {
   side?: string;
   exerciseSide?: string;
   rangeOfMotion?: string;
+  resistance?: string | null;
+  equipment?: string | null;
   difficultyLevel?: string;
   patientDescription?: string;
   description?: string;
@@ -103,6 +105,8 @@ export interface EffectiveExerciseParams {
   clinicalDescription?: string;
   audioCue?: string;
   rangeOfMotion?: string;
+  resistance?: string;
+  equipment?: string;
   difficultyLevel?: string;
   side?: string;
   mainTags?: string[];
@@ -230,6 +234,8 @@ export function resolveEffectiveExerciseParams(
   const customDescription = pickDefined(layered?.customDescription, mapping.customDescription);
   const notes = pickDefined(layered?.notes, mapping.notes, exercise?.notes) ?? '';
   const rangeOfMotion = pickDefined(layered?.rangeOfMotion, exercise?.rangeOfMotion);
+  const resistance = pickDefined(layered?.resistance, exercise?.resistance);
+  const equipment = pickDefined(layered?.equipment, exercise?.equipment);
   const side = resolveSide(layered, exercise);
   const difficultyLevel = pickDefined(layered?.difficultyLevel, exercise?.difficultyLevel);
   const patientDescription = pickDefined(
@@ -266,6 +272,8 @@ export function resolveEffectiveExerciseParams(
     clinicalDescription,
     audioCue,
     rangeOfMotion,
+    resistance,
+    equipment,
     difficultyLevel,
     side,
     mainTags: exercise?.mainTags,

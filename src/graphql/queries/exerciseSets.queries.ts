@@ -84,6 +84,8 @@ export const EXERCISE_SET_WITH_EXERCISES_FRAGMENT = gql`
         defaultExecutionTime
         tempo
         rangeOfMotion
+        resistance
+        equipment
         defaultSets
         defaultReps
         defaultDuration

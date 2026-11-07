@@ -20,6 +20,8 @@ describe('displayRegistry', () => {
       'preparationTime',
       'tempo',
       'load',
+      'resistance',
+      'equipment',
       'side',
       'rangeOfMotion',
       'difficultyLevel',

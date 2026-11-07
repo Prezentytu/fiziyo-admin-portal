@@ -79,6 +79,10 @@ export interface Exercise {
   clinicalDescription?: string;
   audioCue?: string;
   rangeOfMotion?: string;
+  /** Opór (np. guma „Średni”). */
+  resistance?: string | null;
+  /** Sprzęt (np. „Guma, krzesło”). */
+  equipment?: string | null;
   notes?: string;
   // Parametry wykonania
   type?: 'REPS' | 'TIME' | 'reps' | 'time' | string;
