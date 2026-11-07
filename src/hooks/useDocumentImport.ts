@@ -217,11 +217,9 @@ export function useDocumentImport() {
         }
 
         // Walidacja pliku
-        if (!documentImportService.isFormatSupported(state.file)) {
-          setState((prev) => ({
-            ...prev,
-            error: 'Nieobsługiwany format pliku. Obsługiwane: PDF, Excel, CSV, TXT',
-          }));
+        const formatError = documentImportService.getUnsupportedFormatMessage(state.file);
+        if (formatError) {
+          setState((prev) => ({ ...prev, error: formatError }));
           return;
         }
 
@@ -253,7 +251,11 @@ export function useDocumentImport() {
       try {
         let analysisResult;
         if (state.inputMode === 'file' && state.file) {
-          analysisResult = await documentImportService.analyzeDocument(state.file, state.selectedPatientId, additionalContext);
+          analysisResult = await documentImportService.analyzeDocument(
+            state.file,
+            state.selectedPatientId,
+            additionalContext
+          );
         } else {
           analysisResult = await documentImportService.analyzeText(
             state.pastedText.trim(),

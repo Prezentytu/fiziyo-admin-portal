@@ -11,7 +11,7 @@ import { toDocumentItems } from './utils/documentItems';
 import type { DocumentItem } from './utils/chatCards';
 import type { SearchableExercise } from './utils/exerciseLookup';
 
-export const DOCUMENT_ACCEPT = documentImportService.getSupportedFormats().join(',');
+export const DOCUMENT_ACCEPT = documentImportService.getAcceptAttribute();
 export const MIN_NOTE_LENGTH = 20;
 
 function describeResult(items: readonly DocumentItem[]): string {
@@ -24,7 +24,7 @@ function describeResult(items: readonly DocumentItem[]): string {
 }
 
 /**
- * Document or visit note → exercises found in it (the import's analysis and catalog matching),
+ * Document, photo or screenshot of a note, or a typed visit note → exercises found in it (the import's analysis and catalog matching),
  * as a card in the thread. Costs AI credits like the import screen.
  */
 export function useDocumentAnalysis() {
@@ -50,9 +50,8 @@ export function useDocumentAnalysis() {
       runTask(
         'Przeanalizuj dokument',
         async (signal): Promise<AssistantReply> => {
-          if (!documentImportService.isFormatSupported(file)) {
-            throw new Error('Tego formatu nie odczytam. Obsługuję PDF, Excel, CSV i TXT.');
-          }
+          const formatError = documentImportService.getUnsupportedFormatMessage(file);
+          if (formatError) throw new Error(formatError);
           if (!documentImportService.isFileSizeValid(file)) {
             throw new Error(`Plik jest za duży (limit ${documentImportService.getMaxFileSizeMB()} MB).`);
           }

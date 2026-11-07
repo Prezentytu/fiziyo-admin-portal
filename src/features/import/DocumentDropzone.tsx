@@ -1,10 +1,11 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { FileUp, FileText, X, FileSpreadsheet, File, RefreshCw } from 'lucide-react';
+import { FileUp, FileText, X, FileSpreadsheet, File, RefreshCw, Image as ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { documentImportService } from '@/services/documentImportService';
+import { isImageFile, SUPPORTED_FORMATS_LABEL } from '@/utils/documentFormats';
 
 interface DocumentDropzoneProps {
   file: File | null;
@@ -22,9 +23,8 @@ export function DocumentDropzone({ file, onFileSelect, disabled = false, classNa
   const [error, setError] = useState<string | null>(null);
 
   const validateFile = useCallback((f: File): string | null => {
-    if (!documentImportService.isFormatSupported(f)) {
-      return `Nieobsługiwany format. Obsługiwane: ${documentImportService.getSupportedFormats().join(', ')}`;
-    }
+    const formatError = documentImportService.getUnsupportedFormatMessage(f);
+    if (formatError) return formatError;
     if (!documentImportService.isFileSizeValid(f)) {
       return `Plik za duży. Maksymalny rozmiar: ${documentImportService.getMaxFileSizeMB()}MB`;
     }
@@ -93,6 +93,7 @@ export function DocumentDropzone({ file, onFileSelect, disabled = false, classNa
     const ext = f.name.toLowerCase().split('.').pop();
     if (ext === 'pdf') return FileText;
     if (['xlsx', 'xls', 'csv'].includes(ext || '')) return FileSpreadsheet;
+    if (isImageFile(f)) return ImageIcon;
     return File;
   };
 
@@ -122,7 +123,14 @@ export function DocumentDropzone({ file, onFileSelect, disabled = false, classNa
 
           {/* Przyciski */}
           <div className="flex gap-2 shrink-0">
-            <Button variant="outline" size="sm" onClick={handleRemove} disabled={disabled} className="gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRemove}
+              disabled={disabled}
+              className="gap-2"
+              data-testid="import-dropzone-change-btn"
+            >
               <RefreshCw className="h-4 w-4" />
               Zmień plik
             </Button>
@@ -162,7 +170,7 @@ export function DocumentDropzone({ file, onFileSelect, disabled = false, classNa
       >
         <input
           type="file"
-          accept={documentImportService.getSupportedFormats().join(',')}
+          accept={documentImportService.getAcceptAttribute()}
           onChange={handleInputChange}
           disabled={disabled}
           className="absolute inset-0 cursor-pointer opacity-0"
@@ -192,7 +200,7 @@ export function DocumentDropzone({ file, onFileSelect, disabled = false, classNa
 
         {/* Obsługiwane formaty */}
         <p className="text-center text-sm text-muted-foreground">
-          PDF, Excel, CSV lub TXT (max {documentImportService.getMaxFileSizeMB()}MB)
+          {SUPPORTED_FORMATS_LABEL} (max {documentImportService.getMaxFileSizeMB()}MB)
         </p>
       </label>
 

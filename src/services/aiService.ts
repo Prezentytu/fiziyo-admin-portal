@@ -8,6 +8,7 @@ import { getBackendToken } from '@/lib/tokenCache';
 import { triggerCreditsRefresh } from '@/lib/aiCreditsRefresh';
 import { decodeGeneratedImage } from '@/features/exercises/utils/decodeGeneratedImage';
 import { normalizeAiExerciseVariants, type AiExerciseVariant } from '@/features/exercises/utils/aiFullExercise';
+import { insufficientAiCreditsMessage, mapAiErrorResponse } from '@/utils/aiErrorMessages';
 import type {
   ExerciseSuggestionRequest,
   ExerciseSuggestionResponse,
@@ -129,41 +130,17 @@ class AIService {
 
           const errorText = await response.text();
 
-          // Wyczerpanie miesiecznej puli AI — nie pokazujemy slowa "limit"/"kredyty",
-          // user nie powinien czuc ze jest ograniczany. Backend zwraca 400 z error: "insufficient_credits".
-          if (response.status === 400 || response.status === 402 || response.status === 403) {
-            try {
-              const errorJson = JSON.parse(errorText) as { error?: string; message?: string };
-              if (errorJson?.error === 'insufficient_credits') {
-                if (!suppressToast) {
-                  toast.error('Funkcja chwilowo niedostępna. Spróbuj ponownie za chwilę.');
-                }
-                throw new Error(`AI_TEMPORARILY_UNAVAILABLE:${errorJson.error}`);
-              }
-            } catch (parseError) {
-              if (parseError instanceof Error && parseError.message.startsWith('AI_TEMPORARILY_UNAVAILABLE')) {
-                throw parseError;
-              }
+          // Znane błędy AI (wyczerpana miesięczna pula kredytów, awaria dostawcy) mapuje czysta funkcja.
+          const mapped = mapAiErrorResponse(response.status, errorText);
+          if (mapped) {
+            if (!suppressToast) {
+              toast.error(mapped.message);
             }
-          }
-
-          // 502 = backend AI provider failure
-          if (response.status === 502) {
-            try {
-              const errorJson = JSON.parse(errorText) as { error?: string; message?: string };
-              if (errorJson?.message || errorJson?.error) {
-                if (!suppressToast) {
-                  toast.error(errorJson.message ?? 'Asystent AI jest chwilowo niedostępny. Spróbuj ponownie.');
-                }
-                throw new Error(
-                  `AI_PROVIDER_FAILURE:${errorJson.error ?? 'provider_unavailable'}:${errorJson.message ?? ''}`
-                );
-              }
-            } catch (parseError) {
-              if (parseError instanceof Error && parseError.message.startsWith('AI_PROVIDER_FAILURE')) {
-                throw parseError;
-              }
-            }
+            throw new Error(
+              mapped.kind === 'insufficient_credits'
+                ? `AI_TEMPORARILY_UNAVAILABLE:${mapped.code}:${mapped.message}`
+                : `AI_PROVIDER_FAILURE:${mapped.code}:${mapped.message}`
+            );
           }
 
           throw new Error(`Błąd AI: ${response.status} - ${errorText}`);
@@ -442,7 +419,7 @@ class AIService {
           return {
             status: 'error',
             code: 'insufficient_credits',
-            message: 'Funkcja chwilowo niedostępna. Spróbuj ponownie za chwilę.',
+            message: error.message.split(':').slice(2).join(':').trim() || insufficientAiCreditsMessage(new Date()),
           };
         }
         if (error.message.startsWith('AI_PROVIDER_FAILURE')) {

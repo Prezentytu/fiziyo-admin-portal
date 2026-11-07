@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ListEditor } from '@/components/shared/enrichment/ListEditor';
 import { TherapistNotesSection } from '@/components/shared/enrichment/TherapistNotesSection';
 import { DirtyDot } from '@/components/shared/enrichment/DirtyDot';
+import { DescriptionPlayerHintCounter } from '@/components/shared/enrichment/PlayerHintLengthCounter';
 import { EXERCISE_CONTENT_LABELS as LABELS, EXERCISE_NOTES_HINT } from '@/components/shared/enrichment/enrichmentFieldLabels';
 import {
   canRemovePlaceholderRow,
@@ -165,6 +166,13 @@ export function PatientLeadSection({
           dirty={patientDescriptionDirty}
           onChange={onPatientDescriptionChange}
           testId="exercise-detail-patient-description-input"
+        />
+      ) : null}
+      {showPatientDescription && editable ? (
+        <DescriptionPlayerHintCounter
+          description={patientDescription}
+          steps={data.patient?.steps}
+          testId="exercise-detail-patient-description-player-length"
         />
       ) : null}
       <EditableTextBlock

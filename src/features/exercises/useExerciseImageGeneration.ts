@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { aiService } from '@/services/aiService';
 import type { ExerciseImageErrorCode, ExerciseImagePhase, ImageStyle } from '@/types/ai.types';
+import { insufficientAiCreditsMessage } from '@/utils/aiErrorMessages';
 
 export interface GenerateExerciseImageParams {
   exerciseName: string;
@@ -31,7 +32,7 @@ function messageForError(code: ExerciseImageErrorCode, fallback: string): string
     case 'safety_blocked':
       return 'Obraz został odrzucony przez filtr bezpieczeństwa. Zmień nazwę lub opis ćwiczenia.';
     case 'insufficient_credits':
-      return 'Funkcja chwilowo niedostępna. Spróbuj ponownie za chwilę.';
+      return fallback || insufficientAiCreditsMessage(new Date());
     case 'rate_limited':
       return 'Dostawca AI jest chwilowo przeciążony. Spróbuj ponownie.';
     case 'cancelled':

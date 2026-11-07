@@ -6,7 +6,7 @@ import { documentImportService } from '@/services/documentImportService';
 
 vi.mock('@/services/documentImportService', () => ({
   documentImportService: {
-    isFormatSupported: vi.fn(() => true),
+    getUnsupportedFormatMessage: vi.fn(() => null),
     isFileSizeValid: vi.fn(() => true),
     getMaxFileSizeMB: vi.fn(() => 10),
     analyzeDocument: vi.fn(),
