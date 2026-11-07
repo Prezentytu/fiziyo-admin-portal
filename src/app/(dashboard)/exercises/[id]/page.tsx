@@ -51,6 +51,7 @@ import { SubmitToOrganizationDialog } from '@/features/exercises/SubmitToOrganiz
 import { FeedbackBanner } from '@/features/exercises/FeedbackBanner';
 import { resolveExerciseReviewFeedback } from '@/features/exercises/utils/resolveExerciseReviewFeedback';
 import { ReportExerciseDialog } from '@/features/exercises/ReportExerciseDialog';
+import { InternalNotesPanel } from '@/features/exercises/InternalNotesPanel';
 import { canReportExerciseIssue } from '@/features/exercises/utils/exerciseReportRouting';
 import { MediaGallery, buildMediaItems } from '@/components/shared';
 import {
@@ -952,6 +953,8 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
               )}
             </div>
           )}
+
+          <InternalNotesPanel exerciseId={exercise.id} />
         </div>
 
         {/* Right column: content, ordered by importance */}

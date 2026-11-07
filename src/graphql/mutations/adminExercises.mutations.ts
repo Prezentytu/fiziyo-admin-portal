@@ -99,6 +99,16 @@ export const UPDATE_EXERCISE_FIELD_MUTATION = gql`
   ${ADMIN_EXERCISE_FRAGMENT}
 `;
 
+export const UPDATE_EXERCISE_INTERNAL_NOTES_MUTATION = gql`
+  mutation UpdateExerciseInternalNotes($exerciseId: String!, $value: String) {
+    updateExerciseField(exerciseId: $exerciseId, fieldName: "internalNotes", value: $value) {
+      id
+      internalNotes
+      updatedAt
+    }
+  }
+`;
+
 export const APPROVE_ORGANIZATION_EXERCISE_MUTATION = gql`
   mutation ApproveOrganizationExercise($exerciseId: String!, $reviewNotes: String) {
     approveOrganizationExercise(exerciseId: $exerciseId, reviewNotes: $reviewNotes) {
