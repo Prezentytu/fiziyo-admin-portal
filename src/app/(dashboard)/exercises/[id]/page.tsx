@@ -37,6 +37,7 @@ import { ExerciseParametersPanel } from '@/features/exercises/ExerciseParameters
 import { ExerciseEditor } from '@/features/exercises/ExerciseEditor';
 import { ExerciseExecutionSteps } from '@/features/exercises/ExerciseExecutionSteps';
 import { ExerciseAudioCues } from '@/features/exercises/ExerciseAudioCues';
+import { RelatedExercisesSection } from '@/features/exercises/RelatedExercisesSection';
 import {
   PatientLeadSection,
   PatientExtrasSection,
@@ -1001,6 +1002,8 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                 setPath={setEnrichmentPath}
                 persist={async () => {}}
               />
+
+              <RelatedExercisesSection organizationId={organizationId} exerciseId={exercise.id} />
 
               {/* 5. Metadane */}
               <MetadataSection
