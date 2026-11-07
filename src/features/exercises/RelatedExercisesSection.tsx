@@ -47,7 +47,7 @@ function RelatedExerciseRow({ item, testIdPrefix }: Readonly<{ item: RelatedExer
 }
 
 /**
- * „Progresja i regresja” — related exercises in the exercise view and in verification.
+ * „Powiązane ćwiczenia” — related exercises in the exercise view and in verification.
  * Read-only; relations come from the catalog import. Hidden when there is nothing to show.
  */
 export function RelatedExercisesSection({
@@ -71,7 +71,7 @@ export function RelatedExercisesSection({
     >
       <div className="flex items-center gap-2">
         <GitBranch className="h-4 w-4 text-muted-foreground" aria-hidden />
-        <h2 className="text-base font-semibold text-foreground">Progresja i regresja</h2>
+        <h2 className="text-base font-semibold text-foreground">Powiązane ćwiczenia</h2>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         {groups.map((group) => (
