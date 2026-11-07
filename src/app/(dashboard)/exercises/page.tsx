@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { ChoiceChip } from '@/components/ui/choice-chip';
 import { LoadingState } from '@/components/shared/LoadingState';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
@@ -47,6 +48,7 @@ import {
   toExerciseLibraryTab,
   type ExerciseLibraryUrlState,
 } from '@/features/exercises/utils/exerciseLibraryUrlState';
+import { EXERCISE_BODY_REGIONS, findExerciseBodyRegion } from '@/features/exercises/utils/exerciseBodyRegions';
 import { getExerciseDefaultParams } from '@/features/exercise-sets/utils/exerciseDefaults';
 import { PageHeader } from '@/components/shared/page';
 import { useUrlSearchInput } from '@/features/exercises/useUrlSearchInput';
@@ -62,6 +64,7 @@ export default function ExercisesPage() {
   // Filter, search and page live in the URL, so going back from an exercise returns to the same page.
   const listState = useMemo(() => parseExerciseLibraryUrlState(searchParams), [searchParams]);
   const { filter: sourceFilter, search: committedSearch } = listState;
+  const bodyRegion = findExerciseBodyRegion(listState.region);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -141,6 +144,7 @@ export default function ExercisesPage() {
         organizationId,
         tab: toExerciseLibraryTab(sourceFilter),
         search: committedSearch || null,
+        region: bodyRegion?.region ?? null,
         page: listState.page,
         pageSize: listState.pageSize,
       },
@@ -209,6 +213,7 @@ export default function ExercisesPage() {
   const counts = libraryPage?.counts;
   const totalCount = counts?.all ?? 0;
   const isSearching = searchQuery.trim().length > 0;
+  const isFiltered = Boolean(committedSearch) || bodyRegion !== null;
   const isInitialLoading = loading && !libraryPage;
   useSearchTelemetry({
     event: 'exercise_catalog:search',
@@ -300,13 +305,13 @@ export default function ExercisesPage() {
             actions={
               <>
                 <label className="relative w-full sm:w-[280px]">
-                  <span className="sr-only">Szukaj ćwiczeń</span>
+                  <span className="sr-only">Szukaj ćwiczeń po nazwie, mięśniu lub tagu</span>
                   <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-label-secondary" aria-hidden="true" />
                   <Input
                     type="search"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Szukaj ćwiczeń"
+                    placeholder="Szukaj ćwiczeń lub mięśnia"
                     className="pl-10"
                     data-testid="exercise-search-input"
                   />
@@ -371,22 +376,51 @@ export default function ExercisesPage() {
             ))}
           </div>
 
+          <div
+            role="group"
+            aria-label="Region ciała"
+            className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1"
+            data-testid="exercise-region-filter"
+          >
+            <ChoiceChip
+              variant={bodyRegion === null ? 'chosen' : 'default'}
+              aria-pressed={bodyRegion === null}
+              onClick={() => updateListState({ region: null })}
+              data-testid="exercise-region-all"
+            >
+              Wszystkie regiony
+            </ChoiceChip>
+            {EXERCISE_BODY_REGIONS.map((option) => (
+              <ChoiceChip
+                key={option.id}
+                variant={bodyRegion?.id === option.id ? 'chosen' : 'default'}
+                aria-pressed={bodyRegion?.id === option.id}
+                onClick={() => updateListState({ region: bodyRegion?.id === option.id ? null : option.id })}
+                data-testid={`exercise-region-${option.id}`}
+              >
+                {option.label}
+              </ChoiceChip>
+            ))}
+          </div>
+
           {/* Results info */}
-          {isSearching && (
+          {(isSearching || bodyRegion) && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span>Wyniki:</span>
               <Badge variant="secondary" className="text-xs">
                 {libraryPage?.totalCount ?? 0} z {totalCount}
               </Badge>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 px-2 text-xs"
-                onClick={clearSearch}
-                data-testid="exercise-search-clear-btn"
-              >
-                Wyczyść wyszukiwanie
-              </Button>
+              {isSearching && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-xs"
+                  onClick={clearSearch}
+                  data-testid="exercise-search-clear-btn"
+                >
+                  Wyczyść wyszukiwanie
+                </Button>
+              )}
             </div>
           )}
 
@@ -405,14 +439,14 @@ export default function ExercisesPage() {
               <CardContent className="py-16">
                 <EmptyState
                   icon={Dumbbell}
-                  title={committedSearch ? 'Nie znaleziono ćwiczeń' : 'Brak ćwiczeń'}
+                  title={isFiltered ? 'Nie znaleziono ćwiczeń' : 'Brak ćwiczeń'}
                   description={
-                    committedSearch
-                      ? 'Spróbuj zmienić kryteria wyszukiwania'
+                    isFiltered
+                      ? 'Spróbuj innej nazwy, mięśnia albo regionu ciała'
                       : 'Utwórz pierwsze ćwiczenie, a potem dodaj je do zestawu dla pacjenta.'
                   }
-                  actionLabel={!committedSearch ? 'Dodaj ćwiczenie' : undefined}
-                  onAction={!committedSearch ? () => setIsDialogOpen(true) : undefined}
+                  actionLabel={!isFiltered ? 'Dodaj ćwiczenie' : undefined}
+                  onAction={!isFiltered ? () => setIsDialogOpen(true) : undefined}
                 />
               </CardContent>
             </Card>

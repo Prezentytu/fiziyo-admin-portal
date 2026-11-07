@@ -1,10 +1,14 @@
 import type { ExerciseLibraryTab } from '@/types/apollo';
 
+import { findExerciseBodyRegion } from './exerciseBodyRegions';
+
 export type ExerciseLibraryFilter = 'all' | 'organization' | 'fiziyo' | 'needsChanges';
 
 export interface ExerciseLibraryUrlState {
   readonly filter: ExerciseLibraryFilter;
   readonly search: string;
+  /** Body region slug from `EXERCISE_BODY_REGIONS`, or null for every region. */
+  readonly region: string | null;
   readonly page: number;
   readonly pageSize: number;
 }
@@ -31,6 +35,7 @@ export function parseExerciseLibraryUrlState(params: Pick<URLSearchParams, 'get'
   return {
     filter: filter && Object.hasOwn(TAB_BY_FILTER, filter) ? (filter as ExerciseLibraryFilter) : 'all',
     search: params.get('q')?.trim() ?? '',
+    region: findExerciseBodyRegion(params.get('region'))?.id ?? null,
     page: Number.isInteger(page) && page > 1 ? page : 1,
     pageSize: (EXERCISE_LIBRARY_PAGE_SIZES as readonly number[]).includes(pageSize)
       ? pageSize
@@ -43,6 +48,7 @@ export function buildExerciseLibraryQueryString(state: ExerciseLibraryUrlState):
   const params = new URLSearchParams();
   if (state.filter !== 'all') params.set('filter', state.filter);
   if (state.search.trim()) params.set('q', state.search.trim());
+  if (state.region) params.set('region', state.region);
   if (state.page > 1) params.set('page', String(state.page));
   if (state.pageSize !== DEFAULT_EXERCISE_LIBRARY_PAGE_SIZE) params.set('pageSize', String(state.pageSize));
   return params.toString();

@@ -221,6 +221,17 @@ export interface AvailableExercisesResponse {
 
 export type ExerciseLibraryTab = 'ALL' | 'ORGANIZATION' | 'FIZIYO' | 'NEEDS_CHANGES';
 
+export type ExerciseBodyRegion =
+  | 'CERVICAL_SPINE'
+  | 'THORACIC_SPINE'
+  | 'LUMBAR_SPINE'
+  | 'SHOULDER'
+  | 'ELBOW_HAND'
+  | 'HIP'
+  | 'KNEE'
+  | 'FOOT_ANKLE'
+  | 'BREATHING_BALANCE';
+
 export interface AvailableExercisesPageResponse {
   availableExercisesPage: {
     items: Exercise[];
