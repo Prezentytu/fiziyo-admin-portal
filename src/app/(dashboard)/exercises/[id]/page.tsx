@@ -50,6 +50,7 @@ import { SubmitToOrganizationDialog } from '@/features/exercises/SubmitToOrganiz
 import { FeedbackBanner } from '@/features/exercises/FeedbackBanner';
 import { resolveExerciseReviewFeedback } from '@/features/exercises/utils/resolveExerciseReviewFeedback';
 import { ReportExerciseDialog } from '@/features/exercises/ReportExerciseDialog';
+import { canReportExerciseIssue } from '@/features/exercises/utils/exerciseReportRouting';
 import { MediaGallery, buildMediaItems } from '@/components/shared';
 import {
   DropdownMenu,
@@ -559,6 +560,9 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const isPendingOrganizationReview = exercise.organizationVerificationStatus === 'PENDING_ORG_REVIEW';
   const isLocked = isGlobalExercise || isPendingReview || isPendingOrganizationReview;
   const isEditing = isEditMode && !isLocked;
+  // Jedna droga zgłaszania: zgłoszenie tylko dla ćwiczenia FiziYo, którego nie poprawisz sam (Skrzynka #26).
+  const canReportIssue = canReportExerciseIssue({ scope: exercise.scope, canReviewExercises });
+  const hasSecondaryHeroAction = canReportIssue || !isLocked;
   const canEditMedia = isEditing;
 
   const handleToggleEdit = () => {
@@ -664,15 +668,6 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
               )}
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={() => setIsReportDialogOpen(true)}
-                data-testid="exercise-detail-report-btn"
-                className="text-status-warning focus:text-status-warning focus:bg-status-warning-muted"
-              >
-                <Flag className="mr-2 h-4 w-4" />
-                Zgłoś do poprawki
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
                 onClick={() => setIsDeleteDialogOpen(true)}
                 className="text-destructive focus:text-destructive"
                 data-testid="exercise-detail-delete-btn"
@@ -745,8 +740,8 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         <button
           onClick={handleAddToSet}
           className={cn(
-            'group relative overflow-hidden rounded-2xl bg-tint-fill hover:bg-tint-fill-hover p-5 text-left transition-all duration-300 cursor-pointer sm:col-span-1',
-            isLocked ? 'lg:col-span-6' : 'lg:col-span-4'
+            'group relative overflow-hidden rounded-2xl bg-tint-fill hover:bg-tint-fill-hover p-5 text-left transition-all duration-300 cursor-pointer',
+            hasSecondaryHeroAction ? 'sm:col-span-1 lg:col-span-6' : 'sm:col-span-2 lg:col-span-12'
           )}
           data-testid="exercise-detail-add-to-set-btn"
         >
@@ -765,30 +760,29 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
           </div>
         </button>
 
-        <button
-          data-testid="exercise-detail-report-hero-btn"
-          onClick={() => setIsReportDialogOpen(true)}
-          className={cn(
-            'group relative overflow-hidden rounded-2xl border border-status-warning/30 bg-status-warning-muted p-5 text-left transition-all duration-300 hover:shadow-lg hover:shadow-status-warning/20 hover:scale-[1.01] cursor-pointer sm:col-span-1',
-            isLocked ? 'lg:col-span-6' : 'lg:col-span-4'
-          )}
-        >
-          <div className="relative flex items-center gap-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-status-warning-muted text-status-warning shrink-0 group-hover:scale-110 transition-transform duration-300">
-              <Flag className="h-5 w-5" />
+        {canReportIssue && (
+          <button
+            data-testid="exercise-detail-report-hero-btn"
+            onClick={() => setIsReportDialogOpen(true)}
+            className="group relative overflow-hidden rounded-2xl border border-status-warning/30 bg-status-warning-muted p-5 text-left transition-all duration-300 hover:shadow-lg hover:shadow-status-warning/20 hover:scale-[1.01] cursor-pointer sm:col-span-1 lg:col-span-6"
+          >
+            <div className="relative flex items-center gap-4">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-status-warning-muted text-status-warning shrink-0 group-hover:scale-110 transition-transform duration-300">
+                <Flag className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-base font-bold text-foreground">Zgłoś do poprawki</h3>
+                <p className="text-sm text-muted-foreground">Przekaż błąd zespołowi FiziYo</p>
+              </div>
             </div>
-            <div className="min-w-0 flex-1">
-              <h3 className="text-base font-bold text-foreground">Zgłoś do poprawki</h3>
-              <p className="text-sm text-muted-foreground">Przekaż do weryfikacji</p>
-            </div>
-          </div>
-        </button>
+          </button>
+        )}
 
         {!isLocked && (
           <button
             onClick={handleToggleEdit}
             className={cn(
-              'group relative overflow-hidden rounded-2xl border p-5 text-left transition-all duration-300 hover:shadow-lg hover:scale-[1.01] cursor-pointer sm:col-span-2 lg:col-span-4',
+              'group relative overflow-hidden rounded-2xl border p-5 text-left transition-all duration-300 hover:shadow-lg hover:scale-[1.01] cursor-pointer sm:col-span-1 lg:col-span-6',
               isEditing
                 ? 'border-status-success/30 bg-status-success-muted hover:shadow-status-success/20'
                 : 'border-border/40 bg-surface/50 hover:shadow-primary/10'
@@ -1116,7 +1110,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
       />
 
       <ReportExerciseDialog
-        open={isReportDialogOpen}
+        open={canReportIssue && isReportDialogOpen}
         onOpenChange={setIsReportDialogOpen}
         exercise={exercise}
         organizationId={organizationId}

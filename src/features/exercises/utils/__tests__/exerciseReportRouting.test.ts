@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveExerciseReportRoutingTarget } from '../exerciseReportRouting';
+import { canReportExerciseIssue, resolveExerciseReportRoutingTarget } from '../exerciseReportRouting';
 
 describe('resolveExerciseReportRoutingTarget', () => {
   it('returns UPDATE_PENDING for published exercises', () => {
@@ -22,5 +22,21 @@ describe('resolveExerciseReportRoutingTarget', () => {
 
   it('routes organization scope reports to organization queue', () => {
     expect(resolveExerciseReportRoutingTarget({ status: 'DRAFT', scope: 'ORGANIZATION' })).toBe('PENDING_ORG_REVIEW');
+  });
+});
+
+describe('canReportExerciseIssue', () => {
+  it('pozwala fizjoterapeucie zgłosić błąd w ćwiczeniu z bazy FiziYo', () => {
+    expect(canReportExerciseIssue({ scope: 'GLOBAL', canReviewExercises: false })).toBe(true);
+  });
+
+  it('nie pokazuje zgłoszenia przy własnym ćwiczeniu gabinetu: poprawia się je edycją albo w weryfikacji organizacji', () => {
+    expect(canReportExerciseIssue({ scope: 'ORGANIZATION', canReviewExercises: false })).toBe(false);
+    expect(canReportExerciseIssue({ scope: 'PERSONAL', canReviewExercises: false })).toBe(false);
+    expect(canReportExerciseIssue({ scope: undefined, canReviewExercises: false })).toBe(false);
+  });
+
+  it('nie pokazuje zgłoszenia weryfikatorowi FiziYo: ma „Popraw w weryfikacji” zamiast zgłoszenia do samego siebie', () => {
+    expect(canReportExerciseIssue({ scope: 'GLOBAL', canReviewExercises: true })).toBe(false);
   });
 });
