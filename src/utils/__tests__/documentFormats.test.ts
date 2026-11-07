@@ -83,6 +83,12 @@ describe('getPastedScreenshot', () => {
     expect(getPastedScreenshot(clipboard('mostki 3x10', []))).toBeNull();
   });
 
+  it('finds a screenshot the browser put only in items, with an empty files list', () => {
+    const itemsOnly = { ...clipboard('', [screenshot]), files: [] };
+
+    expect(getPastedScreenshot(itemsOnly)?.name).toBe('Zrzut ekranu.png');
+  });
+
   it('ignores non-image files in the clipboard', () => {
     const pdf = new File(['%PDF'], 'zalecenia.pdf', { type: 'application/pdf' });
     expect(getPastedScreenshot(clipboard('', [pdf]))).toBeNull();

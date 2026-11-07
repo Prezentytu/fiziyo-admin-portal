@@ -208,13 +208,14 @@ export function ChatComposer({
   };
 
   const handlePaste = (event: ClipboardEvent<HTMLTextAreaElement>) => {
-    const file = event.clipboardData.files[0];
-    if (!file || disabled || busy) return;
+    if (disabled || busy) return;
+    // Some browsers put a screenshot only in `items`, so it is checked before `files`.
     const screenshot = getPastedScreenshot(event.clipboardData);
+    const file = screenshot ?? event.clipboardData.files[0];
     // Word and Excel copy text together with a picture of it: that pastes as text, not as a screenshot.
-    if (file.type.startsWith('image/') && !screenshot) return;
+    if (!file || (!screenshot && file.type.startsWith('image/'))) return;
     event.preventDefault();
-    onAttach(screenshot ?? file);
+    onAttach(file);
   };
 
   const toggleDictation = () => {
