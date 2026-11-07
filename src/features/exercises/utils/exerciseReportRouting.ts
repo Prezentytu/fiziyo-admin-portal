@@ -23,3 +23,24 @@ export function resolveExerciseReportRoutingTarget({
 
   return 'PENDING_REVIEW';
 }
+
+interface ExerciseReportVisibilityInput {
+  scope?: string | null;
+  canReviewExercises: boolean;
+  /** Rola systemowa jeszcze się ładuje: nie pokazujemy akcji, żeby weryfikator nie zobaczył jej na chwilę. */
+  isRoleLoading?: boolean;
+}
+
+/**
+ * Jedna droga zgłaszania (Skrzynka #26): „Zgłoś do poprawki” jest tylko dla ćwiczenia z bazy FiziYo,
+ * którego fizjoterapeuta nie może poprawić sam. Własne ćwiczenie gabinetu poprawia się edycją albo
+ * w weryfikacji organizacji, a weryfikator FiziYo poprawia ćwiczenie globalne w centrum weryfikacji
+ * („Popraw w weryfikacji”), więc nie zgłasza go do własnej skrzynki.
+ */
+export function canReportExerciseIssue({
+  scope,
+  canReviewExercises,
+  isRoleLoading = false,
+}: ExerciseReportVisibilityInput): boolean {
+  return scope === 'GLOBAL' && !canReviewExercises && !isRoleLoading;
+}
