@@ -55,7 +55,7 @@ Wygląd: canvas „Czat v2 AJ” (https://claude.ai/artifact/QGoTcDeTx2JX2yDq86R
 - Tekst z modelu jest tylko tekstem (bez HTML i markdownu), a wszystko, co zmienia dane, jest kartą z przyciskiem. Do pacjenta trafia tylko to, co fizjoterapeuta zatwierdził w karcie `SendSummary`.
 - Brak sztucznych blokad: czat ma umieć wszystko, co panel (decyzja Adama 30.10). Gdy czegoś jeszcze nie umie, mówi to wprost i proponuje, co umie.
 - „Dziś N wizyt” liczy notatki kliniczne z dzisiejszą datą, bo panel nie ma jeszcze kalendarza wizyt (`/appointments` to zapowiedź).
-- „Skanuj wizytę” działa z notatki albo dokumentu przez istniejący import. Karta mówi tylko, skąd bierze zalecenia, bez zapowiedzi „słuchania” (zgłoszenie z 31.10: brzmiało jak podsłuch); wariant głosowy to osobna decyzja produktu.
+- „Skanuj wizytę” działa z notatki, dokumentu albo zdjęcia lub zrzutu ekranu notatki (JPG, PNG, WEBP; HEIC odrzucony z podpowiedzią) przez istniejący import. Wklejony do pola notatki zrzut ekranu idzie do analizy jako obraz; wklejenie tekstu z obrazkiem (Word, Excel) zostaje tekstem (`utils/documentFormats.ts`). Karta mówi tylko, skąd bierze zalecenia, bez zapowiedzi „słuchania” (zgłoszenie z 31.10: brzmiało jak podsłuch); wariant głosowy to osobna decyzja produktu.
 - „Dla kogo?” zaczyna się od „Bez pacjenta” (zestaw zapisany w katalogu gabinetu, np. żeby wypróbować aplikację), potem pacjenci. Zestaw ułożony w wątku nie jest zestawem z katalogu i karta tak go nie nazywa (`draftNote`, `planNote` w `utils/setDraft.ts`).
 - „Kto nie ćwiczy” pokazuje pacjentów zalogowanego fizjoterapeuty; pytanie o konkretnego pacjenta szuka w całej organizacji (opieka zespołowa).
 - Kilku pacjentów o tym samym imieniu: backend pyta „O kogo chodzi?” bez wołania modelu.

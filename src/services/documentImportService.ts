@@ -1,8 +1,30 @@
 import { getBackendToken } from '@/lib/tokenCache';
 import { triggerCreditsRefresh } from '@/lib/aiCreditsRefresh';
+import { mapAiErrorResponse } from '@/utils/aiErrorMessages';
 import type { DocumentAnalysisResult, DocumentImportRequest, DocumentImportResult } from '@/types/import.types';
+import { DOCUMENT_ACCEPT, unsupportedFormatMessage } from '@/utils/documentFormats';
 
 const isDev = process.env.NODE_ENV === 'development';
+
+/**
+ * Komunikat błędu analizy: znane błędy AI (np. brak kredytów) przez wspólne mapowanie,
+ * w pozostałych przypadkach `message` z backendu albo fallback.
+ */
+async function analysisErrorMessage(response: Response, fallback: string): Promise<string> {
+  const bodyText = await response.text().catch(() => '');
+  const mapped = mapAiErrorResponse(response.status, bodyText);
+  if (mapped) return mapped.message;
+  try {
+    const parsed: unknown = JSON.parse(bodyText);
+    if (typeof parsed === 'object' && parsed !== null) {
+      const { message } = parsed as Record<string, unknown>;
+      if (typeof message === 'string' && message) return message;
+    }
+  } catch {
+    // ciało nie jest JSON-em
+  }
+  return fallback;
+}
 
 /**
  * Serwis do importu dokumentów fizjoterapeutycznych przez AI
@@ -28,7 +50,7 @@ class DocumentImportService {
   }
 
   /**
-   * Analizuje plik dokumentu (PDF, Excel, CSV, TXT)
+   * Analizuje plik dokumentu (PDF, Excel, CSV, TXT) albo zdjęcie/zrzut ekranu (JPG, PNG, WEBP)
    */
   async analyzeDocument(
     file: File,
@@ -68,8 +90,7 @@ class DocumentImportService {
         if (response.status === 401) {
           throw new Error('Sesja wygasła. Odśwież stronę i spróbuj ponownie.');
         }
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Błąd analizy dokumentu: ${response.status}`);
+        throw new Error(await analysisErrorMessage(response, `Błąd analizy dokumentu: ${response.status}`));
       }
 
       const data: DocumentAnalysisResult = await response.json();
@@ -132,8 +153,7 @@ class DocumentImportService {
         if (response.status === 401) {
           throw new Error('Sesja wygasła. Odśwież stronę i spróbuj ponownie.');
         }
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Błąd analizy tekstu: ${response.status}`);
+        throw new Error(await analysisErrorMessage(response, `Błąd analizy tekstu: ${response.status}`));
       }
 
       const data: DocumentAnalysisResult = await response.json();
@@ -209,19 +229,17 @@ class DocumentImportService {
   }
 
   /**
-   * Obsługiwane formaty plików
+   * Obsługiwane formaty plików, gotowe do atrybutu `accept`
    */
-  getSupportedFormats(): string[] {
-    return ['.pdf', '.xlsx', '.xls', '.csv', '.txt', '.md'];
+  getAcceptAttribute(): string {
+    return DOCUMENT_ACCEPT;
   }
 
   /**
-   * Sprawdza czy format pliku jest obsługiwany
+   * Komunikat dla nieobsługiwanego formatu albo null
    */
-  isFormatSupported(file: File): boolean {
-    const extension = file.name.toLowerCase().split('.').pop();
-    const supportedExtensions = ['pdf', 'xlsx', 'xls', 'csv', 'txt', 'md'];
-    return supportedExtensions.includes(extension || '');
+  getUnsupportedFormatMessage(file: File): string | null {
+    return unsupportedFormatMessage(file);
   }
 
   /**

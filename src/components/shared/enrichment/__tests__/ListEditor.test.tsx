@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import { ListEditor } from '../ListEditor';
+import { PlayerHintLengthCounter } from '../PlayerHintLengthCounter';
 
 describe('ListEditor', () => {
   it('wyłącza kosz, gdy jedyny wiersz ma tylko placeholder', () => {
@@ -80,5 +81,23 @@ describe('ListEditor', () => {
 
     expect(onRemoveItem).toHaveBeenCalledWith(0);
     expect(screen.getByTestId('cues-phase-1')).toBeInTheDocument();
+  });
+
+  it('pokazuje pod wierszem, czy wskazówka zmieści się w playerze, i ostrzega tylko przy za długiej', () => {
+    render(
+      <ListEditor
+        title="Wskazówki"
+        items={['Pilnuj kolana', 'a'.repeat(121), '']}
+        placeholder="Np. „Pilnuj kolana”"
+        addLabel="Dodaj wskazówkę"
+        onChange={vi.fn()}
+        renderItemFooter={(text, index) => <PlayerHintLengthCounter text={text} testId={`cues-length-${index}`} />}
+        testIdPrefix="cues"
+      />
+    );
+
+    expect(screen.getByTestId('cues-length-0')).toHaveAttribute('data-status', 'fits');
+    expect(screen.getByTestId('cues-length-1')).toHaveAttribute('data-status', 'too-long');
+    expect(screen.queryByTestId('cues-length-2')).not.toBeInTheDocument();
   });
 });
