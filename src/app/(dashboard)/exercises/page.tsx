@@ -35,6 +35,7 @@ import {
   SUBMIT_TO_GLOBAL_REVIEW_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { useSystemRole } from '@/hooks/useSystemRole';
 import { useExerciseBuilder, type BuilderExercise } from '@/contexts/ExerciseBuilderContext';
 import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
 import { useRealtimeExercises } from '@/hooks/useRealtimeExercises';
@@ -58,6 +59,7 @@ export default function ExercisesPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { currentOrganization } = useOrganization();
+  const { canReviewExercises, isLoading: isRoleLoading } = useSystemRole();
   const { toggleExercise, isInBuilder } = useExerciseBuilder();
   // Filter, search and page live in the URL, so going back from an exercise returns to the same page.
   const listState = useMemo(() => parseExerciseLibraryUrlState(searchParams), [searchParams]);
@@ -432,6 +434,8 @@ export default function ExercisesPage() {
                   onSubmitToGlobal={(e) => setSubmitToGlobalExercise(e)}
                   onSubmitToOrganizationReview={(e) => setSubmitToOrganizationExercise(e)}
                   onReportIssue={(e) => setReportExercise(e)}
+                  canReviewExercises={canReviewExercises}
+                  isRoleLoading={isRoleLoading}
                   isInBuilder={isInBuilder(exercise.id)}
                   onToggleBuilder={handleToggleBuilder}
                 />
@@ -451,6 +455,8 @@ export default function ExercisesPage() {
                   onSubmitToGlobal={(e) => setSubmitToGlobalExercise(e)}
                   onSubmitToOrganizationReview={(e) => setSubmitToOrganizationExercise(e)}
                   onReportIssue={(e) => setReportExercise(e)}
+                  canReviewExercises={canReviewExercises}
+                  isRoleLoading={isRoleLoading}
                   isInBuilder={isInBuilder(exercise.id)}
                   onToggleBuilder={handleToggleBuilder}
                 />
