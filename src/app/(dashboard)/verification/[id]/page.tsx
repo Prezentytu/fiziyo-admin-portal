@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/shared/EmptyState';
 import { VerificationWorkspace } from '@/features/verification/VerificationWorkspace';
 import { VerificationWorkspaceSkeleton } from '@/features/verification/VerificationWorkspaceSkeleton';
 
+import { useOrganization } from '@/contexts/OrganizationContext';
 import { useSystemRole } from '@/hooks/useSystemRole';
 import { getExerciseReports } from '@/services/exerciseReportService';
 import {
@@ -43,6 +44,7 @@ interface VerificationDetailPageProps {
 export default function VerificationDetailPage({ params }: Readonly<VerificationDetailPageProps>) {
   const { id } = use(params);
   const router = useRouter();
+  const { currentOrganization } = useOrganization();
   const searchParams = useSearchParams();
   const { canReviewExercises, isLoading: roleLoading } = useSystemRole();
   const [openReports, setOpenReports] = useState<ExerciseReport[]>([]);
@@ -171,6 +173,7 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
       listUrl={listUrl}
       buildDetailUrl={buildDetailUrl}
       reloadImages={reloadImages}
+      organizationId={currentOrganization?.organizationId ?? null}
     />
   );
 }
