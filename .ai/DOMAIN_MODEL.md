@@ -385,7 +385,7 @@ Organization
  ├── Exercise
  │    ├── ExerciseMedia (MainDemo, Thumbnail, StepByStep...)
  │    ├── ExerciseTagMapping ←→ ExerciseTag ←→ TagCategory
- │    ├── ExerciseRelation (Progression/Regression)
+ │    ├── ExerciseRelation (Regression/Progression/Alternative/Similar, wiele na typ; cel po id albo TargetSourceResearchId; bez filtra tenantowego, widoczność celu sprawdza `relatedExercises`)
  │    └── ExerciseHistory (audit log)
  ├── ExerciseSet
  │    ├── ExerciseSetMapping ←→ Exercise (z nadpisaniami)
