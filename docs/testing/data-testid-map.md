@@ -266,58 +266,61 @@ Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu r
 
 #### Detal ćwiczenia — strona szczegółów (`exercises/[id]/page.tsx`)
 
-| data-testid                                  | Element                                                  | Plik                          |
-| -------------------------------------------- | -------------------------------------------------------- | ----------------------------- |
-| `exercise-detail-back-btn`                   | Powrót do listy ćwiczeń                                  | `exercises/[id]/page.tsx`     |
-| `exercise-detail-menu-trigger`               | Przycisk "Opcje" (menu kontekstowe)                      | `exercises/[id]/page.tsx`     |
-| `exercise-detail-duplicate-btn`              | Duplikuj ćwiczenie                                       | `exercises/[id]/page.tsx`     |
-| `exercise-detail-submit-global-btn`          | Zgłoś do bazy FiziYo                                     | `exercises/[id]/page.tsx`     |
-| `exercise-detail-submit-org-btn`             | Zgłoś do weryfikacji organizacyjnej                      | `exercises/[id]/page.tsx`     |
-| `exercise-detail-resubmit-btn`               | Zgłoś ponownie do weryfikacji                            | `exercises/[id]/page.tsx`     |
-| `exercise-detail-report-btn`                 | Zgłoś do poprawki (menu)                                 | `exercises/[id]/page.tsx`     |
-| `exercise-detail-report-hero-btn`            | Zgłoś do poprawki (hero card)                            | `exercises/[id]/page.tsx`     |
-| `exercise-detail-delete-btn`                 | Usuń ćwiczenie                                           | `exercises/[id]/page.tsx`     |
-| `exercise-detail-name`                       | Tytuł ćwiczenia (h1)                                     | `exercises/[id]/page.tsx`     |
-| `exercise-detail-add-to-set-btn`             | Hero: Dodaj do zestawu                                   | `exercises/[id]/page.tsx`     |
-| `exercise-detail-edit-btn`                   | Hero: Edytuj ćwiczenie / Zapisz (toggler trybu edycji)   | `exercises/[id]/page.tsx`     |
-| `exercise-detail-media-player`               | Galeria mediów                                           | `exercises/[id]/page.tsx`     |
-| `exercise-detail-media-edit-section`         | Sekcja zarządzania zdjęciami                             | `exercises/[id]/page.tsx`     |
-| `exercise-detail-upload-image-btn`           | Dodaj zdjęcie                                            | `exercises/[id]/page.tsx`     |
-| `exercise-detail-ai-image-btn`               | Generuj zdjęcie AI                                       | `exercises/[id]/page.tsx`     |
-| `exercise-detail-ai-style-group`             | Wybór stylu obrazu AI (grupa)                            | `exercises/[id]/page.tsx`     |
-| `exercise-detail-ai-style-illustration`      | Styl: ilustracja                                         | `exercises/[id]/page.tsx`     |
-| `exercise-detail-ai-style-diagram`           | Styl: diagram                                            | `exercises/[id]/page.tsx`     |
-| `exercise-detail-ai-style-photo`             | Styl: zdjęcie                                            | `exercises/[id]/page.tsx`     |
-| `exercise-detail-ai-image-skeleton`          | Skeleton podczas generowania AI                          | `exercises/[id]/page.tsx`     |
-| `exercise-detail-image-file-input`           | Hidden file input do uploadu                             | `exercises/[id]/page.tsx`     |
-| `exercise-detail-delete-image-btn`           | Usuń zdjęcie (hover overlay)                             | `exercises/[id]/page.tsx`     |
-| `exercise-detail-name-input`                 | Edycja nazwy ćwiczenia (tryb edycji)                     | `exercises/[id]/page.tsx`     |
-| `exercise-detail-patient-description-input`  | Edycja opisu dla pacjenta                                | `exercises/[id]/page.tsx`     |
-| `exercise-detail-clinical-description-input` | Edycja opisu klinicznego                                 | `exercises/[id]/page.tsx`     |
-| `exercise-detail-notes-input`                | Edycja wskazówki fizjoterapeuty (`notes`)                | `exercises/[id]/page.tsx`     |
-| `exercise-detail-stop-if-text`               | „Przerwij, gdy…” z liniami jak w aplikacji pacjenta      | `ExerciseDetailSections.tsx`  |
-| `exercise-detail-content-gaps`               | Braki treści według reguł publikacji                     | `exercises/[id]/page.tsx`     |
-| `exercise-detail-open-verification-btn`      | „Popraw w weryfikacji” (ćwiczenie globalne, weryfikator) | `exercises/[id]/page.tsx`     |
-| `exercise-editor-saved-load-note`            | Zapisane obciążenie spoza kilogramów                     | `ExerciseEditor.tsx`          |
-| `exercise-detail-parameters-primary-group`   | Wyróżniona sekcja "Podstawowe parametry"                 | `ExerciseParametersPanel.tsx` |
-| `exercise-param-summary-stat`                | Wyróżniony podsumowujący stat (czas trwania)             | `ExerciseParametersPanel.tsx` |
-| `exercise-param-summary-stat-info`           | Info tooltip przy podsumowującym stat                    | `ExerciseParametersPanel.tsx` |
-| `exercise-param-{key}-input`                 | Edycja parametru (liczba/tekst)                          | `ExerciseParametersPanel.tsx` |
-| `exercise-param-{key}-select`                | Edycja parametru (select: strona/trudność)               | `ExerciseParametersPanel.tsx` |
-| `exercise-audio-cues`                        | Sekcja "Wskazówki"                                       | `ExerciseAudioCues.tsx`       |
-| `exercise-audio-cue-main`                    | Kontener komendy TTS (widok/edycja)                      | `ExerciseAudioCues.tsx`       |
-| `exercise-audio-cue-input`                   | Edycja komendy TTS (tryb edycji)                         | `ExerciseAudioCues.tsx`       |
-| `exercise-audio-cues-list`                   | Lista wskazówek AI (coaching cues, widok)                | `ExerciseAudioCues.tsx`       |
-| `exercise-audio-cues-editor-add-btn`         | Dodaj wskazówkę AI (tryb edycji)                         | `ExerciseAudioCues.tsx`       |
-| `exercise-audio-cues-editor-item-{i}`        | Edycja treści wskazówki AI (tryb edycji)                 | `ExerciseAudioCues.tsx`       |
-| `exercise-audio-cues-editor-remove-{i}`      | Usuń wskazówkę AI (tryb edycji)                          | `ExerciseAudioCues.tsx`       |
-| `exercise-execution-steps`                   | Sekcja "Wykonanie krok po kroku"                         | `ExerciseExecutionSteps.tsx`  |
-| `exercise-execution-steps-list`              | Lista kroków (widok)                                     | `ExerciseExecutionSteps.tsx`  |
-| `exercise-execution-step-{n}`                | Pojedynczy krok (widok)                                  | `ExerciseExecutionSteps.tsx`  |
-| `exercise-execution-step-{n}-image`          | Zdjęcie przypięte do kroku (widok)                       | `ExerciseExecutionSteps.tsx`  |
-| `exercise-execution-steps-editor-add-btn`    | Dodaj krok (tryb edycji)                                 | `ExerciseExecutionSteps.tsx`  |
-| `exercise-execution-steps-editor-item-{i}`   | Edycja treści kroku (tryb edycji)                        | `ExerciseExecutionSteps.tsx`  |
-| `exercise-execution-steps-editor-remove-{i}` | Usuń krok (tryb edycji)                                  | `ExerciseExecutionSteps.tsx`  |
+| data-testid                                         | Element                                                  | Plik                          |
+| --------------------------------------------------- | -------------------------------------------------------- | ----------------------------- |
+| `exercise-detail-back-btn`                          | Powrót do listy ćwiczeń                                  | `exercises/[id]/page.tsx`     |
+| `exercise-detail-menu-trigger`                      | Przycisk "Opcje" (menu kontekstowe)                      | `exercises/[id]/page.tsx`     |
+| `exercise-detail-duplicate-btn`                     | Duplikuj ćwiczenie                                       | `exercises/[id]/page.tsx`     |
+| `exercise-detail-submit-global-btn`                 | Zgłoś do bazy FiziYo                                     | `exercises/[id]/page.tsx`     |
+| `exercise-detail-submit-org-btn`                    | Zgłoś do weryfikacji organizacyjnej                      | `exercises/[id]/page.tsx`     |
+| `exercise-detail-resubmit-btn`                      | Zgłoś ponownie do weryfikacji                            | `exercises/[id]/page.tsx`     |
+| `exercise-detail-report-btn`                        | Zgłoś do poprawki (menu)                                 | `exercises/[id]/page.tsx`     |
+| `exercise-detail-report-hero-btn`                   | Zgłoś do poprawki (hero card)                            | `exercises/[id]/page.tsx`     |
+| `exercise-detail-delete-btn`                        | Usuń ćwiczenie                                           | `exercises/[id]/page.tsx`     |
+| `exercise-detail-name`                              | Tytuł ćwiczenia (h1)                                     | `exercises/[id]/page.tsx`     |
+| `exercise-detail-add-to-set-btn`                    | Hero: Dodaj do zestawu                                   | `exercises/[id]/page.tsx`     |
+| `exercise-detail-edit-btn`                          | Hero: Edytuj ćwiczenie / Zapisz (toggler trybu edycji)   | `exercises/[id]/page.tsx`     |
+| `exercise-detail-media-player`                      | Galeria mediów                                           | `exercises/[id]/page.tsx`     |
+| `exercise-detail-media-edit-section`                | Sekcja zarządzania zdjęciami                             | `exercises/[id]/page.tsx`     |
+| `exercise-detail-upload-image-btn`                  | Dodaj zdjęcie                                            | `exercises/[id]/page.tsx`     |
+| `exercise-detail-ai-image-btn`                      | Generuj zdjęcie AI                                       | `exercises/[id]/page.tsx`     |
+| `exercise-detail-ai-style-group`                    | Wybór stylu obrazu AI (grupa)                            | `exercises/[id]/page.tsx`     |
+| `exercise-detail-ai-style-illustration`             | Styl: ilustracja                                         | `exercises/[id]/page.tsx`     |
+| `exercise-detail-ai-style-diagram`                  | Styl: diagram                                            | `exercises/[id]/page.tsx`     |
+| `exercise-detail-ai-style-photo`                    | Styl: zdjęcie                                            | `exercises/[id]/page.tsx`     |
+| `exercise-detail-ai-image-skeleton`                 | Skeleton podczas generowania AI                          | `exercises/[id]/page.tsx`     |
+| `exercise-detail-image-file-input`                  | Hidden file input do uploadu                             | `exercises/[id]/page.tsx`     |
+| `exercise-detail-delete-image-btn`                  | Usuń zdjęcie (hover overlay)                             | `exercises/[id]/page.tsx`     |
+| `exercise-detail-name-input`                        | Edycja nazwy ćwiczenia (tryb edycji)                     | `exercises/[id]/page.tsx`     |
+| `exercise-detail-patient-description-input`         | Edycja opisu dla pacjenta                                | `exercises/[id]/page.tsx`     |
+| `exercise-detail-patient-description-player-length` | Ile opisu pokaże player (tylko bez kroków)               | `ExerciseDetailSections.tsx`  |
+| `exercise-detail-clinical-description-input`        | Edycja opisu klinicznego                                 | `exercises/[id]/page.tsx`     |
+| `exercise-detail-notes-input`                       | Edycja wskazówki fizjoterapeuty (`notes`)                | `exercises/[id]/page.tsx`     |
+| `exercise-detail-stop-if-text`                      | „Przerwij, gdy…” z liniami jak w aplikacji pacjenta      | `ExerciseDetailSections.tsx`  |
+| `exercise-detail-content-gaps`                      | Braki treści według reguł publikacji                     | `exercises/[id]/page.tsx`     |
+| `exercise-detail-open-verification-btn`             | „Popraw w weryfikacji” (ćwiczenie globalne, weryfikator) | `exercises/[id]/page.tsx`     |
+| `exercise-editor-saved-load-note`                   | Zapisane obciążenie spoza kilogramów                     | `ExerciseEditor.tsx`          |
+| `exercise-detail-parameters-primary-group`          | Wyróżniona sekcja "Podstawowe parametry"                 | `ExerciseParametersPanel.tsx` |
+| `exercise-param-summary-stat`                       | Wyróżniony podsumowujący stat (czas trwania)             | `ExerciseParametersPanel.tsx` |
+| `exercise-param-summary-stat-info`                  | Info tooltip przy podsumowującym stat                    | `ExerciseParametersPanel.tsx` |
+| `exercise-param-{key}-input`                        | Edycja parametru (liczba/tekst)                          | `ExerciseParametersPanel.tsx` |
+| `exercise-param-{key}-select`                       | Edycja parametru (select: strona/trudność)               | `ExerciseParametersPanel.tsx` |
+| `exercise-audio-cues`                               | Sekcja "Wskazówki"                                       | `ExerciseAudioCues.tsx`       |
+| `exercise-audio-cue-main`                           | Kontener komendy TTS (widok/edycja)                      | `ExerciseAudioCues.tsx`       |
+| `exercise-audio-cue-input`                          | Edycja komendy TTS (tryb edycji)                         | `ExerciseAudioCues.tsx`       |
+| `exercise-audio-cues-list`                          | Lista wskazówek AI (coaching cues, widok)                | `ExerciseAudioCues.tsx`       |
+| `exercise-audio-cues-editor-add-btn`                | Dodaj wskazówkę AI (tryb edycji)                         | `ExerciseAudioCues.tsx`       |
+| `exercise-audio-cues-editor-item-{i}`               | Edycja treści wskazówki AI (tryb edycji)                 | `ExerciseAudioCues.tsx`       |
+| `exercise-audio-cues-editor-remove-{i}`             | Usuń wskazówkę AI (tryb edycji)                          | `ExerciseAudioCues.tsx`       |
+| `exercise-audio-cues-editor-length-{i}`             | Długość wskazówki względem playera (`data-status`)       | `ExerciseAudioCues.tsx`       |
+| `exercise-execution-steps`                          | Sekcja "Wykonanie krok po kroku"                         | `ExerciseExecutionSteps.tsx`  |
+| `exercise-execution-steps-list`                     | Lista kroków (widok)                                     | `ExerciseExecutionSteps.tsx`  |
+| `exercise-execution-step-{n}`                       | Pojedynczy krok (widok)                                  | `ExerciseExecutionSteps.tsx`  |
+| `exercise-execution-step-{n}-image`                 | Zdjęcie przypięte do kroku (widok)                       | `ExerciseExecutionSteps.tsx`  |
+| `exercise-execution-steps-editor-add-btn`           | Dodaj krok (tryb edycji)                                 | `ExerciseExecutionSteps.tsx`  |
+| `exercise-execution-steps-editor-item-{i}`          | Edycja treści kroku (tryb edycji)                        | `ExerciseExecutionSteps.tsx`  |
+| `exercise-execution-steps-editor-remove-{i}`        | Usuń krok (tryb edycji)                                  | `ExerciseExecutionSteps.tsx`  |
+| `exercise-execution-steps-editor-length-{i}`        | Długość kroku względem playera (`data-status`)           | `ExerciseExecutionSteps.tsx`  |
 
 ### 5. Zestawy ćwiczeń (set-)
 
@@ -789,7 +792,9 @@ Ekran globalny publikuje z paska, a jedyne wyjście bez publikacji to „To dupl
 | `verification-param-side-select`                                                                 | Strona ciała                                                | `ParametersStage.tsx`         |
 | `verification-param-description-fix-btn`                                                         | Zamiana liczby w opisie                                     | `ParametersStage.tsx`         |
 | `verification-instruction-description-input`                                                     | Opis ćwiczenia (pacjent)                                    | `InstructionStage.tsx`        |
+| `verification-instruction-description-player-length`                                             | Ile opisu pokaże player (tylko bez kroków)                  | `InstructionStage.tsx`        |
 | `verification-step-{n}-{input\|remove-btn}`                                                      | Krok n                                                      | `InstructionStage.tsx`        |
+| `verification-step-{n}-player-length` / `verification-cue-{n}-player-length`                     | Długość kroku / wskazówki względem playera (`data-status`)  | `InstructionStage.tsx`        |
 | `verification-cue-{n}-phase-{preparation\|work\|rest}-btn`                                       | Faza wskazówki głosowej                                     | `InstructionStage.tsx`        |
 | `verification-proposal-{request\|insert\|dismiss}-btn`                                           | Propozycja agenta                                           | `InstructionStage.tsx`        |
 | `verification-safety-stop-if-input`                                                              | Przerwij, gdy… (tekst z liniami)                            | `SafetyStage.tsx`             |
