@@ -21,11 +21,14 @@ import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagC
 import { DELETE_TAG_MUTATION, DELETE_TAG_CATEGORY_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import { matchesSearchQuery } from '@/utils/textUtils';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { useSystemRole } from '@/hooks/useSystemRole';
+import { canManageTag } from '@/features/exercises/utils/tagPermissions';
 import type { ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
 import { PageSheet } from '@/components/shared/page';
 
 export default function TagsPage() {
   const { currentOrganization } = useOrganization();
+  const { canManageGlobalTags } = useSystemRole();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'tags' | 'categories'>('tags');
   const [isTagDialogOpen, setIsTagDialogOpen] = useState(false);
@@ -143,7 +146,11 @@ export default function TagsPage() {
             <Tag className="h-4 w-4" />
             Tagi ({filteredTags.length})
           </TabsTrigger>
-          <TabsTrigger value="categories" className="flex items-center gap-2" data-testid="exercise-tags-tab-categories">
+          <TabsTrigger
+            value="categories"
+            className="flex items-center gap-2"
+            data-testid="exercise-tags-tab-categories"
+          >
             <FolderOpen className="h-4 w-4" />
             Kategorie ({filteredCategories.length})
           </TabsTrigger>
@@ -168,9 +175,17 @@ export default function TagsPage() {
             </Card>
           ) : (
             <div className="grid gap-2">
-              {filteredTags.map((tag) => (
-                <TagCard key={tag.id} tag={tag} onEdit={handleEditTag} onDelete={(t) => setDeletingTag(t)} />
-              ))}
+              {filteredTags.map((tag) => {
+                const manageable = canManageTag(tag, canManageGlobalTags);
+                return (
+                  <TagCard
+                    key={tag.id}
+                    tag={tag}
+                    onEdit={manageable ? handleEditTag : undefined}
+                    onDelete={manageable ? (t) => setDeletingTag(t) : undefined}
+                  />
+                );
+              })}
             </div>
           )}
         </TabsContent>

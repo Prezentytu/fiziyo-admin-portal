@@ -107,8 +107,6 @@
     "src/features/exercises/SubmitToGlobalDialog.tsx:207:Button",
     "src/features/exercises/SubmitToOrganizationDialog.tsx:159:Button",
     "src/features/exercises/SubmitToOrganizationDialog.tsx:162:Button",
-    "src/features/exercises/TagCard.tsx:112:Button",
-    "src/features/exercises/TagCard.tsx:59:Button",
     "src/features/exercises/TagDialog.tsx:177:Input",
     "src/features/exercises/TagDialog.tsx:191:Textarea",
     "src/features/exercises/TagDialog.tsx:211:Input",
