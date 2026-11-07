@@ -9,6 +9,8 @@ const apollo = vi.hoisted(() => ({
   updateNotes: vi.fn(),
   queryOptions: [] as Array<{ skip?: boolean }>,
   internalNotes: null as string | null,
+  error: undefined as Error | undefined,
+  missing: false,
 }));
 
 vi.mock('@/hooks/useSystemRole', () => ({
@@ -19,8 +21,11 @@ vi.mock('@apollo/client/react', () => ({
   useQuery: (_query: unknown, options: { skip?: boolean }) => {
     apollo.queryOptions.push(options);
     return {
-      data: options.skip ? undefined : { exerciseByIdForAdmin: { id: 'ex-1', internalNotes: apollo.internalNotes } },
+      data: options.skip
+        ? undefined
+        : { exerciseByIdForAdmin: apollo.missing ? null : { id: 'ex-1', internalNotes: apollo.internalNotes } },
       loading: false,
+      error: apollo.error,
     };
   },
   useMutation: () => [apollo.updateNotes, { loading: false }],
@@ -31,6 +36,8 @@ describe('InternalNotesPanel', () => {
     apollo.updateNotes.mockResolvedValue({ data: { updateExerciseField: { id: 'ex-1', internalNotes: 'x' } } });
     apollo.queryOptions = [];
     apollo.internalNotes = 'Źródło: film z kanału X';
+    apollo.error = undefined;
+    apollo.missing = false;
   });
 
   afterEach(() => {
@@ -78,5 +85,27 @@ describe('InternalNotesPanel', () => {
     await user.tab();
 
     expect(apollo.updateNotes).toHaveBeenCalledWith({ variables: { exerciseId: 'ex-1', value: null } });
+  });
+
+  it.each([
+    ['query error', () => (apollo.error = new Error('network'))],
+    ['exercise not returned', () => (apollo.missing = true)],
+  ])('shows a load error instead of an editor on %s', (_label, arrange) => {
+    systemRole.canReviewExercises = true;
+    arrange();
+
+    render(<InternalNotesPanel exerciseId="ex-1" />);
+
+    expect(screen.getByText('Nie udało się wczytać notatek')).toBeInTheDocument();
+    expect(screen.queryByTestId('exercise-internal-notes-input')).toBeNull();
+    expect(apollo.updateNotes).not.toHaveBeenCalled();
+  });
+
+  it('caps the input at the backend limit', () => {
+    systemRole.canReviewExercises = true;
+
+    render(<InternalNotesPanel exerciseId="ex-1" />);
+
+    expect(screen.getByTestId('exercise-internal-notes-input')).toHaveAttribute('maxLength', '4000');
   });
 });

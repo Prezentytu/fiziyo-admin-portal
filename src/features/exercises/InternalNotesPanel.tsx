@@ -20,7 +20,7 @@ interface InternalNotesPanelProps {
   className?: string;
 }
 
-type SaveState = 'idle' | 'saving' | 'saved' | 'error';
+type SaveState = 'idle' | 'saving' | 'saved' | 'error' | 'too-long';
 
 /**
  * FiziYo team working notes. Same component in the exercise detail and in verification.
@@ -28,12 +28,36 @@ type SaveState = 'idle' | 'saving' | 'saved' | 'error';
  */
 export function InternalNotesPanel({ exerciseId, className }: Readonly<InternalNotesPanelProps>) {
   const { canReviewExercises } = useSystemRole();
-  const { data, loading } = useQuery<ExerciseInternalNotesResponse>(GET_EXERCISE_INTERNAL_NOTES_QUERY, {
+  const { data, loading, error } = useQuery<ExerciseInternalNotesResponse>(GET_EXERCISE_INTERNAL_NOTES_QUERY, {
     variables: { id: exerciseId },
     skip: !canReviewExercises || !exerciseId,
   });
 
   if (!canReviewExercises) return null;
+
+  // Without the loaded value an edit would overwrite notes the user never saw.
+  const renderBody = () => {
+    if (loading && !data) {
+      return (
+        <div className="flex items-center gap-2 text-[13px] text-label-secondary" role="status">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Wczytywanie…
+        </div>
+      );
+    }
+    const loaded = data?.exerciseByIdForAdmin;
+    if (error || !loaded) {
+      return (
+        <p
+          className="text-[13px] font-semibold text-status-danger"
+          role="alert"
+          data-testid="exercise-internal-notes-error"
+        >
+          Nie udało się wczytać notatek
+        </p>
+      );
+    }
+    return <InternalNotesEditor key={exerciseId} exerciseId={exerciseId} savedValue={loaded.internalNotes} />;
+  };
 
   return (
     <section
@@ -53,25 +77,12 @@ export function InternalNotesPanel({ exerciseId, className }: Readonly<InternalN
           Widzi tylko zespół FiziYo. Fizjoterapeuci i pacjenci tych notatek nie dostają.
         </p>
       </header>
-      {loading && !data ? (
-        <div className="flex items-center gap-2 text-[13px] text-label-secondary" role="status">
-          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Wczytywanie…
-        </div>
-      ) : (
-        <InternalNotesEditor
-          key={exerciseId}
-          exerciseId={exerciseId}
-          savedValue={data?.exerciseByIdForAdmin?.internalNotes ?? null}
-        />
-      )}
+      {renderBody()}
     </section>
   );
 }
 
-function InternalNotesEditor({
-  exerciseId,
-  savedValue,
-}: Readonly<{ exerciseId: string; savedValue: string | null }>) {
+function InternalNotesEditor({ exerciseId, savedValue }: Readonly<{ exerciseId: string; savedValue: string | null }>) {
   const [draft, setDraft] = useState(savedValue ?? '');
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [updateNotes] = useMutation<UpdateExerciseInternalNotesResponse>(UPDATE_EXERCISE_INTERNAL_NOTES_MUTATION);
@@ -79,6 +90,10 @@ function InternalNotesEditor({
   const isTooLong = draft.length > INTERNAL_NOTES_MAX_LENGTH;
 
   const save = async () => {
+    if (isTooLong) {
+      setSaveState('too-long');
+      return;
+    }
     if (!shouldSaveInternalNotes(savedValue, draft)) return;
     setSaveState('saving');
     try {
@@ -111,12 +126,16 @@ function InternalNotesEditor({
         aria-label="Notatki robocze (tylko FiziYo)"
         aria-invalid={isTooLong}
         rows={4}
+        maxLength={INTERNAL_NOTES_MAX_LENGTH}
       />
       <div className="flex items-center justify-between gap-3 text-[12px] text-label-secondary">
         <span role="status" data-testid="exercise-internal-notes-status">
           {saveState === 'saving' && 'Zapisywanie…'}
           {saveState === 'saved' && 'Zapisano'}
           {saveState === 'error' && <span className="font-semibold text-status-danger">Nie zapisano notatek</span>}
+          {saveState === 'too-long' && (
+            <span className="font-semibold text-status-danger">Za długie, nie zapisano</span>
+          )}
           {saveState === 'idle' && 'Zapis po wyjściu z pola'}
         </span>
         <span className={cn(isTooLong && 'font-semibold text-status-danger')}>

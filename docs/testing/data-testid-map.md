@@ -305,6 +305,7 @@ Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu r
 | `exercise-internal-notes-section`                   | Notatki robocze (tylko FiziYo), też w weryfikacji        | `InternalNotesPanel.tsx`      |
 | `exercise-internal-notes-input`                     | Pole notatek roboczych, zapis po wyjściu z pola          | `InternalNotesPanel.tsx`      |
 | `exercise-internal-notes-status`                    | Stan zapisu notatek roboczych                            | `InternalNotesPanel.tsx`      |
+| `exercise-internal-notes-error`                     | Notatek nie wczytano, edytor ukryty                      | `InternalNotesPanel.tsx`      |
 | `exercise-editor-saved-load-note`                   | Zapisane obciążenie spoza kilogramów                     | `ExerciseEditor.tsx`          |
 | `exercise-detail-parameters-primary-group`          | Wyróżniona sekcja "Podstawowe parametry"                 | `ExerciseParametersPanel.tsx` |
 | `exercise-param-summary-stat`                       | Wyróżniony podsumowujący stat (czas trwania)             | `ExerciseParametersPanel.tsx` |
