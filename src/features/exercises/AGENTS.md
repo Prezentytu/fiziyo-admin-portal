@@ -106,6 +106,7 @@ Przykłady: `3 × 10`, `3 × 10 × 10s`, `3 × 1 × 30s`
 - Adapter szablonu: `ExerciseParametersEditor.tsx` → Fields (`variant="create"|"full"`)
 - Treść (enrichment): `ExerciseContentSections.tsx` — wspólne dla `ExerciseEditor` i `CreateExerciseWizard`
 - Kreator: `CreateExerciseWizard.tsx` + `utils/createExerciseSubmit.ts` (create → optional enrichment update)
+- AI całego ćwiczenia w kreatorze: `AiFullExercisePanel.tsx` + `utils/aiFullExercise.ts` (warianty nazwy, szkic wszystkich pól, odrzucenie wartości spoza `AI_PARAM_RANGES`); wynik to tylko szkic formularza z „Cofnij”, zapis robi fizjoterapeuta.
 - Dialog edycji: `ExerciseDialog.tsx` → ten sam `ExerciseEditor`
 - Field contract: `src/components/shared/exercise/fieldContract.ts`
 - Lista: strona `app/(dashboard)/exercises/`

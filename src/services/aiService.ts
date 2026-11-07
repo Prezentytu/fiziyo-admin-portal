@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { getBackendToken } from '@/lib/tokenCache';
 import { triggerCreditsRefresh } from '@/lib/aiCreditsRefresh';
 import { decodeGeneratedImage } from '@/features/exercises/utils/decodeGeneratedImage';
+import { normalizeAiExerciseVariants, type AiExerciseVariant } from '@/features/exercises/utils/aiFullExercise';
 import type {
   ExerciseSuggestionRequest,
   ExerciseSuggestionResponse,
@@ -221,6 +222,27 @@ class AIService {
         console.error('[AIService] getExerciseSuggestion error:', error);
       }
       return null;
+    }
+  }
+
+  /**
+   * Pełne, precyzyjne nazwy i warianty ćwiczenia (pozycja, sprzęt, strona, poziom) z opisu potrzeby.
+   * Pusta lista przy błędzie; odpowiedź przechodzi przez `normalizeAiExerciseVariants`.
+   */
+  async suggestExerciseVariants(query: string): Promise<AiExerciseVariant[]> {
+    const trimmed = query.trim();
+    if (trimmed.length < 2) {
+      return [];
+    }
+
+    try {
+      const response = await this.request<unknown>('exercise-variants', { query: trimmed.slice(0, 300) });
+      return normalizeAiExerciseVariants(response);
+    } catch (error) {
+      if (isDev) {
+        console.error('[AIService] suggestExerciseVariants error:', error);
+      }
+      return [];
     }
   }
 
