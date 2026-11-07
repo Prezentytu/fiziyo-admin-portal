@@ -56,6 +56,8 @@ export function seedBuilderParamsFromMapping(
       customDescription: effective.customDescription ?? '',
       exerciseSide: effective.side,
       rangeOfMotion: effective.rangeOfMotion ?? undefined,
+      resistance: effective.resistance ?? undefined,
+      equipment: effective.equipment ?? undefined,
       difficultyLevel: effective.difficultyLevel ?? undefined,
       patientDescription: effective.patientDescription ?? undefined,
       clinicalDescription: effective.clinicalDescription ?? undefined,
@@ -84,6 +86,8 @@ export function seedBuilderParamsFromMapping(
       exercise?.exerciseSide ??
       undefined,
     rangeOfMotion: mappingOverrides.rangeOfMotion ?? exercise?.rangeOfMotion ?? undefined,
+    resistance: mappingOverrides.resistance ?? exercise?.resistance ?? undefined,
+    equipment: mappingOverrides.equipment ?? exercise?.equipment ?? undefined,
     difficultyLevel:
       mappingOverrides.difficultyLevel ?? exercise?.difficultyLevel ?? undefined,
     patientDescription:

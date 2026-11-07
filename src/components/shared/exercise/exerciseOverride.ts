@@ -19,6 +19,10 @@ export interface ExerciseOverrideFields {
   /** kg-only load (SPEC-003 / SPEC-012). */
   loadWeightKg?: number;
   rangeOfMotion?: string;
+  /** Opór (np. „Średni”); '' = jawne wyczyszczenie względem szablonu. */
+  resistance?: string;
+  /** Sprzęt (np. „Guma, krzesło”); '' = jawne wyczyszczenie względem szablonu. */
+  equipment?: string;
   customName?: string;
   customDescription?: string;
   notes?: string;
@@ -68,6 +72,8 @@ export const EXERCISE_OVERRIDE_CONTENT_KEYS = [
   'tempo',
   'loadWeightKg',
   'rangeOfMotion',
+  'resistance',
+  'equipment',
   'customName',
   'customDescription',
   'notes',

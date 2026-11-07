@@ -116,6 +116,8 @@ export interface AdminExercise {
   orgReviewNotes?: string;
   // Extended training parameters
   rangeOfMotion?: string;
+  resistance?: string | null;
+  equipment?: string | null;
   defaultLoad?: {
     loadWeightKg?: number | null;
     loadSource?: string | null;

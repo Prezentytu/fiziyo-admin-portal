@@ -80,6 +80,8 @@ export interface BuilderExercise {
   clinicalDescription?: string;
   audioCue?: string;
   rangeOfMotion?: string;
+  resistance?: string | null;
+  equipment?: string | null;
   patientDescription?: string;
   notes?: string;
   tempo?: string;
@@ -131,6 +133,8 @@ export interface ExerciseParams {
   loadWeightKg?: number;
   loadSource?: string;
   rangeOfMotion?: string;
+  resistance?: string;
+  equipment?: string;
   difficultyLevel?: string;
   patientDescription?: string;
   clinicalDescription?: string;
@@ -387,6 +391,8 @@ function applyCardPatchToParams(
   if ('customDescription' in patch) onUpdateParams('customDescription', patch.customDescription);
   if ('side' in patch) onUpdateParams('exerciseSide', patch.side);
   if ('rangeOfMotion' in patch) onUpdateParams('rangeOfMotion', patch.rangeOfMotion);
+  if ('resistance' in patch) onUpdateParams('resistance', patch.resistance);
+  if ('equipment' in patch) onUpdateParams('equipment', patch.equipment);
   if ('difficultyLevel' in patch) onUpdateParams('difficultyLevel', patch.difficultyLevel);
   if ('patientDescription' in patch) onUpdateParams('patientDescription', patch.patientDescription);
   if ('clinicalDescription' in patch) {

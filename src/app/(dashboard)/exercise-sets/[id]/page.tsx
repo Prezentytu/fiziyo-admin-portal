@@ -113,6 +113,8 @@ interface ExerciseMapping {
     clinicalDescription?: string;
     audioCue?: string;
     rangeOfMotion?: string;
+    resistance?: string | null;
+    equipment?: string | null;
     difficultyLevel?: string;
     side?: string;
     thumbnailUrl?: string;
@@ -371,6 +373,8 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
     const touchesMappingOverrides =
       'side' in patch ||
       'rangeOfMotion' in patch ||
+      'resistance' in patch ||
+      'equipment' in patch ||
       'difficultyLevel' in patch ||
       'patientDescription' in patch ||
       'clinicalDescription' in patch ||
@@ -394,6 +398,8 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
             side: template?.side ?? template?.exerciseSide,
             exerciseSide: template?.exerciseSide ?? template?.side,
             rangeOfMotion: template?.rangeOfMotion,
+            resistance: template?.resistance ?? undefined,
+            equipment: template?.equipment ?? undefined,
             difficultyLevel: template?.difficultyLevel,
             patientDescription: template?.patientDescription ?? template?.description,
             clinicalDescription: template?.clinicalDescription,
@@ -402,6 +408,8 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
           {
             side: patch.side ?? card.side,
             rangeOfMotion: patch.rangeOfMotion ?? card.rangeOfMotion,
+            resistance: patch.resistance ?? card.resistance,
+            equipment: patch.equipment ?? card.equipment,
             difficultyLevel: patch.difficultyLevel ?? card.difficultyLevel,
             patientDescription: patch.patientDescription ?? card.patientDescription,
             clinicalDescription: patch.clinicalDescription ?? card.clinicalDescription,

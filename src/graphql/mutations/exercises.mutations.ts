@@ -34,6 +34,8 @@ export const CREATE_EXERCISE_MUTATION = gql`
     $audioCue: String
     $difficultyLevel: DifficultyLevel
     $rangeOfMotion: String
+    $resistance: String
+    $equipment: String
     # Load fields
     $loadType: String
     $loadValue: Decimal
@@ -71,6 +73,8 @@ export const CREATE_EXERCISE_MUTATION = gql`
       audioCue: $audioCue
       difficultyLevel: $difficultyLevel
       rangeOfMotion: $rangeOfMotion
+      resistance: $resistance
+      equipment: $equipment
       loadType: $loadType
       loadValue: $loadValue
       loadUnit: $loadUnit
@@ -101,6 +105,8 @@ export const CREATE_EXERCISE_MUTATION = gql`
       tempo
       audioCue
       rangeOfMotion
+      resistance
+      equipment
       defaultLoad {
         loadWeightKg
         loadSource
@@ -157,6 +163,8 @@ export const UPDATE_EXERCISE_MUTATION = gql`
     $audioCue: String
     $difficultyLevel: DifficultyLevel
     $rangeOfMotion: String
+    $resistance: String
+    $equipment: String
     # Load fields
     $loadType: String
     $loadValue: Decimal
@@ -189,6 +197,8 @@ export const UPDATE_EXERCISE_MUTATION = gql`
       audioCue: $audioCue
       difficultyLevel: $difficultyLevel
       rangeOfMotion: $rangeOfMotion
+      resistance: $resistance
+      equipment: $equipment
       loadType: $loadType
       loadValue: $loadValue
       loadUnit: $loadUnit
@@ -216,6 +226,8 @@ export const UPDATE_EXERCISE_MUTATION = gql`
       tempo
       audioCue
       rangeOfMotion
+      resistance
+      equipment
       isActive
       side
       mainTags

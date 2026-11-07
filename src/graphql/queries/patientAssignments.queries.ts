@@ -97,6 +97,8 @@ export const PATIENT_ASSIGNMENT_FULL_FRAGMENT = gql`
           videoUrl
           preparationTime
           rangeOfMotion
+          resistance
+          equipment
           difficultyLevel
           tempo
           enrichmentData

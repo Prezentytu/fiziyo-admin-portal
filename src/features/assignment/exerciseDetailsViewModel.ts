@@ -24,6 +24,8 @@ export interface ExerciseDetailsViewModel {
   tempo?: string;
   rangeOfMotion?: string;
   loadDisplayText?: string;
+  resistance?: string;
+  equipment?: string;
   notes?: string;
   side?: string;
   difficultyLevel?: string;
@@ -112,6 +114,8 @@ export function buildExerciseDetailsViewModel(mapping: ExerciseMapping): Exercis
     tempo: cardData.tempo,
     rangeOfMotion: mapping.exercise?.rangeOfMotion?.trim() || undefined,
     loadDisplayText: pickLoadText(mapping, cardData.loadDisplayText),
+    resistance: cardData.resistance?.trim() || undefined,
+    equipment: cardData.equipment?.trim() || undefined,
     notes: normalizedNotes || undefined,
     side: cardData.side,
     difficultyLevel: mapping.exercise?.difficultyLevel || undefined,

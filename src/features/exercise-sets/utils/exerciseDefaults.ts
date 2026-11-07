@@ -23,6 +23,8 @@ export interface ExerciseParams {
   loadWeightKg?: number;
   loadSource?: string;
   rangeOfMotion?: string;
+  resistance?: string;
+  equipment?: string;
   difficultyLevel?: string;
   patientDescription?: string;
   clinicalDescription?: string;
@@ -49,6 +51,8 @@ export interface ExerciseLikeForDefaults {
   tempo?: string | null;
   notes?: string | null;
   rangeOfMotion?: string | null;
+  resistance?: string | null;
+  equipment?: string | null;
   difficultyLevel?: string | null;
   patientDescription?: string | null;
   description?: string | null;
@@ -77,6 +81,8 @@ export const EMPTY_EXERCISE_PARAMS: ExerciseParams = {
   loadWeightKg: undefined,
   loadSource: undefined,
   rangeOfMotion: '',
+  resistance: '',
+  equipment: '',
   difficultyLevel: 'UNKNOWN',
   patientDescription: '',
   clinicalDescription: '',
@@ -111,6 +117,8 @@ export function getExerciseDefaultParams(exercise: ExerciseLikeForDefaults): Exe
     loadWeightKg: undefined,
     loadSource: undefined,
     rangeOfMotion: exercise.rangeOfMotion ?? '',
+    resistance: exercise.resistance ?? '',
+    equipment: exercise.equipment ?? '',
     difficultyLevel: exercise.difficultyLevel ?? 'UNKNOWN',
     patientDescription: exercise.patientDescription ?? exercise.description ?? '',
     clinicalDescription: exercise.clinicalDescription ?? '',

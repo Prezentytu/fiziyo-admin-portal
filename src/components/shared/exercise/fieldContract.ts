@@ -46,6 +46,14 @@ export interface ExerciseFieldEditConfig {
   max?: number;
   step?: number;
   options?: readonly ExerciseFieldOption[];
+  /**
+   * Text editor presets rendered as one-click chips under the input.
+   * `replace` sets the value (opór), `append` adds to a comma list (sprzęt).
+   */
+  suggestions?: readonly string[];
+  suggestionMode?: 'replace' | 'append';
+  /** Max characters for text editors (mirrors backend column length). */
+  maxLength?: number;
   rule: z.ZodTypeAny;
   /** Canonical data-testid suffix after surface prefix (e.g. sets-input → exercise-param-sets-input). */
   testIdSuffix: string;
@@ -70,6 +78,8 @@ export const ENABLE_FULL_PATIENT_PERSONALIZATION = true;
 export const MAPPING_OVERRIDE_FIELD_KEYS: readonly ExerciseFieldKey[] = [
   'side',
   'rangeOfMotion',
+  'resistance',
+  'equipment',
   'difficultyLevel',
   'patientDescription',
   'clinicalDescription',
@@ -91,6 +101,30 @@ export const DIFFICULTY_OPTIONS: readonly ExerciseFieldOption[] = [
   { value: 'HARD', label: 'Trudny' },
   { value: 'EXPERT', label: 'Ekspert' },
 ] as const;
+
+/** Presety oporu (guma); dopuszczalny własny wpis, np. kolor gumy. */
+export const RESISTANCE_SUGGESTIONS: readonly string[] = [
+  'Lekki',
+  'Średni',
+  'Mocny',
+  'Bardzo mocny',
+] as const;
+
+/** Presety sprzętu; dopuszczalny własny wpis. */
+export const EQUIPMENT_SUGGESTIONS: readonly string[] = [
+  'Guma',
+  'Taśma',
+  'Hantel',
+  'Kettlebell',
+  'Piłka',
+  'Step',
+  'Ręcznik',
+  'Krzesło',
+  'Mata',
+] as const;
+
+/** Max length of resistance / equipment text (backend ExerciseEquipmentFields.MaxLength). */
+export const RESISTANCE_EQUIPMENT_MAX_LENGTH = 100;
 
 export const SIDE_VALUES = SIDE_OPTIONS.map((option) => option.value) as [
   string,
@@ -176,6 +210,34 @@ export const EXERCISE_FIELD_EDIT_CONFIG: Record<ExerciseFieldKey, ExerciseFieldE
     step: 0.5,
     rule: optionalNullableNumber(0, 500),
     testIdSuffix: 'loadKg-input',
+  },
+  resistance: {
+    key: 'resistance',
+    editor: 'text',
+    tier: 2,
+    surfaces: ['template', 'mapping', 'patientOverride', 'patientPlan'],
+    /** Exercise.resistance column; mapping via overridesJson; patient via exerciseOverrides. */
+    mappingMode: 'edit',
+    persistence: 'assignmentOverride',
+    suggestions: RESISTANCE_SUGGESTIONS,
+    suggestionMode: 'replace',
+    maxLength: RESISTANCE_EQUIPMENT_MAX_LENGTH,
+    rule: optionalText(RESISTANCE_EQUIPMENT_MAX_LENGTH),
+    testIdSuffix: 'resistance-input',
+  },
+  equipment: {
+    key: 'equipment',
+    editor: 'text',
+    tier: 2,
+    surfaces: ['template', 'mapping', 'patientOverride', 'patientPlan'],
+    /** Exercise.equipment column; mapping via overridesJson; patient via exerciseOverrides. */
+    mappingMode: 'edit',
+    persistence: 'assignmentOverride',
+    suggestions: EQUIPMENT_SUGGESTIONS,
+    suggestionMode: 'append',
+    maxLength: RESISTANCE_EQUIPMENT_MAX_LENGTH,
+    rule: optionalText(RESISTANCE_EQUIPMENT_MAX_LENGTH),
+    testIdSuffix: 'equipment-input',
   },
   restReps: {
     key: 'restReps',
@@ -362,6 +424,8 @@ export function getMappingEditableCardFields(): Array<
   | 'preparationTime'
   | 'tempo'
   | 'loadKg'
+  | 'resistance'
+  | 'equipment'
   | 'notes'
   | 'side'
   | 'rangeOfMotion'
@@ -389,6 +453,8 @@ export function getMappingEditableCardFields(): Array<
     | 'preparationTime'
     | 'tempo'
     | 'loadKg'
+    | 'resistance'
+    | 'equipment'
     | 'notes'
     | 'side'
     | 'rangeOfMotion'
@@ -480,6 +546,8 @@ export const PARAMETER_EDITOR_FIELD_KEYS: readonly ExerciseFieldKey[] = [
   'reps',
   'executionTime',
   'load',
+  'resistance',
+  'equipment',
   'restSets',
   'restReps',
   'preparationTime',
@@ -511,7 +579,7 @@ export const PARAMETER_SECTIONS: readonly ParameterSectionDefinition[] = [
   {
     id: 'basic',
     title: 'Podstawowe parametry',
-    keys: ['sets', 'reps', 'executionTime', 'load', 'restSets'],
+    keys: ['sets', 'reps', 'executionTime', 'load', 'resistance', 'equipment', 'restSets'],
     advanced: false,
   },
   {

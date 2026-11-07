@@ -329,6 +329,8 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
             audioCue: exercise.audioCue,
             tempo: exercise.tempo,
             rangeOfMotion: exercise.rangeOfMotion,
+            resistance: exercise.resistance,
+            equipment: exercise.equipment,
             type: exercise.type,
             side: exercise.side || exercise.exerciseSide,
             difficultyLevel: exercise.difficultyLevel,

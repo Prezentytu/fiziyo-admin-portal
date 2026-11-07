@@ -31,6 +31,10 @@ export interface ExerciseCoreDraft {
   audioCue: string;
   tempo: string;
   rangeOfMotion: string;
+  /** Opór (np. guma „Średni”); '' = brak. */
+  resistance: string;
+  /** Sprzęt (np. „Guma, krzesło”); '' = brak. */
+  equipment: string;
   side: string;
   difficultyLevel: string;
   videoUrl: string;
@@ -81,6 +85,8 @@ export interface ExerciseEditorSource {
   audioCue?: string | null;
   tempo?: string | null;
   rangeOfMotion?: string | null;
+  resistance?: string | null;
+  equipment?: string | null;
   side?: string | null;
   exerciseSide?: string | null;
   difficultyLevel?: string | null;
@@ -139,6 +145,8 @@ function deriveCoreDraft(source: ExerciseEditorSource | null | undefined): Exerc
     audioCue: source?.audioCue ?? '',
     tempo: source?.tempo ?? '',
     rangeOfMotion: source?.rangeOfMotion ?? '',
+    resistance: source?.resistance ?? '',
+    equipment: source?.equipment ?? '',
     side: (source?.side ?? source?.exerciseSide ?? 'none').toLowerCase(),
     difficultyLevel: (source?.difficultyLevel ?? 'UNKNOWN').toUpperCase(),
     videoUrl: source?.videoUrl ?? '',
@@ -199,6 +207,9 @@ export function buildChangedCoreVariables(
   if (current.audioCue !== initial.audioCue) variables.audioCue = asText(current.audioCue);
   if (current.tempo !== initial.tempo) variables.tempo = asText(current.tempo);
   if (current.rangeOfMotion !== initial.rangeOfMotion) variables.rangeOfMotion = asText(current.rangeOfMotion);
+  // '' (nie null): backend czyści opór/sprzęt tylko pustym tekstem; null = bez zmian.
+  if (current.resistance !== initial.resistance) variables.resistance = current.resistance.trim();
+  if (current.equipment !== initial.equipment) variables.equipment = current.equipment.trim();
   if (current.videoUrl !== initial.videoUrl) variables.videoUrl = asText(current.videoUrl);
   // UpdateExercise skips null/omitted exerciseSide. "none" must be sent as the
   // enum name so Razem (None) can replace Both/Left/Right instead of no-oping.

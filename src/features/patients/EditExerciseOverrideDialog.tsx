@@ -71,6 +71,14 @@ const OVERRIDE_FIELD_TESTID_MAP: Record<
   tempo: { input: 'patient-exercise-override-tempo-input', info: 'patient-exercise-override-tempo-info' },
   side: { input: 'patient-exercise-override-side-select', info: 'patient-exercise-override-side-info' },
   rangeOfMotion: { input: 'patient-exercise-override-rom-input', info: 'patient-exercise-override-rom-info' },
+  resistance: {
+    input: 'patient-exercise-override-resistance-input',
+    info: 'patient-exercise-override-resistance-info',
+  },
+  equipment: {
+    input: 'patient-exercise-override-equipment-input',
+    info: 'patient-exercise-override-equipment-info',
+  },
   difficultyLevel: {
     input: 'patient-exercise-override-difficulty-select',
     info: 'patient-exercise-override-difficulty-info',
@@ -220,6 +228,8 @@ function EditExerciseOverrideDialogContent({
   const inheritedLoadKg =
     mapping.loadUnit === 'kg' && mapping.loadValue != null ? mapping.loadValue : null;
   const inheritedRom = exercise?.rangeOfMotion ?? '';
+  const inheritedResistance = inherited.resistance;
+  const inheritedEquipment = inherited.equipment;
   const inheritedExerciseSide = inherited.exerciseSide;
   const inheritedDifficulty = exercise?.difficultyLevel ?? 'UNKNOWN';
   const inheritedPatientDescription =
@@ -237,6 +247,8 @@ function EditExerciseOverrideDialogContent({
   const initialTempo = currentOverride?.tempo ?? inheritedTempo;
   const initialLoadKg = currentOverride?.loadWeightKg ?? inheritedLoadKg;
   const initialRangeOfMotion = currentOverride?.rangeOfMotion ?? inheritedRom;
+  const initialResistance = currentOverride?.resistance ?? inheritedResistance;
+  const initialEquipment = currentOverride?.equipment ?? inheritedEquipment;
   const initialCustomName = currentOverride?.customName ?? mapping.customName ?? '';
   const initialCustomDescription =
     currentOverride?.customDescription ??
@@ -264,6 +276,8 @@ function EditExerciseOverrideDialogContent({
   const [tempo, setTempo] = useState(initialTempo);
   const [loadKg, setLoadKg] = useState<number | null>(initialLoadKg);
   const [rangeOfMotion, setRangeOfMotion] = useState(initialRangeOfMotion);
+  const [resistance, setResistance] = useState(initialResistance);
+  const [equipment, setEquipment] = useState(initialEquipment);
   const [customName, setCustomName] = useState(initialCustomName);
   const [customDescription, setCustomDescription] = useState(initialCustomDescription);
   const [notes, setNotes] = useState(initialNotes);
@@ -297,6 +311,8 @@ function EditExerciseOverrideDialogContent({
       loadKg,
       tempo,
       rangeOfMotion,
+      resistance,
+      equipment,
       side: exerciseSide,
       difficultyLevel,
       patientDescription,
@@ -317,6 +333,8 @@ function EditExerciseOverrideDialogContent({
       loadKg,
       tempo,
       rangeOfMotion,
+      resistance,
+      equipment,
       exerciseSide,
       difficultyLevel,
       patientDescription,
@@ -340,6 +358,8 @@ function EditExerciseOverrideDialogContent({
       loadKg: inheritedLoadKg,
       tempo: inheritedTempo,
       rangeOfMotion: inheritedRom,
+      resistance: inheritedResistance,
+      equipment: inheritedEquipment,
       side: inheritedExerciseSide,
       difficultyLevel: inheritedDifficulty,
       patientDescription: inheritedPatientDescription,
@@ -357,6 +377,8 @@ function EditExerciseOverrideDialogContent({
       inheritedLoadKg,
       inheritedTempo,
       inheritedRom,
+      inheritedResistance,
+      inheritedEquipment,
       inheritedExerciseSide,
       inheritedDifficulty,
       inheritedPatientDescription,
@@ -376,6 +398,8 @@ function EditExerciseOverrideDialogContent({
     if ('loadKg' in patch) setLoadKg(patch.loadKg ?? null);
     if ('tempo' in patch) setTempo(patch.tempo ?? '');
     if ('rangeOfMotion' in patch) setRangeOfMotion(patch.rangeOfMotion ?? '');
+    if ('resistance' in patch) setResistance(patch.resistance ?? '');
+    if ('equipment' in patch) setEquipment(patch.equipment ?? '');
     if ('side' in patch && patch.side != null) setExerciseSide(patch.side);
     if ('difficultyLevel' in patch && patch.difficultyLevel != null) {
       setDifficultyLevel(patch.difficultyLevel);
@@ -408,6 +432,8 @@ function EditExerciseOverrideDialogContent({
     tempo !== initialTempo ||
     loadKg !== initialLoadKg ||
     rangeOfMotion !== initialRangeOfMotion ||
+    resistance !== initialResistance ||
+    equipment !== initialEquipment ||
     customName !== initialCustomName ||
     customDescription !== initialCustomDescription ||
     notes !== initialNotes ||
@@ -507,6 +533,8 @@ function EditExerciseOverrideDialogContent({
           loadKg: inheritedLoadKg ?? undefined,
           loadWeightKg: inheritedLoadKg ?? undefined,
           rangeOfMotion: inheritedRom,
+          resistance: inheritedResistance,
+          equipment: inheritedEquipment,
           customName: mapping.customName ?? '',
           customDescription:
             mapping.customDescription ??
@@ -538,6 +566,8 @@ function EditExerciseOverrideDialogContent({
                 rangeOfMotion,
               }
             : {}),
+          resistance,
+          equipment,
           customName,
           customDescription,
           notes,
@@ -613,6 +643,8 @@ function EditExerciseOverrideDialogContent({
     setTempo(inheritedTempo);
     setLoadKg(inheritedLoadKg);
     setRangeOfMotion(inheritedRom);
+    setResistance(inheritedResistance);
+    setEquipment(inheritedEquipment);
     setCustomName(mapping.customName ?? '');
     setCustomDescription(
       mapping.customDescription ?? exercise?.patientDescription ?? exercise?.description ?? ''

@@ -18,7 +18,7 @@ type NumericDraftField =
   | 'preparationTime'
   | 'loadKg'
   | 'duration';
-type TextDraftField = 'tempo' | 'rangeOfMotion';
+type TextDraftField = 'tempo' | 'rangeOfMotion' | 'resistance' | 'equipment';
 
 export type ExerciseParametersEditorVariant = 'full' | 'create';
 
@@ -52,6 +52,8 @@ function coreToValues(core: ExerciseCoreDraft): ExerciseParameterValues {
     loadKg: core.loadKg,
     tempo: core.tempo,
     rangeOfMotion: core.rangeOfMotion,
+    resistance: core.resistance,
+    equipment: core.equipment,
     side: core.side,
     difficultyLevel: core.difficultyLevel,
     patientDescription: core.patientDescription,
@@ -86,6 +88,8 @@ export function ExerciseParametersEditor({
       if ('loadKg' in patch) onNumberChange('loadKg', patch.loadKg ?? null);
       if ('tempo' in patch) onTextChange('tempo', patch.tempo ?? '');
       if ('rangeOfMotion' in patch) onTextChange('rangeOfMotion', patch.rangeOfMotion ?? '');
+      if ('resistance' in patch) onTextChange('resistance', patch.resistance ?? '');
+      if ('equipment' in patch) onTextChange('equipment', patch.equipment ?? '');
       if ('side' in patch && patch.side != null) onSideChange(patch.side);
       if ('difficultyLevel' in patch && patch.difficultyLevel != null) {
         onDifficultyChange(patch.difficultyLevel);

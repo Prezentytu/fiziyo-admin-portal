@@ -7,6 +7,8 @@ export interface MappingOverridesTemplateBaseline {
   side?: string | null;
   exerciseSide?: string | null;
   rangeOfMotion?: string | null;
+  resistance?: string | null;
+  equipment?: string | null;
   difficultyLevel?: string | null;
   patientDescription?: string | null;
   description?: string | null;
@@ -29,6 +31,8 @@ export function buildMappingOverridesFromParams(
       side: template?.side ?? template?.exerciseSide ?? undefined,
       exerciseSide: template?.exerciseSide ?? template?.side ?? undefined,
       rangeOfMotion: template?.rangeOfMotion ?? undefined,
+      resistance: template?.resistance ?? undefined,
+      equipment: template?.equipment ?? undefined,
       difficultyLevel: template?.difficultyLevel ?? undefined,
       patientDescription: template?.patientDescription ?? template?.description ?? undefined,
       clinicalDescription: template?.clinicalDescription ?? undefined,
@@ -37,6 +41,8 @@ export function buildMappingOverridesFromParams(
     {
       side: params.exerciseSide,
       rangeOfMotion: params.rangeOfMotion,
+      ...(params.resistance !== undefined ? { resistance: params.resistance } : {}),
+      ...(params.equipment !== undefined ? { equipment: params.equipment } : {}),
       difficultyLevel: params.difficultyLevel,
       patientDescription: params.patientDescription,
       clinicalDescription: params.clinicalDescription,

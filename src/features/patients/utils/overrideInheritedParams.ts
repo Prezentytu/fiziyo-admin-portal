@@ -12,6 +12,10 @@ export interface OverrideInheritedParams {
   restReps: number;
   preparationTime: number;
   exerciseSide: string;
+  /** Opór z overridesJson mappingu albo z ćwiczenia; '' = brak. */
+  resistance: string;
+  /** Sprzęt z overridesJson mappingu albo z ćwiczenia; '' = brak. */
+  equipment: string;
 }
 
 /**
@@ -30,5 +34,7 @@ export function resolveOverrideInheritedParams(mapping: EffectiveMappingSource):
     restReps: effective.restReps,
     preparationTime: effective.preparationTime,
     exerciseSide: effective.side ?? 'none',
+    resistance: effective.resistance ?? '',
+    equipment: effective.equipment ?? '',
   };
 }

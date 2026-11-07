@@ -38,6 +38,10 @@ export interface ExerciseExecutionCardData {
   /** Load value in kg (FiziYo uses kg only in UI). */
   loadKg?: number;
   loadDisplayText?: string;
+  /** Opór (np. guma „Średni”) — Exercise.resistance, nadpisanie w overridesJson / exerciseOverrides. */
+  resistance?: string;
+  /** Sprzęt (np. „Guma, krzesło”) — Exercise.equipment, nadpisanie jak resistance. */
+  equipment?: string;
   notes?: string;
   patientDescription?: string;
   clinicalDescription?: string;
@@ -64,6 +68,8 @@ export type EditableField =
   | 'preparationTime'
   | 'tempo'
   | 'loadKg'
+  | 'resistance'
+  | 'equipment'
   | 'notes'
   | 'customName'
   | 'customDescription'

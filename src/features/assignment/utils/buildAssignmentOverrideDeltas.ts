@@ -30,6 +30,8 @@ export interface OverrideBaselineExercise {
   side?: string;
   exerciseSide?: string;
   rangeOfMotion?: string;
+  resistance?: string | null;
+  equipment?: string | null;
   difficultyLevel?: string;
   patientDescription?: string;
   description?: string;
@@ -53,6 +55,8 @@ function exerciseToInheritedBaseline(exercise: OverrideBaselineExercise | undefi
     side: exercise.side ?? exercise.exerciseSide,
     exerciseSide: exercise.exerciseSide ?? exercise.side,
     rangeOfMotion: exercise.rangeOfMotion,
+    resistance: exercise.resistance ?? undefined,
+    equipment: exercise.equipment ?? undefined,
     difficultyLevel: exercise.difficultyLevel,
     patientDescription: exercise.patientDescription ?? exercise.description,
     clinicalDescription: exercise.clinicalDescription,
@@ -89,6 +93,12 @@ export function buildAssignmentOverrideDeltasFromBuilder(
     }
     if (params.rangeOfMotion !== undefined) {
       clinicalDesired.rangeOfMotion = params.rangeOfMotion;
+    }
+    if (params.resistance !== undefined) {
+      clinicalDesired.resistance = params.resistance;
+    }
+    if (params.equipment !== undefined) {
+      clinicalDesired.equipment = params.equipment;
     }
     if (params.difficultyLevel !== undefined) {
       clinicalDesired.difficultyLevel = params.difficultyLevel;

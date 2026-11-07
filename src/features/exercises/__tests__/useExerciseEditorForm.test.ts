@@ -16,6 +16,8 @@ function makeDraft(overrides: Partial<ExerciseCoreDraft> = {}): ExerciseCoreDraf
     audioCue: '',
     tempo: '',
     rangeOfMotion: '',
+    resistance: '',
+    equipment: '',
     side: 'none',
     difficultyLevel: 'UNKNOWN',
     videoUrl: '',
@@ -58,6 +60,25 @@ describe('buildChangedCoreVariables', () => {
     const current = makeDraft({ duration: 60 });
     const variables = buildChangedCoreVariables(initial, current);
     expect(variables.duration).toBe(60);
+  });
+
+  it('wysyła opór i sprzęt przycięte, a wyczyszczone jako pusty tekst (nie null = bez zmian)', () => {
+    const changed = buildChangedCoreVariables(
+      makeDraft(),
+      makeDraft({ resistance: ' Średni ', equipment: 'Guma, krzesło' })
+    );
+    expect(changed.resistance).toBe('Średni');
+    expect(changed.equipment).toBe('Guma, krzesło');
+
+    const cleared = buildChangedCoreVariables(
+      makeDraft({ resistance: 'Mocny', equipment: 'Hantel' }),
+      makeDraft({ resistance: '', equipment: '' })
+    );
+    expect(cleared.resistance).toBe('');
+    expect(cleared.equipment).toBe('');
+
+    const untouched = buildChangedCoreVariables(makeDraft({ resistance: 'Mocny' }), makeDraft({ resistance: 'Mocny', sets: 4 }));
+    expect(untouched).not.toHaveProperty('resistance');
   });
 
   it('mapuje difficultyLevel UNKNOWN na null', () => {

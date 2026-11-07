@@ -149,6 +149,8 @@ export interface Exercise {
   preparationTime?: number;
   tempo?: string;
   rangeOfMotion?: string;
+  resistance?: string | null;
+  equipment?: string | null;
   // Media
   imageUrl?: string;
   thumbnailUrl?: string;
@@ -311,6 +313,8 @@ export interface ExerciseSetMapping {
     clinicalDescription?: string;
     audioCue?: string;
     rangeOfMotion?: string;
+    resistance?: string | null;
+    equipment?: string | null;
     notes?: string;
     videoUrl?: string;
     gifUrl?: string;

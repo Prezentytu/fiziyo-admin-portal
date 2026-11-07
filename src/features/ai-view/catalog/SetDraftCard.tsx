@@ -40,7 +40,7 @@ import { ChatCard, ChatCardEmpty, ChatCardNote } from './ChatCard';
 import { useSaveTemplateSet } from './useChatWrites';
 
 // A chat draft becomes a plan's mappings: fields a mapping does not keep are not offered.
-const UNSAVED_FIELDS = ['side', 'rangeOfMotion', 'difficultyLevel'] as const;
+const UNSAVED_FIELDS = ['side', 'rangeOfMotion', 'resistance', 'equipment', 'difficultyLevel'] as const;
 
 interface RowProps {
   readonly item: DraftItem;

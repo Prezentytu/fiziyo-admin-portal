@@ -11,6 +11,8 @@ export type ExerciseFieldIconKey =
   | 'pause'
   | 'tempo'
   | 'load'
+  | 'resistance'
+  | 'equipment'
   | 'side'
   | 'range'
   | 'difficulty'
@@ -28,6 +30,8 @@ export type ExerciseFieldKey =
   | 'preparationTime'
   | 'tempo'
   | 'load'
+  | 'resistance'
+  | 'equipment'
   | 'side'
   | 'rangeOfMotion'
   | 'difficultyLevel'
@@ -57,6 +61,8 @@ export interface ExerciseFieldValueSource {
   preparationTime?: number;
   tempo?: string;
   loadDisplayText?: string;
+  resistance?: string;
+  equipment?: string;
   side?: string;
   rangeOfMotion?: string;
   difficultyLevel?: string;
@@ -221,6 +227,28 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
     isDialogVisible: true,
     formatValue: (viewModel) => asTrimmedText(viewModel.loadDisplayText),
   },
+  resistance: {
+    key: 'resistance',
+    label: 'Opór',
+    tooltip:
+      'Opór, z jakim pacjent wykonuje ćwiczenie, np. siła gumy (lekki, średni, mocny) albo jej kolor. Pacjent widzi go w aplikacji obok obciążenia.',
+    iconKey: 'resistance',
+    group: 'execution',
+    isInlineVisible: true,
+    isDialogVisible: true,
+    formatValue: (viewModel) => asTrimmedText(viewModel.resistance),
+  },
+  equipment: {
+    key: 'equipment',
+    label: 'Sprzęt',
+    tooltip:
+      'Sprzęt potrzebny do ćwiczenia, np. guma, hantel, piłka, step albo krzesło. Pacjent widzi go w aplikacji i może przygotować przed startem.',
+    iconKey: 'equipment',
+    group: 'execution',
+    isInlineVisible: true,
+    isDialogVisible: true,
+    formatValue: (viewModel) => asTrimmedText(viewModel.equipment),
+  },
   side: {
     key: 'side',
     label: 'Strona ciała',
@@ -302,6 +330,8 @@ export const INLINE_EXERCISE_FIELD_ORDER: ExerciseFieldKey[] = [
   'restSets',
   'restReps',
   'load',
+  'resistance',
+  'equipment',
   'difficultyLevel',
   'clinicalDescription',
   'audioCue',
@@ -317,6 +347,8 @@ export const DIALOG_EXERCISE_FIELD_ORDER: ExerciseFieldKey[] = [
   'preparationTime',
   'tempo',
   'load',
+  'resistance',
+  'equipment',
   'side',
   'rangeOfMotion',
   'difficultyLevel',

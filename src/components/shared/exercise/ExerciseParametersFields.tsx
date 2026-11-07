@@ -31,6 +31,7 @@ import {
 } from './fieldContract';
 import { getExecutionTimeFieldHint } from './executionTimeFieldHint';
 import { parseNumberFieldDraft } from './numberFieldDraft';
+import { applyTextSuggestion, isTextSuggestionActive, suggestionTestIdSlug } from './textSuggestions';
 import { getTimerModeDescription, getTimerModeLabel } from './timerModeCopy';
 
 /** Normalized values for the shared parameter presentation layer. */
@@ -45,6 +46,8 @@ export interface ExerciseParameterValues {
   loadKg?: number | null;
   tempo?: string | null;
   rangeOfMotion?: string | null;
+  resistance?: string | null;
+  equipment?: string | null;
   side?: string | null;
   difficultyLevel?: string | null;
   patientDescription?: string | null;
@@ -285,6 +288,7 @@ function TextField({
   onChange: (value: string) => void;
 }>) {
   const metadata = EXERCISE_FIELD_METADATA[config.key];
+  const suggestionMode = config.suggestionMode ?? 'replace';
 
   return (
     <div className="space-y-1">
@@ -301,6 +305,7 @@ function TextField({
         id={testId}
         value={value}
         placeholder={placeholder}
+        maxLength={config.maxLength}
         onChange={(event) => onChange(event.target.value)}
         disabled={disabled}
         className={cn(
@@ -309,6 +314,36 @@ function TextField({
           dirty && 'border-status-warning/70 bg-status-warning-muted dark:border-status-warning/40'
         )}
       />
+      {config.suggestions && config.suggestions.length > 0 ? (
+        <div
+          className="flex flex-wrap gap-1.5 pt-0.5"
+          role="group"
+          aria-label={`Podpowiedzi: ${metadata.label}`}
+          data-testid={`${testId}-suggestions`}
+        >
+          {config.suggestions.map((suggestion) => {
+            const active = isTextSuggestionActive(value, suggestion, suggestionMode);
+            return (
+              <button
+                key={suggestion}
+                type="button"
+                aria-pressed={active}
+                disabled={disabled}
+                data-testid={`${testId}-suggestion-${suggestionTestIdSlug(suggestion)}`}
+                onClick={() => onChange(applyTextSuggestion(value, suggestion, suggestionMode))}
+                className={cn(
+                  'rounded-full border px-2.5 py-0.5 text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 disabled:opacity-50',
+                  active
+                    ? 'border-primary/40 bg-primary/10 text-primary'
+                    : 'border-border/60 bg-surface text-muted-foreground hover:bg-accent/40 hover:text-foreground'
+                )}
+              >
+                {suggestion}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -656,7 +691,17 @@ export function ExerciseParametersFields({
         density={density}
         inherited={showInheritedBadge}
         placeholder={
-          key === 'tempo' ? 'np. 3-0-1-0' : key === 'rangeOfMotion' ? 'np. 0–90°' : key === 'audioCue' ? 'np. Wdech przy wznosie' : undefined
+          key === 'tempo'
+            ? 'np. 3-0-1-0'
+            : key === 'rangeOfMotion'
+              ? 'np. 0–90°'
+              : key === 'audioCue'
+                ? 'np. Wdech przy wznosie'
+                : key === 'resistance'
+                  ? 'np. Średni (czerwona guma)'
+                  : key === 'equipment'
+                    ? 'np. Guma, krzesło'
+                    : undefined
         }
         testId={inputTestId}
         infoTestId={infoTestId}

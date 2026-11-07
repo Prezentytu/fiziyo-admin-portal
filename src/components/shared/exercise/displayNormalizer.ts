@@ -9,6 +9,8 @@ interface ExerciseSourceLike {
   preparationTime?: number | null;
   tempo?: string | null;
   rangeOfMotion?: string | null;
+  resistance?: string | null;
+  equipment?: string | null;
   difficultyLevel?: string | null;
   patientDescription?: string | null;
   description?: string | null;
@@ -97,6 +99,8 @@ export function normalizeExerciseFieldValues(source: ExerciseDefaultSourceLike):
     loadDisplayText: resolveLoadDisplayText(source),
     side: normalizeExerciseSide(source.side ?? source.exerciseSide),
     rangeOfMotion: toOptionalString(source.rangeOfMotion),
+    resistance: toOptionalString(source.resistance),
+    equipment: toOptionalString(source.equipment),
     difficultyLevel: toOptionalString(source.difficultyLevel),
     patientDescription: toOptionalString(source.patientDescription ?? source.description),
     clinicalDescription: toOptionalString(source.clinicalDescription),
