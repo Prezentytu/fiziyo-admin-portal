@@ -235,7 +235,7 @@ Panel / Mobile                     Backend (.NET)              OpenAI/OpenRouter
 | `/api/ai/voice-parse`       | Głos → struktura ćwiczenia                                                                                                                                   | kredyty                                    |
 | `/api/ai/generate-image`    | Obraz ćwiczenia (OpenRouter `/images`, kaskada: gemini-3.1-flash-image → seedream-4.5 → flux.2-klein-4b)                                                     | kredyty (5, refund przy porażce)           |
 | `/api/ai/verification/*`    | Sugestie tagów, walidacja                                                                                                                                    | kredyty                                    |
-| `/api/ai/document-analyze`  | PDF/Excel → ćwiczenia                                                                                                                                        | kredyty                                    |
+| `/api/ai/document-analyze`  | PDF/Excel/CSV/TXT albo zdjęcie notatki (JPG, PNG, WEBP) → ćwiczenia                                                                                          | kredyty                                    |
 
 **Pliki:**
 
