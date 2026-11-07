@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { getBackendToken } from '@/lib/tokenCache';
 import { triggerCreditsRefresh } from '@/lib/aiCreditsRefresh';
 import { decodeGeneratedImage } from '@/features/exercises/utils/decodeGeneratedImage';
+import { normalizeAiExerciseVariants, type AiExerciseVariant } from '@/features/exercises/utils/aiFullExercise';
 import { insufficientAiCreditsMessage, mapAiErrorResponse } from '@/utils/aiErrorMessages';
 import type {
   ExerciseSuggestionRequest,
@@ -196,6 +197,35 @@ class AIService {
     } catch (error) {
       if (isDev) {
         console.error('[AIService] getExerciseSuggestion error:', error);
+      }
+      return null;
+    }
+  }
+
+  /**
+   * Pełne, precyzyjne nazwy i warianty ćwiczenia (pozycja, sprzęt, strona, poziom) z opisu potrzeby.
+   * `[]` = AI nie znalazło wariantów; `null` = zapytanie się nie udało (komunikat już pokazany).
+   */
+  async suggestExerciseVariants(query: string): Promise<AiExerciseVariant[] | null> {
+    const trimmed = query.trim();
+    if (trimmed.length < 2) {
+      return null;
+    }
+
+    try {
+      const response = await this.request<unknown>('exercise-variants', { query: trimmed.slice(0, 300) });
+      return normalizeAiExerciseVariants(response);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '';
+      const aborted = error instanceof Error && (error.name === 'AbortError' || message.includes('aborted'));
+      // Known AI errors (credits, provider) were already shown by request(); the rest needs a message here.
+      const alreadyShown =
+        message.startsWith('AI_TEMPORARILY_UNAVAILABLE') || message.startsWith('AI_PROVIDER_FAILURE');
+      if (!aborted && !alreadyShown) {
+        toast.error('Nie udało się pobrać propozycji nazw. Spróbuj ponownie.');
+      }
+      if (isDev) {
+        console.error('[AIService] suggestExerciseVariants error:', error);
       }
       return null;
     }
