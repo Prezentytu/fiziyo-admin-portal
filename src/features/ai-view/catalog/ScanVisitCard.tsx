@@ -1,16 +1,20 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, type ClipboardEvent } from 'react';
 import { FileUp } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { getPastedScreenshot } from '@/utils/documentFormats';
 import { useChatActions, useChatBusy } from '../ChatSessionContext';
 import { DOCUMENT_ACCEPT, MIN_NOTE_LENGTH, useDocumentAnalysis } from '../useDocumentAnalysis';
 import type { CardProps } from './cardProps';
 import { ChatCard, ChatCardNote } from './ChatCard';
 
-/** "Skanuj wizytę": recommendations from a visit note or document the therapist adds become a set. */
+/**
+ * "Skanuj wizytę": recommendations from a visit note, a document, or a photo or screenshot of a note
+ * the therapist adds become a set. A screenshot pasted into the note field is analyzed as that image.
+ */
 export function ScanVisitCard({ spec, testId, messageId, chosen }: CardProps<'ScanVisit'>) {
   const { markChosen } = useChatActions();
   const isBusy = useChatBusy();
@@ -33,6 +37,13 @@ export function ScanVisitCard({ spec, testId, messageId, chosen }: CardProps<'Sc
   const submitFile = async (file: File) => {
     if (await analyzeFile(file, spec.patientId)) markChosen(messageId, file.name);
   };
+  // Text pastes as usual; only a screenshot (an image with no text) is analyzed as the note.
+  const handlePaste = (event: ClipboardEvent<HTMLTextAreaElement>) => {
+    const screenshot = getPastedScreenshot(event.clipboardData);
+    if (!screenshot || isBusy) return;
+    event.preventDefault();
+    void submitFile(screenshot);
+  };
 
   return (
     <ChatCard
@@ -47,7 +58,7 @@ export function ScanVisitCard({ spec, testId, messageId, chosen }: CardProps<'Sc
             data-testid={`${testId}-file-btn`}
           >
             <FileUp aria-hidden="true" />
-            Dokument
+            Dokument lub zdjęcie
           </Button>
           <Button
             onClick={() => void submitNote()}
@@ -60,8 +71,10 @@ export function ScanVisitCard({ spec, testId, messageId, chosen }: CardProps<'Sc
       }
     >
       <Textarea
+        data-testid={`${testId}-note-input`}
         value={note}
         onChange={(event) => setNote(event.target.value)}
+        onPaste={handlePaste}
         onKeyDown={(event) => {
           if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
             event.preventDefault();
@@ -69,9 +82,8 @@ export function ScanVisitCard({ spec, testId, messageId, chosen }: CardProps<'Sc
           }
         }}
         rows={4}
-        placeholder="Wklej albo podyktuj notatkę z wizyty, np. „mostki 3×10, przysiad przy ścianie 3×30 s, rozciąganie łydki”"
+        placeholder="Wklej albo podyktuj notatkę z wizyty, np. „mostki 3×10, przysiad przy ścianie 3×30 s, rozciąganie łydki”. Możesz też wkleić zrzut ekranu."
         aria-label="Notatka z wizyty"
-        data-testid={`${testId}-note-input`}
       />
       <input
         ref={fileRef}
@@ -88,7 +100,7 @@ export function ScanVisitCard({ spec, testId, messageId, chosen }: CardProps<'Sc
           void submitFile(file);
         }}
       />
-      <ChatCardNote>Zalecenia biorę tylko z notatki albo dokumentu, które tu dodasz.</ChatCardNote>
+      <ChatCardNote>Zalecenia biorę tylko z notatki, dokumentu albo zdjęcia, które tu dodasz.</ChatCardNote>
     </ChatCard>
   );
 }

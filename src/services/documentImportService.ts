@@ -1,6 +1,7 @@
 import { getBackendToken } from '@/lib/tokenCache';
 import { triggerCreditsRefresh } from '@/lib/aiCreditsRefresh';
 import type { DocumentAnalysisResult, DocumentImportRequest, DocumentImportResult } from '@/types/import.types';
+import { DOCUMENT_ACCEPT, unsupportedFormatMessage } from '@/utils/documentFormats';
 
 const isDev = process.env.NODE_ENV === 'development';
 
@@ -28,7 +29,7 @@ class DocumentImportService {
   }
 
   /**
-   * Analizuje plik dokumentu (PDF, Excel, CSV, TXT)
+   * Analizuje plik dokumentu (PDF, Excel, CSV, TXT) albo zdjęcie/zrzut ekranu (JPG, PNG, WEBP)
    */
   async analyzeDocument(
     file: File,
@@ -209,19 +210,17 @@ class DocumentImportService {
   }
 
   /**
-   * Obsługiwane formaty plików
+   * Obsługiwane formaty plików, gotowe do atrybutu `accept`
    */
-  getSupportedFormats(): string[] {
-    return ['.pdf', '.xlsx', '.xls', '.csv', '.txt', '.md'];
+  getAcceptAttribute(): string {
+    return DOCUMENT_ACCEPT;
   }
 
   /**
-   * Sprawdza czy format pliku jest obsługiwany
+   * Komunikat dla nieobsługiwanego formatu albo null
    */
-  isFormatSupported(file: File): boolean {
-    const extension = file.name.toLowerCase().split('.').pop();
-    const supportedExtensions = ['pdf', 'xlsx', 'xls', 'csv', 'txt', 'md'];
-    return supportedExtensions.includes(extension || '');
+  getUnsupportedFormatMessage(file: File): string | null {
+    return unsupportedFormatMessage(file);
   }
 
   /**
