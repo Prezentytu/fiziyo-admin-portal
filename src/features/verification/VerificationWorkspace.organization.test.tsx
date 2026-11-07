@@ -108,6 +108,12 @@ describe('VerificationWorkspace – tor organizacji', () => {
     expect(decision.onApprove).toHaveBeenCalledTimes(1);
   });
 
+  it('hides FiziYo working notes from the clinic owner', () => {
+    renderOrganization('PENDING_ORG_REVIEW');
+
+    expect(screen.queryByTestId('exercise-internal-notes-section')).toBeNull();
+  });
+
   it('offers archive for a verified exercise and no review decisions', () => {
     renderOrganization('ORG_VERIFIED');
 
