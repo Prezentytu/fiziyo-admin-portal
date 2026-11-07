@@ -7,6 +7,8 @@
  * i kiedy wróci, zamiast sugerować chwilową awarię.
  */
 
+import { polishPlural } from './polishPlural';
+
 export type AiErrorKind = 'insufficient_credits' | 'provider_failure';
 
 export interface AiErrorMapping {
@@ -23,23 +25,58 @@ export function nextAiCreditsResetDate(now: Date): Date {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
 }
 
-export function insufficientAiCreditsMessage(now: Date): string {
-  const resetLabel = new Intl.DateTimeFormat('pl-PL', {
+/** „1 grudnia” z twardą spacją, żeby dzień nie odklejał się od miesiąca przy zawijaniu. */
+function formatResetLabel(now: Date): string {
+  return new Intl.DateTimeFormat('pl-PL', {
     day: 'numeric',
     month: 'long',
     timeZone: 'Europe/Warsaw',
-  }).format(nextAiCreditsResetDate(now));
+  })
+    .format(nextAiCreditsResetDate(now))
+    .replace(/\s/g, '\u00a0');
+}
+
+function creditsLabel(count: number): string {
+  return `${count}\u00a0${polishPlural(count, 'kredytu', 'kredytów', 'kredytów')}`;
+}
+
+function remainingLabel(count: number): string {
+  return `${polishPlural(count, 'został', 'zostały', 'zostało')} ${count}`;
+}
+
+/**
+ * Backend odmawia, gdy w puli zostało mniej kredytów niż kosztuje akcja (obraz 5, wzbogacenie 3,
+ * zestaw 2, reszta 1). Pula jest pusta tylko przy `remaining <= 0`; inaczej mówimy, ile brakuje.
+ */
+export function insufficientAiCreditsMessage(
+  now: Date,
+  credits: { remaining?: number; required?: number } = {}
+): string {
+  const resetLabel = formatResetLabel(now);
+  const { remaining, required } = credits;
+  if (remaining !== undefined && remaining > 0 && required !== undefined) {
+    return `Ta akcja wymaga ${creditsLabel(required)} AI, w puli gabinetu ${remainingLabel(remaining)}. Pula odnowi się ${resetLabel}.`;
+  }
   return `Miesięczna pula kredytów AI gabinetu się wyczerpała. Odnowi się ${resetLabel}.`;
 }
 
-function parseErrorBody(bodyText: string): { error?: string; message?: string } | null {
+interface AiErrorBody {
+  error?: string;
+  message?: string;
+  remaining?: number;
+  required?: number;
+}
+
+function parseErrorBody(bodyText: string): AiErrorBody | null {
   try {
     const parsed: unknown = JSON.parse(bodyText);
     if (typeof parsed !== 'object' || parsed === null) return null;
-    const { error, message } = parsed as Record<string, unknown>;
+    const { error, message, remaining, required } = parsed as Record<string, unknown>;
     return {
       error: typeof error === 'string' ? error : undefined,
       message: typeof message === 'string' ? message : undefined,
+      remaining: typeof remaining === 'number' ? remaining : undefined,
+      required: typeof required === 'number' ? required : undefined,
     };
   } catch {
     return null;
@@ -55,7 +92,7 @@ export function mapAiErrorResponse(status: number, bodyText: string, now: Date =
   if (!body) return null;
 
   if ((status === 400 || status === 402 || status === 403) && body.error === 'insufficient_credits') {
-    return { kind: 'insufficient_credits', code: body.error, message: insufficientAiCreditsMessage(now) };
+    return { kind: 'insufficient_credits', code: body.error, message: insufficientAiCreditsMessage(now, body) };
   }
 
   if (status === 502 && (body.message || body.error)) {

@@ -137,7 +137,7 @@ class AIService {
             }
             throw new Error(
               mapped.kind === 'insufficient_credits'
-                ? `AI_TEMPORARILY_UNAVAILABLE:${mapped.code}`
+                ? `AI_TEMPORARILY_UNAVAILABLE:${mapped.code}:${mapped.message}`
                 : `AI_PROVIDER_FAILURE:${mapped.code}:${mapped.message}`
             );
           }
@@ -397,7 +397,7 @@ class AIService {
           return {
             status: 'error',
             code: 'insufficient_credits',
-            message: insufficientAiCreditsMessage(new Date()),
+            message: error.message.split(':').slice(2).join(':').trim() || insufficientAiCreditsMessage(new Date()),
           };
         }
         if (error.message.startsWith('AI_PROVIDER_FAILURE')) {

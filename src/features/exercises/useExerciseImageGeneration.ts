@@ -32,7 +32,7 @@ function messageForError(code: ExerciseImageErrorCode, fallback: string): string
     case 'safety_blocked':
       return 'Obraz został odrzucony przez filtr bezpieczeństwa. Zmień nazwę lub opis ćwiczenia.';
     case 'insufficient_credits':
-      return insufficientAiCreditsMessage(new Date());
+      return fallback || insufficientAiCreditsMessage(new Date());
     case 'rate_limited':
       return 'Dostawca AI jest chwilowo przeciążony. Spróbuj ponownie.';
     case 'cancelled':

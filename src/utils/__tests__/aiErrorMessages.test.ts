@@ -10,13 +10,30 @@ describe('mapAiErrorResponse', () => {
     expect(result).toEqual({
       kind: 'insufficient_credits',
       code: 'insufficient_credits',
-      message: 'Miesięczna pula kredytów AI gabinetu się wyczerpała. Odnowi się 1 grudnia.',
+      message: 'Miesięczna pula kredytów AI gabinetu się wyczerpała. Odnowi się 1\u00a0grudnia.',
     });
     expect(result?.message).not.toMatch(/chwilowo/);
   });
 
   it('w grudniu podaje odnowienie 1 stycznia', () => {
-    expect(mapAiErrorResponse(400, credits, new Date('2026-12-31T22:30:00Z'))?.message).toContain('1 stycznia');
+    expect(mapAiErrorResponse(400, credits, new Date('2026-12-31T22:30:00Z'))?.message).toContain('1\u00a0stycznia');
+  });
+
+  it('ostatni wieczór miesiąca w UTC (już 1 grudnia w Polsce) podaje odnowienie 1 grudnia', () => {
+    expect(mapAiErrorResponse(400, credits, new Date('2026-11-30T23:30:00Z'))?.message).toBe(
+      'Miesięczna pula kredytów AI gabinetu się wyczerpała. Odnowi się 1\u00a0grudnia.'
+    );
+  });
+
+  it('gdy w puli coś zostało, ale za mało na akcję, mówi ile wymaga i ile zostało', () => {
+    const body = JSON.stringify({ error: 'insufficient_credits', remaining: 3, required: 5 });
+
+    const message = mapAiErrorResponse(400, body, new Date('2026-11-07T10:00:00Z'))?.message;
+
+    expect(message).toBe(
+      'Ta akcja wymaga 5\u00a0kredytów AI, w puli gabinetu zostały 3. Pula odnowi się 1\u00a0grudnia.'
+    );
+    expect(message).not.toMatch(/wyczerpała/);
   });
 
   it('rozpoznaje brak kredytów także dla 402 i 403', () => {
