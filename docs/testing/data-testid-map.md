@@ -277,8 +277,7 @@ Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu r
 | `exercise-detail-submit-global-btn`                 | Zgłoś do bazy FiziYo                                     | `exercises/[id]/page.tsx`     |
 | `exercise-detail-submit-org-btn`                    | Zgłoś do weryfikacji organizacyjnej                      | `exercises/[id]/page.tsx`     |
 | `exercise-detail-resubmit-btn`                      | Zgłoś ponownie do weryfikacji                            | `exercises/[id]/page.tsx`     |
-| `exercise-detail-report-btn`                        | Zgłoś do poprawki (menu)                                 | `exercises/[id]/page.tsx`     |
-| `exercise-detail-report-hero-btn`                   | Zgłoś do poprawki (hero card)                            | `exercises/[id]/page.tsx`     |
+| `exercise-detail-report-hero-btn`                   | Zgłoś do poprawki (hero; tylko ćwiczenie FiziYo)         | `exercises/[id]/page.tsx`     |
 | `exercise-detail-delete-btn`                        | Usuń ćwiczenie                                           | `exercises/[id]/page.tsx`     |
 | `exercise-detail-name`                              | Tytuł ćwiczenia (h1)                                     | `exercises/[id]/page.tsx`     |
 | `exercise-detail-add-to-set-btn`                    | Hero: Dodaj do zestawu                                   | `exercises/[id]/page.tsx`     |

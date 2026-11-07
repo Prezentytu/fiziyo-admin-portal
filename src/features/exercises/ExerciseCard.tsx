@@ -37,6 +37,7 @@ import { getExerciseCardPreview } from './utils/exerciseCardPreview';
 import { EXERCISE_FIELD_METADATA, HIDE_EXERCISE_TAGS } from '@/components/shared/exercise';
 import { verificationCopy } from '@/features/verification/verificationCopy';
 import { exerciseStatusBadgeVariant } from './utils/exerciseStatusBadgeVariant';
+import { canReportExerciseIssue } from './utils/exerciseReportRouting';
 
 export interface ExerciseTag {
   id: string;
@@ -112,8 +113,12 @@ interface ExerciseCardProps {
   onSubmitToGlobal?: (exercise: Exercise) => void;
   /** Callback to submit exercise to organization verification */
   onSubmitToOrganizationReview?: (exercise: Exercise) => void;
-  /** Callback to report exercise issue */
+  /** Zgłoszenie błędu w ćwiczeniu z bazy FiziYo; widoczność rozstrzyga `canReportExerciseIssue`. */
   onReportIssue?: (exercise: Exercise) => void;
+  /** Weryfikator FiziYo (ContentManager/SiteSuperAdmin) poprawia ćwiczenia w weryfikacji, nie zgłasza ich. */
+  canReviewExercises?: boolean;
+  /** Rola systemowa jeszcze się ładuje; akcja zgłoszenia czeka na nią. */
+  isRoleLoading?: boolean;
   /** Whether this exercise is currently in the builder */
   isInBuilder?: boolean;
   /** Toggle exercise in/out of builder */
@@ -131,6 +136,8 @@ export function ExerciseCard({
   onSubmitToGlobal,
   onSubmitToOrganizationReview,
   onReportIssue,
+  canReviewExercises = false,
+  isRoleLoading = false,
   isInBuilder = false,
   onToggleBuilder,
   className,
@@ -141,6 +148,8 @@ export function ExerciseCard({
 
   // Check if exercise is from global FiziYo database (read-only)
   const isGlobalExercise = exercise.scope === 'GLOBAL';
+  const canReportIssue =
+    !!onReportIssue && canReportExerciseIssue({ scope: exercise.scope, canReviewExercises, isRoleLoading });
 
   // Determine if "Submit to Global" should be shown
   // Only for ORGANIZATION scope exercises that don't have an active global submission
@@ -429,9 +438,9 @@ export function ExerciseCard({
                   </DropdownMenuItem>
                 </>
               )}
-              {onReportIssue && (
+              {canReportIssue && (
                 <DropdownMenuItem
-                  onClick={(event) => runMenuAction(event, () => onReportIssue(exercise))}
+                  onClick={(event) => runMenuAction(event, () => onReportIssue?.(exercise))}
                   data-testid={`exercise-card-${exercise.id}-report-btn`}
                   className="text-status-warning focus:text-status-warning focus:bg-status-warning-muted"
                 >
@@ -711,9 +720,9 @@ export function ExerciseCard({
                       </DropdownMenuItem>
                     </>
                   )}
-                  {onReportIssue && (
+                  {canReportIssue && (
                     <DropdownMenuItem
-                      onClick={(event) => runMenuAction(event, () => onReportIssue(exercise))}
+                      onClick={(event) => runMenuAction(event, () => onReportIssue?.(exercise))}
                       data-testid={`exercise-card-${exercise.id}-report-btn`}
                       className="text-status-warning focus:text-status-warning focus:bg-status-warning-muted"
                     >

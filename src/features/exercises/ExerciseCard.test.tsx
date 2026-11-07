@@ -17,7 +17,7 @@ const baseExercise: Exercise = {
 };
 
 describe('ExerciseCard menu actions', () => {
-  it('pokazuje akcję report i zachowuje submit to global', async () => {
+  it('przy własnym ćwiczeniu gabinetu pokazuje zgłoszenie do weryfikacji, a nie „Zgłoś do poprawki”', async () => {
     const user = userEvent.setup();
     const onSubmitToGlobal = vi.fn();
     const onReportIssue = vi.fn();
@@ -31,16 +31,41 @@ describe('ExerciseCard menu actions', () => {
       />
     );
 
-    const trigger = screen.getByRole('button', { name: /Więcej opcji/ });
-    await user.click(trigger);
+    await user.click(screen.getByRole('button', { name: /Więcej opcji/ }));
 
     expect(screen.getByText('Zgłoś do Bazy Globalnej')).toBeInTheDocument();
-    expect(screen.getByText('Zgłoś do poprawki')).toBeInTheDocument();
+    expect(screen.queryByText('Zgłoś do poprawki')).not.toBeInTheDocument();
     expect(screen.queryByText('nogi')).not.toBeInTheDocument();
     expect(screen.queryByText(/Czas powtórzenia:/)).not.toBeInTheDocument();
+  });
 
+  it('przy ćwiczeniu z bazy FiziYo fizjoterapeuta zgłasza błąd do poprawki', async () => {
+    const user = userEvent.setup();
+    const onReportIssue = vi.fn();
+
+    render(<ExerciseCard exercise={{ ...baseExercise, scope: 'GLOBAL' }} compact onReportIssue={onReportIssue} />);
+
+    await user.click(screen.getByRole('button', { name: /Więcej opcji/ }));
     await user.click(screen.getByTestId('exercise-card-exercise-1-report-btn'));
+
     expect(onReportIssue).toHaveBeenCalledTimes(1);
+  });
+
+  it('weryfikator FiziYo nie widzi „Zgłoś do poprawki” przy ćwiczeniu globalnym', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ExerciseCard
+        exercise={{ ...baseExercise, scope: 'GLOBAL' }}
+        compact
+        onReportIssue={vi.fn()}
+        canReviewExercises
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: /Więcej opcji/ }));
+
+    expect(screen.queryByTestId('exercise-card-exercise-1-report-btn')).not.toBeInTheDocument();
   });
 
   it('pokazuje akcję submit do weryfikacji organizacyjnej i badge pending', async () => {
