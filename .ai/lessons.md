@@ -18,6 +18,14 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 
 ## Wpisy
 
+### 2026-11-07 - Brak kredytów AI udawał awarię
+
+- **Kategoria**: `UI/UX`
+- **Problem**: Toast „chwilowo niedostępna” po `insufficient_credits`; zgłoszenie „nie działa na planie”.
+- **Przyczyna**: Ukrywanie słowa „kredyty”.
+- **Rozwiązanie**: `mapAiErrorResponse`.
+- **Reguła**: Odmowę z limitu nazywaj wprost z datą odnowienia. [egzekwowane: src/utils/__tests__/aiErrorMessages.test.ts]
+
 ### 2026-11-05 - Karta pacjenta drukowała zestaw zamiast planu pacjenta
 
 - **Kategoria**: `Data` | `UI/UX`
