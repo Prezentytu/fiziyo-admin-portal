@@ -1,8 +1,29 @@
 import { getBackendToken } from '@/lib/tokenCache';
 import { triggerCreditsRefresh } from '@/lib/aiCreditsRefresh';
+import { mapAiErrorResponse } from '@/utils/aiErrorMessages';
 import type { DocumentAnalysisResult, DocumentImportRequest, DocumentImportResult } from '@/types/import.types';
 
 const isDev = process.env.NODE_ENV === 'development';
+
+/**
+ * Komunikat błędu analizy: znane błędy AI (np. brak kredytów) przez wspólne mapowanie,
+ * w pozostałych przypadkach `message` z backendu albo fallback.
+ */
+async function analysisErrorMessage(response: Response, fallback: string): Promise<string> {
+  const bodyText = await response.text().catch(() => '');
+  const mapped = mapAiErrorResponse(response.status, bodyText);
+  if (mapped) return mapped.message;
+  try {
+    const parsed: unknown = JSON.parse(bodyText);
+    if (typeof parsed === 'object' && parsed !== null) {
+      const { message } = parsed as Record<string, unknown>;
+      if (typeof message === 'string' && message) return message;
+    }
+  } catch {
+    // ciało nie jest JSON-em
+  }
+  return fallback;
+}
 
 /**
  * Serwis do importu dokumentów fizjoterapeutycznych przez AI
@@ -68,8 +89,7 @@ class DocumentImportService {
         if (response.status === 401) {
           throw new Error('Sesja wygasła. Odśwież stronę i spróbuj ponownie.');
         }
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Błąd analizy dokumentu: ${response.status}`);
+        throw new Error(await analysisErrorMessage(response, `Błąd analizy dokumentu: ${response.status}`));
       }
 
       const data: DocumentAnalysisResult = await response.json();
@@ -132,8 +152,7 @@ class DocumentImportService {
         if (response.status === 401) {
           throw new Error('Sesja wygasła. Odśwież stronę i spróbuj ponownie.');
         }
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Błąd analizy tekstu: ${response.status}`);
+        throw new Error(await analysisErrorMessage(response, `Błąd analizy tekstu: ${response.status}`));
       }
 
       const data: DocumentAnalysisResult = await response.json();
