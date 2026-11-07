@@ -14,6 +14,7 @@ import { ArrowUp, Check, Loader2, Mic, Paperclip, Square, X } from 'lucide-react
 
 import { cn } from '@/lib/utils';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
+import { getPastedScreenshot } from '@/utils/documentFormats';
 import { DOCUMENT_ACCEPT } from './useDocumentAnalysis';
 import { useMicLevels } from './useMicLevels';
 import { WAVE_BARS } from './utils/micLevels';
@@ -207,8 +208,12 @@ export function ChatComposer({
   };
 
   const handlePaste = (event: ClipboardEvent<HTMLTextAreaElement>) => {
-    const file = event.clipboardData.files[0];
-    if (!file || disabled || busy) return;
+    if (disabled || busy) return;
+    // Some browsers put a screenshot only in `items`, so it is checked before `files`.
+    const screenshot = getPastedScreenshot(event.clipboardData);
+    const file = screenshot ?? event.clipboardData.files[0];
+    // Word and Excel copy text together with a picture of it: that pastes as text, not as a screenshot.
+    if (!file || (!screenshot && file.type.startsWith('image/'))) return;
     event.preventDefault();
     onAttach(file);
   };
@@ -325,7 +330,7 @@ export function ChatComposer({
             onClick={() => fileRef.current?.click()}
             disabled={disabled || busy}
             aria-label="Dodaj dokument z zaleceniami"
-            title="Dodaj dokument (PDF, Excel, CSV, TXT). Możesz też go upuścić albo wkleić."
+            title="Dodaj dokument albo zdjęcie notatki (PDF, Excel, CSV, TXT, JPG, PNG, WEBP). Możesz też go upuścić albo wkleić zrzut ekranu."
             data-testid="common-chat-composer-attach-btn"
           >
             <Paperclip aria-hidden="true" />

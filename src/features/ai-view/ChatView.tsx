@@ -455,8 +455,17 @@ function hasDraggedFile(event: DragEvent): boolean {
 
 /** Chat-first home (DEC-20261029-02, design "Czat v2"): one conversation, cards with the app's actions. */
 export function ChatView() {
-  const { messages, isBusy, isReady, isLoading, sendMessage, stopReply, isContextOpen, setContextOpen, activeConversationId } =
-    useChatSession();
+  const {
+    messages,
+    isBusy,
+    isReady,
+    isLoading,
+    sendMessage,
+    stopReply,
+    isContextOpen,
+    setContextOpen,
+    activeConversationId,
+  } = useChatSession();
   const { analyzeFile } = useDocumentAnalysis();
   const scrollRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<ChatComposerHandle>(null);
@@ -591,7 +600,9 @@ export function ChatView() {
               <FileUp aria-hidden="true" />
             </span>
             <p className="text-[17px] font-semibold text-foreground">Upuść dokument z zaleceniami</p>
-            <p className="text-[14px] text-label-secondary">PDF, Excel, CSV albo TXT. Ułożę z niego zestaw.</p>
+            <p className="text-[14px] text-label-secondary">
+              PDF, Excel, CSV, TXT albo zdjęcie notatki. Ułożę z niego zestaw.
+            </p>
           </div>
         )}
       </section>
