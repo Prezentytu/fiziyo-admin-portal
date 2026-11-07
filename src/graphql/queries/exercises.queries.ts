@@ -65,7 +65,8 @@ export const EXERCISE_FULL_FRAGMENT = gql`
   }
 `;
 
-// One page of the exercise library (list view); tab, search, sorting and tab counts are computed by the API.
+// One page of the exercise library (list view); tab, search (with muscle synonyms), body region, sorting
+// and tab counts are computed by the API.
 export const GET_AVAILABLE_EXERCISES_PAGE_QUERY = gql`
   query GetAvailableExercisesPage(
     $organizationId: String!
@@ -73,6 +74,7 @@ export const GET_AVAILABLE_EXERCISES_PAGE_QUERY = gql`
     $search: String
     $page: Int!
     $pageSize: Int!
+    $region: ExerciseBodyRegion
   ) {
     availableExercisesPage(
       organizationId: $organizationId
@@ -80,6 +82,7 @@ export const GET_AVAILABLE_EXERCISES_PAGE_QUERY = gql`
       search: $search
       page: $page
       pageSize: $pageSize
+      region: $region
     ) {
       items {
         ...ExerciseFullFragment

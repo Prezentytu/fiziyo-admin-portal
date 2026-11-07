@@ -229,6 +229,9 @@ Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu r
 | `exercise-page-title`                       | Tytuł strony                          | `exercises/page.tsx`             |
 | `exercise-search-input`                     | Wyszukiwarka                          | `exercises/page.tsx`             |
 | `exercise-search-clear-btn`                 | Wyczyść wyszukiwanie                  | `exercises/page.tsx`             |
+| `exercise-region-filter`                    | Chipy regionu ciała                   | `exercises/page.tsx`             |
+| `exercise-region-all`                       | Wszystkie regiony                     | `exercises/page.tsx`             |
+| `exercise-region-{slug}`                    | Region (`exerciseBodyRegions.ts`)     | `exercises/page.tsx`             |
 | `exercise-view-grid-btn`                    | Widok siatki                          | `exercises/page.tsx`             |
 | `exercise-view-list-btn`                    | Widok listy                           | `exercises/page.tsx`             |
 | `exercise-create-btn`                       | Dodaj ćwiczenie                       | `exercises/page.tsx`             |
