@@ -68,7 +68,7 @@ reportedFilter[reported] --> reportedConnection[reportedVerificationQueueConnect
 - `Exercise detail`:
   - secondary CTA `Zgłoś do poprawki` obok akcji hero (jedno wejście na ekranie, bez duplikatu w menu `Opcje`)
 
-Widoczność (jedna droga zgłaszania, Skrzynka #26): `canReportExerciseIssue` w `src/features/exercises/utils/exerciseReportRouting.ts`. Zgłoszenie jest tylko dla ćwiczenia z bazy FiziYo (`scope = GLOBAL`), którego fizjoterapeuta nie poprawi sam. Własne ćwiczenie gabinetu poprawia się edycją albo w weryfikacji organizacji (`Zgłoś do weryfikacji organizacyjnej`, prośba o poprawki w centrum weryfikacji organizacji). Weryfikator FiziYo (`canReviewExercises`) nie zgłasza ćwiczenia do własnej skrzynki, tylko otwiera je przez `Popraw w weryfikacji`.
+Widoczność (jedna droga zgłaszania, Skrzynka #26): `canReportExerciseIssue` w `src/features/exercises/utils/exerciseReportRouting.ts`. Zgłoszenie jest tylko dla ćwiczenia z bazy FiziYo (`scope = GLOBAL`), którego fizjoterapeuta nie poprawi sam. Własne ćwiczenie gabinetu poprawia się edycją albo w weryfikacji organizacji (`Zgłoś do weryfikacji organizacyjnej`, prośba o poprawki w centrum weryfikacji organizacji). Weryfikator FiziYo (`canReviewExercises`) nie zgłasza ćwiczenia do własnej skrzynki, tylko otwiera je przez `Popraw w weryfikacji`. Własne ćwiczenie zablokowane trwającą weryfikacją (`PENDING_REVIEW`, `PENDING_ORG_REVIEW`) nie ma zgłoszenia ani edycji; uwagi przechodzą przez tę weryfikację, o czym mówi komunikat blokady na stronie ćwiczenia. Akcja zgłoszenia nie renderuje się, dopóki ładuje się rola systemowa (bez mignięcia u weryfikatora).
 
 ### Report dialog
 

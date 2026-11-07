@@ -117,6 +117,8 @@ interface ExerciseCardProps {
   onReportIssue?: (exercise: Exercise) => void;
   /** Weryfikator FiziYo (ContentManager/SiteSuperAdmin) poprawia ćwiczenia w weryfikacji, nie zgłasza ich. */
   canReviewExercises?: boolean;
+  /** Rola systemowa jeszcze się ładuje; akcja zgłoszenia czeka na nią. */
+  isRoleLoading?: boolean;
   /** Whether this exercise is currently in the builder */
   isInBuilder?: boolean;
   /** Toggle exercise in/out of builder */
@@ -135,6 +137,7 @@ export function ExerciseCard({
   onSubmitToOrganizationReview,
   onReportIssue,
   canReviewExercises = false,
+  isRoleLoading = false,
   isInBuilder = false,
   onToggleBuilder,
   className,
@@ -145,7 +148,8 @@ export function ExerciseCard({
 
   // Check if exercise is from global FiziYo database (read-only)
   const isGlobalExercise = exercise.scope === 'GLOBAL';
-  const canReportIssue = !!onReportIssue && canReportExerciseIssue({ scope: exercise.scope, canReviewExercises });
+  const canReportIssue =
+    !!onReportIssue && canReportExerciseIssue({ scope: exercise.scope, canReviewExercises, isRoleLoading });
 
   // Determine if "Submit to Global" should be shown
   // Only for ORGANIZATION scope exercises that don't have an active global submission

@@ -39,4 +39,8 @@ describe('canReportExerciseIssue', () => {
   it('nie pokazuje zgłoszenia weryfikatorowi FiziYo: ma „Popraw w weryfikacji” zamiast zgłoszenia do samego siebie', () => {
     expect(canReportExerciseIssue({ scope: 'GLOBAL', canReviewExercises: true })).toBe(false);
   });
+
+  it('nie pokazuje zgłoszenia, dopóki rola systemowa się ładuje (bez mignięcia u weryfikatora)', () => {
+    expect(canReportExerciseIssue({ scope: 'GLOBAL', canReviewExercises: false, isRoleLoading: true })).toBe(false);
+  });
 });

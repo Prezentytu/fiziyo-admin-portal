@@ -27,6 +27,8 @@ export function resolveExerciseReportRoutingTarget({
 interface ExerciseReportVisibilityInput {
   scope?: string | null;
   canReviewExercises: boolean;
+  /** Rola systemowa jeszcze się ładuje: nie pokazujemy akcji, żeby weryfikator nie zobaczył jej na chwilę. */
+  isRoleLoading?: boolean;
 }
 
 /**
@@ -35,6 +37,10 @@ interface ExerciseReportVisibilityInput {
  * w weryfikacji organizacji, a weryfikator FiziYo poprawia ćwiczenie globalne w centrum weryfikacji
  * („Popraw w weryfikacji”), więc nie zgłasza go do własnej skrzynki.
  */
-export function canReportExerciseIssue({ scope, canReviewExercises }: ExerciseReportVisibilityInput): boolean {
-  return scope === 'GLOBAL' && !canReviewExercises;
+export function canReportExerciseIssue({
+  scope,
+  canReviewExercises,
+  isRoleLoading = false,
+}: ExerciseReportVisibilityInput): boolean {
+  return scope === 'GLOBAL' && !canReviewExercises && !isRoleLoading;
 }

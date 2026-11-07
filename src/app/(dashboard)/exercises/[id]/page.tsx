@@ -123,7 +123,7 @@ function isTagObject(tag: string | ExerciseTag): tag is ExerciseTag {
 export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) {
   const { id } = use(params);
   const router = useRouter();
-  const { canReviewExercises } = useSystemRole();
+  const { canReviewExercises, isLoading: isRoleLoading } = useSystemRole();
   const { currentOrganization } = useOrganization();
   const [isEditMode, setIsEditMode] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -561,7 +561,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const isLocked = isGlobalExercise || isPendingReview || isPendingOrganizationReview;
   const isEditing = isEditMode && !isLocked;
   // Jedna droga zgłaszania: zgłoszenie tylko dla ćwiczenia FiziYo, którego nie poprawisz sam (Skrzynka #26).
-  const canReportIssue = canReportExerciseIssue({ scope: exercise.scope, canReviewExercises });
+  const canReportIssue = canReportExerciseIssue({ scope: exercise.scope, canReviewExercises, isRoleLoading });
   const hasSecondaryHeroAction = canReportIssue || !isLocked;
   const canEditMedia = isEditing;
 
@@ -933,7 +933,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
               <AlertCircle className="h-3.5 w-3.5 shrink-0" />
               <span className="flex-1">
                 {!isGlobalExercise
-                  ? 'Edycja zablokowana podczas weryfikacji.'
+                  ? 'Edycja zablokowana podczas weryfikacji. Uwagi do ćwiczenia przekaż w trwającej weryfikacji.'
                   : canReviewExercises
                     ? 'Ćwiczenie z bazy FiziYo. Poprawiasz je w weryfikacji, zmiana trafi do wszystkich gabinetów.'
                     : 'Ćwiczenie z bazy FiziYo — tylko do odczytu. Użyj "Duplikuj" aby je edytować.'}

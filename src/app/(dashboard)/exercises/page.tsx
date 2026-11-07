@@ -59,7 +59,7 @@ export default function ExercisesPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { currentOrganization } = useOrganization();
-  const { canReviewExercises } = useSystemRole();
+  const { canReviewExercises, isLoading: isRoleLoading } = useSystemRole();
   const { toggleExercise, isInBuilder } = useExerciseBuilder();
   // Filter, search and page live in the URL, so going back from an exercise returns to the same page.
   const listState = useMemo(() => parseExerciseLibraryUrlState(searchParams), [searchParams]);
@@ -435,6 +435,7 @@ export default function ExercisesPage() {
                   onSubmitToOrganizationReview={(e) => setSubmitToOrganizationExercise(e)}
                   onReportIssue={(e) => setReportExercise(e)}
                   canReviewExercises={canReviewExercises}
+                  isRoleLoading={isRoleLoading}
                   isInBuilder={isInBuilder(exercise.id)}
                   onToggleBuilder={handleToggleBuilder}
                 />
@@ -455,6 +456,7 @@ export default function ExercisesPage() {
                   onSubmitToOrganizationReview={(e) => setSubmitToOrganizationExercise(e)}
                   onReportIssue={(e) => setReportExercise(e)}
                   canReviewExercises={canReviewExercises}
+                  isRoleLoading={isRoleLoading}
                   isInBuilder={isInBuilder(exercise.id)}
                   onToggleBuilder={handleToggleBuilder}
                 />
