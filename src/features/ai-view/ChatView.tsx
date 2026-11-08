@@ -29,6 +29,7 @@ import { ChatComposer, type ChatComposerHandle } from './ChatComposer';
 import { useChatSession } from './ChatSessionContext';
 import { useChatShellControls } from './ChatShellControls';
 import { ChatSpecRenderer } from './catalog/ChatSpecRenderer';
+import { AiCreditsRequestControl } from '@/features/ai-credits/AiCreditsRequestControl';
 import { PatientContextPanel } from './PatientContextPanel';
 import { useChatShortcuts } from './useChatShortcuts';
 import { useDocumentAnalysis } from './useDocumentAnalysis';
@@ -112,7 +113,12 @@ const AssistantMessage = memo(function AssistantMessage({
       {(message.text || message.fallbackReason || message.creditsUsed > 0) && (
         <div className="-mt-1.5 flex min-h-7 items-center gap-1">
           {message.fallbackReason ? (
-            <p className="text-[12px] text-label-tertiary">{FALLBACK_NOTES[message.fallbackReason]}</p>
+            <>
+              <p className="text-[12px] text-label-tertiary">{FALLBACK_NOTES[message.fallbackReason]}</p>
+              {message.fallbackReason === 'insufficient_credits' && (
+                <AiCreditsRequestControl testIdPrefix={`common-chat-reply-${message.id}-credits`} showOwnerHint />
+              )}
+            </>
           ) : message.creditsUsed > 0 ? (
             <p className="text-[12px] tabular-nums text-label-tertiary">
               −{message.creditsUsed} {polishPlural(message.creditsUsed, 'kredyt', 'kredyty', 'kredytów')} AI

@@ -17,6 +17,12 @@ vi.mock('sonner', () => ({
   },
 }));
 
+const roleAccessMock = vi.hoisted(() => ({ canManageOrganization: false }));
+
+vi.mock('@/hooks/useRoleAccess', () => ({
+  useRoleAccess: () => roleAccessMock,
+}));
+
 import { toast } from 'sonner';
 
 describe('useExerciseImageGeneration', () => {
@@ -24,6 +30,28 @@ describe('useExerciseImageGeneration', () => {
     generateExerciseImageMock.mockReset();
     vi.mocked(toast.success).mockReset();
     vi.mocked(toast.error).mockReset();
+    roleAccessMock.canManageOrganization = false;
+  });
+
+  it.each([
+    [true, 'action'],
+    [false, 'description'],
+  ])('on exhausted credits (canManageOrganization=%s) offers %s instead of retry', async (canManage, key) => {
+    roleAccessMock.canManageOrganization = canManage;
+    generateExerciseImageMock.mockResolvedValue({
+      status: 'error',
+      code: 'insufficient_credits',
+      message: 'Pula się skończyła.',
+    });
+
+    const { result } = renderHook(() => useExerciseImageGeneration());
+    await act(async () => {
+      await result.current.generate({ exerciseName: 'Plank' });
+    });
+
+    const options = vi.mocked(toast.error).mock.calls[0][1] as Record<string, { label?: string } | string>;
+    expect(Object.keys(options)).toEqual([key]);
+    if (canManage) expect((options.action as { label: string }).label).toBe('Poproś o kredyty');
   });
 
   it('returns file on success and shows success toast', async () => {

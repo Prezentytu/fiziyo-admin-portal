@@ -34,6 +34,7 @@ const {
   editorSaveMock: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock('@/hooks/useRoleAccess', () => ({ useRoleAccess: () => ({ canManageOrganization: false }) }));
 vi.mock('next/image', () => ({
   default: ({ alt }: { alt?: string }) => <span>{alt ?? 'image'}</span>,
 }));

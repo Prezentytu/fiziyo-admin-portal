@@ -9,6 +9,7 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), refresh: vi.fn() }),
 }));
 
+vi.mock('@/hooks/useRoleAccess', () => ({ useRoleAccess: () => ({ canManageOrganization: false }) }));
 vi.mock('next/image', () => ({
   default: ({ src, alt }: { src: string; alt?: string }) => <img src={src} alt={alt ?? ''} />,
 }));

@@ -31,6 +31,7 @@ import {
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Logo } from '@/components/shared/Logo';
+import { AiCreditsNotice } from '@/features/ai-credits/AiCreditsNotice';
 import { NavCountBadge } from '@/components/layout/NavCountBadge';
 import { OrganizationSwitchMenuItems } from '@/components/layout/OrganizationSwitchMenuItems';
 import { verificationItem } from '@/components/layout/navigationConfig';
@@ -269,6 +270,13 @@ function SidebarBody({
           <div className="h-1 overflow-hidden rounded-full bg-fill-tertiary" aria-hidden="true">
             <div className="h-full rounded-full bg-tint-fill" style={{ width: `${creditsPercent}%` }} />
           </div>
+          <AiCreditsNotice
+            usage={{
+              monthlyLimit: credits.monthlyLimit,
+              monthlyUsed: credits.monthlyUsed,
+              totalRemaining: credits.remaining,
+            }}
+          />
         </div>
       )}
 
