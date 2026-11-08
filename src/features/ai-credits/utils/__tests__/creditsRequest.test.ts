@@ -1,0 +1,96 @@
+import { describe, expect, it } from 'vitest';
+
+import {
+  creditsLevel,
+  creditsRequestControl,
+  creditsRequestSchema,
+  recentRequests,
+  normalizeCreditRequests,
+} from '../creditsRequest';
+
+const usage = (totalRemaining: number, totalLimit = 100) => ({ totalLimit, totalRemaining });
+
+describe('creditsLevel', () => {
+  it('warns when 20% of the whole pool or less is left, like the sidebar bar', () => {
+    expect(creditsLevel(usage(21))).toBe('ok');
+    expect(creditsLevel(usage(20))).toBe('low');
+    expect(creditsLevel(usage(1))).toBe('low');
+  });
+
+  it('counts addon credits, so a full addon does not warn after the monthly pool runs out', () => {
+    expect(creditsLevel(usage(450, 500))).toBe('ok');
+  });
+
+  it('reports exhausted when nothing is left', () => {
+    expect(creditsLevel(usage(0))).toBe('exhausted');
+    expect(creditsLevel(usage(-3))).toBe('exhausted');
+  });
+
+  it('does not divide by a zero pool', () => {
+    expect(creditsLevel(usage(5, 0))).toBe('ok');
+  });
+});
+
+describe('normalizeCreditRequests', () => {
+  it('drops statuses the panel does not know', () => {
+    const base = {
+      requestedCredits: 100,
+      message: null,
+      createdAt: '2026-11-08T10:00:00Z',
+      resolvedAt: null,
+      grantedCredits: null,
+      resolutionNote: null,
+    };
+    const result = normalizeCreditRequests([
+      { ...base, id: 'a', status: 'pending' },
+      { ...base, id: 'b', status: 'cancelled' },
+    ]);
+    expect(result?.map((request) => request.id)).toEqual(['a']);
+    expect(normalizeCreditRequests(undefined)).toBeUndefined();
+  });
+});
+
+describe('creditsRequestControl', () => {
+  it('hides the control for roles that cannot request', () => {
+    expect(creditsRequestControl(false, [])).toBe('none');
+    expect(creditsRequestControl(false, [{ status: 'pending' }])).toBe('none');
+  });
+
+  it('offers the button until a request is pending', () => {
+    expect(creditsRequestControl(true, undefined)).toBe('request');
+    expect(creditsRequestControl(true, [{ status: 'approved' }, { status: 'rejected' }])).toBe('request');
+    expect(creditsRequestControl(true, [{ status: 'approved' }, { status: 'pending' }])).toBe('pending');
+  });
+});
+
+describe('recentRequests', () => {
+  it('returns newest first and at most five', () => {
+    const requests = Array.from({ length: 7 }, (_, index) => ({
+      id: `r${index}`,
+      requestedCredits: 100,
+      message: null,
+      status: 'approved' as const,
+      createdAt: `2026-0${index + 1}-01T00:00:00Z`,
+      resolvedAt: null,
+      grantedCredits: null,
+      resolutionNote: null,
+    }));
+    const result = recentRequests(requests);
+    expect(result).toHaveLength(5);
+    expect(result[0].id).toBe('r6');
+  });
+});
+
+describe('creditsRequestSchema', () => {
+  it('accepts 1..10000 whole numbers only', () => {
+    expect(creditsRequestSchema.safeParse({ requestedCredits: 500, message: '' }).success).toBe(true);
+    expect(creditsRequestSchema.safeParse({ requestedCredits: 10000, message: '' }).success).toBe(true);
+    expect(creditsRequestSchema.safeParse({ requestedCredits: 0, message: '' }).success).toBe(false);
+    expect(creditsRequestSchema.safeParse({ requestedCredits: 10001, message: '' }).success).toBe(false);
+    expect(creditsRequestSchema.safeParse({ requestedCredits: 1.5, message: '' }).success).toBe(false);
+  });
+
+  it('caps the note at 500 characters', () => {
+    expect(creditsRequestSchema.safeParse({ requestedCredits: 5, message: 'a'.repeat(501) }).success).toBe(false);
+  });
+});

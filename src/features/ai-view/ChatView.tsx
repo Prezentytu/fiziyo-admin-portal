@@ -29,6 +29,7 @@ import { ChatComposer, type ChatComposerHandle } from './ChatComposer';
 import { useChatSession } from './ChatSessionContext';
 import { useChatShellControls } from './ChatShellControls';
 import { ChatSpecRenderer } from './catalog/ChatSpecRenderer';
+import { AiCreditsRequestControl } from '@/features/ai-credits/AiCreditsRequestControl';
 import { PatientContextPanel } from './PatientContextPanel';
 import { useChatShortcuts } from './useChatShortcuts';
 import { useDocumentAnalysis } from './useDocumentAnalysis';
@@ -92,6 +93,8 @@ const AssistantMessage = memo(function AssistantMessage({
   readonly animate: boolean;
 }) {
   const [copied, copy] = useCopy();
+  const { credits } = useChatSession();
+  const creditsExhausted = !credits || credits.remaining <= 0;
   return (
     <div className="group/message flex min-w-0 flex-1 flex-col gap-3.5">
       {message.text && (
@@ -112,7 +115,13 @@ const AssistantMessage = memo(function AssistantMessage({
       {(message.text || message.fallbackReason || message.creditsUsed > 0) && (
         <div className="-mt-1.5 flex min-h-7 items-center gap-1">
           {message.fallbackReason ? (
-            <p className="text-[12px] text-label-tertiary">{FALLBACK_NOTES[message.fallbackReason]}</p>
+            <>
+              <p className="text-[12px] text-label-tertiary">{FALLBACK_NOTES[message.fallbackReason]}</p>
+              {/* Po doładowaniu stara odpowiedź nie namawia już do prośby. */}
+              {message.fallbackReason === 'insufficient_credits' && creditsExhausted && (
+                <AiCreditsRequestControl testIdPrefix={`common-chat-reply-${message.id}-credits`} showOwnerHint />
+              )}
+            </>
           ) : message.creditsUsed > 0 ? (
             <p className="text-[12px] tabular-nums text-label-tertiary">
               −{message.creditsUsed} {polishPlural(message.creditsUsed, 'kredyt', 'kredyty', 'kredytów')} AI

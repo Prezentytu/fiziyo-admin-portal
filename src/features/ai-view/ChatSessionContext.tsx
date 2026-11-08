@@ -28,6 +28,8 @@ import { selectInactivePatients } from './utils/inactivePatients';
 export interface AiCredits {
   remaining: number;
   limit: number;
+  monthlyLimit: number;
+  monthlyUsed: number;
 }
 
 interface CreateSetRequest {
@@ -187,13 +189,18 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
   const firstName = userData?.userByClerkId?.personalData?.firstName || user?.firstName || undefined;
 
   const { data: creditsData, refetch: refetchCreditsQuery } = useQuery<{
-    aiCreditsStatus?: { monthlyLimit: number; addonCredits: number; totalRemaining: number };
+    aiCreditsStatus?: { monthlyLimit: number; monthlyUsed: number; addonCredits: number; totalRemaining: number };
   }>(GET_AI_CREDITS_STATUS_QUERY, { variables: { organizationId }, skip: !organizationId, errorPolicy: 'all' });
   const creditsStatus = creditsData?.aiCreditsStatus;
   const credits = useMemo<AiCredits | undefined>(
     () =>
       creditsStatus
-        ? { remaining: creditsStatus.totalRemaining, limit: creditsStatus.monthlyLimit + creditsStatus.addonCredits }
+        ? {
+            remaining: creditsStatus.totalRemaining,
+            limit: creditsStatus.monthlyLimit + creditsStatus.addonCredits,
+            monthlyLimit: creditsStatus.monthlyLimit,
+            monthlyUsed: creditsStatus.monthlyUsed,
+          }
         : undefined,
     [creditsStatus]
   );

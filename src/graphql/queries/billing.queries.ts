@@ -65,3 +65,19 @@ export const GET_AI_CREDITS_STATUS_QUERY = gql`
     }
   }
 `;
+
+/** Prośby gabinetu o więcej kredytów AI (tylko Owner i Admin; inne role: `skip`). */
+export const GET_AI_CREDIT_REQUESTS_QUERY = gql`
+  query GetAICreditRequests($organizationId: String!) {
+    aiCreditRequests(organizationId: $organizationId) {
+      id
+      requestedCredits
+      message
+      status
+      createdAt
+      resolvedAt
+      grantedCredits
+      resolutionNote
+    }
+  }
+`;

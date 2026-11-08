@@ -5,6 +5,8 @@ import { toast } from 'sonner';
 import { aiService } from '@/services/aiService';
 import type { ExerciseImageErrorCode, ExerciseImagePhase, ImageStyle } from '@/types/ai.types';
 import { insufficientAiCreditsMessage } from '@/utils/aiErrorMessages';
+import { openCreditsRequestDialog } from '@/features/ai-credits/AiCreditsRequestControl';
+import { useRoleAccess } from '@/hooks/useRoleAccess';
 
 export interface GenerateExerciseImageParams {
   exerciseName: string;
@@ -52,6 +54,7 @@ export function useExerciseImageGeneration(options: UseExerciseImageGenerationOp
     showSuccessToast = true,
     successMessage = 'Obraz został wygenerowany',
   } = options;
+  const { canManageOrganization } = useRoleAccess();
   const [isGenerating, setIsGenerating] = useState(false);
   const [attemptCount, setAttemptCount] = useState(0);
   const [imageStyle, setImageStyle] = useState<ImageStyle>('illustration');
@@ -109,7 +112,13 @@ export function useExerciseImageGeneration(options: UseExerciseImageGenerationOp
           return null;
         }
 
-        if (showErrorToast) {
+        if (showErrorToast && result.code === 'insufficient_credits') {
+          toast.error(messageForError(result.code, result.message), {
+            ...(canManageOrganization
+              ? { action: { label: 'Poproś o kredyty', onClick: openCreditsRequestDialog } }
+              : { description: 'Poproś właściciela gabinetu o więcej kredytów AI.' }),
+          });
+        } else if (showErrorToast) {
           toast.error(messageForError(result.code, result.message), {
             action: {
               label: 'Spróbuj ponownie',
@@ -131,7 +140,7 @@ export function useExerciseImageGeneration(options: UseExerciseImageGenerationOp
         }
       }
     },
-    [imageStyle, showErrorToast, showSuccessToast, successMessage]
+    [canManageOrganization, imageStyle, showErrorToast, showSuccessToast, successMessage]
   );
 
   const cancel = useCallback(() => {

@@ -11,6 +11,7 @@ import { useSidebarState } from '@/hooks/useSidebarState';
 import { ChatShell } from '@/features/ai-view/ChatShell';
 import { TelemetryIdentity } from '@/components/telemetry/TelemetryIdentity';
 import { TelemetryConsentPrompt } from '@/components/telemetry/TelemetryConsentPrompt';
+import { AiCreditsRequestHost } from '@/features/ai-credits/AiCreditsRequestHost';
 import { useChatMode } from '@/features/ai-view/useChatMode';
 
 export default function DashboardLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -34,6 +35,7 @@ export default function DashboardLayout({ children }: Readonly<{ children: React
       <OrganizationProvider>
         <TelemetryIdentity />
         <TelemetryConsentPrompt />
+        <AiCreditsRequestHost />
         <ExerciseBuilderProvider>
           {preference.enabled ? (
             <ChatShell
