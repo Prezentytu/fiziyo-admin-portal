@@ -11,8 +11,11 @@ export interface AICreditRequest {
   resolutionNote: string | null;
 }
 
+/** Status w schemacie to `String!`: nowa wartość z backendu nie może przejść jako znana. */
+export type AICreditRequestPayload = Omit<AICreditRequest, 'status'> & { status: string };
+
 export interface GetAICreditRequestsResponse {
-  aiCreditRequests: AICreditRequest[];
+  aiCreditRequests: AICreditRequestPayload[];
 }
 
 export interface GetAICreditRequestsVariables {

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import type { AICreditRequest } from '@/graphql/types';
+import type { AICreditRequest, AICreditRequestPayload } from '@/graphql/types';
 
 export const LOW_CREDITS_THRESHOLD = 0.8;
 export const DEFAULT_REQUESTED_CREDITS = 500;
@@ -25,9 +25,13 @@ export function creditsLevel(usage: CreditsUsage): CreditsLevel {
   return 'ok';
 }
 
-export function usedPercent(usage: CreditsUsage): number {
-  if (usage.monthlyLimit <= 0) return 0;
-  return Math.min(100, Math.round((usage.monthlyUsed / usage.monthlyLimit) * 100));
+const KNOWN_STATUSES: readonly string[] = ['pending', 'approved', 'rejected'] satisfies AICreditRequest['status'][];
+
+/** Granica: prośby o statusie, którego panel nie zna, pomijamy zamiast pokazać pustą etykietę. */
+export function normalizeCreditRequests(
+  requests: readonly AICreditRequestPayload[] | undefined
+): AICreditRequest[] | undefined {
+  return requests?.filter((request): request is AICreditRequest => KNOWN_STATUSES.includes(request.status));
 }
 
 export type CreditsRequestControl = 'none' | 'request' | 'pending';

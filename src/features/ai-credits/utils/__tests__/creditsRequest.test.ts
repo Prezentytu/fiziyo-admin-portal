@@ -5,7 +5,7 @@ import {
   creditsRequestControl,
   creditsRequestSchema,
   recentRequests,
-  usedPercent,
+  normalizeCreditRequests,
 } from '../creditsRequest';
 
 const usage = (monthlyUsed: number, totalRemaining: number, monthlyLimit = 100) => ({
@@ -28,14 +28,25 @@ describe('creditsLevel', () => {
 
   it('does not divide by a zero pool', () => {
     expect(creditsLevel(usage(0, 50, 0))).toBe('ok');
-    expect(usedPercent(usage(0, 50, 0))).toBe(0);
   });
 });
 
-describe('usedPercent', () => {
-  it('rounds and caps at 100', () => {
-    expect(usedPercent(usage(83, 17))).toBe(83);
-    expect(usedPercent(usage(130, 0))).toBe(100);
+describe('normalizeCreditRequests', () => {
+  it('drops statuses the panel does not know', () => {
+    const base = {
+      requestedCredits: 100,
+      message: null,
+      createdAt: '2026-11-08T10:00:00Z',
+      resolvedAt: null,
+      grantedCredits: null,
+      resolutionNote: null,
+    };
+    const result = normalizeCreditRequests([
+      { ...base, id: 'a', status: 'pending' },
+      { ...base, id: 'b', status: 'cancelled' },
+    ]);
+    expect(result?.map((request) => request.id)).toEqual(['a']);
+    expect(normalizeCreditRequests(undefined)).toBeUndefined();
   });
 });
 

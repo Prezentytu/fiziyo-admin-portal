@@ -7,6 +7,8 @@ import { useRoleAccess } from '@/hooks/useRoleAccess';
 import { GET_AI_CREDIT_REQUESTS_QUERY } from '@/graphql/queries/billing.queries';
 import type { GetAICreditRequestsResponse, GetAICreditRequestsVariables } from '@/graphql/types';
 
+import { normalizeCreditRequests } from './utils/creditsRequest';
+
 /** Prośby o kredyty widzą tylko Owner i Admin; dla innych ról backend rzuca błąd, więc nie odpytujemy. */
 export function useAiCreditRequests() {
   const { currentOrganization } = useOrganization();
@@ -23,5 +25,10 @@ export function useAiCreditRequests() {
     }
   );
 
-  return { organizationId, canRequest: canManageOrganization, requests: data?.aiCreditRequests, loading };
+  return {
+    organizationId,
+    canRequest: canManageOrganization,
+    requests: normalizeCreditRequests(data?.aiCreditRequests),
+    loading,
+  };
 }
