@@ -10,18 +10,19 @@ export const RECENT_REQUESTS_LIMIT = 5;
 
 export const CREDITS_REQUEST_OPEN_EVENT = 'ai-credits-request-open';
 
+/** Ta sama pula co pasek w sidebarze: limit miesięczny plus addon. */
 export interface CreditsUsage {
-  monthlyLimit: number;
-  monthlyUsed: number;
+  totalLimit: number;
   totalRemaining: number;
 }
 
 export type CreditsLevel = 'ok' | 'low' | 'exhausted';
 
-/** Pula wyczerpana, gdy nic nie zostało; ostrzeżenie od 80% puli miesięcznej. */
+/** Pula wyczerpana, gdy nic nie zostało; ostrzeżenie, gdy zostało najwyżej 20% całej puli (jak pasek). */
 export function creditsLevel(usage: CreditsUsage): CreditsLevel {
   if (usage.totalRemaining <= 0) return 'exhausted';
-  if (usage.monthlyLimit > 0 && usage.monthlyUsed / usage.monthlyLimit >= LOW_CREDITS_THRESHOLD) return 'low';
+  if (usage.totalLimit > 0 && (usage.totalLimit - usage.totalRemaining) / usage.totalLimit >= LOW_CREDITS_THRESHOLD)
+    return 'low';
   return 'ok';
 }
 

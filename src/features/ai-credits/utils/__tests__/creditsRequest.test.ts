@@ -8,26 +8,26 @@ import {
   normalizeCreditRequests,
 } from '../creditsRequest';
 
-const usage = (monthlyUsed: number, totalRemaining: number, monthlyLimit = 100) => ({
-  monthlyLimit,
-  monthlyUsed,
-  totalRemaining,
-});
+const usage = (totalRemaining: number, totalLimit = 100) => ({ totalLimit, totalRemaining });
 
 describe('creditsLevel', () => {
-  it('warns from 80% of the monthly pool, not below', () => {
-    expect(creditsLevel(usage(79, 21))).toBe('ok');
-    expect(creditsLevel(usage(80, 20))).toBe('low');
-    expect(creditsLevel(usage(99, 1))).toBe('low');
+  it('warns when 20% of the whole pool or less is left, like the sidebar bar', () => {
+    expect(creditsLevel(usage(21))).toBe('ok');
+    expect(creditsLevel(usage(20))).toBe('low');
+    expect(creditsLevel(usage(1))).toBe('low');
+  });
+
+  it('counts addon credits, so a full addon does not warn after the monthly pool runs out', () => {
+    expect(creditsLevel(usage(450, 500))).toBe('ok');
   });
 
   it('reports exhausted when nothing is left', () => {
-    expect(creditsLevel(usage(100, 0))).toBe('exhausted');
-    expect(creditsLevel(usage(120, -3))).toBe('exhausted');
+    expect(creditsLevel(usage(0))).toBe('exhausted');
+    expect(creditsLevel(usage(-3))).toBe('exhausted');
   });
 
   it('does not divide by a zero pool', () => {
-    expect(creditsLevel(usage(0, 50, 0))).toBe('ok');
+    expect(creditsLevel(usage(5, 0))).toBe('ok');
   });
 });
 

@@ -270,13 +270,7 @@ function SidebarBody({
           <div className="h-1 overflow-hidden rounded-full bg-fill-tertiary" aria-hidden="true">
             <div className="h-full rounded-full bg-tint-fill" style={{ width: `${creditsPercent}%` }} />
           </div>
-          <AiCreditsNotice
-            usage={{
-              monthlyLimit: credits.monthlyLimit,
-              monthlyUsed: credits.monthlyUsed,
-              totalRemaining: credits.remaining,
-            }}
-          />
+          <AiCreditsNotice usage={{ totalLimit: credits.limit, totalRemaining: credits.remaining }} />
         </div>
       )}
 

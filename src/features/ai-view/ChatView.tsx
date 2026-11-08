@@ -93,6 +93,8 @@ const AssistantMessage = memo(function AssistantMessage({
   readonly animate: boolean;
 }) {
   const [copied, copy] = useCopy();
+  const { credits } = useChatSession();
+  const creditsExhausted = !credits || credits.remaining <= 0;
   return (
     <div className="group/message flex min-w-0 flex-1 flex-col gap-3.5">
       {message.text && (
@@ -115,7 +117,8 @@ const AssistantMessage = memo(function AssistantMessage({
           {message.fallbackReason ? (
             <>
               <p className="text-[12px] text-label-tertiary">{FALLBACK_NOTES[message.fallbackReason]}</p>
-              {message.fallbackReason === 'insufficient_credits' && (
+              {/* Po doładowaniu stara odpowiedź nie namawia już do prośby. */}
+              {message.fallbackReason === 'insufficient_credits' && creditsExhausted && (
                 <AiCreditsRequestControl testIdPrefix={`common-chat-reply-${message.id}-credits`} showOwnerHint />
               )}
             </>

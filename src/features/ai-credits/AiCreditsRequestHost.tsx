@@ -11,6 +11,12 @@ import { CREDITS_REQUEST_OPEN_EVENT } from './utils/creditsRequest';
 export function AiCreditsRequestHost() {
   const { canManageOrganization } = useRoleAccess();
   const [open, setOpen] = useState(false);
+  // Zmiana organizacji na rolę bez prawa prośby zamyka dialog, żeby nie otworzył się sam po powrocie.
+  const [allowed, setAllowed] = useState(canManageOrganization);
+  if (allowed !== canManageOrganization) {
+    setAllowed(canManageOrganization);
+    setOpen(false);
+  }
 
   useEffect(() => {
     const show = () => setOpen(true);
