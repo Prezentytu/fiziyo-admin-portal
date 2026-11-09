@@ -36,7 +36,7 @@ Użyj szablonu poniżej. Wypełnij wszystkie sekcje. Zacznij od frontmattera (`s
 
 ### 3a. Spec z issue `from-przemek` / `from-sync` / `feature`
 
-Przeczytaj issue i tylko wskazany fragment notatki (w chmurze masz wyłącznie treść issue — nie proś o transkrypt). Wynik to `draft` z sekcją **Pytania otwarte** i sekcją **Wpływ** (ile minut/kliknięć oszczędza fizjoterapeucie; czy podnosi regularność ćwiczeń pacjenta — miary z `.ai/VISION.md`). Budowa jest decyzją Adama — nie przechodź do implementacji w tym samym zleceniu.
+Przeczytaj issue i tylko wskazany fragment notatki (w chmurze masz wyłącznie treść issue — nie proś o transkrypt). Wynik to `draft` z sekcją **Pytania otwarte** i sekcją **Wpływ** (ile minut/kliknięć oszczędza fizjoterapeucie; czy podnosi regularność ćwiczeń pacjenta — miary z `.ai/VISION.md`) i polem **Pomiar**: zdarzenie panelu z planu telemetrii (`fizjo-app/docs/telemetry/tracking-plan.md`) i oczekiwany kierunek (np. mniej `assignment_wizard:abandon` na ostatnim kroku), albo „bez pomiaru” z powodem. Gdy żadne zdarzenie tego nie pokaże, nowe zdarzenie jest punktem zakresu albo pytaniem otwartym. Po tym polu ślad po merge poznaje, czy zmiana jest `używane` (zasada 70 w baza-wiedzy). Budowa jest decyzją Adama — nie przechodź do implementacji w tym samym zleceniu.
 
 ### 4. Zaktualizuj indeks
 
