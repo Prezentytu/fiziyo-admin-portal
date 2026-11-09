@@ -40,6 +40,14 @@ export function fromGqlStatus(status: AssignmentStatusGql): AssignmentStatus {
 }
 
 /**
+ * Przypisanie zdjęte przez terapeutę albo przez usunięcie pacjenta z gabinetu. Backend zostawia
+ * wiersz z historią treningów ("cancelled", legacy "inactive"), ale panel go nie pokazuje ani nie wznawia.
+ */
+export function isRemovedAssignment(status: string | null | undefined): boolean {
+  return status === 'cancelled' || status === 'inactive';
+}
+
+/**
  * Translates assignment status to Polish
  */
 export function translateAssignmentStatus(status: AssignmentStatus): string {

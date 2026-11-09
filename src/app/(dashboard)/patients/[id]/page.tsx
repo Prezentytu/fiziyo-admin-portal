@@ -61,6 +61,8 @@ import { ExtendSetDialog } from '@/features/patients/ExtendSetDialog';
 import { GeneratePDFDialog } from '@/features/exercise-sets/GeneratePDFDialog';
 import { PatientQRCodeDialog } from '@/features/patients/PatientQRCodeDialog';
 import { EditPatientDialog } from '@/features/patients/EditPatientDialog';
+import { isRemovedAssignment } from '@/utils/statusUtils';
+
 interface PatientDetailPageProps {
   readonly params: Promise<{ id: string }>;
 }
@@ -151,7 +153,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   });
 
   // Filter only exercise set assignments (not individual exercises)
-  const setAssignments = assignments.filter((a) => a.exerciseSetId);
+  const setAssignments = assignments.filter((a) => a.exerciseSetId && !isRemovedAssignment(a.status));
 
   const handleEditPlan = useCallback((assignment: PatientAssignment) => {
     setEditingPlanAssignment(assignment);

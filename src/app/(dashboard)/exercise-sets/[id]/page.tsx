@@ -26,7 +26,7 @@ import { toast } from 'sonner';
 import Link from 'next/link';
 
 import { cn } from '@/lib/utils';
-import { toGqlStatus } from '@/utils/statusUtils';
+import { isRemovedAssignment, toGqlStatus } from '@/utils/statusUtils';
 import { pluralize } from '@/utils/textUtils';
 import { resolveAssignmentDisplayStatus } from '@/features/patients/utils/assignmentDisplayStatus';
 import { Button } from '@/components/ui/button';
@@ -510,7 +510,9 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
 
   const isTemplate = isTemplateSet(exerciseSet);
   const exercises = exerciseSet?.exerciseMappings || [];
-  const assignments = isTemplate ? [] : exerciseSet?.patientAssignments || [];
+  const assignments = isTemplate
+    ? []
+    : (exerciseSet?.patientAssignments || []).filter((a) => !isRemovedAssignment(a.status));
 
   return (
     <PageSheet contentClassName="gap-6">
