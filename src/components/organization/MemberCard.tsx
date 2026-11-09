@@ -273,16 +273,6 @@ export function MemberCard({
                           Ustaw jako Fizjoterapeuta
                         </DropdownMenuItem>
                       )}
-                      {role !== 'member' && (
-                        <DropdownMenuItem
-                          onClick={() => initiateRoleChange('member')}
-                          className="rounded-lg"
-                          data-testid={`org-member-set-member-${member.id}`}
-                        >
-                          <User className="mr-2 h-4 w-4" />
-                          Ustaw jako Członek
-                        </DropdownMenuItem>
-                      )}
                       <DropdownMenuSeparator className="bg-border/50" />
                     </>
                   )}

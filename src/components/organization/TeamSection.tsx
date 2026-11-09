@@ -31,7 +31,7 @@ const roleConfig = {
   owner: { label: 'Właściciel', icon: Crown, color: 'text-status-warning', priority: 0 },
   admin: { label: 'Administratorzy', icon: ShieldCheck, color: 'text-status-info', priority: 1 },
   therapist: { label: 'Fizjoterapeuci', icon: User, color: 'text-primary', priority: 2 },
-  member: { label: 'Członkowie', icon: User, color: 'text-muted-foreground', priority: 3 },
+  staff: { label: 'Personel', icon: User, color: 'text-muted-foreground', priority: 3 },
 };
 
 export function TeamSection({
@@ -70,7 +70,7 @@ export function TeamSection({
       owner: [],
       admin: [],
       therapist: [],
-      member: [],
+      staff: [],
     };
 
     filteredMembers.forEach((m) => {
@@ -209,7 +209,7 @@ export function TeamSection({
           />
         ) : (
           <div className="space-y-6">
-            {(['owner', 'admin', 'therapist', 'member'] as const).map((role) => {
+            {(['owner', 'admin', 'therapist', 'staff'] as const).map((role) => {
               const roleMembers = groupedMembers[role];
               if (roleMembers.length === 0) return null;
 

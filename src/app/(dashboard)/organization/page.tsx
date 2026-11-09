@@ -46,7 +46,7 @@ interface ClinicFromQuery {
 }
 
 // Filter out patients - only show staff members
-const STAFF_ROLES = new Set(['owner', 'admin', 'therapist', 'member']);
+const STAFF_ROLES = new Set(['owner', 'admin', 'therapist', 'staff']);
 
 export default function OrganizationPage() {
   const { user } = useUser();

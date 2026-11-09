@@ -55,7 +55,6 @@ const roleLabels: Record<string, string> = {
   OWNER: 'Właściciel',
   ADMIN: 'Administrator',
   THERAPIST: 'Fizjoterapeuta',
-  MEMBER: 'Członek',
   STAFF: 'Personel',
 };
 
