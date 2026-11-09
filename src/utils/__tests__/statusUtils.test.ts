@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { fromGqlStatus, getStatusColorClass, toGqlStatus, translateAssignmentStatus, type AssignmentStatus } from '../statusUtils';
+import { fromGqlStatus, getStatusColorClass, isRemovedAssignment, toGqlStatus, translateAssignmentStatus, type AssignmentStatus } from '../statusUtils';
 
 describe('statusUtils GraphQL mappings', () => {
   const statuses: AssignmentStatus[] = ['assigned', 'active', 'paused', 'completed', 'cancelled', 'in_progress', 'expired'];
@@ -43,5 +43,15 @@ describe('statusUtils translations and badge classes', () => {
     expect(translateAssignmentStatus('expired')).toBe('Wygasł');
     expect(getStatusColorClass('expired')).toContain('bg-status-danger-muted');
     expect(getStatusColorClass('completed')).toContain('text-label-secondary');
+  });
+});
+
+describe('isRemovedAssignment', () => {
+  it('hides only assignments removed by the therapist or with the patient', () => {
+    expect(isRemovedAssignment('cancelled')).toBe(true);
+    expect(isRemovedAssignment('inactive')).toBe(true);
+    for (const status of ['assigned', 'active', 'paused', 'completed', 'in_progress', 'expired', undefined, null]) {
+      expect(isRemovedAssignment(status)).toBe(false);
+    }
   });
 });
