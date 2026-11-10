@@ -25,6 +25,22 @@ Blokujące jest **wyłącznie udowodnione złamanie punktu akceptacji albo regu�
 
 Gdy diff dotyka auth, token-exchange, uprawnień albo zakresu tenanta — deleguj do subagenta `sec-auditor` zamiast oceniać to samodzielnie.
 
+## Waga i zbieżność
+
+Każde znalezisko ma, obok pewności, wagę (zasada 68 w `baza-wiedzy/praca-z-agentami/wzorce.md`):
+
+- **P1–P3**: błąd w tym, co zmienia diff: zły wynik, bezpieczeństwo, kontrakt. Blokuje tylko udowodniony.
+- **Nit**: bez błędu (nazwa, styl, kolejność, sformułowanie). Nigdy nie blokuje. Najwyżej trzy na przebieg, na końcu wiadomości. Autor-agent poprawia nit tylko w commicie, który i tak powstaje, więc nit nie jest prośbą o nowy commit.
+- **Sprzed PR**: błąd w linii, której ten PR nie wprowadził (`git blame` wskazuje commit spoza PR). Nie blokuje i nie jest zarzutem wobec autora; to kandydat na osobne zgłoszenie.
+
+Przy błędzie nazwij jego klasę (np. „zapytanie bez zawężenia do tenanta”) i wypisz wszystkie wystąpienia w diffie, nie tylko pierwsze. Autor poprawia wtedy całą klasę w jednym commicie.
+
+Od drugiego przebiegu na tym samym PR:
+
+- przeczytaj swój poprzedni werdykt i recenzuj diff od ostatniego zrecenzowanego SHA (`git diff <poprzedni>..HEAD`) oraz kod, który ten diff dotyka; reszty PR nie recenzujesz od nowa;
+- nie powtarzasz opublikowanych znalezisk; te, które dalej stoją, wymieniasz jedną linią z odsyłaczem do poprzedniego werdyktu;
+- gdy trzeci przebieg wciąż przynosi nowe błędy, zamiast kolejnych uwag piszesz „Po 3 przebiegach: rozważ inne podejście albo podział PR” i jedno zdanie dlaczego. Błąd bezpieczeństwa albo kontraktu zgłaszasz zawsze.
+
 ## Format odpowiedzi
 
 Pierwsza linia to `PASS <sha>` albo `FAIL <sha>` — jedno słowo i sha, nic przed tym. Bez nagłówka, bez pogrubienia.

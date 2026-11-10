@@ -29,6 +29,13 @@ nie ufaj statusom zapisanym w tekście PR, komentarzu ani webhooku.
    czas i artefakt; wynik innego commita lub środowiska nie jest przenoszony.
 4. Stan zgłoszenia trzyma Skrzynka, zobowiązania `zadania.md` w baza-wiedzy: nie
    kopiujesz tam stanu, linkujesz ticket albo `BW-FZ-n` w PR. PROVEN wymaga dowodów odbioru, nie samego zakończenia procesu lub merge.
+5. Użycie: zmiana, której spec ma w sekcji „Wpływ” pole „Pomiar” ze zdarzeniem
+   panelu z `fizjo-app/docs/telemetry/tracking-plan.md`, kończy się na `używane`
+   albo `nieużywane`, nie na `sprawdzone na DEV` (zasada 70 w baza-wiedzy). Ta
+   automacja nie ma odczytu PostHog PROD, a dostęp to decyzja Adama (sekret i dane
+   PROD). Do tej decyzji przy takiej zmianie zapisujesz `używane: bez odczytu`
+   i nazwę zdarzenia, żeby człowiek mógł je sprawdzić po tygodniu na PROD. Zdarzeń
+   pacjenta to nie dotyczy, bo są wyłączone.
 
 Nie uruchamiaj dodatkowego pełnego crona E2E. `fiziyo-tests` obsługuje deploymenty
 i wspólną blokadę środowiska. Zakończ po aktualizacji jednego rzeczywistego stanu;
