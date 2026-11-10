@@ -61,11 +61,22 @@ function pickMappingOverrideKeys(source: Record<string, unknown>): MappingOverri
       if (enrichment) result.enrichment = enrichment;
       continue;
     }
+    if (isMappingPlaceholder(key, value)) continue;
     if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
       (result as Record<string, unknown>)[key] = value;
     }
   }
   return result;
+}
+
+/**
+ * Plany z szablonu mają zapisane '' i 'UNKNOWN' w każdej pozycji (zgłoszenie YTn5Dsmm); to brak nadpisania,
+ * tak jak w aplikacji. 'none' w stronie zostaje, bo to świadomy wybór „Razem”. resistance/equipment bez zmian.
+ */
+function isMappingPlaceholder(key: MappingOverridesJsonKey, value: unknown): boolean {
+  if (typeof value !== 'string' || key === 'resistance' || key === 'equipment') return false;
+  const trimmed = value.trim();
+  return trimmed.length === 0 || (key === 'difficultyLevel' && trimmed.toUpperCase() === 'UNKNOWN');
 }
 
 /**

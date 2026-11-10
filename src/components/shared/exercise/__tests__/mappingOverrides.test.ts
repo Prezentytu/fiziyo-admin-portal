@@ -18,6 +18,21 @@ describe('mappingOverrides', () => {
     expect(parsed).toEqual({ exerciseSide: 'left', rangeOfMotion: '90' });
   });
 
+  it('parseMappingOverridesJson pomija puste wartości zastępcze z planów z szablonu', () => {
+    const parsed = parseMappingOverridesJson(
+      JSON.stringify({
+        audioCue: '',
+        exerciseSide: '',
+        rangeOfMotion: '',
+        difficultyLevel: 'UNKNOWN',
+        patientDescription: '',
+        clinicalDescription: ' ',
+      })
+    );
+    expect(parsed).toEqual({});
+    expect(parseMappingOverridesJson(JSON.stringify({ exerciseSide: 'none' }))).toEqual({ exerciseSide: 'none' });
+  });
+
   it('buildMappingOverridesJson zwraca null gdy brak delty vs szablon', () => {
     expect(
       buildMappingOverridesJson(

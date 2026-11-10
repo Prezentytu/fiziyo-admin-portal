@@ -38,15 +38,16 @@ export function buildMappingOverridesFromParams(
       clinicalDescription: template?.clinicalDescription ?? undefined,
       audioCue: template?.audioCue ?? undefined,
     },
+    // Pole bez wartości w params nie jest ruszone; inaczej buildOverrideDelta zapisze je jako wyczyszczone.
     {
-      side: params.exerciseSide,
-      rangeOfMotion: params.rangeOfMotion,
+      ...(params.exerciseSide !== undefined ? { side: params.exerciseSide } : {}),
+      ...(params.rangeOfMotion !== undefined ? { rangeOfMotion: params.rangeOfMotion } : {}),
       ...(params.resistance !== undefined ? { resistance: params.resistance } : {}),
       ...(params.equipment !== undefined ? { equipment: params.equipment } : {}),
-      difficultyLevel: params.difficultyLevel,
-      patientDescription: params.patientDescription,
-      clinicalDescription: params.clinicalDescription,
-      audioCue: params.audioCue,
+      ...(params.difficultyLevel !== undefined ? { difficultyLevel: params.difficultyLevel } : {}),
+      ...(params.patientDescription !== undefined ? { patientDescription: params.patientDescription } : {}),
+      ...(params.clinicalDescription !== undefined ? { clinicalDescription: params.clinicalDescription } : {}),
+      ...(params.audioCue !== undefined ? { audioCue: params.audioCue } : {}),
     },
     enrichmentDelta
   );
