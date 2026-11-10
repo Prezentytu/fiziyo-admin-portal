@@ -9,7 +9,8 @@ import { ExerciseThumbnail } from './ExerciseThumbnail';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { cn } from '@/lib/utils';
 import { polishPlural } from '@/utils/polishPlural';
-import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
+import { formatExerciseDuration } from '@/utils/exerciseTime';
+import { calculateCardTotalSeconds } from './adapters';
 import {
   type ExerciseExecutionCardProps,
   type EditableField,
@@ -166,7 +167,7 @@ export function ExerciseExecutionCard({
   const canUseInternalPreview = !onPreview;
   const totalDuration = useMemo(
     () =>
-      calculateExerciseTotalSeconds({
+      calculateCardTotalSeconds({
         sets: exercise.sets,
         reps: exercise.reps,
         duration: exercise.duration,
@@ -176,7 +177,7 @@ export function ExerciseExecutionCard({
         preparationTime: exercise.preparationTime,
         tempo: exercise.tempo,
         side: exercise.side,
-        type: exercise.isTimeBased ? 'time' : 'reps',
+        isTimeBased: exercise.isTimeBased,
       }),
     [
       exercise.isTimeBased,

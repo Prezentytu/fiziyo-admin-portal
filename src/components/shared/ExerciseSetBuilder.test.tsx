@@ -245,3 +245,35 @@ describe('ExerciseSetBuilder chosen exercise content', () => {
     });
   });
 });
+
+describe('ExerciseSetBuilder total duration', () => {
+  it('liczy czas zestawu z tych samych parametrów co karta ćwiczenia', () => {
+    // Parametry z mappingu szablonu nie niosą executionTime; karta bierze go z ćwiczenia i nagłówek też musi.
+    const exercise = {
+      id: 'exercise-1',
+      name: 'Przysiad',
+      type: 'REPS',
+      defaultSets: 3,
+      defaultReps: 1,
+      defaultExecutionTime: 90,
+      defaultRestBetweenSets: 60,
+      preparationTime: 10,
+      tempo: '3010',
+      side: 'NONE',
+    };
+
+    render(
+      <ExerciseSetBuilder
+        {...createProps({
+          availableExercises: [exercise],
+          selectedInstances: [{ instanceId: 'instance-1', exerciseId: exercise.id }],
+          exerciseParams: new Map([
+            ['instance-1', { sets: 3, reps: 9, restSets: 60, preparationTime: 10, tempo: '3010', exerciseSide: 'NONE' }],
+          ]),
+        })}
+      />
+    );
+
+    expect(screen.getByTestId('set-builder-total-duration')).toHaveTextContent('42 min 40 s');
+  });
+});

@@ -42,13 +42,14 @@ import { getMediaUrl } from '@/utils/mediaUrl';
 import {
   ExerciseExecutionCard,
   ExerciseThumbnail,
+  calculateCardTotalSeconds,
   fromBuilderExercise,
   HIDE_EXERCISE_TAGS,
 } from '@/components/shared/exercise';
 import type { ExerciseExecutionCardData } from '@/components/shared/exercise';
 import { ColorBadge } from '@/components/shared/ColorBadge';
 import { filterExercisesBySource, countBySource } from '@/utils/exerciseSourceFilter';
-import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
+import { formatExerciseDuration } from '@/utils/exerciseTime';
 import { buildExerciseLoadParamFields } from '@/utils/exerciseLoadMutation';
 import type { ExerciseSourceFilter } from '@/utils/exerciseSourceFilter';
 import { cn } from '@/lib/utils';
@@ -677,25 +678,14 @@ export function ExerciseSetBuilder({
       .filter((item): item is { instanceId: string; exerciseId: string; exercise: BuilderExercise } => item !== null);
   }, [availableExercises, selectedInstances]);
 
-  // Set duration based on the same algorithm as exercise cards.
+  // Sum of the cards' own durations, so the header never disagrees with a card.
   const totalSetDuration = useMemo(() => {
     let totalSeconds = 0;
     let isEstimate = false;
 
     for (const { instanceId, exercise } of selectedInstancesData) {
       const params = exerciseParams.get(instanceId) || getDefaultParams(exercise);
-      const duration = calculateExerciseTotalSeconds({
-        sets: params.sets ?? 3,
-        reps: params.reps ?? 10,
-        duration: params.duration,
-        executionTime: params.executionTime,
-        restSets: params.restSets,
-        restReps: params.restReps,
-        preparationTime: params.preparationTime,
-        tempo: params.tempo,
-        side: params.exerciseSide ?? exercise.side ?? exercise.exerciseSide,
-        type: exercise.type,
-      });
+      const duration = calculateCardTotalSeconds(fromBuilderExercise(exercise, params));
 
       totalSeconds += duration.seconds;
       isEstimate = isEstimate || duration.isEstimate;
@@ -922,7 +912,10 @@ export function ExerciseSetBuilder({
 
               {/* Hero Duration Badge */}
               {totalSetDuration.seconds > 0 && (
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/10 border border-primary/20 shrink-0">
+                <div
+                  data-testid={`${testIdPrefix}-total-duration`}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/10 border border-primary/20 shrink-0"
+                >
                   <Timer className="h-3.5 w-3.5 text-primary" />
                   <span className="text-sm font-bold text-primary">
                     {formatExerciseDuration(totalSetDuration.seconds, totalSetDuration.isEstimate)}
