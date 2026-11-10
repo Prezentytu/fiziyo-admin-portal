@@ -27,8 +27,8 @@ const roleLabels: Record<string, string> = {
   admin: 'Admin',
   THERAPIST: 'Fizjo',
   therapist: 'Fizjo',
-  MEMBER: 'Członek',
-  member: 'Członek',
+  STAFF: 'Personel',
+  staff: 'Personel',
 };
 
 // ========================================

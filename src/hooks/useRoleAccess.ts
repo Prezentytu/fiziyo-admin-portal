@@ -8,7 +8,7 @@ import { canImportCatalog } from '@/lib/organization/catalogImportAccess';
 // Types
 // ========================================
 
-export type OrganizationRole = 'owner' | 'admin' | 'therapist' | 'member' | 'staff';
+export type OrganizationRole = 'owner' | 'admin' | 'therapist' | 'staff';
 
 export interface RoleAccessResult {
   /** Current user's role in the organization (lowercase) */

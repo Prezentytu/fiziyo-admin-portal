@@ -31,7 +31,6 @@ const roleLabels: Record<string, string> = {
   OWNER: 'Właściciel',
   ADMIN: 'Administrator',
   THERAPIST: 'Fizjoterapeuta',
-  MEMBER: 'Członek',
   STAFF: 'Personel',
 };
 
@@ -39,7 +38,6 @@ const roleIcons: Record<string, React.ReactNode> = {
   OWNER: <ShieldCheck className="h-3 w-3" />,
   ADMIN: <Shield className="h-3 w-3" />,
   THERAPIST: <User className="h-3 w-3" />,
-  MEMBER: <User className="h-3 w-3" />,
   STAFF: <User className="h-3 w-3" />,
 };
 
@@ -149,7 +147,7 @@ export function OrganizationsList({
             {organizations.map((org) => {
               const isDefault = org.organizationId === defaultOrganizationId;
               const isActive = org.organizationId === currentOrganization?.organizationId;
-              const roleKey = org.role?.toUpperCase() || 'MEMBER';
+              const roleKey = org.role?.toUpperCase() || 'STAFF';
 
               return (
                 <button

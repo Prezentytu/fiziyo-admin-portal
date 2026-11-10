@@ -4,7 +4,7 @@
 
 export type RoleFilter = 'all' | 'admin' | 'therapist';
 
-const STAFF_ROLES = new Set(['owner', 'admin', 'therapist', 'member']);
+const STAFF_ROLES = new Set(['owner', 'admin', 'therapist', 'staff']);
 
 export function isStaffRole(role: string): boolean {
   return STAFF_ROLES.has(role.toLowerCase());

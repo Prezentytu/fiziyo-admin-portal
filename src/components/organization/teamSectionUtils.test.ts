@@ -3,11 +3,12 @@ import { isStaffRole, passesRoleFilter, type RoleFilter } from './teamSectionUti
 
 describe('teamSectionUtils', () => {
   describe('isStaffRole', () => {
-    it('returns true for owner, admin, therapist, member', () => {
+    it('returns true for owner, admin, therapist, staff', () => {
       expect(isStaffRole('owner')).toBe(true);
       expect(isStaffRole('admin')).toBe(true);
       expect(isStaffRole('therapist')).toBe(true);
-      expect(isStaffRole('member')).toBe(true);
+      expect(isStaffRole('staff')).toBe(true);
+      expect(isStaffRole('member')).toBe(false);
     });
 
     it('returns true for role in any case', () => {
@@ -29,7 +30,7 @@ describe('teamSectionUtils', () => {
       expect(passesRoleFilter('owner', filter)).toBe(true);
       expect(passesRoleFilter('admin', filter)).toBe(true);
       expect(passesRoleFilter('therapist', filter)).toBe(true);
-      expect(passesRoleFilter('member', filter)).toBe(true);
+      expect(passesRoleFilter('staff', filter)).toBe(true);
     });
 
     it('for filter "admin" passes only owner and admin', () => {
@@ -37,7 +38,7 @@ describe('teamSectionUtils', () => {
       expect(passesRoleFilter('owner', filter)).toBe(true);
       expect(passesRoleFilter('admin', filter)).toBe(true);
       expect(passesRoleFilter('therapist', filter)).toBe(false);
-      expect(passesRoleFilter('member', filter)).toBe(false);
+      expect(passesRoleFilter('staff', filter)).toBe(false);
     });
 
     it('for filter "therapist" passes therapist and owner', () => {
@@ -45,7 +46,7 @@ describe('teamSectionUtils', () => {
       expect(passesRoleFilter('therapist', filter)).toBe(true);
       expect(passesRoleFilter('owner', filter)).toBe(true);
       expect(passesRoleFilter('admin', filter)).toBe(false);
-      expect(passesRoleFilter('member', filter)).toBe(false);
+      expect(passesRoleFilter('staff', filter)).toBe(false);
     });
 
     it('treats role case-insensitively', () => {

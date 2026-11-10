@@ -261,7 +261,6 @@ function getRoleLabel(role: string): string {
     admin: 'Administrator',
     THERAPIST: 'Fizjoterapeuta',
     therapist: 'Fizjoterapeuta',
-    MEMBER: 'Członek',
     member: 'Członek',
     STAFF: 'Personel',
     staff: 'Personel',
