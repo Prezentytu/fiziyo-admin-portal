@@ -606,15 +606,30 @@ export function ExerciseExecutionCard({
                 <TooltipProvider delayDuration={200}>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <p
-                        className={cn(
-                          'font-medium text-sm text-foreground',
-                          showReadableView ? 'leading-snug whitespace-normal wrap-break-word' : 'truncate'
-                        )}
-                        data-testid={`${testId}-name`}
-                      >
-                        {exercise.displayName}
-                      </p>
+                      {/* Nazwa otwiera podgląd tylko z onPreview; bez niego klik w wiersz obsługuje rodzic (np. SelectSetStep). */}
+                      {onPreview ? (
+                        <button
+                          type="button"
+                          onClick={onPreview}
+                          className={cn(
+                            'block w-full cursor-pointer rounded-sm text-left font-medium text-sm text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                            showReadableView ? 'leading-snug whitespace-normal wrap-break-word' : 'truncate'
+                          )}
+                          data-testid={`${testId}-name`}
+                        >
+                          {exercise.displayName}
+                        </button>
+                      ) : (
+                        <p
+                          className={cn(
+                            'font-medium text-sm text-foreground',
+                            showReadableView ? 'leading-snug whitespace-normal wrap-break-word' : 'truncate'
+                          )}
+                          data-testid={`${testId}-name`}
+                        >
+                          {exercise.displayName}
+                        </p>
+                      )}
                     </TooltipTrigger>
                     {!showReadableView && (
                       <TooltipContent side="top" className="text-xs max-w-[300px] wrap-break-word">

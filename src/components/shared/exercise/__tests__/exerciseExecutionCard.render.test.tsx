@@ -87,10 +87,31 @@ describe('ExerciseExecutionCard inline read-only source info', () => {
       />
     );
 
+    // Bez onPreview klik w nazwę zostaje dla rodzica (SelectSetStep otwiera wtedy szczegóły).
+    expect(screen.queryByRole('button', { name: 'Przysiad' })).toBeNull();
     await user.click(screen.getByTestId('exercise-card-exercise-preview-1-thumbnail-btn'));
 
     expect(screen.getByTestId('exercise-preview-dialog')).toBeInTheDocument();
     expect(screen.getByTestId('exercise-preview-title')).toHaveTextContent('Przysiad');
+  });
+
+  it('nazwa w podglądzie planu otwiera ten sam podgląd co miniatura', async () => {
+    const user = userEvent.setup();
+    const onPreview = vi.fn();
+
+    render(
+      <ExerciseExecutionCard
+        mode="view"
+        viewVariant="readable"
+        testIdPrefix="exercise-card"
+        onPreview={onPreview}
+        exercise={{ id: 'exercise-preview-2', displayName: 'Most biodrowy', sets: 3, reps: 10 }}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Most biodrowy' }));
+
+    expect(onPreview).toHaveBeenCalledTimes(1);
   });
 
   it('pozwala wyczyścić czas powtórzenia i emituje undefined', async () => {
