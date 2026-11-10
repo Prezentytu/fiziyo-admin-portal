@@ -31,6 +31,7 @@ import {
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Logo } from '@/components/shared/Logo';
+import { AiCreditsDetailsPopover } from '@/features/ai-credits/AiCreditsDetailsPopover';
 import { AiCreditsNotice } from '@/features/ai-credits/AiCreditsNotice';
 import { NavCountBadge } from '@/components/layout/NavCountBadge';
 import { OrganizationSwitchMenuItems } from '@/components/layout/OrganizationSwitchMenuItems';
@@ -261,15 +262,17 @@ function SidebarBody({
           className="mx-1 mb-1 flex flex-col gap-1.5 rounded-[12px] bg-fill-quaternary px-3 py-2.5"
           data-testid="nav-chat-credits"
         >
-          <div className="flex items-center justify-between text-[12px]">
-            <span className="text-label-secondary">Kredyty AI</span>
-            <b className="font-semibold tabular-nums text-foreground">
-              {credits.remaining} / {credits.limit}
-            </b>
-          </div>
-          <div className="h-1 overflow-hidden rounded-full bg-fill-tertiary" aria-hidden="true">
-            <div className="h-full rounded-full bg-tint-fill" style={{ width: `${creditsPercent}%` }} />
-          </div>
+          <AiCreditsDetailsPopover className="-mx-1 flex cursor-pointer flex-col gap-1.5 rounded-[8px] px-1 py-0.5 text-left hover:bg-fill-tertiary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <span className="flex items-center justify-between text-[12px]">
+              <span className="text-label-secondary">Kredyty AI</span>
+              <b className="font-semibold tabular-nums text-foreground">
+                {credits.remaining} / {credits.limit}
+              </b>
+            </span>
+            <span className="block h-1 overflow-hidden rounded-full bg-fill-tertiary" aria-hidden="true">
+              <span className="block h-full rounded-full bg-tint-fill" style={{ width: `${creditsPercent}%` }} />
+            </span>
+          </AiCreditsDetailsPopover>
           <AiCreditsNotice usage={{ totalLimit: credits.limit, totalRemaining: credits.remaining }} />
         </div>
       )}
