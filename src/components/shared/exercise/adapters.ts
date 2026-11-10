@@ -9,6 +9,40 @@ import { toV3 } from '@/features/verification/utils/enrichmentToV3';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import { resolveLoadKg } from '@/utils/exerciseLoadMutation';
 import { getMediaUrl, getMediaUrls } from '@/utils/mediaUrl';
+import { calculateExerciseTotalSeconds } from '@/utils/exerciseTime';
+
+type CardDurationInput = Pick<
+  ExerciseExecutionCardData,
+  | 'sets'
+  | 'reps'
+  | 'duration'
+  | 'executionTime'
+  | 'restSets'
+  | 'restReps'
+  | 'preparationTime'
+  | 'tempo'
+  | 'side'
+  | 'isTimeBased'
+>;
+
+/**
+ * Exercise time as the card shows it. The set total sums exactly this, so the header and every card
+ * read the same params, including template fallbacks the builder params do not carry (executionTime).
+ */
+export function calculateCardTotalSeconds(card: CardDurationInput): { seconds: number; isEstimate: boolean } {
+  return calculateExerciseTotalSeconds({
+    sets: card.sets,
+    reps: card.reps,
+    duration: card.duration,
+    executionTime: card.executionTime,
+    restSets: card.restSets,
+    restReps: card.restReps,
+    preparationTime: card.preparationTime,
+    tempo: card.tempo,
+    side: card.side,
+    type: card.isTimeBased ? 'time' : 'reps',
+  });
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;

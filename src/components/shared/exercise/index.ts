@@ -18,7 +18,7 @@ export type {
   EditableField,
 } from './types';
 export { isTimerExercise, isFieldEditable } from './types';
-export { fromExerciseMapping, fromBuilderExercise, buildExerciseImageUrls } from './adapters';
+export { fromExerciseMapping, fromBuilderExercise, buildExerciseImageUrls, calculateCardTotalSeconds } from './adapters';
 export {
   EXERCISE_OVERRIDE_CONTENT_KEYS,
   hasExerciseOverrideContent,
