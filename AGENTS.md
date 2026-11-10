@@ -60,7 +60,7 @@ Najczęstszy defekt: zmiana działa w widoku, który sprawdziłeś, a brakuje je
 ## PR i commity
 
 - Conventional commits, temat małymi literami, scope z `commitlint.config.ts`: `fix(exercises): czas ćwiczenia obustronnego z przygotowaniem przed prawą stroną`.
-- Opis według `.github/PULL_REQUEST_TEMPLATE.md`, z sekcją wpływu na E2E. Zmiana UI: zrzut przed i po z kont testowych.
+- Opis według `.github/PULL_REQUEST_TEMPLATE.md`, także przy `--body`. Zmiana UI: zrzut przed i po z kont testowych.
 - Małe, atomowe commity. Nie commituj, nie pushuj, nie twórz PR i nie wdrażaj bez upoważnienia; uruchomienie runu nie jest zgodą. Merguje człowiek.
 
 ## Dokumentacja i lekcje
