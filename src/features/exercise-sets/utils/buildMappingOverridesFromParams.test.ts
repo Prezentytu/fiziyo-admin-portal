@@ -15,6 +15,18 @@ describe('buildMappingOverridesFromParams', () => {
     expect(JSON.parse(json ?? '{}')).toEqual({ exerciseSide: 'none' });
   });
 
+  it('writes nothing for fields the builder params never carried', () => {
+    const template = {
+      side: 'both', exerciseSide: 'both', rangeOfMotion: 'Pełny', difficultyLevel: 'MEDIUM',
+      patientDescription: 'Stań na dysku.', clinicalDescription: 'Propriocepcja.', audioCue: 'Trzymaj biodra.',
+    };
+
+    expect(buildMappingOverridesFromParams(template, {})).toBeNull();
+    expect(JSON.parse(buildMappingOverridesFromParams(template, { rangeOfMotion: '0-90' }) ?? '{}')).toEqual({
+      rangeOfMotion: '0-90',
+    });
+  });
+
   it('returns null when builder keeps catalog Both', () => {
     expect(
       buildMappingOverridesFromParams(
