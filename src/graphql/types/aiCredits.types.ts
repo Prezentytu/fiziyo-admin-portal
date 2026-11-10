@@ -35,3 +35,38 @@ export interface RequestAICreditsVariables {
   requestedCredits: number;
   message?: string;
 }
+
+export interface AICreditsStatus {
+  monthlyLimit: number;
+  monthlyUsed: number;
+  monthlyRemaining: number;
+  addonCredits: number;
+  totalRemaining: number;
+  resetDate: string;
+}
+
+export interface GetAICreditsStatusResponse {
+  aiCreditsStatus: AICreditsStatus;
+}
+
+export interface GetAICreditsStatusVariables {
+  organizationId: string;
+}
+
+/** `kind` i `actionType` w schemacie to `String!`; znaczenie nadaje `summarizeCreditsUsage`. */
+export interface AICreditsLogEntry {
+  id: string;
+  kind: string;
+  creditsUsed: number;
+  actionType: string;
+  createdAt: string;
+}
+
+export interface GetAICreditsHistoryResponse {
+  aiCreditsHistory: AICreditsLogEntry[];
+}
+
+export interface GetAICreditsHistoryVariables {
+  organizationId: string;
+  days?: number;
+}

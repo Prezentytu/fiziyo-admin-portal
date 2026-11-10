@@ -81,3 +81,16 @@ export const GET_AI_CREDIT_REQUESTS_QUERY = gql`
     }
   }
 `;
+
+/** Historia kredytów AI do podziału zużycia (tylko Owner i Admin; inne role: `skip`). Bez `description`: to wolny tekst. */
+export const GET_AI_CREDITS_HISTORY_QUERY = gql`
+  query GetAICreditsHistory($organizationId: String!, $days: Int) {
+    aiCreditsHistory(organizationId: $organizationId, days: $days) {
+      id
+      kind
+      creditsUsed
+      actionType
+      createdAt
+    }
+  }
+`;
