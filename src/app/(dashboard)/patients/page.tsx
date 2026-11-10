@@ -74,7 +74,7 @@ export default function PatientsPage() {
   const organizationId = currentOrganization?.organizationId;
 
   // Get user data for therapistId
-  const { data: userData } = useQuery(GET_USER_BY_CLERK_ID_QUERY, {
+  const { data: userData, loading: userLoading } = useQuery(GET_USER_BY_CLERK_ID_QUERY, {
     variables: { clerkId: user?.id },
     skip: !user?.id,
   });
@@ -177,6 +177,10 @@ export default function PatientsPage() {
       count: filteredPatients.length,
     }),
   });
+
+  // Before the list (and the therapist behind "my" counts) arrives, every count
+  // is 0. Showing it reads as "no patients", so counts wait for the data.
+  const countsReady = data !== undefined && !userLoading;
 
   const tabCounts: Record<TherapyFilterType, number> = {
     my: myCount,
@@ -298,7 +302,7 @@ export default function PatientsPage() {
       <PageHeader
         title="Pacjenci"
         titleTestId="patient-page-title"
-        subtitle={`${myCount} pod Twoją opieką · ${totalCount} w organizacji`}
+        subtitle={countsReady ? `${myCount} pod Twoją opieką · ${totalCount} w organizacji` : 'Wczytuję pacjentów…'}
         actions={
           <>
             <label className="relative w-full sm:w-[300px]">
@@ -335,7 +339,7 @@ export default function PatientsPage() {
             {FILTER_TABS.map((tab) => (
               <TabsTrigger key={tab.id} value={tab.id} activeVariant="underline" data-testid={tab.testId}>
                 {tab.label}
-                <span className={cn('ml-1.5 tabular-nums', tab.countClass)}>{tabCounts[tab.id]}</span>
+                {countsReady && <span className={cn('ml-1.5 tabular-nums', tab.countClass)}>{tabCounts[tab.id]}</span>}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -366,7 +370,7 @@ export default function PatientsPage() {
         </div>
       </div>
 
-      {searchQuery && (
+      {searchQuery && countsReady && (
         <div className="flex items-center gap-2 text-[13px] text-label-secondary">
           <span aria-live="polite">
             {filteredPatients.length} z {filteredByType.length} pacjentów pasuje do „{searchQuery}”
