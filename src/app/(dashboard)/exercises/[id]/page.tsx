@@ -52,6 +52,7 @@ import { FeedbackBanner } from '@/features/exercises/FeedbackBanner';
 import { resolveExerciseReviewFeedback } from '@/features/exercises/utils/resolveExerciseReviewFeedback';
 import { ReportExerciseDialog } from '@/features/exercises/ReportExerciseDialog';
 import { InternalNotesPanel } from '@/features/exercises/InternalNotesPanel';
+import { ContentGapsNotice } from '@/features/exercises/ContentGapsNotice';
 import { canReportExerciseIssue } from '@/features/exercises/utils/exerciseReportRouting';
 import { MediaGallery, buildMediaItems } from '@/components/shared';
 import {
@@ -103,7 +104,11 @@ import { canOpenVideoOutsidePortal } from '@/utils/videoEmbed';
 import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
 import { resolveLoadKg } from '@/utils/exerciseLoadMutation';
 import { verificationCopy } from '@/features/verification/verificationCopy';
-import { countStopIfSymptoms, hasPatientVideo, listContentGaps } from '@/features/verification/utils/verificationStages';
+import {
+  countStopIfSymptoms,
+  hasPatientVideo,
+  listContentGaps,
+} from '@/features/verification/utils/verificationStages';
 import { useSystemRole } from '@/hooks/useSystemRole';
 import { ORG_VERIFICATION_REFETCH_QUERIES } from '@/hooks/useOrganizationVerificationRealtime';
 import { PageSheet } from '@/components/shared/page';
@@ -303,7 +308,9 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
 
   const normalizeTagIds = (tagValues: (string | ExerciseTag)[] | undefined) => {
     if (!tagValues || tagValues.length === 0) return null;
-    const tagIds = tagValues.map((tag) => (isTagObject(tag) ? tag.id : tag)).filter((tag): tag is string => Boolean(tag));
+    const tagIds = tagValues
+      .map((tag) => (isTagObject(tag) ? tag.id : tag))
+      .filter((tag): tag is string => Boolean(tag));
     return tagIds.length > 0 ? tagIds : null;
   };
 
@@ -354,7 +361,8 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         }),
       });
 
-      const duplicatedExerciseId = (result.data as { createExercise?: { id?: string } } | undefined)?.createExercise?.id;
+      const duplicatedExerciseId = (result.data as { createExercise?: { id?: string } } | undefined)?.createExercise
+        ?.id;
 
       toast.success('Kopia ćwiczenia została utworzona', {
         description: `Nowe ćwiczenie: "${duplicatedExerciseName}"`,
@@ -493,7 +501,11 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
           <Dumbbell className="h-8 w-8 text-muted-foreground" />
         </div>
         <p className="text-destructive">{error ? `Błąd: ${error.message}` : 'Nie znaleziono ćwiczenia'}</p>
-        <Button variant="outline" onClick={() => router.push('/exercises')} data-testid="exercise-detail-error-back-btn">
+        <Button
+          variant="outline"
+          onClick={() => router.push('/exercises')}
+          data-testid="exercise-detail-error-back-btn"
+        >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Wróć do listy
         </Button>
@@ -624,7 +636,12 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
               </DropdownMenuItem>
               {canOpenVideoOutsidePortal(exercise.videoUrl) && (
                 <DropdownMenuItem asChild>
-                  <a href={exercise.videoUrl} target="_blank" rel="noopener noreferrer" data-testid="exercise-detail-open-video-link">
+                  <a
+                    href={exercise.videoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-testid="exercise-detail-open-video-link"
+                  >
                     <ExternalLink className="mr-2 h-4 w-4" />
                     Otwórz film
                   </a>
@@ -731,13 +748,18 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
             onChange={(event) => setCoreField('name', event.target.value)}
           />
         ) : (
-          <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground" data-testid="exercise-detail-name">
+          <h1
+            className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground"
+            data-testid="exercise-detail-name"
+          >
             {exercise.name}
           </h1>
         )}
       </div>
 
-      {reviewFeedback && <FeedbackBanner adminReviewNotes={reviewFeedback.notes} updatedAt={reviewFeedback.updatedAt} />}
+      {reviewFeedback && (
+        <FeedbackBanner adminReviewNotes={reviewFeedback.notes} updatedAt={reviewFeedback.updatedAt} />
+      )}
 
       {/* Hero Actions */}
       <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12">
@@ -803,7 +825,9 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                 {isEditing ? <Check className="h-5 w-5" /> : <Pencil className="h-5 w-5" />}
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="text-base font-bold text-foreground">{isEditing ? 'Zakończ edycję' : 'Edytuj ćwiczenie'}</h3>
+                <h3 className="text-base font-bold text-foreground">
+                  {isEditing ? 'Zakończ edycję' : 'Edytuj ćwiczenie'}
+                </h3>
                 <p className="text-sm text-muted-foreground">
                   {isEditing ? 'Wróć do podglądu' : 'Zmień parametry i opisy'}
                 </p>
@@ -813,21 +837,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         )}
       </div>
 
-      {contentGaps.length > 0 && !isEditing && (
-        <div className="rounded-2xl border border-status-info/20 bg-status-info-muted p-4">
-          <div className="flex items-start gap-3">
-            <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-status-info" />
-            <div>
-              <p className="text-sm font-semibold text-foreground">To ćwiczenie może być jeszcze lepsze</p>
-              <ul className="list-disc space-y-0.5 pl-5 text-sm text-muted-foreground" data-testid="exercise-detail-content-gaps">
-                {contentGaps.map((gap) => (
-                  <li key={gap.text}>{gap.text}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-      )}
+      {!isEditing && <ContentGapsNotice gaps={contentGaps} onFix={isLocked ? undefined : () => setIsEditMode(true)} />}
 
       <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
         {/* Left column: media */}
@@ -909,7 +919,9 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                   size="sm"
                   variant="outline"
                   onClick={handleAIGenerateImage}
-                  disabled={uploadingImage || isGeneratingAiImage || !exercise.name || (exercise.images?.length ?? 0) >= 5}
+                  disabled={
+                    uploadingImage || isGeneratingAiImage || !exercise.name || (exercise.images?.length ?? 0) >= 5
+                  }
                   aria-busy={isGeneratingAiImage}
                 >
                   {isGeneratingAiImage ? (
@@ -985,14 +997,16 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                 setPath={setEnrichmentPath}
               />
 
-              <ExerciseExecutionSteps
-                enrichmentData={enrichment}
-                editable={false}
-              />
+              <ExerciseExecutionSteps enrichmentData={enrichment} editable={false} />
 
               <ExerciseAudioCues audioCue={audioCue} enrichmentData={enrichment} editable={false} />
 
-              <PatientExtrasSection data={enrichment} editable={false} isPathDirty={isPathDirty} setPath={setEnrichmentPath} />
+              <PatientExtrasSection
+                data={enrichment}
+                editable={false}
+                isPathDirty={isPathDirty}
+                setPath={setEnrichmentPath}
+              />
 
               {/* 3. Bezpieczeństwo */}
               <SafetySection data={enrichment} editable={false} isPathDirty={isPathDirty} setPath={setEnrichmentPath} />
