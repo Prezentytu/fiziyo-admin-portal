@@ -316,7 +316,7 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
                         size={200}
                         level="H"
                         imageSettings={{
-                          src: '/images/logo_new.png',
+                          src: '/images/icon.png',
                           x: undefined,
                           y: undefined,
                           height: 40,
