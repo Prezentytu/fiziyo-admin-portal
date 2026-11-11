@@ -15,6 +15,11 @@ import {
   canRemovePlaceholderRow,
   isMistakeRowEmpty,
 } from '@/components/shared/enrichment/canRemovePlaceholderRow';
+import {
+  readExerciseContent,
+  type ExerciseContentEquipmentItem,
+} from '@/components/shared/exercise/readExerciseContent';
+import { describeEquipmentItem } from '@/features/exercises/utils/equipmentItemText';
 import { cn } from '@/lib/utils';
 import type { EnrichmentPatientMistakeV3, ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 
@@ -27,6 +32,26 @@ function hasText(value: string | undefined | null): value is string {
 
 function hasListItems(values: string[] | undefined): boolean {
   return Boolean(values?.some((value) => hasText(value)));
+}
+
+/** Etykiety bloków, które widok odczytu pokazuje od v3.3 (FR-007); edycja ich jeszcze nie ma. */
+const READ_LABELS = {
+  breathing: 'Oddech',
+  easier: 'Łatwiej',
+  harder: 'Trudniej',
+  painRule: 'Reguła bólu',
+  checkpoints: 'Punkty kontrolne',
+  therapistNote: 'Uwagi kliniczne',
+  substitutes: 'Zamienniki',
+} as const;
+
+function ReadLine({ label, text, testId }: Readonly<{ label: string; text: string | null; testId?: string }>) {
+  if (!text) return null;
+  return (
+    <p className="text-sm text-muted-foreground" data-testid={testId}>
+      <span className="font-medium text-foreground">{label}:</span> {text}
+    </p>
+  );
 }
 
 function ReadList({ label, items, testId }: Readonly<{ label: string; items: string[]; testId?: string }>) {
@@ -144,9 +169,12 @@ export function PatientLeadSection({
   setPath,
   showPatientDescription = true,
 }: Readonly<PatientLeadSectionProps>) {
-  const summary = data.patient?.summary ?? '';
-  const hasReadContent =
-    (showPatientDescription && hasText(patientDescription)) || hasText(summary);
+  // Odczyt idzie przez wspólny czytnik: rekord 3.3 nie ma opisu z kolumny, nawet gdy kolumna jest wypełniona.
+  const content = readExerciseContent({ enrichmentData: data, patientDescription });
+  const showDescription = showPatientDescription && (editable || content.version === 'legacy');
+  const description = editable ? patientDescription : (content.instruction.description ?? '');
+  const summary = editable ? (data.patient?.summary ?? '') : (content.instruction.summary ?? '');
+  const hasReadContent = (showDescription && hasText(description)) || hasText(summary);
   if (!editable && !hasReadContent) return null;
 
   return (
@@ -155,10 +183,10 @@ export function PatientLeadSection({
       icon={<HeartPulse className="h-4 w-4 text-muted-foreground" />}
       testId="exercise-detail-patient-lead"
     >
-      {showPatientDescription ? (
+      {showDescription ? (
         <EditableTextBlock
           label="Opis dla pacjenta"
-          value={patientDescription}
+          value={description}
           placeholder="Prostym językiem: co pacjent ma zrobić i na co uważać."
           editable={editable}
           disabled={disabled}
@@ -295,8 +323,18 @@ export function PatientExtrasSection({
   const why = data.patient?.why ?? '';
   const whenToDo = data.patient?.when_to_do ?? '';
 
+  const content = readExerciseContent({ enrichmentData: data });
   const hasAnyReadContent =
-    mistakes.length > 0 || hasText(shouldFeel) || hasText(shouldNotFeel) || hasText(why) || hasText(whenToDo);
+    content.mistakes.length > 0 ||
+    [
+      content.shouldFeel,
+      content.shouldNotFeel,
+      content.why,
+      content.whenToDo,
+      content.breathing?.text,
+      content.easier,
+      content.harder,
+    ].some(Boolean);
 
   if (!editable && !hasAnyReadContent) return null;
 
@@ -363,14 +401,14 @@ export function PatientExtrasSection({
         </div>
       ) : (
         <div className="space-y-3">
-          {mistakes.length > 0 && (
+          {content.mistakes.length > 0 && (
             <div className="space-y-2">
-              {mistakes.map((mistake, index) => (
-                <div key={`${mistake.mistake ?? ''}-${index}`} className="text-sm text-muted-foreground">
+              {content.mistakes.map((mistake, index) => (
+                <div key={`${mistake.mistake}-${index}`} className="text-sm text-muted-foreground">
                   <p>
-                    <span className="font-medium text-foreground">Błąd:</span> {mistake.mistake || 'Brak opisu'}
+                    <span className="font-medium text-foreground">Błąd:</span> {mistake.mistake}
                   </p>
-                  {hasText(mistake.fix) && (
+                  {mistake.fix && (
                     <p>
                       <span className="font-medium text-foreground">Korekta:</span> {mistake.fix}
                     </p>
@@ -379,22 +417,17 @@ export function PatientExtrasSection({
               ))}
             </div>
           )}
-          {hasText(shouldFeel) && (
-            <p className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">{LABELS.shouldFeel}:</span> {shouldFeel}
-            </p>
-          )}
-          {hasText(shouldNotFeel) && (
-            <p className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">{LABELS.shouldNotFeel}:</span> {shouldNotFeel}
-            </p>
-          )}
-          {hasText(why) && <p className="text-sm text-muted-foreground">{why}</p>}
-          {hasText(whenToDo) && (
-            <p className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">{LABELS.whenToDo}:</span> {whenToDo}
-            </p>
-          )}
+          <ReadLine label={LABELS.shouldFeel} text={content.shouldFeel} />
+          <ReadLine label={LABELS.shouldNotFeel} text={content.shouldNotFeel} />
+          {content.why && <p className="text-sm text-muted-foreground">{content.why}</p>}
+          <ReadLine label={LABELS.whenToDo} text={content.whenToDo} />
+          <ReadLine
+            label={READ_LABELS.breathing}
+            text={content.breathing?.text ?? null}
+            testId="exercise-detail-breathing-text"
+          />
+          <ReadLine label={READ_LABELS.easier} text={content.easier} testId="exercise-detail-easier-text" />
+          <ReadLine label={READ_LABELS.harder} text={content.harder} testId="exercise-detail-harder-text" />
         </div>
       )}
     </SectionCard>
@@ -424,7 +457,18 @@ export function SafetySection({
   const intensityGuide = data.safety?.intensity_guide ?? '';
   const requiresSupervision = Boolean(data.safety?.requires_supervision);
 
-  const hasAnyReadContent = hasText(stopIf) || hasText(intensityGuide) || requiresSupervision;
+  const content = readExerciseContent({ enrichmentData: data });
+  const isLegacy = content.version === 'legacy';
+  // Rekord stary trzyma przeciwwskazania w bloku fizjoterapeuty; 3.3 ma je w `safety.contraindications`.
+  const contraindications = isLegacy ? [] : content.contraindications;
+  // `intensity_guide` jest w 3.3 wycofane na rzecz reguły bólu.
+  const readIntensityGuide = isLegacy ? intensityGuide : '';
+  const hasAnyReadContent =
+    content.stopIf !== null ||
+    hasText(readIntensityGuide) ||
+    content.requiresSupervision === true ||
+    contraindications.length > 0 ||
+    content.painRule !== null;
   if (!editable && !hasAnyReadContent) return null;
 
   return (
@@ -475,20 +519,26 @@ export function SafetySection({
         </div>
       ) : (
         <div className="space-y-2">
-          {requiresSupervision && (
+          {content.requiresSupervision === true && (
             <p className="text-sm font-medium text-status-warning">Wymaga nadzoru fizjoterapeuty</p>
           )}
-          {hasText(stopIf) && (
+          {content.stopIf && (
             <div className="space-y-1 text-sm text-muted-foreground" data-testid="exercise-detail-stop-if-text">
               <p className="font-medium text-foreground">{LABELS.stopIf}</p>
-              <p className="whitespace-pre-line">{stopIf}</p>
+              <p className="whitespace-pre-line">{content.stopIf}</p>
             </div>
           )}
-          {hasText(intensityGuide) && (
+          {hasText(readIntensityGuide) && (
             <p className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">{LABELS.intensityGuide}:</span> {intensityGuide}
+              <span className="font-medium text-foreground">{LABELS.intensityGuide}:</span> {readIntensityGuide}
             </p>
           )}
+          <ReadList
+            label={LABELS.contraindications}
+            items={contraindications}
+            testId="exercise-detail-safety-contraindications"
+          />
+          <ReadLine label={READ_LABELS.painRule} text={content.painRule} testId="exercise-detail-pain-rule-text" />
         </div>
       )}
     </SectionCard>
@@ -521,45 +571,66 @@ export function TherapistSection({
   persist,
 }: Readonly<TherapistSectionProps>) {
   const therapist = data.therapist ?? {};
+  const content = readExerciseContent({ enrichmentData: data, clinicalDescription });
+  const isLegacy = content.version === 'legacy';
+  // 3.3: opis z kolumny, przeciwwskazania i notatki o progresji mają nowe miejsca, więc stare są pomijane.
+  const readClinicalDescription = content.clinicalDescription ?? '';
+  const checkpoints = content.checkpoints.map((checkpoint) => checkpoint.text);
+  // 3.3 niesie wskazania jako kody ze słownika; portal nie ma jeszcze ich etykiet, więc pokazuje kod.
+  const indications = content.indications
+    .map((indication) => indication.text ?? indication.code)
+    .filter((entry): entry is string => entry !== null);
+  const contraindications = isLegacy ? content.contraindications : [];
+  const progressionNotes = isLegacy ? therapist.progression_notes : undefined;
   const hasTherapistReadContent =
-    hasText(clinicalDescription) ||
-    hasText(therapist.clinical_notes) ||
-    hasListItems(therapist.indications) ||
-    hasListItems(therapist.contraindications) ||
+    hasText(readClinicalDescription) ||
+    content.therapistNote !== null ||
+    checkpoints.length > 0 ||
+    indications.length > 0 ||
+    contraindications.length > 0 ||
     hasListItems(therapist.rehab_phases) ||
     hasListItems(therapist.clinical_benefits) ||
-    hasText(therapist.progression_notes);
+    hasText(progressionNotes);
 
   if (!editable && !hasTherapistReadContent) return null;
 
   return (
     <SectionCard title="Dla fizjoterapeuty" icon={<Stethoscope className="h-4 w-4 text-muted-foreground" />} testId="exercise-detail-therapist">
-      <EditableTextBlock
-        label={LABELS.clinicalDescription}
-        value={clinicalDescription}
-        placeholder="Cel, biomechanika, uwagi terapeutyczne."
-        editable={editable}
-        disabled={disabled}
-        emptyText="Brak opisu dla fizjoterapeuty."
-        dirty={clinicalDescriptionDirty}
-        onChange={onClinicalDescriptionChange}
-        testId="exercise-detail-clinical-description-input"
-      />
+      {editable || isLegacy ? (
+        <EditableTextBlock
+          label={LABELS.clinicalDescription}
+          value={editable ? clinicalDescription : readClinicalDescription}
+          placeholder="Cel, biomechanika, uwagi terapeutyczne."
+          editable={editable}
+          disabled={disabled}
+          emptyText="Brak opisu dla fizjoterapeuty."
+          dirty={clinicalDescriptionDirty}
+          onChange={onClinicalDescriptionChange}
+          testId="exercise-detail-clinical-description-input"
+        />
+      ) : null}
 
       {editable ? (
         <TherapistNotesSection draft={data} disabled={disabled} setPath={setPath} persist={persist} />
       ) : (
         <div className="space-y-2">
-          {hasText(therapist.clinical_notes) && (
-            <p className="text-sm text-muted-foreground">{therapist.clinical_notes}</p>
+          {isLegacy ? (
+            content.therapistNote && <p className="text-sm text-muted-foreground">{content.therapistNote}</p>
+          ) : (
+            <ReadLine
+              label={READ_LABELS.therapistNote}
+              text={content.therapistNote}
+              testId="exercise-detail-therapist-note"
+            />
           )}
-          <ReadList label={LABELS.indications} items={therapist.indications ?? []} />
-          <ReadList label={LABELS.contraindications} items={therapist.contraindications ?? []} />
+          <ReadList label={READ_LABELS.checkpoints} items={checkpoints} testId="exercise-detail-checkpoints" />
+          <ReadList label={LABELS.indications} items={indications} testId="exercise-detail-indications" />
+          <ReadList label={LABELS.contraindications} items={contraindications} />
           <ReadList label={LABELS.rehabPhases} items={therapist.rehab_phases ?? []} />
           <ReadList label={LABELS.clinicalBenefits} items={therapist.clinical_benefits ?? []} />
-          {hasText(therapist.progression_notes) && (
+          {hasText(progressionNotes) && (
             <p className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">{LABELS.progressionNotes}:</span> {therapist.progression_notes}
+              <span className="font-medium text-foreground">{LABELS.progressionNotes}:</span> {progressionNotes}
             </p>
           )}
         </div>
@@ -605,6 +676,40 @@ function ReadChips({ label, items }: Readonly<{ label: string; items: string[] }
   );
 }
 
+/** Sprzęt z v3.3 (`equipment_items`): nazwa z liczbą sztuk, wymagany albo opcjonalny, zamienniki. */
+function ReadEquipmentItems({ items }: Readonly<{ items: ExerciseContentEquipmentItem[] }>) {
+  if (items.length === 0) return null;
+  return (
+    <div className="space-y-1.5" data-testid="exercise-detail-equipment-items">
+      <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">{LABELS.equipment}</p>
+      <ul className="space-y-1">
+        {items.map((item, index) => {
+          const text = describeEquipmentItem(item);
+          return (
+            <li
+              key={`${index}-${item.label}`}
+              className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-muted-foreground"
+              data-testid={`exercise-detail-equipment-item-${index}`}
+            >
+              <span className="text-foreground">{text.name}</span>
+              {text.requirement && (
+                <span className="rounded-full border border-border/60 bg-background px-2 py-0.5 text-[11px]">
+                  {text.requirement}
+                </span>
+              )}
+              {text.substitutes && (
+                <span>
+                  {READ_LABELS.substitutes}: {text.substitutes}
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 export function MetadataSection({
   data,
   videoUrl,
@@ -624,10 +729,12 @@ export function MetadataSection({
   const suitableFor = data.ai?.suitable_for ?? [];
   const contraindicatedFor = data.ai?.contraindicated_for ?? [];
 
+  // Kolumny sprzętu czytnikowi nie podajemy: ta sekcja jej dotąd nie pokazywała.
+  const content = readExerciseContent({ enrichmentData: data });
   const hasReadContent =
     hasText(videoUrl) ||
     hasText(notes) ||
-    hasListItems(equipment) ||
+    content.equipment.length > 0 ||
     hasListItems(keywords) ||
     hasListItems(problems) ||
     hasListItems(suitableFor) ||
@@ -734,7 +841,11 @@ export function MetadataSection({
               <span className="font-medium text-foreground">{LABELS.notes}:</span> {notes}
             </p>
           )}
-          <ReadChips label={LABELS.equipment} items={equipment} />
+          {content.version === 'legacy' ? (
+            <ReadChips label={LABELS.equipment} items={content.equipment.map((item) => item.label)} />
+          ) : (
+            <ReadEquipmentItems items={content.equipment} />
+          )}
           <ReadChips label={LABELS.problems} items={problems} />
           <ReadChips label={LABELS.suitableFor} items={suitableFor} />
           <ReadChips label={LABELS.contraindicatedFor} items={contraindicatedFor} />

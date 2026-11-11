@@ -299,6 +299,16 @@ Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu r
 | `exercise-detail-clinical-description-input`        | Edycja opisu klinicznego                                 | `exercises/[id]/page.tsx`     |
 | `exercise-detail-notes-input`                       | Edycja wskazówki fizjoterapeuty (`notes`)                | `exercises/[id]/page.tsx`     |
 | `exercise-detail-stop-if-text`                      | „Przerwij, gdy…” z liniami jak w aplikacji pacjenta      | `ExerciseDetailSections.tsx`  |
+| `exercise-detail-breathing-text`                    | Oddech (rekord 3.3, tryb odczytu)                        | `ExerciseDetailSections.tsx`  |
+| `exercise-detail-easier-text`                       | „Łatwiej” (rekord 3.3, tryb odczytu)                     | `ExerciseDetailSections.tsx`  |
+| `exercise-detail-harder-text`                       | „Trudniej” (rekord 3.3, tryb odczytu)                    | `ExerciseDetailSections.tsx`  |
+| `exercise-detail-safety-contraindications`          | Przeciwwskazania w bloku Bezpieczeństwo (rekord 3.3)     | `ExerciseDetailSections.tsx`  |
+| `exercise-detail-pain-rule-text`                    | Reguła bólu, kod ze słownika (rekord 3.3)                | `ExerciseDetailSections.tsx`  |
+| `exercise-detail-therapist-note`                    | Uwagi kliniczne `therapist.note` (rekord 3.3)            | `ExerciseDetailSections.tsx`  |
+| `exercise-detail-checkpoints`                       | Punkty kontrolne dla fizjoterapeuty (lista)              | `ExerciseDetailSections.tsx`  |
+| `exercise-detail-indications`                       | Wskazania (tekst; w 3.3 kody ze słownika)                | `ExerciseDetailSections.tsx`  |
+| `exercise-detail-equipment-items`                   | Sprzęt z `equipment_items` (rekord 3.3)                  | `ExerciseDetailSections.tsx`  |
+| `exercise-detail-equipment-item-{index}`            | Pozycja sprzętu: nazwa, liczba, wymagany, zamienniki     | `ExerciseDetailSections.tsx`  |
 | `exercise-detail-content-gaps`                      | Braki treści według reguł publikacji                     | `exercises/[id]/page.tsx`     |
 | `exercise-detail-open-verification-btn`             | „Popraw w weryfikacji” (ćwiczenie globalne, weryfikator) | `exercises/[id]/page.tsx`     |
 | `exercise-internal-notes-section`                   | Notatki robocze (tylko FiziYo), też w weryfikacji        | `InternalNotesPanel.tsx`      |
