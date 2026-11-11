@@ -1,0 +1,459 @@
+{
+  "$schema": "fiziyo-exercise-v3",
+  "patient": {
+    "summary": "Napinanie przodu uda z kolanem dociśniętym do zrolowanego ręcznika, bez ruchu w stawie.",
+    "steps": [
+      "Połóż się na plecach na macie albo na łóżku. Nogi wyprostuj.",
+      "Ręce połóż swobodnie wzdłuż tułowia.",
+      "Pod kolano nogi ćwiczonej włóż mały zrolowany ręcznik. Druga noga leży prosto, bez ręcznika.",
+      "Rozluźnij obie nogi.",
+      "Z wydechem napnij mięsień z przodu uda nogi ćwiczonej.",
+      "Dociśnij tył kolana do ręcznika. Rzepka przesuwa się w górę, pięta zostaje na podłożu.",
+      "Utrzymaj napięcie przez ustalony czas. Oddychaj spokojnie, nie wstrzymuj powietrza.",
+      "Z wdechem rozluźnij udo całkowicie przed kolejnym napięciem."
+    ],
+    "cues": [
+      "Napnij przód uda.",
+      "Dociśnij kolano do ręcznika.",
+      "Biodro i tułów spokojnie.",
+      "Oddychaj, nie wstrzymuj powietrza.",
+      "Ręcznik pod kolanem, noga prosta.",
+      "Rozluźnij udo całkowicie."
+    ],
+    "mistakes": [
+      {
+        "mistake": "Napinasz pośladek albo unosisz biodro.",
+        "fix": "Biodro leży spokojnie – pracuje przód uda."
+      },
+      {
+        "mistake": "Wstrzymujesz oddech.",
+        "fix": "Oddychaj spokojnie, możesz liczyć na głos."
+      },
+      {
+        "mistake": "Napięcie jest słabe, rzepka się nie rusza.",
+        "fix": "Połóż dłoń na udzie i napnij mocniej."
+      }
+    ],
+    "should_feel": "Twardnienie mięśnia z przodu uda nogi ćwiczonej – możesz sprawdzić to dłonią.",
+    "should_not_feel": "Ostrego bólu w kolanie ani skurczu mięśnia.",
+    "why": "Uczy na nowo napinać mięsień z przodu uda i pomaga odzyskać pełny wyprost kolana.",
+    "when_to_do": "Często jako pierwsze ćwiczenie po urazie lub operacji kolana, gdy udo słabo się napina.",
+    "cue_phases": [
+      {
+        "cue": 0,
+        "phase": "work"
+      },
+      {
+        "cue": 1,
+        "phase": "work"
+      },
+      {
+        "cue": 2,
+        "phase": "work"
+      },
+      {
+        "cue": 3,
+        "phase": "work"
+      },
+      {
+        "cue": 4,
+        "phase": "preparation"
+      },
+      {
+        "cue": 5,
+        "phase": "rest"
+      }
+    ],
+    "easier": "Napinaj udo słabiej albo podłóż pod kolano większy ręcznik.",
+    "harder": "Przyciągnij palce stopy do siebie i napnij udo tak mocno, by pięta lekko uniosła się nad podłoże."
+  },
+  "therapist": {
+    "checkpoints": [
+      {
+        "text": "nogi wyprostowane, mały zrolowany ręcznik pod kolanem nogi ćwiczonej, druga noga bez ręcznika",
+        "evidence": "frame",
+        "view": "side"
+      },
+      {
+        "text": "przy napięciu ręcznik się spłaszcza, rzepka przesuwa się w górę, kolano prostuje się mocniej",
+        "evidence": "frame",
+        "view": "closeup"
+      },
+      {
+        "text": "pięta zostaje na podłożu; lekkie uniesienie pięty to wersja trudniejsza",
+        "evidence": "sequence",
+        "view": "closeup"
+      },
+      {
+        "text": "biodro i tułów nieruchome, bez napinania pośladka zamiast uda",
+        "evidence": "sequence",
+        "view": "any"
+      },
+      {
+        "text": "pełne rozluźnienie między napięciami",
+        "evidence": "sequence",
+        "view": "any"
+      }
+    ]
+  },
+  "ai": {
+    "keywords": [
+      "izometria mięśnia czworogłowego",
+      "wciskanie kolana w ręcznik",
+      "quad set",
+      "quad set with towel roll",
+      "isometric quads",
+      "static quads",
+      "kolano",
+      "mięsień czworogłowy uda",
+      "wyprost",
+      "leżenie na plecach",
+      "izometria"
+    ]
+  },
+  "safety": {
+    "stop_if": "Kolano robi się gorące i zaczerwienione albo pojawia się gorączka (zwłaszcza po operacji) – przerwij i jeszcze dziś skontaktuj się z lekarzem.\nKolano wyraźnie puchnie po ćwiczeniu i obrzęk nie zmniejsza się do następnego dnia – przerwij i powiedz o tym fizjoterapeucie.",
+    "requires_supervision": false,
+    "pain_rule": "WS-3",
+    "contraindications": [
+      {
+        "text": "Zwykle dozwolone od pierwszych dni po operacji kolana – wg protokołu operatora; przy bólu ponad 5/10 zmniejszyć siłę napięcia."
+      }
+    ],
+    "flags": [
+      {
+        "code": "supine_pregnancy"
+      },
+      {
+        "code": "floor_transfer_required"
+      },
+      {
+        "code": "supine_head_support"
+      },
+      {
+        "code": "orthostatic_transition"
+      },
+      {
+        "code": "valsalva_risk"
+      }
+    ]
+  },
+  "schemaVersion": "3.3",
+  "key": "fx-0073",
+  "kind": "exercise",
+  "classification": {
+    "difficulty": "easy",
+    "position": "supine",
+    "body_region": ["knee"],
+    "muscles": {
+      "primary": ["quadriceps"],
+      "secondary": []
+    },
+    "movement": {
+      "pattern": "extension",
+      "type": "isometric"
+    },
+    "indications": ["osteoarthritis", "patellofemoral_syndrome"],
+    "goals": ["motor_control"],
+    "progression_family": "quadriceps",
+    "structures": [],
+    "functions": []
+  },
+  "side": {
+    "mode": "each_side",
+    "per_side_dose": true,
+    "start": "left",
+    "shown_in_media": "right"
+  },
+  "equipment_items": [
+    {
+      "code": "mat",
+      "label": "mata albo łóżko",
+      "qty": 1,
+      "required": true,
+      "substitutes": []
+    },
+    {
+      "code": "towel",
+      "label": "mały zrolowany ręcznik",
+      "qty": 1,
+      "required": true,
+      "substitutes": []
+    }
+  ],
+  "prescription": {
+    "goal": "motor_control",
+    "mode": "hold",
+    "params": {
+      "sets": {
+        "default": 2,
+        "min": 1,
+        "max": 3
+      },
+      "reps": {
+        "default": 10,
+        "min": 5,
+        "max": 15
+      },
+      "rep_s": {
+        "default": 7,
+        "min": 5,
+        "max": 12,
+        "source": "szacunek: napięcie ok. 1 s + przytrzymanie 5 s + rozluźnienie ok. 1 s; do pomiaru z filmu (U03)"
+      },
+      "hold_s": {
+        "default": 5,
+        "min": 3,
+        "max": 10
+      },
+      "rest_sets_s": {
+        "default": 30,
+        "min": 15,
+        "max": 90
+      },
+      "rest_reps_s": {
+        "default": 3,
+        "min": 2,
+        "max": 10
+      },
+      "prep_s": {
+        "default": 10,
+        "min": 5,
+        "max": 15
+      },
+      "intensity": {
+        "default": {
+          "scale": "rpe10",
+          "value": 6
+        },
+        "min": 3,
+        "max": 8
+      }
+    },
+    "progression": {
+      "criterion": "Rzepka wyraźnie się unosi przy każdym napięciu, napięcie trzyma się przez cały czas bez bólu ponad 5/10",
+      "next": [
+        "mocniejsze napięcie z lekkim uniesieniem pięty nad podłoże",
+        "fx-0173 krótki łuk z wałkiem pod kolanem",
+        "fx-0076 unoszenie prostej nogi"
+      ]
+    },
+    "regression": {
+      "criterion": "Nie udaje się napiąć mięśnia albo napięcie wywołuje ból ponad 5/10",
+      "next": ["słabsze napięcie", "większy ręcznik pod kolanem", "w siadzie z oparciem pleców"]
+    }
+  },
+  "breathing": {
+    "pattern": null,
+    "text": "Wydech przy napinaniu uda, wdech przy rozluźnianiu. Nie wstrzymuj powietrza."
+  },
+  "media": [
+    {
+      "id": "m1",
+      "type": "image",
+      "url": "https://fiziyoimagesdev.z36.web.core.windows.net/exercises/fiziyo-h2g-17392/0cd943cc-0fdd-4c96-bc93-5f18c60a7a95.jpg",
+      "order": 1,
+      "layout": "AB",
+      "provenance": {
+        "origin": "own_ai",
+        "author": "FiziYo",
+        "license": "own",
+        "usage_scope": "production"
+      }
+    },
+    {
+      "id": "m2",
+      "type": "image",
+      "url": "https://fiziyoimagesdev.z36.web.core.windows.net/exercises/fiziyo-h2g-17392/dcc7b723-7799-468b-9bb9-8d3f214236a5.jpg",
+      "order": 2,
+      "layout": null,
+      "provenance": {
+        "origin": "own_ai",
+        "author": "FiziYo",
+        "license": "own",
+        "usage_scope": "production"
+      }
+    },
+    {
+      "id": "m3",
+      "type": "image",
+      "url": "https://fiziyoimagesdev.z36.web.core.windows.net/exercises/fiziyo-h2g-17392/22752ea9-55ea-4de2-92d2-76667a2fd637.jpg",
+      "order": 3,
+      "layout": null,
+      "provenance": {
+        "origin": "own_ai",
+        "author": "FiziYo",
+        "license": "own",
+        "usage_scope": "production"
+      }
+    },
+    {
+      "id": "m4",
+      "type": "image",
+      "url": "https://fiziyoimagesdev.z36.web.core.windows.net/exercises/fiziyo-h2g-17392/d9843b75-75b4-455a-8f4d-091633f0eaf9.jpg",
+      "order": 4,
+      "layout": null,
+      "provenance": {
+        "origin": "own_ai",
+        "author": "FiziYo",
+        "license": "own",
+        "usage_scope": "production"
+      }
+    },
+    {
+      "id": "m5",
+      "type": "video",
+      "url": "https://vimeo.com/1240779405",
+      "start_s": null,
+      "end_s": null,
+      "side_shown": "right",
+      "provenance": {
+        "origin": "partner",
+        "author": "HEP2go",
+        "license": "permission_demo",
+        "usage_scope": "demo_only"
+      }
+    }
+  ],
+  "relations": [
+    {
+      "type": "progression",
+      "key": "fx-0173",
+      "source_key": null,
+      "difference": "kolano prostuje się nad wałkiem, pięta unosi się wyraźnie",
+      "when_to_switch": null,
+      "order": 1,
+      "ai_suggested": true,
+      "verified": false
+    },
+    {
+      "type": "progression",
+      "key": "fx-0076",
+      "source_key": null,
+      "difference": "cała prosta noga unosi się nad podłoże",
+      "when_to_switch": null,
+      "order": 2,
+      "ai_suggested": true,
+      "verified": false
+    },
+    {
+      "type": "variant",
+      "key": "fx-1001",
+      "source_key": null,
+      "difference": "ręcznik pod piętą – docisk prowadzi kolano do pełnego wyprostu",
+      "when_to_switch": null,
+      "order": 3,
+      "ai_suggested": true,
+      "verified": false
+    },
+    {
+      "type": "variant",
+      "key": "fx-1002",
+      "source_key": null,
+      "difference": "w siadzie z prostą nogą, bez ręcznika",
+      "when_to_switch": null,
+      "order": 4,
+      "ai_suggested": true,
+      "verified": false
+    },
+    {
+      "type": "variant",
+      "key": "fx-1003",
+      "source_key": null,
+      "difference": "w leżeniu na brzuchu, palce stopy oparte o matę",
+      "when_to_switch": null,
+      "order": 5,
+      "ai_suggested": true,
+      "verified": false
+    },
+    {
+      "type": "variant",
+      "key": "fx-1004",
+      "source_key": null,
+      "difference": "noga obrócona na zewnątrz",
+      "when_to_switch": null,
+      "order": 6,
+      "ai_suggested": true,
+      "verified": false
+    },
+    {
+      "type": "variant",
+      "key": "fx-1006",
+      "source_key": null,
+      "difference": "obie nogi naraz, podudzia na klinie",
+      "when_to_switch": null,
+      "order": 7,
+      "ai_suggested": true,
+      "verified": false
+    }
+  ],
+  "lifecycle": {
+    "availability": "demo",
+    "status": "ai_audited",
+    "quality": {
+      "auditor": "export_v33@2026-11-10",
+      "findings": [
+        {
+          "code": "PAR2",
+          "level": "warn",
+          "path": "prescription.params.rep_s",
+          "text": "czas powtórzenia oszacowany, nie zmierzony z filmu"
+        },
+        {
+          "code": "C10",
+          "level": "warn",
+          "path": "classification.structures",
+          "text": "oś bez wartości – słownik jeszcze nie istnieje (N1)"
+        },
+        {
+          "code": "C10",
+          "level": "warn",
+          "path": "classification.functions",
+          "text": "oś bez wartości – słownik jeszcze nie istnieje (N1)"
+        },
+        {
+          "code": "M03",
+          "level": "warn",
+          "path": "media[0]",
+          "text": "adres magazynu DEV – przed produkcją kopia do magazynu produkcji (A5)"
+        },
+        {
+          "code": "M03",
+          "level": "warn",
+          "path": "media[1]",
+          "text": "adres magazynu DEV – przed produkcją kopia do magazynu produkcji (A5)"
+        },
+        {
+          "code": "M03",
+          "level": "warn",
+          "path": "media[2]",
+          "text": "adres magazynu DEV – przed produkcją kopia do magazynu produkcji (A5)"
+        },
+        {
+          "code": "M03",
+          "level": "warn",
+          "path": "media[3]",
+          "text": "adres magazynu DEV – przed produkcją kopia do magazynu produkcji (A5)"
+        }
+      ]
+    }
+  },
+  "provenance": {
+    "sources": [
+      {
+        "kind": "h2g",
+        "source_key": "h2g-17392",
+        "role": "movement"
+      },
+      {
+        "kind": "own",
+        "source_key": "fx-0073",
+        "role": "text"
+      }
+    ],
+    "patient": {
+      "by": "agent",
+      "confidence": 0.9
+    }
+  }
+}

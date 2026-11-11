@@ -98,11 +98,10 @@ import {
   isExerciseSaveAuthError,
 } from '@/features/exercises/utils/buildEnrichmentUpdateVariables';
 import { getNextExerciseCopyName } from '@/features/exercises/utils/getNextExerciseCopyName';
-import { buildCreateExerciseVariables } from '@/features/exercises/utils/buildCreateExerciseVariables';
+import { buildDuplicateExerciseVariables } from '@/features/exercises/utils/buildDuplicateExerciseVariables';
 import { normalizeExerciseType } from '@/utils/exerciseEnums';
 import { canOpenVideoOutsidePortal } from '@/utils/videoEmbed';
 import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
-import { resolveLoadKg } from '@/utils/exerciseLoadMutation';
 import { verificationCopy } from '@/features/verification/verificationCopy';
 import {
   countStopIfSymptoms,
@@ -115,16 +114,6 @@ import { PageSheet } from '@/components/shared/page';
 
 interface ExerciseDetailPageProps {
   params: Promise<{ id: string }>;
-}
-
-interface ExerciseTag {
-  id: string;
-  name: string;
-  color: string;
-}
-
-function isTagObject(tag: string | ExerciseTag): tag is ExerciseTag {
-  return typeof tag === 'object' && 'name' in tag;
 }
 
 export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) {
@@ -306,58 +295,17 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
     }
   };
 
-  const normalizeTagIds = (tagValues: (string | ExerciseTag)[] | undefined) => {
-    if (!tagValues || tagValues.length === 0) return null;
-    const tagIds = tagValues
-      .map((tag) => (isTagObject(tag) ? tag.id : tag))
-      .filter((tag): tag is string => Boolean(tag));
-    return tagIds.length > 0 ? tagIds : null;
-  };
-
   const handleDuplicateExercise = async () => {
     if (!organizationId || !exercise) return;
 
     const duplicatedExerciseName = getNextExerciseCopyName(exercise.name, organizationExerciseNames);
-    const exerciseWithLoad = exercise as typeof exercise & {
-      defaultLoad?: {
-        loadWeightKg?: number | null;
-        value?: number | null;
-        unit?: string | null;
-      } | null;
-    };
-    const loadKg = resolveLoadKg(exerciseWithLoad.defaultLoad) ?? null;
 
     try {
       const result = await createExercise({
-        variables: buildCreateExerciseVariables({
+        variables: buildDuplicateExerciseVariables({
           organizationId,
-          draft: {
-            name: duplicatedExerciseName,
-            patientDescription: exercise.patientDescription || exercise.description || '',
-            clinicalDescription: exercise.clinicalDescription,
-            notes: exercise.notes,
-            audioCue: exercise.audioCue,
-            tempo: exercise.tempo,
-            rangeOfMotion: exercise.rangeOfMotion,
-            resistance: exercise.resistance,
-            equipment: exercise.equipment,
-            type: exercise.type,
-            side: exercise.side || exercise.exerciseSide,
-            difficultyLevel: exercise.difficultyLevel,
-            videoUrl: exercise.videoUrl,
-            // GraphQL Exercise ma tylko pola default* (bez sets/restSets/executionTime).
-            sets: exercise.defaultSets ?? null,
-            reps: exercise.defaultReps ?? null,
-            duration: exercise.defaultDuration ?? null,
-            restSets: exercise.defaultRestBetweenSets ?? null,
-            restReps: exercise.defaultRestBetweenReps ?? null,
-            preparationTime: exercise.preparationTime ?? null,
-            executionTime: exercise.defaultExecutionTime ?? null,
-            loadKg,
-            images: exercise.images?.length ? exercise.images : null,
-            mainTags: normalizeTagIds(exercise.mainTags),
-            additionalTags: normalizeTagIds(exercise.additionalTags),
-          },
+          source: exercise,
+          name: duplicatedExerciseName,
         }),
       });
 
