@@ -33,7 +33,7 @@
 ## Dowody
 
 - Kandydat: branch `feat/wydruk-i-podglady-v33`, commity lokalne na 2fc1c820
-- Kontrola: 2026-11-11, `npm run lint` (bez uwag), `npm run type-check` (bez błędów), `npm run check:testids` (unexpected=0), `npm run check:design-tokens` (OK), `npm run test:run` (248 plików, 1456 testów, wszystkie zielone). `next build` pominięty: wymaga zmiennych Clerk.
+- Kontrola: 2026-11-11, `npm run lint` (bez uwag), `npm run type-check` (bez błędów), `npm run check:testids` (unexpected=0 po przesunięciu pięciu numerów linii `ExercisePreviewDrawer.tsx` w liście wyjątków), `npm run check:design-tokens` (OK), `npm run test:run` (248 plików, 1456 testów, wszystkie zielone). `next build` pominięty: wymaga zmiennych Clerk.
 - Niesprawdzone: render prawdziwego PDF (łamanie stron przy 8 krokach), wygląd podglądów w przeglądarce, czy każde zapytanie na żywo oddaje `enrichmentData`; DEV i PROD nietknięte.
 - Reviewer: unverified
 
