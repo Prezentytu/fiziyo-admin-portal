@@ -1,13 +1,16 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { fromExerciseMapping } from '../adapters';
+import { fromBuilderExercise, fromExerciseMapping } from '../adapters';
 import { ExercisePreviewDialog } from '../ExercisePreviewDialog';
 import {
   emptyExercise,
   LEGACY_DESCRIPTION,
+  LEGACY_STEPS_TEXT,
   legacyStepsOnly,
   legacyWithDescription,
+  V33_STEPS_TEXT,
+  v33WithStaleColumn,
 } from './fixtures/instructionRecords';
 
 vi.mock('next/image', () => ({
@@ -27,7 +30,9 @@ function renderPreview(exercise: Mapping['exercise'], mapping?: Partial<Mapping>
 
 /** Wartość pola „Opis dla pacjenta” w podglądzie. */
 function patientInstructionText(): string | null {
-  return screen.getByText('Opis dla pacjenta').closest('div')?.parentElement?.querySelector('p.mt-1')?.textContent ?? null;
+  return (
+    screen.getByText('Opis dla pacjenta').closest('div')?.parentElement?.querySelector('p.mt-1')?.textContent ?? null
+  );
 }
 
 describe('ExercisePreviewDialog: instrukcja dla pacjenta, rekord stary', () => {
@@ -37,17 +42,47 @@ describe('ExercisePreviewDialog: instrukcja dla pacjenta, rekord stary', () => {
   });
 
   it('opis pozycji wygrywa z kolumną, a personalizacja przypisania z opisem pozycji', () => {
-    renderPreview(legacyWithDescription, { customDescription: 'Opis pozycji' }, { patientDescription: 'Opis dla Jana' });
+    renderPreview(
+      legacyWithDescription,
+      { customDescription: 'Opis pozycji' },
+      { patientDescription: 'Opis dla Jana' }
+    );
     expect(patientInstructionText()).toBe('Opis dla Jana');
   });
 
-  it('bez opisu, ale z krokami: dziś „Nie ustawiono”', () => {
+  it('bez opisu, ale z krokami pokazuje podsumowanie i kroki zamiast „Nie ustawiono”', () => {
     renderPreview(legacyStepsOnly);
-    expect(patientInstructionText()).toBe('Nie ustawiono');
+    expect(patientInstructionText()).toBe(LEGACY_STEPS_TEXT);
   });
 
   it('bez żadnej treści mówi „Nie ustawiono”', () => {
     renderPreview(emptyExercise);
     expect(patientInstructionText()).toBe('Nie ustawiono');
+  });
+});
+
+describe('ExercisePreviewDialog: instrukcja dla pacjenta, rekord 3.3', () => {
+  it('pokazuje podsumowanie i kroki, a nie starą kolumnę opisu', () => {
+    renderPreview(v33WithStaleColumn);
+    expect(patientInstructionText()).toBe(V33_STEPS_TEXT);
+  });
+
+  it('nadpisanie opisu wygrywa z krokami', () => {
+    renderPreview(v33WithStaleColumn, { customDescription: 'Opis pozycji' });
+    expect(patientInstructionText()).toBe('Opis pozycji');
+  });
+
+  it('bez kroków i podsumowania mówi „Nie ustawiono” mimo wypełnionej kolumny', () => {
+    renderPreview({ ...v33WithStaleColumn, enrichmentData: { $schema: 'fiziyo-exercise-v3', schemaVersion: '3.3' } });
+    expect(patientInstructionText()).toBe('Nie ustawiono');
+  });
+
+  it('kreator zestawu: opis zasiany z kolumny nie jest nadpisaniem, inny tekst jest', () => {
+    const seeded = fromBuilderExercise(v33WithStaleColumn, {
+      patientDescription: v33WithStaleColumn.patientDescription,
+    });
+    expect(seeded.patientDescriptionOverride).toBeUndefined();
+    const edited = fromBuilderExercise(v33WithStaleColumn, { patientDescription: 'Opis dla Jana' });
+    expect(edited.patientDescriptionOverride).toBe('Opis dla Jana');
   });
 });

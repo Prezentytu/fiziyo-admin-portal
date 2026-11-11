@@ -184,6 +184,7 @@ export function fromExerciseMapping(
     loadDisplayText: effective.loadDisplayText,
     notes: effective.notes,
     patientDescription: effective.patientDescription,
+    patientDescriptionOverride: effective.patientDescriptionOverride,
     clinicalDescription: effective.clinicalDescription,
     audioCue: effective.audioCue,
     rangeOfMotion: effective.rangeOfMotion,
@@ -309,6 +310,11 @@ export function fromBuilderExercise(
     notes: params.notes ?? '',
     patientDescription:
       params.patientDescription ?? exercise.patientDescription ?? exercise.description,
+    // Parametry kreatora bywają zasiane opisem z kolumny; nadpisaniem jest dopiero tekst inny niż kolumna.
+    patientDescriptionOverride:
+      params.patientDescription?.trim() !== (exercise.patientDescription ?? exercise.description)?.trim()
+        ? params.patientDescription
+        : undefined,
     clinicalDescription: params.clinicalDescription ?? exercise.clinicalDescription,
     audioCue: params.audioCue ?? exercise.audioCue,
     rangeOfMotion: params.rangeOfMotion ?? exercise.rangeOfMotion,

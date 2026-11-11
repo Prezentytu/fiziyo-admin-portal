@@ -4,8 +4,11 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   emptyExercise,
   LEGACY_DESCRIPTION,
+  LEGACY_STEPS_TEXT,
   legacyStepsOnly,
   legacyWithDescription,
+  V33_STEPS_TEXT,
+  v33WithStaleColumn,
 } from '@/components/shared/exercise/__tests__/fixtures/instructionRecords';
 import { ExercisePreviewDrawer } from '../ExercisePreviewDrawer';
 import type { ExerciseMapping, ExerciseOverride } from '../PatientAssignmentCard';
@@ -14,7 +17,11 @@ vi.mock('next/image', () => ({
   default: ({ src, alt }: { src: string; alt?: string }) => <img src={src} alt={alt ?? ''} />,
 }));
 
-function renderDrawer(exercise: ExerciseMapping['exercise'], mapping?: Partial<ExerciseMapping>, override?: ExerciseOverride) {
+function renderDrawer(
+  exercise: ExerciseMapping['exercise'],
+  mapping?: Partial<ExerciseMapping>,
+  override?: ExerciseOverride
+) {
   render(
     <ExercisePreviewDrawer
       open
@@ -50,13 +57,38 @@ describe('ExercisePreviewDrawer: instrukcja dla pacjenta, rekord stary', () => {
     expect(patientInstructionText()).toBe('Opis dla Jana');
   });
 
-  it('bez opisu, ale z krokami: dziś sekcji opisu nie ma', () => {
+  it('bez opisu, ale z krokami pokazuje podsumowanie i kroki zamiast chować sekcję', () => {
     renderDrawer(legacyStepsOnly);
-    expect(patientInstructionText()).toBeNull();
+    expect(patientInstructionText()).toBe(LEGACY_STEPS_TEXT);
+  });
+
+  it('puste nadpisanie opisu nie chowa opisu z kolumny', () => {
+    renderDrawer(legacyWithDescription, { customDescription: '' });
+    expect(patientInstructionText()).toBe(LEGACY_DESCRIPTION);
   });
 
   it('bez żadnej treści sekcji opisu nie ma', () => {
     renderDrawer(emptyExercise);
+    expect(patientInstructionText()).toBeNull();
+  });
+});
+
+describe('ExercisePreviewDrawer: instrukcja dla pacjenta, rekord 3.3', () => {
+  it('pokazuje podsumowanie i kroki, a nie starą kolumnę opisu', () => {
+    renderDrawer(v33WithStaleColumn);
+    expect(patientInstructionText()).toBe(V33_STEPS_TEXT);
+  });
+
+  it('opis z przypisania wygrywa z krokami', () => {
+    renderDrawer(v33WithStaleColumn, undefined, {
+      exerciseMappingId: 'm-1',
+      customDescription: 'Opis dla Jana',
+    } as ExerciseOverride);
+    expect(patientInstructionText()).toBe('Opis dla Jana');
+  });
+
+  it('bez kroków i podsumowania sekcji opisu nie ma mimo wypełnionej kolumny', () => {
+    renderDrawer({ ...v33WithStaleColumn, enrichmentData: { schemaVersion: '3.3' } });
     expect(patientInstructionText()).toBeNull();
   });
 });

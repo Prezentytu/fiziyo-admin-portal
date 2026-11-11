@@ -15,6 +15,7 @@ import {
   normalizeExerciseFieldValues,
   resolveEffectiveExerciseParams,
 } from '@/components/shared/exercise';
+import { resolvePatientInstruction } from '@/components/shared/exercise/patientInstruction';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import type { ExerciseMapping, ExerciseOverride } from './PatientAssignmentCard';
 import type { ExerciseLoad } from '@/features/assignment/types';
@@ -109,12 +110,13 @@ export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, o
   const effectiveTempo = normalizedOverride?.tempo ?? normalizedMapping.tempo ?? exercise?.tempo;
   const effectiveLoadDisplayText = normalizedMapping.loadText ?? exercise?.defaultLoad?.text ?? exercise?.loadText;
   const effectiveName = normalizedOverride?.customName ?? normalizedMapping.customName ?? exercise?.name;
+  // Opis z przypisania, potem z pozycji planu; dalej instrukcja rekordu (opis albo podsumowanie i kroki).
   const effectivePatientDescription =
-    normalizedOverride?.customDescription ??
-    normalizedMapping.customDescription ??
-    exercise?.patientDescription ??
-    exercise?.description ??
-    '';
+    resolvePatientInstruction({
+      override: normalizedOverride?.customDescription ?? normalizedMapping.customDescription,
+      exercise,
+      enrichment: effective.effectiveEnrichment,
+    }).text ?? '';
   const effectiveClinicalDescription = exercise?.clinicalDescription ?? '';
   const effectiveSide = effective.side;
   const normalizedFields = normalizeExerciseFieldValues({

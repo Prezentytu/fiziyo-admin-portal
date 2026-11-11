@@ -44,6 +44,11 @@ export interface ExerciseExecutionCardData {
   equipment?: string;
   notes?: string;
   patientDescription?: string;
+  /**
+   * Sama nadpisana część `patientDescription`, bez kolumny ćwiczenia. Tylko do odczytu w podglądzie
+   * (`resolvePatientInstruction`); zapis nadal liczy różnicę z `patientDescription`.
+   */
+  patientDescriptionOverride?: string;
   clinicalDescription?: string;
   audioCue?: string;
   rangeOfMotion?: string;

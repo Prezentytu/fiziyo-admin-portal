@@ -1,6 +1,8 @@
 import { fromExerciseMapping } from '@/components/shared/exercise';
+import { resolvePatientInstruction } from '@/components/shared/exercise/patientInstruction';
 import { formatLoad } from '@/utils/loadParser';
 import { getMediaUrl } from '@/utils/mediaUrl';
+import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import type { ExerciseMapping } from './types';
 
 const FALLBACK_DESCRIPTION = 'Brak opisu ćwiczenia.';
@@ -35,17 +37,18 @@ export interface ExerciseDetailsViewModel {
   status?: string;
 }
 
-function pickPatientDescription(mapping: ExerciseMapping): string | undefined {
-  const customDescription = mapping.customDescription?.trim();
-  if (customDescription) return customDescription;
-
-  const patientDescription = mapping.exercise?.patientDescription?.trim();
-  if (patientDescription) return patientDescription;
-
-  const legacyDescription = mapping.exercise?.description?.trim();
-  if (legacyDescription) return legacyDescription;
-
-  return undefined;
+/**
+ * Opis pozycji zestawu wygrywa; potem opis rekordu starego; gdy go nie ma, i zawsze dla rekordu 3.3,
+ * podsumowanie i kroki (po nadpisaniach pozycji).
+ */
+function pickPatientDescription(
+  mapping: ExerciseMapping,
+  enrichment: ExerciseEnrichmentData | undefined
+): string | undefined {
+  return (
+    resolvePatientInstruction({ override: mapping.customDescription, exercise: mapping.exercise, enrichment }).text ??
+    undefined
+  );
 }
 
 function pickClinicalDescription(mapping: ExerciseMapping): string | undefined {
@@ -90,7 +93,7 @@ function pickVideoUrl(mapping: ExerciseMapping): string | undefined {
 
 export function buildExerciseDetailsViewModel(mapping: ExerciseMapping): ExerciseDetailsViewModel {
   const cardData = fromExerciseMapping(mapping);
-  const patientDescription = pickPatientDescription(mapping);
+  const patientDescription = pickPatientDescription(mapping, cardData.enrichment);
   const normalizedNotes = cardData.notes?.trim();
   const clinicalDescription = pickClinicalDescription(mapping);
   const audioCue = pickAudioCue(mapping);
