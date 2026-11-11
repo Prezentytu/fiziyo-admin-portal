@@ -105,7 +105,7 @@ Przykłady: `3 × 10`, `3 × 10 × 10s`, `3 × 1 × 30s`
 - Prezentacja parametrów (SSOT UI): `src/components/shared/exercise/ExerciseParametersFields.tsx` + `PARAMETER_SECTIONS` w `fieldContract.ts`
 - Adapter szablonu: `ExerciseParametersEditor.tsx` → Fields (`variant="create"|"full"`)
 - Treść (enrichment): `ExerciseContentSections.tsx` — wspólne dla `ExerciseEditor` i `CreateExerciseWizard`
-- Rekord w kontrakcie v3.3: formularz i zapis według `.ai/specs/SPEC-037-2026-11-11-exercise-edit-v33.md`. Dokument do wysłania buduje `utils/enrichmentV33Document.ts` z dokumentu wczytanego; nowe pole edytowalne dopisujesz do `V33_EDITABLE_PATHS`, nigdy przez `compactEnrichment` ani `toV3`.
+- Rekord w kontrakcie v3.3: formularz i zapis według `.ai/specs/SPEC-038-2026-11-11-exercise-edit-v33.md`. Dokument do wysłania buduje `utils/enrichmentV33Document.ts` z dokumentu wczytanego; nowe pole edytowalne dopisujesz do `V33_EDITABLE_PATHS`, nigdy przez `compactEnrichment` ani `toV3`.
 - Kreator: `CreateExerciseWizard.tsx` + `utils/createExerciseSubmit.ts` (create → optional enrichment update)
 - AI całego ćwiczenia w kreatorze: `AiFullExercisePanel.tsx` + `utils/aiFullExercise.ts` (warianty nazwy, szkic wszystkich pól, odrzucenie wartości spoza `AI_PARAM_RANGES`); wynik to tylko szkic formularza z „Cofnij”, zapis robi fizjoterapeuta.
 - Dialog edycji: `ExerciseDialog.tsx` → ten sam `ExerciseEditor`

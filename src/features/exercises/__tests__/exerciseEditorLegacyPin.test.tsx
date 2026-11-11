@@ -10,7 +10,7 @@ import { useExerciseEditorForm, type ExerciseEditorSource } from '../useExercise
 
 /**
  * Pins the edit form of a record WITHOUT `schemaVersion` (old shape): the set of inputs and what is saved.
- * The v3.3 form (SPEC-037) must not change anything asserted here.
+ * The v3.3 form (SPEC-038) must not change anything asserted here.
  */
 
 const { updateCore, updateEnrichment } = vi.hoisted(() => ({ updateCore: vi.fn(), updateEnrichment: vi.fn() }));

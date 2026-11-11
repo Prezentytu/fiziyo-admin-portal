@@ -1,6 +1,6 @@
 # Edycja ćwiczenia w kontrakcie v3.3
 
-- Issue / spec: `.ai/specs/SPEC-037-2026-11-11-exercise-edit-v33.md`; kontrakt `fiziyo-research/feature-requests/FR-007-schemat-v3/KONTRAKT-v3.3.md`.
+- Issue / spec: `.ai/specs/SPEC-038-2026-11-11-exercise-edit-v33.md`; kontrakt `fiziyo-research/feature-requests/FR-007-schemat-v3/KONTRAKT-v3.3.md`.
 - Owning repo: fiziyo-admin-portal
 - Status runu: review pending
 - Upoważnienie: zlecenie właściciela (Przemek) z 2026-11-11 przez koordynatora: implementacja i commit lokalny. Bez push, bez PR, bez DEV i PROD.
@@ -27,7 +27,7 @@
 
 ## Decyzje
 
-- Numer SPEC-037: 035 i 036 są zajęte przez gałęzie `feat/widok-cwiczenia-v33` i `feat/wydruk-i-podglady-v33`.
+- Numer SPEC-038: 035 i 036 są zajęte przez gałęzie `feat/widok-cwiczenia-v33` i `feat/wydruk-i-podglady-v33`.
 - Zmiany liczone z różnicy szkicu i wczytanego dokumentu na zamkniętej liście ścieżek, a nie z listy „dotkniętych pól”: AI, panel JSON i workspace weryfikacji podmieniają cały szkic albo całą sekcję `patient`, więc tylko taka reguła gwarantuje, że nic spoza listy nie wyjdzie.
 - Guard kolumn wycofanych w hooku, nie w komponencie: obejmuje też workspace weryfikacji, który tych pól nie ukrywa. Skutek: wpis w polu wycofanym na rekordzie 3.3 w weryfikacji nie jest zapisywany.
 - AI włączone z mapowaniem na pola o tym samym miejscu; `patient.summary` wliczone, bo ścieżka jest identyczna.
@@ -47,4 +47,4 @@
 - Następny krok: zapis rekordu p001 na lokalnej instancji (przeglądarka + baza), zrzuty w obu motywach, potem draft PR na bazę `feat/czytnik-tresci-v33`.
 - Blokady: brak.
 - Transfer kodu: ten sam checkout, commity lokalne, bez push.
-- Źródło: spec SPEC-037.
+- Źródło: spec SPEC-038.

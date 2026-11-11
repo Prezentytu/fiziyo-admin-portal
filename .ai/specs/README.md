@@ -109,7 +109,7 @@ Każda specyfikacja powinna mieć sekcję Changelog na końcu:
 | 032 | [Patient name forms](SPEC-032-2026-10-30-patient-name-forms.md)                                       | Formy imion pacjentów ze słownika zamiast reguł końcówek       | draft       |
 | 033 | [Exercise library pages](SPEC-033-2026-10-31-exercise-library-pages.md)                               | Lista ćwiczeń stronami z API z licznikami zakładek             | in-progress |
 | 034 | [Verification queue header](SPEC-034-2026-11-02-verification-queue-header.md)                         | Jeden nagłówek kolejek weryfikacji z licznikami i główną akcją | implemented |
-| 037 | [Exercise edit v3.3](SPEC-037-2026-11-11-exercise-edit-v33.md)                                        | Edycja ćwiczenia 3.3 bez utraty kluczy i bez pól wycofanych    | in-progress |
+| 037 | [Exercise edit v3.3](SPEC-038-2026-11-11-exercise-edit-v33.md)                                        | Edycja ćwiczenia 3.3 bez utraty kluczy i bez pól wycofanych    | in-progress |
 
 ## Numery bez specu
 

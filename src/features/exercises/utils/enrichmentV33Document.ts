@@ -1,5 +1,5 @@
 /**
- * Zapis treści ćwiczenia w kontrakcie v3.3 (SPEC-037).
+ * Zapis treści ćwiczenia w kontrakcie v3.3 (SPEC-038).
  *
  * Dokument do wysłania powstaje z dokumentu WCZYTANEGO, na który nakładamy tylko pola zmienione przez
  * fizjoterapeutę. Zmienić da się wyłącznie ścieżki z `V33_EDITABLE_PATHS`; wszystko inne (sekcje zespołu,

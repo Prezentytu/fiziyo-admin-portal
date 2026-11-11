@@ -24,7 +24,7 @@ import { buildV33Document, collectV33Edits, loadV33Document } from './utils/enri
  * autosave-on-blur udostępnia dirty tracking i jeden skoordynowany zapis
  * (core przez UpdateExercise, v3 przez UpdateExerciseField(enrichmentData)).
  *
- * Rekord w kontrakcie v3.3 (SPEC-037) ma osobną regułę zapisu: dokument powstaje z wczytanego
+ * Rekord w kontrakcie v3.3 (SPEC-038) ma osobną regułę zapisu: dokument powstaje z wczytanego
  * (`buildV33Document`), a wycofane kolumny (opis dla pacjenta, opis kliniczny, notatka, polecenie audio)
  * nigdy nie idą do mutacji.
  */

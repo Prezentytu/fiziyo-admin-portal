@@ -28,7 +28,7 @@ export interface ExerciseContentSectionsProps {
   showPatientLead?: boolean;
   /**
    * Kontrakt treści rekordu. `3.3` pokazuje edytory pól v3.3 i nie renderuje pól wycofanych
-   * (opis dla pacjenta, opis kliniczny, notatka, polecenie audio i stare pola dokumentu); SPEC-037.
+   * (opis dla pacjenta, opis kliniczny, notatka, polecenie audio i stare pola dokumentu); SPEC-038.
    */
   contentVersion?: ExerciseContentVersion;
 }

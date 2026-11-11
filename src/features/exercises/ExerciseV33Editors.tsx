@@ -21,7 +21,7 @@ import {
 } from './utils/enrichmentV33Document';
 
 /**
- * Editors of the v3.3 content facts that have no place in the old form (SPEC-037).
+ * Editors of the v3.3 content facts that have no place in the old form (SPEC-038).
  * Rows keep every key the form does not show (`evidence`, `view`, `code`); only the edited part changes.
  */
 
