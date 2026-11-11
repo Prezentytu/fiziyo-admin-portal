@@ -138,3 +138,18 @@ export type {
   PersonalizationPatch,
   SplitPersonalizationResult,
 } from './exercisePersonalizationWriter';
+export { printableInstructionLines, readExerciseContent } from './readExerciseContent';
+export type {
+  ExerciseContent,
+  ExerciseContentBreathing,
+  ExerciseContentCheckpoint,
+  ExerciseContentCue,
+  ExerciseContentEquipmentItem,
+  ExerciseContentIndication,
+  ExerciseContentInstruction,
+  ExerciseContentMistake,
+  ExerciseContentSide,
+  ExerciseContentSource,
+  ExerciseContentVersion,
+  PrintableInstructionOptions,
+} from './readExerciseContent';
