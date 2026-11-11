@@ -74,41 +74,42 @@ Każda specyfikacja powinna mieć sekcję Changelog na końcu:
 
 ## Indeks specyfikacji
 
-| Nr  | Tytuł                                                                                                 | Opis                                                           | Status      |
-| --- | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- | ----------- |
-| 001 | [Assignment Wizard](SPEC-001-2026-02-04-assignment-wizard.md)                                         | Wizard przypisywania zestawów ćwiczeń pacjentom                | implemented |
-| 002 | [Billing Widget](SPEC-002-2026-02-04-billing-widget.md)                                               | Widget rozliczeniowy Pay-as-you-go                             | implemented |
-| 003 | [Exercises Module](SPEC-003-2026-02-16-exercises-module.md)                                           | Ćwiczenia — formularz, lista, filtrowanie                      | implemented |
-| 004 | [Exercise Sets Module](SPEC-004-2026-02-16-exercise-sets-module.md)                                   | Zestawy ćwiczeń                                                | implemented |
-| 005 | [Patients Module](SPEC-005-2026-02-16-patients-module.md)                                             | Pacjenci — lista, profil, przypisania                          | implemented |
-| 006 | [Billing Details](SPEC-006-2026-03-04-billing-details.md)                                             | Dane firmy do fakturowania i rozliczeń                         | implemented |
-| 007 | [Template vs Plan](SPEC-007-2026-03-07-template-vs-plan.md)                                           | Rozdzielenie szablonów i planów pacjenta                       | Aktywny     |
-| 008 | [Exercise Report Verification Flow](SPEC-008-2026-03-08-exercise-report-verification-flow.md)         | Zgłaszanie ćwiczeń do kolejki verification                     | Aktywny     |
-| 009 | [Organization Exercise Verification](SPEC-009-2026-05-25-organization-exercise-verification.md)       | Weryfikacja ćwiczeń na poziomie organizacji                    | Aktywny     |
-| 010 | [Import Module](SPEC-010-2026-03-08-import-module.md)                                                 | Import dokumentów (plik i plain text)                          | Aktywny     |
-| 011 | [Invite Flow Without Legacy Plan Limits](SPEC-011-2026-03-08-invite-flow-no-legacy-limits.md)         | Invite flow bez limitów starego modelu planów                  | Aktywny     |
-| 012 | [Exercise Dosage Model](SPEC-012-2026-04-08-exercise-dosage-model.md)                                 | Single source of truth dla semantyki podstawowych parametrów   | implemented |
-| 013 | [Verification Dual-Track](SPEC-013-2026-05-26-verification-dual-track.md)                             | Dwa tory weryfikacji + cross-org dla super admin               | Aktywny     |
-| 014 | [Real-time Patient Assignment Sync](SPEC-014-2026-04-17-realtime-patient-sync.md)                     | Push admin->mobile przez GraphQL Subscriptions                 | implemented |
-| 015 | [Assignment Status Enum Alignment](SPEC-015-2026-05-07-assignment-status-enum-alignment.md)           | Migracja statusu assignment na enum GraphQL                    | Aktywny     |
-| 016 | [Admin Portal Access Control](SPEC-016-2026-05-14-admin-portal-access-control.md)                     | Blokada pacjentów w panelu fizjoterapeutów                     | Aktywny     |
-| 017 | [Assignment Display Status](SPEC-017-2026-05-26-assignment-display-status.md)                         | Dynamiczny status przypisania + sygnał Premium                 | implemented |
-| 019 | [Second Gen Skills Open-Mercato](SPEC-019-2026-06-12-second-gen-skills-open-mercato.md)               | Wykonywalne skille, manifest lint, runy i audyty               | implemented |
-| 020 | [AI Image Generation](SPEC-020-2026-07-28-ai-image-generation.md)                                     | OpenRouter Image API + kaskada modeli + UX hook                | implemented |
-| 021 | [Full Patient Personalization](SPEC-021-2026-07-28-full-patient-personalization.md)                   | Routing persystencji + pełna edycja przy assign do pacjenta    | implemented |
-| 022 | [Unified Exercise Parameters](SPEC-022-2026-07-28-unified-exercise-parameters.md)                     | Jedna prezentacja parametrów + parytet treści create/edit      | implemented |
-| 023 | [Mapping overridesJson + duration](SPEC-023-2026-07-28-mapping-overrides-and-duration-deprecation.md) | overridesJson na mappingu + wycofanie edycji duration          | implemented |
-| 024 | [Enrichment personalization](SPEC-024-2026-07-28-enrichment-personalization.md)                       | Personalizacja kroków/cues/safety per pacjent i zestaw         | implemented |
-| 025 | [Catalog bundle import](SPEC-025-2026-08-20-catalog-bundle-import.md)                                 | Import JSON katalogu w Ustawienia → Zaawansowane (każdy fizjo) | implemented |
-| 026 | [Release identity](SPEC-026-2026-09-08-release-identity.md)                                           | Tożsamość release w panelu                                     | implemented |
-| 027 | [Runtime security updates](SPEC-027-2026-09-08-runtime-security-updates.md)                           | Aktualizacje zależności runtime                                | implemented |
-| 028 | [Promote admin](SPEC-028-2026-09-15-promote-admin.md)                                                 | Ręczny Promote PROD z GitHub Actions, nie z UI Vercel          | in-progress |
-| 029 | [Design system v4](SPEC-029-2026-10-15-design-system-v4.md)                                           | Tokeny, prymitywy i powłoka panelu wg design systemu FiziYo    | in-progress |
-| 030 | [Verification stages](SPEC-030-2026-10-26-verification-stages.md)                                     | Weryfikacja ćwiczeń w 5 etapach z oceną poprawności parametrów | in-progress |
-| 031 | [Chat view](SPEC-031-2026-10-30-chat-view.md)                                                         | Czat jak w designie Czat v2: rozmowa z kartami akcji panelu    | in-progress |
-| 032 | [Patient name forms](SPEC-032-2026-10-30-patient-name-forms.md)                                       | Formy imion pacjentów ze słownika zamiast reguł końcówek       | draft       |
-| 033 | [Exercise library pages](SPEC-033-2026-10-31-exercise-library-pages.md)                               | Lista ćwiczeń stronami z API z licznikami zakładek             | in-progress |
-| 034 | [Verification queue header](SPEC-034-2026-11-02-verification-queue-header.md)                         | Jeden nagłówek kolejek weryfikacji z licznikami i główną akcją | implemented |
+| Nr  | Tytuł                                                                                                 | Opis                                                             | Status      |
+| --- | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- | ----------- |
+| 001 | [Assignment Wizard](SPEC-001-2026-02-04-assignment-wizard.md)                                         | Wizard przypisywania zestawów ćwiczeń pacjentom                  | implemented |
+| 002 | [Billing Widget](SPEC-002-2026-02-04-billing-widget.md)                                               | Widget rozliczeniowy Pay-as-you-go                               | implemented |
+| 003 | [Exercises Module](SPEC-003-2026-02-16-exercises-module.md)                                           | Ćwiczenia — formularz, lista, filtrowanie                        | implemented |
+| 004 | [Exercise Sets Module](SPEC-004-2026-02-16-exercise-sets-module.md)                                   | Zestawy ćwiczeń                                                  | implemented |
+| 005 | [Patients Module](SPEC-005-2026-02-16-patients-module.md)                                             | Pacjenci — lista, profil, przypisania                            | implemented |
+| 006 | [Billing Details](SPEC-006-2026-03-04-billing-details.md)                                             | Dane firmy do fakturowania i rozliczeń                           | implemented |
+| 007 | [Template vs Plan](SPEC-007-2026-03-07-template-vs-plan.md)                                           | Rozdzielenie szablonów i planów pacjenta                         | Aktywny     |
+| 008 | [Exercise Report Verification Flow](SPEC-008-2026-03-08-exercise-report-verification-flow.md)         | Zgłaszanie ćwiczeń do kolejki verification                       | Aktywny     |
+| 009 | [Organization Exercise Verification](SPEC-009-2026-05-25-organization-exercise-verification.md)       | Weryfikacja ćwiczeń na poziomie organizacji                      | Aktywny     |
+| 010 | [Import Module](SPEC-010-2026-03-08-import-module.md)                                                 | Import dokumentów (plik i plain text)                            | Aktywny     |
+| 011 | [Invite Flow Without Legacy Plan Limits](SPEC-011-2026-03-08-invite-flow-no-legacy-limits.md)         | Invite flow bez limitów starego modelu planów                    | Aktywny     |
+| 012 | [Exercise Dosage Model](SPEC-012-2026-04-08-exercise-dosage-model.md)                                 | Single source of truth dla semantyki podstawowych parametrów     | implemented |
+| 013 | [Verification Dual-Track](SPEC-013-2026-05-26-verification-dual-track.md)                             | Dwa tory weryfikacji + cross-org dla super admin                 | Aktywny     |
+| 014 | [Real-time Patient Assignment Sync](SPEC-014-2026-04-17-realtime-patient-sync.md)                     | Push admin->mobile przez GraphQL Subscriptions                   | implemented |
+| 015 | [Assignment Status Enum Alignment](SPEC-015-2026-05-07-assignment-status-enum-alignment.md)           | Migracja statusu assignment na enum GraphQL                      | Aktywny     |
+| 016 | [Admin Portal Access Control](SPEC-016-2026-05-14-admin-portal-access-control.md)                     | Blokada pacjentów w panelu fizjoterapeutów                       | Aktywny     |
+| 017 | [Assignment Display Status](SPEC-017-2026-05-26-assignment-display-status.md)                         | Dynamiczny status przypisania + sygnał Premium                   | implemented |
+| 019 | [Second Gen Skills Open-Mercato](SPEC-019-2026-06-12-second-gen-skills-open-mercato.md)               | Wykonywalne skille, manifest lint, runy i audyty                 | implemented |
+| 020 | [AI Image Generation](SPEC-020-2026-07-28-ai-image-generation.md)                                     | OpenRouter Image API + kaskada modeli + UX hook                  | implemented |
+| 021 | [Full Patient Personalization](SPEC-021-2026-07-28-full-patient-personalization.md)                   | Routing persystencji + pełna edycja przy assign do pacjenta      | implemented |
+| 022 | [Unified Exercise Parameters](SPEC-022-2026-07-28-unified-exercise-parameters.md)                     | Jedna prezentacja parametrów + parytet treści create/edit        | implemented |
+| 023 | [Mapping overridesJson + duration](SPEC-023-2026-07-28-mapping-overrides-and-duration-deprecation.md) | overridesJson na mappingu + wycofanie edycji duration            | implemented |
+| 024 | [Enrichment personalization](SPEC-024-2026-07-28-enrichment-personalization.md)                       | Personalizacja kroków/cues/safety per pacjent i zestaw           | implemented |
+| 025 | [Catalog bundle import](SPEC-025-2026-08-20-catalog-bundle-import.md)                                 | Import JSON katalogu w Ustawienia → Zaawansowane (każdy fizjo)   | implemented |
+| 026 | [Release identity](SPEC-026-2026-09-08-release-identity.md)                                           | Tożsamość release w panelu                                       | implemented |
+| 027 | [Runtime security updates](SPEC-027-2026-09-08-runtime-security-updates.md)                           | Aktualizacje zależności runtime                                  | implemented |
+| 028 | [Promote admin](SPEC-028-2026-09-15-promote-admin.md)                                                 | Ręczny Promote PROD z GitHub Actions, nie z UI Vercel            | in-progress |
+| 029 | [Design system v4](SPEC-029-2026-10-15-design-system-v4.md)                                           | Tokeny, prymitywy i powłoka panelu wg design systemu FiziYo      | in-progress |
+| 030 | [Verification stages](SPEC-030-2026-10-26-verification-stages.md)                                     | Weryfikacja ćwiczeń w 5 etapach z oceną poprawności parametrów   | in-progress |
+| 031 | [Chat view](SPEC-031-2026-10-30-chat-view.md)                                                         | Czat jak w designie Czat v2: rozmowa z kartami akcji panelu      | in-progress |
+| 032 | [Patient name forms](SPEC-032-2026-10-30-patient-name-forms.md)                                       | Formy imion pacjentów ze słownika zamiast reguł końcówek         | draft       |
+| 033 | [Exercise library pages](SPEC-033-2026-10-31-exercise-library-pages.md)                               | Lista ćwiczeń stronami z API z licznikami zakładek               | in-progress |
+| 034 | [Verification queue header](SPEC-034-2026-11-02-verification-queue-header.md)                         | Jeden nagłówek kolejek weryfikacji z licznikami i główną akcją   | implemented |
+| 035 | [Verification content v3.3](SPEC-035-2026-11-11-verification-content-v33.md)                          | Centrum weryfikacji czyta i zapisuje ćwiczenie w kontrakcie v3.3 | in-progress |
 
 ## Numery bez specu
 

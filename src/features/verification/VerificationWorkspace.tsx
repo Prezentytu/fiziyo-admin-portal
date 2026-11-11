@@ -10,11 +10,13 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MediaGallery, buildMediaItems } from '@/components/shared';
+import { readExerciseContent } from '@/components/shared/exercise/readExerciseContent';
 import { PageSheet } from '@/components/shared/page';
 import { useExerciseEditorForm } from '@/features/exercises/useExerciseEditorForm';
 import { useExerciseImageGeneration } from '@/features/exercises/useExerciseImageGeneration';
 import { toV3 } from '@/features/verification/utils/enrichmentToV3';
 
+import { useSystemRole } from '@/hooks/useSystemRole';
 import { useVerificationHotkeys } from '@/hooks/useVerificationHotkeys';
 import { aiService } from '@/services/aiService';
 import { resolveExerciseReports } from '@/services/exerciseReportService';
@@ -45,6 +47,7 @@ import { DecisionStage, type DecisionRow } from './stages/DecisionStage';
 import { DuplicateDialog, type DuplicateTarget } from './stages/DuplicateDialog';
 import { RelatedExercisesSection } from '@/features/exercises/RelatedExercisesSection';
 
+import { ContractFacts } from './stages/ContractFacts';
 import { ExtraContentSection } from './stages/ExtraContentSection';
 import { InstructionStage } from './stages/InstructionStage';
 import { MaterialStage, type PendingPhoto } from './stages/MaterialStage';
@@ -55,6 +58,14 @@ import { SafetyStage } from './stages/SafetyStage';
 import { VerificationFloatingBar } from './stages/VerificationFloatingBar';
 import { VerificationStageNav, type StageNavItem, type StageNavState } from './stages/VerificationStageNav';
 import { countFilledMistakes, countFilledTexts, summarizeChanges, toChangeSnapshot } from './utils/changeSummary';
+import {
+  applyVerificationEditsV33,
+  omitRetiredCoreVariablesV33,
+  readContraindicationTextsV33,
+  withV3SchemaMarker,
+} from './utils/contentV33';
+import { EXTRA_CONTENT_GROUPS_V33 } from './utils/extraContent';
+import { buildVerificationFactsV33, sideColumnDiffersFromMode } from './utils/verificationFacts';
 import {
   applyInstructionProposal,
   buildInstructionProposal,
@@ -207,7 +218,18 @@ export function VerificationWorkspace({
 }: VerificationWorkspaceProps) {
   const router = useRouter();
   const { user } = useUser();
+  const { canReviewExercises } = useSystemRole();
   const rootRef = useRef<HTMLDivElement | null>(null);
+
+  // Contract v3.3 (FR-007): the record is read and saved in contract places; a legacy record keeps the old path.
+  const isV33 = useMemo(() => readExerciseContent(exercise).version === '3.3', [exercise]);
+  const contractFacts = useMemo(() => (isV33 ? buildVerificationFactsV33(exercise) : null), [exercise, isV33]);
+  const formSource = useMemo(
+    () => (isV33 ? { ...exercise, enrichmentData: withV3SchemaMarker(exercise.enrichmentData) } : exercise),
+    [exercise, isV33]
+  );
+  const loadedEnrichmentRef = useRef(exercise.enrichmentData);
+  loadedEnrichmentRef.current = exercise.enrichmentData;
 
   // ============================================
   // MUTATIONS
@@ -238,13 +260,20 @@ export function VerificationWorkspace({
 
   const updateCore = useCallback(
     async (variables: Record<string, unknown>) => {
+      if (isV33) {
+        const contractVariables = omitRetiredCoreVariablesV33(variables);
+        if (Object.keys(contractVariables).length === 0) return;
+        await updateExerciseDetails({ variables: { exerciseId: exercise.id, ...contractVariables } });
+        return;
+      }
       await updateExerciseDetails({ variables: { exerciseId: exercise.id, ...variables } });
     },
-    [exercise.id, updateExerciseDetails]
+    [exercise.id, isV33, updateExerciseDetails]
   );
 
   const updateEnrichment = useCallback(
-    async (payload: ExerciseEnrichmentData) => {
+    async (draftPayload: ExerciseEnrichmentData) => {
+      const payload = isV33 ? applyVerificationEditsV33(loadedEnrichmentRef.current, draftPayload) : draftPayload;
       if (saveEnrichment) {
         await saveEnrichment(payload);
         return;
@@ -253,11 +282,11 @@ export function VerificationWorkspace({
         variables: { exerciseId: exercise.id, fieldName: 'enrichmentData', value: JSON.stringify(payload ?? {}) },
       });
     },
-    [exercise.id, saveEnrichment, updateExerciseField]
+    [exercise.id, isV33, saveEnrichment, updateExerciseField]
   );
 
   const form = useExerciseEditorForm({
-    source: exercise,
+    source: formSource,
     updateCore,
     updateEnrichment,
     onError: onSaveError ?? (() => toast.error('Nie udało się zapisać zmian')),
@@ -265,6 +294,9 @@ export function VerificationWorkspace({
   });
   const { core, enrichment, setCoreField, setEnrichmentPath, flush } = form;
   const patient = useMemo<ExerciseEnrichmentPatientV3>(() => enrichment.patient ?? {}, [enrichment.patient]);
+  // The text the patient reads first: the description column on a legacy record, `patient.summary` in v3.3.
+  const patientLead = isV33 ? (patient.summary ?? '') : core.patientDescription;
+  const therapistLead = isV33 ? '' : core.clinicalDescription;
 
   // ============================================
   // STATE
@@ -329,7 +361,7 @@ export function VerificationWorkspace({
     steps: patient.steps ?? [],
     stepImages: patient.step_images,
     photos,
-    description: core.patientDescription,
+    description: patientLead,
     hasVideo,
   });
   const isFollowingText = stage === 'instruction' && isMediaFollowingText;
@@ -386,8 +418,8 @@ export function VerificationWorkspace({
     ]
   );
   const descriptionNumbers = useMemo(
-    () => (descriptionAcknowledged ? [] : findHardcodedNumbers(core.patientDescription)),
-    [descriptionAcknowledged, core.patientDescription]
+    () => (descriptionAcknowledged || isV33 ? [] : findHardcodedNumbers(core.patientDescription)),
+    [descriptionAcknowledged, isV33, core.patientDescription]
   );
   const stopIfCount = countStopIfSymptoms(enrichment.safety?.stop_if);
 
@@ -404,8 +436,11 @@ export function VerificationWorkspace({
         descriptionNumberCount: descriptionNumbers.length,
         hasPendingProposal: proposal !== null,
         stopIfCount,
+        v33: isV33 ? { stepCount: countFilledTexts(patient.steps) } : undefined,
       }),
     [
+      isV33,
+      patient.steps,
       core.name,
       core.patientDescription,
       core.clinicalDescription,
@@ -419,11 +454,17 @@ export function VerificationWorkspace({
     ]
   );
 
-  const [initialSnapshot] = useState(() => toChangeSnapshot(core, photos.length, enrichment));
+  const contentVersion = isV33 ? '3.3' : 'legacy';
+  const [initialSnapshot] = useState(() => toChangeSnapshot(core, photos.length, enrichment, contentVersion));
 
   const changes = useMemo(
-    () => summarizeChanges(initialSnapshot, toChangeSnapshot(core, photos.length, enrichment), replacedPhotoCount),
-    [initialSnapshot, core, photos.length, enrichment, replacedPhotoCount]
+    () =>
+      summarizeChanges(
+        initialSnapshot,
+        toChangeSnapshot(core, photos.length, enrichment, contentVersion),
+        replacedPhotoCount
+      ),
+    [initialSnapshot, core, photos.length, enrichment, contentVersion, replacedPhotoCount]
   );
 
   const latestReport = useMemo(
@@ -562,7 +603,7 @@ export function VerificationWorkspace({
         .join(' ');
       const file = await imageGeneration.generate({
         exerciseName: core.name,
-        exerciseDescription: [core.patientDescription, corrections].filter(Boolean).join(' '),
+        exerciseDescription: [patientLead, corrections].filter(Boolean).join(' '),
         exerciseType: mode === 'hold' ? 'time' : 'reps',
       });
       setGeneratingIndex(null);
@@ -570,7 +611,7 @@ export function VerificationWorkspace({
       const previewUrl = await fileToDataUrl(file);
       setPendingPhoto({ index, previewUrl });
     },
-    [core.name, core.patientDescription, imageGeneration, mode]
+    [core.name, patientLead, imageGeneration, mode]
   );
 
   const handleRetryPhoto = useCallback(() => {
@@ -649,8 +690,8 @@ export function VerificationWorkspace({
     try {
       const response = await aiService.generateEnrichment({
         exerciseName: core.name,
-        patientDescription: core.patientDescription,
-        clinicalDescription: core.clinicalDescription,
+        patientDescription: patientLead,
+        clinicalDescription: therapistLead,
         type: mode === 'hold' ? 'time' : 'reps',
         tags: [...core.mainTags, ...core.additionalTags],
         existingEnrichmentJson: JSON.stringify(enrichment),
@@ -668,7 +709,7 @@ export function VerificationWorkspace({
     } finally {
       setIsGeneratingProposal(false);
     }
-  }, [core, enrichment, mode, patient]);
+  }, [core, enrichment, mode, patient, patientLead, therapistLead]);
 
   // ============================================
   // HANDLERS: decisions
@@ -828,6 +869,7 @@ export function VerificationWorkspace({
     stopIfCount,
     canDecide,
     signerName: user?.fullName ?? 'Twoje konto',
+    isV33,
     organization: isOrganization
       ? {
           statusLabel: getVerificationStatusBadge(
@@ -846,6 +888,8 @@ export function VerificationWorkspace({
     return { key, title: STAGE_TITLES[key], sub: subs[key], state, hasIssues };
   });
 
+  const perSideDose = contractFacts !== null && enrichment.side?.per_side_dose === true;
+
   const decisionRows: DecisionRow[] = [
     {
       key: 'material',
@@ -857,7 +901,7 @@ export function VerificationWorkspace({
     {
       key: 'parameters',
       title: STAGE_TITLES.parameters,
-      summary: `${buildPatientParameterLine(parameterValues, mode, core.side)} · ${formatSessionDuration(evaluation.sessionSeconds, evaluation.sessionIsEstimate)}`,
+      summary: `${buildPatientParameterLine(parameterValues, mode, core.side, perSideDose)} · ${formatSessionDuration(evaluation.sessionSeconds, evaluation.sessionIsEstimate)}`,
       changes: changes.parameters,
       issues: stages.issues.parameters,
     },
@@ -865,7 +909,7 @@ export function VerificationWorkspace({
       key: 'instruction',
       title: STAGE_TITLES.instruction,
       summary: [
-        'Opis',
+        isV33 ? 'Podsumowanie' : 'Opis',
         pluralizePl(countFilledTexts(patient.steps), 'krok', 'kroki', 'kroków'),
         pluralizePl(countFilledTexts(patient.cues), 'wskazówka głosowa', 'wskazówki głosowe', 'wskazówek głosowych'),
         pluralizePl(countFilledMistakes(patient.mistakes), 'typowy błąd', 'typowe błędy', 'typowych błędów'),
@@ -879,7 +923,9 @@ export function VerificationWorkspace({
       summary: [
         pluralizePl(stopIfCount, 'objaw przerwania', 'objawy przerwania', 'objawów przerwania'),
         pluralizePl(
-          countFilledTexts(enrichment.therapist?.contraindications),
+          isV33
+            ? readContraindicationTextsV33(enrichment).length
+            : countFilledTexts(enrichment.therapist?.contraindications),
           'przeciwwskazanie',
           'przeciwwskazania',
           'przeciwwskazań'
@@ -1084,6 +1130,7 @@ export function VerificationWorkspace({
               }}
               onRetryPending={handleRetryPhoto}
               onDiscardPending={() => setPendingPhoto(null)}
+              contractFacts={contractFacts?.material}
             />
           )}
 
@@ -1096,12 +1143,21 @@ export function VerificationWorkspace({
               descriptionNumbers={descriptionNumbers}
               onValueChange={handleParameterChange}
               onAcknowledge={handleAcknowledge}
-              onFixDescription={() =>
-                setCoreField('patientDescription', replaceHardcodedNumbers(core.patientDescription))
-              }
+              onFixDescription={() => {
+                if (!isV33) setCoreField('patientDescription', replaceHardcodedNumbers(core.patientDescription));
+              }}
               onAcknowledgeDescription={() => setDescriptionAcknowledged(true)}
               onCoreFieldChange={setCoreField}
               savedLoadLabel={form.savedLoadLabel}
+              v33={
+                contractFacts
+                  ? {
+                      perSideDose,
+                      sideDiffersFromDocument: sideColumnDiffersFromMode(core.side, enrichment.side?.mode ?? null),
+                      facts: contractFacts.parameters,
+                    }
+                  : undefined
+              }
             />
           )}
 
@@ -1123,6 +1179,11 @@ export function VerificationWorkspace({
               onDismissProposal={() => setProposal(null)}
               focusedStep={focusedStep}
               onFocusStep={handleFocusStep}
+              v33={
+                contractFacts
+                  ? { enrichment, onEnrichmentPathChange: setEnrichmentPath, facts: contractFacts.instruction }
+                  : undefined
+              }
             />
           )}
 
@@ -1132,6 +1193,11 @@ export function VerificationWorkspace({
               therapistDescription={core.clinicalDescription}
               onTherapistDescriptionChange={(value) => setCoreField('clinicalDescription', value)}
               onEnrichmentPathChange={setEnrichmentPath}
+              v33={
+                contractFacts
+                  ? { safetyFacts: contractFacts.safety, therapistFacts: contractFacts.therapist }
+                  : undefined
+              }
             />
           )}
 
@@ -1143,7 +1209,17 @@ export function VerificationWorkspace({
                 core={{ audioCue: core.audioCue, notes: core.notes }}
                 onEnrichmentPathChange={setEnrichmentPath}
                 onCoreFieldChange={setCoreField}
+                groups={isV33 ? EXTRA_CONTENT_GROUPS_V33 : undefined}
               />
+              {contractFacts && (
+                <ContractFacts
+                  title="Pochodzenie i klasyfikacja"
+                  facts={[...contractFacts.classification, ...(canReviewExercises ? contractFacts.team : [])]}
+                  hint="Tylko do odczytu. Kody ze słownika; te pola zmienisz w formularzu ćwiczenia."
+                  collapsible
+                  data-testid="verification-contract-facts"
+                />
+              )}
               {organizationId && (
                 <RelatedExercisesSection
                   organizationId={organizationId}

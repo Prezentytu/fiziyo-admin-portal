@@ -30,6 +30,8 @@ import {
   type ParameterKey,
   type ParameterValues,
 } from '../utils/parameterRules';
+import type { VerificationFact } from '../utils/verificationFacts';
+import { ContractFacts } from './ContractFacts';
 import { StageSection } from './StageSection';
 
 interface ParametersStageProps {
@@ -45,6 +47,8 @@ interface ParametersStageProps {
   onCoreFieldChange: <K extends keyof ExerciseCoreDraft>(field: K, value: ExerciseCoreDraft[K]) => void;
   /** Saved load the kilogram field cannot show (band, RPE, text). */
   savedLoadLabel?: string | null;
+  /** Set for a record in contract v3.3: side facts of the document and the remaining parameter facts, read-only. */
+  v33?: { perSideDose: boolean; sideDiffersFromDocument: boolean; facts: VerificationFact[] };
 }
 
 const FIELD_INFO: Partial<Record<ParameterKey, string>> = {
@@ -339,6 +343,7 @@ export function ParametersStage({
   onAcknowledgeDescription,
   onCoreFieldChange,
   savedLoadLabel = null,
+  v33,
 }: ParametersStageProps) {
   const sessionFinding = evaluation.findings.find((finding) => finding.key === 'session');
   const sessionText = formatSessionDuration(evaluation.sessionSeconds, evaluation.sessionIsEstimate);
@@ -430,6 +435,19 @@ export function ParametersStage({
               </Select>
               {sideFactor(core.side) === 2 && (
                 <span className="text-[13px] text-label-secondary">Czas liczony podwójnie</span>
+              )}
+              {v33?.perSideDose && (
+                <span
+                  className="text-[13px] font-semibold text-foreground"
+                  data-testid="verification-param-per-side-note"
+                >
+                  Serie i powtórzenia podane na jedną stronę
+                </span>
+              )}
+              {v33?.sideDiffersFromDocument && (
+                <span className="text-[13px] text-status-warning" data-testid="verification-param-side-mismatch-note">
+                  Tryb strony w treści ćwiczenia jest inny. Popraw go w formularzu ćwiczenia.
+                </span>
               )}
             </div>
           </div>
@@ -542,6 +560,10 @@ export function ParametersStage({
           ))}
         </div>
       </StageSection>
+
+      {v33 && (
+        <ContractFacts title="Strona, sprzęt i zakresy" facts={v33.facts} data-testid="verification-param-facts" />
+      )}
     </div>
   );
 }

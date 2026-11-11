@@ -238,6 +238,20 @@ describe('buildPatientParameterLine', () => {
       '3 serie × 12 powtórzeń na każdą stronę · przerwa 60 s'
     );
   });
+
+  it('przy dawce na stronę (v3.3) mówi „na każdą stronę” także dla „naprzemiennie”', () => {
+    expect(buildPatientParameterLine(typicalReps, 'reps', 'alternating')).toBe('3 serie × 12 powtórzeń · przerwa 60 s');
+    expect(buildPatientParameterLine(typicalReps, 'reps', 'alternating', true)).toBe(
+      '3 serie × 12 powtórzeń na każdą stronę · przerwa 60 s'
+    );
+  });
+
+  it('czas ćwiczenia „naprzemiennie” liczy powtórzenia raz, także gdy rekord podaje je na stronę', () => {
+    // Known gap (SPEC-035): with `side.per_side_dose` the patient does twice as many repetitions.
+    expect(computeSessionSeconds(typicalReps, 'reps', 'alternating')).toBe(
+      computeSessionSeconds(typicalReps, 'reps', 'none')
+    );
+  });
 });
 
 describe('hardcoded numbers in patient description', () => {

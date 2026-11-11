@@ -465,11 +465,17 @@ export function describeFieldNote(field: ParameterFieldState): string {
   }
 }
 
-export function buildPatientParameterLine(values: ParameterValues, mode: ExecutionMode, side: string): string {
+export function buildPatientParameterLine(
+  values: ParameterValues,
+  mode: ExecutionMode,
+  side: string,
+  /** Contract v3.3 `side.per_side_dose`: the numbers are per side also outside „Na każdą stronę”. */
+  perSideDose = false
+): string {
   const sets = positive(values.sets);
   const volume =
     mode === 'reps' ? `${positive(values.reps) ?? '–'} powtórzeń` : `${positive(values.hold) ?? '–'} s utrzymania`;
-  const sideText = sideFactor(side) === 2 ? ' na każdą stronę' : '';
+  const sideText = sideFactor(side) === 2 || perSideDose ? ' na każdą stronę' : '';
   const rest = positive(values.rest);
   const restText = rest ? ` · przerwa ${rest} s` : '';
   return `${sets ?? '–'} serie × ${volume}${sideText}${restText}`;

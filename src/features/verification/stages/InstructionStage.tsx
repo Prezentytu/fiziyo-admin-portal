@@ -12,7 +12,13 @@ import {
   PlayerHintLengthCounter,
 } from '@/components/shared/enrichment/PlayerHintLengthCounter';
 import type { ExerciseCoreDraft } from '@/features/exercises/useExerciseEditorForm';
-import type { EnrichmentPatientMistakeV3, ExerciseEnrichmentPatientV3 } from '@/graphql/types/exerciseEnrichment.types';
+import type {
+  EnrichmentPatientMistakeV3,
+  ExerciseEnrichmentData,
+  ExerciseEnrichmentPatientV3,
+} from '@/graphql/types/exerciseEnrichment.types';
+import { INSTRUCTION_CONTENT_GROUP_V33, SUMMARY_FIELD_V33 } from '../utils/extraContent';
+import type { VerificationFact } from '../utils/verificationFacts';
 import type { InstructionProposal } from '../utils/instructionProposal';
 import {
   CUE_PHASE_OPTIONS,
@@ -24,6 +30,8 @@ import {
 } from '../utils/stepMedia';
 import { MIN_NAME_LENGTH, MIN_PATIENT_DESCRIPTION_LENGTH } from '../utils/verificationStages';
 import { isShownInPlayer } from '@/features/exercises/utils/playerHintLength';
+import { ContractFacts } from './ContractFacts';
+import { ExtraContentField, ExtraContentGroupSection } from './ExtraContentSection';
 import { LengthHint } from './LengthHint';
 import { SegmentedControl } from './SegmentedControl';
 import { StageSection } from './StageSection';
@@ -42,7 +50,19 @@ interface InstructionStageProps {
   /** Step being read (null: the description); its text is repeated next to the media. */
   focusedStep: number | null;
   onFocusStep: (stepIndex: number | null) => void;
+  /**
+   * Set for a record in contract v3.3: the retired description column gives way to `patient.summary`
+   * and the remaining patient facts of the contract join the stage.
+   */
+  v33?: {
+    enrichment: ExerciseEnrichmentData;
+    onEnrichmentPathChange: (path: string, value: unknown) => void;
+    facts: VerificationFact[];
+  };
 }
+
+const NO_CORE_FIELDS = { audioCue: '', notes: '' };
+const ignoreCoreField = () => undefined;
 
 function ProposalCard({
   proposal,
@@ -128,6 +148,7 @@ export function InstructionStage({
   onDismissProposal,
   focusedStep,
   onFocusStep,
+  v33,
 }: InstructionStageProps) {
   const steps = patient.steps ?? [];
   const cues = patient.cues ?? [];
@@ -179,33 +200,44 @@ export function InstructionStage({
             data-testid="verification-instruction-name-input"
           />
         </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="verification-instruction-description" className="text-[13px] text-label-secondary">
-            Opis
-          </Label>
-          <p className="text-[13px] text-label-tertiary">Widoczny przed, w trakcie i po ćwiczeniu</p>
-          <Textarea
-            id="verification-instruction-description"
-            value={patientDescription}
-            rows={4}
-            className="field-sizing-content"
-            onChange={(event) => onCoreFieldChange('patientDescription', event.target.value)}
+        {v33 ? (
+          <ExtraContentField
+            field={SUMMARY_FIELD_V33}
+            enrichment={v33.enrichment}
+            core={NO_CORE_FIELDS}
+            onEnrichmentPathChange={v33.onEnrichmentPathChange}
+            onCoreFieldChange={ignoreCoreField}
             onFocus={() => onFocusStep(null)}
-            aria-describedby="verification-instruction-description-count verification-instruction-description-player-length"
-            data-testid="verification-instruction-description-input"
           />
-          <LengthHint
-            id="verification-instruction-description-count"
-            length={descriptionLength}
-            min={MIN_PATIENT_DESCRIPTION_LENGTH}
-          />
-          <DescriptionPlayerHintCounter
-            id="verification-instruction-description-player-length"
-            description={patientDescription}
-            steps={steps}
-            testId="verification-instruction-description-player-length"
-          />
-        </div>
+        ) : (
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="verification-instruction-description" className="text-[13px] text-label-secondary">
+              Opis
+            </Label>
+            <p className="text-[13px] text-label-tertiary">Widoczny przed, w trakcie i po ćwiczeniu</p>
+            <Textarea
+              id="verification-instruction-description"
+              value={patientDescription}
+              rows={4}
+              className="field-sizing-content"
+              onChange={(event) => onCoreFieldChange('patientDescription', event.target.value)}
+              onFocus={() => onFocusStep(null)}
+              aria-describedby="verification-instruction-description-count verification-instruction-description-player-length"
+              data-testid="verification-instruction-description-input"
+            />
+            <LengthHint
+              id="verification-instruction-description-count"
+              length={descriptionLength}
+              min={MIN_PATIENT_DESCRIPTION_LENGTH}
+            />
+            <DescriptionPlayerHintCounter
+              id="verification-instruction-description-player-length"
+              description={patientDescription}
+              steps={steps}
+              testId="verification-instruction-description-player-length"
+            />
+          </div>
+        )}
       </StageSection>
 
       <StageSection title="Kroki" data-testid="verification-instruction-steps">
@@ -399,6 +431,23 @@ export function InstructionStage({
           + Dodaj błąd
         </Button>
       </StageSection>
+
+      {v33 && (
+        <>
+          <ExtraContentGroupSection
+            group={INSTRUCTION_CONTENT_GROUP_V33}
+            enrichment={v33.enrichment}
+            core={NO_CORE_FIELDS}
+            onEnrichmentPathChange={v33.onEnrichmentPathChange}
+            onCoreFieldChange={ignoreCoreField}
+          />
+          <ContractFacts
+            title="Łatwiej, trudniej, oddech"
+            facts={v33.facts}
+            data-testid="verification-instruction-facts"
+          />
+        </>
+      )}
     </div>
   );
 }

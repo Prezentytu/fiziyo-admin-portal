@@ -115,7 +115,9 @@ describe('VerificationWorkspace – rekord stary', () => {
       within(screen.getByTestId('verification-safety-contraindications-list')).getByText('Świeży uraz')
     ).toBeInTheDocument();
     expect(screen.getByTestId('verification-safety-therapist-description-input')).toHaveValue(THERAPIST_DESCRIPTION);
-    expect(within(screen.getByTestId('verification-safety-indications-list')).getByText('Ból kolana')).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId('verification-safety-indications-list')).getByText('Ból kolana')
+    ).toBeInTheDocument();
   });
 
   it('pokazuje pozostałe treści karty w etapie Decyzja i przepuszcza kompletny rekord', async () => {
@@ -154,7 +156,9 @@ describe('VerificationWorkspace – rekord stary', () => {
     await user.type(screen.getByTestId('verification-safety-contraindications-input'), 'Ostry stan zapalny{Enter}');
     await user.click(screen.getByTestId('verification-skip-btn'));
 
-    await waitFor(() => expect(savedVariables().some((variables) => variables.fieldName === 'enrichmentData')).toBe(true));
+    await waitFor(() =>
+      expect(savedVariables().some((variables) => variables.fieldName === 'enrichmentData')).toBe(true)
+    );
     const all = savedVariables();
     expect(all).toContainEqual({ exerciseId: 'legacy-1', description: `${DESCRIPTION} Oddychaj spokojnie.` });
     const enrichmentSave = all.find((variables) => variables.fieldName === 'enrichmentData');
