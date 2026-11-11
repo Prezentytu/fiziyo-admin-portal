@@ -18,6 +18,7 @@ import {
 import { listOverriddenEnrichmentPaths, type EnrichmentOverride } from './enrichmentOverride';
 import { getContentSections, type ContentSectionId } from './contentContract';
 import type { ExerciseFieldSurface } from './fieldContract';
+import type { ExerciseContentVersion } from './readExerciseContent';
 import { cn } from '@/lib/utils';
 
 export interface ExercisePatientContentFieldsProps {
@@ -41,6 +42,8 @@ export interface ExercisePatientContentFieldsProps {
   onRestoreAll?: () => void;
   className?: string;
   testIdPrefix?: string;
+  /** Kontrakt treści rekordu; `3.3` pokazuje pola v3.3 i ukrywa wycofane (tylko edytor szablonu). */
+  contentVersion?: ExerciseContentVersion;
 }
 
 export function ExercisePatientContentFields({
@@ -60,6 +63,7 @@ export function ExercisePatientContentFields({
   onRestoreAll,
   className,
   testIdPrefix = 'exercise-patient-content',
+  contentVersion = 'legacy',
 }: Readonly<ExercisePatientContentFieldsProps>) {
   const sections = getContentSections(surface);
   const sectionIds = new Set<ContentSectionId>(sections.map((section) => section.id));
@@ -133,6 +137,7 @@ export function ExercisePatientContentFields({
           disabled={disabled}
           isPathDirty={isPathDirty}
           setPath={setPath}
+          contentVersion={contentVersion}
         />
       ) : null}
 
@@ -143,6 +148,7 @@ export function ExercisePatientContentFields({
           disabled={disabled}
           isPathDirty={isPathDirty}
           setPath={setPath}
+          contentVersion={contentVersion}
         />
       ) : null}
     </div>

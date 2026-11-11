@@ -16,7 +16,9 @@ import {
   isMistakeRowEmpty,
 } from '@/components/shared/enrichment/canRemovePlaceholderRow';
 import { cn } from '@/lib/utils';
+import type { ExerciseContentVersion } from '@/components/shared/exercise/readExerciseContent';
 import type { EnrichmentPatientMistakeV3, ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
+import { EquipmentItemsEditor, TextItemsEditor, TherapistNoteField } from './ExerciseV33Editors';
 
 /** Function to check whether an enrichment path differs from the saved baseline. */
 type IsPathDirty = (path: string) => boolean;
@@ -280,6 +282,8 @@ interface PatientExtrasSectionProps {
   disabled?: boolean;
   isPathDirty: IsPathDirty;
   setPath: (path: string, value: unknown) => void;
+  /** `3.3` adds the editors of facts that exist only in contract v3.3 (edit mode). */
+  contentVersion?: ExerciseContentVersion;
 }
 
 export function PatientExtrasSection({
@@ -288,6 +292,7 @@ export function PatientExtrasSection({
   disabled = false,
   isPathDirty,
   setPath,
+  contentVersion = 'legacy',
 }: Readonly<PatientExtrasSectionProps>) {
   const mistakes = data.patient?.mistakes ?? [];
   const shouldFeel = data.patient?.should_feel ?? '';
@@ -360,6 +365,48 @@ export function PatientExtrasSection({
             onChange={(value) => setPath('patient.when_to_do', value)}
             testId="exercise-detail-when-to-do-input"
           />
+          {contentVersion === '3.3' ? (
+            <>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <EditableTextBlock
+                  label={LABELS.easier}
+                  value={data.patient?.easier ?? ''}
+                  placeholder="np. napinaj słabiej albo podłóż większy ręcznik"
+                  editable
+                  disabled={disabled}
+                  minHeight="min-h-[64px]"
+                  emptyText="—"
+                  dirty={isPathDirty('patient.easier')}
+                  onChange={(value) => setPath('patient.easier', value)}
+                  testId="exercise-detail-easier-input"
+                />
+                <EditableTextBlock
+                  label={LABELS.harder}
+                  value={data.patient?.harder ?? ''}
+                  placeholder="np. przytrzymaj dłużej w końcowej pozycji"
+                  editable
+                  disabled={disabled}
+                  minHeight="min-h-[64px]"
+                  emptyText="—"
+                  dirty={isPathDirty('patient.harder')}
+                  onChange={(value) => setPath('patient.harder', value)}
+                  testId="exercise-detail-harder-input"
+                />
+              </div>
+              <EditableTextBlock
+                label={LABELS.breathing}
+                value={data.breathing?.text ?? ''}
+                placeholder="np. wydech przy napinaniu, wdech przy rozluźnianiu"
+                editable
+                disabled={disabled}
+                minHeight="min-h-[64px]"
+                emptyText="—"
+                dirty={isPathDirty('breathing.text')}
+                onChange={(value) => setPath('breathing.text', value)}
+                testId="exercise-detail-breathing-input"
+              />
+            </>
+          ) : null}
         </div>
       ) : (
         <div className="space-y-3">
@@ -411,6 +458,8 @@ interface SafetySectionProps {
   disabled?: boolean;
   isPathDirty: IsPathDirty;
   setPath: (path: string, value: unknown) => void;
+  /** `3.3` hides the retired intensity guide and edits `safety.contraindications` (edit mode). */
+  contentVersion?: ExerciseContentVersion;
 }
 
 export function SafetySection({
@@ -419,6 +468,7 @@ export function SafetySection({
   disabled = false,
   isPathDirty,
   setPath,
+  contentVersion = 'legacy',
 }: Readonly<SafetySectionProps>) {
   const stopIf = data.safety?.stop_if ?? '';
   const intensityGuide = data.safety?.intensity_guide ?? '';
@@ -443,18 +493,31 @@ export function SafetySection({
             onChange={(value) => setPath('safety.stop_if', value)}
             testId="exercise-detail-stop-if-input"
           />
-          <EditableTextBlock
-            label={LABELS.intensityGuide}
-            value={intensityGuide}
-            placeholder="np. utrzymuj intensywność 5–6/10 w skali odczuwanego wysiłku"
-            editable
-            disabled={disabled}
-            minHeight="min-h-[70px]"
-            emptyText="—"
-            dirty={isPathDirty('safety.intensity_guide')}
-            onChange={(value) => setPath('safety.intensity_guide', value)}
-            testId="exercise-detail-intensity-guide-input"
-          />
+          {contentVersion === '3.3' ? (
+            <TextItemsEditor
+              title={LABELS.contraindications}
+              items={data.safety?.contraindications ?? []}
+              placeholder="np. świeży uraz kolana"
+              addLabel="Dodaj przeciwwskazanie"
+              disabled={disabled}
+              dirty={isPathDirty('safety.contraindications')}
+              onChange={(items) => setPath('safety.contraindications', items)}
+              testIdPrefix="exercise-detail-contraindications"
+            />
+          ) : (
+            <EditableTextBlock
+              label={LABELS.intensityGuide}
+              value={intensityGuide}
+              placeholder="np. utrzymuj intensywność 5–6/10 w skali odczuwanego wysiłku"
+              editable
+              disabled={disabled}
+              minHeight="min-h-[70px]"
+              emptyText="—"
+              dirty={isPathDirty('safety.intensity_guide')}
+              onChange={(value) => setPath('safety.intensity_guide', value)}
+              testId="exercise-detail-intensity-guide-input"
+            />
+          )}
           <div
             className={cn(
               'flex items-center gap-3 rounded-xl border p-3 transition-colors',
@@ -508,6 +571,9 @@ interface TherapistSectionProps {
   onClinicalDescriptionChange: (value: string) => void;
   setPath: (path: string, value: unknown) => void;
   persist: () => Promise<void>;
+  /** `3.3` replaces the retired description and notes with checkpoints and one clinical note (edit mode). */
+  contentVersion?: ExerciseContentVersion;
+  isPathDirty?: IsPathDirty;
 }
 
 export function TherapistSection({
@@ -519,8 +585,34 @@ export function TherapistSection({
   onClinicalDescriptionChange,
   setPath,
   persist,
+  contentVersion = 'legacy',
+  isPathDirty = () => false,
 }: Readonly<TherapistSectionProps>) {
   const therapist = data.therapist ?? {};
+
+  if (editable && contentVersion === '3.3') {
+    return (
+      <SectionCard title="Dla fizjoterapeuty" icon={<Stethoscope className="h-4 w-4 text-muted-foreground" />} testId="exercise-detail-therapist">
+        <TextItemsEditor
+          title={LABELS.checkpoints}
+          items={therapist.checkpoints ?? []}
+          placeholder="np. biodro i tułów nieruchome"
+          addLabel="Dodaj punkt kontrolny"
+          disabled={disabled}
+          dirty={isPathDirty('therapist.checkpoints')}
+          onChange={(items) => setPath('therapist.checkpoints', items)}
+          testIdPrefix="exercise-detail-checkpoints"
+        />
+        <TherapistNoteField
+          value={therapist.note ?? ''}
+          disabled={disabled}
+          dirty={isPathDirty('therapist.note')}
+          onChange={(value) => setPath('therapist.note', value)}
+        />
+      </SectionCard>
+    );
+  }
+
   const hasTherapistReadContent =
     hasText(clinicalDescription) ||
     hasText(therapist.clinical_notes) ||
@@ -584,6 +676,8 @@ interface MetadataSectionProps {
   onVideoUrlChange: (value: string) => void;
   onNotesChange: (value: string) => void;
   setPath: (path: string, value: unknown) => void;
+  /** `3.3` keeps the video link and edits `equipment_items`; retired and team-only fields are not rendered (edit mode). */
+  contentVersion?: ExerciseContentVersion;
 }
 
 function ReadChips({ label, items }: Readonly<{ label: string; items: string[] }>) {
@@ -605,6 +699,36 @@ function ReadChips({ label, items }: Readonly<{ label: string; items: string[] }
   );
 }
 
+function VideoUrlField({
+  value,
+  dirty,
+  disabled,
+  onChange,
+}: Readonly<{ value: string; dirty: boolean; disabled: boolean; onChange: (value: string) => void }>) {
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-1">
+        <Label className="text-xs text-muted-foreground" htmlFor="exercise-detail-video-url">
+          Link do filmu
+        </Label>
+        <DirtyDot active={dirty} />
+      </div>
+      <Input
+        data-testid="exercise-detail-video-url-input"
+        id="exercise-detail-video-url"
+        value={value}
+        placeholder="https://..."
+        onChange={(event) => onChange(event.target.value)}
+        disabled={disabled}
+        className={cn(
+          'h-9 text-sm transition-colors',
+          dirty && 'border-status-warning/70 bg-status-warning-muted dark:border-status-warning/40'
+        )}
+      />
+    </div>
+  );
+}
+
 export function MetadataSection({
   data,
   videoUrl,
@@ -617,7 +741,9 @@ export function MetadataSection({
   onVideoUrlChange,
   onNotesChange,
   setPath,
+  contentVersion = 'legacy',
 }: Readonly<MetadataSectionProps>) {
+  const isV33Edit = editable && contentVersion === '3.3';
   const equipment = data.equipment ?? [];
   const keywords = data.ai?.keywords ?? [];
   const problems = data.ai?.problems ?? [];
@@ -636,29 +762,24 @@ export function MetadataSection({
   if (!editable && !hasReadContent) return null;
 
   return (
-    <SectionCard title="Metadane i wyszukiwanie" icon={<Tags className="h-4 w-4 text-muted-foreground" />} testId="exercise-detail-metadata">
-      {editable ? (
+    <SectionCard
+      title={isV33Edit ? 'Sprzęt i film' : 'Metadane i wyszukiwanie'}
+      icon={<Tags className="h-4 w-4 text-muted-foreground" />}
+      testId="exercise-detail-metadata"
+    >
+      {isV33Edit ? (
         <div className="space-y-4">
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-1">
-              <Label className="text-xs text-muted-foreground" htmlFor="exercise-detail-video-url">
-                Link do filmu
-              </Label>
-              <DirtyDot active={videoUrlDirty} />
-            </div>
-            <Input
-              data-testid="exercise-detail-video-url-input"
-              id="exercise-detail-video-url"
-              value={videoUrl}
-              placeholder="https://..."
-              onChange={(event) => onVideoUrlChange(event.target.value)}
-              disabled={disabled}
-              className={cn(
-                'h-9 text-sm transition-colors',
-                videoUrlDirty && 'border-status-warning/70 bg-status-warning-muted dark:border-status-warning/40'
-              )}
-            />
-          </div>
+          <VideoUrlField value={videoUrl} dirty={videoUrlDirty} disabled={disabled} onChange={onVideoUrlChange} />
+          <EquipmentItemsEditor
+            items={data.equipment_items ?? []}
+            disabled={disabled}
+            dirty={isPathDirty('equipment_items')}
+            onChange={(items) => setPath('equipment_items', items)}
+          />
+        </div>
+      ) : editable ? (
+        <div className="space-y-4">
+          <VideoUrlField value={videoUrl} dirty={videoUrlDirty} disabled={disabled} onChange={onVideoUrlChange} />
           <EditableTextBlock
             label={LABELS.notes}
             value={notes}

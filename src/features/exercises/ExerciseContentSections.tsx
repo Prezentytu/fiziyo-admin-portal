@@ -1,6 +1,7 @@
 'use client';
 
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
+import type { ExerciseContentVersion } from '@/components/shared/exercise/readExerciseContent';
 import { ExercisePatientContentFields } from '@/components/shared/exercise/ExercisePatientContentFields';
 import { TherapistSection, MetadataSection } from './ExerciseDetailSections';
 
@@ -25,6 +26,11 @@ export interface ExerciseContentSectionsProps {
   setPath: (path: string, value: unknown) => void;
   /** When false, skips PatientLeadSection (create wizard keeps a lean description above). */
   showPatientLead?: boolean;
+  /**
+   * Kontrakt treści rekordu. `3.3` pokazuje edytory pól v3.3 i nie renderuje pól wycofanych
+   * (opis dla pacjenta, opis kliniczny, notatka, polecenie audio i stare pola dokumentu); SPEC-037.
+   */
+  contentVersion?: ExerciseContentVersion;
 }
 
 /**
@@ -51,7 +57,10 @@ export function ExerciseContentSections({
   onNotesChange,
   setPath,
   showPatientLead = true,
+  contentVersion = 'legacy',
 }: Readonly<ExerciseContentSectionsProps>) {
+  const isV33 = contentVersion === '3.3';
+
   return (
     <div className="space-y-4" data-testid="exercise-content-sections">
       <ExercisePatientContentFields
@@ -66,7 +75,8 @@ export function ExerciseContentSections({
         audioCue={audioCue}
         onAudioCueChange={onAudioCueChange}
         showPatientLead={showPatientLead}
-        showCoreScalars
+        showCoreScalars={!isV33}
+        contentVersion={contentVersion}
         testIdPrefix="exercise-patient-content"
       />
 
@@ -79,6 +89,8 @@ export function ExerciseContentSections({
         onClinicalDescriptionChange={onClinicalDescriptionChange}
         setPath={setPath}
         persist={async () => {}}
+        contentVersion={contentVersion}
+        isPathDirty={isPathDirty}
       />
 
       <MetadataSection
@@ -93,6 +105,7 @@ export function ExerciseContentSections({
         onVideoUrlChange={onVideoUrlChange}
         onNotesChange={onNotesChange}
         setPath={setPath}
+        contentVersion={contentVersion}
       />
     </div>
   );

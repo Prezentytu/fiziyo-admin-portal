@@ -306,6 +306,27 @@ Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu r
 | `exercise-internal-notes-status`                    | Stan zapisu notatek roboczych                            | `InternalNotesPanel.tsx`      |
 | `exercise-internal-notes-error`                     | Notatek nie wczytano, edytor ukryty                      | `InternalNotesPanel.tsx`      |
 | `exercise-editor-saved-load-note`                   | Zapisane obciążenie spoza kilogramów                     | `ExerciseEditor.tsx`          |
+| `exercise-editor-advanced-json-error`               | Błąd panelu JSON (np. brak `schemaVersion`)              | `ExerciseEditor.tsx`          |
+| `exercise-detail-easier-input`                      | 3.3: jak wykonać łatwiej (`patient.easier`)              | `ExerciseDetailSections.tsx`  |
+| `exercise-detail-harder-input`                      | 3.3: jak wykonać trudniej (`patient.harder`)             | `ExerciseDetailSections.tsx`  |
+| `exercise-detail-breathing-input`                   | 3.3: oddech (`breathing.text`)                           | `ExerciseDetailSections.tsx`  |
+| `exercise-detail-contraindications-add-btn`         | 3.3: dodaj przeciwwskazanie                              | `ExerciseV33Editors.tsx`      |
+| `exercise-detail-contraindications-item-{i}`        | 3.3: tekst przeciwwskazania                              | `ExerciseV33Editors.tsx`      |
+| `exercise-detail-contraindications-remove-{i}`      | 3.3: usuń przeciwwskazanie                               | `ExerciseV33Editors.tsx`      |
+| `exercise-detail-checkpoints-add-btn`               | 3.3: dodaj punkt kontrolny                               | `ExerciseV33Editors.tsx`      |
+| `exercise-detail-checkpoints-item-{i}`              | 3.3: tekst punktu kontrolnego                            | `ExerciseV33Editors.tsx`      |
+| `exercise-detail-checkpoints-remove-{i}`            | 3.3: usuń punkt kontrolny                                | `ExerciseV33Editors.tsx`      |
+| `exercise-detail-therapist-note-input`              | 3.3: uwagi kliniczne (`therapist.note`, 600 znaków)      | `ExerciseV33Editors.tsx`      |
+| `exercise-detail-therapist-note-counter`            | 3.3: licznik znaków uwag klinicznych                     | `ExerciseV33Editors.tsx`      |
+| `exercise-detail-equipment-items-add-btn`           | 3.3: dodaj sprzęt (`equipment_items`)                    | `ExerciseV33Editors.tsx`      |
+| `exercise-detail-equipment-items-row-{i}`           | 3.3: wiersz sprzętu                                      | `ExerciseV33Editors.tsx`      |
+| `exercise-detail-equipment-items-label-{i}`         | 3.3: nazwa sprzętu                                       | `ExerciseV33Editors.tsx`      |
+| `exercise-detail-equipment-items-qty-{i}`           | 3.3: liczba sztuk                                        | `ExerciseV33Editors.tsx`      |
+| `exercise-detail-equipment-items-required-{i}`      | 3.3: przełącznik „niezbędny”                             | `ExerciseV33Editors.tsx`      |
+| `exercise-detail-equipment-items-remove-{i}`        | 3.3: usuń sprzęt                                         | `ExerciseV33Editors.tsx`      |
+| `exercise-detail-equipment-subs-{i}-add-btn`        | 3.3: dodaj zamiennik sprzętu                             | `ExerciseV33Editors.tsx`      |
+| `exercise-detail-equipment-subs-{i}-item-{j}`       | 3.3: tekst zamiennika                                    | `ExerciseV33Editors.tsx`      |
+| `exercise-detail-equipment-subs-{i}-remove-{j}`     | 3.3: usuń zamiennik                                      | `ExerciseV33Editors.tsx`      |
 | `exercise-detail-parameters-primary-group`          | Wyróżniona sekcja "Podstawowe parametry"                 | `ExerciseParametersPanel.tsx` |
 | `exercise-param-summary-stat`                       | Wyróżniony podsumowujący stat (czas trwania)             | `ExerciseParametersPanel.tsx` |
 | `exercise-param-summary-stat-info`                  | Info tooltip przy podsumowującym stat                    | `ExerciseParametersPanel.tsx` |

@@ -24,6 +24,11 @@ export const EXERCISE_CONTENT_LABELS = {
   keywords: 'Słowa kluczowe',
   audioCue: 'Polecenia audio',
   notes: 'Wskazówka fizjoterapeuty',
+  easier: 'Jak wykonać łatwiej',
+  harder: 'Jak wykonać trudniej',
+  breathing: 'Oddech',
+  checkpoints: 'Punkty kontrolne',
+  therapistNote: 'Uwagi kliniczne',
 } as const;
 
 /** `notes` reaches the patient plan as „Wskazówka fizjoterapeuty” in the mobile app. */
