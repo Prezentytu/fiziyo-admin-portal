@@ -40,7 +40,7 @@ Moduł obsługuje dwa niezależne tory:
 - `patient.step_images` i `patient.cue_phases` to addytywne klucze enrichment v3; po usunięciu kroku/wskazówki przesuwaj indeksy helperami z `utils/stepMedia.ts`.
 - Copy bez słowa „kliniczny”; pole `clinicalDescription` = „Opis dla fizjoterapeuty”.
 
-## Ćwiczenie w kontrakcie v3.3 (SPEC-035)
+## Ćwiczenie w kontrakcie v3.3 (SPEC-037)
 
 - Wersję rozstrzyga `readExerciseContent`; rekord stary zachowuje dotychczasowe zachowanie.
 - Zapis rekordu 3.3 idzie przez `applyVerificationEditsV33` (`utils/contentV33.ts`): kopia wczytanego dokumentu plus ścieżki z `V33_EDITABLE_PATHS`. Nowe pole edytowalne dopisujesz do tej listy; nigdy nie piszesz do `therapist.indications`, `therapist.contraindications`, `equipment` ani kolumn opisu.

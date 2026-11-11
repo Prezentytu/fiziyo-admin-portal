@@ -247,7 +247,7 @@ describe('buildPatientParameterLine', () => {
   });
 
   it('czas ćwiczenia „naprzemiennie” liczy powtórzenia raz, także gdy rekord podaje je na stronę', () => {
-    // Known gap (SPEC-035): with `side.per_side_dose` the patient does twice as many repetitions.
+    // Known gap (SPEC-037): with `side.per_side_dose` the patient does twice as many repetitions.
     expect(computeSessionSeconds(typicalReps, 'reps', 'alternating')).toBe(
       computeSessionSeconds(typicalReps, 'reps', 'none')
     );

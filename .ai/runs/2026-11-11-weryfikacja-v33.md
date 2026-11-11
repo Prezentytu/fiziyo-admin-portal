@@ -1,11 +1,11 @@
 # Centrum weryfikacji czyta i zapisuje ćwiczenie v3.3
 
-- Issue / spec: FR-007 (kontrakt v3.3, bramka G1), SPEC-035
+- Issue / spec: FR-007 (kontrakt v3.3, bramka G1), SPEC-037
 - Owning repo: fiziyo-admin-portal
 - Status runu: working (commity lokalne, bez pusha i PR)
 - Upoważnienie: zadanie koordynatora w imieniu Przemka; commit lokalny tak, push i PR nie
 - Writer: agent (Claude Code)
-- Dozwolone pliki: `src/features/verification/**`, SPEC-035 i indeks, `docs/testing/data-testid-map.md`, ten run
+- Dozwolone pliki: `src/features/verification/**`, SPEC-037 i indeks, `docs/testing/data-testid-map.md`, ten run
 - Wykluczenia: formularz edycji ćwiczenia (`src/features/exercises/*Editor*`, `useExerciseEditorForm`, `buildEnrichmentUpdateVariables`, `useEnrichmentDraft`), ujednolicenie listy parametrów, kontrakt GraphQL, DEV i PROD
 - Acceptance: rekord wzorcowy p001 pokazuje każdy fakt kontraktu w swoim etapie; bramki treści bez wycofanych pól; zapis jednej edycji nie zmienia żadnego innego klucza; rekord stary bez zmian
 
@@ -29,7 +29,7 @@
 ## Decyzje
 
 - Wymagane w bramce 3.3: materiał, nazwa, kroki. Powód: kontrakt nie wymienia innych pól wymaganych, a „Przerwij, gdy” nazywa opcjonalnym.
-- Fakty spoza dzisiejszej edycji są tylko do odczytu, mimo że macierz oczekuje edycji: zakres zadania; lista w SPEC-035.
+- Fakty spoza dzisiejszej edycji są tylko do odczytu, mimo że macierz oczekuje edycji: zakres zadania; lista w SPEC-037.
 - Bramka parametrów bez zmian: 7 rekordów p001 staje na uwadze „zwykle 2–6 s” do kliknięcia „OK”. Do decyzji właściciela, czy zakres ma czytać `prescription.params`.
 
 ## Dowody
@@ -43,4 +43,4 @@
 - Następny krok: przegląd w przeglądarce na DEV po merge'u #220 i tego PR
 - Blokady: brak
 - Transfer kodu: commity na `feat/weryfikacja-v33` w worktree
-- Źródło: FR-007, SPEC-035
+- Źródło: FR-007, SPEC-037
