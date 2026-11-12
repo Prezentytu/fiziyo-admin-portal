@@ -129,6 +129,12 @@ export interface ExerciseEditorSource {
 
 export type ExerciseSaveStatus = 'idle' | 'saving' | 'success' | 'error';
 
+/**
+ * What one save attempt ended with: nothing to save, saved, refused because someone else changed the record,
+ * or failed. A caller that acts on saved content (publish, leave) must stop on the last two.
+ */
+export type ExerciseSaveOutcome = 'clean' | 'saved' | 'conflict' | 'error';
+
 interface UseExerciseEditorFormParams {
   source: ExerciseEditorSource | null | undefined;
   updateCore: (variables: Record<string, unknown>) => Promise<void>;
@@ -433,7 +439,7 @@ export function useExerciseEditorForm({
     setInitialEnrichment(enrichmentRef.current);
   }, []);
 
-  const performSave = useCallback(async () => {
+  const performSave = useCallback(async (): Promise<ExerciseSaveOutcome> => {
     const currentCore = coreRef.current;
     const currentEnrichment = enrichmentRef.current;
     const isV33 = contentVersion === '3.3';
@@ -447,8 +453,8 @@ export function useExerciseEditorForm({
       ? Object.keys(v33Edits).length > 0
       : JSON.stringify(currentEnrichmentPayload) !== initialEnrichmentPayload;
 
-    if (!currentCoreDirty && !currentEnrichmentDirty) return;
-    if (conflictDocumentRef.current) return;
+    if (!currentCoreDirty && !currentEnrichmentDirty) return 'clean';
+    if (conflictDocumentRef.current) return 'conflict';
 
     setSaveStatus('saving');
     try {
@@ -461,7 +467,7 @@ export function useExerciseEditorForm({
         if (!isSameV33Document(initialEnrichmentRef.current, current)) {
           setConflictDocument(current);
           setSaveStatus('idle');
-          return;
+          return 'conflict';
         }
       }
       if (currentCoreDirty) {
@@ -479,10 +485,12 @@ export function useExerciseEditorForm({
         markSaved();
       }
       onSaved?.();
+      return 'saved';
     } catch (error) {
       console.error('[ExerciseEditor] Save failed:', error);
       setSaveStatus('error');
       onError?.(error);
+      return 'error';
     }
   }, [
     contentVersion,
@@ -497,12 +505,12 @@ export function useExerciseEditorForm({
 
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const flush = useCallback(async () => {
+  const flush = useCallback(async (): Promise<ExerciseSaveOutcome> => {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
       debounceTimerRef.current = null;
     }
-    await performSave();
+    return performSave();
   }, [performSave]);
 
   const save = useCallback(async () => {

@@ -128,6 +128,14 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
     return result.data?.exerciseByIdForOrgVerification?.images ?? [];
   }, [refetch]);
 
+  /** Stored document past the cache: the workspace compares it with the loaded one before a 3.3 save. */
+  const fetchCurrentEnrichment = useCallback(async () => {
+    const result = await refetch();
+    const current = result.data?.exerciseByIdForOrgVerification;
+    if (!current) throw new Error('Nie udało się pobrać aktualnej wersji ćwiczenia.');
+    return current.enrichmentData ?? null;
+  }, [refetch]);
+
   const decision = useMemo<OrganizationDecision>(
     () => ({
       status: exercise?.organizationVerificationStatus,
@@ -190,6 +198,7 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
       listUrl={listHref}
       buildDetailUrl={buildDetailUrl}
       reloadImages={reloadImages}
+      fetchCurrentEnrichment={fetchCurrentEnrichment}
       organizationDecision={decision}
       saveEnrichment={saveEnrichment}
       onSaveError={handleSaveError}

@@ -141,6 +141,14 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
     return refreshed?.images ?? [];
   }, [refetch]);
 
+  /** Stored document past the cache: the workspace compares it with the loaded one before a 3.3 save. */
+  const fetchCurrentEnrichment = useCallback(async () => {
+    const result = await refetch();
+    const current = result.data?.exerciseByIdForAdmin as unknown as AdminExercise | null | undefined;
+    if (!current) throw new Error('Nie udało się pobrać aktualnej wersji ćwiczenia.');
+    return current.enrichmentData ?? null;
+  }, [refetch]);
+
   if (!roleLoading && !canReviewExercises) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -178,6 +186,7 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
       listUrl={listUrl}
       buildDetailUrl={buildDetailUrl}
       reloadImages={reloadImages}
+      fetchCurrentEnrichment={fetchCurrentEnrichment}
       organizationId={currentOrganization?.organizationId ?? null}
     />
   );

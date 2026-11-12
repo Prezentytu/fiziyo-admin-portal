@@ -111,6 +111,14 @@ export default function CrossOrgVerificationDetailPage({ params }: Readonly<Cros
     return result.data?.exerciseByIdForCrossOrgVerification?.images ?? [];
   }, [refetch]);
 
+  /** Stored document past the cache: the workspace compares it with the loaded one before a 3.3 save. */
+  const fetchCurrentEnrichment = useCallback(async () => {
+    const result = await refetch();
+    const current = result.data?.exerciseByIdForCrossOrgVerification;
+    if (!current) throw new Error('Nie udało się pobrać aktualnej wersji ćwiczenia.');
+    return current.enrichmentData ?? null;
+  }, [refetch]);
+
   const decision = useMemo<OrganizationDecision>(
     () => ({
       status: exercise?.organizationVerificationStatus,
@@ -173,6 +181,7 @@ export default function CrossOrgVerificationDetailPage({ params }: Readonly<Cros
       listUrl={listHref}
       buildDetailUrl={buildDetailUrl}
       reloadImages={reloadImages}
+      fetchCurrentEnrichment={fetchCurrentEnrichment}
       organizationDecision={decision}
       backTestId="cross-org-verification-back-btn"
       data-testid="cross-org-verification-detail-page"

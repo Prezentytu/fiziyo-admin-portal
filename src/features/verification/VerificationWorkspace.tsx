@@ -48,6 +48,7 @@ import { DuplicateDialog, type DuplicateTarget } from './stages/DuplicateDialog'
 import { RelatedExercisesSection } from '@/features/exercises/RelatedExercisesSection';
 
 import { ContractFacts } from './stages/ContractFacts';
+import { ExerciseSaveConflictNotice } from '@/features/exercises/ExerciseSaveConflictNotice';
 import { ExtraContentSection } from './stages/ExtraContentSection';
 import { InstructionStage } from './stages/InstructionStage';
 import { MaterialStage, type PendingPhoto } from './stages/MaterialStage';
@@ -153,6 +154,11 @@ interface VerificationWorkspaceProps {
   /** Overrides the default enrichment save (admin `updateExerciseField`). */
   saveEnrichment?: (payload: ExerciseEnrichmentData) => Promise<void>;
   onSaveError?: (error: unknown) => void;
+  /**
+   * Reads the stored document past the cache. With it a 3.3 save first checks that nobody else changed
+   * the record since it was loaded; a difference stops the save and every decision that depends on it.
+   */
+  fetchCurrentEnrichment?: () => Promise<ExerciseEnrichmentData | string | null | undefined>;
   backTestId?: string;
   /** Active organization from the token; enables the related exercises section. */
   organizationId?: string | null;
@@ -160,6 +166,21 @@ interface VerificationWorkspaceProps {
 }
 
 const NO_REPORTS: ExerciseReport[] = [];
+
+/** Pending edits of a 3.3 record did not reach the database, so the action that needed them was stopped. */
+class UnsavedChangesError extends Error {
+  constructor(readonly outcome: 'conflict' | 'error') {
+    super(
+      outcome === 'conflict'
+        ? 'Ktoś zmienił to ćwiczenie. Wczytaj aktualną wersję, zanim przejdziesz dalej.'
+        : 'Zmiany nie zostały zapisane. Spróbuj ponownie, zanim przejdziesz dalej.'
+    );
+  }
+}
+
+function actionErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof UnsavedChangesError ? error.message : fallback;
+}
 
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -207,6 +228,7 @@ export function VerificationWorkspace({
   organizationDecision,
   saveEnrichment,
   onSaveError,
+  fetchCurrentEnrichment,
   backTestId = 'verification-back-btn',
   organizationId = null,
   'data-testid': rootTestId = 'verification-workspace',
@@ -275,8 +297,18 @@ export function VerificationWorkspace({
     updateEnrichment,
     onError: onSaveError ?? (() => toast.error('Nie udało się zapisać zmian')),
     autosaveDelayMs: 900,
+    fetchCurrentEnrichment,
   });
-  const { core, enrichment, setCoreField, setEnrichmentPath, flush } = form;
+  const { core, enrichment, setCoreField, setEnrichmentPath, flush: flushForm } = form;
+  /**
+   * Saves pending edits before an action that relies on them. A 3.3 record throws when the save was refused
+   * (someone else changed the record) or failed, so nothing gets published or left behind unsaved.
+   * A legacy record keeps its behaviour: a failed save is reported by the hook and the action goes on.
+   */
+  const flush = useCallback(async () => {
+    const outcome = await flushForm();
+    if (isV33 && (outcome === 'conflict' || outcome === 'error')) throw new UnsavedChangesError(outcome);
+  }, [flushForm, isV33]);
   const patient = useMemo<ExerciseEnrichmentPatientV3>(() => enrichment.patient ?? {}, [enrichment.patient]);
   /**
    * A 3.3 record is saved path by path, so a changed `patient` goes in as its changed keys: a key outside
@@ -739,7 +771,7 @@ export function VerificationWorkspace({
         leaveToNext();
       } catch (error) {
         console.error('Błąd zatwierdzania w organizacji:', error);
-        toast.error('Nie udało się zatwierdzić ćwiczenia');
+        toast.error(actionErrorMessage(error, 'Nie udało się zatwierdzić ćwiczenia'));
         setIsLeaving(false);
       }
       return;
@@ -752,7 +784,7 @@ export function VerificationWorkspace({
       leaveToNext();
     } catch (error) {
       console.error('Błąd zatwierdzania:', error);
-      toast.error('Nie udało się zatwierdzić ćwiczenia');
+      toast.error(actionErrorMessage(error, 'Nie udało się zatwierdzić ćwiczenia'));
       setIsLeaving(false);
     }
   }, [
@@ -778,7 +810,7 @@ export function VerificationWorkspace({
         leaveToNext();
       } catch (error) {
         console.error('Błąd odsyłania do poprawek:', error);
-        toast.error('Nie udało się odesłać ćwiczenia do poprawek');
+        toast.error(actionErrorMessage(error, 'Nie udało się odesłać ćwiczenia do poprawek'));
         setIsLeaving(false);
       }
     },
@@ -795,7 +827,7 @@ export function VerificationWorkspace({
       router.push(listUrl);
     } catch (error) {
       console.error('Błąd archiwizacji:', error);
-      toast.error('Nie udało się zarchiwizować ćwiczenia');
+      toast.error(actionErrorMessage(error, 'Nie udało się zarchiwizować ćwiczenia'));
       setIsLeaving(false);
     }
   }, [canArchive, flush, listUrl, organizationDecision, router]);
@@ -816,7 +848,7 @@ export function VerificationWorkspace({
         leaveToNext();
       } catch (error) {
         console.error('Błąd oznaczania duplikatu:', error);
-        toast.error('Nie udało się oznaczyć duplikatu');
+        toast.error(actionErrorMessage(error, 'Nie udało się oznaczyć duplikatu'));
         setIsLeaving(false);
       }
     },
@@ -824,11 +856,16 @@ export function VerificationWorkspace({
   );
 
   const handleSkip = useCallback(() => {
-    void flush().then(leaveToNext);
+    flush().then(leaveToNext, (error: unknown) =>
+      toast.error(actionErrorMessage(error, 'Nie udało się zapisać zmian'))
+    );
   }, [flush, leaveToNext]);
 
   const handleSave = useCallback(() => {
-    void flush().then(() => toast.success('Zmiany zapisane'));
+    flush().then(
+      () => toast.success('Zmiany zapisane'),
+      (error: unknown) => toast.error(actionErrorMessage(error, 'Nie udało się zapisać zmian'))
+    );
   }, [flush]);
 
   const stageHasIssues = (key: VerificationStageKey) =>
@@ -1021,6 +1058,8 @@ export function VerificationWorkspace({
           Odłóż na później
         </Button>
       </header>
+
+      {form.hasSaveConflict && <ExerciseSaveConflictNotice onLoadCurrent={form.loadCurrentVersion} />}
 
       {latestReport && reportStage && (
         <div
