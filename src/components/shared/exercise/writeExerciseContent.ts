@@ -467,18 +467,62 @@ export function isSameV33Document(
   );
 }
 
+/** Pole zmienione i na tym ekranie, i w bazie od wczytania. `undefined` znaczy: pole opróżnione. */
+export interface V33EditCollision {
+  path: string;
+  /** Niezapisana wartość z ekranu. */
+  mine: unknown;
+  /** Wartość zapisana w bazie przez kogoś innego. */
+  theirs: unknown;
+}
+
+/** Listy zapisywane parami: kroki ze zdjęciami, wskazówki z fazami. Wybór wersji dotyczy całej pary. */
+const LINKED_PATHS: ReadonlyArray<readonly [string, string]> = [
+  [STEPS_PATH, STEP_IMAGES_PATH],
+  [CUES_PATH, CUE_PHASES_PATH],
+];
+
+function withLinkedPaths(paths: readonly string[]): Set<string> {
+  const all = new Set(paths);
+  for (const pair of LINKED_PATHS) {
+    if (pair.some((path) => all.has(path))) pair.forEach((path) => all.add(path));
+  }
+  return all;
+}
+
+/**
+ * Pola, które fizjoterapeuta zmienił na ekranie (`draft` względem `loaded`), a ktoś inny zmienił w bazie
+ * (`current` względem `loaded`) na inną wartość. Tu przeniesienie szkicu musiałoby skasować jedną z wersji,
+ * więc ekran pokazuje obie i pyta, która zostaje.
+ */
+export function findV33EditCollisions(
+  loaded: ExerciseEnrichmentData,
+  draft: ExerciseEnrichmentData,
+  current: ExerciseEnrichmentData
+): V33EditCollision[] {
+  const mine = collectV33Edits(loaded, draft);
+  const theirs = collectV33Edits(loaded, current);
+  return Object.keys(mine)
+    .filter((path) => path in theirs && !sameJson(mine[path], theirs[path]))
+    .map((path) => ({ path, mine: mine[path], theirs: theirs[path] }));
+}
+
 /**
  * Szkic przeniesiony na aktualną wersję z bazy: dokument `current` z nałożonymi niezapisanymi zmianami
- * fizjoterapeuty (różnica `draft` względem `loaded`). Cudza zmiana w innym polu zostaje; w tym samym polu
- * wygrywa to, co fizjoterapeuta ma na ekranie i zaraz zapisze.
+ * fizjoterapeuty (różnica `draft` względem `loaded`). Cudza zmiana w innym polu zostaje. W polu zmienionym
+ * przez obie osoby zostaje wersja z ekranu, chyba że ścieżka jest w `keepTheirs`: wtedy zmiana z ekranu jest
+ * odrzucana i zostaje wersja z bazy (razem z listą z nią sparowaną).
  */
 export function rebaseV33Draft(
   loaded: ExerciseEnrichmentData,
   draft: ExerciseEnrichmentData,
-  current: ExerciseEnrichmentData
+  current: ExerciseEnrichmentData,
+  keepTheirs: readonly string[] = []
 ): ExerciseEnrichmentData {
+  const rejected = withLinkedPaths(keepTheirs);
   const rebased = cloneJson(current) as UnknownRecord;
   for (const [path, value] of Object.entries(collectV33Edits(loaded, draft))) {
+    if (rejected.has(path)) continue;
     if (value === undefined) deleteAtPath(rebased, path);
     else setAtPath(rebased, path, cloneJson(value));
   }
