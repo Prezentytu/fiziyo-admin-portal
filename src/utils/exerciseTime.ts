@@ -102,9 +102,13 @@ export function calculateExerciseTotalSeconds(params: {
     return { seconds: 0, isEstimate: false };
   }
 
-  const reps = Math.max(1, Math.floor(params.reps ?? 10));
+  const prescribedReps = Math.max(1, Math.floor(params.reps ?? 10));
   const side = params.side?.toLowerCase();
   const sideMultiplier = side === 'both' ? 2 : 1;
+  // ALTERNATING: liczba jest na stronę (decyzja 12.11, KONTRAKT-v3.3 §6.7), więc w jednym przebiegu serii
+  // jest 2 × reps powtórzeń, L, P, L, P… Ten sam wzór co player (`resolveExerciseSideDose`, fizjo-app).
+  const alternatingMultiplier = side === 'alternating' ? 2 : 1;
+  const reps = prescribedReps * alternatingMultiplier;
 
   const preparationTime = normalizePositiveNumber(params.preparationTime);
   const restSets = normalizePositiveNumber(params.restSets);
@@ -122,7 +126,7 @@ export function calculateExerciseTotalSeconds(params: {
     executionTime > 0
       ? reps * executionTime + Math.max(0, reps - 1) * restReps
       : durationOverride > 0
-        ? durationOverride
+        ? durationOverride * alternatingMultiplier
         : reps * repetitionTime + Math.max(0, reps - 1) * restReps;
 
   const setsTime = sets * workOneSideOfOneSet * sideMultiplier;
@@ -189,7 +193,8 @@ export function formatEstimatedTime(seconds: number): string {
  *
  * - None → razem (ruch obustronny naraz)
  * - Both → na każdą stronę (lewa, potem prawa w serii)
- * - Left / Right / Alternating
+ * - Alternating → na każdą stronę, strona zmienia się po każdym powtórzeniu
+ * - Left / Right
  */
 export function getSideIndicator(side: string | undefined | null): { icon: string; label: string; showBadge: boolean } {
   const normalizedSide = side?.toLowerCase() || 'none';

@@ -7,7 +7,7 @@ export const EXERCISE_SIDE_LABELS = {
 } as const;
 
 export const EXERCISE_SIDE_HELP =
-  'Na każdą stronę: w każdej serii lewa, potem prawa, przerwa między seriami. Naprzemiennie: podana liczba łącznie, zmiana strony po każdym powtórzeniu. Razem: jeden przebieg, także gdy obie strony pracują jednocześnie.';
+  'Na każdą stronę: w każdej serii lewa, potem prawa, przerwa między seriami. Naprzemiennie: podana liczba na każdą stronę, zmiana strony po każdym powtórzeniu (10 = 20 powtórzeń w serii). Razem: jeden przebieg, także gdy obie strony pracują jednocześnie.';
 
 export function formatExerciseSideLabel(side?: string | null): string {
   const normalized = side?.trim().toLowerCase() ?? '';

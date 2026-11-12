@@ -149,6 +149,17 @@ describe('calculateExerciseTotalSeconds', () => {
     ).toBe(165);
   });
 
+  it('liczy „naprzemiennie” na stronę: 2 × reps powtórzeń w serii, jak player (decyzja 12.11)', () => {
+    const dose = { sets: 2, reps: 10, executionTime: 3, restSets: 20, restReps: 1, preparationTime: 5, type: 'reps' };
+    // 5 + 2 × (20 × 3 + 19 × 1) + 20 = 183, ta sama liczba co `calculateEstimatedExerciseTime` w fizjo-app.
+    expect(calculateExerciseTotalSeconds({ ...dose, side: 'alternating' }).seconds).toBe(183);
+    expect(calculateExerciseTotalSeconds({ ...dose, side: 'ALTERNATING' }).seconds).toBe(183);
+    // Bez przygotowania przed drugą stroną, w odróżnieniu od „na każdą stronę”.
+    expect(calculateExerciseTotalSeconds({ ...dose, side: 'both' }).seconds).toBe(191);
+    // Szkic z czasem serii: czas serii też na stronę.
+    expect(calculateExerciseTotalSeconds({ sets: 1, duration: 30, side: 'alternating' }).seconds).toBe(60);
+  });
+
   it('daje priorytet executionTime nad duration', () => {
     const result = calculateExerciseTotalSeconds({
       sets: 3,
