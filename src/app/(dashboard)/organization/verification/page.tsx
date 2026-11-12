@@ -12,6 +12,13 @@ import { EmptyState } from '@/components/shared/EmptyState';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { VerificationStatsCards } from '@/features/verification/VerificationStatsCards';
+import { VerificationQueueOrderingControls } from '@/features/verification/VerificationQueueOrderingControls';
+import {
+  parseQueueOrdering,
+  queueDateLabel,
+  queueOrderingVariables,
+  type VerificationQueueOrdering,
+} from '@/features/verification/utils/queueOrdering';
 import { VerificationTaskCard } from '@/features/verification/VerificationTaskCard';
 import { VerificationSelectionToolbar } from '@/features/verification/VerificationSelectionToolbar';
 import { VerificationArchiveDialog } from '@/features/verification/VerificationArchiveDialog';
@@ -51,6 +58,7 @@ export default function OrganizationVerificationPage() {
   const [filter, setFilter] = useState<OrgFilter>(parseOrganizationVerificationFilter(searchParams.get('filter')));
   const [page, setPage] = useState(Number(searchParams.get('page') ?? '1') || 1);
   const [pageSize] = useState(20);
+  const [ordering, setOrdering] = useState<VerificationQueueOrdering>(() => parseQueueOrdering(searchParams));
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
 
   const {
@@ -76,6 +84,7 @@ export default function OrganizationVerificationPage() {
         search: search.trim() || null,
         page,
         pageSize,
+        ...queueOrderingVariables(ordering),
       },
       skip: !organizationId || !canManageOrganization,
       fetchPolicy: 'cache-and-network',
@@ -113,13 +122,19 @@ export default function OrganizationVerificationPage() {
   // Archiwizować da się tylko ćwiczenia OrgVerified (backend), więc zaznaczanie jest tylko w tej zakładce.
   const canArchive = filter === 'verified';
 
-  const updateUrl = (nextFilter: OrgFilter, nextSearch: string, nextPage: number) => {
+  const updateUrl = (
+    nextFilter: OrgFilter,
+    nextSearch: string,
+    nextPage: number,
+    nextOrdering: VerificationQueueOrdering = ordering
+  ) => {
     const params = buildOrganizationVerificationSearchParams({
       filter: nextFilter,
       search: nextSearch,
       page: nextPage,
       pageSize,
       view: 'grid',
+      ordering: nextOrdering,
     });
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };
@@ -160,8 +175,9 @@ export default function OrganizationVerificationPage() {
       page,
       pageSize,
       view: 'grid' as const,
+      ordering,
     }),
-    [filter, search, page, pageSize]
+    [filter, search, page, pageSize, ordering]
   );
 
   if (!roleLoading && !canManageOrganization) {
@@ -218,6 +234,18 @@ export default function OrganizationVerificationPage() {
           />
         </div>
       </div>
+
+      <VerificationQueueOrderingControls
+        ordering={ordering}
+        onChange={(nextOrdering) => {
+          selection.clear();
+          setOrdering(nextOrdering);
+          setPage(1);
+          updateUrl(filter, search, 1, nextOrdering);
+        }}
+        dateLabel={queueDateLabel('organization', filter)}
+        testIdPrefix="org-verification"
+      />
 
       <VerificationSelectionToolbar
         selectedCount={selection.selectedCount}

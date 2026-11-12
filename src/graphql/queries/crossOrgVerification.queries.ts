@@ -16,8 +16,24 @@ export const GET_CROSS_ORG_VERIFICATION_STATS_QUERY = gql`
 `;
 
 export const GET_CROSS_ORG_VERIFICATION_QUEUE_PAGE_QUERY = gql`
-  query GetCrossOrgVerificationQueuePage($filter: String!, $search: String, $page: Int!, $pageSize: Int!) {
-    crossOrgVerificationQueuePage(filter: $filter, search: $search, page: $page, pageSize: $pageSize) {
+  query GetCrossOrgVerificationQueuePage(
+    $filter: String!
+    $search: String
+    $page: Int!
+    $pageSize: Int!
+    $sort: VerificationQueueSort
+    $dateFrom: DateTime
+    $dateTo: DateTime
+  ) {
+    crossOrgVerificationQueuePage(
+      filter: $filter
+      search: $search
+      page: $page
+      pageSize: $pageSize
+      sort: $sort
+      dateFrom: $dateFrom
+      dateTo: $dateTo
+    ) {
       items {
         organizationId
         organizationName
@@ -39,8 +55,22 @@ export const GET_CROSS_ORG_VERIFICATION_QUEUE_PAGE_QUERY = gql`
 `;
 
 export const GET_CROSS_ORG_VERIFICATION_QUEUE_NAVIGATOR_QUERY = gql`
-  query GetCrossOrgVerificationQueueNavigator($currentExerciseId: String!, $filter: String!, $search: String) {
-    crossOrgVerificationQueueNavigator(currentExerciseId: $currentExerciseId, filter: $filter, search: $search) {
+  query GetCrossOrgVerificationQueueNavigator(
+    $currentExerciseId: String!
+    $filter: String!
+    $search: String
+    $sort: VerificationQueueSort
+    $dateFrom: DateTime
+    $dateTo: DateTime
+  ) {
+    crossOrgVerificationQueueNavigator(
+      currentExerciseId: $currentExerciseId
+      filter: $filter
+      search: $search
+      sort: $sort
+      dateFrom: $dateFrom
+      dateTo: $dateTo
+    ) {
       currentExerciseId
       positionInQueue
       totalInQueue
