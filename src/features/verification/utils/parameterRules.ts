@@ -282,7 +282,8 @@ function computeSession(
 ): { seconds: number; isEstimate: boolean } {
   const sets = positive(values.sets) ?? 0;
   // Rekord 3.3 „naprzemiennie”: 2·reps powtórzeń z rzędu, czyli wzór wspólny z podwojoną liczbą (§6.7).
-  const repsPerSet = (reps: number) => (resolveSideDose(side, isV33).alternatesPerSide ? reps * 2 : reps);
+  const alternatesPerSide = resolveSideDose(side, isV33).alternatesPerSide;
+  const repsPerSet = (reps: number) => (alternatesPerSide ? reps * 2 : reps);
   const shared = {
     sets,
     restSets: values.rest ?? undefined,
@@ -294,6 +295,9 @@ function computeSession(
       ...shared,
       reps: repsPerSet(1),
       executionTime: positive(values.hold) ?? 0,
+      // Utrzymanie to jedno powtórzenie, więc przerwy między powtórzeniami nie ma. Wyjątek: rekord 3.3
+      // „naprzemiennie” robi dwa utrzymania z rzędu (strona po stronie) i przerwa wypada między nimi (§6.7).
+      restReps: alternatesPerSide ? (timing.restReps ?? undefined) : undefined,
     });
   }
   return calculateExerciseTotalSeconds({
