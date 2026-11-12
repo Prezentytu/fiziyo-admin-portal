@@ -10,6 +10,8 @@ import type { ExerciseBundleImportResult } from '@/graphql/mutations/exercises.m
 import { useExerciseBundleImport } from '@/hooks/useExerciseBundleImport';
 import { checkCatalogBundleText } from '@/lib/organization/catalogBundleFile';
 
+import { CatalogBundleMediaCopyReport } from './CatalogBundleMediaCopyReport';
+
 const STEPS = ['tag-categories.json', 'tags.json', 'exercises-001.json', 'kolejne exercises-00x.json'] as const;
 
 interface CatalogBundleImportCardProps {
@@ -145,6 +147,8 @@ export function CatalogBundleImportCard({ organizationId }: CatalogBundleImportC
             </div>
           </div>
         ) : null}
+
+        {lastResult ? <CatalogBundleMediaCopyReport mediaCopy={lastResult.mediaCopy} /> : null}
       </CardContent>
     </Card>
   );

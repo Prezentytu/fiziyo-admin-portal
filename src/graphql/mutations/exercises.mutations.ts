@@ -796,9 +796,47 @@ export const IMPORT_EXERCISE_BUNDLE_MUTATION = gql`
       skipped
       errors
       warnings
+      mediaCopy {
+        copied
+        alreadyPresent
+        planned
+        kept
+        failed
+        items {
+          sourceUrl
+          targetUrl
+          outcome
+          reason
+        }
+      }
     }
   }
 `;
+
+export type ExerciseBundleMediaCopyOutcome =
+  | 'COPIED'
+  | 'ALREADY_PRESENT'
+  | 'PLANNED'
+  | 'KEPT_OWN'
+  | 'KEPT_EMBEDDED'
+  | 'FAILED';
+
+export interface ExerciseBundleMediaCopyItem {
+  sourceUrl: string;
+  targetUrl: string | null;
+  outcome: ExerciseBundleMediaCopyOutcome;
+  reason: string | null;
+}
+
+/** Copy of bundle media into this environment's storage, done before the import writes records. */
+export interface ExerciseBundleMediaCopy {
+  copied: number;
+  alreadyPresent: number;
+  planned: number;
+  kept: number;
+  failed: number;
+  items: ExerciseBundleMediaCopyItem[];
+}
 
 export interface ExerciseBundleImportResult {
   success: boolean;
@@ -812,6 +850,7 @@ export interface ExerciseBundleImportResult {
   skipped: number;
   errors: string[];
   warnings: string[];
+  mediaCopy: ExerciseBundleMediaCopy;
 }
 
 export interface ImportExerciseBundleData {
