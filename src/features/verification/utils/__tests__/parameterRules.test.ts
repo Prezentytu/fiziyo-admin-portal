@@ -304,6 +304,38 @@ describe('dawka na stronę: etykieta i czas z jednej reguły (odbiór 12.11, F1)
     expect(resolveSideDose('both', true).doseNote).toBe('Serie i powtórzenia podane na jedną stronę');
   });
 
+  describe('tryb utrzymania (odbiór 13.11)', () => {
+    // 3 serie, utrzymanie 30 s, przerwa między seriami 60 s, między powtórzeniami 3 s, przygotowanie 5 s.
+    const holdValues: ParameterValues = { sets: 3, reps: 1, repTime: null, hold: 30, rest: 60 };
+    const holdTiming = { restReps: 3, preparationTime: 5 };
+    /** Wywołanie z origin/main, przepisane dosłownie: utrzymanie to jedno powtórzenie, bez przerwy między powtórzeniami. */
+    const mainHoldSeconds = (side: string) =>
+      calculateExerciseTotalSeconds({ sets: 3, restSets: 60, preparationTime: 5, side, reps: 1, executionTime: 30 })
+        .seconds;
+
+    it('rekord 3.3, „Naprzemiennie”: między stronami jest przerwa między powtórzeniami, 314 s (§6.7)', () => {
+      // sets × (2·1 × hold + (2·1 − 1) × rest_reps_s) + przerwy między seriami + przygotowanie
+      const expected = 3 * (2 * 30 + 1 * 3) + 2 * 60 + 5;
+      expect(expected).toBe(314);
+      expect(computeSessionSeconds(holdValues, 'hold', 'alternating', holdTiming, true)).toBe(expected);
+      expect(
+        evaluateParameters({ values: holdValues, mode: 'hold', side: 'ALTERNATING', timing: holdTiming, isV33: true })
+          .sessionSeconds
+      ).toBe(expected);
+    });
+
+    it.each(['alternating', 'both', 'left', 'right', 'none'])('rekord bez wersji, strona %s: czas jak na main', (side) => {
+      expect(computeSessionSeconds(holdValues, 'hold', side, holdTiming)).toBe(mainHoldSeconds(side));
+      expect(evaluateParameters({ values: holdValues, mode: 'hold', side, timing: holdTiming }).sessionSeconds).toBe(
+        mainHoldSeconds(side)
+      );
+    });
+
+    it.each(['both', 'left', 'right', 'none'])('rekord 3.3, strona %s: czas bez zmian względem main', (side) => {
+      expect(computeSessionSeconds(holdValues, 'hold', side, holdTiming, true)).toBe(mainHoldSeconds(side));
+    });
+  });
+
   it('etykieta nie mówi „na stronę”, gdy czas liczy dawkę raz (i odwrotnie)', () => {
     for (const isV33 of [false, true]) {
       for (const side of ['alternating', 'both', 'left', 'right', 'none', 'ALTERNATING', 'BOTH']) {
