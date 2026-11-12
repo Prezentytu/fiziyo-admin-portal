@@ -9,7 +9,8 @@ import {
 } from '@/graphql/queries/exercises.queries';
 import type { AvailableExercisesPageResponse, ExerciseBodyRegion, ExerciseLibraryTab } from '@/types/apollo';
 
-import { useDemoPool } from './demoPool';
+import { useDemoPoolWithIds } from './demoPool';
+import { isSchemaValidationError } from '@/lib/graphql/isSchemaValidationError';
 import { toExerciseAvailability, type ExerciseLibraryDemoFilter } from './utils/exerciseLibraryUrlState';
 
 interface UseExerciseLibraryPageOptions {
@@ -37,7 +38,7 @@ export function useExerciseLibraryPage({
   page,
   pageSize,
 }: UseExerciseLibraryPageOptions) {
-  const { enabled: demoPoolEnabled, demoExerciseIds } = useDemoPool();
+  const { enabled: demoPoolEnabled, demoExerciseIds } = useDemoPoolWithIds();
   const [demoFilterRejected, setDemoFilterRejected] = useState(false);
   const demoFilterAvailable = demoPoolEnabled && !demoFilterRejected;
   const demoFilter: ExerciseLibraryDemoFilter = demoFilterAvailable ? demo : 'all';
@@ -60,7 +61,10 @@ export function useExerciseLibraryPage({
     }
   );
 
-  if (error && availability && !demoFilterRejected) {
+  // Tylko odrzucenie dokumentu przez walidację schematu (backend bez pola) chowa filtr. Błąd przejściowy (sieć, 5xx)
+  // zostaje błędem biblioteki, a filtr wraca przy następnym wejściu.
+  const demoDocumentRejected = Boolean(error && availability && isSchemaValidationError(error));
+  if (demoDocumentRejected && !demoFilterRejected) {
     setDemoFilterRejected(true);
   }
 
@@ -69,7 +73,7 @@ export function useExerciseLibraryPage({
     previousData,
     loading,
     // The rejected demo document is replaced by the plain list in the next render; its error is not the library's.
-    error: availability ? undefined : error,
+    error: demoDocumentRejected ? undefined : error,
     demoFilter,
     demoFilterAvailable,
     demoExerciseIds,

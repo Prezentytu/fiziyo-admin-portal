@@ -1,7 +1,10 @@
 import type { ReactNode } from 'react';
 import { render, renderHook, screen, waitFor } from '@testing-library/react';
 import { MockedProvider } from '@apollo/client/testing/react';
-import type { MockLink } from '@apollo/client/testing';
+import { ApolloClient, ApolloLink, InMemoryCache } from '@apollo/client';
+import { ApolloProvider } from '@apollo/client/react';
+import { ServerError } from '@apollo/client/errors';
+import { MockLink } from '@apollo/client/testing';
 import { GraphQLError, print } from 'graphql';
 import { describe, expect, it } from 'vitest';
 
@@ -12,7 +15,7 @@ import {
 } from '@/graphql/queries/exercises.queries';
 import { GET_ORGANIZATION_DEMO_POOL_QUERY } from '@/graphql/queries/organizations.queries';
 
-import { DemoPoolQueryProvider, ExerciseDemoBadge } from './demoPool';
+import { DemoPoolQueryProvider, ExerciseDemoBadge, useDemoPool } from './demoPool';
 import { useExerciseLibraryPage } from './useExerciseLibraryPage';
 import type { ExerciseLibraryDemoFilter } from './utils/exerciseLibraryUrlState';
 
@@ -107,7 +110,11 @@ describe('biblioteka na API bez puli demo (przed fizjo-app#388)', () => {
   it.each([
     [
       'błąd walidacji w odpowiedzi',
-      { result: { errors: [new GraphQLError('The field `demoPoolEnabled` does not exist on the type `Organization`.')] } },
+      {
+        result: {
+          errors: [new GraphQLError('The field `demoPoolEnabled` does not exist on the type `Organization`.')],
+        },
+      },
     ],
     ['HTTP 400 bez danych', { error: new Error('Response not successful: Received status code 400') }],
   ])('%s: lista ładuje się jak na main, bez filtra i znaczków', async (_name, outcome) => {
@@ -133,6 +140,45 @@ describe('biblioteka na API bez puli demo (przed fizjo-app#388)', () => {
 
     expect(result.current.error).toBeUndefined();
     expect(result.current.demoFilter).toBe('all');
+  });
+});
+
+function http(status: number): ServerError {
+  return new ServerError(`Response not successful: Received status code ${status}`, {
+    response: new Response('{}', { status }),
+    bodyText: '{}',
+  });
+}
+
+describe('filtr demo po błędzie listy', () => {
+  it('błąd sieci nie chowa filtru: błąd trafia do biblioteki, a filtr zostaje', async () => {
+    const { result } = renderLibrary(
+      [plainList, poolOn, demoIds, demoList({ error: new TypeError('Failed to fetch') })],
+      'only'
+    );
+
+    await waitFor(() => expect(result.current.error).toBeDefined());
+
+    expect(result.current.demoFilterAvailable).toBe(true);
+    expect(result.current.demoFilter).toBe('only');
+  });
+
+  it('po błędzie sieci następne wejście na bibliotekę ponawia zapytanie z filtrem', async () => {
+    const failed = renderLibrary([plainList, poolOn, demoIds, demoList({ error: http(503) })], 'only');
+    await waitFor(() => expect(failed.result.current.error).toBeDefined());
+    failed.unmount();
+
+    const retried = renderLibrary([plainList, poolOn, demoIds, demoList({ result: pageResult(2) })], 'only');
+    await waitFor(() => expect(retried.result.current.data?.availableExercisesPage.totalCount).toBe(2));
+    expect(retried.result.current.demoFilterAvailable).toBe(true);
+  });
+
+  it('błąd walidacji schematu (HTTP 400) chowa filtr i wraca do zwykłej listy', async () => {
+    const { result } = renderLibrary([plainList, poolOn, demoIds, demoList({ error: http(400) })], 'only');
+
+    await waitFor(() => expect(result.current.demoFilterAvailable).toBe(false));
+    await waitFor(() => expect(result.current.data?.availableExercisesPage.totalCount).toBe(40));
+    expect(result.current.error).toBeUndefined();
   });
 });
 
@@ -182,6 +228,54 @@ describe('biblioteka na API z pulą demo', () => {
 
     expect(result.current.demoFilter).toBe('all');
     expect(result.current.error).toBeUndefined();
+  });
+});
+
+describe('identyfikatory demo', () => {
+  it('zapytanie o identyfikatory jest zawężone po stronie API do rekordów demo', () => {
+    const printed = print(GET_DEMO_EXERCISE_IDS_QUERY).replace(/\s+/g, '');
+    expect(printed.match(/where:\{availability:\{eq:DEMO\}\}/g)).toHaveLength(2);
+  });
+
+  it('gabinet z pulą pobiera identyfikatory dopiero, gdy ekran ich potrzebuje', async () => {
+    const operations: string[] = [];
+    const recorder = new ApolloLink((operation, forward) => {
+      operations.push(operation.operationName ?? '');
+      return forward(operation);
+    });
+    const client = new ApolloClient({
+      cache: new InMemoryCache(),
+      link: ApolloLink.from([recorder, new MockLink([poolOn, demoIds])]),
+    });
+
+    function IdleScreen() {
+      const { enabled } = useDemoPool();
+      return <span data-testid="pool">{String(enabled)}</span>;
+    }
+
+    const { rerender } = render(
+      <ApolloProvider client={client}>
+        <DemoPoolQueryProvider organizationId={ORG}>
+          <IdleScreen />
+        </DemoPoolQueryProvider>
+      </ApolloProvider>
+    );
+
+    await waitFor(() => expect(screen.getByTestId('pool')).toHaveTextContent('true'));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(operations).toEqual(['GetOrganizationDemoPool']);
+
+    rerender(
+      <ApolloProvider client={client}>
+        <DemoPoolQueryProvider organizationId={ORG}>
+          <IdleScreen />
+          <ExerciseDemoBadge exerciseId="ex-demo" testId="badge-ex-demo" />
+        </DemoPoolQueryProvider>
+      </ApolloProvider>
+    );
+
+    expect(await screen.findByTestId('badge-ex-demo')).toBeInTheDocument();
+    expect(operations).toEqual(['GetOrganizationDemoPool', 'GetDemoExerciseIds']);
   });
 });
 
