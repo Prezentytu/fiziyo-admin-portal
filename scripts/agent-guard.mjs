@@ -213,17 +213,45 @@ function stripHeredocs(text, onlyQuoted = false) {
   return kept.join("\n");
 }
 
+// Kontynuacja linii jak w powłoce: `\\⏎` przy nieparzystej liczbie końcowych ukośników skleja linie, ale nie w treści
+// heredoca z ogranicznikiem w cudzysłowie (tam powłoka niczego nie skleja, a ogranicznik musi zostać osobną linią).
+function joinContinuations(text) {
+  const out = [];
+  const lines = text.replace(/\r\n/g, "\n").split("\n");
+  let i = 0;
+  while (i < lines.length) {
+    let line = lines[i];
+    i += 1;
+    while (/(?<!\\)(?:\\\\)*\\$/.test(line) && i < lines.length) {
+      line = `${line.slice(0, -1)} ${lines[i]}`;
+      i += 1;
+    }
+    out.push(line);
+    const start = heredocStart(line);
+    if (start?.quoted) {
+      while (i < lines.length) {
+        out.push(lines[i]);
+        i += 1;
+        if (out.at(-1).trim() === start.word) break;
+      }
+    }
+  }
+  return out.join("\n");
+}
+
 // Zagnieżdżone gh: $(gh …) i `gh …` w całym surowym poleceniu, bez modelowania cudzysłowów (każdy model coś gubił).
 const NESTED_GH = /(?:\$\(|`)\s*((?:\S*\/)?gh\s[^)`]*)/g;
 
 const GH_COMMANDS = new Set(["pr", "api", "alias", "issue", "repo", "run", "workflow", "release", "search", "gist", "label", "secret", "variable", "auth", "browse", "cache", "codespace", "project", "ruleset", "status", "extension", "config"]);
-const PR_SUBCOMMANDS = new Set(["merge", "review", "view", "list", "create", "checks", "edit", "comment", "diff", "status", "close", "reopen", "ready", "checkout", "lock", "unlock", "revert", "update-branch"]);
+const PR_SUBCOMMANDS = new Set(["merge", "review", "view", "list", "create", "checks", "edit", "comment", "diff", "status", "close", "reopen", "ready", "checkout", "lock", "unlock", "revert", "update-branch", "ls", "new", "co"]);
 
 // (komenda, podkomenda) ze słów bez cudzysłowów: pierwsza znana komenda gh, a po `pr` pierwsza znana podkomenda.
 // Flaga z wartością przed nimi ani cudzysłów wokół słowa nie zmieniają wyniku; `gh pr list --search merge` to list.
 function ghSubcommand(segment) {
   const words = tokenize(segment);
   if (!words.length || !/^(\S*\/)?gh$/.test(words[0])) return [null, null];
+  // Flaga zaraz po gh: nie wiemy, czy bierze wartość, więc słowo merge/review/api/alias w poleceniu to odmowa.
+  if (words[1]?.startsWith("-") && words.some((w) => ["merge", "review", "api", "alias"].includes(w))) return ["flag-first", null];
   for (let i = 1; i < words.length; i += 1) {
     if (!GH_COMMANDS.has(words[i])) continue;
     const rest = words.slice(i + 1);
@@ -241,7 +269,7 @@ export function classifyShellCommand(command, options = {}) {
     consentDir: options.consentDir ?? path.join(homedir(), ".claude", "merge-zgody"),
     now: options.now ?? Date.now(),
   };
-  const raw = String(command ?? "").replace(/\\\r?\n/g, " ");
+  const raw = joinContinuations(String(command ?? ""));
   const reasons = [];
   for (const match of stripHeredocs(raw, true).matchAll(NESTED_GH)) {
     const inner = match[1];
@@ -252,6 +280,7 @@ export function classifyShellCommand(command, options = {}) {
     const bare = skeleton(segment);
     const [ghCommand, ghSub] = ghSubcommand(segment);
     const ghFirst = GH_FIRST.test(segment);
+    if (ghCommand === "flag-first") reasons.push("gh z flagą przed komendą i słowem merge, review, api albo alias: podaj komendę zaraz po gh");
     if (PUSH_MAIN.test(segment)) reasons.push("push to main");
     if (ghCommand === "api" || (!ghFirst && (API_COMMAND.test(bare) || /\bgh\b[\s\S]*\bapi\b/.test(bare)))) {
       if (API_MERGE.test(segment)) reasons.push("pull request merge przez API");

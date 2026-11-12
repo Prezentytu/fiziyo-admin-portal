@@ -433,6 +433,29 @@ describe("agent-guard: merge przez agenta", () => {
     }
   });
 
+  it("joins continuations per line, not inside quoted heredoc bodies", () => {
+    const ok = `gh pr merge 12 -R ${REPO} --merge --match-head-commit ${SHA}`;
+    assert.equal(classifyShellCommand("cat > x <<'EOF'\nlinia \\\nEOF\ngh pr merge 12").permission, "deny");
+    assert.equal(classifyShellCommand("cat > x <<'EOF'\nlinia \\\nEOF\ngit push origin main").permission, "deny");
+    assert.equal(classifyShellCommand("echo C:\\\\\ngh pr merge 12").permission, "deny");
+    assert.equal(classifyShellCommand("cat > x <<'EOF'\nlinia \\\nEOF\necho ok").permission, "allow");
+    assert.equal(classifyShellCommand(`gh pr review 12 \\\n --approve`).permission, "deny");
+    assert.equal(classifyShellCommand(`${ok} \\\n --admin`, { consentDir: zgoda({ repo: "prezentytu/fiziyo-admin-portal" }) }).permission, "deny");
+  });
+
+  it("denies a flag right after gh when merge, review, api or alias is among the words", () => {
+    assert.equal(classifyShellCommand("gh -b api pr merge 12").permission, "deny");
+    assert.equal(classifyShellCommand("gh -b x pr review 12 --approve").permission, "deny");
+    assert.equal(classifyShellCommand("gh -b x api repos/o/r/pulls/12/merge -X PUT").permission, "deny");
+    assert.equal(classifyShellCommand("gh --json number pr view 57").permission, "allow");
+  });
+
+  it("knows the pr subcommand aliases ls, new and co", () => {
+    for (const command of ["gh pr ls --search merge", "gh pr new --title merge", "gh pr ls -a @me --label review", "gh pr co 12"]) {
+      assert.equal(classifyShellCommand(command).permission, "allow", command);
+    }
+  });
+
   it("explains the reason in the hook response", () => {
     const response = hookResponse("gh pr merge 12 --merge");
     assert.equal(response.permission, "deny");
