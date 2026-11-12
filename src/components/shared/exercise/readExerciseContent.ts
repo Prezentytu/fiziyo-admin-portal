@@ -59,6 +59,13 @@ export interface ExerciseContentIndication {
   text: string | null;
 }
 
+export interface ExerciseContentPrecaution {
+  /** Kod grupy szczególnej; `null`, gdy wpis go nie podaje. */
+  group: string | null;
+  /** Jedno zdanie dla pacjenta, bez przeróbek. */
+  text: string;
+}
+
 export interface ExerciseContentCheckpoint {
   text: string;
   evidence: string | null;
@@ -110,6 +117,8 @@ export interface ExerciseContent {
   painRule: string | null;
   /** 3.3: `safety.contraindications`; rekord stary: `therapist.contraindications`. */
   contraindications: string[];
+  /** Ostrożności dla grup szczególnych (`safety.precautions`), w zapisanej kolejności. Tylko 3.3; pacjent widzi je osobnym blokiem na końcu karty. */
+  precautions: ExerciseContentPrecaution[];
   /** Kody flag bezpieczeństwa. Tylko 3.3. */
   safetyFlags: string[];
   requiresSupervision: boolean | null;
@@ -278,6 +287,16 @@ function readContraindications(isNew: boolean, safety: UnknownRecord | null, the
     .filter((text): text is string => text !== null);
 }
 
+function readPrecautions(isNew: boolean, safety: UnknownRecord | null): ExerciseContentPrecaution[] {
+  if (!isNew) return [];
+  return asList(safety?.precautions)
+    .map((item) => {
+      const entry = asRecord(item);
+      return { group: asText(entry?.group), text: asText(entry?.text) };
+    })
+    .filter((item): item is ExerciseContentPrecaution => item.text !== null);
+}
+
 function readIndications(
   isNew: boolean,
   document: UnknownRecord,
@@ -329,6 +348,7 @@ export function readExerciseContent(exercise: ExerciseContentSource | null | und
     stopIf: asText(safety?.stop_if),
     painRule: isNew ? asText(safety?.pain_rule) : null,
     contraindications: readContraindications(isNew, safety, therapist),
+    precautions: readPrecautions(isNew, safety),
     safetyFlags: isNew
       ? asList(safety?.flags)
           .map((flag) => asText(asRecord(flag)?.code ?? flag))
