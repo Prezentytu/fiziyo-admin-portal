@@ -329,7 +329,7 @@ describe("agent-guard: merge przez agenta", () => {
       assert.equal(classifyShellCommand(command).permission, "deny", command);
     }
     assert.equal(classifyShellCommand("out=$(gh pr view 12 --json state)").permission, "allow");
-    assert.equal(classifyShellCommand("git commit -m 'opis: $(gh pr merge 12)'").permission, "allow");
+    assert.equal(classifyShellCommand("git commit -m 'opis: $(gh pr merge 12)'").permission, "deny");
   });
 
   it("tracks quote state char by char: an apostrophe inside double quotes is a plain char, \\\" does not close them", () => {
@@ -340,7 +340,24 @@ describe("agent-guard: merge przez agenta", () => {
     ]) {
       assert.equal(classifyShellCommand(command).permission, "deny", command);
     }
-    assert.equal(classifyShellCommand(`echo "it's fine" '$(gh pr merge 12)'`).permission, "allow");
+    assert.equal(classifyShellCommand(`echo "it's fine" '$(gh pr merge 12)'`).permission, "deny");
+  });
+
+  it("finds $(gh …) and `gh …` in the raw command, whatever the quoting, and treats them as nested", () => {
+    for (const command of [
+      `echo "$(echo "it's")" "$(gh pr merge 12)"`,
+      `echo hi # it's\necho "$(gh pr merge 12)"`,
+      `echo $'it\\'s' "$(gh pr merge 12)"`,
+      `cat <<EOF\nit's $(gh pr merge 12)\nEOF`,
+      "echo `gh pr merge 12`",
+      `echo "$(gh pr review 12 --approve)"`,
+      `echo '$(gh api -X PUT repos/o/r/git/refs/heads/main -f sha=x)'`,
+    ]) {
+      assert.equal(classifyShellCommand(command).permission, "deny", command);
+    }
+    assert.equal(classifyShellCommand("cat <<EOF\nopis: gh pr merge 12\nEOF").permission, "allow");
+    assert.equal(classifyShellCommand("cat <<'EOF'\nopis: gh pr merge 12 $(date)\nEOF").permission, "allow");
+    assert.equal(classifyShellCommand("echo $(gh pr view 12 --json state)").permission, "allow");
   });
 
   it("explains the reason in the hook response", () => {

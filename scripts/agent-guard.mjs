@@ -184,6 +184,25 @@ function reviewApiDenied(raw) {
   return events.length === 0 || !events.every((event) => SAFE_EVENTS.has(event));
 }
 
+// Treść heredoców to dane (cat <<EOF); podstawienia w niej łapie wcześniejsze skanowanie surowego polecenia.
+function stripHeredocs(text) {
+  const kept = [];
+  let delimiter = null;
+  for (const line of text.split("\n")) {
+    if (delimiter) {
+      if (line.trim() === delimiter) delimiter = null;
+      continue;
+    }
+    kept.push(line);
+    const start = /<<-?\s*(["']?)([A-Za-z_]\w*)\1/.exec(line);
+    if (start) delimiter = start[2];
+  }
+  return kept.join("\n");
+}
+
+// Zagnieżdżone gh: $(gh …) i `gh …` w całym surowym poleceniu, bez modelowania cudzysłowów (każdy model coś gubił).
+const NESTED_GH = /(?:\$\(|`)\s*((?:\S*\/)?gh\s[^)`]*)/g;
+
 const GH_PR_REVIEW = /^(\S*\/)?gh\s[\s\S]*\bpr\s+review\b/;
 
 export function classifyShellCommand(command, options = {}) {
@@ -193,7 +212,12 @@ export function classifyShellCommand(command, options = {}) {
   };
   const raw = String(command ?? "");
   const reasons = [];
-  for (const segment of commandSegments(raw)) {
+  for (const match of raw.matchAll(NESTED_GH)) {
+    const inner = match[1];
+    if (GH_MERGE.test(inner)) reasons.push("pull request merge wewnątrz $( ) albo backtickach: wywołaj `gh pr merge` osobno");
+    else reasons.push(...classifyShellCommand(inner, options).reasons);
+  }
+  for (const segment of commandSegments(stripHeredocs(raw))) {
     const bare = skeleton(segment);
     if (PUSH_MAIN.test(segment)) reasons.push("push to main");
     if (API_COMMAND.test(bare) || /\bgh\b[\s\S]*\bapi\b/.test(bare)) {
