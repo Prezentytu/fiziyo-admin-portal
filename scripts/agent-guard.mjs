@@ -132,10 +132,24 @@ function consentExists({ repo, number, sha }, { consentDir, now }) {
 function mergeDenials(segment, command, deps) {
   if (/(^|\s)GH_(REPO|HOST)=/.test(command)) return ["pull request merge: GH_REPO/GH_HOST w poleceniu, repo podaj jawnie przez -R"];
   const tokens = tokenize(segment);
-  const at = tokens.findIndex((token, i) => token === "pr" && tokens[i + 1] === "merge");
+  // Flagi repo przed podkomendą (`gh -R x pr merge`, `gh pr -R x merge`) działają jak na końcu: przenosimy je do args.
+  const rest = tokens.slice(1);
+  const moved = [];
+  let sawPr = false;
+  let at = -1;
+  for (let i = 0; i < rest.length; i += 1) {
+    const word = rest[i];
+    if (word === "pr" && !sawPr) sawPr = true;
+    else if (word === "merge" && sawPr) {
+      at = i + 1;
+      break;
+    } else if (word === "-R" || word === "--repo") moved.push(word, rest[(i += 1)]);
+    else if (word.startsWith("--repo=") || word.startsWith("-R")) moved.push(word);
+    else break;
+  }
   if (at < 0) return ["pull request merge: nie umiem odczytać komendy"];
   const denials = [];
-  const args = tokens.slice(at + 2);
+  const args = [...moved, ...rest.slice(at)];
   let sha;
   let repo;
   let number;
@@ -185,7 +199,7 @@ function reviewApiDenied(raw) {
 }
 
 // Treść heredoców to dane (cat <<EOF); podstawienia w niej łapie wcześniejsze skanowanie surowego polecenia.
-function stripHeredocs(text) {
+function stripHeredocs(text, onlyQuoted = false) {
   const kept = [];
   let delimiter = null;
   for (const line of text.split("\n")) {
@@ -195,7 +209,7 @@ function stripHeredocs(text) {
     }
     kept.push(line);
     const start = /<<-?\s*(["']?)([A-Za-z_]\w*)\1/.exec(line);
-    if (start) delimiter = start[2];
+    if (start && (!onlyQuoted || start[1])) delimiter = start[2];
   }
   return kept.join("\n");
 }
@@ -212,7 +226,7 @@ export function classifyShellCommand(command, options = {}) {
   };
   const raw = String(command ?? "");
   const reasons = [];
-  for (const match of raw.matchAll(NESTED_GH)) {
+  for (const match of stripHeredocs(raw, true).matchAll(NESTED_GH)) {
     const inner = match[1];
     if (GH_MERGE.test(inner)) reasons.push("pull request merge wewnątrz $( ) albo backtickach: wywołaj `gh pr merge` osobno");
     else reasons.push(...classifyShellCommand(inner, options).reasons);

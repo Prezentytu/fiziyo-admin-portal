@@ -360,6 +360,31 @@ describe("agent-guard: merge przez agenta", () => {
     assert.equal(classifyShellCommand("echo $(gh pr view 12 --json state)").permission, "allow");
   });
 
+  it("reads repo flags placed before the subcommand like gh does", () => {
+    const dir = zgoda({ repo: "prezentytu/fiziyo-admin-portal" });
+    const tail = `--merge --match-head-commit ${SHA}`;
+    for (const command of [
+      `gh -R ${REPO} pr merge 12 ${tail}`,
+      `gh --repo ${REPO} pr merge 12 ${tail}`,
+      `gh --repo=${REPO} pr merge 12 ${tail}`,
+      `gh pr -R ${REPO} merge 12 ${tail}`,
+    ]) {
+      assert.equal(classifyShellCommand(command, { consentDir: dir }).permission, "allow", command);
+      assert.equal(classifyShellCommand(command, { consentDir: zgoda({ sha: OTHER_SHA, repo: "prezentytu/fiziyo-admin-portal" }) }).permission, "deny", `${command} (bez zgody)`);
+    }
+    assert.equal(classifyShellCommand(`gh -R ${REPO} pr merge 12 ${tail} --admin`, { consentDir: dir }).permission, "deny");
+    assert.equal(classifyShellCommand(`gh -R ${REPO} pr review 12 --approve`).permission, "deny");
+    assert.equal(classifyShellCommand("gh -R o/r alias set m 'pr merge'").permission, "deny");
+    assert.equal(classifyShellCommand("gh -R o/r pr view 12").permission, "allow");
+  });
+
+  it("skips bodies of quoted heredocs in the substitution scan, keeps scanning unquoted ones", () => {
+    const body = "komenda: \\`gh pr merge 12\\`";
+    assert.equal(classifyShellCommand(`gh pr create --body "$(cat <<'EOF'\n${body}\nEOF\n)"`).permission, "allow");
+    assert.equal(classifyShellCommand(`gh pr create --body "$(cat <<"EOF"\n${body}\nEOF\n)"`).permission, "allow");
+    assert.equal(classifyShellCommand(`gh pr create --body "$(cat <<EOF\n${body}\nEOF\n)"`).permission, "deny");
+  });
+
   it("explains the reason in the hook response", () => {
     const response = hookResponse("gh pr merge 12 --merge");
     assert.equal(response.permission, "deny");
