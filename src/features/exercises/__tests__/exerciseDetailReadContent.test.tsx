@@ -2,11 +2,13 @@ import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import goldenV33 from '@/components/shared/exercise/__tests__/fixtures/enrichmentV33.fx-0073.json';
+import { toV3 } from '@/features/verification/utils/enrichmentToV3';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import {
   MetadataSection,
   PatientExtrasSection,
   PatientLeadSection,
+  readViewDocument,
   SafetySection,
   TherapistSection,
 } from '../ExerciseDetailSections';
@@ -375,18 +377,34 @@ describe('widok ćwiczenia, rekord podniesiony mechanicznie do 3.3', () => {
     renderReadView(raised);
     expect(sectionText('exercise-detail-therapist')).toBe(
       'Dla fizjoterapeuty' +
-        'Uwagi kliniczne: Uwaga na koślawienie (przeniesione).' +
-        'Faza rehabilitacji:faza II' +
-        'Korzyści terapeutyczne:siła'
+        'Uwagi kliniczne: Uwaga na koślawienie (przeniesione).'
     );
     expect(sectionText('exercise-detail-safety')).toBe(
       'BezpieczeństwoWymaga nadzoru fizjoterapeutyPrzerwij, gdy…Zawroty głowy\nOstry ból kolana'
     );
   });
 
-  it('kolumny bez pola w kontrakcie zostają: wskazówka fizjoterapeuty i polecenie audio', () => {
-    renderReadView(raised);
-    expect(sectionText('exercise-detail-metadata')).toContain('Wskazówka fizjoterapeuty: Korzyści: siła nóg');
-    expect(sectionText('exercise-audio-cue-main')).toContain('Plecy proste');
+  it('kolumny i klucze wycofane w kontrakcie §2 znikają: wskazówka fizjoterapeuty, polecenie audio, problemy', () => {
+    const { container } = renderReadView(raised);
+    expect(container.textContent).not.toContain('Korzyści: siła nóg');
+    expect(container.textContent).not.toContain('Plecy proste');
+    expect(container.textContent).not.toContain('Problemy / dolegliwości');
+    expect(screen.queryByTestId('exercise-audio-cue-main')).not.toBeInTheDocument();
+    // Kontrakt nie wymienia `ai.suitable_for` ani `ai.contraindicated_for`, więc zostają.
+    expect(sectionText('exercise-detail-metadata')).toBe(
+      'Metadane i wyszukiwanie' +
+        'Film: https://vimeo.com/1' +
+        'Odpowiednie dlaseniorzy' +
+        'Przeciwwskazane dlaostry uraz' +
+        'Słowa kluczoweprzysiad'
+    );
+  });
+
+  it('dokument 3.3 bez znacznika `$schema` jest czytany jak 3.3, nie jak szkic po konwersji starego rekordu', () => {
+    const source = { schemaVersion: '3.3', patient: { steps: ['Usiądź.'] }, therapist: { note: 'Notatka 3.3.' } };
+    expect(readViewDocument(source, toV3(source))).toBe(source);
+    const legacyDraft = toV3(legacyRecord.enrichmentData);
+    expect(readViewDocument(legacyRecord.enrichmentData, legacyDraft)).toBe(legacyDraft);
+    expect(readViewDocument(null, legacyDraft)).toBe(legacyDraft);
   });
 });

@@ -23,6 +23,18 @@ import { describeEquipmentItem } from '@/features/exercises/utils/equipmentItemT
 import { cn } from '@/lib/utils';
 import type { EnrichmentPatientMistakeV3, ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 
+/**
+ * Dokument dla sekcji w trybie odczytu. Szkic formularza przechodzi przez `toV3`, które dla dokumentu
+ * bez znacznika `$schema` gubi `schemaVersion`; rekord 3.3 czytamy więc wprost z zapisanego dokumentu.
+ */
+export function readViewDocument(
+  source: ExerciseEnrichmentData | string | null | undefined,
+  draft: ExerciseEnrichmentData
+): ExerciseEnrichmentData {
+  if (!source || typeof source !== 'object') return draft;
+  return readExerciseContent({ enrichmentData: source }).version === '3.3' ? source : draft;
+}
+
 /** Function to check whether an enrichment path differs from the saved baseline. */
 type IsPathDirty = (path: string) => boolean;
 
@@ -596,14 +608,17 @@ export function TherapistSection({
     .filter((entry): entry is string => entry !== null);
   const contraindications = isLegacy ? content.contraindications : [];
   const progressionNotes = isLegacy ? therapist.progression_notes : undefined;
+  // Kontrakt v3.3 §5: fazy i korzyści przeszły do `therapist.note`, stare listy nie są czytane.
+  const rehabPhases = isLegacy ? (therapist.rehab_phases ?? []) : [];
+  const clinicalBenefits = isLegacy ? (therapist.clinical_benefits ?? []) : [];
   const hasTherapistReadContent =
     hasText(readClinicalDescription) ||
     content.therapistNote !== null ||
     checkpoints.length > 0 ||
     indications.length > 0 ||
     contraindications.length > 0 ||
-    hasListItems(therapist.rehab_phases) ||
-    hasListItems(therapist.clinical_benefits) ||
+    hasListItems(rehabPhases) ||
+    hasListItems(clinicalBenefits) ||
     hasText(progressionNotes);
 
   if (!editable && !hasTherapistReadContent) return null;
@@ -640,8 +655,8 @@ export function TherapistSection({
           <ReadList label={READ_LABELS.checkpoints} items={checkpoints} testId="exercise-detail-checkpoints" />
           <ReadList label={LABELS.indications} items={indications} testId="exercise-detail-indications" />
           <ReadList label={LABELS.contraindications} items={contraindications} />
-          <ReadList label={LABELS.rehabPhases} items={therapist.rehab_phases ?? []} />
-          <ReadList label={LABELS.clinicalBenefits} items={therapist.clinical_benefits ?? []} />
+          <ReadList label={LABELS.rehabPhases} items={rehabPhases} />
+          <ReadList label={LABELS.clinicalBenefits} items={clinicalBenefits} />
           {hasText(progressionNotes) && (
             <p className="text-sm text-muted-foreground">
               <span className="font-medium text-foreground">{LABELS.progressionNotes}:</span> {progressionNotes}
@@ -744,13 +759,16 @@ export function MetadataSection({
   const contraindicatedFor = data.ai?.contraindicated_for ?? [];
 
   // Kolumny sprzętu czytnikowi nie podajemy: ta sekcja jej dotąd nie pokazywała.
-  const content = readExerciseContent({ enrichmentData: data });
+  const content = readExerciseContent({ enrichmentData: data, notes });
+  // Kontrakt v3.3 §2 wycofał kolumnę notatek i `ai.problems`: rekord 3.3 ich nie pokazuje.
+  const readNotes = content.notes;
+  const readProblems = content.version === 'legacy' ? problems : [];
   const hasReadContent =
     hasText(videoUrl) ||
-    hasText(notes) ||
+    hasText(readNotes) ||
     content.equipment.length > 0 ||
     hasListItems(keywords) ||
-    hasListItems(problems) ||
+    hasListItems(readProblems) ||
     hasListItems(suitableFor) ||
     hasListItems(contraindicatedFor);
 
@@ -850,9 +868,9 @@ export function MetadataSection({
               <span className="font-medium text-foreground">Film:</span> {videoUrl}
             </p>
           )}
-          {hasText(notes) && (
+          {hasText(readNotes) && (
             <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">{LABELS.notes}:</span> {notes}
+              <span className="font-medium text-foreground">{LABELS.notes}:</span> {readNotes}
             </p>
           )}
           {content.version === 'legacy' ? (
@@ -860,7 +878,7 @@ export function MetadataSection({
           ) : (
             <ReadEquipmentItems items={content.equipment} />
           )}
-          <ReadChips label={LABELS.problems} items={problems} />
+          <ReadChips label={LABELS.problems} items={readProblems} />
           <ReadChips label={LABELS.suitableFor} items={suitableFor} />
           <ReadChips label={LABELS.contraindicatedFor} items={contraindicatedFor} />
           <ReadChips label={LABELS.keywords} items={keywords} />
