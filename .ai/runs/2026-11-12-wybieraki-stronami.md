@@ -24,7 +24,7 @@
 ## Decyzje
 
 - Bez zmiany kontraktu: `availableExercisesPage` i `exerciseById` (szczegóły w SPEC-033).
-- Popularne doczytywane po id (10 rekordów), żeby nie zależały od wczytanych stron.
+- Popularne idą przez `availableExercises` zawężone do id (reguła widoczności biblioteki), nie przez `exerciseById`: po review 12.11 rekord ukryty w bibliotece nie może być oferowany do dodania.
 
 ## Handoff
 

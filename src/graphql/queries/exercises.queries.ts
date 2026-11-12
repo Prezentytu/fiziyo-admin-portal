@@ -253,9 +253,10 @@ export const GET_AVAILABLE_EXERCISES_PICKER_PAGE_QUERY = gql`
 // its rule with): an exercise the library hides is not returned, so it cannot show up as "Popularne".
 // The API cuts the list to 5000 by name before `where` applies, so two windows cover 10 000 visible exercises.
 export const GET_VISIBLE_EXERCISE_PICKER_RECORDS_QUERY = gql`
-  query GetVisibleExercisePickerRecords($organizationId: String!, $ids: [String!]!) {
+  query GetVisibleExercisePickerRecords($organizationId: String!, $ids: [String!]!, $withEnrichment: Boolean! = false) {
     firstWindow: availableExercises(organizationId: $organizationId, skip: 0, take: 5000, where: { id: { in: $ids } }) {
       ...ExercisePickerFragment
+      enrichmentData @include(if: $withEnrichment)
     }
     secondWindow: availableExercises(
       organizationId: $organizationId
@@ -264,6 +265,7 @@ export const GET_VISIBLE_EXERCISE_PICKER_RECORDS_QUERY = gql`
       where: { id: { in: $ids } }
     ) {
       ...ExercisePickerFragment
+      enrichmentData @include(if: $withEnrichment)
     }
   }
   ${EXERCISE_PICKER_FRAGMENT}

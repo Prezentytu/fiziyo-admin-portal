@@ -178,6 +178,20 @@ export function useExercisePickerLibrary<T extends { id: string; updatedAt?: str
   );
   const missingKey = missingIds.join('|');
 
+  // exerciseById does not return personal-scope exercises, which the library lists for their author;
+  // such a chosen exercise comes from the library list narrowed to its id.
+  const fetchVisibleDetails = useCallback(
+    (exerciseId: string) =>
+      apolloClient
+        .query<VisibleRecordsResponse<DetailsRecord<T>>>({
+          query: GET_VISIBLE_EXERCISE_PICKER_RECORDS_QUERY,
+          variables: { organizationId: organizationId ?? '', ids: [exerciseId], withEnrichment: true },
+          fetchPolicy: 'network-only',
+        })
+        .then((result) => result.data?.firstWindow?.[0] ?? result.data?.secondWindow?.[0] ?? null),
+    [apolloClient, organizationId]
+  );
+
   const fetchDetails = useCallback(
     (exerciseId: string) =>
       apolloClient
@@ -186,9 +200,9 @@ export function useExercisePickerLibrary<T extends { id: string; updatedAt?: str
           variables: { id: exerciseId },
           fetchPolicy: 'network-only',
         })
-        .then((result) => result.data?.exerciseById ?? null)
+        .then((result) => result.data?.exerciseById ?? (organizationId ? fetchVisibleDetails(exerciseId) : null))
         .catch(() => null),
-    [apolloClient]
+    [apolloClient, fetchVisibleDetails, organizationId]
   );
 
   useEffect(() => {

@@ -319,6 +319,8 @@ function AddExerciseToPatientDialogContent({
   const visibleExercises = exercises;
   const remainingExercises = exercisePages.loadingMore ? 0 : exercisePages.remaining;
   const showMoreExercises = exercisePages.loadMore;
+  // A page can hold only exercises already in the plan; the list is empty only when no page is left.
+  const moreExercisesToLoad = exercisePages.loadingMore || exercisePages.remaining > 0;
 
   // Track changes
   const hasChanges = selectedExercise !== null;
@@ -571,6 +573,10 @@ function AddExerciseToPatientDialogContent({
           <ScrollArea className="flex-1">
             <div className="px-6 py-4">
               {loadingExercises ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : exercises.length === 0 && moreExercisesToLoad ? (
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>

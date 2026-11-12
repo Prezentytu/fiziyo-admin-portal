@@ -251,6 +251,32 @@ describe('useExercisePickerLibrary', () => {
     expect(result.current.detailsReady).toBe(true);
   });
 
+  it('loads a chosen exercise that exerciseById does not return (personal scope) through the library list', async () => {
+    mockClientQuery.mockImplementation(({ query, variables }: { query: unknown; variables: { ids?: string[] } }) =>
+      Promise.resolve(
+        query === GET_VISIBLE_EXERCISE_PICKER_RECORDS_QUERY
+          ? {
+              data: {
+                firstWindow: (variables.ids ?? []).map((id) => ({ id, name: 'Moje prywatne', updatedAt: 't1', enrichmentData: steps })),
+                secondWindow: [],
+              },
+            }
+          : { data: { exerciseById: null } }
+      )
+    );
+
+    const { result } = renderHook(() => useExercisePickerLibrary({ organizationId: 'org', detailExerciseIds: ['personal'] }));
+
+    await waitFor(() => expect(result.current.detailsReady).toBe(true));
+    expect(result.current.exercises.find((exercise) => exercise.id === 'personal')).toMatchObject({
+      name: 'Moje prywatne',
+      enrichmentData: steps,
+    });
+    expect(mockClientQuery.mock.calls.at(-1)?.[0]).toMatchObject({
+      variables: { organizationId: 'org', ids: ['personal'], withEnrichment: true },
+    });
+  });
+
   it('loadExercise returns a just created exercise and keeps it known', async () => {
     mockClientQuery.mockResolvedValue(details('new'));
     const { result } = renderHook(() => useExercisePickerLibrary({ organizationId: 'org', detailExerciseIds: [] }));
