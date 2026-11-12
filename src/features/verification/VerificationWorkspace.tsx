@@ -868,6 +868,14 @@ export function VerificationWorkspace({
     );
   }, [flush, leaveToNext]);
 
+  /** The back arrow leaves only after pending edits are saved; a refused or failed 3.3 save keeps the screen. */
+  const handleBack = useCallback(() => {
+    flush().then(
+      () => router.push(listUrl),
+      (error: unknown) => toast.error(actionErrorMessage(error, 'Nie udało się zapisać zmian'))
+    );
+  }, [flush, listUrl, router]);
+
   const handleSave = useCallback(() => {
     flush().then(
       () => toast.success('Zmiany zapisane'),
@@ -1023,7 +1031,7 @@ export function VerificationWorkspace({
           className="-ml-2"
           aria-label="Lista ćwiczeń"
           title="Lista ćwiczeń"
-          onClick={() => router.push(listUrl)}
+          onClick={handleBack}
           data-testid={backTestId}
         >
           <ArrowLeft />
