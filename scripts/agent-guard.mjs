@@ -13,7 +13,6 @@ const PROMOTE = /\b(?:npm|pnpm|yarn|npx|gh)\b[\s\S]*\bpromote\b|\bworkflow[\s\S]
 
 const CONSENT_MAX_AGE_MS = 30 * 60_000;
 const CONSENT_MAX_FUTURE_MS = 60_000;
-const FULL_SHA = /^[0-9a-f]{40}$/;
 // Flagi `gh pr merge`, które biorą wartość; bez tej listy wartość pomyliłaby się z numerem PR.
 const VALUE_FLAGS = new Set(["-R", "--repo", "--match-head-commit", "-b", "--body", "-F", "--body-file", "-t", "--subject", "-A", "--author-email"]);
 
