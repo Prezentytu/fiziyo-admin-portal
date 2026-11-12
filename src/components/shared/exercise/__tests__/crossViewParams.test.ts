@@ -28,6 +28,20 @@ describe('parametry ćwiczenia: ten sam zestaw, te same liczby', () => {
     },
   };
 
+  it('notatka z katalogu nie trafia jako uwaga fizjoterapeuty do żadnego widoku (S-01 R2.3)', () => {
+    const withCatalogNotes = { ...mapping, exercise: { ...mapping.exercise, notes: 'Ogólna notatka z katalogu' } };
+
+    const views = [
+      resolveEffectiveExerciseParams(withCatalogNotes).notes,
+      fromExerciseMapping(withCatalogNotes).notes,
+      toPdfExercise(withCatalogNotes).notes,
+    ];
+
+    for (const notes of views) {
+      expect(notes || undefined).toBeUndefined();
+    }
+  });
+
   it('serie, przerwa i typ są zgodne we wszystkich widokach', () => {
     const resolved = resolveEffectiveExerciseParams(mapping);
     const card = fromExerciseMapping(mapping);

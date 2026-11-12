@@ -51,6 +51,13 @@ describe('mapAiErrorResponse', () => {
     });
   });
 
+  it('odmowę roli (403 forbidden) mapuje na brak dostępu, nie na chwilową awarię ani brak kredytów', () => {
+    const result = mapAiErrorResponse(403, JSON.stringify({ error: 'forbidden' }));
+
+    expect(result?.kind).toBe('forbidden');
+    expect(result?.message).not.toMatch(/ponownie|kredyt/i);
+  });
+
   it('nie rozpoznaje innych błędów ani ciała, które nie jest JSON-em', () => {
     expect(mapAiErrorResponse(400, JSON.stringify({ error: 'invalid_input' }))).toBeNull();
     expect(mapAiErrorResponse(400, 'Bad Request')).toBeNull();

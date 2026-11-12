@@ -85,7 +85,7 @@ export function toPdfExercise(mapping: PdfMappingSource, override?: ExerciseOver
     exerciseSide: normalizeExerciseSide(effective.side),
     imageUrl: effective.customImages?.[0] || resolvePdfExerciseImageUrl(exercise),
     images: effective.customImages?.length ? effective.customImages : exercise?.images,
-    notes: effective.notes || exercise?.notes,
+    notes: effective.notes || undefined,
     sets: effective.sets,
     reps,
     duration: effective.duration,
