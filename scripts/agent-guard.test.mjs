@@ -332,6 +332,17 @@ describe("agent-guard: merge przez agenta", () => {
     assert.equal(classifyShellCommand("git commit -m 'opis: $(gh pr merge 12)'").permission, "allow");
   });
 
+  it("tracks quote state char by char: an apostrophe inside double quotes is a plain char, \\\" does not close them", () => {
+    for (const command of [
+      `echo "it's $(gh pr merge 12)" 'x'`,
+      `git commit -m "don't" -m "$(gh pr merge 12)" -m "won't"`,
+      `git commit -m "say \\"hi\\" it's $(gh pr merge 12)" 'x'`,
+    ]) {
+      assert.equal(classifyShellCommand(command).permission, "deny", command);
+    }
+    assert.equal(classifyShellCommand(`echo "it's fine" '$(gh pr merge 12)'`).permission, "allow");
+  });
+
   it("explains the reason in the hook response", () => {
     const response = hookResponse("gh pr merge 12 --merge");
     assert.equal(response.permission, "deny");
