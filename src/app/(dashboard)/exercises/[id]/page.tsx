@@ -98,7 +98,11 @@ import {
   isExerciseSaveAuthError,
 } from '@/features/exercises/utils/buildEnrichmentUpdateVariables';
 import { getNextExerciseCopyName } from '@/features/exercises/utils/getNextExerciseCopyName';
-import { buildDuplicateExerciseVariables } from '@/features/exercises/utils/buildDuplicateExerciseVariables';
+import {
+  buildDuplicateExerciseVariables,
+  canDuplicateExercise,
+} from '@/features/exercises/utils/buildDuplicateExerciseVariables';
+import { useExerciseAvailability } from '@/hooks/useExerciseAvailability';
 import { normalizeExerciseType } from '@/utils/exerciseEnums';
 import { canOpenVideoOutsidePortal } from '@/utils/videoEmbed';
 import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
@@ -143,6 +147,8 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const { data, loading, error } = useQuery(GET_EXERCISE_BY_ID_QUERY, {
     variables: { id },
   });
+  // Rekord puli demo ma cudze media; kopia do gabinetu jest niedostępna, gdy API podaje dostępność.
+  const canDuplicate = canDuplicateExercise({ availability: useExerciseAvailability(id) });
   const { data: organizationExercisesData } = useQuery(GET_ORGANIZATION_EXERCISE_NAMES_QUERY, {
     variables: { organizationId },
     skip: !organizationId,
@@ -296,7 +302,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   };
 
   const handleDuplicateExercise = async () => {
-    if (!organizationId || !exercise) return;
+    if (!organizationId || !exercise || !canDuplicate) return;
 
     const duplicatedExerciseName = getNextExerciseCopyName(exercise.name, organizationExerciseNames);
 
@@ -574,14 +580,16 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={handleDuplicateExercise}
-                disabled={duplicating}
-                data-testid="exercise-detail-duplicate-btn"
-              >
-                <Copy className="mr-2 h-4 w-4" />
-                {duplicating ? 'Tworzenie kopii...' : 'Duplikuj'}
-              </DropdownMenuItem>
+              {canDuplicate && (
+                <DropdownMenuItem
+                  onClick={handleDuplicateExercise}
+                  disabled={duplicating}
+                  data-testid="exercise-detail-duplicate-btn"
+                >
+                  <Copy className="mr-2 h-4 w-4" />
+                  {duplicating ? 'Tworzenie kopii...' : 'Duplikuj'}
+                </DropdownMenuItem>
+              )}
               {canOpenVideoOutsidePortal(exercise.videoUrl) && (
                 <DropdownMenuItem asChild>
                   <a
@@ -900,7 +908,9 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                   ? 'Edycja zablokowana podczas weryfikacji. Uwagi do ćwiczenia przekaż w trwającej weryfikacji.'
                   : canReviewExercises
                     ? 'Ćwiczenie z bazy FiziYo. Poprawiasz je w weryfikacji, zmiana trafi do wszystkich gabinetów.'
-                    : 'Ćwiczenie z bazy FiziYo — tylko do odczytu. Użyj "Duplikuj" aby je edytować.'}
+                    : canDuplicate
+                      ? 'Ćwiczenie z bazy FiziYo — tylko do odczytu. Użyj "Duplikuj" aby je edytować.'
+                      : 'Ćwiczenie z puli demo — tylko do odczytu. Ma media dostępne wyłącznie w puli demo, więc nie można go duplikować.'}
               </span>
               {isGlobalExercise && canReviewExercises && (
                 <Button

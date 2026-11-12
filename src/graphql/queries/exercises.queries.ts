@@ -128,6 +128,18 @@ export const GET_EXERCISE_BY_ID_QUERY = gql`
   ${EXERCISE_FULL_FRAGMENT}
 `;
 
+// Dostępność ćwiczenia (pula demo, fizjo-app#388). Osobny dokument pytany z errorPolicy 'ignore':
+// API bez pola `availability` odrzuca tylko to zapytanie, a widok ćwiczenia ładuje się jak dotąd.
+// Nie dopisuj tego pola do ExerciseFullFragment, dopóki backend z #388 nie jest na każdym środowisku.
+export const GET_EXERCISE_AVAILABILITY_QUERY = gql`
+  query GetExerciseAvailability($id: String!) {
+    exerciseById(id: $id) {
+      id
+      availability
+    }
+  }
+`;
+
 // Query do pobierania ćwiczeń organizacji (używa dedykowanej metody z Scope filtering)
 export const GET_ORGANIZATION_EXERCISES_QUERY = gql`
   query GetOrganizationExercises($organizationId: String!) {
