@@ -184,31 +184,72 @@ function reviewApiDenied(raw) {
   return events.length === 0 || !events.every((event) => SAFE_EVENTS.has(event));
 }
 
-// Ogranicznik heredoca to całe słowo powłoki: sklejone części w cudzysłowach i bez (`<<'E'OF` to EOF w cudzysłowie).
+const HEREDOC_WORD = /<<(-?)[ \t]*((?:'[^']*'|"[^"]*"|\\.|[^\s'"\;&|<>()])+)/y;
+
+// Pierwsze `<<WORD` poza cudzysłowem, komentarzem i $((…)); `$(` otwiera nowy kontekst cudzysłowów, także w "…".
+// Ogranicznik to całe słowo powłoki (`<<'E'OF` to EOF w cudzysłowie). Zwraca { dash, word, quoted } albo null.
 function heredocStart(line) {
-  const match = /(?<!<)<<(?!<)-?[ \t]*((?:'[^']*'|"[^"]*"|\\.|[^\s'"\\;&|<>()])+)/.exec(line);
-  if (!match) return null;
-  let word = "";
-  let quoted = false;
-  for (const part of match[1].matchAll(/'([^']*)'|"([^"]*)"|\\(.)|([^'"\\]+)/g)) {
-    if (part[4] === undefined) quoted = true;
-    word += part[1] ?? part[2] ?? part[3] ?? part[4];
+  let quote = null;
+  let arithmetic = 0;
+  const stack = [];
+  for (let j = 0; j < line.length; j += 1) {
+    const ch = line[j];
+    if (quote === "'") {
+      if (ch === "'") quote = null;
+    } else if (ch === "\\") j += 1;
+    else if (line.startsWith("$(", j) && !line.startsWith("$((", j)) {
+      stack.push(quote);
+      quote = null;
+      j += 1;
+    } else if (stack.length && quote === null && ch === ")") quote = stack.pop();
+    else if (quote === '"') {
+      if (ch === '"') quote = null;
+    } else if (ch === "'" || ch === '"') quote = ch;
+    else if (ch === "#" && (j === 0 || " \t;|&(".includes(line[j - 1]))) return null;
+    else if (line.startsWith("$((", j)) {
+      arithmetic += 1;
+      j += 2;
+    } else if (arithmetic && line.startsWith("))", j)) {
+      arithmetic -= 1;
+      j += 1;
+    } else if (!arithmetic && line.startsWith("<<", j) && line[j - 1] !== "<" && line[j + 2] !== "<") {
+      HEREDOC_WORD.lastIndex = j;
+      const match = HEREDOC_WORD.exec(line);
+      if (match) {
+        let word = "";
+        let quoted = false;
+        for (const part of match[2].matchAll(/'([^']*)'|"([^"]*)"|\\(.)|([^'"\\]+)/g)) {
+          if (part[4] === undefined) quoted = true;
+          word += part[1] ?? part[2] ?? part[3] ?? part[4];
+        }
+        return { dash: match[1] === "-", word, quoted };
+      }
+      j += 1;
+    }
   }
-  return { word, quoted };
+  return null;
+}
+
+// Indeks linii z ogranicznikiem od `from` (dokładnie; przy `<<-` bez wiodących tabulatorów) albo -1.
+function heredocEnd(lines, from, start) {
+  for (let k = from; k < lines.length; k += 1) {
+    if ((start.dash ? lines[k].replace(/^\t+/, "") : lines[k]) === start.word) return k;
+  }
+  return -1;
 }
 
 // Treść heredoców to dane (cat <<EOF); podstawienia w niej łapie wcześniejsze skanowanie surowego polecenia.
+// Fail-closed: bez linii z ogranicznikiem niczego nie zdejmujemy, reszta idzie jako polecenia.
 function stripHeredocs(text, onlyQuoted = false) {
   const kept = [];
-  let delimiter = null;
-  for (const line of text.split("\n")) {
-    if (delimiter) {
-      if (line.trim() === delimiter) delimiter = null;
-      continue;
+  const lines = text.split("\n");
+  for (let i = 0; i < lines.length; i += 1) {
+    kept.push(lines[i]);
+    const start = heredocStart(lines[i]);
+    if (start && (!onlyQuoted || start.quoted)) {
+      const end = heredocEnd(lines, i + 1, start);
+      if (end >= 0) i = end;
     }
-    kept.push(line);
-    const start = heredocStart(line);
-    if (start && (!onlyQuoted || start.quoted)) delimiter = start.word;
   }
   return kept.join("\n");
 }
@@ -229,10 +270,10 @@ function joinContinuations(text) {
     out.push(line);
     const start = heredocStart(line);
     if (start?.quoted) {
-      while (i < lines.length) {
-        out.push(lines[i]);
-        i += 1;
-        if (out.at(-1).trim() === start.word) break;
+      const end = heredocEnd(lines, i, start);
+      if (end >= 0) {
+        out.push(...lines.slice(i, end + 1));
+        i = end + 1;
       }
     }
   }
@@ -290,7 +331,8 @@ export function classifyShellCommand(command, options = {}) {
     }
     if (ghFirst && ghCommand === "pr" && ghSub === "merge") reasons.push(...mergeDenials(segment, raw, deps));
     else if (!ghFirst && GH_MERGE.test(bare)) reasons.push("pull request merge wewnątrz konstrukcji powłoki: wywołaj `gh pr merge` osobno");
-    if (((ghCommand === "alias" && (ghSub === "set" || ghSub === "import")) || (!ghFirst && /\bgh\b[\s\S]*\balias\s+(set|import)\b/.test(bare))) && /merge|review|api/.test(segment)) reasons.push("alias gh na merge, review albo api");
+    if (ghCommand === "alias" && ghSub === "import") reasons.push("gh alias import: treść aliasu idzie z wejścia albo pliku, strażnik jej nie widzi");
+    if (((ghCommand === "alias" && ghSub === "set") || (!ghFirst && /\bgh\b[\s\S]*\balias\s+(set|import)\b/.test(bare))) && /merge|review|api/.test(segment)) reasons.push("alias gh na merge, review albo api");
     if (((ghCommand === "pr" && ghSub === "review") || (!ghFirst && GH_PR_REVIEW.test(bare))) && approveDenial(segment)) reasons.push("approve robi człowiek");
     if (VERCEL_PROD.test(segment)) reasons.push("production deploy");
     if (PROMOTE.test(segment)) reasons.push("promote workflow");

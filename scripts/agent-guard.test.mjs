@@ -456,6 +456,30 @@ describe("agent-guard: merge przez agenta", () => {
     }
   });
 
+  it("takes <<WORD for a heredoc only outside quotes, comments and $((…)); fails closed without a delimiter line", () => {
+    const deny = [
+      "git commit -m \"fix: heredoc <<'EOF' w guard\"\ngit push origin main",
+      'git commit -m "guard: obsługa <<EOF"\ngh pr merge 12',
+      "gh pr create --title x --body \"uzyj <<'EOF'\"\ngh pr review 12 --approve",
+      "# zapis przez <<'EOF'\ngh pr merge 12",
+      "echo $((1<<3))\ngh pr merge 12",
+      "python3 -c 'print(1<<2)'\ngh pr merge 12",
+      "bash -c 'cat <<EOF\nx\nEOF'\ngh pr merge 12",
+      "echo \"x <<y\"; cat <<'EOF'\nbody\nEOF\ngh pr merge 12",
+      "cat <<EOF\nx\ngh pr merge 12",
+      "cat <<-EOF\nx\n    EOF\ngh pr merge 12",
+      "gh alias import - <<'EOF'\nm: pr merge\nEOF",
+      "gh alias import aliases.yml",
+    ];
+    for (const command of deny) assert.equal(classifyShellCommand(command).permission, "deny", command);
+    const allow = [
+      "echo \"x <<y\"; cat <<'EOF'\ngh pr merge 12\nEOF\necho ok",
+      "gh pr create --title t --body \"$(cat <<'EOF'\nopis: gh pr merge 12\nEOF\n)\"",
+      "cat <<-EOF\n\tgh pr merge 12\n\tEOF\necho ok",
+    ];
+    for (const command of allow) assert.equal(classifyShellCommand(command).permission, "allow", command);
+  });
+
   it("explains the reason in the hook response", () => {
     const response = hookResponse("gh pr merge 12 --merge");
     assert.equal(response.permission, "deny");
