@@ -57,6 +57,14 @@ describe('ExercisePreviewDrawer: instrukcja dla pacjenta, rekord stary', () => {
     expect(patientInstructionText()).toBe('Opis dla Jana');
   });
 
+  it('opis z warstwy pacjenta (patientDescription w nadpisaniu) wygrywa z opisem pozycji i kolumną', () => {
+    renderDrawer(legacyWithDescription, { customDescription: 'Opis pozycji' }, {
+      exerciseMappingId: 'm-1',
+      patientDescription: 'Opis z personalizacji',
+    } as ExerciseOverride);
+    expect(patientInstructionText()).toBe('Opis z personalizacji');
+  });
+
   it('bez opisu, ale z krokami pokazuje podsumowanie i kroki zamiast chować sekcję', () => {
     renderDrawer(legacyStepsOnly);
     expect(patientInstructionText()).toBe(LEGACY_STEPS_TEXT);
@@ -85,6 +93,14 @@ describe('ExercisePreviewDrawer: instrukcja dla pacjenta, rekord 3.3', () => {
       customDescription: 'Opis dla Jana',
     } as ExerciseOverride);
     expect(patientInstructionText()).toBe('Opis dla Jana');
+  });
+
+  it('opis z warstwy pacjenta wygrywa z krokami', () => {
+    renderDrawer(v33WithStaleColumn, undefined, {
+      exerciseMappingId: 'm-1',
+      patientDescription: 'Opis z personalizacji',
+    } as ExerciseOverride);
+    expect(patientInstructionText()).toBe('Opis z personalizacji');
   });
 
   it('bez kroków i podsumowania sekcji opisu nie ma mimo wypełnionej kolumny', () => {

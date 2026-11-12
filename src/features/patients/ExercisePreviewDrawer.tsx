@@ -110,10 +110,10 @@ export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, o
   const effectiveTempo = normalizedOverride?.tempo ?? normalizedMapping.tempo ?? exercise?.tempo;
   const effectiveLoadDisplayText = normalizedMapping.loadText ?? exercise?.defaultLoad?.text ?? exercise?.loadText;
   const effectiveName = normalizedOverride?.customName ?? normalizedMapping.customName ?? exercise?.name;
-  // Opis z przypisania, potem z pozycji planu; dalej instrukcja rekordu (opis albo podsumowanie i kroki).
+  // Nadpisanie z przypisania (także warstwa personalizacji), potem z pozycji planu; dalej instrukcja rekordu, jak na wydruku.
   const effectivePatientDescription =
     resolvePatientInstruction({
-      override: normalizedOverride?.customDescription ?? normalizedMapping.customDescription,
+      override: effective.patientDescriptionOverride,
       exercise,
       enrichment: effective.effectiveEnrichment,
     }).text ?? '';
