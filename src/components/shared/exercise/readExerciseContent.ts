@@ -131,9 +131,9 @@ export interface ExerciseContent {
   side: ExerciseContentSide;
   /** Stara kolumna opisu klinicznego. Tylko rekord stary. */
   clinicalDescription: string | null;
-  /** Kolumna notatek. Nie ma pola w kontrakcie, więc czytamy ją w obu wersjach. */
+  /** Kolumna notatek. Tylko rekord stary: kontrakt v3.3 §2 ją wycofał (uwaga fizjoterapeuty należy do pozycji planu). */
   notes: string | null;
-  /** Kolumna podpowiedzi głosowej. Jak `notes`: w obu wersjach. */
+  /** Kolumna podpowiedzi głosowej. Tylko rekord stary: w v3.3 zastępują ją `patient.cues`. */
   audioCue: string | null;
 }
 
@@ -258,7 +258,8 @@ function readEquipment(
 ): ExerciseContentEquipmentItem[] {
   const fromDocument = isNew ? readEquipmentItems(document) : textEquipment(asTextList(document.equipment));
   if (fromDocument.length > 0) return fromDocument;
-  // Kolumnę sprzętu backend liczy z `equipment_items`, więc nie jest drugą prawdą, tylko zapasem, gdy dokument milczy.
+  // Zapas, gdy dokument milczy (np. rekord podniesiony mechanicznie). Kontrakt §1 zakłada, że kolumnę liczy backend
+  // z `equipment_items`; dziś backend tego nie robi, więc kolumna bywa starsza od dokumentu.
   const column = asText(source.equipment);
   return column ? textEquipment([column]) : [];
 }
@@ -361,8 +362,8 @@ export function readExerciseContent(exercise: ExerciseContentSource | null | und
     equipment: readEquipment(isNew, document, source),
     side: readSide(isNew, document, source),
     clinicalDescription: isNew ? null : asText(source.clinicalDescription),
-    notes: asText(source.notes),
-    audioCue: asText(source.audioCue),
+    notes: isNew ? null : asText(source.notes),
+    audioCue: isNew ? null : asText(source.audioCue),
   };
 }
 

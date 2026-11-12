@@ -228,9 +228,9 @@ describe('readExerciseContent: rekord 3.3', () => {
     expect(content.therapistNote).toBe('Uwaga na koślawienie (przeniesione).');
     expect(content.contraindications).toEqual([]);
     expect(content.indications).toEqual([]);
-    // Kolumny bez pola w kontrakcie zostają czytelne; sprzęt z kolumny, gdy dokument nie ma equipment_items.
-    expect(content.notes).toBe('Korzyści: siła nóg');
-    expect(content.audioCue).toBe('Plecy proste');
+    // Kolumny wycofane w kontrakcie §2 (notatka, polecenie audio) nie są czytane; sprzęt z kolumny, gdy dokument nie ma equipment_items.
+    expect(content.notes).toBeNull();
+    expect(content.audioCue).toBeNull();
     expect(content.equipment.map((item) => item.label)).toEqual(['krzesło']);
     expect(content.side.mode).toBe('BOTH');
     expect(content.side.perSideDose).toBe(false);
