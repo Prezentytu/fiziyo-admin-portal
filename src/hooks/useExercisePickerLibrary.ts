@@ -64,6 +64,9 @@ interface ExerciseByIdResponse<T> {
   exerciseById: DetailsRecord<T> | null;
 }
 
+/** `take` of one window of the visible-records query (the API's per-request maximum). */
+const VISIBLE_WINDOW_SIZE = 5000;
+
 interface VisibleRecordsResponse<T> {
   firstWindow?: T[] | null;
   secondWindow?: T[] | null;
@@ -115,11 +118,21 @@ export function useExercisePickerLibrary<T extends { id: string; updatedAt?: str
 
   // "Popularne": the most used exercises, asked from the library list narrowed to their ids, so the library's
   // visibility rule decides what can be offered. A failed or pending request offers none.
+  const libraryTotal = pages.counts?.all ?? null;
   const popularCandidateIds = useMemo(() => topPopularExerciseIds(popularity, POPULAR_CANDIDATE_LIMIT), [popularity]);
   const { data: visiblePopularData } = useQuery<VisibleRecordsResponse<T>>(GET_VISIBLE_EXERCISE_PICKER_RECORDS_QUERY, {
-    variables: { organizationId: organizationId ?? '', ids: popularCandidateIds },
-    skip: skip || !organizationId || popularCandidateIds.length === 0,
+    variables: {
+      organizationId: organizationId ?? '',
+      ids: popularCandidateIds,
+      // availableExercises answers at most 5000 records per window and `where` narrows only inside a window;
+      // the second window is needed only when the whole visible library (counts.all) does not fit in the first.
+      withSecondWindow: (libraryTotal ?? 0) > VISIBLE_WINDOW_SIZE,
+    },
+    // Without the library size (first page still loading or failed) nothing is offered, as when the request fails.
+    skip: skip || !organizationId || popularCandidateIds.length === 0 || libraryTotal === null,
+    // Fresh once per opening of the picker, then from the cache (the visibility rule changes rarely).
     fetchPolicy: 'cache-and-network',
+    nextFetchPolicy: 'cache-first',
   });
   const visiblePopularById = useMemo(() => {
     const byId = new Map<string, T>();

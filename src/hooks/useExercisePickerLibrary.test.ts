@@ -14,9 +14,13 @@ type Item = { id: string; name: string; updatedAt?: string };
 const mockClientQuery = vi.fn();
 let itemsBySearch: Record<string, Item[]> = {};
 const pageCache = new Map<string, unknown>();
+/** Size of the whole visible library as the API counts it (counts.all); defaults to the number of items. */
+let libraryTotal: number | null = null;
+/** The first page has not arrived (or failed), so the library size is unknown. */
+let pageUnavailable = false;
 
 function pageResponse(variables: { search: string | null; page: number }) {
-  const key = JSON.stringify(variables) + JSON.stringify(itemsBySearch[variables.search ?? ''] ?? []);
+  const key = JSON.stringify(variables) + JSON.stringify(itemsBySearch[variables.search ?? ''] ?? []) + libraryTotal;
   if (!pageCache.has(key)) {
     const items = itemsBySearch[variables.search ?? ''] ?? [];
     pageCache.set(key, {
@@ -25,7 +29,7 @@ function pageResponse(variables: { search: string | null; page: number }) {
         totalCount: items.length,
         page: variables.page,
         hasNextPage: false,
-        counts: { all: items.length, organization: 0, fiziyo: items.length },
+        counts: { all: libraryTotal ?? items.length, organization: 0, fiziyo: items.length },
       },
     });
   }
@@ -34,15 +38,19 @@ function pageResponse(variables: { search: string | null; page: number }) {
 
 /** What the library's visibility rule returns for the asked ids (availableExercises narrowed to ids). */
 let visibleRecords: Item[] = [];
-const visibleRequests: Array<{ organizationId: string; ids: string[] }> = [];
+const visibleRequests: Array<{ organizationId: string; ids: string[]; withSecondWindow?: boolean }> = [];
 const visibleCache = new Map<string, unknown>();
 
-function visibleResponse(variables: { organizationId: string; ids: string[] }) {
+function visibleResponse(variables: { organizationId: string; ids: string[]; withSecondWindow?: boolean }) {
   const key = JSON.stringify(variables) + JSON.stringify(visibleRecords);
   if (!visibleCache.has(key)) {
     visibleRequests.push(variables);
     const asked = visibleRecords.filter((record) => variables.ids.includes(record.id));
-    visibleCache.set(key, { firstWindow: asked.slice(0, 1), secondWindow: asked.slice(1) });
+    visibleCache.set(key, {
+      // One window holds everything when the library fits in it.
+      firstWindow: variables.withSecondWindow === false ? asked : asked.slice(0, 1),
+      ...(variables.withSecondWindow === false ? {} : { secondWindow: asked.slice(1) }),
+    });
   }
   return visibleCache.get(key);
 }
@@ -56,8 +64,13 @@ vi.mock('@apollo/client/react', () => ({
     }
   ) => {
     if (options.skip) return { data: undefined, loading: false, error: undefined };
+    if (pageUnavailable && query !== GET_VISIBLE_EXERCISE_PICKER_RECORDS_QUERY) {
+      return { data: undefined, loading: true, error: undefined };
+    }
     const data =
-      query === GET_VISIBLE_EXERCISE_PICKER_RECORDS_QUERY ? visibleResponse(options.variables) : pageResponse(options.variables);
+      query === GET_VISIBLE_EXERCISE_PICKER_RECORDS_QUERY
+        ? visibleResponse(options.variables)
+        : pageResponse(options.variables);
     return { data, loading: false, error: undefined };
   },
   useApolloClient: () => ({ query: mockClientQuery }),
@@ -79,6 +92,8 @@ describe('useExercisePickerLibrary', () => {
     pageCache.clear();
     visibleCache.clear();
     visibleRequests.length = 0;
+    libraryTotal = null;
+    pageUnavailable = false;
     visibleRecords = [];
     itemsBySearch = {
       '': [
@@ -190,7 +205,9 @@ describe('useExercisePickerLibrary', () => {
       })
     );
 
-    expect(visibleRequests).toEqual([{ organizationId: 'org', ids: ['hidden', 'b', 'popular'] }]);
+    expect(visibleRequests).toEqual([
+      { organizationId: 'org', ids: ['hidden', 'b', 'popular'], withSecondWindow: false },
+    ]);
     expect(result.current.library.popularIds).toEqual(['b', 'popular']);
     expect(result.current.exercises.map((exercise) => exercise.id)).toEqual(['a', 'b', 'popular']);
     expect(mockClientQuery).not.toHaveBeenCalled();
@@ -199,9 +216,41 @@ describe('useExercisePickerLibrary', () => {
     expect(result.current.exercises.map((exercise) => exercise.id)).not.toContain('hidden');
   });
 
+  it('asks only the first 5000-record window for popular ones when the whole library fits in it', () => {
+    libraryTotal = 5000;
+    renderHook(() =>
+      useExercisePickerLibrary({ organizationId: 'org', detailExerciseIds: [], popularity: { a: 9, b: 5 } })
+    );
+
+    expect(visibleRequests).toHaveLength(1);
+    expect(visibleRequests[0]).toMatchObject({ withSecondWindow: false });
+  });
+
+  it('asks the second window as well when the library is larger than one', () => {
+    libraryTotal = 5001;
+    renderHook(() =>
+      useExercisePickerLibrary({ organizationId: 'org', detailExerciseIds: [], popularity: { a: 9, b: 5 } })
+    );
+
+    expect(visibleRequests).toHaveLength(1);
+    expect(visibleRequests[0]).toMatchObject({ withSecondWindow: true });
+  });
+
+  it('does not ask for popular ones before the library size is known', () => {
+    pageUnavailable = true;
+    const { result } = renderHook(() =>
+      useExercisePickerLibrary({ organizationId: 'org', detailExerciseIds: [], popularity: { a: 9 } })
+    );
+
+    expect(visibleRequests).toHaveLength(0);
+    expect(result.current.library.popularIds).toEqual([]);
+  });
+
   it('does not offer as popular a hidden exercise that is known because it is already in the set', async () => {
     mockClientQuery.mockImplementation(({ variables }: { variables: { id: string } }) =>
-      Promise.resolve({ data: { exerciseById: { id: variables.id, name: variables.id, updatedAt: 't1', enrichmentData: null } } })
+      Promise.resolve({
+        data: { exerciseById: { id: variables.id, name: variables.id, updatedAt: 't1', enrichmentData: null } },
+      })
     );
 
     const { result } = renderHook(() =>
@@ -225,7 +274,9 @@ describe('useExercisePickerLibrary', () => {
   });
 
   it('fills the popular list with the next most used exercises when the top ones are hidden', () => {
-    const popularity = Object.fromEntries(Array.from({ length: 14 }, (_, index) => [`p${String(index).padStart(2, '0')}`, 100 - index]));
+    const popularity = Object.fromEntries(
+      Array.from({ length: 14 }, (_, index) => [`p${String(index).padStart(2, '0')}`, 100 - index])
+    );
     visibleRecords = Object.keys(popularity)
       .filter((id) => id !== 'p00' && id !== 'p01')
       .map((id) => ({ id, name: id, updatedAt: 't1' }));
@@ -234,7 +285,18 @@ describe('useExercisePickerLibrary', () => {
       useExercisePickerLibrary({ organizationId: 'org', detailExerciseIds: [], popularity })
     );
 
-    expect(result.current.library.popularIds).toEqual(['p02', 'p03', 'p04', 'p05', 'p06', 'p07', 'p08', 'p09', 'p10', 'p11']);
+    expect(result.current.library.popularIds).toEqual([
+      'p02',
+      'p03',
+      'p04',
+      'p05',
+      'p06',
+      'p07',
+      'p08',
+      'p09',
+      'p10',
+      'p11',
+    ]);
   });
 
   it('loads exercises already in the set by id as records, without blocking saving', async () => {
@@ -257,7 +319,12 @@ describe('useExercisePickerLibrary', () => {
         query === GET_VISIBLE_EXERCISE_PICKER_RECORDS_QUERY
           ? {
               data: {
-                firstWindow: (variables.ids ?? []).map((id) => ({ id, name: 'Moje prywatne', updatedAt: 't1', enrichmentData: steps })),
+                firstWindow: (variables.ids ?? []).map((id) => ({
+                  id,
+                  name: 'Moje prywatne',
+                  updatedAt: 't1',
+                  enrichmentData: steps,
+                })),
                 secondWindow: [],
               },
             }
@@ -265,7 +332,9 @@ describe('useExercisePickerLibrary', () => {
       )
     );
 
-    const { result } = renderHook(() => useExercisePickerLibrary({ organizationId: 'org', detailExerciseIds: ['personal'] }));
+    const { result } = renderHook(() =>
+      useExercisePickerLibrary({ organizationId: 'org', detailExerciseIds: ['personal'] })
+    );
 
     await waitFor(() => expect(result.current.detailsReady).toBe(true));
     expect(result.current.exercises.find((exercise) => exercise.id === 'personal')).toMatchObject({
