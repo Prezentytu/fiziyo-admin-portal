@@ -96,6 +96,7 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import type { ExerciseByIdResponse, ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
 import {
   buildEnrichmentUpdateVariables,
+  fetchCurrentEnrichmentData,
   isExerciseSaveAuthError,
 } from '@/features/exercises/utils/buildEnrichmentUpdateVariables';
 import { getNextExerciseCopyName } from '@/features/exercises/utils/getNextExerciseCopyName';
@@ -239,10 +240,13 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
     toast.error('Nie udało się zapisać zmian');
   }, []);
 
+  const fetchCurrentEnrichment = useCallback(() => fetchCurrentEnrichmentData(apolloClient, id), [apolloClient, id]);
+
   const exerciseEditorForm = useExerciseEditorForm({
     source: rawExercise,
     updateCore,
     updateEnrichment,
+    fetchCurrentEnrichment,
     onSaved: handleSaved,
     onError: handleSaveError,
   });

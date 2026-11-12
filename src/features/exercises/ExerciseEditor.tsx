@@ -15,6 +15,7 @@ import { ExerciseParametersEditor } from './ExerciseParametersEditor';
 import { ExerciseContentSections } from './ExerciseContentSections';
 import type { UseExerciseEditorFormResult } from './useExerciseEditorForm';
 import { deepMergeFillGaps, revertUnchangedAiValues } from './utils/enrichmentFillGaps';
+import { ExerciseSaveConflictNotice } from './ExerciseSaveConflictNotice';
 import { countV33AiFillSections, mergeV33AiFill, parseV33JsonDocument } from './utils/enrichmentV33Document';
 
 import { aiService } from '@/services/aiService';
@@ -299,6 +300,7 @@ export function ExerciseEditor({
 
   return (
     <div className={cn('space-y-4', className)}>
+      {form.hasSaveConflict && <ExerciseSaveConflictNotice onLoadCurrent={form.loadCurrentVersion} />}
       {showNameField && (
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground" htmlFor="exercise-editor-name">

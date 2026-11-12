@@ -17,8 +17,10 @@ import { readExerciseContent, type ExerciseContentVersion } from '@/components/s
 import {
   buildV33Document,
   collectV33Edits,
+  isSameV33Document,
   isV33EditablePath,
   loadV33Document,
+  rebaseV33Draft,
 } from '@/components/shared/exercise/writeExerciseContent';
 
 /**
@@ -131,6 +133,12 @@ interface UseExerciseEditorFormParams {
   source: ExerciseEditorSource | null | undefined;
   updateCore: (variables: Record<string, unknown>) => Promise<void>;
   updateEnrichment: (payload: ExerciseEnrichmentData) => Promise<void>;
+  /**
+   * Aktualny dokument treści prosto z bazy (bez cache). Podany, chroni rekord 3.3 przed nadpisaniem cudzej
+   * zmiany: przed zapisem hook porównuje go z dokumentem wczytanym i przy różnicy nie zapisuje
+   * (`hasSaveConflict`). Backend nie ma jeszcze warunku wersji, więc to jedyna zapora po stronie portalu.
+   */
+  fetchCurrentEnrichment?: () => Promise<ExerciseEnrichmentData | string | null | undefined>;
   onSaved?: () => void;
   onError?: (error: unknown) => void;
   /**
@@ -265,6 +273,7 @@ export function useExerciseEditorForm({
   source,
   updateCore,
   updateEnrichment,
+  fetchCurrentEnrichment,
   onSaved,
   onError,
   autosaveDelayMs,
@@ -287,6 +296,8 @@ export function useExerciseEditorForm({
   // Fixed at hydration together with the baseline, so the write rule always matches the loaded document.
   const [contentVersion, setContentVersion] = useState<ExerciseContentVersion>(derivedVersion);
   const [saveStatus, setSaveStatus] = useState<ExerciseSaveStatus>('idle');
+  // The document someone else saved while this one was being edited; set, it blocks every save.
+  const [conflictDocument, setConflictDocument] = useState<ExerciseEnrichmentData | null>(null);
 
   const hasHydratedRef = useRef(false);
   const hydratedIdentityRef = useRef<string | null>(null);
@@ -334,6 +345,7 @@ export function useExerciseEditorForm({
     setCore(derivedCore);
     setEnrichment(derivedEnrichment);
     setContentVersion(derivedVersion);
+    setConflictDocument(null);
     setSaveStatus('idle');
   }, [derivedCore, derivedEnrichment, derivedVersion, isAutosave, source]);
 
@@ -399,6 +411,21 @@ export function useExerciseEditorForm({
   enrichmentRef.current = enrichment;
   initialCoreRef.current = initialCore;
   initialEnrichmentRef.current = initialEnrichment;
+  const conflictDocumentRef = useRef(conflictDocument);
+  conflictDocumentRef.current = conflictDocument;
+
+  /**
+   * Po konflikcie: szkic przechodzi na aktualną wersję z bazy i zachowuje niezapisane zmiany z ekranu.
+   * Niczego nie zapisuje; fizjoterapeuta widzi wynik i zapisuje sam.
+   */
+  const loadCurrentVersion = useCallback(() => {
+    const current = conflictDocumentRef.current;
+    if (!current) return;
+    setEnrichment(rebaseV33Draft(initialEnrichmentRef.current, enrichmentRef.current, current));
+    setInitialEnrichment(current);
+    setConflictDocument(null);
+    setSaveStatus('idle');
+  }, []);
 
   /** Snapshotuje aktualny draft jako nową baseline bez refetchu — używane po autosave. */
   const markSaved = useCallback(() => {
@@ -421,9 +448,22 @@ export function useExerciseEditorForm({
       : JSON.stringify(currentEnrichmentPayload) !== initialEnrichmentPayload;
 
     if (!currentCoreDirty && !currentEnrichmentDirty) return;
+    if (conflictDocumentRef.current) return;
 
     setSaveStatus('saving');
     try {
+      if (isV33 && currentEnrichmentDirty && fetchCurrentEnrichment) {
+        // The mutation replaces the whole document, so a save built on a stale one would erase the other change.
+        const fetched = await fetchCurrentEnrichment();
+        // No document is a failed read, never "someone emptied it": rebasing onto nothing would lose the record.
+        if (fetched == null) throw new Error('Nie udało się pobrać aktualnej wersji ćwiczenia.');
+        const current = loadV33Document(fetched);
+        if (!isSameV33Document(initialEnrichmentRef.current, current)) {
+          setConflictDocument(current);
+          setSaveStatus('idle');
+          return;
+        }
+      }
       if (currentCoreDirty) {
         await updateCore(coreVariables);
       }
@@ -444,7 +484,16 @@ export function useExerciseEditorForm({
       setSaveStatus('error');
       onError?.(error);
     }
-  }, [contentVersion, initialEnrichmentPayload, markSaved, onError, onSaved, updateCore, updateEnrichment]);
+  }, [
+    contentVersion,
+    fetchCurrentEnrichment,
+    initialEnrichmentPayload,
+    markSaved,
+    onError,
+    onSaved,
+    updateCore,
+    updateEnrichment,
+  ]);
 
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -506,6 +555,8 @@ export function useExerciseEditorForm({
       isCoreFieldDirty,
       isPathDirty,
       saveStatus,
+      hasSaveConflict: conflictDocument !== null,
+      loadCurrentVersion,
       save,
       flush,
       markSaved,
@@ -516,10 +567,12 @@ export function useExerciseEditorForm({
       core,
       exerciseType,
       enrichment,
+      conflictDocument,
       flush,
       isCoreFieldDirty,
       isDirty,
       isPathDirty,
+      loadCurrentVersion,
       markSaved,
       replaceEnrichment,
       reset,

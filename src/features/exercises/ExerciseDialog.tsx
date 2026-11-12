@@ -33,7 +33,11 @@ import type { Exercise } from './ExerciseCard';
 import { verificationCopy } from '@/features/verification/verificationCopy';
 import { getNextExerciseCopyName } from './utils/getNextExerciseCopyName';
 import { buildExerciseMediaChangeSet, getExerciseMediaGalleryUrls } from './utils/exerciseMedia';
-import { buildEnrichmentUpdateVariables, isExerciseSaveAuthError } from './utils/buildEnrichmentUpdateVariables';
+import {
+  buildEnrichmentUpdateVariables,
+  fetchCurrentEnrichmentData,
+  isExerciseSaveAuthError,
+} from './utils/buildEnrichmentUpdateVariables';
 import { useExerciseImageGeneration } from './useExerciseImageGeneration';
 import { ImageStylePicker } from './ImageStylePicker';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
@@ -243,10 +247,16 @@ export function ExerciseDialog({
     [exercise, updateExercise]
   );
 
+  const fetchCurrentEnrichment = useCallback(async () => {
+    if (!exercise) return null;
+    return fetchCurrentEnrichmentData(apolloClient, exercise.id);
+  }, [apolloClient, exercise]);
+
   const editorForm = useExerciseEditorForm({
     source: exercise,
     updateCore,
     updateEnrichment,
+    fetchCurrentEnrichment,
   });
 
   React.useEffect(() => {
