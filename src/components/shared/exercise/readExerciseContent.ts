@@ -89,7 +89,7 @@ export interface ExerciseContentBreathing {
 export interface ExerciseContentSide {
   /** 3.3: `side.mode` (`none`, `each_side`, `alternating`, `left`, `right`). Rekord stary: wartość kolumny strony. */
   mode: string | null;
-  /** Dawka liczona na stronę. Rekord stary zawsze `false` (liczy łącznie). */
+  /** Dawka liczona na stronę. 3.3 przy dwóch stronach: tak, chyba że dokument mówi wprost `false`. Rekord stary zawsze `false` (liczy łącznie). */
   perSideDose: boolean;
   start: string | null;
   shownInMedia: string | null;
@@ -139,6 +139,8 @@ export interface ExerciseContent {
 
 const CUE_PHASES: readonly EnrichmentCuePhaseV3[] = ['preparation', 'work', 'rest'];
 const FIRST_NEW_READER_VERSION = [3, 3] as const;
+/** `side.mode` z kontraktu oraz wartość kolumny strony („obie”), gdy dokument nie ma sekcji `side`. */
+const TWO_SIDED_MODES = ['each_side', 'alternating', 'both'];
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -267,9 +269,12 @@ function readEquipment(
 function readSide(isNew: boolean, document: UnknownRecord, source: ExerciseContentSource): ExerciseContentSide {
   const column = asText(source.side) ?? asText(source.exerciseSide);
   const side = isNew ? asRecord(document.side) : null;
+  const mode = asText(side?.mode) ?? column;
+  // Kontrakt §6.7: w 3.3 przy dwóch stronach `reps` jest zawsze na stronę; brak sekcji albo klucza znaczy to samo.
+  const twoSided = isNew && TWO_SIDED_MODES.includes((mode ?? '').toLowerCase());
   return {
-    mode: asText(side?.mode) ?? column,
-    perSideDose: side?.per_side_dose === true,
+    mode,
+    perSideDose: twoSided ? side?.per_side_dose !== false : side?.per_side_dose === true,
     start: asText(side?.start),
     shownInMedia: asText(side?.shown_in_media),
   };

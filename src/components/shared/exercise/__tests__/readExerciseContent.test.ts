@@ -233,7 +233,22 @@ describe('readExerciseContent: rekord 3.3', () => {
     expect(content.audioCue).toBeNull();
     expect(content.equipment.map((item) => item.label)).toEqual(['krzesło']);
     expect(content.side.mode).toBe('BOTH');
-    expect(content.side.perSideDose).toBe(false);
+    // Kontrakt §6.7: w 3.3 dawka przy dwóch stronach jest na stronę także bez sekcji `side`.
+    expect(content.side.perSideDose).toBe(true);
+  });
+
+  it.each([
+    ['each_side', undefined, true],
+    ['alternating', undefined, true],
+    ['each_side', true, true],
+    ['alternating', false, false],
+    ['none', undefined, false],
+    ['left', undefined, false],
+    ['right', true, true],
+  ])('3.3, side.mode %s, per_side_dose %s → dawka na stronę: %s', (mode, perSideDose, expected) => {
+    const side = perSideDose === undefined ? { mode } : { mode, per_side_dose: perSideDose };
+
+    expect(readExerciseContent({ enrichmentData: { schemaVersion: '3.3', side } }).side.perSideDose).toBe(expected);
   });
 
   it('rekord 3.3 bez kroków i podsumowania nie ma instrukcji mimo wypełnionej kolumny opisu', () => {
