@@ -175,6 +175,34 @@ describe("agent-guard: merge przez agenta", () => {
     assert.equal(classifyShellCommand("gh pr review 12 --request-changes -b 'x'").permission, "allow");
   });
 
+  it("fails closed on review creation through the API unless the event is visibly COMMENT or REQUEST_CHANGES", () => {
+    for (const command of [
+      "gh api repos/o/r/pulls/12/reviews --input review.json",
+      "gh api repos/o/r/pulls/12/reviews --input - <<< '{\"event\":\"COMMENT\"}'",
+      "gh api repos/o/r/pulls/12/reviews -F body=@plik.md",
+      "gh api repos/o/r/pulls/12/reviews -f body=ok",
+      "gh api -X POST repos/o/r/pulls/12/reviews",
+      "echo '{\"event\":\"APPROVE\"}' | gh api repos/o/r/pulls/12/reviews --input -",
+      "gh api repos/o/r/pulls/12/reviews -f event=COMMENT -f event=APPROVE",
+      "gh api repos/o/r/pulls/12/reviews -f event=APPROVE",
+      "gh api graphql -f query='mutation { addPullRequestReview(input:{pullRequestId:\"x\"}) { clientMutationId } }'",
+      "gh api graphql -f query='mutation { submitPullRequestReview(input:{pullRequestReviewId:\"x\", event: COMMENT}) { clientMutationId } }' --input q.json",
+      "gh api graphql -f query='mutation { submitPullRequestReview(input:{pullRequestReviewId:\"x\", event: APPROVE}) { clientMutationId } }'",
+    ]) {
+      assert.equal(classifyShellCommand(command).permission, "deny", command);
+    }
+    for (const command of [
+      "gh api repos/o/r/pulls/12/reviews -f event=COMMENT -f body=ok",
+      "gh api repos/o/r/pulls/12/reviews -f event=REQUEST_CHANGES -f body=x",
+      "gh api repos/o/r/pulls/12/reviews -f event=COMMENT",
+      "gh api graphql -f query='mutation { addPullRequestReview(input:{pullRequestId:\"x\", event: COMMENT}) { clientMutationId } }'",
+      "gh api repos/o/r/pulls/12/reviews",
+    ]) {
+      assert.equal(classifyShellCommand(command).permission, command.endsWith("12/reviews") ? "deny" : "allow", command);
+    }
+    assert.equal(classifyShellCommand("gh api repos/o/r/pulls/12/comments").permission, "allow");
+  });
+
   it("explains the reason in the hook response", () => {
     const response = hookResponse("gh pr merge 12 --merge");
     assert.equal(response.permission, "deny");

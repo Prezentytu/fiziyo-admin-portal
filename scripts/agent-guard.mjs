@@ -87,6 +87,18 @@ function approveDenial(segment) {
   return tokens.some((t) => t === "--approve" || t.startsWith("--approve=") || /^-[a-zA-Z]*a[a-zA-Z]*$/.test(t));
 }
 
+// Fail-closed: review przez API (REST pulls/N/reviews, GraphQL add/submitPullRequestReview) przechodzi tylko, gdy w samej
+// komendzie widać każde `event` i każde jest COMMENT albo REQUEST_CHANGES; --input, plik/stdin i brak event = odmowa.
+const REVIEW_API = /\/pulls\/\d+\/reviews\b|\baddPullRequestReview\b|\bsubmitPullRequestReview\b/;
+const SAFE_EVENTS = new Set(["COMMENT", "REQUEST_CHANGES"]);
+
+function reviewApiDenied(raw) {
+  if (!REVIEW_API.test(raw)) return false;
+  if (/APPROVE\b/i.test(raw) || /(^|\s)--input\b/.test(raw) || /=@/.test(raw)) return true;
+  const events = [...raw.matchAll(/\bevent["']?\s*[=:]\s*["']?([A-Za-z_]+)/gi)].map((m) => m[1].toUpperCase());
+  return events.length === 0 || !events.every((event) => SAFE_EVENTS.has(event));
+}
+
 const GH_PR_REVIEW = /^(\S*\/)?gh\s[\s\S]*\bpr\s+review\b/;
 
 export function classifyShellCommand(command, options = {}) {
@@ -97,7 +109,7 @@ export function classifyShellCommand(command, options = {}) {
   const raw = String(command ?? "");
   const reasons = [];
   if (API_MERGE.test(raw)) reasons.push("pull request merge przez API");
-  if (/\/pulls\/\d+\/reviews\b/.test(raw) && /APPROVE\b/i.test(raw)) reasons.push("approve przez API");
+  if (reviewApiDenied(raw)) reasons.push("review przez API: przepuszczam tylko jawne event=COMMENT albo REQUEST_CHANGES w argumentach");
   for (const segment of commandSegments(raw)) {
     if (PUSH_MAIN.test(segment)) reasons.push("push to main");
     if (GH_MERGE.test(segment)) reasons.push(...mergeDenials(segment, raw, deps));
