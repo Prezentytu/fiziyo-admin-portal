@@ -132,7 +132,7 @@ function consentExists({ repo, number, sha }, { consentDir, now }) {
 function mergeDenials(segment, command, deps) {
   if (/(^|\s)GH_(REPO|HOST)=/.test(command)) return ["pull request merge: GH_REPO/GH_HOST w poleceniu, repo podaj jawnie przez -R"];
   const tokens = tokenize(segment);
-  // Flagi repo przed podkomendą (`gh -R x pr merge`, `gh pr -R x merge`) działają jak na końcu: przenosimy je do args.
+  // Każda flaga przed podkomendą (`gh --admin=true pr merge`, `gh pr -R x merge`) działa jak na końcu: idzie do args. Wartość bierze tylko -R/--repo.
   const rest = tokens.slice(1);
   const moved = [];
   let sawPr = false;
@@ -144,7 +144,7 @@ function mergeDenials(segment, command, deps) {
       at = i + 1;
       break;
     } else if (word === "-R" || word === "--repo") moved.push(word, rest[(i += 1)]);
-    else if (word.startsWith("--repo=") || word.startsWith("-R")) moved.push(word);
+    else if (word.startsWith("-")) moved.push(word);
     else break;
   }
   if (at < 0) return ["pull request merge: nie umiem odczytać komendy"];
@@ -198,6 +198,19 @@ function reviewApiDenied(raw) {
   return events.length === 0 || !events.every((event) => SAFE_EVENTS.has(event));
 }
 
+// Ogranicznik heredoca to całe słowo powłoki: sklejone części w cudzysłowach i bez (`<<'E'OF` to EOF w cudzysłowie).
+function heredocStart(line) {
+  const match = /(?<!<)<<(?!<)-?[ \t]*((?:'[^']*'|"[^"]*"|\\.|[^\s'"\\;&|<>()])+)/.exec(line);
+  if (!match) return null;
+  let word = "";
+  let quoted = false;
+  for (const part of match[1].matchAll(/'([^']*)'|"([^"]*)"|\\(.)|([^'"\\]+)/g)) {
+    if (part[4] === undefined) quoted = true;
+    word += part[1] ?? part[2] ?? part[3] ?? part[4];
+  }
+  return { word, quoted };
+}
+
 // Treść heredoców to dane (cat <<EOF); podstawienia w niej łapie wcześniejsze skanowanie surowego polecenia.
 function stripHeredocs(text, onlyQuoted = false) {
   const kept = [];
@@ -208,8 +221,8 @@ function stripHeredocs(text, onlyQuoted = false) {
       continue;
     }
     kept.push(line);
-    const start = /<<-?\s*(["']?)([A-Za-z_]\w*)\1/.exec(line);
-    if (start && (!onlyQuoted || start[1])) delimiter = start[2];
+    const start = heredocStart(line);
+    if (start && (!onlyQuoted || start.quoted)) delimiter = start.word;
   }
   return kept.join("\n");
 }

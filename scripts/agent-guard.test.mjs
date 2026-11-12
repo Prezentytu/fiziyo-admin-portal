@@ -385,6 +385,36 @@ describe("agent-guard: merge przez agenta", () => {
     assert.equal(classifyShellCommand(`gh pr create --body "$(cat <<EOF\n${body}\nEOF\n)"`).permission, "deny");
   });
 
+  it("moves every flag placed before the gh subcommand to the end", () => {
+    const dir = zgoda({ repo: "prezentytu/fiziyo-admin-portal" });
+    const tail = `-R ${REPO} --merge --match-head-commit ${SHA}`;
+    for (const command of [
+      `gh --admin=true pr merge 12 ${tail}`,
+      `gh pr --admin=true merge 12 ${tail}`,
+      `gh pr --auto=true merge 12 ${tail}`,
+      "gh --approve=true pr review 12",
+      "gh --method=PUT api repos/o/r/git/refs/heads/main -f sha=x",
+      "gh --method=POST api repos/o/r/pulls/12/reviews -f body=x",
+    ]) {
+      assert.equal(classifyShellCommand(command, { consentDir: dir }).permission, "deny", command);
+    }
+    assert.equal(classifyShellCommand(`gh --delete-branch pr merge 12 ${tail}`, { consentDir: dir }).permission, "allow");
+    assert.equal(classifyShellCommand(`gh pr --delete-branch=true merge 12 ${tail}`, { consentDir: dir }).permission, "allow");
+    assert.equal(classifyShellCommand("gh --json=number pr view 57").permission, "allow");
+  });
+
+  it("treats the heredoc delimiter as the whole shell word: <<'E'OF ends at EOF", () => {
+    const after = "echo $(gh pr merge 12)";
+    assert.equal(classifyShellCommand(`cat <<'E'OF\nE\nEOF\n${after}`).permission, "deny");
+    assert.equal(classifyShellCommand(`cat <<"E"OF\nopis\nEOF\n${after}`).permission, "deny");
+    assert.equal(classifyShellCommand("cat <<'E'OF\nopis: gh pr merge 12\nEOF").permission, "allow");
+    assert.equal(classifyShellCommand(`cat <<E"O"F\nopis: gh pr merge 12\nEOF\ngh pr merge 12 -R ${REPO} --merge --match-head-commit ${SHA}`).permission, "deny");
+  });
+
+  it("does not take a here-string for a heredoc", () => {
+    assert.equal(classifyShellCommand("cat <<< EOF\necho $(gh pr merge 12)").permission, "deny");
+  });
+
   it("explains the reason in the hook response", () => {
     const response = hookResponse("gh pr merge 12 --merge");
     assert.equal(response.permission, "deny");
