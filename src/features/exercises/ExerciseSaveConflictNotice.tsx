@@ -6,7 +6,7 @@ import { AlertTriangle } from 'lucide-react';
 import type { V33EditCollision } from '@/components/shared/exercise/writeExerciseContent';
 import { Button } from '@/components/ui/button';
 
-import type { SaveCollisionResolution } from './useExerciseEditorForm';
+import { linkedPathsOf, type SaveCollisionResolution } from './utils/saveCollisions';
 
 interface ExerciseSaveConflictNoticeProps {
   /** Fields changed both on this screen and in the database; each needs a choice before loading. */
@@ -70,13 +70,36 @@ function VersionText({ title, value }: Readonly<{ title: string; value: unknown 
   );
 }
 
+interface CollisionGroup {
+  /** First field of the group; names the group in test ids and in the choice state. */
+  key: string;
+  fields: V33EditCollision[];
+}
+
+/** Fields decided by one choice: a single field, or both lists of a linked pair (steps with their photos). */
+function groupCollisions(collisions: readonly V33EditCollision[]): CollisionGroup[] {
+  const groups: CollisionGroup[] = [];
+  for (const collision of collisions) {
+    const linked = linkedPathsOf(collision.path);
+    const group = groups.find(({ fields }) => linked.includes(fields[0].path));
+    if (group) group.fields.push(collision);
+    else groups.push({ key: collision.path, fields: [collision] });
+  }
+  return groups;
+}
+
+const fieldLabel = (path: string) => SAVE_COLLISION_FIELD_LABELS[path] ?? path;
+
 /** Shown when someone else saved the exercise while it was being edited; the save did not happen. */
 export function ExerciseSaveConflictNotice({ collisions, onLoadCurrent }: Readonly<ExerciseSaveConflictNoticeProps>) {
   const [choices, setChoices] = useState<Record<string, 'mine' | 'theirs'>>({});
+  const groups = groupCollisions(collisions);
   const resolution = Object.fromEntries(
-    collisions.filter(({ path }) => choices[path]).map(({ path }) => [path, choices[path]])
+    groups
+      .filter(({ key }) => choices[key])
+      .flatMap(({ key, fields }) => fields.map(({ path }) => [path, choices[key]]))
   );
-  const isResolved = collisions.every(({ path }) => choices[path]);
+  const isResolved = groups.every(({ key }) => choices[key]);
 
   return (
     <div
@@ -101,35 +124,44 @@ export function ExerciseSaveConflictNotice({ collisions, onLoadCurrent }: Readon
             </p>
           )}
         </div>
-        {collisions.map(({ path, mine, theirs }) => (
+        {groups.map(({ key, fields }) => (
           <div
-            key={path}
+            key={key}
             className="space-y-2 rounded-xl border border-border bg-background p-3"
-            data-testid={`exercise-save-conflict-collision-${path}`}
+            data-testid={`exercise-save-conflict-collision-${key}`}
           >
-            <p className="text-sm font-semibold text-foreground">{SAVE_COLLISION_FIELD_LABELS[path] ?? path}</p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <VersionText title="Twoja wersja (niezapisana)" value={mine} />
-              <VersionText title="Wersja zapisana przez tamtą osobę" value={theirs} />
-            </div>
+            {fields.length > 1 ? (
+              <p className="text-sm text-muted-foreground">
+                Te pola zapisują się razem, więc wybierasz jedną wersję dla obu.
+              </p>
+            ) : null}
+            {fields.map(({ path, mine, theirs }) => (
+              <div key={path} className="space-y-2">
+                <p className="text-sm font-semibold text-foreground">{fieldLabel(path)}</p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <VersionText title="Twoja wersja (niezapisana)" value={mine} />
+                  <VersionText title="Wersja zapisana przez tamtą osobę" value={theirs} />
+                </div>
+              </div>
+            ))}
             <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
                 size="sm"
-                variant={choices[path] === 'mine' ? 'default' : 'outline'}
-                aria-pressed={choices[path] === 'mine'}
-                onClick={() => setChoices((previous) => ({ ...previous, [path]: 'mine' }))}
-                data-testid={`exercise-save-conflict-keep-mine-${path}-btn`}
+                variant={choices[key] === 'mine' ? 'default' : 'outline'}
+                aria-pressed={choices[key] === 'mine'}
+                onClick={() => setChoices((previous) => ({ ...previous, [key]: 'mine' }))}
+                data-testid={`exercise-save-conflict-keep-mine-${key}-btn`}
               >
                 Zostaw moją
               </Button>
               <Button
                 type="button"
                 size="sm"
-                variant={choices[path] === 'theirs' ? 'default' : 'outline'}
-                aria-pressed={choices[path] === 'theirs'}
-                onClick={() => setChoices((previous) => ({ ...previous, [path]: 'theirs' }))}
-                data-testid={`exercise-save-conflict-keep-theirs-${path}-btn`}
+                variant={choices[key] === 'theirs' ? 'default' : 'outline'}
+                aria-pressed={choices[key] === 'theirs'}
+                onClick={() => setChoices((previous) => ({ ...previous, [key]: 'theirs' }))}
+                data-testid={`exercise-save-conflict-keep-theirs-${key}-btn`}
               >
                 Zostaw zapisaną, odrzuć moją
               </Button>
