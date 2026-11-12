@@ -32,6 +32,7 @@ import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
 
 import { GET_AVAILABLE_EXERCISES_PICKER_QUERY } from '@/graphql/queries/exercises.queries';
 import { filterExercisesBySearch } from '@/features/exercises/utils/exerciseSearch';
+import { ExerciseDemoBadge } from '@/features/exercises/demoPool';
 import { useIncrementalList } from '@/hooks/useIncrementalList';
 import {
   ADD_EXERCISE_TO_EXERCISE_SET_MUTATION,
@@ -615,6 +616,7 @@ function AddExerciseToPatientDialogContent({
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-sm truncate">{exercise.name}</p>
                         </div>
+                        <ExerciseDemoBadge exerciseId={exercise.id} testId={`add-exercise-demo-${exercise.id}`} />
                       </button>
                     );
                   })}

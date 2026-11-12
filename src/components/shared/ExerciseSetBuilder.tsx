@@ -35,6 +35,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { ExerciseDemoBadge } from '@/features/exercises/demoPool';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ShowMoreTrigger } from '@/components/shared/ShowMoreTrigger';
@@ -312,6 +313,7 @@ function ExercisePickerItem({
       </div>
 
       <div className="flex items-center gap-2">
+        <ExerciseDemoBadge exerciseId={exercise.id} testId={`${testIdPrefix}-demo-${exercise.id}`} />
         {instanceCount > 0 && (
           <span className="text-[10px] font-bold text-primary px-1.5 py-0.5 rounded-md bg-primary/10 border border-primary/20">
             {instanceCount}x
