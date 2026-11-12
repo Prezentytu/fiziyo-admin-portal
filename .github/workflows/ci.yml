@@ -3,6 +3,8 @@ name: CI
 on:
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -11,6 +13,8 @@ concurrency:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    # Ostatnie przebiegi trwają 3-5 min; limit ~3x zapasu zamiast domyślnych 360 min.
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
 
@@ -40,6 +44,22 @@ jobs:
       # Baza długu może tylko maleć: nowy hex albo paleta Tailwinda poza tokenami blokuje PR (AGENTS.md, Validation Commands).
       - name: Design tokens guard
         run: npm run check:design-tokens
+
+      # Schemat backendu to zacommitowany SDL w prywatnym fizjo-app (jego CI pilnuje, że jest aktualny). Operacja panelu
+      # spoza schematu czerwieni PR, zanim zobaczy ją użytkownik. Token musi mieć contents:read do Prezentytu/fizjo-app.
+      - name: Backend GraphQL schema
+        uses: actions/checkout@v7
+        with:
+          repository: Prezentytu/fizjo-app
+          token: ${{ secrets.E2E_DISPATCH_PAT }}
+          sparse-checkout: backend/schema.graphql
+          sparse-checkout-cone-mode: false
+          path: .backend-schema
+
+      - name: GraphQL documents vs backend schema
+        run: npm run graphql:validate
+        env:
+          GRAPHQL_SCHEMA_PATH: .backend-schema/backend/schema.graphql
 
       - name: Type check
         run: npm run type-check

@@ -19,6 +19,7 @@
     "lint:fix": "eslint --fix",
     "check:testids": "node scripts/check-testid-coverage.mjs",
     "check:design-tokens": "node scripts/check-design-tokens.mjs",
+    "graphql:validate": "node scripts/validate-graphql-documents.mjs --require-schema",
     "type-check": "tsc --noEmit",
     "format": "prettier --write \"src/**/*.{json,md}\"",
     "format:check": "prettier --check \"src/**/*.{json,md}\"",
