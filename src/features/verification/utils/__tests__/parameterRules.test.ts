@@ -5,6 +5,7 @@ import {
   buildPatientParameterLine,
   createParameterReview,
   markParameterEdited,
+  resolveSideDose,
   reviewValues,
   describeFieldNote,
   toCoreUpdates,
@@ -21,7 +22,7 @@ import {
   toParameterValues,
   type ParameterValues,
 } from '../parameterRules';
-import { formatExerciseDuration } from '@/utils/exerciseTime';
+import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
 
 const typicalReps: ParameterValues = { sets: 3, reps: 12, repTime: 3, hold: null, rest: 60 };
 
@@ -226,10 +227,94 @@ describe('deriveExecutionMode / toParameterValues', () => {
     expect(reviewValues({ sets: 3, reps: 1, executionTime: 3, restSets: 60, side: 'none' }).repTime).toBe(3);
   });
 
-  it('„Na każdą stronę” i „Naprzemiennie” podwajają czas (dawka na stronę)', () => {
+  it('rekord bez wersji: tylko „Na każdą stronę” podwaja czas, jak na main', () => {
     expect(sideFactor('both')).toBe(2);
-    expect(sideFactor('alternating')).toBe(2);
+    expect(sideFactor('alternating')).toBe(1);
     expect(sideFactor('none')).toBe(1);
+  });
+
+  it('rekord 3.3: „Na każdą stronę” i „Naprzemiennie” to dawka na stronę', () => {
+    expect(sideFactor('both', true)).toBe(2);
+    expect(sideFactor('alternating', true)).toBe(2);
+    expect(sideFactor('none', true)).toBe(1);
+  });
+});
+
+describe('dawka na stronę: etykieta i czas z jednej reguły (odbiór 12.11, F1)', () => {
+  // Przykład z odbioru: 3 × 10, 3 s na powtórzenie, przerwy 1 s / 60 s, przygotowanie 5 s.
+  const values: ParameterValues = { sets: 3, reps: 10, repTime: 3, hold: null, rest: 60 };
+  const timing = { restReps: 1, preparationTime: 5 };
+  /** Funkcje z origin/main, przepisane dosłownie: rekord bez wersji ma się z nimi zgadzać. */
+  const mainSideFactor = (side: string) => (side.toLowerCase() === 'both' ? 2 : 1);
+  const mainLine = (side: string) => `3 serie × 10 powtórzeń${mainSideFactor(side) === 2 ? ' na każdą stronę' : ''} · przerwa 60 s`;
+  const mainSeconds = (side: string) =>
+    calculateExerciseTotalSeconds({
+      sets: 3,
+      reps: 10,
+      executionTime: 3,
+      restSets: 60,
+      restReps: 1,
+      preparationTime: 5,
+      side,
+      type: 'reps',
+    }).seconds;
+
+  it.each(['alternating', 'both', 'left', 'right', 'none'])(
+    'rekord bez wersji, strona %s: liczba, etykieta i czas jak na main',
+    (side) => {
+      const dose = resolveSideDose(side);
+      expect(dose.factor).toBe(mainSideFactor(side));
+      expect(buildPatientParameterLine(values, 'reps', side)).toBe(mainLine(side));
+      expect(computeSessionSeconds(values, 'reps', side, timing)).toBe(mainSeconds(side));
+      expect(evaluateParameters({ values, mode: 'reps', side, timing }).sessionSeconds).toBe(mainSeconds(side));
+      // Main nie ma wzmianki „na jedną stronę”; „Czas liczony podwójnie” tylko przy „Na każdą stronę”.
+      expect(dose.doseNote).toBeNull();
+      expect(dose.timeNote).toBe(side === 'both' ? 'Czas liczony podwójnie' : null);
+    }
+  );
+
+  it('rekord bez wersji, „Naprzemiennie”: 242 s i ani słowa o stronie', () => {
+    expect(computeSessionSeconds(values, 'reps', 'alternating', timing)).toBe(242);
+    expect(buildPatientParameterLine(values, 'reps', 'alternating')).toBe('3 serie × 10 powtórzeń · przerwa 60 s');
+  });
+
+  it('rekord 3.3, „Naprzemiennie”: wzór §6.7, 362 s, etykieta „na każdą stronę, naprzemiennie”', () => {
+    // sets × (2·reps × rep_s + (2·reps − 1) × rest_reps_s) + przerwy między seriami + przygotowanie
+    const expected = 3 * (2 * 10 * 3 + (2 * 10 - 1) * 1) + 2 * 60 + 5;
+    expect(expected).toBe(362);
+    expect(computeSessionSeconds(values, 'reps', 'alternating', timing, true)).toBe(expected);
+    expect(evaluateParameters({ values, mode: 'reps', side: 'alternating', timing, isV33: true }).sessionSeconds).toBe(
+      expected
+    );
+    expect(buildPatientParameterLine(values, 'reps', 'alternating', true)).toBe(
+      '3 serie × 10 powtórzeń na każdą stronę, naprzemiennie · przerwa 60 s'
+    );
+    const dose = resolveSideDose('alternating', true);
+    expect(dose).toMatchObject({ factor: 2, doseNote: 'Serie i powtórzenia podane na jedną stronę' });
+    expect(dose.timeNote).toBe('Czas liczony podwójnie');
+  });
+
+  it('rekord 3.3, „Na każdą stronę”: wzór §6.7 each_side', () => {
+    // sets × (2 × (reps × rep_s + (reps − 1) × rest_reps_s) + prep_s) + przerwy między seriami + przygotowanie
+    const expected = 3 * (2 * (10 * 3 + 9 * 1) + 5) + 2 * 60 + 5;
+    expect(computeSessionSeconds(values, 'reps', 'both', timing, true)).toBe(expected);
+    expect(buildPatientParameterLine(values, 'reps', 'both', true)).toBe(
+      '3 serie × 10 powtórzeń na każdą stronę · przerwa 60 s'
+    );
+    expect(resolveSideDose('both', true).doseNote).toBe('Serie i powtórzenia podane na jedną stronę');
+  });
+
+  it('etykieta nie mówi „na stronę”, gdy czas liczy dawkę raz (i odwrotnie)', () => {
+    for (const isV33 of [false, true]) {
+      for (const side of ['alternating', 'both', 'left', 'right', 'none', 'ALTERNATING', 'BOTH']) {
+        const dose = resolveSideDose(side, isV33);
+        const once = computeSessionSeconds(values, 'reps', 'none', timing, isV33);
+        const counted = computeSessionSeconds(values, 'reps', side, timing, isV33);
+        expect(counted > once, `${side}/${isV33}`).toBe(dose.factor === 2);
+        expect(buildPatientParameterLine(values, 'reps', side, isV33).includes('na każdą stronę')).toBe(dose.factor === 2);
+        expect(dose.timeNote !== null).toBe(dose.factor === 2);
+      }
+    }
   });
 });
 
@@ -240,10 +325,11 @@ describe('buildPatientParameterLine', () => {
     );
   });
 
-  it('„naprzemiennie” mówi „na każdą stronę” w każdym rekordzie (decyzja 12.11)', () => {
-    expect(buildPatientParameterLine(typicalReps, 'reps', 'alternating')).toBe(
+  it('„naprzemiennie” mówi „na każdą stronę” tylko w rekordzie 3.3', () => {
+    expect(buildPatientParameterLine(typicalReps, 'reps', 'alternating', true)).toBe(
       '3 serie × 12 powtórzeń na każdą stronę, naprzemiennie · przerwa 60 s'
     );
+    expect(buildPatientParameterLine(typicalReps, 'reps', 'alternating')).toBe('3 serie × 12 powtórzeń · przerwa 60 s');
   });
 });
 

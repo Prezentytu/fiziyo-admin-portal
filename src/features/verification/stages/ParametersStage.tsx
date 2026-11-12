@@ -20,7 +20,7 @@ import {
   formatSessionDuration,
   formatWithUnit,
   fromSliderValue,
-  sideFactor,
+  resolveSideDose,
   sliderPercent,
   toSliderValue,
   type AcknowledgeKey,
@@ -347,6 +347,7 @@ export function ParametersStage({
 }: ParametersStageProps) {
   const sessionFinding = evaluation.findings.find((finding) => finding.key === 'session');
   const sessionText = formatSessionDuration(evaluation.sessionSeconds, evaluation.sessionIsEstimate);
+  const sideDose = resolveSideDose(core.side, v33 !== undefined);
 
   return (
     <div className="flex flex-col gap-4" data-testid="verification-stage-parameters">
@@ -433,15 +434,13 @@ export function ParametersStage({
                   ))}
                 </SelectContent>
               </Select>
-              {sideFactor(core.side) === 2 && (
-                <span className="text-[13px] text-label-secondary">Czas liczony podwójnie</span>
-              )}
-              {sideFactor(core.side) === 2 && (
+              {sideDose.timeNote && <span className="text-[13px] text-label-secondary">{sideDose.timeNote}</span>}
+              {sideDose.doseNote && (
                 <span
                   className="text-[13px] font-semibold text-foreground"
                   data-testid="verification-param-per-side-note"
                 >
-                  Serie i powtórzenia podane na jedną stronę
+                  {sideDose.doseNote}
                 </span>
               )}
               {v33?.sideDiffersFromDocument && (

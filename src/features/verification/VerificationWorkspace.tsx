@@ -438,6 +438,7 @@ export function VerificationWorkspace({
           restReps: core.restReps,
           preparationTime: core.preparationTime,
         },
+        isV33,
       }),
     [
       parameterValues,
@@ -449,6 +450,7 @@ export function VerificationWorkspace({
       core.preparationTime,
       parameterReview.acknowledged,
       parameterReview.acknowledgedSessionSeconds,
+      isV33,
     ]
   );
   const descriptionNumbers = useMemo(
@@ -941,7 +943,7 @@ export function VerificationWorkspace({
     {
       key: 'parameters',
       title: STAGE_TITLES.parameters,
-      summary: `${buildPatientParameterLine(parameterValues, mode, core.side)} · ${formatSessionDuration(evaluation.sessionSeconds, evaluation.sessionIsEstimate)}`,
+      summary: `${buildPatientParameterLine(parameterValues, mode, core.side, isV33)} · ${formatSessionDuration(evaluation.sessionSeconds, evaluation.sessionIsEstimate)}`,
       changes: changes.parameters,
       issues: stages.issues.parameters,
     },
