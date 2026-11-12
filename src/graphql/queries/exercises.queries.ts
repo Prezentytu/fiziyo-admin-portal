@@ -205,7 +205,7 @@ export const EXERCISE_PICKER_FRAGMENT = gql`
   }
 `;
 
-// Detail views use GET_EXERCISE_BY_ID_QUERY; chosen exercises get their enrichment via GET_EXERCISE_ENRICHMENT_QUERY.
+// Full library for the chat (ai-view) only; set, assignment and patient pickers use GET_AVAILABLE_EXERCISES_PICKER_PAGE_QUERY.
 export const GET_AVAILABLE_EXERCISES_PICKER_QUERY = gql`
   query GetAvailableExercisesForPicker($organizationId: String!) {
     availableExercises(organizationId: $organizationId) {
@@ -215,16 +215,64 @@ export const GET_AVAILABLE_EXERCISES_PICKER_QUERY = gql`
   ${EXERCISE_PICKER_FRAGMENT}
 `;
 
-// Enrichment of one exercise chosen in a picker (the picker list itself omits it).
-export const GET_EXERCISE_ENRICHMENT_QUERY = gql`
-  query GetExerciseEnrichment($id: String!) {
+// One page of the picker library (sets, assignment, patient): same page and search as the library list,
+// light fields only. Exercises outside the loaded pages come by id (GET_EXERCISE_PICKER_RECORD_QUERY).
+export const GET_AVAILABLE_EXERCISES_PICKER_PAGE_QUERY = gql`
+  query GetAvailableExercisesPickerPage(
+    $organizationId: String!
+    $tab: ExerciseLibraryTab!
+    $search: String
+    $page: Int!
+    $pageSize: Int!
+  ) {
+    availableExercisesPage(
+      organizationId: $organizationId
+      tab: $tab
+      search: $search
+      page: $page
+      pageSize: $pageSize
+    ) {
+      items {
+        ...ExercisePickerFragment
+      }
+      totalCount
+      page
+      pageSize
+      hasNextPage
+      counts {
+        all
+        organization
+        fiziyo
+      }
+    }
+  }
+  ${EXERCISE_PICKER_FRAGMENT}
+`;
+
+// One picker record by id (popular exercises outside the loaded pages).
+export const GET_EXERCISE_PICKER_RECORD_QUERY = gql`
+  query GetExercisePickerRecord($id: String!) {
     exerciseById(id: $id) {
-      id
-      updatedAt
+      ...ExercisePickerFragment
+    }
+  }
+  ${EXERCISE_PICKER_FRAGMENT}
+`;
+
+// A chosen exercise: its picker record and enrichment (the picker pages omit enrichment).
+export const GET_EXERCISE_PICKER_DETAILS_QUERY = gql`
+  query GetExercisePickerDetails($id: String!) {
+    exerciseById(id: $id) {
+      ...ExercisePickerFragment
       enrichmentData
     }
   }
+  ${EXERCISE_PICKER_FRAGMENT}
 `;
 
-/** Refresh both the picker library (set and assignment pickers) and the paged list after exercise writes. */
-export const EXERCISE_LIBRARY_REFETCH_QUERIES = [GET_AVAILABLE_EXERCISES_PICKER_QUERY, GET_AVAILABLE_EXERCISES_PAGE_QUERY];
+/** Refresh the pickers (paged and the chat's full list) and the library list after exercise writes. */
+export const EXERCISE_LIBRARY_REFETCH_QUERIES = [
+  GET_AVAILABLE_EXERCISES_PICKER_QUERY,
+  GET_AVAILABLE_EXERCISES_PICKER_PAGE_QUERY,
+  GET_AVAILABLE_EXERCISES_PAGE_QUERY,
+];

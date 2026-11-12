@@ -1,64 +1,116 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useApolloClient, useQuery } from '@apollo/client/react';
+import { useApolloClient } from '@apollo/client/react';
 import { toast } from 'sonner';
 
 import {
-  GET_AVAILABLE_EXERCISES_PICKER_QUERY,
-  GET_EXERCISE_ENRICHMENT_QUERY,
+  GET_EXERCISE_PICKER_DETAILS_QUERY,
+  GET_EXERCISE_PICKER_RECORD_QUERY,
 } from '@/graphql/queries/exercises.queries';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { useExercisePickerPages, type ExercisePickerCounts } from '@/hooks/useExercisePickerPages';
 import { findMissingEnrichmentIds, withLoadedEnrichment } from '@/utils/exercisePickerDetails';
+import { mergeKnownExercises, topPopularExerciseIds } from '@/utils/exercisePickerPages';
+import type { ExerciseSourceFilter } from '@/utils/exerciseSourceFilter';
 
 interface UseExercisePickerLibraryOptions {
   organizationId: string | null | undefined;
   skip?: boolean;
-  /** Exercises whose enrichment must be loaded before their content is edited or saved (chosen in the builder). */
+  /** Exercises whose record and enrichment must be loaded before their content is edited or saved (chosen in the builder). */
   detailExerciseIds: readonly string[];
-  /** Enrichment already at hand (e.g. from set mappings), so those exercises need no extra request. */
+  /** Enrichment already at hand (e.g. from set mappings), so those exercises need no enrichment request. */
   knownEnrichment?: ReadonlyArray<{ id: string; enrichmentData?: ExerciseEnrichmentData | null }>;
+  /** Exercises shown but not edited (e.g. already in the set): their records load by id, without blocking saving. */
+  recordExerciseIds?: readonly string[];
+  /** Usage count per exercise id; the most used ones are shown as "Popularne" above the list. */
+  popularity?: Readonly<Record<string, number>>;
 }
 
-interface ExerciseEnrichmentResponse {
-  exerciseById: { id: string; updatedAt?: string | null; enrichmentData?: ExerciseEnrichmentData | null } | null;
+/** Browsing state of the picker list, rendered by ExerciseSetBuilder. Records are resolved from `exercises`. */
+export interface ExercisePickerLibraryView {
+  itemIds: readonly string[];
+  popularIds: readonly string[];
+  counts: ExercisePickerCounts | null;
+  loading: boolean;
+  loadingMore: boolean;
+  remaining: number;
+  loadMore: () => void;
+  search: string;
+  onSearchChange: (search: string) => void;
+  sourceFilter: ExerciseSourceFilter;
+  onSourceFilterChange: (sourceFilter: ExerciseSourceFilter) => void;
 }
 
-interface FetchedEnrichment {
+interface FetchedDetails<T> {
+  record: T;
   enrichmentData: ExerciseEnrichmentData | null;
   updatedAt: string | null;
 }
 
+type DetailsRecord<T> = T & { updatedAt?: string | null; enrichmentData?: ExerciseEnrichmentData | null };
+
+interface ExerciseByIdResponse<T> {
+  exerciseById: DetailsRecord<T> | null;
+}
+
+function toFetchedDetails<T>(exercise: DetailsRecord<T>): FetchedDetails<T> {
+  const { enrichmentData, ...record } = exercise;
+  return { record: record as T, enrichmentData: enrichmentData ?? null, updatedAt: exercise.updatedAt ?? null };
+}
+
 /**
- * Exercise library for pickers: light list for browsing, enrichment only for chosen exercises.
- * `detailsReady` is false until every chosen exercise has its enrichment; callers block saving until then,
- * because override deltas against a missing template would clear or freeze patient content.
+ * Exercise library for pickers: server pages for browsing, records by id for chosen and popular exercises,
+ * enrichment only for chosen ones. `exercises` holds every record the picker knows, so callers can look up
+ * chosen exercises even when they are on no loaded page (a set opened for editing, a search changed since).
+ * `detailsReady` is false until every chosen exercise has its record and enrichment; callers block saving
+ * until then, because override deltas against a missing template would clear or freeze patient content.
  */
 export function useExercisePickerLibrary<T extends { id: string; updatedAt?: string | null }>({
   organizationId,
   skip = false,
   detailExerciseIds,
   knownEnrichment,
+  recordExerciseIds,
+  popularity,
 }: UseExercisePickerLibraryOptions) {
   const apolloClient = useApolloClient();
-  const [fetchedEnrichment, setFetchedEnrichment] = useState<ReadonlyMap<string, FetchedEnrichment>>(() => new Map());
-  const [failedIds, setFailedIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [searchInput, setSearchInput] = useState('');
+  const [sourceFilter, setSourceFilter] = useState<ExerciseSourceFilter>('all');
+  const search = useDebouncedValue(searchInput.trim());
+  const pages = useExercisePickerPages<T>({ organizationId, skip, search, sourceFilter });
 
-  const { data, loading, error, refetch } = useQuery<{ availableExercises?: T[] }>(
-    GET_AVAILABLE_EXERCISES_PICKER_QUERY,
-    {
-      variables: { organizationId: organizationId ?? '' },
-      skip: skip || !organizationId,
-    }
+  // Records seen on any page stay known after the search or tab changes, so chosen exercises do not vanish.
+  const [seen, setSeen] = useState<{ organizationId: string; items: readonly T[]; byId: ReadonlyMap<string, T> }>(
+    () => ({ organizationId: organizationId ?? '', items: [], byId: new Map() })
   );
+  let seenById = seen.byId;
+  if (seen.items !== pages.items || seen.organizationId !== (organizationId ?? '')) {
+    const next = new Map(seen.organizationId === (organizationId ?? '') ? seen.byId : undefined);
+    for (const item of pages.items) next.set(item.id, item);
+    seenById = next;
+    setSeen({ organizationId: organizationId ?? '', items: pages.items, byId: next });
+  }
+
+  const [fetchedDetails, setFetchedDetails] = useState<ReadonlyMap<string, FetchedDetails<T>>>(() => new Map());
+  const [extraRecords, setExtraRecords] = useState<ReadonlyMap<string, T>>(() => new Map());
+  const [failedIds, setFailedIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [failedRecordIds, setFailedRecordIds] = useState<ReadonlySet<string>>(() => new Set());
+
+  const knownRecords = useMemo(() => {
+    const byId = new Map(extraRecords);
+    for (const [exerciseId, fetched] of fetchedDetails) byId.set(exerciseId, fetched.record);
+    return mergeKnownExercises([...seenById.values()], byId);
+  }, [fetchedDetails, extraRecords, seenById]);
+  const knownIds = useMemo(() => new Set(knownRecords.map((exercise) => exercise.id)), [knownRecords]);
 
   const enrichmentById = useMemo(() => {
-    const listUpdatedAt = new Map((data?.availableExercises ?? []).map((exercise) => [exercise.id, exercise.updatedAt ?? null]));
     const merged = new Map<string, ExerciseEnrichmentData | null>();
-    for (const [exerciseId, fetched] of fetchedEnrichment) {
+    for (const [exerciseId, fetched] of fetchedDetails) {
       // An exercise edited since its enrichment was fetched is fetched again.
-      const currentUpdatedAt = listUpdatedAt.get(exerciseId);
-      if (currentUpdatedAt === undefined || currentUpdatedAt === fetched.updatedAt) {
+      const pageUpdatedAt = seenById.get(exerciseId)?.updatedAt;
+      if (pageUpdatedAt === undefined || pageUpdatedAt === fetched.updatedAt) {
         merged.set(exerciseId, fetched.enrichmentData);
       }
     }
@@ -68,69 +120,121 @@ export function useExercisePickerLibrary<T extends { id: string; updatedAt?: str
       }
     }
     return merged;
-  }, [data, fetchedEnrichment, knownEnrichment]);
+  }, [fetchedDetails, knownEnrichment, seenById]);
 
+  const incompleteIds = useMemo(
+    () =>
+      [
+        ...new Set([
+          ...findMissingEnrichmentIds(detailExerciseIds, enrichmentById),
+          ...detailExerciseIds.filter((exerciseId) => exerciseId && !knownIds.has(exerciseId)),
+        ]),
+      ],
+    [detailExerciseIds, enrichmentById, knownIds]
+  );
   const missingIds = useMemo(
-    () => findMissingEnrichmentIds(detailExerciseIds, enrichmentById).filter((exerciseId) => !failedIds.has(exerciseId)),
-    [detailExerciseIds, enrichmentById, failedIds]
+    () => incompleteIds.filter((exerciseId) => !failedIds.has(exerciseId)),
+    [incompleteIds, failedIds]
   );
   const missingKey = missingIds.join('|');
-  const listLoaded = Boolean(data?.availableExercises);
+
+  const fetchDetails = useCallback(
+    (exerciseId: string) =>
+      apolloClient
+        .query<ExerciseByIdResponse<T>>({
+          query: GET_EXERCISE_PICKER_DETAILS_QUERY,
+          variables: { id: exerciseId },
+          fetchPolicy: 'network-only',
+        })
+        .then((result) => result.data?.exerciseById ?? null)
+        .catch(() => null),
+    [apolloClient]
+  );
 
   useEffect(() => {
-    if (skip || !listLoaded || missingIds.length === 0) return;
+    if (skip || missingIds.length === 0) return;
     let cancelled = false;
-    void Promise.all(
-      missingIds.map((exerciseId) =>
-        apolloClient
-          .query<ExerciseEnrichmentResponse>({
-            query: GET_EXERCISE_ENRICHMENT_QUERY,
-            variables: { id: exerciseId },
-            fetchPolicy: 'network-only',
-          })
-          .then((result) => ({ exerciseId, exercise: result.data?.exerciseById ?? null }))
-          .catch(() => ({ exerciseId, exercise: undefined }))
-      )
-    ).then((results) => {
-      if (cancelled) return;
-      const loaded = results.filter((result) => result.exercise);
-      const failed = results.filter((result) => !result.exercise).map((result) => result.exerciseId);
-      if (loaded.length > 0) {
-        setFetchedEnrichment((previous) => {
-          const next = new Map(previous);
-          for (const result of loaded) {
-            next.set(result.exerciseId, {
-              enrichmentData: result.exercise?.enrichmentData ?? null,
-              updatedAt: result.exercise?.updatedAt ?? null,
-            });
-          }
-          return next;
-        });
+    void Promise.all(missingIds.map((exerciseId) => fetchDetails(exerciseId).then((exercise) => ({ exerciseId, exercise })))).then(
+      (results) => {
+        if (cancelled) return;
+        const loaded = results.filter((result) => result.exercise);
+        const failed = results.filter((result) => !result.exercise).map((result) => result.exerciseId);
+        if (loaded.length > 0) {
+          setFetchedDetails((previous) => {
+            const next = new Map(previous);
+            for (const result of loaded) {
+              if (result.exercise) next.set(result.exerciseId, toFetchedDetails(result.exercise));
+            }
+            return next;
+          });
+        }
+        if (failed.length > 0) {
+          setFailedIds((previous) => new Set([...previous, ...failed]));
+        }
       }
-      if (failed.length > 0) {
-        setFailedIds((previous) => new Set([...previous, ...failed]));
-      }
-    });
+    );
     return () => {
       cancelled = true;
     };
     // missingKey carries missingIds; the array itself is a fresh reference on every render
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apolloClient, listLoaded, missingKey, skip]);
+  }, [fetchDetails, missingKey, skip]);
+
+  const popularIds = useMemo(() => topPopularExerciseIds(popularity), [popularity]);
+  const missingRecordKey = [...new Set([...(recordExerciseIds ?? []), ...popularIds])]
+    .filter((exerciseId) => exerciseId && !knownIds.has(exerciseId) && !failedRecordIds.has(exerciseId))
+    .join('|');
+
+  useEffect(() => {
+    if (skip || !missingRecordKey) return;
+    let cancelled = false;
+    const exerciseIds = missingRecordKey.split('|');
+    void Promise.all(
+      exerciseIds.map((exerciseId) =>
+        apolloClient
+          .query<ExerciseByIdResponse<T>>({ query: GET_EXERCISE_PICKER_RECORD_QUERY, variables: { id: exerciseId } })
+          .then((result) => ({ exerciseId, exercise: result.data?.exerciseById ?? null }))
+          .catch(() => ({ exerciseId, exercise: null }))
+      )
+    ).then((results) => {
+      if (cancelled) return;
+      setExtraRecords((previous) => {
+        const next = new Map(previous);
+        for (const result of results) {
+          if (result.exercise) next.set(result.exerciseId, result.exercise);
+        }
+        return next;
+      });
+      const failed = results.filter((result) => !result.exercise).map((result) => result.exerciseId);
+      if (failed.length > 0) setFailedRecordIds((previous) => new Set([...previous, ...failed]));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [apolloClient, missingRecordKey, skip]);
+
+  /** Record and enrichment of one exercise straight from the API (e.g. just created); null when not available. */
+  const loadExercise = useCallback(
+    async (exerciseId: string): Promise<T | null> => {
+      const exercise = await fetchDetails(exerciseId);
+      if (!exercise) return null;
+      const fetched = toFetchedDetails(exercise);
+      setFetchedDetails((previous) => new Map(previous).set(exerciseId, fetched));
+      return fetched.record;
+    },
+    [fetchDetails]
+  );
 
   const retryDetails = useCallback(() => setFailedIds(new Set()), []);
 
-  const exercises = useMemo(
-    () => withLoadedEnrichment(data?.availableExercises ?? [], enrichmentById),
-    [data, enrichmentById]
-  );
+  const exercises = useMemo(() => withLoadedEnrichment(knownRecords, enrichmentById), [knownRecords, enrichmentById]);
 
   const detailsFailed = useMemo(
     () => detailExerciseIds.some((exerciseId) => failedIds.has(exerciseId)),
     [detailExerciseIds, failedIds]
   );
 
-  const detailsReady = findMissingEnrichmentIds(detailExerciseIds, enrichmentById).length === 0;
+  const detailsReady = incompleteIds.length === 0;
 
   /** Call before saving; false means wait (button shows pending) or the content failed to load (retried). */
   const ensureDetailsReady = useCallback((): boolean => {
@@ -142,11 +246,27 @@ export function useExercisePickerLibrary<T extends { id: string; updatedAt?: str
     return false;
   }, [detailsFailed, detailsReady, retryDetails]);
 
+  const itemIds = useMemo(() => pages.items.map((exercise) => exercise.id), [pages.items]);
+  const library: ExercisePickerLibraryView = {
+    itemIds,
+    popularIds,
+    counts: pages.counts,
+    loading: pages.loading,
+    loadingMore: pages.loadingMore,
+    remaining: pages.remaining,
+    loadMore: pages.loadMore,
+    search: searchInput,
+    onSearchChange: setSearchInput,
+    sourceFilter,
+    onSourceFilterChange: setSourceFilter,
+  };
+
   return {
     exercises,
-    loading,
-    error,
-    refetch,
+    library,
+    loading: pages.loading,
+    error: pages.error,
+    loadExercise,
     detailsReady,
     /** Content of chosen exercises is still loading; show the save button as pending. */
     detailsPending: !detailsReady && !detailsFailed,

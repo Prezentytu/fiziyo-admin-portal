@@ -225,17 +225,6 @@ export function EditExerciseSetFullDialog({
       })),
     [set]
   );
-  const {
-    exercises: pickerExercises,
-    loading: loadingExercises,
-    detailsPending,
-    ensureDetailsReady,
-  } = useExercisePickerLibrary<PickerExerciseRecord>({
-    organizationId,
-    skip: !open,
-    detailExerciseIds: selectedExerciseIds,
-    knownEnrichment,
-  });
 
   const { data: tagsData } = useQuery(GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY, {
     variables: { organizationId },
@@ -252,6 +241,23 @@ export function EditExerciseSetFullDialog({
     skip: !organizationId || !open,
   });
 
+  const exercisePopularity = useMemo(
+    () => countExerciseUsage(exerciseUsageData?.exerciseSets ?? []),
+    [exerciseUsageData]
+  );
+  const {
+    exercises: pickerExercises,
+    library,
+    detailsPending,
+    ensureDetailsReady,
+  } = useExercisePickerLibrary<PickerExerciseRecord>({
+    organizationId,
+    skip: !open,
+    detailExerciseIds: selectedExerciseIds,
+    knownEnrichment,
+    popularity: exercisePopularity,
+  });
+
   const tags = useMemo(() => (tagsData as ExerciseTagsResponse)?.exerciseTags || [], [tagsData]);
   const categories = useMemo(
     () => (categoriesData as TagCategoriesResponse)?.tagsByOrganizationId || [],
@@ -264,10 +270,6 @@ export function EditExerciseSetFullDialog({
     [pickerExercises, tagsMap]
   );
 
-  const exercisePopularity = useMemo(
-    () => countExerciseUsage(exerciseUsageData?.exerciseSets ?? []),
-    [exerciseUsageData]
-  );
 
   const builderTags: ExerciseTag[] = useMemo(
     () => tags.map((tag) => ({ id: tag.id, name: tag.name, color: tag.color })),
@@ -504,9 +506,8 @@ export function EditExerciseSetFullDialog({
               exerciseParams={exerciseParams}
               onExerciseParamsChange={setExerciseParams}
               availableExercises={availableExercises}
-              loadingExercises={loadingExercises}
+              library={library}
               tags={builderTags}
-              exercisePopularity={exercisePopularity}
               showAI
               onAIClick={handleGenerateAISetMeta}
               aiButtonLabel="Wygeneruj nazwę i opis AI"

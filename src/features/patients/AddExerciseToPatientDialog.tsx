@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useState, useMemo, useCallback } from 'react';
 import Image from 'next/image';
-import { useQuery, useMutation } from '@apollo/client/react';
+import { useMutation } from '@apollo/client/react';
 import { Search, Loader2, Dumbbell, X } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -30,9 +30,8 @@ import { cn } from '@/lib/utils';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
 
-import { GET_AVAILABLE_EXERCISES_PICKER_QUERY } from '@/graphql/queries/exercises.queries';
-import { filterExercisesBySearch } from '@/features/exercises/utils/exerciseSearch';
-import { useIncrementalList } from '@/hooks/useIncrementalList';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { useExercisePickerPages } from '@/hooks/useExercisePickerPages';
 import {
   ADD_EXERCISE_TO_EXERCISE_SET_MUTATION,
   UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION,
@@ -289,11 +288,13 @@ function AddExerciseToPatientDialogContent({
     []
   );
 
-    // Get exercises from organization
-  const { data: exercisesData, loading: loadingExercises } = useQuery(GET_AVAILABLE_EXERCISES_PICKER_QUERY, {
-    variables: { organizationId },
-    skip: !organizationId,
+  const debouncedSearch = useDebouncedValue(searchQuery.trim());
+  const exercisePages = useExercisePickerPages<Exercise>({
+    organizationId,
+    search: debouncedSearch,
+    sourceFilter: 'all',
   });
+  const loadingExercises = exercisePages.loading;
 
   const [addExerciseToSet, { loading: adding }] = useMutation(ADD_EXERCISE_TO_EXERCISE_SET_MUTATION);
   const [updateOverrides, { loading: updatingOverrides }] = useMutation(
@@ -310,24 +311,14 @@ function AddExerciseToPatientDialogContent({
     return ids;
   }, [assignment]);
 
-  // Filter exercises
-  const exercises: Exercise[] = useMemo(() => {
-    const data = exercisesData as { availableExercises?: Exercise[] } | undefined;
-    const all = data?.availableExercises || [];
-
-    // Filter out exercises already in the set
-    const filtered = all.filter((e) => !existingExerciseIds.has(e.id));
-
-    // Apply search filter
-    if (!searchQuery.trim()) return filtered;
-
-    return filterExercisesBySearch(filtered, searchQuery);
-  }, [exercisesData, existingExerciseIds, searchQuery]);
-  const {
-    visibleItems: visibleExercises,
-    remaining: remainingExercises,
-    showMore: showMoreExercises,
-  } = useIncrementalList(exercises, searchQuery);
+  // Search and paging come from the API; exercises already in the set are left out of each page.
+  const exercises: Exercise[] = useMemo(
+    () => exercisePages.items.filter((exercise) => !existingExerciseIds.has(exercise.id)),
+    [exercisePages.items, existingExerciseIds]
+  );
+  const visibleExercises = exercises;
+  const remainingExercises = exercisePages.loadingMore ? 0 : exercisePages.remaining;
+  const showMoreExercises = exercisePages.loadMore;
 
   // Track changes
   const hasChanges = selectedExercise !== null;
