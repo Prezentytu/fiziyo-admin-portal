@@ -66,7 +66,7 @@ export function useExercisePickerPages<T extends { id: string }>({
     setState(current);
   }
 
-  const { data, loading, error } = useQuery<PickerPageResponse<T>>(GET_AVAILABLE_EXERCISES_PICKER_PAGE_QUERY, {
+  const { data, loading, error, refetch } = useQuery<PickerPageResponse<T>>(GET_AVAILABLE_EXERCISES_PICKER_PAGE_QUERY, {
     variables: {
       organizationId: orgId,
       tab: toPickerLibraryTab(sourceFilter),
@@ -94,10 +94,17 @@ export function useExercisePickerPages<T extends { id: string }>({
   const loadedPages = current.pages;
   const items = useMemo(() => flattenPickerPages(loadedPages), [loadedPages]);
   const canLoadMore = current.hasNextPage && !loading;
+  // The asked page is not loaded when its request failed; asking for the same page number again changes
+  // nothing, so "show more" repeats the request instead.
+  const failedPage = Boolean(error) && !loadedPages.has(current.page);
   const loadMore = useCallback(() => {
     if (!canLoadMore) return;
+    if (failedPage) {
+      void refetch().catch(() => undefined);
+      return;
+    }
     setState((previous) => ({ ...previous, page: Math.max(0, ...previous.pages.keys()) + 1 }));
-  }, [canLoadMore]);
+  }, [canLoadMore, failedPage, refetch]);
 
   return {
     items,
