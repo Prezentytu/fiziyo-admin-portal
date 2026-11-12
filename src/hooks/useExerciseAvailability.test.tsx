@@ -9,7 +9,9 @@ import { describe, expect, it } from 'vitest';
 
 import { GET_EXERCISE_AVAILABILITY_QUERY } from '@/graphql/queries/exercises.queries';
 
-import { useExerciseAvailability } from './useExerciseAvailability';
+import { ServerError } from '@apollo/client/errors';
+
+import { isDuplicateAllowed, useExerciseAvailability } from './useExerciseAvailability';
 
 // Prawdziwy klient Apollo: API z polem `availability` (po fizjo-app#388) i bez niego (dzisiejszy main).
 
@@ -28,7 +30,9 @@ const exerciseQuery: MockLink.MockedResponse = {
   result: { data: { exerciseById: { __typename: 'Exercise', id: 'ex-1', name: 'Mostek' } } },
 };
 
-function availabilityMock(outcome: Pick<MockLink.MockedResponse, 'result' | 'error'>): MockLink.MockedResponse {
+function availabilityMock(
+  outcome: Pick<MockLink.MockedResponse, 'result' | 'error' | 'delay'>
+): MockLink.MockedResponse {
   return { request: { query: GET_EXERCISE_AVAILABILITY_QUERY, variables: { id: 'ex-1' } }, ...outcome };
 }
 
@@ -36,7 +40,9 @@ function renderScreen(mocks: MockLink.MockedResponse[]) {
   const wrapper = ({ children }: { children: ReactNode }) => <MockedProvider mocks={mocks}>{children}</MockedProvider>;
   return renderHook(
     () => ({
-      exercise: useQuery<{ exerciseById: { id: string; name: string } }>(GET_EXERCISE_NAME_QUERY, { variables: { id: 'ex-1' } }),
+      exercise: useQuery<{ exerciseById: { id: string; name: string } }>(GET_EXERCISE_NAME_QUERY, {
+        variables: { id: 'ex-1' },
+      }),
       availability: useExerciseAvailability('ex-1'),
     }),
     { wrapper }
@@ -47,10 +53,14 @@ describe('useExerciseAvailability', () => {
   it('oddaje dostępność, gdy API zna pole', async () => {
     const { result } = renderScreen([
       exerciseQuery,
-      availabilityMock({ result: { data: { exerciseById: { __typename: 'Exercise', id: 'ex-1', availability: 'DEMO' } } } }),
+      availabilityMock({
+        result: { data: { exerciseById: { __typename: 'Exercise', id: 'ex-1', availability: 'DEMO' } } },
+      }),
     ]);
 
-    await waitFor(() => expect(result.current.availability).toBe('DEMO'));
+    await waitFor(() => expect(result.current.availability.status).toBe('known'));
+    expect(result.current.availability).toEqual({ status: 'known', availability: 'DEMO' });
+    expect(isDuplicateAllowed(result.current.availability)).toBe(false);
     expect(result.current.exercise.data?.exerciseById.name).toBe('Mostek');
   });
 
@@ -59,21 +69,69 @@ describe('useExerciseAvailability', () => {
       'odpowiedź z błędem walidacji',
       { result: { errors: [new GraphQLError('The field `availability` does not exist on the type `Exercise`.')] } },
     ],
-    ['HTTP 400 bez danych', { error: new Error('Response not successful: Received status code 400') }],
-  ])('API bez pola (%s): brak dostępności, a ekran ładuje się jak na main', async (_name, outcome) => {
+    [
+      'HTTP 400 bez danych',
+      {
+        error: new ServerError('Response not successful: Received status code 400', {
+          response: new Response('{}', { status: 400 }),
+          bodyText: '{}',
+        }),
+      },
+    ],
+  ])('API bez pola (%s): brak dostępności, Duplikuj działa, a ekran ładuje się jak na main', async (_name, outcome) => {
     const { result } = renderScreen([exerciseQuery, availabilityMock(outcome)]);
 
     await waitFor(() => expect(result.current.exercise.data?.exerciseById.name).toBe('Mostek'));
     await waitFor(() => expect(result.current.exercise.loading).toBe(false));
 
-    expect(result.current.availability).toBeUndefined();
+    await waitFor(() => expect(result.current.availability.status).toBe('unsupported'));
+    expect(isDuplicateAllowed(result.current.availability)).toBe(true);
     expect(result.current.exercise.error).toBeUndefined();
+  });
+
+  it('dopóki zapytanie trwa, Duplikuj jest niedostępne', async () => {
+    const { result } = renderScreen([
+      exerciseQuery,
+      availabilityMock({
+        result: { data: { exerciseById: { __typename: 'Exercise', id: 'ex-1', availability: 'STANDARD' } } },
+        delay: 50,
+      }),
+    ]);
+
+    expect(result.current.availability.status).toBe('loading');
+    expect(isDuplicateAllowed(result.current.availability)).toBe(false);
+
+    await waitFor(() => expect(result.current.availability.status).toBe('known'));
+    expect(isDuplicateAllowed(result.current.availability)).toBe(true);
+  });
+
+  it('błąd sieci (brak odpowiedzi): Duplikuj niedostępne, bo dostępność jest nieznana', async () => {
+    const { result } = renderScreen([exerciseQuery, availabilityMock({ error: new TypeError('Failed to fetch') })]);
+
+    await waitFor(() => expect(result.current.availability.status).toBe('error'));
+    expect(isDuplicateAllowed(result.current.availability)).toBe(false);
+    expect(result.current.exercise.error).toBeUndefined();
+  });
+
+  it('HTTP 503 to nie brak pola w schemacie: Duplikuj niedostępne', async () => {
+    const { result } = renderScreen([
+      exerciseQuery,
+      availabilityMock({
+        error: new ServerError('Response not successful: Received status code 503', {
+          response: new Response('{}', { status: 503 }),
+          bodyText: '{}',
+        }),
+      }),
+    ]);
+
+    await waitFor(() => expect(result.current.availability.status).toBe('error'));
+    expect(isDuplicateAllowed(result.current.availability)).toBe(false);
   });
 
   it('bez id nie pyta API', () => {
     const wrapper = ({ children }: { children: ReactNode }) => <MockedProvider mocks={[]}>{children}</MockedProvider>;
     const { result } = renderHook(() => useExerciseAvailability(null), { wrapper });
 
-    expect(result.current).toBeUndefined();
+    expect(result.current.status).toBe('unsupported');
   });
 });

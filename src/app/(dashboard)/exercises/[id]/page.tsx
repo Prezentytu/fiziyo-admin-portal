@@ -98,11 +98,8 @@ import {
   isExerciseSaveAuthError,
 } from '@/features/exercises/utils/buildEnrichmentUpdateVariables';
 import { getNextExerciseCopyName } from '@/features/exercises/utils/getNextExerciseCopyName';
-import {
-  buildDuplicateExerciseVariables,
-  canDuplicateExercise,
-} from '@/features/exercises/utils/buildDuplicateExerciseVariables';
-import { useExerciseAvailability } from '@/hooks/useExerciseAvailability';
+import { buildDuplicateExerciseVariables } from '@/features/exercises/utils/buildDuplicateExerciseVariables';
+import { isDuplicateAllowed, useExerciseAvailability } from '@/hooks/useExerciseAvailability';
 import { normalizeExerciseType } from '@/utils/exerciseEnums';
 import { canOpenVideoOutsidePortal } from '@/utils/videoEmbed';
 import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
@@ -147,8 +144,11 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const { data, loading, error } = useQuery(GET_EXERCISE_BY_ID_QUERY, {
     variables: { id },
   });
-  // Rekord puli demo ma cudze media; kopia do gabinetu jest niedostępna, gdy API podaje dostępność.
-  const canDuplicate = canDuplicateExercise({ availability: useExerciseAvailability(id) });
+  // Rekord puli demo ma cudze media; kopia do gabinetu jest niedostępna dla demo i dopóki dostępność jest nieznana
+  // (ładowanie, błąd sieci). API bez pola (sprzed fizjo-app#388) nie ma rekordów demo: kopia działa jak dotąd.
+  const availabilityState = useExerciseAvailability(id);
+  const canDuplicate = isDuplicateAllowed(availabilityState);
+  const availabilityPending = availabilityState.status === 'loading' || availabilityState.status === 'error';
   const { data: organizationExercisesData } = useQuery(GET_ORGANIZATION_EXERCISE_NAMES_QUERY, {
     variables: { organizationId },
     skip: !organizationId,
@@ -580,10 +580,17 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {canDuplicate && (
+              {(canDuplicate || availabilityPending) && (
                 <DropdownMenuItem
                   onClick={handleDuplicateExercise}
-                  disabled={duplicating}
+                  disabled={duplicating || !canDuplicate}
+                  title={
+                    availabilityPending
+                      ? availabilityState.status === 'loading'
+                        ? 'Sprawdzam dostępność ćwiczenia...'
+                        : 'Nie udało się sprawdzić dostępności ćwiczenia. Odśwież stronę.'
+                      : undefined
+                  }
                   data-testid="exercise-detail-duplicate-btn"
                 >
                   <Copy className="mr-2 h-4 w-4" />
@@ -908,7 +915,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                   ? 'Edycja zablokowana podczas weryfikacji. Uwagi do ćwiczenia przekaż w trwającej weryfikacji.'
                   : canReviewExercises
                     ? 'Ćwiczenie z bazy FiziYo. Poprawiasz je w weryfikacji, zmiana trafi do wszystkich gabinetów.'
-                    : canDuplicate
+                    : canDuplicate || availabilityPending
                       ? 'Ćwiczenie z bazy FiziYo — tylko do odczytu. Użyj "Duplikuj" aby je edytować.'
                       : 'Ćwiczenie z puli demo — tylko do odczytu. Ma media dostępne wyłącznie w puli demo, więc nie można go duplikować.'}
               </span>
