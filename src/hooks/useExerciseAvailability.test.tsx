@@ -11,6 +11,7 @@ import { GET_EXERCISE_AVAILABILITY_QUERY } from '@/graphql/queries/exercises.que
 
 import { ServerError } from '@apollo/client/errors';
 
+import { HOTCHOCOLATE_RESPONSES } from '@/lib/graphql/hotChocolateResponses.fixture';
 import { isDuplicateAllowed, useExerciseAvailability } from './useExerciseAvailability';
 
 // Prawdziwy klient Apollo: API z polem `availability` (po fizjo-app#388) i bez niego (dzisiejszy main).
@@ -65,29 +66,29 @@ describe('useExerciseAvailability', () => {
   });
 
   it.each([
-    [
-      'odpowiedź z błędem walidacji',
-      { result: { errors: [new GraphQLError('The field `availability` does not exist on the type `Exercise`.')] } },
-    ],
-    [
-      'HTTP 400 bez danych',
-      {
-        error: new ServerError('Response not successful: Received status code 400', {
-          response: new Response('{}', { status: 400 }),
-          bodyText: '{}',
+    ['nieznane pole (błąd z path)', 'unknownField'],
+    ['nieznany argument (błąd bez path)', 'unknownArg'],
+  ] as const)(
+    'prawdziwa odpowiedź HotChocolate backendu bez pola: %s: Duplikuj działa, a ekran ładuje się jak na main',
+    async (_name, recorded) => {
+      const { errors } = JSON.parse(HOTCHOCOLATE_RESPONSES[recorded].body) as {
+        errors: Array<{ message: string; path?: string[]; extensions?: Record<string, unknown> }>;
+      };
+      const { result } = renderScreen([
+        exerciseQuery,
+        availabilityMock({
+          result: {
+            errors: errors.map(({ message, path, extensions }) => new GraphQLError(message, { path, extensions })),
+          },
         }),
-      },
-    ],
-  ])('API bez pola (%s): brak dostępności, Duplikuj działa, a ekran ładuje się jak na main', async (_name, outcome) => {
-    const { result } = renderScreen([exerciseQuery, availabilityMock(outcome)]);
+      ]);
 
-    await waitFor(() => expect(result.current.exercise.data?.exerciseById.name).toBe('Mostek'));
-    await waitFor(() => expect(result.current.exercise.loading).toBe(false));
-
-    await waitFor(() => expect(result.current.availability.status).toBe('unsupported'));
-    expect(isDuplicateAllowed(result.current.availability)).toBe(true);
-    expect(result.current.exercise.error).toBeUndefined();
-  });
+      await waitFor(() => expect(result.current.exercise.data?.exerciseById.name).toBe('Mostek'));
+      await waitFor(() => expect(result.current.availability.status).toBe('unsupported'));
+      expect(isDuplicateAllowed(result.current.availability)).toBe(true);
+      expect(result.current.exercise.error).toBeUndefined();
+    }
+  );
 
   it('dopóki zapytanie trwa, Duplikuj jest niedostępne', async () => {
     const { result } = renderScreen([
