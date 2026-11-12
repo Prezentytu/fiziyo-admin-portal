@@ -718,6 +718,9 @@ export function VerificationWorkspace({
   // ============================================
 
   const isOrganization = organizationDecision !== undefined;
+  // DEC-20261110-01: pola zespołu i AI rekordu 3.3 tylko w torze katalogu Fizjo. O torze decyduje trasa
+  // (prop `organizationDecision`), a nie rola ani parametr adresu: w weryfikacji organizacji nie widzi ich nikt.
+  const showTeamFields = canReviewExercises && !isOrganization;
   const organizationStatus = organizationDecision?.status;
   const canDecide = isOrganization
     ? canApproveOrganizationExercise(organizationStatus)
@@ -1203,17 +1206,19 @@ export function VerificationWorkspace({
           {stage === 'decision' && (
             <>
               <DecisionStage rows={decisionRows} onGoToStage={goToStage} />
-              <ExtraContentSection
-                enrichment={enrichment}
-                core={{ audioCue: core.audioCue, notes: core.notes }}
-                onEnrichmentPathChange={setEnrichmentPath}
-                onCoreFieldChange={setCoreField}
-                groups={isV33 ? EXTRA_CONTENT_GROUPS_V33 : undefined}
-              />
+              {(!isV33 || showTeamFields) && (
+                <ExtraContentSection
+                  enrichment={enrichment}
+                  core={{ audioCue: core.audioCue, notes: core.notes }}
+                  onEnrichmentPathChange={setEnrichmentPath}
+                  onCoreFieldChange={setCoreField}
+                  groups={isV33 ? EXTRA_CONTENT_GROUPS_V33 : undefined}
+                />
+              )}
               {contractFacts && (
                 <ContractFacts
                   title="Pochodzenie i klasyfikacja"
-                  facts={[...contractFacts.classification, ...(canReviewExercises ? contractFacts.team : [])]}
+                  facts={[...contractFacts.classification, ...(showTeamFields ? contractFacts.team : [])]}
                   hint="Tylko do odczytu. Kody ze słownika; te pola zmienisz w formularzu ćwiczenia."
                   collapsible
                   data-testid="verification-contract-facts"

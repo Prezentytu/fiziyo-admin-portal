@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import goldenV33 from '@/components/shared/exercise/__tests__/fixtures/enrichmentV33.fx-0073.json';
-import { VerificationWorkspace } from './VerificationWorkspace';
+import { VerificationWorkspace, type OrganizationDecision } from './VerificationWorkspace';
 import type { AdminExercise } from '@/graphql/types/adminExercise.types';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 
@@ -70,6 +70,30 @@ function renderWorkspace(exercise: AdminExercise) {
       listUrl="/verification"
       buildDetailUrl={(exerciseId) => `/verification/${exerciseId}`}
       reloadImages={async () => exercise.images ?? []}
+    />
+  );
+}
+
+/** Tor organizacji: o torze decyduje trasa (prop `organizationDecision`), nie parametr adresu ani rola. */
+function renderOrganizationWorkspace(exercise: AdminExercise) {
+  const decision: OrganizationDecision = {
+    status: 'PENDING_ORG_REVIEW',
+    isBusy: false,
+    onApprove: vi.fn().mockResolvedValue(undefined),
+    onRequestChanges: vi.fn().mockResolvedValue(undefined),
+    onArchive: vi.fn().mockResolvedValue(undefined),
+  };
+  return render(
+    <VerificationWorkspace
+      exercise={exercise}
+      queuePosition={1}
+      queueTotal={7}
+      nextExerciseId={null}
+      listUrl="/organization/verification"
+      buildDetailUrl={(exerciseId) => `/organization/verification/${exerciseId}`}
+      reloadImages={async () => exercise.images ?? []}
+      organizationDecision={decision}
+      saveEnrichment={vi.fn().mockResolvedValue(undefined)}
     />
   );
 }
@@ -208,6 +232,28 @@ describe('VerificationWorkspace – rekord v3.3', () => {
     expect(screen.queryByTestId('verification-fact-provenance-sources')).not.toBeInTheDocument();
     expect(screen.queryByTestId('verification-fact-lifecycle-status')).not.toBeInTheDocument();
     expect(screen.queryByTestId('verification-fact-media-usage-scope')).not.toBeInTheDocument();
+  });
+
+  it('członek zespołu FiziYo: pola zespołu i AI widzi w torze katalogu, nigdy w weryfikacji organizacji', async () => {
+    const TEAM_FACTS = ['provenance-sources', 'media-usage-scope', 'lifecycle-availability', 'lifecycle-status'];
+    role.canReviewExercises = true;
+    const user = userEvent.setup();
+
+    const { unmount } = renderWorkspace(buildGoldenExercise());
+    await user.click(screen.getByTestId('verification-stage-decision-btn'));
+    for (const id of TEAM_FACTS) expect(fact(id)).toBeInTheDocument();
+    expect(screen.getByTestId('verification-extra-keywords-list')).toBeInTheDocument();
+    unmount();
+
+    renderOrganizationWorkspace(buildGoldenExercise());
+    await user.click(screen.getByTestId('verification-stage-decision-btn'));
+    expect(fact('classification-position')).toBeInTheDocument();
+    for (const id of [...TEAM_FACTS, 'lifecycle-findings']) {
+      expect(screen.queryByTestId(`verification-fact-${id}`)).not.toBeInTheDocument();
+    }
+    expect(screen.queryByTestId('verification-extra-keywords-list')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('verification-extra-content')).not.toBeInTheDocument();
+    expect(screen.getByTestId('verification-stage-decision')).not.toHaveTextContent('quad set');
   });
 
   it('zapisuje przeciwwskazanie w safety.contraindications i nie rusza żadnego innego klucza', async () => {
