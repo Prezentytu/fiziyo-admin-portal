@@ -5,6 +5,7 @@ import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.
 import {
   buildV33Document,
   collectV33Edits,
+  findV33EditCollisions,
   isSameV33Document,
   isV33EditablePath,
   loadV33Document,
@@ -696,6 +697,89 @@ describe('ochrona przed nadpisaniem cudzej zmiany', () => {
     // What is left to save against the fresh document is exactly the therapist's own edit.
     expect(Object.keys(collectV33Edits(current, rebased))).toEqual(['patient.steps']);
     expectOnlyChanged(buildV33Document(current, collectV33Edits(current, rebased)), ['patient.steps'], current);
+  });
+
+  describe('to samo pole zmienione przez obie osoby (odbiór 12.11, F2)', () => {
+    const OTHER_STEPS = ['Krok zapisany przez drugą osobę.'];
+    const MY_STEPS = ['Mój poprawiony krok.'];
+
+    function bothEdited() {
+      const draft = draftOf();
+      section(draft, 'patient').steps = MY_STEPS;
+      section(draft, 'patient').why = 'Moje po co.';
+      const current = draftOf() as ExerciseEnrichmentData & Doc;
+      section(current, 'patient').steps = OTHER_STEPS;
+      section(current, 'safety').stop_if = 'Objaw dopisany przez drugą osobę.';
+      return { draft: draft as ExerciseEnrichmentData, current };
+    }
+
+    it('wykrywa kolizję tylko w polu zmienionym przez obie osoby i oddaje obie wartości', () => {
+      const { draft, current } = bothEdited();
+
+      expect(findV33EditCollisions(loaded, draft, current)).toEqual([
+        { path: 'patient.steps', mine: MY_STEPS, theirs: OTHER_STEPS },
+      ]);
+    });
+
+    it('nie ma kolizji, gdy zmiany dotyczą różnych pól albo obie osoby wpisały to samo', () => {
+      const draft = draftOf();
+      section(draft, 'patient').why = 'To samo zdanie.';
+      const otherField = draftOf() as ExerciseEnrichmentData;
+      section(otherField, 'safety').stop_if = 'Inne pole.';
+      const sameValue = draftOf() as ExerciseEnrichmentData;
+      section(sameValue, 'patient').why = 'To samo zdanie. ';
+
+      expect(findV33EditCollisions(loaded, draft as ExerciseEnrichmentData, otherField)).toEqual([]);
+      expect(findV33EditCollisions(loaded, draft as ExerciseEnrichmentData, sameValue)).toEqual([]);
+      expect(findV33EditCollisions(loaded, draftOf() as ExerciseEnrichmentData, otherField)).toEqual([]);
+    });
+
+    it('pole opróżnione przez jedną z osób też jest kolizją', () => {
+      const draft = draftOf();
+      section(draft, 'patient').why = '';
+      const current = draftOf() as ExerciseEnrichmentData;
+      section(current, 'patient').why = 'Cudze po co.';
+
+      expect(findV33EditCollisions(loaded, draft as ExerciseEnrichmentData, current)).toEqual([
+        { path: 'patient.why', mine: undefined, theirs: 'Cudze po co.' },
+      ]);
+    });
+
+    it('wybór „zostaw cudzą wersję” odrzuca moją zmianę tego pola, reszta moich zmian zostaje', () => {
+      const { draft, current } = bothEdited();
+
+      const rebased = rebaseV33Draft(loaded, draft, current, ['patient.steps']);
+
+      expect(rebased.patient?.steps).toEqual(OTHER_STEPS);
+      expect(rebased.patient?.why).toBe('Moje po co.');
+      expect(rebased.safety?.stop_if).toBe('Objaw dopisany przez drugą osobę.');
+      expect(Object.keys(collectV33Edits(current, rebased))).toEqual(['patient.why']);
+    });
+
+    it('wybór „zostaw moją wersję” (domyślny dla wywołania bez listy) nakłada moją zmianę', () => {
+      const { draft, current } = bothEdited();
+
+      const rebased = rebaseV33Draft(loaded, draft, current);
+
+      expect(rebased.patient?.steps).toEqual(MY_STEPS);
+      expect(Object.keys(collectV33Edits(current, rebased)).sort()).toEqual(['patient.steps', 'patient.why']);
+    });
+
+    it('cudze kroki zostają razem ze swoimi zdjęciami, a cudze wskazówki ze swoimi fazami', () => {
+      const draft = draftOf();
+      section(draft, 'patient').steps = MY_STEPS;
+      section(draft, 'patient').step_images = [{ step: 1, url: 'https://example.test/moje.png' }];
+      section(draft, 'patient').cues = ['Moja wskazówka.'];
+      section(draft, 'patient').cue_phases = [{ cue: 0, phase: 'rest' }];
+      const current = draftOf() as ExerciseEnrichmentData;
+      section(current, 'patient').steps = OTHER_STEPS;
+      section(current, 'patient').cues = ['Cudza wskazówka.'];
+      section(current, 'patient').cue_phases = [{ cue: 0, phase: 'work' }];
+
+      const rebased = rebaseV33Draft(loaded, draft as ExerciseEnrichmentData, current, ['patient.steps', 'patient.cues']);
+
+      expect(rebased.patient).toEqual(current.patient);
+    });
   });
 
   it('bez niezapisanych zmian przeniesiony szkic to aktualny dokument', () => {

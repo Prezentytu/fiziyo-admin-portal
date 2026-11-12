@@ -163,6 +163,7 @@ export {
   V33_WRITTEN_DICTIONARIES,
   buildV33Document,
   collectV33Edits,
+  findV33EditCollisions,
   isSameV33Document,
   isV33EditablePath,
   loadV33Document,
@@ -171,4 +172,4 @@ export {
   rebaseV33Draft,
   withTextItem,
 } from './writeExerciseContent';
-export type { V33Edits, V33PrecautionGroupCode } from './writeExerciseContent';
+export type { V33EditCollision, V33Edits, V33PrecautionGroupCode } from './writeExerciseContent';
