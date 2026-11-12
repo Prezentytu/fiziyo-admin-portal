@@ -31,7 +31,30 @@ export const MAPPING_OVERRIDES_JSON_KEYS = [
 
 export type MappingOverridesJsonKey = (typeof MAPPING_OVERRIDES_JSON_KEYS)[number];
 
-export type MappingOverridesJson = Pick<ExerciseOverrideFields, MappingOverridesJsonKey>;
+/**
+ * Pola tekstowe pozycji, które fizjoterapeuta może świadomie wyczyścić (FR-007, decyzja A).
+ * W `overridesJson` pozycji: brak klucza = dziedziczy z ćwiczenia, `null` = wyczyszczone, napis = nadpisanie.
+ * Opór i sprzęt mają własną regułę (`''` czyści, `null` dziedziczy), strona czyści się jako `'none'`.
+ */
+export const MAPPING_CLEARABLE_TEXT_KEYS = [
+  'rangeOfMotion',
+  'difficultyLevel',
+  'patientDescription',
+  'clinicalDescription',
+  'audioCue',
+] as const satisfies ReadonlyArray<MappingOverridesJsonKey>;
+
+export type MappingClearableTextKey = (typeof MAPPING_CLEARABLE_TEXT_KEYS)[number];
+
+export type MappingOverridesJson = Omit<
+  Pick<ExerciseOverrideFields, MappingOverridesJsonKey>,
+  MappingClearableTextKey
+> &
+  Partial<Record<MappingClearableTextKey, string | null>>;
+
+function isMappingClearableTextKey(key: string): key is MappingClearableTextKey {
+  return (MAPPING_CLEARABLE_TEXT_KEYS as readonly string[]).includes(key);
+}
 
 export function parseMappingOverridesJson(
   raw: string | MappingOverridesJson | null | undefined
@@ -55,6 +78,10 @@ function pickMappingOverrideKeys(source: Record<string, unknown>): MappingOverri
   for (const key of MAPPING_OVERRIDES_JSON_KEYS) {
     if (!(key in source)) continue;
     const value = source[key];
+    if (value === null && isMappingClearableTextKey(key)) {
+      result[key] = null;
+      continue;
+    }
     if (value === undefined || value === null) continue;
     if (key === 'enrichment') {
       const enrichment = parseEnrichmentOverride(value);
@@ -82,6 +109,7 @@ function isMappingPlaceholder(key: MappingOverridesJsonKey, value: unknown): boo
 /**
  * Build overridesJson string for ExerciseSetMapping from desired vs template baseline.
  * Returns null when empty (clear mapping overrides).
+ * Wyczyszczone pola tekstowe (MAPPING_CLEARABLE_TEXT_KEYS) zapisuje jako null, opór i sprzęt jako pusty napis.
  * Pass `enrichmentDelta` when enrichment personalization is present.
  */
 export function buildMappingOverridesJson(
@@ -94,7 +122,9 @@ export function buildMappingOverridesJson(
   for (const key of MAPPING_OVERRIDES_JSON_KEYS) {
     if (key === 'enrichment') continue;
     if (key in fullDelta && fullDelta[key] !== undefined) {
-      (filtered as Record<string, unknown>)[key] = fullDelta[key];
+      const value = fullDelta[key];
+      (filtered as Record<string, unknown>)[key] =
+        isMappingClearableTextKey(key) && isMappingPlaceholder(key, value) ? null : value;
     }
   }
   if (enrichmentDelta && hasEnrichmentOverrideContent(enrichmentDelta)) {
@@ -113,11 +143,31 @@ export function mergeOverrideLayers(
     mappingOverrides?.enrichment,
     assignmentOverride?.enrichment
   );
-  const { enrichment: _mappingEnrichment, ...mappingScalars } = mappingOverrides ?? {};
+  const { enrichment: _mappingEnrichment, ...mappingFields } = mappingOverrides ?? {};
   const { enrichment: _assignmentEnrichment, ...assignmentScalars } = assignmentOverride ?? {};
+  // null (wyczyszczone w pozycji) nie jest wartością warstwy; resolver czyta go z resolveMappingClearedKeys.
+  const mappingScalars = Object.fromEntries(
+    Object.entries(mappingFields).filter(([, value]) => value !== null)
+  ) as ExerciseOverrideFields;
   return {
     ...mappingScalars,
     ...assignmentScalars,
     ...(enrichment ? { enrichment } : {}),
   };
+}
+
+/**
+ * Pola wyczyszczone w pozycji zestawu (`null` w overridesJson), których nie nadpisuje przypisanie pacjenta.
+ * Dla nich efektywna wartość jest pusta, bez rezerwy z katalogu.
+ */
+export function resolveMappingClearedKeys(
+  mappingOverrides?: MappingOverridesJson | null,
+  assignmentOverride?: ExerciseOverrideFields | null
+): ReadonlySet<MappingClearableTextKey> {
+  const cleared = new Set<MappingClearableTextKey>();
+  if (!mappingOverrides) return cleared;
+  for (const key of MAPPING_CLEARABLE_TEXT_KEYS) {
+    if (mappingOverrides[key] === null && assignmentOverride?.[key] === undefined) cleared.add(key);
+  }
+  return cleared;
 }
