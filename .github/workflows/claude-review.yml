@@ -1,4 +1,4 @@
-# Review każdego PR przez Claude Code (plugin code-review), drugi recenzent obok Cursora.
+# Review każdego PR przez Claude Code (plugin code-review), jedyny automatyczny recenzent od 2026-11-12 (Cursor anulowany).
 # Rozliczenie: subskrypcja Claude przez CLAUDE_CODE_OAUTH_TOKEN (`claude setup-token`).
 # Wymaga aplikacji GitHub "Claude" zainstalowanej na repo (id-token: write).
 name: Claude review
@@ -28,8 +28,8 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          # PR-y od agentów (Skrzynka, Cursor) też dostają review.
-          allowed_bots: "prezentytu-skrzynka-internal,cursor"
+          # PR-y od agentów (Skrzynka) też dostają review.
+          allowed_bots: "prezentytu-skrzynka-internal"
           plugin_marketplaces: "https://github.com/anthropics/claude-plugins-official.git"
           plugins: "code-review@claude-plugins-official"
           prompt: "/code-review:code-review --comment ${{ github.repository }}/pull/${{ github.event.pull_request.number }}"
