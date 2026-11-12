@@ -1074,7 +1074,9 @@ export function VerificationWorkspace({
         </Button>
       </header>
 
-      {form.hasSaveConflict && <ExerciseSaveConflictNotice onLoadCurrent={form.loadCurrentVersion} />}
+      {form.hasSaveConflict && (
+        <ExerciseSaveConflictNotice collisions={form.saveCollisions} onLoadCurrent={form.loadCurrentVersion} />
+      )}
 
       {latestReport && reportStage && (
         <div

@@ -5,6 +5,7 @@ import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.
 import {
   buildV33Document,
   collectV33Edits,
+  findV33EditCollisions,
   isSameV33Document,
   isV33EditablePath,
   loadV33Document,
@@ -20,6 +21,17 @@ import {
   withTextItem,
 } from '../writeExerciseContent';
 import fixture from './fixtures/enrichmentV33.fx-0073.json';
+import {
+  classesOfV33Leaf,
+  editableRootOf,
+  GOLDEN_EDITABLE_PATHS,
+  GOLDEN_LEAF_PATHS,
+  leafPaths,
+  V33_EDITABLE_ABSENT_FROM_GOLDEN,
+  V33_PATHS_EVERY_EDITOR_COVERS,
+  V33_READ_ONLY_PATHS,
+  V33_SKIPPED_PATHS,
+} from './fixtures/v33GoldenPaths';
 
 type Doc = Record<string, unknown>;
 
@@ -576,8 +588,8 @@ describe('lista ścieżek edytowalnych (zapadka)', () => {
     'ai.keywords': ['zmienione'],
   };
 
-  it('każda ścieżka z listy ma przypadek w tym teście', () => {
-    expect(Object.keys(changedValue).sort()).toEqual([...V33_EDITABLE_PATHS].sort());
+  it('każda ścieżka edytowalna wynikająca ze złotego rekordu ma przypadek w tym teście', () => {
+    expect(Object.keys(changedValue).sort()).toEqual([...V33_PATHS_EVERY_EDITOR_COVERS].sort());
   });
 
   it.each(V33_EDITABLE_PATHS.map((path) => [path]))('%s: zmiana w szkicu trafia do zapisanego dokumentu', (path) => {
@@ -698,9 +710,166 @@ describe('ochrona przed nadpisaniem cudzej zmiany', () => {
     expectOnlyChanged(buildV33Document(current, collectV33Edits(current, rebased)), ['patient.steps'], current);
   });
 
+  describe('to samo pole zmienione przez obie osoby (odbiór 12.11, F2)', () => {
+    const OTHER_STEPS = ['Krok zapisany przez drugą osobę.'];
+    const MY_STEPS = ['Mój poprawiony krok.'];
+
+    function bothEdited() {
+      const draft = draftOf();
+      section(draft, 'patient').steps = MY_STEPS;
+      section(draft, 'patient').why = 'Moje po co.';
+      const current = draftOf() as ExerciseEnrichmentData & Doc;
+      section(current, 'patient').steps = OTHER_STEPS;
+      section(current, 'safety').stop_if = 'Objaw dopisany przez drugą osobę.';
+      return { draft: draft as ExerciseEnrichmentData, current };
+    }
+
+    it('wykrywa kolizję tylko w polu zmienionym przez obie osoby i oddaje obie wartości', () => {
+      const { draft, current } = bothEdited();
+
+      expect(findV33EditCollisions(loaded, draft, current)).toEqual([
+        { path: 'patient.steps', mine: MY_STEPS, theirs: OTHER_STEPS },
+      ]);
+    });
+
+    it('nie ma kolizji, gdy zmiany dotyczą różnych pól albo obie osoby wpisały to samo', () => {
+      const draft = draftOf();
+      section(draft, 'patient').why = 'To samo zdanie.';
+      const otherField = draftOf() as ExerciseEnrichmentData;
+      section(otherField, 'safety').stop_if = 'Inne pole.';
+      const sameValue = draftOf() as ExerciseEnrichmentData;
+      section(sameValue, 'patient').why = 'To samo zdanie. ';
+
+      expect(findV33EditCollisions(loaded, draft as ExerciseEnrichmentData, otherField)).toEqual([]);
+      expect(findV33EditCollisions(loaded, draft as ExerciseEnrichmentData, sameValue)).toEqual([]);
+      expect(findV33EditCollisions(loaded, draftOf() as ExerciseEnrichmentData, otherField)).toEqual([]);
+    });
+
+    it('pole opróżnione przez jedną z osób też jest kolizją', () => {
+      const draft = draftOf();
+      section(draft, 'patient').why = '';
+      const current = draftOf() as ExerciseEnrichmentData;
+      section(current, 'patient').why = 'Cudze po co.';
+
+      expect(findV33EditCollisions(loaded, draft as ExerciseEnrichmentData, current)).toEqual([
+        { path: 'patient.why', mine: undefined, theirs: 'Cudze po co.' },
+      ]);
+    });
+
+    it('wybór „zostaw cudzą wersję” odrzuca moją zmianę tego pola, reszta moich zmian zostaje', () => {
+      const { draft, current } = bothEdited();
+
+      const rebased = rebaseV33Draft(loaded, draft, current, ['patient.steps']);
+
+      expect(rebased.patient?.steps).toEqual(OTHER_STEPS);
+      expect(rebased.patient?.why).toBe('Moje po co.');
+      expect(rebased.safety?.stop_if).toBe('Objaw dopisany przez drugą osobę.');
+      expect(Object.keys(collectV33Edits(current, rebased))).toEqual(['patient.why']);
+    });
+
+    it('wybór „zostaw moją wersję” (domyślny dla wywołania bez listy) nakłada moją zmianę', () => {
+      const { draft, current } = bothEdited();
+
+      const rebased = rebaseV33Draft(loaded, draft, current);
+
+      expect(rebased.patient?.steps).toEqual(MY_STEPS);
+      expect(Object.keys(collectV33Edits(current, rebased)).sort()).toEqual(['patient.steps', 'patient.why']);
+    });
+
+    it('cudze kroki zostają razem ze swoimi zdjęciami, a cudze wskazówki ze swoimi fazami', () => {
+      const draft = draftOf();
+      section(draft, 'patient').steps = MY_STEPS;
+      section(draft, 'patient').step_images = [{ step: 1, url: 'https://example.test/moje.png' }];
+      section(draft, 'patient').cues = ['Moja wskazówka.'];
+      section(draft, 'patient').cue_phases = [{ cue: 0, phase: 'rest' }];
+      const current = draftOf() as ExerciseEnrichmentData;
+      section(current, 'patient').steps = OTHER_STEPS;
+      section(current, 'patient').cues = ['Cudza wskazówka.'];
+      section(current, 'patient').cue_phases = [{ cue: 0, phase: 'work' }];
+
+      const rebased = rebaseV33Draft(loaded, draft as ExerciseEnrichmentData, current, ['patient.steps', 'patient.cues']);
+
+      expect(rebased.patient).toEqual(current.patient);
+    });
+  });
+
   it('bez niezapisanych zmian przeniesiony szkic to aktualny dokument', () => {
     const current = { ...loaded, patient: { ...loaded.patient, why: 'Zmienione przez kogoś.' } } as ExerciseEnrichmentData;
 
     expect(rebaseV33Draft(loaded, draftOf() as ExerciseEnrichmentData, current)).toEqual(current);
+  });
+});
+
+describe('zapadka kontraktu: każdy liść złotego rekordu 3.3 jest sklasyfikowany', () => {
+  function setLeaf(document: Doc, path: string, change: (value: unknown) => unknown): void {
+    const keys = path.split('.');
+    let target: Record<string, unknown> = document;
+    for (const key of keys.slice(0, -1)) target = target[key] as Record<string, unknown>;
+    const last = keys[keys.length - 1];
+    target[last] = change(target[last]);
+  }
+
+  /** A different value of the same kind, so the change is the kind a screen or an import could make. */
+  function changed(value: unknown): unknown {
+    if (typeof value === 'string') return `${value} (zmiana)`;
+    if (typeof value === 'number') return value + 1;
+    if (typeof value === 'boolean') return !value;
+    return 'zmiana';
+  }
+
+  const classified = GOLDEN_LEAF_PATHS.map((path) => ({ path, classes: classesOfV33Leaf(path) }));
+  const leavesOf = (wanted: string) =>
+    classified.filter(({ classes }) => classes[0] === wanted).map(({ path }) => [path] as const);
+
+  it('złoty rekord jest rekordem 3.3 i ma liście', () => {
+    expect(loaded.schemaVersion).toBe('3.3');
+    expect(GOLDEN_LEAF_PATHS.length).toBeGreaterThan(100);
+  });
+
+  it('żaden liść nie jest poza klasyfikacją ani w dwóch klasach naraz', () => {
+    expect(classified.filter(({ classes }) => classes.length !== 1)).toEqual([]);
+  });
+
+  it('nowe pole kontraktu w rekordzie jest niesklasyfikowane, dopóki nikt go nie dopisze', () => {
+    const next = draftOf();
+    section(next, 'patient').nowe_pole_kontraktu = 'x';
+    next.nowa_sekcja = { pole: 1 };
+
+    expect(leafPaths(next).filter((path) => classesOfV33Leaf(path).length === 0)).toEqual([
+      'patient.nowe_pole_kontraktu',
+      'nowa_sekcja.pole',
+    ]);
+  });
+
+  it('listy „tylko do odczytu” i „pominięte” nie mają martwych wpisów, a każdy wpis ma powód', () => {
+    for (const rule of [...V33_READ_ONLY_PATHS, ...V33_SKIPPED_PATHS]) {
+      expect(GOLDEN_LEAF_PATHS.some((leaf) => leaf === rule.path || leaf.startsWith(`${rule.path}.`)), rule.path).toBe(true);
+      expect(rule.reason.trim().length, rule.path).toBeGreaterThan(10);
+    }
+  });
+
+  it('lista ścieżek edytowalnych to dokładnie: pola ze złotego rekordu plus jawnie nazwane nieobecne w nim', () => {
+    const absent = V33_EDITABLE_ABSENT_FROM_GOLDEN.map((rule) => rule.path);
+
+    expect(absent.filter((path) => GOLDEN_EDITABLE_PATHS.includes(path))).toEqual([]);
+    expect([...GOLDEN_EDITABLE_PATHS, ...absent].sort()).toEqual([...V33_EDITABLE_PATHS].sort());
+    for (const rule of V33_EDITABLE_ABSENT_FROM_GOLDEN) expect(rule.reason.trim().length).toBeGreaterThan(10);
+  });
+
+  it.each(leavesOf('editable'))('edytowalny %s: zmiana liścia trafia do zapisu pod swoją ścieżką', (path) => {
+    const draft = draftOf();
+    setLeaf(draft, path, changed);
+
+    const edits = Object.keys(collectV33Edits(loaded, draft as ExerciseEnrichmentData));
+
+    expect(edits).toContain(editableRootOf(path));
+  });
+
+  it.each(leavesOf('read-only'))('tylko do odczytu %s: zmiana w szkicu nie trafia do zapisu', (path) => {
+    const draft = draftOf();
+    setLeaf(draft, path, changed);
+
+    expect(collectV33Edits(loaded, draft as ExerciseEnrichmentData)).toEqual({});
+    expect(save(draft)).toEqual(loaded);
   });
 });

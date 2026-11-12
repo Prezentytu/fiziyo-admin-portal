@@ -5,7 +5,10 @@ import fixture from '@/components/shared/exercise/__tests__/fixtures/enrichmentV
 import { TooltipProvider } from '@/components/ui/tooltip';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 
+import { V33_EDITABLE_PATHS } from '@/components/shared/exercise/writeExerciseContent';
+
 import { ExerciseEditor } from '../ExerciseEditor';
+import { describeCollisionValue, SAVE_COLLISION_FIELD_LABELS } from '../ExerciseSaveConflictNotice';
 import { useExerciseEditorForm, type ExerciseEditorSource } from '../useExerciseEditorForm';
 
 const { updateCore } = vi.hoisted(() => ({ updateCore: vi.fn() }));
@@ -133,20 +136,81 @@ describe('ochrona przed nadpisaniem cudzej zmiany (rekord 3.3)', () => {
     expect(server.stored()).toMatchObject({ lifecycle: { status: 'zmienione przez import' }, patient: { why: 'Nowe po co.' } });
   });
 
-  it('to samo pole zmienione przez obie osoby: po wczytaniu zostaje wersja z ekranu, zapis dopiero po decyzji', async () => {
-    const server = fakeServer();
-    const editor = openEditor(server);
-    act(() => editor.result.current.setEnrichmentPath('patient.why', 'Moje po co.'));
-    await server.write({ ...document, patient: { ...document.patient, why: 'Cudze po co.' } });
+  describe('to samo pole zmienione przez obie osoby (odbiór 12.11, F2)', () => {
+    async function collide() {
+      const server = fakeServer();
+      const editor = openEditor(server);
+      act(() => editor.result.current.setEnrichmentPath('patient.why', 'Moje po co.'));
+      act(() => editor.result.current.setEnrichmentPath('patient.easier', 'Moje łatwiej.'));
+      await server.write({
+        ...document,
+        patient: { ...document.patient, why: 'Cudze po co.', harder: 'Cudze trudniej.' },
+      });
+      server.writes.length = 0;
+      await act(async () => {
+        await editor.result.current.save();
+      });
+      return { server, editor };
+    }
 
-    await act(async () => {
-      await editor.result.current.save();
+    it('konflikt nazywa pole i obie wartości; pola zmienione tylko przez jedną osobę nie są kolizją', async () => {
+      const { server, editor } = await collide();
+
+      expect(server.writes).toHaveLength(0);
+      expect(editor.result.current.hasSaveConflict).toBe(true);
+      expect(editor.result.current.saveCollisions).toEqual([
+        { path: 'patient.why', mine: 'Moje po co.', theirs: 'Cudze po co.' },
+      ]);
     });
-    expect(server.stored().patient?.why).toBe('Cudze po co.');
 
-    act(() => editor.result.current.loadCurrentVersion());
-    expect(editor.result.current.enrichment.patient?.why).toBe('Moje po co.');
-    expect(editor.result.current.isPathDirty('patient.why')).toBe(true);
+    it('bez wyboru wersji w polu kolizji nic się nie wczytuje i nic nie zapisuje', async () => {
+      const { server, editor } = await collide();
+
+      act(() => editor.result.current.loadCurrentVersion());
+      act(() => editor.result.current.loadCurrentVersion({}));
+
+      expect(editor.result.current.hasSaveConflict).toBe(true);
+      await act(async () => {
+        await editor.result.current.save();
+      });
+      expect(server.writes).toHaveLength(0);
+      expect(server.stored().patient?.why).toBe('Cudze po co.');
+    });
+
+    it('wybór cudzej wersji: moja zmiana tego pola jest odrzucona, reszta moich zmian się zapisuje', async () => {
+      const { server, editor } = await collide();
+
+      act(() => editor.result.current.loadCurrentVersion({ 'patient.why': 'theirs' }));
+
+      expect(editor.result.current.hasSaveConflict).toBe(false);
+      expect(editor.result.current.enrichment.patient).toMatchObject({
+        why: 'Cudze po co.',
+        easier: 'Moje łatwiej.',
+        harder: 'Cudze trudniej.',
+      });
+      expect(editor.result.current.isPathDirty('patient.why')).toBe(false);
+      await act(async () => {
+        await editor.result.current.save();
+      });
+      expect(server.stored().patient).toMatchObject({
+        why: 'Cudze po co.',
+        easier: 'Moje łatwiej.',
+        harder: 'Cudze trudniej.',
+      });
+    });
+
+    it('wybór mojej wersji: nadpisuje cudzą dopiero po tej decyzji', async () => {
+      const { server, editor } = await collide();
+
+      act(() => editor.result.current.loadCurrentVersion({ 'patient.why': 'mine' }));
+
+      expect(editor.result.current.enrichment.patient?.why).toBe('Moje po co.');
+      expect(server.stored().patient?.why).toBe('Cudze po co.');
+      await act(async () => {
+        await editor.result.current.save();
+      });
+      expect(server.stored().patient).toMatchObject({ why: 'Moje po co.', harder: 'Cudze trudniej.' });
+    });
   });
 
   it('bez cudzej zmiany zapis przechodzi, także drugi z rzędu i przy innej kolejności kluczy w bazie', async () => {
@@ -238,5 +302,61 @@ describe('ochrona przed nadpisaniem cudzej zmiany (rekord 3.3)', () => {
     expect(screen.queryByTestId('exercise-save-conflict-notice')).not.toBeInTheDocument();
     expect(screen.getByTestId('exercise-detail-easier-input')).toHaveValue('Moje łatwiej.');
     expect(screen.getByTestId('exercise-detail-harder-input')).toHaveValue('Cudze trudniej.');
+  });
+
+  it('formularz przy kolizji tego samego pola pokazuje obie wersje i czeka na wybór', async () => {
+    const server = fakeServer();
+    function ConflictEditor() {
+      const form = useExerciseEditorForm({
+        source: v33Source,
+        updateCore,
+        updateEnrichment: server.write,
+        fetchCurrentEnrichment: server.read,
+      });
+      return (
+        <TooltipProvider>
+          <ExerciseEditor form={form} />
+          <button type="button" data-testid="exercise-editor-test-save-btn" onClick={() => void form.save()}>
+            Zapisz szkic
+          </button>
+        </TooltipProvider>
+      );
+    }
+    render(<ConflictEditor />);
+    fireEvent.change(screen.getByTestId('exercise-detail-easier-input'), { target: { value: 'Moje łatwiej.' } });
+    await server.write({ ...document, patient: { ...document.patient, easier: 'Cudze łatwiej.' } });
+    server.writes.length = 0;
+
+    fireEvent.click(screen.getByTestId('exercise-editor-test-save-btn'));
+    const notice = await screen.findByTestId('exercise-save-conflict-notice');
+
+    expect(notice).not.toHaveTextContent('żeby nie skasować tamtych');
+    const collision = screen.getByTestId('exercise-save-conflict-collision-patient.easier');
+    expect(collision).toHaveTextContent('Moje łatwiej.');
+    expect(collision).toHaveTextContent('Cudze łatwiej.');
+    expect(screen.getByTestId('exercise-save-conflict-load-btn')).toBeDisabled();
+
+    fireEvent.click(screen.getByTestId('exercise-save-conflict-keep-theirs-patient.easier-btn'));
+    expect(screen.getByTestId('exercise-save-conflict-load-btn')).toBeEnabled();
+    fireEvent.click(screen.getByTestId('exercise-save-conflict-load-btn'));
+
+    expect(screen.queryByTestId('exercise-save-conflict-notice')).not.toBeInTheDocument();
+    expect(screen.getByTestId('exercise-detail-easier-input')).toHaveValue('Cudze łatwiej.');
+    expect(server.writes).toHaveLength(0);
+  });
+});
+
+describe('komunikat konfliktu: nazwy pól i wartości', () => {
+  it('każde pole, które portal zapisuje, ma nazwę dla fizjoterapeuty', () => {
+    expect(Object.keys(SAVE_COLLISION_FIELD_LABELS).sort()).toEqual([...V33_EDITABLE_PATHS].sort());
+  });
+
+  it('pokazuje tekst, listę, wiersze z kilkoma polami i pole opróżnione', () => {
+    expect(describeCollisionValue('Zdanie.')).toEqual(['Zdanie.']);
+    expect(describeCollisionValue(['Krok 1.', 'Krok 2.'])).toEqual(['Krok 1.', 'Krok 2.']);
+    expect(describeCollisionValue([{ mistake: 'Błąd.', fix: 'Poprawka.' }])).toEqual(['Błąd. · Poprawka.']);
+    expect(describeCollisionValue(true)).toEqual(['tak']);
+    expect(describeCollisionValue(undefined)).toEqual(['(puste)']);
+    expect(describeCollisionValue([])).toEqual(['(puste)']);
   });
 });

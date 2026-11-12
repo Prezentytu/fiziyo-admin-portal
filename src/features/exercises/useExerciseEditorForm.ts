@@ -17,10 +17,12 @@ import { readExerciseContent, type ExerciseContentVersion } from '@/components/s
 import {
   buildV33Document,
   collectV33Edits,
+  findV33EditCollisions,
   isSameV33Document,
   isV33EditablePath,
   loadV33Document,
   rebaseV33Draft,
+  type V33EditCollision,
 } from '@/components/shared/exercise/writeExerciseContent';
 
 /**
@@ -275,6 +277,9 @@ export function buildChangedCoreVariables(
   return variables;
 }
 
+/** Wybór wersji dla pól zmienionych przez obie osoby: ścieżka → która wersja zostaje. */
+export type SaveCollisionResolution = Readonly<Record<string, 'mine' | 'theirs'>>;
+
 export function useExerciseEditorForm({
   source,
   updateCore,
@@ -420,14 +425,26 @@ export function useExerciseEditorForm({
   const conflictDocumentRef = useRef(conflictDocument);
   conflictDocumentRef.current = conflictDocument;
 
+  /** Pola zmienione i na tym ekranie, i w bazie: przy każdym fizjoterapeuta wybiera, która wersja zostaje. */
+  const saveCollisions = useMemo<V33EditCollision[]>(
+    () => (conflictDocument ? findV33EditCollisions(initialEnrichment, enrichment, conflictDocument) : []),
+    [conflictDocument, enrichment, initialEnrichment]
+  );
+
   /**
    * Po konflikcie: szkic przechodzi na aktualną wersję z bazy i zachowuje niezapisane zmiany z ekranu.
-   * Niczego nie zapisuje; fizjoterapeuta widzi wynik i zapisuje sam.
+   * Pole zmienione przez obie osoby wymaga wyboru: `mine` zostawia wersję z ekranu (nadpisze cudzą przy
+   * zapisie), `theirs` odrzuca zmianę z ekranu. Bez wyboru dla każdej kolizji nic się nie dzieje, żeby żadna
+   * wersja nie znikła po cichu. Niczego nie zapisuje; fizjoterapeuta widzi wynik i zapisuje sam.
    */
-  const loadCurrentVersion = useCallback(() => {
+  const loadCurrentVersion = useCallback((resolution?: SaveCollisionResolution) => {
     const current = conflictDocumentRef.current;
     if (!current) return;
-    setEnrichment(rebaseV33Draft(initialEnrichmentRef.current, enrichmentRef.current, current));
+    const collisions = findV33EditCollisions(initialEnrichmentRef.current, enrichmentRef.current, current);
+    const choices = (resolution ?? {}) as Record<string, unknown>;
+    if (collisions.some(({ path }) => choices[path] !== 'mine' && choices[path] !== 'theirs')) return;
+    const keepTheirs = collisions.filter(({ path }) => choices[path] === 'theirs').map(({ path }) => path);
+    setEnrichment(rebaseV33Draft(initialEnrichmentRef.current, enrichmentRef.current, current, keepTheirs));
     setInitialEnrichment(current);
     setConflictDocument(null);
     setSaveStatus('idle');
@@ -439,7 +456,7 @@ export function useExerciseEditorForm({
     setInitialEnrichment(enrichmentRef.current);
   }, []);
 
-  const performSave = useCallback(async (): Promise<ExerciseSaveOutcome> => {
+  const runSave = useCallback(async (): Promise<ExerciseSaveOutcome> => {
     const currentCore = coreRef.current;
     const currentEnrichment = enrichmentRef.current;
     const isV33 = contentVersion === '3.3';
@@ -451,7 +468,8 @@ export function useExerciseEditorForm({
       : composeEnrichmentPayload(currentEnrichment);
     const currentEnrichmentDirty = isV33
       ? Object.keys(v33Edits).length > 0
-      : JSON.stringify(currentEnrichmentPayload) !== initialEnrichmentPayload;
+      : JSON.stringify(currentEnrichmentPayload) !==
+        JSON.stringify(composeEnrichmentPayload(initialEnrichmentRef.current));
 
     if (!currentCoreDirty && !currentEnrichmentDirty) return 'clean';
     if (conflictDocumentRef.current) return 'conflict';
@@ -465,6 +483,7 @@ export function useExerciseEditorForm({
         if (fetched == null) throw new Error('Nie udało się pobrać aktualnej wersji ćwiczenia.');
         const current = loadV33Document(fetched);
         if (!isSameV33Document(initialEnrichmentRef.current, current)) {
+          conflictDocumentRef.current = current;
           setConflictDocument(current);
           setSaveStatus('idle');
           return 'conflict';
@@ -477,12 +496,15 @@ export function useExerciseEditorForm({
         await updateEnrichment(currentEnrichmentPayload);
       }
       setSaveStatus('success');
-      if (isV33) {
-        // The baseline is the document that was sent, so the next save starts from what the backend holds.
-        setInitialCore(currentCore);
-        if (currentEnrichmentDirty) setInitialEnrichment(currentEnrichmentPayload);
-      } else {
-        markSaved();
+      // The baseline is what was sent, so the next save starts from what the backend holds and an edit typed
+      // while this one was in flight stays unsaved. Refs first: a save queued behind this one runs before React
+      // re-renders and must compare against the new baseline, not the one from before this save.
+      initialCoreRef.current = currentCore;
+      setInitialCore(currentCore);
+      if (currentEnrichmentDirty) {
+        const savedEnrichment = isV33 ? currentEnrichmentPayload : currentEnrichment;
+        initialEnrichmentRef.current = savedEnrichment;
+        setInitialEnrichment(savedEnrichment);
       }
       onSaved?.();
       return 'saved';
@@ -492,16 +514,21 @@ export function useExerciseEditorForm({
       onError?.(error);
       return 'error';
     }
-  }, [
-    contentVersion,
-    fetchCurrentEnrichment,
-    initialEnrichmentPayload,
-    markSaved,
-    onError,
-    onSaved,
-    updateCore,
-    updateEnrichment,
-  ]);
+  }, [contentVersion, fetchCurrentEnrichment, onError, onSaved, updateCore, updateEnrichment]);
+
+  /**
+   * Saves of one form run one after another: autosave and a save from a button or a decision used to overlap,
+   * and the second one read back the document written by the first and reported a conflict with itself.
+   * A queued save starts when the previous one has finished and takes the baseline that save left.
+   */
+  const runSaveRef = useRef(runSave);
+  runSaveRef.current = runSave;
+  const saveQueueRef = useRef<Promise<unknown>>(Promise.resolve());
+  const performSave = useCallback(() => {
+    const next = saveQueueRef.current.then(() => runSaveRef.current());
+    saveQueueRef.current = next.catch(() => undefined);
+    return next;
+  }, []);
 
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -564,6 +591,7 @@ export function useExerciseEditorForm({
       isPathDirty,
       saveStatus,
       hasSaveConflict: conflictDocument !== null,
+      saveCollisions,
       loadCurrentVersion,
       save,
       flush,
@@ -585,6 +613,7 @@ export function useExerciseEditorForm({
       replaceEnrichment,
       reset,
       save,
+      saveCollisions,
       saveStatus,
       savedLoadLabel,
       setCoreField,
