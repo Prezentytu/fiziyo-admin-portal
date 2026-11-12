@@ -342,3 +342,23 @@ describe('trójstan pól tekstowych overridesJson pozycji (FR-007, decyzja A)', 
     expect(result.audioCue).toBe('Od pacjenta');
   });
 });
+
+// S-01 R2.3: notatka z katalogu nie jest uwagą fizjoterapeuty, więc nie zastępuje pustej uwagi pozycji.
+describe('resolveEffectiveExerciseParams: uwaga fizjoterapeuty', () => {
+  const withNotes = (mappingNotes: string | undefined) => ({
+    ...baseMapping,
+    notes: mappingNotes,
+    exercise: { ...baseMapping.exercise, notes: 'Ogólna notatka z katalogu' },
+  });
+
+  it('bez uwagi w pozycji nie bierze notatki z katalogu', () => {
+    expect(resolveEffectiveExerciseParams(withNotes(undefined)).notes).toBe('');
+  });
+
+  it('uwaga pozycji i nadpisanie przypisania nadal działają', () => {
+    expect(resolveEffectiveExerciseParams(withNotes('Nie schodź niżej niż krzesło')).notes).toBe(
+      'Nie schodź niżej niż krzesło'
+    );
+    expect(resolveEffectiveExerciseParams(withNotes('Z pozycji'), { notes: 'Od pacjenta' }).notes).toBe('Od pacjenta');
+  });
+});

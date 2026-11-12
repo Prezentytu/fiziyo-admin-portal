@@ -237,7 +237,8 @@ export function resolveEffectiveExerciseParams(
 
   const customName = pickDefined(layered?.customName, mapping.customName);
   const customDescription = pickDefined(layered?.customDescription, mapping.customDescription);
-  const notes = pickDefined(layered?.notes, mapping.notes, exercise?.notes) ?? '';
+  // Uwaga fizjoterapeuty tylko z pozycji i przypisania; notatka z katalogu nie jest uwagą (S-01 R2.3).
+  const notes = pickDefined(layered?.notes, mapping.notes) ?? '';
   const rangeOfMotion = unlessCleared('rangeOfMotion', pickDefined(layered?.rangeOfMotion, exercise?.rangeOfMotion));
   const resistance = pickDefined(layered?.resistance, exercise?.resistance);
   const equipment = pickDefined(layered?.equipment, exercise?.equipment);
