@@ -250,6 +250,45 @@ describe('readExerciseContent: rekord 3.3', () => {
   });
 });
 
+describe('readExerciseContent: ostrożności dla grup szczególnych', () => {
+  const precautions = [
+    { group: 'ciaza', text: ' W ciąży po 20. tygodniu ćwicz w pozycji półleżącej. ', source: 'S2' },
+    { group: 'endoproteza_biodra', text: 'Po endoprotezie biodra nie krzyżuj nóg.' },
+  ];
+  const withPrecautions = (safety: unknown, extra: Record<string, unknown> = { schemaVersion: '3.3' }) =>
+    readExerciseContent({ enrichmentData: { ...extra, safety } } as unknown as ExerciseContentSource);
+
+  it('rekord 3.3 oddaje ostrożności w zapisanej kolejności, z kodem grupy i tekstem', () => {
+    expect(withPrecautions({ precautions }).precautions).toEqual([
+      { group: 'ciaza', text: 'W ciąży po 20. tygodniu ćwicz w pozycji półleżącej.' },
+      { group: 'endoproteza_biodra', text: 'Po endoprotezie biodra nie krzyżuj nóg.' },
+    ]);
+  });
+
+  it('rekord 3.3 bez pola i rekord stary dają pustą listę', () => {
+    expect(readExerciseContent({ enrichmentData: golden }).precautions).toEqual([]);
+    expect(withPrecautions({ precautions }, {}).precautions).toEqual([]);
+    expect(withPrecautions({ precautions }, { $schema: 'fiziyo-exercise-v3' }).precautions).toEqual([]);
+    expect(readExerciseContent(oldV3).precautions).toEqual([]);
+    expect(readExerciseContent(null).precautions).toEqual([]);
+  });
+
+  it('wpisy bez tekstu odpadają, zły kształt nie rzuca, brak kodu grupy daje null', () => {
+    const malformed = [null, 'sam tekst', 7, [], {}, { group: 'ciaza' }, { group: 'ciaza', text: '  ' }, { text: 5 }, { group: 3, text: 'Bez kodu.' }];
+    expect(withPrecautions({ precautions: malformed }).precautions).toEqual([{ group: null, text: 'Bez kodu.' }]);
+    for (const wrong of ['tekst', 5, {}, null, true]) {
+      expect(withPrecautions({ precautions: wrong }).precautions).toEqual([]);
+    }
+  });
+
+  it('nie zmienia wejścia', () => {
+    const source = { enrichmentData: { schemaVersion: '3.3', safety: { precautions } } };
+    const before = JSON.stringify(source);
+    readExerciseContent(source as unknown as ExerciseContentSource);
+    expect(JSON.stringify(source)).toBe(before);
+  });
+});
+
 describe('readExerciseContent: odporność', () => {
   it('nie zmienia wejścia', () => {
     for (const source of [oldV3, { enrichmentData: v2Document }, { enrichmentData: golden }]) {
