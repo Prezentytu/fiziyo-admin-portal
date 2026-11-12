@@ -304,6 +304,34 @@ describe("agent-guard: merge przez agenta", () => {
     assert.equal(classifyShellCommand("gh api graphql -f query=`cat q.graphql`").permission, "deny");
   });
 
+  it("derives the gh api method from words: the last -X/--method wins, text does not count", () => {
+    for (const command of [
+      'gh api repos/o/r/pulls/1/reviews -f event=APPROVE -f body="Sprawdzone: gh api --method GET zwraca 200"',
+      'gh api -X PATCH repos/o/r/git/refs/heads/main -f sha=abc -f message="nie -X GET"',
+      "gh api --method=GET -X PUT repos/o/r/git/refs/heads/main -f sha=abc",
+      "gh api -X GET -X POST repos/o/r/git/refs/heads/main -f sha=abc",
+      "gh api -XPUT repos/o/r/git/refs/heads/main -f sha=abc",
+    ]) {
+      assert.equal(classifyShellCommand(command).permission, "deny", command);
+    }
+    assert.equal(classifyShellCommand("gh api -XGET repos/o/r/git/refs/heads/main -f x=1").permission, "allow");
+    assert.equal(classifyShellCommand("gh api -X POST -X GET repos/o/r/git/refs/heads/main -f x=1").permission, "allow");
+  });
+
+  it("blocks gh pr merge in assignments and substitutions, allows other gh in them", () => {
+    for (const command of [
+      "out=$(gh pr merge 12 --squash)",
+      'out="$(gh pr merge 12)"',
+      "export X=$(gh pr merge 12)",
+      "local x=`gh pr merge 12`",
+      'git commit -m"$(gh pr merge 12)"',
+    ]) {
+      assert.equal(classifyShellCommand(command).permission, "deny", command);
+    }
+    assert.equal(classifyShellCommand("out=$(gh pr view 12 --json state)").permission, "allow");
+    assert.equal(classifyShellCommand("git commit -m 'opis: $(gh pr merge 12)'").permission, "allow");
+  });
+
   it("explains the reason in the hook response", () => {
     const response = hookResponse("gh pr merge 12 --merge");
     assert.equal(response.permission, "deny");

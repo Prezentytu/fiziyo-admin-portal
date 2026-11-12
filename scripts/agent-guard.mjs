@@ -8,12 +8,29 @@ import path from "node:path";
 const PUSH_MAIN = /\bgit\b[\s\S]*\bpush\b[\s\S]*(?:\borigin\/)?(?:HEAD:)?(?:refs\/heads\/)?main\b/;
 const GH_MERGE = /\bgh\b[\s\S]*\bpr\b[\s\S]*\bmerge\b/;
 const API_MERGE = /\/pulls\/\d+\/merge\b|\bmergePullRequest\b|\benablePullRequestAutoMerge\b|\benqueuePullRequest\b|\brepos\/[^/\s]+\/[^/\s]+\/merges\b/;
-const API_WRITE = /(^|\s)((-X|--method)[\s=]*(POST|PUT|PATCH|DELETE)\b|(-f|-F|--field|--raw-field|--input)(\s|=))/i;
-const API_GET = /(^|\s)(-X|--method)[\s=]*GET\b/i;
-const API_INPUT = /(^|\s)--input(\s|=)/;
 const API_SUBSTITUTION = /\bgraphql\b[\s\S]*\bquery=[^\s]*(\$\(|`)/;
-// Zapis = metoda zapisu albo pola; jawny GET z -f/-F to odczyt (gh zamienia pola na parametry zapytania).
-const isApiWrite = (text) => /(^|\s)(-X|--method)[\s=]*(POST|PUT|PATCH|DELETE)\b/i.test(text) || API_INPUT.test(text) || (API_WRITE.test(text) && !API_GET.test(text));
+// Metoda ze słów polecenia (gh bierze ostatnie -X/--method), nie z tekstu argumentów.
+function apiMethod(text) {
+  let method;
+  const words = tokenize(text);
+  for (let i = 0; i < words.length; i += 1) {
+    const w = words[i];
+    if ((w === "-X" || w === "--method") && i + 1 < words.length) method = words[i + 1];
+    else if (w.startsWith("--method=")) method = w.slice(9);
+    else if (w.startsWith("-X") && w.length > 2) method = w.slice(2);
+  }
+  return method?.toUpperCase();
+}
+
+// Zapis = metoda zapisu, --input albo pola bez jawnego GET (gh zamienia pola GET na parametry zapytania).
+function isApiWrite(text) {
+  const words = tokenize(text);
+  const method = apiMethod(text);
+  if (method && method !== "GET") return true;
+  if (words.some((w) => w === "--input" || w.startsWith("--input="))) return true;
+  const fields = words.some((w) => /^(-[fF].*|--field(=.*)?|--raw-field(=.*)?)$/.test(w));
+  return fields && method !== "GET";
+}
 const API_MAIN_REF = /\bgit\/refs\/heads\/(main|master)\b/;
 // GraphQL z pliku albo stdin: strażnik nie widzi, czy to merge albo approve.
 const API_GRAPHQL_FILE = /\bgraphql\b[\s\S]*((^|\s)(-f|-F|--field|--raw-field)[\s=]*query=@|(^|\s)--input(\s|=))/;
