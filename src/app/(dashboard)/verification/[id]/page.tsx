@@ -12,6 +12,7 @@ import { VerificationWorkspaceSkeleton } from '@/features/verification/Verificat
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useSystemRole } from '@/hooks/useSystemRole';
 import { getExerciseReports } from '@/services/exerciseReportService';
+import { parseQueueOrdering, queueOrderingVariables } from '@/features/verification/utils/queueOrdering';
 import {
   buildVerificationDetailHref,
   buildVerificationListHref,
@@ -58,6 +59,7 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
     return normalized === 'reported' ? 'pending' : normalized;
   }, [searchParams]);
   const queueSearch = useMemo(() => searchParams.get('search') || null, [searchParams]);
+  const queueOrdering = useMemo(() => parseQueueOrdering(searchParams), [searchParams]);
   const listQueryString = useMemo(() => searchParams.toString(), [searchParams]);
   const listUrl = useMemo(() => {
     if (!listQueryString) {
@@ -72,6 +74,7 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
       page: Number(params.get('page') ?? '1'),
       pageSize: Number(params.get('pageSize') ?? '20'),
       view: params.get('view') === 'list' ? 'list' : 'grid',
+      ordering: parseQueueOrdering(params),
     });
   }, [listQueryString]);
   const buildDetailUrl = useCallback(
@@ -83,9 +86,10 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
             page: Number(searchParams.get('page') ?? '1'),
             pageSize: Number(searchParams.get('pageSize') ?? '20'),
             view: searchParams.get('view') === 'list' ? 'list' : 'grid',
+            ordering: queueOrdering,
           })
         : `/verification/${exerciseId}`,
-    [listQueryString, queueFilter, searchParams]
+    [listQueryString, queueFilter, searchParams, queueOrdering]
   );
 
   const { data: queueNavigatorData } = useQuery<GetVerificationQueueNavigatorResponse, GetVerificationQueueNavigatorVariables>(
@@ -95,6 +99,7 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
         currentExerciseId: id,
         filter: queueFilter,
         search: queueSearch,
+        ...queueOrderingVariables(queueOrdering),
       },
       skip: !canReviewExercises || !id,
       fetchPolicy: 'cache-and-network',
