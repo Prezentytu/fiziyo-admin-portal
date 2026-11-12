@@ -77,6 +77,46 @@ export const GET_AVAILABLE_EXERCISES_PAGE_QUERY = gql`
     $page: Int!
     $pageSize: Int!
     $region: ExerciseBodyRegion
+  ) {
+    availableExercisesPage(
+      organizationId: $organizationId
+      tab: $tab
+      search: $search
+      page: $page
+      pageSize: $pageSize
+      region: $region
+    ) {
+      items {
+        ...ExerciseFullFragment
+      }
+      totalCount
+      page
+      pageSize
+      totalPages
+      hasPreviousPage
+      hasNextPage
+      counts {
+        all
+        organization
+        fiziyo
+        needsChanges
+      }
+    }
+  }
+  ${EXERCISE_FULL_FRAGMENT}
+`;
+
+// Ta sama strona biblioteki zawężona filtrem puli demo (fizjo-app#388). Osobny dokument: argumentu
+// `availability` nie zna API sprzed #388, więc zwykła lista (wyżej) go nie niesie i działa na każdym backendzie.
+// Biblioteka sięga po ten dokument dopiero, gdy API potwierdzi pulę demo gabinetu i terapeuta wybierze filtr.
+export const GET_AVAILABLE_EXERCISES_DEMO_PAGE_QUERY = gql`
+  query GetAvailableExercisesDemoPage(
+    $organizationId: String!
+    $tab: ExerciseLibraryTab!
+    $search: String
+    $page: Int!
+    $pageSize: Int!
+    $region: ExerciseBodyRegion
     $availability: ExerciseAvailability
   ) {
     availableExercisesPage(
@@ -90,7 +130,6 @@ export const GET_AVAILABLE_EXERCISES_PAGE_QUERY = gql`
     ) {
       items {
         ...ExerciseFullFragment
-        availability
       }
       totalCount
       page
@@ -230,4 +269,8 @@ export const GET_EXERCISE_ENRICHMENT_QUERY = gql`
 `;
 
 /** Refresh both the picker library (set and assignment pickers) and the paged list after exercise writes. */
-export const EXERCISE_LIBRARY_REFETCH_QUERIES = [GET_AVAILABLE_EXERCISES_PICKER_QUERY, GET_AVAILABLE_EXERCISES_PAGE_QUERY];
+export const EXERCISE_LIBRARY_REFETCH_QUERIES = [
+  GET_AVAILABLE_EXERCISES_PICKER_QUERY,
+  GET_AVAILABLE_EXERCISES_PAGE_QUERY,
+  GET_AVAILABLE_EXERCISES_DEMO_PAGE_QUERY,
+];
