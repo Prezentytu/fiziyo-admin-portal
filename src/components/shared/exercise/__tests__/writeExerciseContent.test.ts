@@ -21,6 +21,17 @@ import {
   withTextItem,
 } from '../writeExerciseContent';
 import fixture from './fixtures/enrichmentV33.fx-0073.json';
+import {
+  classesOfV33Leaf,
+  editableRootOf,
+  GOLDEN_EDITABLE_PATHS,
+  GOLDEN_LEAF_PATHS,
+  leafPaths,
+  V33_EDITABLE_ABSENT_FROM_GOLDEN,
+  V33_PATHS_EVERY_EDITOR_COVERS,
+  V33_READ_ONLY_PATHS,
+  V33_SKIPPED_PATHS,
+} from './fixtures/v33GoldenPaths';
 
 type Doc = Record<string, unknown>;
 
@@ -577,8 +588,8 @@ describe('lista ścieżek edytowalnych (zapadka)', () => {
     'ai.keywords': ['zmienione'],
   };
 
-  it('każda ścieżka z listy ma przypadek w tym teście', () => {
-    expect(Object.keys(changedValue).sort()).toEqual([...V33_EDITABLE_PATHS].sort());
+  it('każda ścieżka edytowalna wynikająca ze złotego rekordu ma przypadek w tym teście', () => {
+    expect(Object.keys(changedValue).sort()).toEqual([...V33_PATHS_EVERY_EDITOR_COVERS].sort());
   });
 
   it.each(V33_EDITABLE_PATHS.map((path) => [path]))('%s: zmiana w szkicu trafia do zapisanego dokumentu', (path) => {
@@ -786,5 +797,79 @@ describe('ochrona przed nadpisaniem cudzej zmiany', () => {
     const current = { ...loaded, patient: { ...loaded.patient, why: 'Zmienione przez kogoś.' } } as ExerciseEnrichmentData;
 
     expect(rebaseV33Draft(loaded, draftOf() as ExerciseEnrichmentData, current)).toEqual(current);
+  });
+});
+
+describe('zapadka kontraktu: każdy liść złotego rekordu 3.3 jest sklasyfikowany', () => {
+  function setLeaf(document: Doc, path: string, change: (value: unknown) => unknown): void {
+    const keys = path.split('.');
+    let target: Record<string, unknown> = document;
+    for (const key of keys.slice(0, -1)) target = target[key] as Record<string, unknown>;
+    const last = keys[keys.length - 1];
+    target[last] = change(target[last]);
+  }
+
+  /** A different value of the same kind, so the change is the kind a screen or an import could make. */
+  function changed(value: unknown): unknown {
+    if (typeof value === 'string') return `${value} (zmiana)`;
+    if (typeof value === 'number') return value + 1;
+    if (typeof value === 'boolean') return !value;
+    return 'zmiana';
+  }
+
+  const classified = GOLDEN_LEAF_PATHS.map((path) => ({ path, classes: classesOfV33Leaf(path) }));
+  const leavesOf = (wanted: string) =>
+    classified.filter(({ classes }) => classes[0] === wanted).map(({ path }) => [path] as const);
+
+  it('złoty rekord jest rekordem 3.3 i ma liście', () => {
+    expect(loaded.schemaVersion).toBe('3.3');
+    expect(GOLDEN_LEAF_PATHS.length).toBeGreaterThan(100);
+  });
+
+  it('żaden liść nie jest poza klasyfikacją ani w dwóch klasach naraz', () => {
+    expect(classified.filter(({ classes }) => classes.length !== 1)).toEqual([]);
+  });
+
+  it('nowe pole kontraktu w rekordzie jest niesklasyfikowane, dopóki nikt go nie dopisze', () => {
+    const next = draftOf();
+    section(next, 'patient').nowe_pole_kontraktu = 'x';
+    next.nowa_sekcja = { pole: 1 };
+
+    expect(leafPaths(next).filter((path) => classesOfV33Leaf(path).length === 0)).toEqual([
+      'patient.nowe_pole_kontraktu',
+      'nowa_sekcja.pole',
+    ]);
+  });
+
+  it('listy „tylko do odczytu” i „pominięte” nie mają martwych wpisów, a każdy wpis ma powód', () => {
+    for (const rule of [...V33_READ_ONLY_PATHS, ...V33_SKIPPED_PATHS]) {
+      expect(GOLDEN_LEAF_PATHS.some((leaf) => leaf === rule.path || leaf.startsWith(`${rule.path}.`)), rule.path).toBe(true);
+      expect(rule.reason.trim().length, rule.path).toBeGreaterThan(10);
+    }
+  });
+
+  it('lista ścieżek edytowalnych to dokładnie: pola ze złotego rekordu plus jawnie nazwane nieobecne w nim', () => {
+    const absent = V33_EDITABLE_ABSENT_FROM_GOLDEN.map((rule) => rule.path);
+
+    expect(absent.filter((path) => GOLDEN_EDITABLE_PATHS.includes(path))).toEqual([]);
+    expect([...GOLDEN_EDITABLE_PATHS, ...absent].sort()).toEqual([...V33_EDITABLE_PATHS].sort());
+    for (const rule of V33_EDITABLE_ABSENT_FROM_GOLDEN) expect(rule.reason.trim().length).toBeGreaterThan(10);
+  });
+
+  it.each(leavesOf('editable'))('edytowalny %s: zmiana liścia trafia do zapisu pod swoją ścieżką', (path) => {
+    const draft = draftOf();
+    setLeaf(draft, path, changed);
+
+    const edits = Object.keys(collectV33Edits(loaded, draft as ExerciseEnrichmentData));
+
+    expect(edits).toContain(editableRootOf(path));
+  });
+
+  it.each(leavesOf('read-only'))('tylko do odczytu %s: zmiana w szkicu nie trafia do zapisu', (path) => {
+    const draft = draftOf();
+    setLeaf(draft, path, changed);
+
+    expect(collectV33Edits(loaded, draft as ExerciseEnrichmentData)).toEqual({});
+    expect(save(draft)).toEqual(loaded);
   });
 });
