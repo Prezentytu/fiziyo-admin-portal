@@ -1,0 +1,63 @@
+# Drzwi jednokierunkowe: zmiana pliku pasującego do wzorca = merge tylko przez człowieka.
+# Składnia jak .gitignore, jeden wzorzec na linię. Polityka:
+# https://github.com/Prezentytu/baza-wiedzy/blob/main/praca-z-agentami/merge-agenta.md
+
+# Ten plik, instrukcje agentów i hooki strażnika
+/.github/drzwi-jednokierunkowe
+/AGENTS.md
+/CLAUDE.md
+/.cursor/hooks.json
+/.claude/settings*.json
+/.codex/**
+/.husky/**
+/scripts/agent-guard.mjs
+/scripts/agent-guard.test.mjs
+
+# Workflow, wdrożenia, release i bramka CI
+/.github/workflows/**
+/.github/dependabot.yml
+/scripts/ci-gate.mjs
+/scripts/post-deploy-report.mjs
+/scripts/promote-admin.mjs
+/scripts/pin-devportal-domain.mjs
+/vercel.json
+/next.config.ts
+/src/lib/release/**
+/.env.example
+
+# Auth, wymiana tokenu, middleware (Next 16: src/proxy.ts), Clerk
+/src/proxy.ts
+/src/app/(auth)/**
+/src/app/api/**
+/src/components/auth/**
+/src/features/auth/**
+/src/lib/auth/**
+/src/lib/clerkErrors.ts
+/src/lib/tokenCache.ts
+/src/services/tokenExchangeService.ts
+/src/types/tokenExchange.types.ts
+/src/graphql/providers/**
+/src/graphql/links/**
+/src/graphql/config/**
+
+# Uprawnienia ról i izolacja tenanta (organizacja = granica danych)
+/src/hooks/useRoleAccess.ts
+/src/hooks/useSystemRole.ts
+/src/hooks/useOrganizationVerificationAccess.ts
+/src/contexts/OrganizationContext.tsx
+/src/lib/organization/**
+/src/features/exercises/utils/tagPermissions.ts
+
+# Publiczny kontrakt GraphQL (wspólny z aplikacją mobilną): zapisy, schemat, zasady zgodności
+/BACKWARD_COMPATIBILITY.md
+/src/graphql/mutations/**
+*.graphql
+schema.*
+
+# Pieniądze: billing, finanse, Stripe
+/src/components/billing/**
+/src/components/finances/**
+/src/app/(dashboard)/finances/**
+
+# Nowy klocek (zależność)
+/package.json
