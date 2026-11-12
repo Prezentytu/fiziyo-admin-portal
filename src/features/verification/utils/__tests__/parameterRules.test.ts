@@ -226,9 +226,10 @@ describe('deriveExecutionMode / toParameterValues', () => {
     expect(reviewValues({ sets: 3, reps: 1, executionTime: 3, restSets: 60, side: 'none' }).repTime).toBe(3);
   });
 
-  it('strona „Na każdą stronę” podwaja czas', () => {
+  it('„Na każdą stronę” i „Naprzemiennie” podwajają czas (dawka na stronę)', () => {
     expect(sideFactor('both')).toBe(2);
-    expect(sideFactor('alternating')).toBe(1);
+    expect(sideFactor('alternating')).toBe(2);
+    expect(sideFactor('none')).toBe(1);
   });
 });
 
@@ -239,17 +240,9 @@ describe('buildPatientParameterLine', () => {
     );
   });
 
-  it('przy dawce na stronę (v3.3) mówi „na każdą stronę” także dla „naprzemiennie”', () => {
-    expect(buildPatientParameterLine(typicalReps, 'reps', 'alternating')).toBe('3 serie × 12 powtórzeń · przerwa 60 s');
-    expect(buildPatientParameterLine(typicalReps, 'reps', 'alternating', true)).toBe(
-      '3 serie × 12 powtórzeń na każdą stronę · przerwa 60 s'
-    );
-  });
-
-  it('czas ćwiczenia „naprzemiennie” liczy powtórzenia raz, także gdy rekord podaje je na stronę', () => {
-    // Known gap (SPEC-037): with `side.per_side_dose` the patient does twice as many repetitions.
-    expect(computeSessionSeconds(typicalReps, 'reps', 'alternating')).toBe(
-      computeSessionSeconds(typicalReps, 'reps', 'none')
+  it('„naprzemiennie” mówi „na każdą stronę” w każdym rekordzie (decyzja 12.11)', () => {
+    expect(buildPatientParameterLine(typicalReps, 'reps', 'alternating')).toBe(
+      '3 serie × 12 powtórzeń na każdą stronę, naprzemiennie · przerwa 60 s'
     );
   });
 });

@@ -888,8 +888,6 @@ export function VerificationWorkspace({
     return { key, title: STAGE_TITLES[key], sub: subs[key], state, hasIssues };
   });
 
-  const perSideDose = contractFacts !== null && enrichment.side?.per_side_dose === true;
-
   const decisionRows: DecisionRow[] = [
     {
       key: 'material',
@@ -901,7 +899,7 @@ export function VerificationWorkspace({
     {
       key: 'parameters',
       title: STAGE_TITLES.parameters,
-      summary: `${buildPatientParameterLine(parameterValues, mode, core.side, perSideDose)} · ${formatSessionDuration(evaluation.sessionSeconds, evaluation.sessionIsEstimate)}`,
+      summary: `${buildPatientParameterLine(parameterValues, mode, core.side)} · ${formatSessionDuration(evaluation.sessionSeconds, evaluation.sessionIsEstimate)}`,
       changes: changes.parameters,
       issues: stages.issues.parameters,
     },
@@ -1152,7 +1150,6 @@ export function VerificationWorkspace({
               v33={
                 contractFacts
                   ? {
-                      perSideDose,
                       sideDiffersFromDocument: sideColumnDiffersFromMode(core.side, enrichment.side?.mode ?? null),
                       facts: contractFacts.parameters,
                     }

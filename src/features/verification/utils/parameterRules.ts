@@ -135,8 +135,10 @@ function positive(value: number | null | undefined): number | null {
   return value != null && Number.isFinite(value) && value > 0 ? value : null;
 }
 
+/** Ile razy zalecona dawka przypada na serię: 2 dla „na każdą stronę” i „naprzemiennie” (dawka na stronę). */
 export function sideFactor(side: string): number {
-  return side.toLowerCase() === 'both' ? 2 : 1;
+  const normalized = side.toLowerCase();
+  return normalized === 'both' || normalized === 'alternating' ? 2 : 1;
 }
 
 export function deriveExecutionMode(
@@ -468,14 +470,13 @@ export function describeFieldNote(field: ParameterFieldState): string {
 export function buildPatientParameterLine(
   values: ParameterValues,
   mode: ExecutionMode,
-  side: string,
-  /** Contract v3.3 `side.per_side_dose`: the numbers are per side also outside „Na każdą stronę”. */
-  perSideDose = false
+  side: string
 ): string {
   const sets = positive(values.sets);
   const volume =
     mode === 'reps' ? `${positive(values.reps) ?? '–'} powtórzeń` : `${positive(values.hold) ?? '–'} s utrzymania`;
-  const sideText = sideFactor(side) === 2 || perSideDose ? ' na każdą stronę' : '';
+  const sideText =
+    side.toLowerCase() === 'alternating' ? ' na każdą stronę, naprzemiennie' : sideFactor(side) === 2 ? ' na każdą stronę' : '';
   const rest = positive(values.rest);
   const restText = rest ? ` · przerwa ${rest} s` : '';
   return `${sets ?? '–'} serie × ${volume}${sideText}${restText}`;

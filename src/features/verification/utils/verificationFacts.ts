@@ -146,7 +146,13 @@ export function buildVerificationFactsV33(exercise: ExerciseContentSource): Veri
       fact(
         'side-per-side-dose',
         'Parametry a strona',
-        side ? (content.side.perSideDose ? 'Liczone na każdą stronę osobno' : 'Liczone łącznie') : null
+        // Decyzja 12.11 (KONTRAKT-v3.3 §6.7): przy stronach liczba jest zawsze na stronę; `per_side_dose: false`
+        // w treści to błąd danych, nie inny sposób liczenia.
+        side && /^(each_side|both|alternating)$/i.test(sideMode ?? '')
+          ? content.side.perSideDose
+            ? 'Liczone na każdą stronę osobno'
+            : 'Treść mówi „łącznie”, a liczymy na każdą stronę: popraw per_side_dose w treści ćwiczenia'
+          : null
       ),
       fact('side-start', 'Strona startowa', sideName(content.side.start)),
       fact(

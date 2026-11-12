@@ -25,7 +25,7 @@ Kontrakt i macierz są poza repo: `fiziyo-research/feature-requests/FR-007-schem
 - **Kompletność 3.3** (`ENRICHMENT_SECTIONS_V33`): podsumowanie, kroki, wskazówki, błędy, odczucia, dlaczego i kiedy, łatwiej i trudniej, oddech, „Przerwij, gdy”, reguła bólu, przeciwwskazania, punkty kontrolne, wskazania, sprzęt, słowa kluczowe. `therapist.note` nie wchodzi do licznika (kontrakt: domyślnie puste).
 - **Widoczność.** Klasyfikację, klucz i powiązania widzi każdy weryfikator; źródła, zakres użycia mediów, dostępność, status i wynik audytu tylko zespół FiziYo (`useSystemRole().canReviewExercises`, jak notatki robocze).
 - **Kody ze słownika pokazujemy jak zapisane** (wskazania, flagi, klasyfikacja, reguła bólu): panel nie ma jeszcze ich nazw.
-- **Parametry.** Lista parametrów i zakresy zostają osobnym zadaniem. Gdy `side.per_side_dose` jest prawdą, etap mówi „Serie i powtórzenia podane na jedną stronę”, a podsumowanie decyzji „na każdą stronę”. Gdy kolumna strony rozjedzie się z `side.mode`, etap pokazuje ostrzeżenie.
+- **Parametry.** Lista parametrów i zakresy zostają osobnym zadaniem. Przy „na każdą stronę” i „naprzemiennie” etap mówi „Serie i powtórzenia podane na jedną stronę”, a podsumowanie decyzji „na każdą stronę” (przy naprzemiennym: „na każdą stronę, naprzemiennie”), w każdym rekordzie (decyzja 12.11, KONTRAKT-v3.3 §6.7). `per_side_dose: false` w treści pokazuje się jako błąd danych. Gdy kolumna strony rozjedzie się z `side.mode`, etap pokazuje ostrzeżenie.
 
 ## Założenia (kontrakt nie rozstrzyga)
 
@@ -39,7 +39,7 @@ Kontrakt i macierz są poza repo: `fiziyo-research/feature-requests/FR-007-schem
 - Edycja w weryfikacji: `patient.easier`, `harder`, `breathing`, `safety.pain_rule`, `flags`, `therapist.checkpoints`, `therapist.note`, `classification.*`, `equipment_items`, `side.*`, `prescription.*`, `media[]`, `relations`, `lifecycle`, `provenance`, aliasy, trudność, typ.
 - `media[]` nie zmienia się, gdy weryfikator wymienia zdjęcie albo film (fakt zapisany dwa razy, kontrakt §4 pkt 1).
 - Zmiana strony w etapie Parametry pisze tylko kolumnę; `side.mode` zostaje.
-- Czas ćwiczenia „naprzemiennie” z dawką na stronę jest liczony jak dawka łączna (o połowę za krótko); wzór jest wspólny z kartą ćwiczenia i odtwarzaczem.
+- Czas ćwiczenia „naprzemiennie” poprawia osobny PR od `main` (`fix/naprzemiennie-na-strone`, wzór wspólny z kartą ćwiczenia i odtwarzaczem); do jego scalenia ta gałąź liczy go jak dawkę łączną.
 - Uwaga „zwykle 2–6 s” przy czasie powtórzenia 7 s zatrzymuje wszystkie rekordy p001 do kliknięcia „OK”; zakresy nie czytają jeszcze `prescription.params`.
 - Karta ćwiczenia (`exercises/[id]`) liczy braki treści po staremu.
 

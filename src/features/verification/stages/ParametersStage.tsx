@@ -48,7 +48,7 @@ interface ParametersStageProps {
   /** Saved load the kilogram field cannot show (band, RPE, text). */
   savedLoadLabel?: string | null;
   /** Set for a record in contract v3.3: side facts of the document and the remaining parameter facts, read-only. */
-  v33?: { perSideDose: boolean; sideDiffersFromDocument: boolean; facts: VerificationFact[] };
+  v33?: { sideDiffersFromDocument: boolean; facts: VerificationFact[] };
 }
 
 const FIELD_INFO: Partial<Record<ParameterKey, string>> = {
@@ -436,7 +436,7 @@ export function ParametersStage({
               {sideFactor(core.side) === 2 && (
                 <span className="text-[13px] text-label-secondary">Czas liczony podwójnie</span>
               )}
-              {v33?.perSideDose && (
+              {sideFactor(core.side) === 2 && (
                 <span
                   className="text-[13px] font-semibold text-foreground"
                   data-testid="verification-param-per-side-note"
