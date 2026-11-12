@@ -8,7 +8,11 @@ import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.
 import { V33_EDITABLE_PATHS } from '@/components/shared/exercise/writeExerciseContent';
 
 import { ExerciseEditor } from '../ExerciseEditor';
-import { describeCollisionValue, SAVE_COLLISION_FIELD_LABELS } from '../ExerciseSaveConflictNotice';
+import {
+  describeCollisionValue,
+  ExerciseSaveConflictNotice,
+  SAVE_COLLISION_FIELD_LABELS,
+} from '../ExerciseSaveConflictNotice';
 import { useExerciseEditorForm, type ExerciseEditorSource } from '../useExerciseEditorForm';
 
 const { updateCore } = vi.hoisted(() => ({ updateCore: vi.fn() }));
@@ -210,6 +214,170 @@ describe('ochrona przed nadpisaniem cudzej zmiany (rekord 3.3)', () => {
         await editor.result.current.save();
       });
       expect(server.stored().patient).toMatchObject({ why: 'Moje po co.', harder: 'Cudze trudniej.' });
+    });
+  });
+
+  describe('listy zapisywane parami to jedna kolizja z jednym wyborem (odbiór 13.11, F10)', () => {
+    const PAIRS = [
+      {
+        name: 'kroki i zdjęcia kroków',
+        list: 'patient.steps',
+        links: 'patient.step_images',
+        mine: { list: ['Mój krok 1.', 'Mój krok 2.', 'Mój krok 3.'], links: [{ step: 1, url: 'https://example.test/moje.jpg' }] },
+        theirs: { list: ['Cudzy krok 1.', 'Cudzy krok 2.'], links: [{ step: 2, url: 'https://example.test/cudze.jpg' }] },
+      },
+      {
+        name: 'wskazówki i fazy wskazówek',
+        list: 'patient.cues',
+        links: 'patient.cue_phases',
+        mine: { list: ['Moja wskazówka 1.', 'Moja wskazówka 2.'], links: [{ cue: 1, phase: 'rest' }] },
+        theirs: { list: ['Cudza wskazówka.'], links: [{ cue: 0, phase: 'preparation' }] },
+      },
+    ] as const;
+    type Pair = (typeof PAIRS)[number];
+
+    const leaf = (path: string) => path.split('.')[1];
+    const pairIn = (value: ExerciseEnrichmentData | undefined, pair: Pair) => {
+      const patient = (value?.patient ?? {}) as Record<string, unknown>;
+      return { list: patient[leaf(pair.list)], links: patient[leaf(pair.links)] };
+    };
+
+    /** Both people change both lists of the pair; I also change a field nobody else touched. */
+    async function collidePair(pair: Pair) {
+      const server = fakeServer();
+      const editor = openEditor(server);
+      act(() => editor.result.current.setEnrichmentPath(pair.list, [...pair.mine.list]));
+      act(() => editor.result.current.setEnrichmentPath(pair.links, [...pair.mine.links]));
+      act(() => editor.result.current.setEnrichmentPath('patient.easier', 'Moje łatwiej.'));
+      await server.write({
+        ...document,
+        patient: { ...document.patient, [leaf(pair.list)]: pair.theirs.list, [leaf(pair.links)]: pair.theirs.links },
+      } as ExerciseEnrichmentData);
+      server.writes.length = 0;
+      await act(async () => {
+        await editor.result.current.save();
+      });
+      return { server, editor };
+    }
+
+    it.each(PAIRS)('$name: sprzeczny wybór w parze niczego nie wczytuje, moja treść zostaje na ekranie', async (pair) => {
+      const { server, editor } = await collidePair(pair);
+
+      act(() => editor.result.current.loadCurrentVersion({ [pair.list]: 'mine', [pair.links]: 'theirs' }));
+      act(() => editor.result.current.loadCurrentVersion({ [pair.list]: 'theirs', [pair.links]: 'mine' }));
+
+      expect(editor.result.current.hasSaveConflict).toBe(true);
+      expect(pairIn(editor.result.current.enrichment, pair)).toEqual(pair.mine);
+      await act(async () => {
+        await editor.result.current.save();
+      });
+      expect(server.writes).toHaveLength(0);
+      expect(pairIn(server.stored(), pair)).toEqual(pair.theirs);
+    });
+
+    it.each(PAIRS)('$name: wybór mojej wersji zapisuje obie moje listy', async (pair) => {
+      const { server, editor } = await collidePair(pair);
+
+      act(() => editor.result.current.loadCurrentVersion({ [pair.list]: 'mine', [pair.links]: 'mine' }));
+      await act(async () => {
+        await editor.result.current.save();
+      });
+
+      expect(pairIn(server.stored(), pair)).toEqual(pair.mine);
+      expect(server.stored().patient?.easier).toBe('Moje łatwiej.');
+    });
+
+    it.each(PAIRS)('$name: wybór wersji zapisanej zostawia obie cudze listy i resztę moich zmian', async (pair) => {
+      const { server, editor } = await collidePair(pair);
+
+      act(() => editor.result.current.loadCurrentVersion({ [pair.list]: 'theirs', [pair.links]: 'theirs' }));
+      expect(pairIn(editor.result.current.enrichment, pair)).toEqual(pair.theirs);
+      await act(async () => {
+        await editor.result.current.save();
+      });
+
+      expect(pairIn(server.stored(), pair)).toEqual(pair.theirs);
+      expect(server.stored().patient?.easier).toBe('Moje łatwiej.');
+    });
+
+    it('kolizja w jednej liście pary pokazuje obie listy w obu wersjach, a „moja” nie miesza moich kroków z cudzymi zdjęciami', async () => {
+      const pair = PAIRS[0];
+      const server = fakeServer();
+      const editor = openEditor(server);
+      act(() => editor.result.current.setEnrichmentPath(pair.list, [...pair.mine.list]));
+      await server.write({
+        ...document,
+        patient: { ...document.patient, steps: [...pair.theirs.list], step_images: [...pair.theirs.links] },
+      });
+      server.writes.length = 0;
+      await act(async () => {
+        await editor.result.current.save();
+      });
+
+      expect(editor.result.current.saveCollisions).toEqual([
+        { path: pair.list, mine: pair.mine.list, theirs: pair.theirs.list },
+        { path: pair.links, mine: undefined, theirs: pair.theirs.links },
+      ]);
+      act(() => editor.result.current.loadCurrentVersion({ [pair.list]: 'mine', [pair.links]: 'mine' }));
+      await act(async () => {
+        await editor.result.current.save();
+      });
+      expect(server.stored().patient?.steps).toEqual(pair.mine.list);
+      expect(server.stored().patient?.step_images ?? []).toEqual([]);
+    });
+
+    it('ja zmieniam kroki, tamta osoba zdjęcia kroków: to też kolizja pary, nic się nie skleja bez wyboru', async () => {
+      const pair = PAIRS[0];
+      const server = fakeServer();
+      const editor = openEditor(server);
+      act(() => editor.result.current.setEnrichmentPath(pair.list, ['Jedyny krok.']));
+      await server.write({ ...document, patient: { ...document.patient, step_images: [...pair.theirs.links] } });
+      server.writes.length = 0;
+      await act(async () => {
+        await editor.result.current.save();
+      });
+
+      expect(editor.result.current.saveCollisions.map(({ path }) => path)).toEqual([pair.list, pair.links]);
+      act(() => editor.result.current.loadCurrentVersion());
+      expect(editor.result.current.hasSaveConflict).toBe(true);
+      expect(editor.result.current.enrichment.patient?.steps).toEqual(['Jedyny krok.']);
+
+      act(() => editor.result.current.loadCurrentVersion({ [pair.list]: 'theirs', [pair.links]: 'theirs' }));
+      expect(editor.result.current.enrichment.patient?.steps).toEqual(document.patient?.steps);
+      expect(editor.result.current.enrichment.patient?.step_images).toEqual(pair.theirs.links);
+    });
+
+    it('komunikat daje dla pary jeden wybór, pokazuje obie wersje obu list i oddaje ten sam wybór dla obu', () => {
+      const pair = PAIRS[0];
+      const onLoadCurrent = vi.fn();
+      render(
+        <ExerciseSaveConflictNotice
+          collisions={[
+            { path: 'patient.why', mine: 'Moje po co.', theirs: 'Cudze po co.' },
+            { path: pair.list, mine: pair.mine.list, theirs: pair.theirs.list },
+            { path: pair.links, mine: pair.mine.links, theirs: pair.theirs.links },
+          ]}
+          onLoadCurrent={onLoadCurrent}
+        />
+      );
+
+      expect(screen.getAllByTestId(/^exercise-save-conflict-keep-mine-/)).toHaveLength(2);
+      expect(screen.queryByTestId('exercise-save-conflict-keep-mine-patient.step_images-btn')).not.toBeInTheDocument();
+      const card = screen.getByTestId('exercise-save-conflict-collision-patient.steps');
+      for (const text of ['Mój krok 3.', 'Cudzy krok 2.', 'https://example.test/moje.jpg', 'https://example.test/cudze.jpg']) {
+        expect(card).toHaveTextContent(text);
+      }
+
+      fireEvent.click(screen.getByTestId('exercise-save-conflict-keep-theirs-patient.why-btn'));
+      expect(screen.getByTestId('exercise-save-conflict-load-btn')).toBeDisabled();
+      fireEvent.click(screen.getByTestId('exercise-save-conflict-keep-mine-patient.steps-btn'));
+      fireEvent.click(screen.getByTestId('exercise-save-conflict-load-btn'));
+
+      expect(onLoadCurrent).toHaveBeenCalledWith({
+        'patient.why': 'theirs',
+        'patient.steps': 'mine',
+        'patient.step_images': 'mine',
+      });
     });
   });
 
