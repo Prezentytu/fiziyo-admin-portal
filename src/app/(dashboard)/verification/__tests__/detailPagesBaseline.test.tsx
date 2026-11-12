@@ -23,6 +23,7 @@ const { useQuery } = vi.hoisted(() => ({ useQuery: vi.fn() }));
 vi.mock('@apollo/client/react', () => ({
   useQuery,
   useMutation: () => [vi.fn(), { loading: false }],
+  useApolloClient: () => ({ query: vi.fn() }),
 }));
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), refresh: vi.fn(), prefetch: vi.fn() }),

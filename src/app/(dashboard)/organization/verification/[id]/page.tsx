@@ -1,7 +1,7 @@
 'use client';
 
 import { use, useCallback, useMemo } from 'react';
-import { useMutation, useQuery } from '@apollo/client/react';
+import { useApolloClient, useMutation, useQuery } from '@apollo/client/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Archive, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
@@ -47,6 +47,7 @@ interface OrganizationVerificationDetailPageProps {
 export default function OrganizationVerificationDetailPage({ params }: Readonly<OrganizationVerificationDetailPageProps>) {
   const { id } = use(params);
   const router = useRouter();
+  const apolloClient = useApolloClient();
   const searchParams = useSearchParams();
   const { currentOrganization } = useOrganization();
   const { canManageOrganization, isLoading: roleLoading } = useRoleAccess();
@@ -129,13 +130,20 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
     return result.data?.exerciseByIdForOrgVerification?.images ?? [];
   }, [refetch]);
 
-  /** Stored document past the cache: the workspace compares it with the loaded one before a 3.3 save. */
+  /**
+   * Stored document past the cache: the workspace compares it with the loaded one before a 3.3 save.
+   * A one-off read, not `refetch`: a failed read must fail the save only and leave this page's query alone.
+   */
   const fetchCurrentEnrichment = useCallback(async () => {
-    const result = await refetch();
+    const result = await apolloClient.query<{ exerciseByIdForOrgVerification: AdminExercise | null }>({
+      query: GET_EXERCISE_BY_ID_FOR_ORG_VERIFICATION_QUERY,
+      variables: { organizationId: organizationId ?? '', id },
+      fetchPolicy: 'network-only',
+    });
     const current = result.data?.exerciseByIdForOrgVerification;
     if (!current) throw new Error('Nie udało się pobrać aktualnej wersji ćwiczenia.');
     return current.enrichmentData ?? null;
-  }, [refetch]);
+  }, [apolloClient, id, organizationId]);
 
   const decision = useMemo<OrganizationDecision>(
     () => ({

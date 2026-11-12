@@ -1,7 +1,7 @@
 'use client';
 
 import { use, useCallback, useMemo } from 'react';
-import { useMutation, useQuery } from '@apollo/client/react';
+import { useApolloClient, useMutation, useQuery } from '@apollo/client/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Archive, ShieldCheck } from 'lucide-react';
 import {
@@ -50,6 +50,7 @@ function parseFilter(value: string | null): CrossOrgFilter {
 export default function CrossOrgVerificationDetailPage({ params }: Readonly<CrossOrgVerificationDetailPageProps>) {
   const { id } = use(params);
   const router = useRouter();
+  const apolloClient = useApolloClient();
   const searchParams = useSearchParams();
   const { isSiteSuperAdmin, isLoading: roleLoading } = useSystemRole();
 
@@ -112,13 +113,20 @@ export default function CrossOrgVerificationDetailPage({ params }: Readonly<Cros
     return result.data?.exerciseByIdForCrossOrgVerification?.images ?? [];
   }, [refetch]);
 
-  /** Stored document past the cache: the workspace compares it with the loaded one before a 3.3 save. */
+  /**
+   * Stored document past the cache: the workspace compares it with the loaded one before a 3.3 save.
+   * A one-off read, not `refetch`: a failed read must fail the save only and leave this page's query alone.
+   */
   const fetchCurrentEnrichment = useCallback(async () => {
-    const result = await refetch();
+    const result = await apolloClient.query<{ exerciseByIdForCrossOrgVerification: AdminExercise | null }>({
+      query: GET_EXERCISE_BY_ID_FOR_CROSS_ORG_VERIFICATION_QUERY,
+      variables: { exerciseId: id },
+      fetchPolicy: 'network-only',
+    });
     const current = result.data?.exerciseByIdForCrossOrgVerification;
     if (!current) throw new Error('Nie udało się pobrać aktualnej wersji ćwiczenia.');
     return current.enrichmentData ?? null;
-  }, [refetch]);
+  }, [apolloClient, id]);
 
   const decision = useMemo<OrganizationDecision>(
     () => ({
