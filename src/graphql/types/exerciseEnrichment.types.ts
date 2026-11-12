@@ -115,6 +115,13 @@ export interface EnrichmentContraindicationV33 {
   text?: string;
 }
 
+/** Ostrożność dla grupy szczególnej: jedno zdanie dla pacjenta, pokazywane osobnym blokiem na końcu karty. */
+export interface EnrichmentPrecautionV33 {
+  /** Kod grupy z listy zamkniętej kontraktu §6.1 (np. `pregnancy_postpartum`, `other`); słownik: `V33_PRECAUTION_GROUPS`. */
+  group?: string;
+  text?: string;
+}
+
 export interface EnrichmentSafetyFlagV33 {
   code?: string;
 }
@@ -131,6 +138,8 @@ export interface EnrichmentSafetyV33 {
   contraindications?: EnrichmentContraindicationV33[];
   /** v3.3 */
   flags?: EnrichmentSafetyFlagV33[];
+  /** v3.3, opcjonalne: ostrożności dla grup szczególnych. Kolejność ma znaczenie. */
+  precautions?: EnrichmentPrecautionV33[];
 }
 
 export interface EnrichmentBreathingV33 {

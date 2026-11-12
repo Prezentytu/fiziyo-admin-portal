@@ -3,6 +3,10 @@ import { describe, expect, it } from 'vitest';
 import { EMPTY_EXERCISE_PARAMS, getExerciseDefaultParams } from './exerciseDefaults';
 
 describe('getExerciseDefaultParams', () => {
+  it('nie podstawia notatki z katalogu jako uwagi fizjoterapeuty (S-01 R2.2)', () => {
+    expect(getExerciseDefaultParams({ notes: 'Ogólna notatka z katalogu' }).notes).toBe('');
+  });
+
   it('uzywa wartosci defaultX gdy sa dostepne', () => {
     const defaults = getExerciseDefaultParams({
       defaultSets: 5,

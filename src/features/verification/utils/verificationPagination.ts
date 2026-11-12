@@ -1,7 +1,11 @@
+import { appendQueueOrderingParams, type VerificationQueueOrdering } from './queueOrdering';
+
 export type VerificationFilter = 'pending' | 'changes' | 'published' | 'archived' | 'reported';
 export type VerificationViewMode = 'grid' | 'list';
 
 export interface VerificationListState {
+  /** Sortowanie i zakres dat (T-0024); brak = domyślna kolejka. */
+  ordering?: VerificationQueueOrdering;
   filter: VerificationFilter;
   search: string;
   page: number;
@@ -44,7 +48,7 @@ export function buildVerificationSearchParams(state: VerificationListState): URL
   params.set('page', String(Math.max(state.page, 1)));
   params.set('pageSize', String(clampVerificationPageSize(state.pageSize)));
   params.set('view', state.view);
-  return params;
+  return appendQueueOrderingParams(params, state.ordering);
 }
 
 export function buildVerificationListHref(state: VerificationListState): string {

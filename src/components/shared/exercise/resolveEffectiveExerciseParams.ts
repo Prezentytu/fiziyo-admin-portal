@@ -7,6 +7,7 @@ import { applyEnrichmentOverride, hasEnrichmentOverrideContent } from './enrichm
 import {
   mergeOverrideLayers,
   parseMappingOverridesJson,
+  resolveMappingClearedKeys,
 } from './mappingOverrides';
 import { readExerciseTemplateParams } from './exerciseParamDefaults';
 
@@ -102,6 +103,11 @@ export interface EffectiveExerciseParams {
   customName?: string;
   customDescription?: string;
   patientDescription?: string;
+  /**
+   * Sama część nadpisana `patientDescription` (przypisanie, pozycja zestawu albo `customDescription`), bez kolumny
+   * ćwiczenia. Czytniki instrukcji (`resolvePatientInstruction`) potrzebują jej, bo rekord 3.3 pomija kolumnę.
+   */
+  patientDescriptionOverride?: string;
   clinicalDescription?: string;
   audioCue?: string;
   rangeOfMotion?: string;
@@ -190,8 +196,12 @@ export function resolveEffectiveExerciseParams(
   const exercise = mapping.exercise;
   const mappingOverrides = parseMappingOverridesJson(mapping.overridesJson);
   const layered = mergeOverrideLayers(mappingOverrides, override);
-  const overriddenKeys = Object.keys(layered ?? {}).filter((key) => {
+  const clearedKeys = resolveMappingClearedKeys(mappingOverrides, override);
+  const unlessCleared = <T>(key: Parameters<typeof clearedKeys.has>[0], value: T): T | undefined =>
+    clearedKeys.has(key) ? undefined : value;
+  const overriddenKeys = [...Object.keys(layered ?? {}), ...clearedKeys].filter((key) => {
     if (key === 'exerciseMappingId') return false;
+    if (clearedKeys.has(key as Parameters<typeof clearedKeys.has>[0])) return true;
     const value = layered?.[key as keyof ExerciseOverrideFields];
     if (value === undefined) return false;
     if (key === 'customImages' && Array.isArray(value) && value.length === 0) return false;
@@ -232,23 +242,29 @@ export function resolveEffectiveExerciseParams(
 
   const customName = pickDefined(layered?.customName, mapping.customName);
   const customDescription = pickDefined(layered?.customDescription, mapping.customDescription);
-  const notes = pickDefined(layered?.notes, mapping.notes, exercise?.notes) ?? '';
-  const rangeOfMotion = pickDefined(layered?.rangeOfMotion, exercise?.rangeOfMotion);
+  // Uwaga fizjoterapeuty tylko z pozycji i przypisania; notatka z katalogu nie jest uwagą (S-01 R2.3).
+  const notes = pickDefined(layered?.notes, mapping.notes) ?? '';
+  const rangeOfMotion = unlessCleared('rangeOfMotion', pickDefined(layered?.rangeOfMotion, exercise?.rangeOfMotion));
   const resistance = pickDefined(layered?.resistance, exercise?.resistance);
   const equipment = pickDefined(layered?.equipment, exercise?.equipment);
   const side = resolveSide(layered, exercise);
-  const difficultyLevel = pickDefined(layered?.difficultyLevel, exercise?.difficultyLevel);
-  const patientDescription = pickDefined(
-    layered?.patientDescription,
-    customDescription,
-    exercise?.patientDescription,
-    exercise?.description
+  const difficultyLevel = unlessCleared(
+    'difficultyLevel',
+    pickDefined(layered?.difficultyLevel, exercise?.difficultyLevel)
   );
-  const clinicalDescription = pickDefined(
-    layered?.clinicalDescription,
-    exercise?.clinicalDescription
+  const patientDescriptionOverride = unlessCleared(
+    'patientDescription',
+    pickDefined(layered?.patientDescription, customDescription)
   );
-  const audioCue = pickDefined(layered?.audioCue, exercise?.audioCue);
+  const patientDescription = unlessCleared(
+    'patientDescription',
+    pickDefined(patientDescriptionOverride, exercise?.patientDescription, exercise?.description)
+  );
+  const clinicalDescription = unlessCleared(
+    'clinicalDescription',
+    pickDefined(layered?.clinicalDescription, exercise?.clinicalDescription)
+  );
+  const audioCue = unlessCleared('audioCue', pickDefined(layered?.audioCue, exercise?.audioCue));
   const displayName = (customName?.trim() || exercise?.name?.trim() || 'Ćwiczenie') as string;
   const isTimeBased = normalizeExerciseType(exercise?.type) === 'time';
 
@@ -269,6 +285,7 @@ export function resolveEffectiveExerciseParams(
     customName,
     customDescription,
     patientDescription,
+    patientDescriptionOverride,
     clinicalDescription,
     audioCue,
     rangeOfMotion,

@@ -13,6 +13,15 @@ import { shouldRehydrateExerciseEditorDraft } from './utils/shouldRehydrateExerc
 import { normalizeExerciseType } from '@/utils/exerciseEnums';
 import type { ExerciseParametersTimingType } from '@/components/shared/exercise/ExerciseParametersFields';
 import { describeSavedNonKgLoad, readSavedLoadKg } from './utils/describeSavedLoad';
+import { readExerciseContent, type ExerciseContentVersion } from '@/components/shared/exercise/readExerciseContent';
+import {
+  buildV33Document,
+  collectV33Edits,
+  isSameV33Document,
+  isV33EditablePath,
+  loadV33Document,
+  rebaseV33Draft,
+} from '@/components/shared/exercise/writeExerciseContent';
 
 /**
  * Pojedynczy model formularza edytora ćwiczenia (v3).
@@ -21,6 +30,10 @@ import { describeSavedNonKgLoad, readSavedLoadKg } from './utils/describeSavedLo
  * (znormalizowanych `toV3` raz przy wczytaniu). Zamiast rozproszonego
  * autosave-on-blur udostępnia dirty tracking i jeden skoordynowany zapis
  * (core przez UpdateExercise, v3 przez UpdateExerciseField(enrichmentData)).
+ *
+ * Rekord w kontrakcie v3.3 (SPEC-038) ma osobną regułę zapisu: dokument powstaje z wczytanego
+ * (`buildV33Document`), a wycofane kolumny (opis dla pacjenta, opis kliniczny, notatka, polecenie audio)
+ * nigdy nie idą do mutacji.
  */
 
 export interface ExerciseCoreDraft {
@@ -110,6 +123,8 @@ export interface ExerciseEditorSource {
   mainTags?: unknown;
   additionalTags?: unknown;
   enrichmentData?: ExerciseEnrichmentData | null;
+  /** Przyszła kolumna wersji treści; wygrywa z `enrichmentData.schemaVersion`. */
+  schemaVersion?: string | number | null;
 }
 
 export type ExerciseSaveStatus = 'idle' | 'saving' | 'success' | 'error';
@@ -118,6 +133,12 @@ interface UseExerciseEditorFormParams {
   source: ExerciseEditorSource | null | undefined;
   updateCore: (variables: Record<string, unknown>) => Promise<void>;
   updateEnrichment: (payload: ExerciseEnrichmentData) => Promise<void>;
+  /**
+   * Aktualny dokument treści prosto z bazy (bez cache). Podany, chroni rekord 3.3 przed nadpisaniem cudzej
+   * zmiany: przed zapisem hook porównuje go z dokumentem wczytanym i przy różnicy nie zapisuje
+   * (`hasSaveConflict`). Backend nie ma jeszcze warunku wersji, więc to jedyna zapora po stronie portalu.
+   */
+  fetchCurrentEnrichment?: () => Promise<ExerciseEnrichmentData | string | null | undefined>;
   onSaved?: () => void;
   onError?: (error: unknown) => void;
   /**
@@ -194,17 +215,22 @@ function asText(value: string): string | null {
 /** Exported for unit tests — dirty-diff core draft → UpdateExercise variables. */
 export function buildChangedCoreVariables(
   initial: ExerciseCoreDraft,
-  current: ExerciseCoreDraft
+  current: ExerciseCoreDraft,
+  contentVersion: ExerciseContentVersion = 'legacy'
 ): Record<string, unknown> {
   const variables: Record<string, unknown> = {};
+  // A 3.3 record keeps whatever these columns hold: neither a new value nor an erasing null is sent.
+  const writesRetiredColumns = contentVersion !== '3.3';
 
   if (current.name !== initial.name) variables.name = current.name.trim();
-  if (current.patientDescription !== initial.patientDescription)
-    variables.description = asText(current.patientDescription);
-  if (current.clinicalDescription !== initial.clinicalDescription)
-    variables.clinicalDescription = asText(current.clinicalDescription);
-  if (current.notes !== initial.notes) variables.notes = asText(current.notes);
-  if (current.audioCue !== initial.audioCue) variables.audioCue = asText(current.audioCue);
+  if (writesRetiredColumns) {
+    if (current.patientDescription !== initial.patientDescription)
+      variables.description = asText(current.patientDescription);
+    if (current.clinicalDescription !== initial.clinicalDescription)
+      variables.clinicalDescription = asText(current.clinicalDescription);
+    if (current.notes !== initial.notes) variables.notes = asText(current.notes);
+    if (current.audioCue !== initial.audioCue) variables.audioCue = asText(current.audioCue);
+  }
   if (current.tempo !== initial.tempo) variables.tempo = asText(current.tempo);
   if (current.rangeOfMotion !== initial.rangeOfMotion) variables.rangeOfMotion = asText(current.rangeOfMotion);
   // '' (nie null): backend czyści opór/sprzęt tylko pustym tekstem; null = bez zmian.
@@ -247,13 +273,19 @@ export function useExerciseEditorForm({
   source,
   updateCore,
   updateEnrichment,
+  fetchCurrentEnrichment,
   onSaved,
   onError,
   autosaveDelayMs,
 }: UseExerciseEditorFormParams) {
   const isAutosave = autosaveDelayMs != null;
   const derivedCore = useMemo(() => deriveCoreDraft(source), [source]);
-  const derivedEnrichment = useMemo(() => toV3(source?.enrichmentData), [source?.enrichmentData]);
+  const derivedVersion = useMemo(() => readExerciseContent(source).version, [source]);
+  // A 3.3 document is edited as loaded: `toV3` would rebuild one without `$schema` from five sections only.
+  const derivedEnrichment = useMemo(
+    () => (derivedVersion === '3.3' ? loadV33Document(source?.enrichmentData) : toV3(source?.enrichmentData)),
+    [derivedVersion, source?.enrichmentData]
+  );
 
   // Baseline (dirty-tracking) state. Hydration runs once per exercise identity.
   // Refetch (np. po uploadzie zdjęcia AI) nie nadpisuje brudnego draftu.
@@ -261,15 +293,19 @@ export function useExerciseEditorForm({
   const [initialEnrichment, setInitialEnrichment] = useState<ExerciseEnrichmentData>(derivedEnrichment);
   const [core, setCore] = useState<ExerciseCoreDraft>(derivedCore);
   const [enrichment, setEnrichment] = useState<ExerciseEnrichmentData>(derivedEnrichment);
+  // Fixed at hydration together with the baseline, so the write rule always matches the loaded document.
+  const [contentVersion, setContentVersion] = useState<ExerciseContentVersion>(derivedVersion);
   const [saveStatus, setSaveStatus] = useState<ExerciseSaveStatus>('idle');
+  // The document someone else saved while this one was being edited; set, it blocks every save.
+  const [conflictDocument, setConflictDocument] = useState<ExerciseEnrichmentData | null>(null);
 
   const hasHydratedRef = useRef(false);
   const hydratedIdentityRef = useRef<string | null>(null);
   const isDirtyRef = useRef(false);
 
   const coreDirty = useMemo(
-    () => Object.keys(buildChangedCoreVariables(initialCore, core)).length > 0,
-    [initialCore, core]
+    () => Object.keys(buildChangedCoreVariables(initialCore, core, contentVersion)).length > 0,
+    [initialCore, core, contentVersion]
   );
 
   const initialEnrichmentPayload = useMemo(
@@ -277,10 +313,12 @@ export function useExerciseEditorForm({
     [initialEnrichment]
   );
 
-  const enrichmentPayload = useMemo(() => composeEnrichmentPayload(enrichment), [enrichment]);
   const enrichmentDirty = useMemo(
-    () => JSON.stringify(enrichmentPayload) !== initialEnrichmentPayload,
-    [enrichmentPayload, initialEnrichmentPayload]
+    () =>
+      contentVersion === '3.3'
+        ? Object.keys(collectV33Edits(initialEnrichment, enrichment)).length > 0
+        : JSON.stringify(composeEnrichmentPayload(enrichment)) !== initialEnrichmentPayload,
+    [contentVersion, enrichment, initialEnrichment, initialEnrichmentPayload]
   );
 
   const isDirty = coreDirty || enrichmentDirty;
@@ -306,22 +344,32 @@ export function useExerciseEditorForm({
     setInitialEnrichment(derivedEnrichment);
     setCore(derivedCore);
     setEnrichment(derivedEnrichment);
+    setContentVersion(derivedVersion);
+    setConflictDocument(null);
     setSaveStatus('idle');
-  }, [derivedCore, derivedEnrichment, isAutosave, source]);
+  }, [derivedCore, derivedEnrichment, derivedVersion, isAutosave, source]);
 
   const setCoreField = useCallback(<K extends keyof ExerciseCoreDraft>(field: K, value: ExerciseCoreDraft[K]) => {
     setCore((previous) => ({ ...previous, [field]: value }));
     setSaveStatus('idle');
   }, []);
 
-  const setEnrichmentPath = useCallback((path: string, value: unknown) => {
-    setEnrichment((previous) => {
-      const next = deepCloneEnrichment(previous);
-      setEnrichmentAtPath(next as Record<string, unknown>, path, value);
-      return next;
-    });
-    setSaveStatus('idle');
-  }, []);
+  const setEnrichmentPath = useCallback(
+    (path: string, value: unknown) => {
+      if (contentVersion === '3.3' && !isV33EditablePath(path)) {
+        // The 3.3 save sends only `V33_EDITABLE_PATHS`; a field wired to any other path would lose its value silently.
+        console.error(`[ExerciseEditor] Ścieżka „${path}” nie jest zapisywana w rekordzie 3.3; zmiana pominięta.`);
+        return;
+      }
+      setEnrichment((previous) => {
+        const next = deepCloneEnrichment(previous);
+        setEnrichmentAtPath(next as Record<string, unknown>, path, value);
+        return next;
+      });
+      setSaveStatus('idle');
+    },
+    [contentVersion]
+  );
 
   const replaceEnrichment = useCallback((next: ExerciseEnrichmentData) => {
     setEnrichment(next);
@@ -358,9 +406,26 @@ export function useExerciseEditorForm({
   const coreRef = useRef(core);
   const enrichmentRef = useRef(enrichment);
   const initialCoreRef = useRef(initialCore);
+  const initialEnrichmentRef = useRef(initialEnrichment);
   coreRef.current = core;
   enrichmentRef.current = enrichment;
   initialCoreRef.current = initialCore;
+  initialEnrichmentRef.current = initialEnrichment;
+  const conflictDocumentRef = useRef(conflictDocument);
+  conflictDocumentRef.current = conflictDocument;
+
+  /**
+   * Po konflikcie: szkic przechodzi na aktualną wersję z bazy i zachowuje niezapisane zmiany z ekranu.
+   * Niczego nie zapisuje; fizjoterapeuta widzi wynik i zapisuje sam.
+   */
+  const loadCurrentVersion = useCallback(() => {
+    const current = conflictDocumentRef.current;
+    if (!current) return;
+    setEnrichment(rebaseV33Draft(initialEnrichmentRef.current, enrichmentRef.current, current));
+    setInitialEnrichment(current);
+    setConflictDocument(null);
+    setSaveStatus('idle');
+  }, []);
 
   /** Snapshotuje aktualny draft jako nową baseline bez refetchu — używane po autosave. */
   const markSaved = useCallback(() => {
@@ -371,29 +436,64 @@ export function useExerciseEditorForm({
   const performSave = useCallback(async () => {
     const currentCore = coreRef.current;
     const currentEnrichment = enrichmentRef.current;
-    const currentCoreDirty = Object.keys(buildChangedCoreVariables(initialCoreRef.current, currentCore)).length > 0;
-    const currentEnrichmentPayload = composeEnrichmentPayload(currentEnrichment);
-    const currentEnrichmentDirty = JSON.stringify(currentEnrichmentPayload) !== initialEnrichmentPayload;
+    const isV33 = contentVersion === '3.3';
+    const coreVariables = buildChangedCoreVariables(initialCoreRef.current, currentCore, contentVersion);
+    const currentCoreDirty = Object.keys(coreVariables).length > 0;
+    const v33Edits = isV33 ? collectV33Edits(initialEnrichmentRef.current, currentEnrichment) : {};
+    const currentEnrichmentPayload = isV33
+      ? buildV33Document(initialEnrichmentRef.current, v33Edits)
+      : composeEnrichmentPayload(currentEnrichment);
+    const currentEnrichmentDirty = isV33
+      ? Object.keys(v33Edits).length > 0
+      : JSON.stringify(currentEnrichmentPayload) !== initialEnrichmentPayload;
 
     if (!currentCoreDirty && !currentEnrichmentDirty) return;
+    if (conflictDocumentRef.current) return;
 
     setSaveStatus('saving');
     try {
+      if (isV33 && currentEnrichmentDirty && fetchCurrentEnrichment) {
+        // The mutation replaces the whole document, so a save built on a stale one would erase the other change.
+        const fetched = await fetchCurrentEnrichment();
+        // No document is a failed read, never "someone emptied it": rebasing onto nothing would lose the record.
+        if (fetched == null) throw new Error('Nie udało się pobrać aktualnej wersji ćwiczenia.');
+        const current = loadV33Document(fetched);
+        if (!isSameV33Document(initialEnrichmentRef.current, current)) {
+          setConflictDocument(current);
+          setSaveStatus('idle');
+          return;
+        }
+      }
       if (currentCoreDirty) {
-        await updateCore(buildChangedCoreVariables(initialCoreRef.current, currentCore));
+        await updateCore(coreVariables);
       }
       if (currentEnrichmentDirty) {
         await updateEnrichment(currentEnrichmentPayload);
       }
       setSaveStatus('success');
-      markSaved();
+      if (isV33) {
+        // The baseline is the document that was sent, so the next save starts from what the backend holds.
+        setInitialCore(currentCore);
+        if (currentEnrichmentDirty) setInitialEnrichment(currentEnrichmentPayload);
+      } else {
+        markSaved();
+      }
       onSaved?.();
     } catch (error) {
       console.error('[ExerciseEditor] Save failed:', error);
       setSaveStatus('error');
       onError?.(error);
     }
-  }, [initialEnrichmentPayload, markSaved, onError, onSaved, updateCore, updateEnrichment]);
+  }, [
+    contentVersion,
+    fetchCurrentEnrichment,
+    initialEnrichmentPayload,
+    markSaved,
+    onError,
+    onSaved,
+    updateCore,
+    updateEnrichment,
+  ]);
 
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -447,6 +547,7 @@ export function useExerciseEditorForm({
       exerciseType,
       savedLoadLabel,
       enrichment,
+      contentVersion,
       setCoreField,
       setEnrichmentPath,
       replaceEnrichment,
@@ -454,19 +555,24 @@ export function useExerciseEditorForm({
       isCoreFieldDirty,
       isPathDirty,
       saveStatus,
+      hasSaveConflict: conflictDocument !== null,
+      loadCurrentVersion,
       save,
       flush,
       markSaved,
       reset,
     }),
     [
+      contentVersion,
       core,
       exerciseType,
       enrichment,
+      conflictDocument,
       flush,
       isCoreFieldDirty,
       isDirty,
       isPathDirty,
+      loadCurrentVersion,
       markSaved,
       replaceEnrichment,
       reset,

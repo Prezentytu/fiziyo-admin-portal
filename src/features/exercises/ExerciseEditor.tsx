@@ -15,11 +15,14 @@ import { ExerciseParametersEditor } from './ExerciseParametersEditor';
 import { ExerciseContentSections } from './ExerciseContentSections';
 import type { UseExerciseEditorFormResult } from './useExerciseEditorForm';
 import { deepMergeFillGaps, revertUnchangedAiValues } from './utils/enrichmentFillGaps';
+import { ExerciseSaveConflictNotice } from './ExerciseSaveConflictNotice';
+import { countV33AiFillSections, mergeV33AiFill, parseV33JsonDocument } from './utils/enrichmentV33Document';
 
 import { aiService } from '@/services/aiService';
 import { compactEnrichment, parseEnrichmentJson, toFullShapeJson } from '@/features/verification/utils/enrichment';
 import { toV3 } from '@/features/verification/utils/enrichmentToV3';
 import { computeCompleteness } from '@/features/verification/utils/enrichmentSkeleton';
+import type { ExerciseContentVersion } from '@/components/shared/exercise/readExerciseContent';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import { normalizeExerciseType } from '@/utils/exerciseEnums';
 
@@ -58,18 +61,26 @@ interface AiFillChange {
 function AiFillBar({
   context,
   enrichment,
+  contentVersion,
   disabled,
   onApply,
 }: Readonly<{
   context: ExerciseEditorAiFillContext;
   enrichment: ExerciseEnrichmentData;
+  contentVersion: ExerciseContentVersion;
   disabled: boolean;
   onApply: (data: ExerciseEnrichmentData) => void;
 }>) {
   const [isGenerating, setIsGenerating] = useState(false);
   const enrichmentRef = useRef(enrichment);
   enrichmentRef.current = enrichment;
-  const completeness = useMemo(() => computeCompleteness(enrichment), [enrichment]);
+  // A 3.3 draft is never compacted or widened: AI may only fill the fields that live in the same place in 3.3.
+  const isV33 = contentVersion === '3.3';
+  const countFilled = useCallback(
+    (data: ExerciseEnrichmentData) => (isV33 ? countV33AiFillSections(data) : computeCompleteness(data)),
+    [isV33]
+  );
+  const completeness = useMemo(() => countFilled(enrichment), [countFilled, enrichment]);
 
   const handleDiscard = useCallback((change: AiFillChange) => {
     const current = enrichmentRef.current;
@@ -83,9 +94,9 @@ function AiFillBar({
         cue_phases: current.patient?.cue_phases,
       };
     }
-    onApply(compactEnrichment(restored) ?? {});
+    onApply(isV33 ? restored : (compactEnrichment(restored) ?? {}));
     toast.info('Cofnięto propozycję AI, zachowując ręczne zmiany.');
-  }, [onApply]);
+  }, [isV33, onApply]);
 
   const handleGenerate = useCallback(async () => {
     if (isGenerating || disabled) return;
@@ -108,13 +119,18 @@ function AiFillBar({
       return;
     }
 
-    const aiData = toV3(response.enrichmentData as ExerciseEnrichmentData);
     const currentEnrichment = enrichmentRef.current;
-    const merged = deepMergeFillGaps(currentEnrichment, aiData) as ExerciseEnrichmentData;
-    const cleanedMerged = compactEnrichment(merged) ?? {};
+    const cleanedMerged = isV33
+      ? mergeV33AiFill(currentEnrichment, response.enrichmentData as ExerciseEnrichmentData)
+      : (compactEnrichment(
+          deepMergeFillGaps(
+            currentEnrichment,
+            toV3(response.enrichmentData as ExerciseEnrichmentData)
+          ) as ExerciseEnrichmentData
+        ) ?? {});
 
-    const beforeFilled = computeCompleteness(currentEnrichment).filled;
-    const afterFilled = computeCompleteness(cleanedMerged).filled;
+    const beforeFilled = countFilled(currentEnrichment).filled;
+    const afterFilled = countFilled(cleanedMerged).filled;
     const newSections = afterFilled - beforeFilled;
 
     onApply(cleanedMerged);
@@ -130,7 +146,7 @@ function AiFillBar({
         duration: 7000,
       }
     );
-  }, [context, disabled, enrichment, handleDiscard, isGenerating, onApply]);
+  }, [context, countFilled, disabled, enrichment, handleDiscard, isGenerating, isV33, onApply]);
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border/40 bg-surface/50 p-3">
@@ -139,7 +155,7 @@ function AiFillBar({
         <span className={completeness.filled === completeness.total ? 'text-status-success' : ''}>
           {completeness.filled}/{completeness.total}
         </span>{' '}
-        sekcji rozszerzonych
+        {isV33 ? 'sekcji, które uzupełnia AI' : 'sekcji rozszerzonych'}
       </p>
       <Button
         type="button"
@@ -167,29 +183,36 @@ function AiFillBar({
 
 function AdvancedJsonSection({
   enrichment,
+  contentVersion,
   disabled,
   onApply,
 }: Readonly<{
   enrichment: ExerciseEnrichmentData;
+  contentVersion: ExerciseContentVersion;
   disabled: boolean;
   onApply: (data: ExerciseEnrichmentData) => void;
 }>) {
+  const isV33 = contentVersion === '3.3';
+  // The 3.3 document is shown as stored: the skeleton would add retired keys and `toV3` could drop the new ones.
+  const toRawJson = (data: ExerciseEnrichmentData) =>
+    isV33 ? JSON.stringify(data, null, 2) : toFullShapeJson(toV3(data));
   const [isOpen, setIsOpen] = useState(false);
-  const [rawJson, setRawJson] = useState(() => toFullShapeJson(toV3(enrichment)));
+  const [rawJson, setRawJson] = useState(() => toRawJson(enrichment));
   const [error, setError] = useState<string | null>(null);
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
     if (open) {
-      setRawJson(toFullShapeJson(toV3(enrichment)));
+      setRawJson(toRawJson(enrichment));
       setError(null);
     }
   };
 
   const handleApply = () => {
     try {
-      const parsed = parseEnrichmentJson(rawJson);
-      const cleaned = compactEnrichment(toV3(parsed)) ?? {};
+      const cleaned = isV33
+        ? parseV33JsonDocument(rawJson)
+        : (compactEnrichment(toV3(parseEnrichmentJson(rawJson))) ?? {});
       onApply(cleaned);
       setError(null);
       toast.success('Dane JSON zostały zastosowane.');
@@ -213,7 +236,9 @@ function AdvancedJsonSection({
       <CollapsibleContent>
         <div className="space-y-3 border-t border-border/40 p-4">
           <p className="text-xs text-muted-foreground">
-            Surowy JSON danych rozszerzonych (v3). Zmiany tutaj nadpisują wszystkie sekcje powyżej po kliknięciu „Zastosuj”.
+            {isV33
+              ? 'Surowy JSON treści ćwiczenia (3.3). „Zastosuj” przenosi do formularza pola, które da się w nim edytować; pozostałe części dokumentu zostają zapisane bez zmian.'
+              : 'Surowy JSON danych rozszerzonych (v3). Zmiany tutaj nadpisują wszystkie sekcje powyżej po kliknięciu „Zastosuj”.'}
           </p>
           <Textarea
             value={rawJson}
@@ -225,7 +250,11 @@ function AdvancedJsonSection({
             className="min-h-[280px] font-mono text-xs"
             data-testid="exercise-editor-advanced-json-textarea"
           />
-          {error && <p className="text-xs text-destructive">{error}</p>}
+          {error && (
+            <p className="text-xs text-destructive" data-testid="exercise-editor-advanced-json-error">
+              {error}
+            </p>
+          )}
           <div className="flex justify-end">
             <Button
               type="button"
@@ -249,17 +278,29 @@ export function ExerciseEditor({
   showNameField = false,
   aiFillContext = {
     name: form.core.name,
-    patientDescription: form.core.patientDescription,
-    clinicalDescription: form.core.clinicalDescription,
+    // A 3.3 record has no patient or clinical description; the summary is the context for the generator.
+    patientDescription:
+      form.contentVersion === '3.3' ? (form.enrichment.patient?.summary ?? '') : form.core.patientDescription,
+    clinicalDescription: form.contentVersion === '3.3' ? '' : form.core.clinicalDescription,
     type: form.exerciseType,
   },
   showAdvancedJson = false,
   className,
 }: Readonly<ExerciseEditorProps>) {
-  const { core, enrichment, setCoreField, setEnrichmentPath, replaceEnrichment, isCoreFieldDirty, isPathDirty } = form;
+  const {
+    core,
+    enrichment,
+    contentVersion,
+    setCoreField,
+    setEnrichmentPath,
+    replaceEnrichment,
+    isCoreFieldDirty,
+    isPathDirty,
+  } = form;
 
   return (
     <div className={cn('space-y-4', className)}>
+      {form.hasSaveConflict && <ExerciseSaveConflictNotice onLoadCurrent={form.loadCurrentVersion} />}
       {showNameField && (
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground" htmlFor="exercise-editor-name">
@@ -277,7 +318,13 @@ export function ExerciseEditor({
       )}
 
       {aiFillContext && (
-        <AiFillBar context={aiFillContext} enrichment={enrichment} disabled={disabled} onApply={replaceEnrichment} />
+        <AiFillBar
+          context={aiFillContext}
+          enrichment={enrichment}
+          contentVersion={contentVersion}
+          disabled={disabled}
+          onApply={replaceEnrichment}
+        />
       )}
 
       <div>
@@ -321,10 +368,16 @@ export function ExerciseEditor({
         onVideoUrlChange={(value) => setCoreField('videoUrl', value)}
         onNotesChange={(value) => setCoreField('notes', value)}
         setPath={setEnrichmentPath}
+        contentVersion={contentVersion}
       />
 
       {showAdvancedJson && (
-        <AdvancedJsonSection enrichment={enrichment} disabled={disabled} onApply={replaceEnrichment} />
+        <AdvancedJsonSection
+          enrichment={enrichment}
+          contentVersion={contentVersion}
+          disabled={disabled}
+          onApply={replaceEnrichment}
+        />
       )}
     </div>
   );

@@ -44,6 +44,7 @@ import {
   SafetySection,
   TherapistSection,
   MetadataSection,
+  readViewDocument,
 } from '@/features/exercises/ExerciseDetailSections';
 import { CreateSetWizard } from '@/features/exercise-sets';
 import { SubmitToGlobalDialog } from '@/features/exercises/SubmitToGlobalDialog';
@@ -52,7 +53,7 @@ import { FeedbackBanner } from '@/features/exercises/FeedbackBanner';
 import { resolveExerciseReviewFeedback } from '@/features/exercises/utils/resolveExerciseReviewFeedback';
 import { ReportExerciseDialog } from '@/features/exercises/ReportExerciseDialog';
 import { InternalNotesPanel } from '@/features/exercises/InternalNotesPanel';
-import { ContentGapsNotice } from '@/features/exercises/ContentGapsNotice';
+import { ContentGapsNotice, listExerciseContentGaps } from '@/features/exercises/ContentGapsNotice';
 import { canReportExerciseIssue } from '@/features/exercises/utils/exerciseReportRouting';
 import { MediaGallery, buildMediaItems } from '@/components/shared';
 import {
@@ -95,6 +96,7 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import type { ExerciseByIdResponse, ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
 import {
   buildEnrichmentUpdateVariables,
+  fetchCurrentEnrichmentData,
   isExerciseSaveAuthError,
 } from '@/features/exercises/utils/buildEnrichmentUpdateVariables';
 import { getNextExerciseCopyName } from '@/features/exercises/utils/getNextExerciseCopyName';
@@ -104,11 +106,7 @@ import { canOpenVideoOutsidePortal } from '@/utils/videoEmbed';
 import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
 import { resolveLoadKg } from '@/utils/exerciseLoadMutation';
 import { verificationCopy } from '@/features/verification/verificationCopy';
-import {
-  countStopIfSymptoms,
-  hasPatientVideo,
-  listContentGaps,
-} from '@/features/verification/utils/verificationStages';
+import { hasPatientVideo } from '@/features/verification/utils/verificationStages';
 import { useSystemRole } from '@/hooks/useSystemRole';
 import { ORG_VERIFICATION_REFETCH_QUERIES } from '@/hooks/useOrganizationVerificationRealtime';
 import { PageSheet } from '@/components/shared/page';
@@ -242,10 +240,13 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
     toast.error('Nie udało się zapisać zmian');
   }, []);
 
+  const fetchCurrentEnrichment = useCallback(() => fetchCurrentEnrichmentData(apolloClient, id), [apolloClient, id]);
+
   const exerciseEditorForm = useExerciseEditorForm({
     source: rawExercise,
     updateCore,
     updateEnrichment,
+    fetchCurrentEnrichment,
     onSaved: handleSaved,
     onError: handleSaveError,
   });
@@ -561,17 +562,14 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         }
       : undefined;
 
-  const physiotherapistDescription = exercise.clinicalDescription || '';
   const audioCue = (exercise as { audioCue?: string }).audioCue || '';
-  const contentGaps = listContentGaps({
-    name: exercise.name ?? '',
-    // Same sources as the verification gate (useExerciseEditorForm + VerificationWorkspace).
-    patientDescription: exercise.patientDescription ?? exercise.description ?? '',
-    therapistDescription: physiotherapistDescription,
+  const contentGaps = listExerciseContentGaps({
+    exercise,
+    enrichment,
     hasVideo: hasPatientVideo(exercise),
     imageCount: imageItemsCount,
-    stopIfCount: countStopIfSymptoms(enrichment.safety?.stop_if),
   });
+  const readEnrichment = readViewDocument(rawExercise?.enrichmentData, enrichment);
 
   const isPendingOrganizationReview = exercise.organizationVerificationStatus === 'PENDING_ORG_REVIEW';
   const isLocked = isGlobalExercise || isPendingReview || isPendingOrganizationReview;
@@ -988,7 +986,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
 
               {/* 2. Instrukcje dla pacjenta */}
               <PatientLeadSection
-                data={enrichment}
+                data={readEnrichment}
                 patientDescription={core.patientDescription}
                 editable={false}
                 patientDescriptionDirty={isCoreFieldDirty('patientDescription')}
@@ -997,23 +995,23 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                 setPath={setEnrichmentPath}
               />
 
-              <ExerciseExecutionSteps enrichmentData={enrichment} editable={false} />
+              <ExerciseExecutionSteps enrichmentData={readEnrichment} editable={false} />
 
-              <ExerciseAudioCues audioCue={audioCue} enrichmentData={enrichment} editable={false} />
+              <ExerciseAudioCues audioCue={audioCue} enrichmentData={readEnrichment} editable={false} />
 
               <PatientExtrasSection
-                data={enrichment}
+                data={readEnrichment}
                 editable={false}
                 isPathDirty={isPathDirty}
                 setPath={setEnrichmentPath}
               />
 
               {/* 3. Bezpieczeństwo */}
-              <SafetySection data={enrichment} editable={false} isPathDirty={isPathDirty} setPath={setEnrichmentPath} />
+              <SafetySection data={readEnrichment} editable={false} isPathDirty={isPathDirty} setPath={setEnrichmentPath} />
 
               {/* 4. Dla terapeuty */}
               <TherapistSection
-                data={enrichment}
+                data={readEnrichment}
                 clinicalDescription={core.clinicalDescription}
                 editable={false}
                 clinicalDescriptionDirty={isCoreFieldDirty('clinicalDescription')}
@@ -1026,7 +1024,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
 
               {/* 5. Metadane */}
               <MetadataSection
-                data={enrichment}
+                data={readEnrichment}
                 videoUrl={core.videoUrl}
                 notes={core.notes}
                 editable={false}

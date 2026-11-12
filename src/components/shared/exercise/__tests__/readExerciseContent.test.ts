@@ -228,12 +228,27 @@ describe('readExerciseContent: rekord 3.3', () => {
     expect(content.therapistNote).toBe('Uwaga na koślawienie (przeniesione).');
     expect(content.contraindications).toEqual([]);
     expect(content.indications).toEqual([]);
-    // Kolumny bez pola w kontrakcie zostają czytelne; sprzęt z kolumny, gdy dokument nie ma equipment_items.
-    expect(content.notes).toBe('Korzyści: siła nóg');
-    expect(content.audioCue).toBe('Plecy proste');
+    // Kolumny wycofane w kontrakcie §2 (notatka, polecenie audio) nie są czytane; sprzęt z kolumny, gdy dokument nie ma equipment_items.
+    expect(content.notes).toBeNull();
+    expect(content.audioCue).toBeNull();
     expect(content.equipment.map((item) => item.label)).toEqual(['krzesło']);
     expect(content.side.mode).toBe('BOTH');
-    expect(content.side.perSideDose).toBe(false);
+    // Kontrakt §6.7: w 3.3 dawka przy dwóch stronach jest na stronę także bez sekcji `side`.
+    expect(content.side.perSideDose).toBe(true);
+  });
+
+  it.each([
+    ['each_side', undefined, true],
+    ['alternating', undefined, true],
+    ['each_side', true, true],
+    ['alternating', false, false],
+    ['none', undefined, false],
+    ['left', undefined, false],
+    ['right', true, true],
+  ])('3.3, side.mode %s, per_side_dose %s → dawka na stronę: %s', (mode, perSideDose, expected) => {
+    const side = perSideDose === undefined ? { mode } : { mode, per_side_dose: perSideDose };
+
+    expect(readExerciseContent({ enrichmentData: { schemaVersion: '3.3', side } }).side.perSideDose).toBe(expected);
   });
 
   it('rekord 3.3 bez kroków i podsumowania nie ma instrukcji mimo wypełnionej kolumny opisu', () => {
@@ -247,6 +262,45 @@ describe('readExerciseContent: rekord 3.3', () => {
     const content = readExerciseContent({ enrichmentData: withoutMarker });
     expect(content.checkpoints).toHaveLength(5);
     expect(content.equipment).toHaveLength(2);
+  });
+});
+
+describe('readExerciseContent: ostrożności dla grup szczególnych', () => {
+  const precautions = [
+    { group: 'ciaza', text: ' W ciąży po 20. tygodniu ćwicz w pozycji półleżącej. ', source: 'S2' },
+    { group: 'endoproteza_biodra', text: 'Po endoprotezie biodra nie krzyżuj nóg.' },
+  ];
+  const withPrecautions = (safety: unknown, extra: Record<string, unknown> = { schemaVersion: '3.3' }) =>
+    readExerciseContent({ enrichmentData: { ...extra, safety } } as unknown as ExerciseContentSource);
+
+  it('rekord 3.3 oddaje ostrożności w zapisanej kolejności, z kodem grupy i tekstem', () => {
+    expect(withPrecautions({ precautions }).precautions).toEqual([
+      { group: 'ciaza', text: 'W ciąży po 20. tygodniu ćwicz w pozycji półleżącej.' },
+      { group: 'endoproteza_biodra', text: 'Po endoprotezie biodra nie krzyżuj nóg.' },
+    ]);
+  });
+
+  it('rekord 3.3 bez pola i rekord stary dają pustą listę', () => {
+    expect(readExerciseContent({ enrichmentData: golden }).precautions).toEqual([]);
+    expect(withPrecautions({ precautions }, {}).precautions).toEqual([]);
+    expect(withPrecautions({ precautions }, { $schema: 'fiziyo-exercise-v3' }).precautions).toEqual([]);
+    expect(readExerciseContent(oldV3).precautions).toEqual([]);
+    expect(readExerciseContent(null).precautions).toEqual([]);
+  });
+
+  it('wpisy bez tekstu odpadają, zły kształt nie rzuca, brak kodu grupy daje null', () => {
+    const malformed = [null, 'sam tekst', 7, [], {}, { group: 'ciaza' }, { group: 'ciaza', text: '  ' }, { text: 5 }, { group: 3, text: 'Bez kodu.' }];
+    expect(withPrecautions({ precautions: malformed }).precautions).toEqual([{ group: null, text: 'Bez kodu.' }]);
+    for (const wrong of ['tekst', 5, {}, null, true]) {
+      expect(withPrecautions({ precautions: wrong }).precautions).toEqual([]);
+    }
+  });
+
+  it('nie zmienia wejścia', () => {
+    const source = { enrichmentData: { schemaVersion: '3.3', safety: { precautions } } };
+    const before = JSON.stringify(source);
+    readExerciseContent(source as unknown as ExerciseContentSource);
+    expect(JSON.stringify(source)).toBe(before);
   });
 });
 
