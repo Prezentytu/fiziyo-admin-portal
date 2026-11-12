@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import type { ExerciseBundleImportResult } from '@/graphql/mutations/exercises.mutations';
 import { useExerciseBundleImport } from '@/hooks/useExerciseBundleImport';
 import { checkCatalogBundleText } from '@/lib/organization/catalogBundleFile';
+import { describeImportFailure } from '@/lib/organization/catalogBundleImportError';
 
 import { CatalogBundleMediaCopyReport } from './CatalogBundleMediaCopyReport';
 
@@ -72,8 +73,8 @@ export function CatalogBundleImportCard({ organizationId }: CatalogBundleImportC
       }
 
       toast.success(`Zaimportowano ${file.name}`);
-    } catch {
-      toast.error('Import nie powiódł się. Backend musi znać mutację importExerciseBundle.');
+    } catch (error) {
+      toast.error(describeImportFailure(error));
     } finally {
       if (inputRef.current) {
         inputRef.current.value = '';

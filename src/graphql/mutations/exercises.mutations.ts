@@ -838,19 +838,30 @@ export const IMPORT_EXERCISE_BUNDLE_WITH_MEDIA_COPY_MUTATION = gql`
 `;
 
 /**
- * Pola wyniku importu i raportu kopii mediów znane temu API; odpowiedź bez `mediaCopy`, bez liczników
- * `deferred` i `notCopied` albo błąd = import bez raportu kopii mediów.
+ * Sonda wyboru mutacji, bez introspekcji (HotChocolate poza Development odrzuca `__type` z HC0046). To ta sama
+ * mutacja z raportem kopii mediów, ale z polem głównym pominiętym przez `@skip(if: true)` i argumentami wpisanymi
+ * wprost. Serwer ją waliduje, ale nie uruchamia resolvera, więc nic nie zapisuje. Odpowiedź bez błędów = API zna
+ * `mediaCopy`, `deferred` i `notCopied` (fizjo-app#432). Każda inna (błąd walidacji, sieć, 401, 5xx, brak odpowiedzi)
+ * = import starą mutacją.
  */
-export const GET_EXERCISE_BUNDLE_IMPORT_RESULT_FIELDS_QUERY = gql`
-  query GetExerciseBundleImportResultFields {
-    __type(name: "ExerciseBundleImportResultDto") {
-      fields {
-        name
-      }
-    }
-    mediaCopyType: __type(name: "ExerciseBundleMediaCopyDto") {
-      fields {
-        name
+export const PROBE_EXERCISE_BUNDLE_MEDIA_COPY_MUTATION = gql`
+  mutation ProbeExerciseBundleMediaCopy {
+    importExerciseBundle(organizationId: "probe", json: "{}", asGlobal: false) @skip(if: true) {
+      success
+      mediaCopy {
+        copied
+        alreadyPresent
+        planned
+        kept
+        failed
+        deferred
+        notCopied
+        items {
+          sourceUrl
+          targetUrl
+          outcome
+          reason
+        }
       }
     }
   }
