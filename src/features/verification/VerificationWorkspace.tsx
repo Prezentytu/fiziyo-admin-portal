@@ -167,7 +167,7 @@ interface VerificationWorkspaceProps {
 
 const NO_REPORTS: ExerciseReport[] = [];
 
-/** Pending edits of a 3.3 record did not reach the database, so the action that needed them was stopped. */
+/** Pending edits did not reach the database, so the action that needed them was stopped. */
 class UnsavedChangesError extends Error {
   constructor(readonly outcome: 'conflict' | 'error') {
     super(
@@ -309,6 +309,11 @@ export function VerificationWorkspace({
     const outcome = await flushForm();
     if (isV33 && (outcome === 'conflict' || outcome === 'error')) throw new UnsavedChangesError(outcome);
   }, [flushForm, isV33]);
+  /** A decision never rests on content that was not saved, whatever the record version. */
+  const flushBeforeDecision = useCallback(async () => {
+    const outcome = await flushForm();
+    if (outcome === 'conflict' || outcome === 'error') throw new UnsavedChangesError(outcome);
+  }, [flushForm]);
   const patient = useMemo<ExerciseEnrichmentPatientV3>(() => enrichment.patient ?? {}, [enrichment.patient]);
   /**
    * A 3.3 record is saved path by path, so a changed `patient` goes in as its changed keys: a key outside
@@ -767,7 +772,7 @@ export function VerificationWorkspace({
     setIsLeaving(true);
     if (organizationDecision) {
       try {
-        await flush();
+        await flushBeforeDecision();
         await organizationDecision.onApprove();
         toast.success('Ćwiczenie zweryfikowane w gabinecie');
         leaveToNext();
@@ -779,7 +784,7 @@ export function VerificationWorkspace({
       return;
     }
     try {
-      await flush();
+      await flushBeforeDecision();
       await approveExercise({ variables: { exerciseId: exercise.id, reviewNotes: null } });
       toast.success('Zweryfikowane i opublikowane w Katalogu FiziYo');
       void resolveReports('Poprawione i opublikowane w weryfikacji');
@@ -793,7 +798,7 @@ export function VerificationWorkspace({
     approveExercise,
     canDecide,
     exercise.id,
-    flush,
+    flushBeforeDecision,
     leaveToNext,
     organizationDecision,
     resolveReports,
@@ -805,7 +810,7 @@ export function VerificationWorkspace({
       if (!organizationDecision || !canRequestChanges) return;
       setIsLeaving(true);
       try {
-        await flush();
+        await flushBeforeDecision();
         await organizationDecision.onRequestChanges(notes);
         toast.success('Ćwiczenie odesłane do poprawek');
         setIsChangesOpen(false);
@@ -816,14 +821,14 @@ export function VerificationWorkspace({
         setIsLeaving(false);
       }
     },
-    [canRequestChanges, flush, leaveToNext, organizationDecision]
+    [canRequestChanges, flushBeforeDecision, leaveToNext, organizationDecision]
   );
 
   const handleArchive = useCallback(async () => {
     if (!organizationDecision || !canArchive) return;
     setIsLeaving(true);
     try {
-      await flush();
+      await flushBeforeDecision();
       await organizationDecision.onArchive();
       toast.success('Ćwiczenie zarchiwizowane');
       router.push(listUrl);
@@ -832,7 +837,7 @@ export function VerificationWorkspace({
       toast.error(actionErrorMessage(error, 'Nie udało się zarchiwizować ćwiczenia'));
       setIsLeaving(false);
     }
-  }, [canArchive, flush, listUrl, organizationDecision, router]);
+  }, [canArchive, flushBeforeDecision, listUrl, organizationDecision, router]);
 
   const handleMarkDuplicate = useCallback(
     async (target: DuplicateTarget) => {
@@ -840,7 +845,7 @@ export function VerificationWorkspace({
       setIsLeaving(true);
       const notes = `To ćwiczenie jest już w bazie jako „${target.name}” (ID: ${target.id}).`;
       try {
-        await flush();
+        await flushBeforeDecision();
         await rejectExercise({
           variables: { exerciseId: exercise.id, rejectionReason: 'POTENTIAL_DUPLICATE', notes },
         });
@@ -854,7 +859,7 @@ export function VerificationWorkspace({
         setIsLeaving(false);
       }
     },
-    [canDecide, exercise.id, flush, leaveToNext, rejectExercise, resolveReports]
+    [canDecide, exercise.id, flushBeforeDecision, leaveToNext, rejectExercise, resolveReports]
   );
 
   const handleSkip = useCallback(() => {
