@@ -1,10 +1,24 @@
-import type {
-  ExerciseBundleMediaCopy,
-  ExerciseBundleMediaCopyItem,
-  ExerciseBundleMediaCopyOutcome,
-} from '@/graphql/mutations/exercises.mutations';
-
 export type MediaCopyTone = 'success' | 'warning' | 'destructive' | 'secondary';
+
+/** Wynik znany portalowi albo dowolna nowa wartość z API (pokazywana wprost). */
+export type ExerciseBundleMediaCopyOutcome = string;
+
+export interface ExerciseBundleMediaCopyItem {
+  sourceUrl: string;
+  targetUrl: string | null;
+  outcome: ExerciseBundleMediaCopyOutcome;
+  reason: string | null;
+}
+
+/** Copy of bundle media into this environment's storage, done before the import writes records. */
+export interface ExerciseBundleMediaCopy {
+  copied: number;
+  alreadyPresent: number;
+  planned: number;
+  kept: number;
+  failed: number;
+  items: ExerciseBundleMediaCopyItem[];
+}
 
 export interface MediaCopyCount {
   key: 'copied' | 'alreadyPresent' | 'planned' | 'kept' | 'failed';
@@ -28,7 +42,7 @@ const COUNT_LABELS: ReadonlyArray<Omit<MediaCopyCount, 'count'>> = [
   { key: 'failed', label: 'nieudane', tone: 'destructive' },
 ];
 
-const OUTCOME_LABELS: Record<ExerciseBundleMediaCopyOutcome, string> = {
+const OUTCOME_LABELS: Record<string, string> = {
   COPIED: 'skopiowane',
   ALREADY_PRESENT: 'już w magazynie',
   PLANNED: 'do skopiowania',
@@ -37,8 +51,61 @@ const OUTCOME_LABELS: Record<ExerciseBundleMediaCopyOutcome, string> = {
   FAILED: 'nieudane, adres bez zmian',
 };
 
+/** Licznik, do którego wpada wynik adresu, gdy API nie podało liczników; nieznany wynik nie wpada do żadnego. */
+const COUNT_KEY_BY_OUTCOME: Record<string, MediaCopyCount['key']> = {
+  COPIED: 'copied',
+  ALREADY_PRESENT: 'alreadyPresent',
+  PLANNED: 'planned',
+  KEPT_OWN: 'kept',
+  KEPT_EMBEDDED: 'kept',
+  FAILED: 'failed',
+};
+
 export function mediaCopyOutcomeLabel(outcome: ExerciseBundleMediaCopyOutcome): string {
-  return OUTCOME_LABELS[outcome] ?? outcome;
+  return Object.hasOwn(OUTCOME_LABELS, outcome) ? OUTCOME_LABELS[outcome] : outcome;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function textOrNull(value: unknown): string | null {
+  return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
+function readItem(value: unknown): ExerciseBundleMediaCopyItem | null {
+  if (!isRecord(value)) return null;
+  const sourceUrl = textOrNull(value.sourceUrl);
+  const outcome = textOrNull(value.outcome);
+  if (!sourceUrl || !outcome) return null;
+  return { sourceUrl, targetUrl: textOrNull(value.targetUrl), outcome, reason: textOrNull(value.reason) };
+}
+
+/**
+ * Raport kopii mediów z odpowiedzi importu. Czyta tylko pola, które zna: brak raportu (API sprzed fizjo-app#432),
+ * brak licznika albo listy, nieznany wynik i dodatkowe pola nie psują karty importu. Brakujący licznik liczy z listy.
+ */
+export function readMediaCopy(value: unknown): ExerciseBundleMediaCopy | null {
+  if (!isRecord(value)) return null;
+
+  const items = (Array.isArray(value.items) ? value.items : [])
+    .map(readItem)
+    .filter((item): item is ExerciseBundleMediaCopyItem => item !== null);
+
+  const count = (key: MediaCopyCount['key']): number => {
+    const reported = value[key];
+    if (typeof reported === 'number' && Number.isFinite(reported) && reported >= 0) return reported;
+    return items.filter((item) => COUNT_KEY_BY_OUTCOME[item.outcome] === key).length;
+  };
+
+  return {
+    copied: count('copied'),
+    alreadyPresent: count('alreadyPresent'),
+    planned: count('planned'),
+    kept: count('kept'),
+    failed: count('failed'),
+    items,
+  };
 }
 
 /** Null when the import did not touch media (no copy for this account or no media addresses in the file). */
