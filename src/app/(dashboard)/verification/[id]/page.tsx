@@ -52,6 +52,8 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
 
   const { data, loading, error, refetch } = useQuery<ExerciseByIdForAdminResponse>(GET_EXERCISE_BY_ID_FOR_ADMIN_QUERY, {
     variables: { id },
+    // The workspace takes its baseline once, on open; a cached (older) document would raise a false save conflict.
+    fetchPolicy: 'network-only',
   });
 
   const queueFilter = useMemo(() => {

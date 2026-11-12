@@ -73,7 +73,8 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
     {
       variables: { organizationId: organizationId ?? '', id },
       skip: !organizationId || !canManageOrganization,
-      fetchPolicy: 'cache-and-network',
+      // The workspace takes its baseline once, on open; a cached (older) document would raise a false save conflict.
+      fetchPolicy: 'network-only',
     }
   );
 

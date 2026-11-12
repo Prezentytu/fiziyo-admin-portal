@@ -80,7 +80,8 @@ export default function CrossOrgVerificationDetailPage({ params }: Readonly<Cros
     {
       variables: { exerciseId: id },
       skip: !isSiteSuperAdmin,
-      fetchPolicy: 'cache-and-network',
+      // The workspace takes its baseline once, on open; a cached (older) document would raise a false save conflict.
+      fetchPolicy: 'network-only',
     }
   );
 
