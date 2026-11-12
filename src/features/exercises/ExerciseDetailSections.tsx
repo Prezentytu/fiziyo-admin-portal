@@ -40,6 +40,8 @@ const READ_LABELS = {
   easier: 'Łatwiej',
   harder: 'Trudniej',
   painRule: 'Reguła bólu',
+  precautions: 'Ostrożności dla grup szczególnych',
+  precautionsHint: 'Pacjent widzi je w osobnym bloku na końcu karty ćwiczenia.',
   checkpoints: 'Punkty kontrolne',
   therapistNote: 'Uwagi kliniczne',
   substitutes: 'Zamienniki',
@@ -468,7 +470,8 @@ export function SafetySection({
     hasText(readIntensityGuide) ||
     content.requiresSupervision === true ||
     contraindications.length > 0 ||
-    content.painRule !== null;
+    content.painRule !== null ||
+    content.precautions.length > 0;
   if (!editable && !hasAnyReadContent) return null;
 
   return (
@@ -539,6 +542,17 @@ export function SafetySection({
             testId="exercise-detail-safety-contraindications"
           />
           <ReadLine label={READ_LABELS.painRule} text={content.painRule} testId="exercise-detail-pain-rule-text" />
+          {content.precautions.length > 0 && (
+            <div className="space-y-1 text-sm text-muted-foreground" data-testid="exercise-detail-safety-precautions">
+              <p className="font-medium text-foreground">{READ_LABELS.precautions}:</p>
+              <p className="text-xs">{READ_LABELS.precautionsHint}</p>
+              <ul className="list-disc space-y-0.5 pl-5">
+                {content.precautions.map((precaution, index) => (
+                  <li key={`${index}-${precaution.text}`}>{precaution.text}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
     </SectionCard>

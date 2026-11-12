@@ -19,7 +19,7 @@ Fizjoterapeuta otwiera ćwiczenie zapisane w kontrakcie v3.3 (FR-007) i widzi ca
 - `therapist.rehab_phases` i `therapist.clinical_benefits` nie są na liście wycofanych w kontrakcie, więc zostają widoczne w obu wersjach.
 - Nowe bloki, tylko gdy pole ma treść (bez pustych nagłówków):
   - „Odczucia i typowe błędy”: Oddech (`breathing.text`), Łatwiej, Trudniej (`patient.easier`, `patient.harder`).
-  - „Bezpieczeństwo”: Przeciwwskazania (`safety.contraindications`), Reguła bólu (`safety.pain_rule`, kod bez tłumaczenia).
+  - „Bezpieczeństwo”: Przeciwwskazania (`safety.contraindications`), Reguła bólu (`safety.pain_rule`, kod bez tłumaczenia), a na końcu sekcji Ostrożności dla grup szczególnych (`safety.precautions`): zdanie w linii tak, jak je zapisano, bez kodu grupy (jak punkty kontrolne bez kodów), z dopiskiem, że pacjent widzi je w osobnym bloku na końcu karty.
   - „Dla fizjoterapeuty”: Uwagi kliniczne (`therapist.note`), Punkty kontrolne (sam tekst, bez kodów `evidence` i `view`), Wskazania (`classification.indications`).
   - „Metadane i wyszukiwanie”: sprzęt z `equipment_items` jako lista: nazwa, „× n” powyżej jednej sztuki, „wymagany” albo „opcjonalny”, „Zamienniki: …” (`utils/equipmentItemText.ts`).
 - Wskazania i reguła bólu to kody ze słownika. Portal nie ma jeszcze etykiet słownika, więc pokazuje kod bez zmian.
@@ -41,3 +41,7 @@ Edycja pól v3.3, etykiety słownika (wskazania, reguła bólu, flagi), flagi be
 ### 2026-11-11
 
 - Tryb odczytu widoku ćwiczenia przez wspólny czytnik treści; nowe bloki dla rekordu 3.3.
+
+### 2026-11-12
+
+- Blok „Ostrożności dla grup szczególnych” w sekcji „Bezpieczeństwo” (opcjonalne `safety.precautions`, decyzja właściciela produktu z 12.11.2026).

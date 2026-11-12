@@ -253,6 +253,57 @@ describe('widok ćwiczenia, rekord 3.3', () => {
     expect(safety.queryByText('Wymaga nadzoru fizjoterapeuty')).not.toBeInTheDocument();
   });
 
+  it('ostrożności dla grup szczególnych stoją na końcu bezpieczeństwa, zdanie w linii, bez kodu grupy', () => {
+    renderReadView({
+      ...v33Record,
+      enrichmentData: {
+        ...golden,
+        safety: {
+          ...golden.safety,
+          precautions: [
+            { group: 'ciaza', text: 'W ciąży po 20. tygodniu ćwicz w pozycji półleżącej.' },
+            { group: 'endoproteza_biodra', text: 'Po endoprotezie biodra nie krzyżuj nóg.' },
+            { group: 'inne' },
+          ],
+        },
+      },
+    });
+    const safety = screen.getByTestId('exercise-detail-safety');
+    const precautions = within(safety).getByTestId('exercise-detail-safety-precautions');
+    expect(within(precautions).getByText('Ostrożności dla grup szczególnych:')).toBeInTheDocument();
+    expect(within(precautions).getByText('Pacjent widzi je w osobnym bloku na końcu karty ćwiczenia.')).toBeInTheDocument();
+    expect(within(precautions).getAllByRole('listitem').map((item) => item.textContent)).toEqual([
+      'W ciąży po 20. tygodniu ćwicz w pozycji półleżącej.',
+      'Po endoprotezie biodra nie krzyżuj nóg.',
+    ]);
+    expect(precautions.textContent).not.toContain('ciaza');
+    expect(safety.lastElementChild?.lastElementChild).toBe(precautions);
+  });
+
+  it('bez ostrożności nie ma ich nagłówka; same ostrożności wystarczą, żeby pokazać sekcję', () => {
+    const { unmount } = renderReadView(v33Record);
+    expect(screen.queryByTestId('exercise-detail-safety-precautions')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Ostrożności dla grup szczególnych/)).not.toBeInTheDocument();
+    unmount();
+
+    renderReadView({
+      enrichmentData: { schemaVersion: '3.3', safety: { precautions: [{ group: 'senior', text: 'Ćwicz przy stabilnym oparciu.' }] } },
+    });
+    expect(sectionText('exercise-detail-safety')).toContain('Ćwicz przy stabilnym oparciu.');
+  });
+
+  it('rekord stary nie pokazuje ostrożności, nawet gdy dokument ma ten klucz', () => {
+    renderReadView({
+      ...legacyRecord,
+      enrichmentData: {
+        ...legacyRecord.enrichmentData,
+        safety: { ...legacyRecord.enrichmentData.safety, precautions: [{ group: 'ciaza', text: 'Nie dla starego rekordu.' }] },
+      },
+    });
+    expect(screen.queryByTestId('exercise-detail-safety-precautions')).not.toBeInTheDocument();
+    expect(screen.queryByText('Nie dla starego rekordu.')).not.toBeInTheDocument();
+  });
+
   it('blok fizjoterapeuty ma punkty kontrolne, uwagi kliniczne i wskazania jako kody', () => {
     renderReadView(v33Record);
     const therapist = within(screen.getByTestId('exercise-detail-therapist'));

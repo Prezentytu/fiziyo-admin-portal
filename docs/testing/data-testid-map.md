@@ -304,6 +304,7 @@ Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu r
 | `exercise-detail-harder-text`                       | „Trudniej” (rekord 3.3, tryb odczytu)                    | `ExerciseDetailSections.tsx`  |
 | `exercise-detail-safety-contraindications`          | Przeciwwskazania w bloku Bezpieczeństwo (rekord 3.3)     | `ExerciseDetailSections.tsx`  |
 | `exercise-detail-pain-rule-text`                    | Reguła bólu, kod ze słownika (rekord 3.3)                | `ExerciseDetailSections.tsx`  |
+| `exercise-detail-safety-precautions`                | Ostrożności dla grup szczególnych (rekord 3.3)           | `ExerciseDetailSections.tsx`  |
 | `exercise-detail-therapist-note`                    | Uwagi kliniczne `therapist.note` (rekord 3.3)            | `ExerciseDetailSections.tsx`  |
 | `exercise-detail-checkpoints`                       | Punkty kontrolne dla fizjoterapeuty (lista)              | `ExerciseDetailSections.tsx`  |
 | `exercise-detail-indications`                       | Wskazania (tekst; w 3.3 kody ze słownika)                | `ExerciseDetailSections.tsx`  |

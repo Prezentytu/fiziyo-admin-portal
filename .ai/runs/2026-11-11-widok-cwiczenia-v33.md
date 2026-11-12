@@ -35,6 +35,7 @@
 
 - Kandydat: branch `feat/widok-cwiczenia-v33`, commity lokalne na 2fc1c820
 - Kontrola: 2026-11-11, `npm run lint` (bez uwag), `npm run type-check` (bez błędów), `npm run check:testids` (unexpected=0), `npm run check:design-tokens` (OK), `npm run test:run` (245 plików, 1435 testów, wszystkie zielone). `next build` pominięty: wymaga zmiennych Clerk.
+- Kontrola 2026-11-12 (blok „Ostrożności dla grup szczególnych”, `safety.precautions`, po merge'u `feat/czytnik-tresci-v33`): te same bramki zielone, `npm run test:run` 245 plików, 1442 testy. `next build` pominięty jak wyżej.
 - Niesprawdzone: wygląd w przeglądarce w obu motywach; DEV i PROD nietknięte.
 - Reviewer: unverified
 
