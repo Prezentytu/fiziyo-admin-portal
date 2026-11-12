@@ -269,6 +269,7 @@ describe('formularz rekordu 3.3', () => {
         "exercise-detail-mistake-fix-0",
         "exercise-detail-mistake-text-0",
         "exercise-detail-patient-summary-input",
+        "exercise-detail-precautions-item-0",
         "exercise-detail-requires-supervision-switch",
         "exercise-detail-should-feel-input",
         "exercise-detail-should-not-feel-input",
@@ -379,6 +380,74 @@ describe('formularz rekordu 3.3', () => {
     expect(sentDocument().safety?.contraindications).toEqual([{ text: 'Świeży uraz.' }]);
     expect(sentDocument().therapist?.contraindications).toBeUndefined();
     expect(updateCore).not.toHaveBeenCalled();
+  });
+});
+
+describe('ostrożności dla grup szczególnych w formularzu 3.3', () => {
+  const precautions = [
+    { group: 'ciaza', text: 'W ciąży po 20. tygodniu ćwicz w pozycji półleżącej.', source: 'S2' },
+    { group: 'endoproteza_biodra', text: 'Po endoprotezie biodra nie krzyżuj nóg.' },
+  ];
+  const withPrecautions: ExerciseEditorSource = {
+    ...v33Source,
+    enrichmentData: { ...document, safety: { ...document.safety, precautions } } as ExerciseEnrichmentData,
+  };
+  const sentPrecautions = () => (sentDocument().safety as Record<string, unknown>).precautions;
+
+  it('pokazuje zapisane zdania i dopisek o osobnym bloku dla pacjenta', () => {
+    render(<Editor source={withPrecautions} />);
+
+    expect(screen.getByText('Ostrożności dla grup szczególnych')).toBeInTheDocument();
+    expect(screen.getByTestId('exercise-detail-precautions-item-0')).toHaveValue(precautions[0].text);
+    expect(screen.getByTestId('exercise-detail-precautions-item-1')).toHaveValue(precautions[1].text);
+    expect(
+      screen.getByText('Pacjent zobaczy te zdania w osobnym bloku na końcu karty ćwiczenia, więc nie powtarzaj ich w krokach.')
+    ).toBeInTheDocument();
+  });
+
+  it('edycja tekstu zachowuje kod grupy i dodatkowe klucze wiersza, reszta dokumentu bez zmian', async () => {
+    render(<Editor source={withPrecautions} />);
+
+    fireEvent.change(screen.getByTestId('exercise-detail-precautions-item-0'), { target: { value: 'W ciąży ćwicz półleżąc.' } });
+    await saveDraft();
+
+    expect(sentPrecautions()).toEqual([{ group: 'ciaza', text: 'W ciąży ćwicz półleżąc.', source: 'S2' }, precautions[1]]);
+    expect(withoutKeys(sentDocument(), ['safety.precautions'])).toEqual(
+      withoutKeys(withPrecautions.enrichmentData as ExerciseEnrichmentData, ['safety.precautions'])
+    );
+  });
+
+  it('nowy wiersz dostaje kod grupy „inne”, także pierwszy w rekordzie bez ostrożności', async () => {
+    const { unmount } = render(<Editor source={withPrecautions} />);
+    fireEvent.click(screen.getByTestId('exercise-detail-precautions-add-btn'));
+    fireEvent.change(screen.getByTestId('exercise-detail-precautions-item-2'), { target: { value: 'Seniorzy: ćwicz przy oparciu.' } });
+    await saveDraft();
+    expect(sentPrecautions()).toEqual([...precautions, { group: 'inne', text: 'Seniorzy: ćwicz przy oparciu.' }]);
+    unmount();
+    updateEnrichment.mockClear();
+
+    render(<Editor />);
+    fireEvent.change(screen.getByTestId('exercise-detail-precautions-item-0'), { target: { value: 'Przy zawrotach głowy ćwicz na siedząco.' } });
+    await saveDraft();
+    expect(sentPrecautions()).toEqual([{ group: 'inne', text: 'Przy zawrotach głowy ćwicz na siedząco.' }]);
+  });
+
+  it('usunięcie wszystkich wierszy usuwa klucz z dokumentu', async () => {
+    render(<Editor source={withPrecautions} />);
+
+    fireEvent.click(screen.getByTestId('exercise-detail-precautions-remove-1'));
+    fireEvent.click(screen.getByTestId('exercise-detail-precautions-remove-0'));
+    await saveDraft();
+
+    expect('precautions' in (sentDocument().safety as Record<string, unknown>)).toBe(false);
+    expect(sentDocument().safety?.stop_if).toBe(document.safety?.stop_if);
+  });
+
+  it('rekord stary nie ma edytora ostrożności', () => {
+    render(<Editor source={{ id: 'old', name: 'Stare', type: 'REPS', enrichmentData: { patient: { steps: ['Krok.'] } } }} />);
+
+    expect(screen.queryByTestId('exercise-detail-precautions-item-0')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('exercise-detail-precautions-add-btn')).not.toBeInTheDocument();
   });
 });
 

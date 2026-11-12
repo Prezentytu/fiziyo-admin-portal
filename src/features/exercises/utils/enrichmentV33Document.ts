@@ -35,6 +35,7 @@ const CUES_PATH = 'patient.cues';
 const CUE_PHASES_PATH = 'patient.cue_phases';
 const MISTAKES_PATH = 'patient.mistakes';
 const CONTRAINDICATIONS_PATH = 'safety.contraindications';
+const PRECAUTIONS_PATH = 'safety.precautions';
 const CHECKPOINTS_PATH = 'therapist.checkpoints';
 const EQUIPMENT_ITEMS_PATH = 'equipment_items';
 
@@ -48,9 +49,16 @@ export const V33_EDITABLE_PATHS: readonly string[] = [
   CUE_PHASES_PATH,
   MISTAKES_PATH,
   CONTRAINDICATIONS_PATH,
+  PRECAUTIONS_PATH,
   CHECKPOINTS_PATH,
   EQUIPMENT_ITEMS_PATH,
 ];
+
+/**
+ * Kod grupy dla ostrożności dopisanej w formularzu. Kontrakt v3.3 nie ma jeszcze listy kodów grup,
+ * więc nowy wiersz dostaje kod ogólny; wiersze wczytane zachowują swój `group`.
+ */
+export const NEW_PRECAUTION_GROUP = 'inne';
 
 /** Ścieżka → nowa wartość. `undefined` znaczy: fizjoterapeuta opróżnił pole, klucz znika z dokumentu. */
 export type V33Edits = Record<string, unknown>;
@@ -130,14 +138,14 @@ export function loadV33Document(raw: ExerciseEnrichmentData | string | null | un
 
 // ---------- Wiersze list: tekst + klucze, których formularz nie pokazuje ----------
 
-/** Tekst punktu kontrolnego albo przeciwwskazania; wpis bywa obiektem `{ text, … }` albo samym tekstem. */
+/** Tekst punktu kontrolnego, przeciwwskazania albo ostrożności; wpis bywa obiektem `{ text, … }` albo samym tekstem. */
 export function readTextItem(item: unknown): string {
   if (typeof item === 'string') return item;
   const text = asRecord(item)?.text;
   return typeof text === 'string' ? text : '';
 }
 
-/** Zmienia sam tekst wpisu; pozostałe klucze (np. `evidence`, `view`) i kształt wpisu zostają. */
+/** Zmienia sam tekst wpisu; pozostałe klucze (np. `evidence`, `view`, `group`) i kształt wpisu zostają. */
 export function withTextItem(item: unknown, text: string): unknown {
   if (typeof item === 'string') return text;
   const record = asRecord(item);
@@ -310,6 +318,7 @@ export function collectV33Edits(loaded: ExerciseEnrichmentData, draft: ExerciseE
   for (const [path, cleanRow] of [
     [MISTAKES_PATH, cleanMistake],
     [CONTRAINDICATIONS_PATH, cleanTextItem],
+    [PRECAUTIONS_PATH, cleanTextItem],
     [CHECKPOINTS_PATH, cleanTextItem],
     [EQUIPMENT_ITEMS_PATH, cleanEquipmentItem],
   ] as const) {

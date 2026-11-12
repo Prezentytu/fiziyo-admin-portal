@@ -22,7 +22,7 @@ import {
 
 /**
  * Editors of the v3.3 content facts that have no place in the old form (SPEC-038).
- * Rows keep every key the form does not show (`evidence`, `view`, `code`); only the edited part changes.
+ * Rows keep every key the form does not show (`evidence`, `view`, `code`, `group`); only the edited part changes.
  */
 
 const DIRTY_FIELD_CLASS = 'border-status-warning/70 bg-status-warning-muted dark:border-status-warning/40';
@@ -37,6 +37,10 @@ interface TextItemsEditorProps {
   dirty?: boolean;
   onChange: (items: unknown[]) => void;
   testIdPrefix: string;
+  /** Keys a row added in the form starts with, next to an empty `text` (e.g. `{ group: 'inne' }`). */
+  newItemDefaults?: Readonly<Record<string, unknown>>;
+  /** One sentence under the rows. */
+  hint?: string;
 }
 
 export function TextItemsEditor({
@@ -48,8 +52,11 @@ export function TextItemsEditor({
   dirty = false,
   onChange,
   testIdPrefix,
+  newItemDefaults,
+  hint,
 }: Readonly<TextItemsEditorProps>) {
-  const rows: readonly unknown[] = items.length > 0 ? items : [{ text: '' }];
+  const newItem = () => ({ ...newItemDefaults, text: '' });
+  const rows: readonly unknown[] = items.length > 0 ? items : [newItem()];
   const canRemove = (index: number) => rows.length > 1 || readTextItem(rows[index]).trim() !== '';
 
   return (
@@ -65,7 +72,7 @@ export function TextItemsEditor({
           size="sm"
           variant="outline"
           disabled={disabled}
-          onClick={() => onChange([...items, { text: '' }])}
+          onClick={() => onChange([...items, newItem()])}
         >
           <Plus className="mr-1 h-3.5 w-3.5" />
           {addLabel}
@@ -96,6 +103,7 @@ export function TextItemsEditor({
           </Button>
         </div>
       ))}
+      {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
     </div>
   );
 }

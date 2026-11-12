@@ -313,6 +313,9 @@ Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu r
 | `exercise-detail-contraindications-add-btn`         | 3.3: dodaj przeciwwskazanie                              | `ExerciseV33Editors.tsx`      |
 | `exercise-detail-contraindications-item-{i}`        | 3.3: tekst przeciwwskazania                              | `ExerciseV33Editors.tsx`      |
 | `exercise-detail-contraindications-remove-{i}`      | 3.3: usuń przeciwwskazanie                               | `ExerciseV33Editors.tsx`      |
+| `exercise-detail-precautions-add-btn`               | 3.3: dodaj ostrożność dla grupy szczególnej              | `ExerciseV33Editors.tsx`      |
+| `exercise-detail-precautions-item-{i}`              | 3.3: zdanie ostrożności (`safety.precautions[].text`)    | `ExerciseV33Editors.tsx`      |
+| `exercise-detail-precautions-remove-{i}`            | 3.3: usuń ostrożność                                     | `ExerciseV33Editors.tsx`      |
 | `exercise-detail-checkpoints-add-btn`               | 3.3: dodaj punkt kontrolny                               | `ExerciseV33Editors.tsx`      |
 | `exercise-detail-checkpoints-item-{i}`              | 3.3: tekst punktu kontrolnego                            | `ExerciseV33Editors.tsx`      |
 | `exercise-detail-checkpoints-remove-{i}`            | 3.3: usuń punkt kontrolny                                | `ExerciseV33Editors.tsx`      |

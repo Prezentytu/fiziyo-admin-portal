@@ -10,6 +10,7 @@ import {
   countV33AiFillSections,
   loadV33Document,
   mergeV33AiFill,
+  NEW_PRECAUTION_GROUP,
   parseV33JsonDocument,
   pickV33AiFill,
   readTextItem,
@@ -251,6 +252,77 @@ describe('zmiana jednego pola zostawia resztę dokumentu', () => {
     expect(saved.safety?.flags).toEqual(loaded.safety?.flags);
     expect(saved.safety?.pain_rule).toBe('WS-3');
     expectOnlyChanged(saved, ['safety.contraindications']);
+  });
+
+  describe('safety.precautions', () => {
+    const precautions = [
+      { group: 'ciaza', text: 'W ciąży po 20. tygodniu ćwicz w pozycji półleżącej.', source: 'S2', reviewed: { by: 'kp', ok: true } },
+      { group: 'endoproteza_biodra', text: 'Po endoprotezie biodra nie krzyżuj nóg.' },
+    ];
+    const withPrecautions = { ...loaded, safety: { ...loaded.safety, precautions } } as ExerciseEnrichmentData;
+    const rowsOf = (document: unknown) => section(document, 'safety').precautions as unknown[];
+
+    it('jest na liście ścieżek edytowalnych', () => {
+      expect(V33_EDITABLE_PATHS).toContain('safety.precautions');
+    });
+
+    it('zmiana tekstu jednego wiersza zmienia tylko tę ścieżkę i zachowuje group oraz dodatkowe klucze', () => {
+      const draft = draftOf(withPrecautions);
+      rowsOf(draft)[0] = withTextItem(rowsOf(draft)[0], ' W ciąży ćwicz w pozycji półleżącej. ');
+
+      expect(Object.keys(collectV33Edits(withPrecautions, draft as ExerciseEnrichmentData))).toEqual(['safety.precautions']);
+      const saved = save(draft, withPrecautions);
+
+      expect(rowsOf(saved)).toEqual([
+        { group: 'ciaza', text: 'W ciąży ćwicz w pozycji półleżącej.', source: 'S2', reviewed: { by: 'kp', ok: true } },
+        precautions[1],
+      ]);
+      expect(Object.keys(rowsOf(saved)[0] as Doc)).toEqual(['group', 'text', 'source', 'reviewed']);
+      expectOnlyChanged(saved, ['safety.precautions'], withPrecautions);
+    });
+
+    it('nowy wiersz dostaje kod grupy „inne”, kolejność zostaje, pusty wiersz odpada', () => {
+      const draft = draftOf(withPrecautions);
+      rowsOf(draft).push({ group: NEW_PRECAUTION_GROUP, text: 'Przy zawrotach głowy ćwicz na siedząco.' }, { group: NEW_PRECAUTION_GROUP, text: ' ' });
+
+      expect(rowsOf(save(draft, withPrecautions))).toEqual([
+        ...precautions,
+        { group: 'inne', text: 'Przy zawrotach głowy ćwicz na siedząco.' },
+      ]);
+    });
+
+    it('pierwsza ostrożność w dokumencie bez pola tworzy klucz, reszta bezpieczeństwa bez zmian', () => {
+      const draft = draftOf();
+      section(draft, 'safety').precautions = [{ group: NEW_PRECAUTION_GROUP, text: 'Seniorzy: ćwicz przy oparciu.' }];
+
+      const saved = save(draft);
+
+      expect(rowsOf(saved)).toEqual([{ group: 'inne', text: 'Seniorzy: ćwicz przy oparciu.' }]);
+      expectOnlyChanged(saved, ['safety.precautions']);
+    });
+
+    it('opróżniona lista usuwa klucz, reszta zostaje', () => {
+      const draft = draftOf(withPrecautions);
+      section(draft, 'safety').precautions = [];
+
+      const saved = save(draft, withPrecautions);
+
+      expect('precautions' in section(saved, 'safety')).toBe(false);
+      expectOnlyChanged(saved, ['safety.precautions'], withPrecautions);
+    });
+
+    it('nieruszona lista wraca identyczna, także z pustym wierszem dodanym w formularzu', () => {
+      const untouched = draftOf(withPrecautions);
+      expect(collectV33Edits(withPrecautions, untouched as ExerciseEnrichmentData)).toEqual({});
+      expect(JSON.stringify(save(untouched, withPrecautions))).toBe(JSON.stringify(withPrecautions));
+
+      rowsOf(untouched).push({ group: NEW_PRECAUTION_GROUP, text: '' });
+      expect(collectV33Edits(withPrecautions, untouched as ExerciseEnrichmentData)).toEqual({});
+
+      const emptyRowOnly = draftOf();
+      section(emptyRowOnly, 'safety').precautions = [{ group: NEW_PRECAUTION_GROUP, text: '' }];
+      expect(JSON.stringify(save(emptyRowOnly))).toBe(JSON.stringify(loaded));
+    });
   });
 
   it('equipment_items: zmiana etykiety, liczby, wymagalności i zamienników zachowuje code', () => {

@@ -29,7 +29,12 @@ export const EXERCISE_CONTENT_LABELS = {
   breathing: 'Oddech',
   checkpoints: 'Punkty kontrolne',
   therapistNote: 'Uwagi kliniczne',
+  precautions: 'Ostrożności dla grup szczególnych',
 } as const;
+
+/** `safety.precautions` is a separate patient-facing block at the end of the exercise card. */
+export const EXERCISE_PRECAUTIONS_HINT =
+  'Pacjent zobaczy te zdania w osobnym bloku na końcu karty ćwiczenia, więc nie powtarzaj ich w krokach.';
 
 /** `notes` reaches the patient plan as „Wskazówka fizjoterapeuty” in the mobile app. */
 export const EXERCISE_NOTES_HINT = 'Pacjent może ją zobaczyć przy ćwiczeniu w aplikacji.';

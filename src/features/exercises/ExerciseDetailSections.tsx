@@ -10,7 +10,11 @@ import { ListEditor } from '@/components/shared/enrichment/ListEditor';
 import { TherapistNotesSection } from '@/components/shared/enrichment/TherapistNotesSection';
 import { DirtyDot } from '@/components/shared/enrichment/DirtyDot';
 import { DescriptionPlayerHintCounter } from '@/components/shared/enrichment/PlayerHintLengthCounter';
-import { EXERCISE_CONTENT_LABELS as LABELS, EXERCISE_NOTES_HINT } from '@/components/shared/enrichment/enrichmentFieldLabels';
+import {
+  EXERCISE_CONTENT_LABELS as LABELS,
+  EXERCISE_NOTES_HINT,
+  EXERCISE_PRECAUTIONS_HINT,
+} from '@/components/shared/enrichment/enrichmentFieldLabels';
 import {
   canRemovePlaceholderRow,
   isMistakeRowEmpty,
@@ -19,6 +23,7 @@ import { cn } from '@/lib/utils';
 import type { ExerciseContentVersion } from '@/components/shared/exercise/readExerciseContent';
 import type { EnrichmentPatientMistakeV3, ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import { EquipmentItemsEditor, TextItemsEditor, TherapistNoteField } from './ExerciseV33Editors';
+import { NEW_PRECAUTION_GROUP } from './utils/enrichmentV33Document';
 
 /** Function to check whether an enrichment path differs from the saved baseline. */
 type IsPathDirty = (path: string) => boolean;
@@ -535,6 +540,20 @@ export function SafetySection({
             <Label>Wymaga nadzoru fizjoterapeuty</Label>
             <DirtyDot active={isPathDirty('safety.requires_supervision')} className="ml-auto" />
           </div>
+          {contentVersion === '3.3' ? (
+            <TextItemsEditor
+              title={LABELS.precautions}
+              items={data.safety?.precautions ?? []}
+              placeholder="np. W ciąży ćwicz w pozycji półleżącej."
+              addLabel="Dodaj ostrożność"
+              disabled={disabled}
+              dirty={isPathDirty('safety.precautions')}
+              onChange={(items) => setPath('safety.precautions', items)}
+              testIdPrefix="exercise-detail-precautions"
+              newItemDefaults={{ group: NEW_PRECAUTION_GROUP }}
+              hint={EXERCISE_PRECAUTIONS_HINT}
+            />
+          ) : null}
         </div>
       ) : (
         <div className="space-y-2">

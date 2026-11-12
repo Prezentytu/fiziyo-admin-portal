@@ -24,10 +24,10 @@ To zmiana zapisu danych: drzwi jednokierunkowe. Rekord stary (bez `schemaVersion
    - sekcje zespołu (`provenance`, `lifecycle`, `classification`, `relations`, `media`, `prescription`, `ai`, `side`, `safety.pain_rule`, `safety.flags`) nie mają edytorów i przetrwają nawet wtedy, gdy szkic je zgubił;
    - pole wycofane dopisane do szkicu (AI, panel JSON, widok weryfikacji) nie jest zmianą i nie trafia do zapisu.
 4. **Co jest przycinane.** Tylko to, co fizjoterapeuta edytował: tekst opróżniony usuwa swój klucz (sekcja nadrzędna zostaje, nawet pusta), lista opróżniona usuwa swój klucz, z edytowanej listy odpadają puste wiersze, teksty są przycinane z białych znaków. Biały znak na końcu tekstu i pusty wiersz dodany w formularzu nie są zmianą. W edytowanej liście wiersz nieruszony wraca w zapisanej postaci.
-5. **Wiersze bogatsze niż tekst.** Punkt kontrolny i przeciwwskazanie edytują sam `text`, reszta kluczy wiersza (`evidence`, `view`) zostaje. Pozycja sprzętu edytuje `label`, `qty`, `required`, `substitutes`; `code` zostaje. Nowa pozycja sprzętu nie ma `code`.
+5. **Wiersze bogatsze niż tekst.** Punkt kontrolny, przeciwwskazanie i ostrożność edytują sam `text`, reszta kluczy wiersza (`evidence`, `view`, `group`) zostaje. Nowa ostrożność dostaje `group: "inne"` (`NEW_PRECAUTION_GROUP`): kontrakt v3.3 nie ma listy kodów grup, więc formularz nie daje wyboru grupy. Pozycja sprzętu edytuje `label`, `qty`, `required`, `substitutes`; `code` zostaje. Nowa pozycja sprzętu nie ma `code`.
 6. **Kroki i wskazówki.** Usunięcie kroku albo wskazówki przesuwa zdjęcia (`step_images`) i fazy (`cue_phases`) przypięte po indeksie, tak jak dotąd `realignMediaForBlankEntries`.
 7. **Kolumny wycofane.** Dla rekordu 3.3 `buildChangedCoreVariables` nie wysyła `description`, `clinicalDescription`, `notes`, `audioCue`, ani nowej wartości, ani `null`. Stare wartości zostają w bazie nietknięte. Guard jest w hooku, więc obowiązuje stronę ćwiczenia, dialog i workspace weryfikacji.
-8. **Formularz 3.3** (`ExerciseContentSections` z `contentVersion="3.3"`): nie renderuje opisu dla pacjenta, opisu klinicznego, notatki, polecenia audio, `therapist.clinical_notes`, starych wskazań i przeciwwskazań, faz rehabilitacji, korzyści, notatek o progresji, starej listy `equipment`, `safety.intensity_guide` ani list `ai.*`. Dochodzą edytory: `patient.easier`, `patient.harder`, `breathing.text`, `safety.contraindications[]`, `therapist.checkpoints[]`, `therapist.note` (600 znaków, licznik), `equipment_items[]`.
+8. **Formularz 3.3** (`ExerciseContentSections` z `contentVersion="3.3"`): nie renderuje opisu dla pacjenta, opisu klinicznego, notatki, polecenia audio, `therapist.clinical_notes`, starych wskazań i przeciwwskazań, faz rehabilitacji, korzyści, notatek o progresji, starej listy `equipment`, `safety.intensity_guide` ani list `ai.*`. Dochodzą edytory: `patient.easier`, `patient.harder`, `breathing.text`, `safety.contraindications[]`, `safety.precautions[]` (ostrożności dla grup szczególnych, na końcu sekcji „Bezpieczeństwo”, z dopiskiem, że pacjent widzi je w osobnym bloku na końcu karty i nie należy ich powtarzać w krokach), `therapist.checkpoints[]`, `therapist.note` (600 znaków, licznik), `equipment_items[]`.
 9. **„Uzupełnij przez AI” zostaje włączone.** Z odpowiedzi generatora bierzemy tylko pola, które w 3.3 leżą w tym samym miejscu: podsumowanie, kroki, wskazówki, błędy, „po co”, „kiedy”, odczucia, „Przerwij, gdy”. Reszta odpowiedzi jest odrzucana. AI wypełnia wyłącznie puste pola, a zapis i tak przechodzi przez regułę z pkt 3.
 10. **Panel „Zaawansowane (JSON)”** pokazuje dokument 3.3 bez szkieletu starych kluczy i odrzuca z komunikatem dokument, który nie niesie `schemaVersion` 3.3 lub wyższej. Zastosowany dokument zmienia tylko pola z pkt 3.
 
@@ -69,3 +69,7 @@ Mutacja bez zmian: `updateExercise` z `enrichmentDataJson` (cały dokument). Kon
 ### 2026-11-11
 
 - Pierwsza wersja: reguła zapisu 3.3, formularz 3.3, AI i panel JSON, testy.
+
+### 2026-11-12
+
+- `safety.precautions` na liście ścieżek edytowalnych, edytor wierszy z tekstem jak przeciwwskazania (decyzja właściciela produktu z 12.11.2026).
