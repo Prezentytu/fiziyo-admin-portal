@@ -30,6 +30,7 @@ vi.mock('@apollo/client/react', () => ({
     requested.push(options.variables);
     return { data: respond(options.variables), loading: false, error: undefined };
   },
+  useApolloClient: () => ({ query: vi.fn() }),
 }));
 
 describe('useExercisePickerPages', () => {

@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
-import { useQuery } from '@apollo/client/react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useApolloClient, useQuery } from '@apollo/client/react';
 
 import { GET_AVAILABLE_EXERCISES_PICKER_PAGE_QUERY } from '@/graphql/queries/exercises.queries';
 import type { ExerciseSourceFilter } from '@/utils/exerciseSourceFilter';
@@ -39,15 +39,19 @@ interface PagesState<T> {
   hasNextPage: boolean;
   totalCount: number;
   counts: ExercisePickerCounts | null;
+  /** Grows when an already loaded page came back changed (the library changed after a write). */
+  refreshes: number;
 }
 
 function emptyState<T>(key: string, organizationId: string, counts: ExercisePickerCounts | null): PagesState<T> {
-  return { key, organizationId, page: 1, pages: new Map(), hasNextPage: false, totalCount: 0, counts };
+  return { key, organizationId, page: 1, pages: new Map(), hasNextPage: false, totalCount: 0, counts, refreshes: 0 };
 }
 
 /**
  * Picker library in server pages: search, source tab and order come from the API, like the library list.
  * "Show more" appends the next page; a new search, tab or organization starts again from page 1.
+ * Apollo keeps each page as its own cache entry and refetches only the last asked one after a write,
+ * so when that page comes back changed the earlier pages are asked again as well.
  */
 export function useExercisePickerPages<T extends { id: string }>({
   organizationId,
@@ -55,6 +59,7 @@ export function useExercisePickerPages<T extends { id: string }>({
   search,
   sourceFilter,
 }: UseExercisePickerPagesOptions) {
+  const client = useApolloClient();
   const orgId = organizationId ?? '';
   const key = `${orgId}|${sourceFilter}|${search}`;
   const [state, setState] = useState<PagesState<T>>(() => emptyState<T>(key, orgId, null));
@@ -66,10 +71,11 @@ export function useExercisePickerPages<T extends { id: string }>({
     setState(current);
   }
 
+  const tab = toPickerLibraryTab(sourceFilter);
   const { data, loading, error, refetch } = useQuery<PickerPageResponse<T>>(GET_AVAILABLE_EXERCISES_PICKER_PAGE_QUERY, {
     variables: {
       organizationId: orgId,
-      tab: toPickerLibraryTab(sourceFilter),
+      tab,
       search: search || null,
       page: current.page,
       pageSize: EXERCISE_PICKER_PAGE_SIZE,
@@ -87,9 +93,43 @@ export function useExercisePickerPages<T extends { id: string }>({
       hasNextPage: isLastPage ? result.hasNextPage : current.hasNextPage,
       totalCount: result.totalCount,
       counts: result.counts,
+      refreshes: current.pages.has(result.page) ? current.refreshes + 1 : current.refreshes,
     };
     setState(current);
   }
+
+  const refreshes = current.refreshes;
+  const activePage = current.page;
+  const loadedPageNumbers = [...current.pages.keys()].sort((left, right) => left - right).join('|');
+  useEffect(() => {
+    if (refreshes === 0 || skip || !orgId) return;
+    let cancelled = false;
+    const stalePages = loadedPageNumbers.split('|').map(Number).filter((page) => page > 0 && page !== activePage);
+    for (const page of stalePages) {
+      void client
+        .query<PickerPageResponse<T>>({
+          query: GET_AVAILABLE_EXERCISES_PICKER_PAGE_QUERY,
+          variables: { organizationId: orgId, tab, search: search || null, page, pageSize: EXERCISE_PICKER_PAGE_SIZE },
+          fetchPolicy: 'network-only',
+        })
+        .then((response) => {
+          const refreshed = response.data?.availableExercisesPage;
+          if (cancelled || !refreshed) return;
+          setState((previous) =>
+            previous.key === key && previous.pages.has(page) && previous.pages.get(page) !== refreshed.items
+              ? { ...previous, pages: new Map(previous.pages).set(page, refreshed.items) }
+              : previous
+          );
+        })
+        // A failed refresh keeps the page as it was; the next search or write asks again.
+        .catch(() => undefined);
+    }
+    return () => {
+      cancelled = true;
+    };
+    // Runs once per refresh of the active page; the loaded page numbers are read at that moment.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshes, key]);
 
   const loadedPages = current.pages;
   const items = useMemo(() => flattenPickerPages(loadedPages), [loadedPages]);

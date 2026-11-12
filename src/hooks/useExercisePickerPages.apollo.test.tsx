@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { act, renderHook, waitFor } from '@testing-library/react';
+import { useApolloClient } from '@apollo/client/react';
 import { MockedProvider } from '@apollo/client/testing/react';
 import type { MockLink } from '@apollo/client/testing';
 import { describe, expect, it } from 'vitest';
@@ -147,5 +148,38 @@ describe('useExercisePickerPages with Apollo Client', () => {
     act(() => result.current.loadMore());
     await waitFor(() => expect(ids(result.current.items)).toEqual(['p1-1', 'p1-2', 'p2-1', 'p2-2']));
     expect(result.current.remaining).toBe(0);
+  });
+
+  it('refreshes the earlier pages too when the library changed after a write', async () => {
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <MockedProvider
+        mocks={[
+          pageMock(null, 1, ['p1-1', 'p1-2'], { hasNextPage: true, totalCount: 3 }),
+          pageMock(null, 2, ['p2-1'], { totalCount: 3 }),
+          // After a write: a new exercise leads page 1 and pushes the rest down.
+          pageMock(null, 2, ['p1-2', 'p2-1'], { totalCount: 4 }),
+          pageMock(null, 1, ['new', 'p1-1'], { hasNextPage: true, totalCount: 4 }),
+        ]}
+      >
+        {children}
+      </MockedProvider>
+    );
+    const { result } = renderHook(
+      () => ({
+        pages: useExercisePickerPages<Item>({ organizationId: 'org', search: '', sourceFilter: 'all' }),
+        client: useApolloClient(),
+      }),
+      { wrapper }
+    );
+    await waitFor(() => expect(ids(result.current.pages.items)).toEqual(['p1-1', 'p1-2']));
+    act(() => result.current.pages.loadMore());
+    await waitFor(() => expect(ids(result.current.pages.items)).toEqual(['p1-1', 'p1-2', 'p2-1']));
+
+    await act(async () => {
+      await result.current.client.refetchQueries({ include: [GET_AVAILABLE_EXERCISES_PICKER_PAGE_QUERY] });
+    });
+
+    await waitFor(() => expect(ids(result.current.pages.items)).toEqual(['new', 'p1-1', 'p1-2', 'p2-1']));
+    expect(result.current.pages.remaining).toBe(0);
   });
 });
