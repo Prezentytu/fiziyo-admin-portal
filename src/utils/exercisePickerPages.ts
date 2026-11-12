@@ -3,6 +3,8 @@ import type { ExerciseSourceFilter } from '@/utils/exerciseSourceFilter';
 
 export const EXERCISE_PICKER_PAGE_SIZE = 50;
 export const POPULAR_EXERCISE_LIMIT = 10;
+/** Most used exercises checked against the library, so hidden ones can be replaced by the next most used. */
+export const POPULAR_CANDIDATE_LIMIT = 30;
 
 const TAB_BY_SOURCE: Record<ExerciseSourceFilter, ExerciseLibraryTab> = {
   all: 'ALL',
@@ -38,6 +40,15 @@ export function topPopularExerciseIds(
     .sort(([leftId, left], [rightId, right]) => right - left || leftId.localeCompare(rightId))
     .slice(0, limit)
     .map(([exerciseId]) => exerciseId);
+}
+
+/** Popular candidates the library confirmed as visible, most used first. Unconfirmed ones are never offered. */
+export function visiblePopularExerciseIds(
+  candidateIds: readonly string[],
+  visibleIds: ReadonlySet<string>,
+  limit: number = POPULAR_EXERCISE_LIMIT
+): string[] {
+  return candidateIds.filter((exerciseId) => visibleIds.has(exerciseId)).slice(0, limit);
 }
 
 /**

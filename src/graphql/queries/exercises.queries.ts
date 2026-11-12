@@ -249,7 +249,28 @@ export const GET_AVAILABLE_EXERCISES_PICKER_PAGE_QUERY = gql`
   ${EXERCISE_PICKER_FRAGMENT}
 `;
 
-// One picker record by id (popular exercises outside the loaded pages).
+// Picker records by id through the library's visibility rule (availableExercises is the list the page shares
+// its rule with): an exercise the library hides is not returned, so it cannot show up as "Popularne".
+// The API cuts the list to 5000 by name before `where` applies, so two windows cover 10 000 visible exercises.
+export const GET_VISIBLE_EXERCISE_PICKER_RECORDS_QUERY = gql`
+  query GetVisibleExercisePickerRecords($organizationId: String!, $ids: [String!]!) {
+    firstWindow: availableExercises(organizationId: $organizationId, skip: 0, take: 5000, where: { id: { in: $ids } }) {
+      ...ExercisePickerFragment
+    }
+    secondWindow: availableExercises(
+      organizationId: $organizationId
+      skip: 5000
+      take: 5000
+      where: { id: { in: $ids } }
+    ) {
+      ...ExercisePickerFragment
+    }
+  }
+  ${EXERCISE_PICKER_FRAGMENT}
+`;
+
+// One picker record by id, for exercises already in the set (shown, not offered for adding).
+// exerciseById does not apply the library's visibility rule; never use it to offer an exercise.
 export const GET_EXERCISE_PICKER_RECORD_QUERY = gql`
   query GetExercisePickerRecord($id: String!) {
     exerciseById(id: $id) {

@@ -5,6 +5,7 @@ import {
   mergeKnownExercises,
   toPickerLibraryTab,
   topPopularExerciseIds,
+  visiblePopularExerciseIds,
 } from './exercisePickerPages';
 
 describe('flattenPickerPages', () => {
@@ -29,6 +30,16 @@ describe('topPopularExerciseIds', () => {
 
   it('bez danych o użyciu nie ma popularnych', () => {
     expect(topPopularExerciseIds(undefined)).toEqual([]);
+  });
+});
+
+describe('visiblePopularExerciseIds', () => {
+  it('zostawia tylko ćwiczenia potwierdzone przez bibliotekę, w kolejności użycia, z limitem', () => {
+    expect(visiblePopularExerciseIds(['ukryte', 'a', 'b', 'c'], new Set(['c', 'a', 'b']), 2)).toEqual(['a', 'b']);
+  });
+
+  it('bez potwierdzenia z biblioteki nie ma popularnych', () => {
+    expect(visiblePopularExerciseIds(['a', 'b'], new Set())).toEqual([]);
   });
 });
 

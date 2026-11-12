@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   GET_EXERCISE_PICKER_DETAILS_QUERY,
   GET_EXERCISE_PICKER_RECORD_QUERY,
+  GET_VISIBLE_EXERCISE_PICKER_RECORDS_QUERY,
 } from '@/graphql/queries/exercises.queries';
 
 import { useExercisePickerLibrary } from './useExercisePickerLibrary';
@@ -31,12 +32,34 @@ function pageResponse(variables: { search: string | null; page: number }) {
   return pageCache.get(key);
 }
 
+/** What the library's visibility rule returns for the asked ids (availableExercises narrowed to ids). */
+let visibleRecords: Item[] = [];
+const visibleRequests: Array<{ organizationId: string; ids: string[] }> = [];
+const visibleCache = new Map<string, unknown>();
+
+function visibleResponse(variables: { organizationId: string; ids: string[] }) {
+  const key = JSON.stringify(variables) + JSON.stringify(visibleRecords);
+  if (!visibleCache.has(key)) {
+    visibleRequests.push(variables);
+    const asked = visibleRecords.filter((record) => variables.ids.includes(record.id));
+    visibleCache.set(key, { firstWindow: asked.slice(0, 1), secondWindow: asked.slice(1) });
+  }
+  return visibleCache.get(key);
+}
+
 vi.mock('@apollo/client/react', () => ({
-  useQuery: (_query: unknown, options: { variables: { search: string | null; page: number }; skip?: boolean }) => ({
-    data: options.skip ? undefined : pageResponse(options.variables),
-    loading: false,
-    error: undefined,
-  }),
+  useQuery: (
+    query: unknown,
+    options: {
+      variables: { search: string | null; page: number } & { organizationId: string; ids: string[] };
+      skip?: boolean;
+    }
+  ) => {
+    if (options.skip) return { data: undefined, loading: false, error: undefined };
+    const data =
+      query === GET_VISIBLE_EXERCISE_PICKER_RECORDS_QUERY ? visibleResponse(options.variables) : pageResponse(options.variables);
+    return { data, loading: false, error: undefined };
+  },
   useApolloClient: () => ({ query: mockClientQuery }),
 }));
 
@@ -54,6 +77,9 @@ describe('useExercisePickerLibrary', () => {
   beforeEach(() => {
     mockClientQuery.mockReset();
     pageCache.clear();
+    visibleCache.clear();
+    visibleRequests.length = 0;
+    visibleRecords = [];
     itemsBySearch = {
       '': [
         { id: 'a', name: 'A', updatedAt: 't1' },
@@ -149,28 +175,79 @@ describe('useExercisePickerLibrary', () => {
     await waitFor(() => expect(result.current.detailsReady).toBe(true));
   });
 
-  it('loads popular and shown exercises outside the pages as records, without blocking saving', async () => {
+  it('offers as popular only exercises the library rule returns, never one fetched by id', async () => {
+    // exerciseById answers for any global record, also one the library hides (unpublished, org gate, demo without access).
     mockClientQuery.mockImplementation(({ variables }: { variables: { id: string } }) =>
       Promise.resolve({ data: { exerciseById: { id: variables.id, name: variables.id, updatedAt: 't1' } } })
     );
+    visibleRecords = [{ id: 'popular', name: 'Popular', updatedAt: 't1' }];
 
     const { result } = renderHook(() =>
       useExercisePickerLibrary({
         organizationId: 'org',
         detailExerciseIds: [],
-        recordExerciseIds: ['in-set'],
-        popularity: { b: 9, popular: 3, unused: 0 },
+        popularity: { hidden: 9, b: 5, popular: 3, unused: 0 },
       })
     );
 
+    expect(visibleRequests).toEqual([{ organizationId: 'org', ids: ['hidden', 'b', 'popular'] }]);
     expect(result.current.library.popularIds).toEqual(['b', 'popular']);
-    await waitFor(() =>
-      expect(result.current.exercises.map((exercise) => exercise.id)).toEqual(expect.arrayContaining(['in-set', 'popular']))
+    expect(result.current.exercises.map((exercise) => exercise.id)).toEqual(['a', 'b', 'popular']);
+    expect(mockClientQuery).not.toHaveBeenCalled();
+    await act(async () => {});
+    expect(result.current.library.popularIds).not.toContain('hidden');
+    expect(result.current.exercises.map((exercise) => exercise.id)).not.toContain('hidden');
+  });
+
+  it('does not offer as popular a hidden exercise that is known because it is already in the set', async () => {
+    mockClientQuery.mockImplementation(({ variables }: { variables: { id: string } }) =>
+      Promise.resolve({ data: { exerciseById: { id: variables.id, name: variables.id, updatedAt: 't1', enrichmentData: null } } })
     );
-    expect(mockClientQuery.mock.calls.map((call) => call[0].query)).toEqual([
-      GET_EXERCISE_PICKER_RECORD_QUERY,
-      GET_EXERCISE_PICKER_RECORD_QUERY,
-    ]);
+
+    const { result } = renderHook(() =>
+      useExercisePickerLibrary({
+        organizationId: 'org',
+        detailExerciseIds: ['hidden-chosen'],
+        recordExerciseIds: ['hidden-in-set'],
+        popularity: { 'hidden-chosen': 9, 'hidden-in-set': 8 },
+      })
+    );
+
+    // Both stay known, so the set still opens and saves; neither is offered for adding.
+    await waitFor(() =>
+      expect(result.current.exercises.map((exercise) => exercise.id)).toEqual(
+        expect.arrayContaining(['hidden-chosen', 'hidden-in-set'])
+      )
+    );
+    expect(result.current.detailsReady).toBe(true);
+    expect(result.current.library.popularIds).toEqual([]);
+    expect(result.current.library.itemIds).toEqual(['a', 'b']);
+  });
+
+  it('fills the popular list with the next most used exercises when the top ones are hidden', () => {
+    const popularity = Object.fromEntries(Array.from({ length: 14 }, (_, index) => [`p${String(index).padStart(2, '0')}`, 100 - index]));
+    visibleRecords = Object.keys(popularity)
+      .filter((id) => id !== 'p00' && id !== 'p01')
+      .map((id) => ({ id, name: id, updatedAt: 't1' }));
+
+    const { result } = renderHook(() =>
+      useExercisePickerLibrary({ organizationId: 'org', detailExerciseIds: [], popularity })
+    );
+
+    expect(result.current.library.popularIds).toEqual(['p02', 'p03', 'p04', 'p05', 'p06', 'p07', 'p08', 'p09', 'p10', 'p11']);
+  });
+
+  it('loads exercises already in the set by id as records, without blocking saving', async () => {
+    mockClientQuery.mockImplementation(({ variables }: { variables: { id: string } }) =>
+      Promise.resolve({ data: { exerciseById: { id: variables.id, name: variables.id, updatedAt: 't1' } } })
+    );
+
+    const { result } = renderHook(() =>
+      useExercisePickerLibrary({ organizationId: 'org', detailExerciseIds: [], recordExerciseIds: ['in-set'] })
+    );
+
+    await waitFor(() => expect(result.current.exercises.map((exercise) => exercise.id)).toContain('in-set'));
+    expect(mockClientQuery.mock.calls.map((call) => call[0].query)).toEqual([GET_EXERCISE_PICKER_RECORD_QUERY]);
     expect(result.current.detailsReady).toBe(true);
   });
 

@@ -1,18 +1,24 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useApolloClient } from '@apollo/client/react';
+import { useApolloClient, useQuery } from '@apollo/client/react';
 import { toast } from 'sonner';
 
 import {
   GET_EXERCISE_PICKER_DETAILS_QUERY,
   GET_EXERCISE_PICKER_RECORD_QUERY,
+  GET_VISIBLE_EXERCISE_PICKER_RECORDS_QUERY,
 } from '@/graphql/queries/exercises.queries';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useExercisePickerPages, type ExercisePickerCounts } from '@/hooks/useExercisePickerPages';
 import { findMissingEnrichmentIds, withLoadedEnrichment } from '@/utils/exercisePickerDetails';
-import { mergeKnownExercises, topPopularExerciseIds } from '@/utils/exercisePickerPages';
+import {
+  mergeKnownExercises,
+  POPULAR_CANDIDATE_LIMIT,
+  topPopularExerciseIds,
+  visiblePopularExerciseIds,
+} from '@/utils/exercisePickerPages';
 import type { ExerciseSourceFilter } from '@/utils/exerciseSourceFilter';
 
 interface UseExercisePickerLibraryOptions {
@@ -22,9 +28,12 @@ interface UseExercisePickerLibraryOptions {
   detailExerciseIds: readonly string[];
   /** Enrichment already at hand (e.g. from set mappings), so those exercises need no enrichment request. */
   knownEnrichment?: ReadonlyArray<{ id: string; enrichmentData?: ExerciseEnrichmentData | null }>;
-  /** Exercises shown but not edited (e.g. already in the set): their records load by id, without blocking saving. */
+  /**
+   * Exercises already in the set, shown but not edited: their records load by id, without blocking saving.
+   * Loading by id skips the library's visibility rule, so these records are never offered for adding.
+   */
   recordExerciseIds?: readonly string[];
-  /** Usage count per exercise id; the most used ones are shown as "Popularne" above the list. */
+  /** Usage count per exercise id; the most used ones the library still shows are "Popularne" above the list. */
   popularity?: Readonly<Record<string, number>>;
 }
 
@@ -55,14 +64,20 @@ interface ExerciseByIdResponse<T> {
   exerciseById: DetailsRecord<T> | null;
 }
 
+interface VisibleRecordsResponse<T> {
+  firstWindow?: T[] | null;
+  secondWindow?: T[] | null;
+}
+
 function toFetchedDetails<T>(exercise: DetailsRecord<T>): FetchedDetails<T> {
   const { enrichmentData, ...record } = exercise;
   return { record: record as T, enrichmentData: enrichmentData ?? null, updatedAt: exercise.updatedAt ?? null };
 }
 
 /**
- * Exercise library for pickers: server pages for browsing, records by id for chosen and popular exercises,
- * enrichment only for chosen ones. `exercises` holds every record the picker knows, so callers can look up
+ * Exercise library for pickers: server pages for browsing, records by id for exercises already chosen,
+ * enrichment only for chosen ones. Everything offered for adding (pages, "Popularne") comes through the
+ * library's visibility rule; a record fetched by id is known but never offered. `exercises` holds every record the picker knows, so callers can look up
  * chosen exercises even when they are on no loaded page (a set opened for editing, a search changed since).
  * `detailsReady` is false until every chosen exercise has its record and enrichment; callers block saving
  * until then, because override deltas against a missing template would clear or freeze patient content.
@@ -98,11 +113,36 @@ export function useExercisePickerLibrary<T extends { id: string; updatedAt?: str
   const [failedIds, setFailedIds] = useState<ReadonlySet<string>>(() => new Set());
   const [failedRecordIds, setFailedRecordIds] = useState<ReadonlySet<string>>(() => new Set());
 
+  // "Popularne": the most used exercises, asked from the library list narrowed to their ids, so the library's
+  // visibility rule decides what can be offered. A failed or pending request offers none.
+  const popularCandidateIds = useMemo(() => topPopularExerciseIds(popularity, POPULAR_CANDIDATE_LIMIT), [popularity]);
+  const { data: visiblePopularData } = useQuery<VisibleRecordsResponse<T>>(GET_VISIBLE_EXERCISE_PICKER_RECORDS_QUERY, {
+    variables: { organizationId: organizationId ?? '', ids: popularCandidateIds },
+    skip: skip || !organizationId || popularCandidateIds.length === 0,
+    fetchPolicy: 'cache-and-network',
+  });
+  const visiblePopularById = useMemo(() => {
+    const byId = new Map<string, T>();
+    for (const record of [...(visiblePopularData?.firstWindow ?? []), ...(visiblePopularData?.secondWindow ?? [])]) {
+      byId.set(record.id, record);
+    }
+    return byId;
+  }, [visiblePopularData]);
+  const popularIds = useMemo(
+    () =>
+      visiblePopularExerciseIds(
+        popularCandidateIds,
+        new Set([...seenById.keys(), ...visiblePopularById.keys()])
+      ),
+    [popularCandidateIds, seenById, visiblePopularById]
+  );
+
   const knownRecords = useMemo(() => {
-    const byId = new Map(extraRecords);
+    const byId = new Map(visiblePopularById);
+    for (const [exerciseId, record] of extraRecords) byId.set(exerciseId, record);
     for (const [exerciseId, fetched] of fetchedDetails) byId.set(exerciseId, fetched.record);
     return mergeKnownExercises([...seenById.values()], byId);
-  }, [fetchedDetails, extraRecords, seenById]);
+  }, [fetchedDetails, extraRecords, seenById, visiblePopularById]);
   const knownIds = useMemo(() => new Set(knownRecords.map((exercise) => exercise.id)), [knownRecords]);
 
   const enrichmentById = useMemo(() => {
@@ -180,8 +220,7 @@ export function useExercisePickerLibrary<T extends { id: string; updatedAt?: str
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchDetails, missingKey, skip]);
 
-  const popularIds = useMemo(() => topPopularExerciseIds(popularity), [popularity]);
-  const missingRecordKey = [...new Set([...(recordExerciseIds ?? []), ...popularIds])]
+  const missingRecordKey = [...new Set(recordExerciseIds ?? [])]
     .filter((exerciseId) => exerciseId && !knownIds.has(exerciseId) && !failedRecordIds.has(exerciseId))
     .join('|');
 

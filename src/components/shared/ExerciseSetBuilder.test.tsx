@@ -324,6 +324,30 @@ describe('ExerciseSetBuilder library from server pages', () => {
     expect(screen.getByTestId('set-builder-show-more-btn')).toHaveTextContent('120');
   });
 
+  it('offers for adding only what the library lists or confirms as popular, not every known record', () => {
+    const listed = { id: 'listed', name: 'Na stronie' };
+    const popular = { id: 'popular', name: 'Popularne z biblioteki' };
+    const hidden = { id: 'hidden', name: 'Ukryte w bibliotece, obecne w zestawie' };
+
+    render(
+      <ExerciseSetBuilder
+        {...createProps(
+          {
+            availableExercises: [listed, popular, hidden],
+            selectedInstances: [{ instanceId: 'hidden-instance', exerciseId: hidden.id }],
+          },
+          { itemIds: [listed.id], popularIds: [popular.id] }
+        )}
+      />
+    );
+
+    expect(screen.getByTestId('set-builder-picker-listed')).toBeInTheDocument();
+    expect(screen.getByTestId('set-builder-picker-popular')).toBeInTheDocument();
+    expect(screen.queryByTestId('set-builder-picker-hidden')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: `Dodaj ćwiczenie: ${hidden.name}` })).not.toBeInTheDocument();
+    expect(screen.getByTestId('set-builder-exercise-hidden')).toBeInTheDocument();
+  });
+
   it('passes search and source tab to the library instead of filtering locally', async () => {
     const user = userEvent.setup();
     const onSearchChange = vi.fn();
