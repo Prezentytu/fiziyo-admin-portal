@@ -304,3 +304,61 @@ describe('estimateEffectiveExerciseSeconds', () => {
     expect(estimateEffectiveExerciseSeconds(time)).toBe(300);
   });
 });
+
+describe('trójstan pól tekstowych overridesJson pozycji (FR-007, decyzja A)', () => {
+  const mapping = (overrides: Record<string, unknown> | undefined) => ({
+    ...baseMapping,
+    overridesJson: overrides === undefined ? undefined : JSON.stringify(overrides),
+    exercise: {
+      ...baseMapping.exercise,
+      patientDescription: 'Stań na dysku.',
+      description: 'Stań na dysku.',
+      clinicalDescription: 'Propriocepcja.',
+      audioCue: 'Trzymaj biodra.',
+    },
+  });
+  const keys = ['rangeOfMotion', 'difficultyLevel', 'patientDescription', 'clinicalDescription', 'audioCue'] as const;
+
+  it.each(keys)('%s: brak klucza i pusty napis dziedziczą z ćwiczenia', (key) => {
+    const inherited = resolveEffectiveExerciseParams(mapping({}))[key];
+    expect(inherited).toBeTruthy();
+    expect(resolveEffectiveExerciseParams(mapping({ [key]: '' }))[key]).toBe(inherited);
+    expect(resolveEffectiveExerciseParams(mapping(undefined))[key]).toBe(inherited);
+  });
+
+  it.each(keys)('%s: null czyści i oznacza pole jako nadpisane', (key) => {
+    const result = resolveEffectiveExerciseParams(mapping({ [key]: null }));
+    expect(result[key]).toBeUndefined();
+    expect(result.overriddenKeys).toContain(key);
+  });
+
+  it.each(keys)('%s: napis nadpisuje', (key) => {
+    const value = key === 'difficultyLevel' ? 'HARD' : 'Z pozycji';
+    expect(resolveEffectiveExerciseParams(mapping({ [key]: value }))[key]).toBe(value);
+  });
+
+  it('nadpisanie przypisania wygrywa z wyczyszczeniem w pozycji', () => {
+    const result = resolveEffectiveExerciseParams(mapping({ audioCue: null }), { audioCue: 'Od pacjenta' });
+    expect(result.audioCue).toBe('Od pacjenta');
+  });
+});
+
+// S-01 R2.3: notatka z katalogu nie jest uwagą fizjoterapeuty, więc nie zastępuje pustej uwagi pozycji.
+describe('resolveEffectiveExerciseParams: uwaga fizjoterapeuty', () => {
+  const withNotes = (mappingNotes: string | undefined) => ({
+    ...baseMapping,
+    notes: mappingNotes,
+    exercise: { ...baseMapping.exercise, notes: 'Ogólna notatka z katalogu' },
+  });
+
+  it('bez uwagi w pozycji nie bierze notatki z katalogu', () => {
+    expect(resolveEffectiveExerciseParams(withNotes(undefined)).notes).toBe('');
+  });
+
+  it('uwaga pozycji i nadpisanie przypisania nadal działają', () => {
+    expect(resolveEffectiveExerciseParams(withNotes('Nie schodź niżej niż krzesło')).notes).toBe(
+      'Nie schodź niżej niż krzesło'
+    );
+    expect(resolveEffectiveExerciseParams(withNotes('Z pozycji'), { notes: 'Od pacjenta' }).notes).toBe('Od pacjenta');
+  });
+});
