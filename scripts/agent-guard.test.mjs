@@ -413,6 +413,26 @@ describe("agent-guard: merge przez agenta", () => {
     assert.equal(classifyShellCommand('cat <<< "x"\ngh pr merge 12').permission, "deny");
   });
 
+  it("joins backslash-newline continuations before analysis", () => {
+    const dir = zgoda({ repo: "prezentytu/fiziyo-admin-portal" });
+    const ok = `gh pr merge 12 -R ${REPO} --merge --match-head-commit ${SHA}`;
+    assert.equal(classifyShellCommand("gh pr review 12 \\\n --approve").permission, "deny");
+    assert.equal(classifyShellCommand("gh -R o/r \\\n pr merge 12").permission, "deny");
+    assert.equal(classifyShellCommand(`${ok} \\\n --admin`, { consentDir: dir }).permission, "deny");
+    assert.equal(classifyShellCommand(`${ok} \\\n --delete-branch`, { consentDir: dir }).permission, "allow");
+  });
+
+  it("finds the gh subcommand structurally: first known command, then first known pr subcommand", () => {
+    const dir = zgoda({ repo: "prezentytu/fiziyo-admin-portal" });
+    const tail = `12 -R ${REPO} --merge --match-head-commit ${SHA}`;
+    for (const command of [`gh pr 'merge' ${tail}`, `gh 'pr' merge ${tail}`, `gh pr "merge" ${tail}`, "gh pr 'review' 12 --approve", "gh 'pr' review 12 --approve"]) {
+      assert.equal(classifyShellCommand(command, { consentDir: dir }).permission, "deny", command);
+    }
+    for (const command of ["gh pr list --search merge", "gh pr create --title t -a @me --label review", "gh pr create --title api --body x", "gh pr view 12 --json reviews"]) {
+      assert.equal(classifyShellCommand(command).permission, "allow", command);
+    }
+  });
+
   it("explains the reason in the hook response", () => {
     const response = hookResponse("gh pr merge 12 --merge");
     assert.equal(response.permission, "deny");

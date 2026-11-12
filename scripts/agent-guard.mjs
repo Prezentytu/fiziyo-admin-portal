@@ -133,7 +133,7 @@ function mergeDenials(segment, command, deps) {
   if (/(^|\s)GH_(REPO|HOST)=/.test(command)) return ["pull request merge: GH_REPO/GH_HOST w poleceniu, repo podaj jawnie przez -R"];
   const tokens = tokenize(segment);
   // Forma kanoniczna: `gh pr merge …` zaraz po gh (ship.mjs podaje tylko ją); każda inna, także z flagą przed `pr merge`, to odmowa.
-  if (tokens[1] !== "pr" || tokens[2] !== "merge") return ["pull request merge: tylko forma `gh pr merge <N> -R owner/repo --match-head-commit <sha>`, flagi po `merge`"];
+  if (!/^(\S*\/)?gh pr merge(\s|$)/.test(segment)) return ["pull request merge: tylko forma `gh pr merge <N> -R owner/repo --match-head-commit <sha>`, flagi po `merge`"];
   const args = tokens.slice(3);
   const denials = [];
   let sha;
@@ -216,6 +216,24 @@ function stripHeredocs(text, onlyQuoted = false) {
 // Zagnieżdżone gh: $(gh …) i `gh …` w całym surowym poleceniu, bez modelowania cudzysłowów (każdy model coś gubił).
 const NESTED_GH = /(?:\$\(|`)\s*((?:\S*\/)?gh\s[^)`]*)/g;
 
+const GH_COMMANDS = new Set(["pr", "api", "alias", "issue", "repo", "run", "workflow", "release", "search", "gist", "label", "secret", "variable", "auth", "browse", "cache", "codespace", "project", "ruleset", "status", "extension", "config"]);
+const PR_SUBCOMMANDS = new Set(["merge", "review", "view", "list", "create", "checks", "edit", "comment", "diff", "status", "close", "reopen", "ready", "checkout", "lock", "unlock", "revert", "update-branch"]);
+
+// (komenda, podkomenda) ze słów bez cudzysłowów: pierwsza znana komenda gh, a po `pr` pierwsza znana podkomenda.
+// Flaga z wartością przed nimi ani cudzysłów wokół słowa nie zmieniają wyniku; `gh pr list --search merge` to list.
+function ghSubcommand(segment) {
+  const words = tokenize(segment);
+  if (!words.length || !/^(\S*\/)?gh$/.test(words[0])) return [null, null];
+  for (let i = 1; i < words.length; i += 1) {
+    if (!GH_COMMANDS.has(words[i])) continue;
+    const rest = words.slice(i + 1);
+    if (words[i] === "pr") return ["pr", rest.find((w) => PR_SUBCOMMANDS.has(w)) ?? null];
+    if (words[i] === "alias") return ["alias", rest.find((w) => !w.startsWith("-")) ?? null];
+    return [words[i], null];
+  }
+  return [null, null];
+}
+
 const GH_PR_REVIEW = /^(\S*\/)?gh\s[\s\S]*\bpr\b[\s\S]*\breview\b/;
 
 export function classifyShellCommand(command, options = {}) {
@@ -223,7 +241,7 @@ export function classifyShellCommand(command, options = {}) {
     consentDir: options.consentDir ?? path.join(homedir(), ".claude", "merge-zgody"),
     now: options.now ?? Date.now(),
   };
-  const raw = String(command ?? "");
+  const raw = String(command ?? "").replace(/\\\r?\n/g, " ");
   const reasons = [];
   for (const match of stripHeredocs(raw, true).matchAll(NESTED_GH)) {
     const inner = match[1];
@@ -232,18 +250,19 @@ export function classifyShellCommand(command, options = {}) {
   }
   for (const segment of commandSegments(stripHeredocs(raw))) {
     const bare = skeleton(segment);
+    const [ghCommand, ghSub] = ghSubcommand(segment);
+    const ghFirst = GH_FIRST.test(segment);
     if (PUSH_MAIN.test(segment)) reasons.push("push to main");
-    if (API_COMMAND.test(bare) || /\bgh\b[\s\S]*\bapi\b/.test(bare)) {
+    if (ghCommand === "api" || (!ghFirst && (API_COMMAND.test(bare) || /\bgh\b[\s\S]*\bapi\b/.test(bare)))) {
       if (API_MERGE.test(segment)) reasons.push("pull request merge przez API");
       if (API_MAIN_REF.test(segment) && isApiWrite(segment)) reasons.push("zapis refs/heads/main przez API");
       if (API_GRAPHQL_FILE.test(segment) || API_SUBSTITUTION.test(segment)) reasons.push("GraphQL z pliku, stdin albo podstawienia: podaj zapytanie w -f query=");
       if (reviewApiDenied(segment)) reasons.push("review przez API: przepuszczam tylko jawne event=COMMENT albo REQUEST_CHANGES w argumentach");
     }
-    if (GH_MERGE.test(bare)) {
-      reasons.push(...(GH_FIRST.test(segment) ? mergeDenials(segment, raw, deps) : ["pull request merge wewnątrz konstrukcji powłoki: wywołaj `gh pr merge` osobno"]));
-    }
-    if (/\bgh\b[\s\S]*\balias\s+(set|import)\b/.test(bare) && /merge|review|api/.test(segment)) reasons.push("alias gh na merge, review albo api");
-    if (GH_PR_REVIEW.test(bare) && approveDenial(segment)) reasons.push("approve robi człowiek");
+    if (ghFirst && ghCommand === "pr" && ghSub === "merge") reasons.push(...mergeDenials(segment, raw, deps));
+    else if (!ghFirst && GH_MERGE.test(bare)) reasons.push("pull request merge wewnątrz konstrukcji powłoki: wywołaj `gh pr merge` osobno");
+    if (((ghCommand === "alias" && (ghSub === "set" || ghSub === "import")) || (!ghFirst && /\bgh\b[\s\S]*\balias\s+(set|import)\b/.test(bare))) && /merge|review|api/.test(segment)) reasons.push("alias gh na merge, review albo api");
+    if (((ghCommand === "pr" && ghSub === "review") || (!ghFirst && GH_PR_REVIEW.test(bare))) && approveDenial(segment)) reasons.push("approve robi człowiek");
     if (VERCEL_PROD.test(segment)) reasons.push("production deploy");
     if (PROMOTE.test(segment)) reasons.push("promote workflow");
   }
