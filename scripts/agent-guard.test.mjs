@@ -14,7 +14,7 @@ const MINUTE = 60_000;
 
 function zgoda({ repo = REPO, pr = 12, sha = SHA, ageMs = 0 } = {}) {
   const dir = mkdtempSync(path.join(tmpdir(), "zgody-"));
-  const file = path.join(dir, repo, `${pr}__${sha}`);
+  const file = path.join(dir, repo.toLowerCase(), `${pr}__${sha}`);
   mkdirSync(path.dirname(file), { recursive: true });
   writeFileSync(file, "");
   const at = new Date(Date.now() - ageMs);
