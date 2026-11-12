@@ -4,6 +4,11 @@ import { use, useCallback, useMemo } from 'react';
 import { useMutation, useQuery } from '@apollo/client/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Archive, ShieldCheck } from 'lucide-react';
+import {
+  appendQueueOrderingParams,
+  parseQueueOrdering,
+  queueOrderingVariables,
+} from '@/features/verification/utils/queueOrdering';
 
 import { EmptyState } from '@/components/shared/EmptyState';
 import { VerificationWorkspace, type OrganizationDecision } from '@/features/verification/VerificationWorkspace';
@@ -53,6 +58,7 @@ export default function CrossOrgVerificationDetailPage({ params }: Readonly<Cros
   const page = Number(searchParams.get('page') ?? '1') || 1;
   const pageSize = Number(searchParams.get('pageSize') ?? '20') || 20;
 
+  const ordering = useMemo(() => parseQueueOrdering(searchParams), [searchParams]);
   const queryString = useMemo(() => {
     const urlParams = new URLSearchParams();
     urlParams.set('filter', filter);
@@ -61,8 +67,8 @@ export default function CrossOrgVerificationDetailPage({ params }: Readonly<Cros
     }
     urlParams.set('page', String(page));
     urlParams.set('pageSize', String(pageSize));
-    return urlParams.toString();
-  }, [filter, search, page, pageSize]);
+    return appendQueueOrderingParams(urlParams, ordering).toString();
+  }, [filter, search, page, pageSize, ordering]);
   const listHref = `/verification/organizations?${queryString}`;
   const buildDetailUrl = useCallback(
     (exerciseId: string) => `/verification/organizations/${exerciseId}?${queryString}`,
@@ -81,7 +87,7 @@ export default function CrossOrgVerificationDetailPage({ params }: Readonly<Cros
   const { data: navigatorData } = useQuery<GetCrossOrgVerificationQueueNavigatorResponse>(
     GET_CROSS_ORG_VERIFICATION_QUEUE_NAVIGATOR_QUERY,
     {
-      variables: { currentExerciseId: id, filter, search: search || null },
+      variables: { currentExerciseId: id, filter, search: search || null, ...queueOrderingVariables(ordering) },
       skip: !isSiteSuperAdmin,
       fetchPolicy: 'cache-and-network',
     }
