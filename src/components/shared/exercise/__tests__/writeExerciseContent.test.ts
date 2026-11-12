@@ -27,6 +27,7 @@ import {
   GOLDEN_EDITABLE_PATHS,
   GOLDEN_LEAF_PATHS,
   leafPaths,
+  leafShape,
   V33_EDITABLE_ABSENT_FROM_GOLDEN,
   V33_PATHS_EVERY_EDITOR_COVERS,
   V33_READ_ONLY_PATHS,
@@ -866,6 +867,15 @@ describe('zapadka kontraktu: każdy liść złotego rekordu 3.3 jest sklasyfikow
     for (const rule of [...V33_READ_ONLY_PATHS, ...V33_SKIPPED_PATHS]) {
       expect(GOLDEN_LEAF_PATHS.some((leaf) => leaf === rule.path || leaf.startsWith(`${rule.path}.`)), rule.path).toBe(true);
       expect(rule.reason.trim().length, rule.path).toBeGreaterThan(10);
+    }
+  });
+
+  it('każdy liść wpisany jako tylko do odczytu leży w swojej sekcji i istnieje w złotym rekordzie', () => {
+    const goldenShapes = new Set(GOLDEN_LEAF_PATHS.map(leafShape));
+    for (const rule of V33_READ_ONLY_PATHS) {
+      expect(rule.leaves.length, rule.path).toBeGreaterThan(0);
+      expect(rule.leaves.filter((leaf) => leaf !== rule.path && !leaf.startsWith(`${rule.path}.`))).toEqual([]);
+      expect(rule.leaves.filter((leaf) => !goldenShapes.has(leaf))).toEqual([]);
     }
   });
 
