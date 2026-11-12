@@ -20,7 +20,7 @@ interface ScheduleStepProps {
   readonly onStartDateChange: (date: Date) => void;
   readonly onEndDateChange: (date: Date) => void;
   readonly onFrequencyChange: (frequency: Frequency) => void;
-  /** Notatka do zestawu widoczna dla pacjenta. Bez `onNoteChange` pole jest ukryte (edycja planu). */
+  /** Notatka do zestawu widoczna dla pacjenta. Bez `onNoteChange` pole jest ukryte. */
   readonly note?: string;
   readonly onNoteChange?: (note: string) => void;
 }
