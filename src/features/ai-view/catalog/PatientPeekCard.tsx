@@ -17,6 +17,7 @@ import { useChatActions } from '../ChatSessionContext';
 import { pendingReminderIds, selectInactivePatients } from '../utils/inactivePatients';
 import type { CardProps } from './cardProps';
 import { ChatCard, ChatCardEmpty } from './ChatCard';
+import { PatientPlanSection } from './PatientPlanSection';
 
 const MAX_ROWS = 6;
 const ROW_CLASS =
@@ -162,7 +163,7 @@ export function PatientPeekCard({ spec, testId }: CardProps<'PatientPeek'>) {
           </Button>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" asChild data-testid={`${testId}-open-link`}>
-              <Link href={`/patients/${patient.id}`}>Otwórz kartę</Link>
+              <Link href={`/patients/${patient.id}`}>Zmień plan</Link>
             </Button>
             <Button
               onClick={() =>
@@ -187,6 +188,7 @@ export function PatientPeekCard({ spec, testId }: CardProps<'PatientPeek'>) {
         </div>
         <ActivityStatusLabel tone={activity.tone} label={activity.label} />
       </div>
+      <PatientPlanSection patientId={patient.id} testId={`${testId}-plan`} />
     </ChatCard>
   );
 }
