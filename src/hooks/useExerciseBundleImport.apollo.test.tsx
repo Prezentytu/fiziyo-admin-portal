@@ -14,6 +14,8 @@ import {
   IMPORT_EXERCISE_BUNDLE_WITH_MEDIA_COPY_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
 
+import { HOTCHOCOLATE_RESPONSES } from '@/lib/graphql/hotChocolateResponses.fixture';
+
 import { useExerciseBundleImport } from './useExerciseBundleImport';
 
 // Prawdziwy klient Apollo: API sprzed fizjo-app#432 (bez `mediaCopy`) i API z raportem kopii mediów.
@@ -83,6 +85,16 @@ function fieldsOf(names: string[], mediaCopyFields: string[] | null = MEDIA_COPY
     result: {
       data: { __type: typeOf(names), mediaCopyType: mediaCopyFields ? typeOf(mediaCopyFields) : null },
     },
+  };
+}
+
+/** Błędy z zapisanej prawdziwej odpowiedzi HotChocolate 15.1.14. */
+function recorded(name: keyof typeof HOTCHOCOLATE_RESPONSES): Pick<MockLink.MockedResponse, 'result'> {
+  const { errors } = JSON.parse(HOTCHOCOLATE_RESPONSES[name].body) as {
+    errors: Array<{ message: string; path?: string[]; extensions?: Record<string, unknown> }>;
+  };
+  return {
+    result: { errors: errors.map(({ message, path, extensions }) => new GraphQLError(message, { path, extensions })) },
   };
 }
 
@@ -171,43 +183,16 @@ describe('wynik pytania o schemat nie zostaje na całą sesję', () => {
   });
 
   it.each([
-    ['HTTP 400', { error: http(400) }],
-    [
-      'błąd walidacji dokumentu',
-      {
-        result: {
-          errors: [new GraphQLError('The field `deferred` does not exist on the type `ExerciseBundleMediaCopyDto`.')],
-        },
-      },
-    ],
-  ])('nowa mutacja odrzucona walidacją schematu (%s): jedna próba starą mutacją', async (_name, rejection) => {
-    const { asked, wrapper } = lookup([
-      resultFields(fieldsOf(['success', 'mediaCopy'])),
-      { request: { query: IMPORT_EXERCISE_BUNDLE_WITH_MEDIA_COPY_MUTATION, variables }, ...rejection },
-      plainImport,
-    ]);
-    const { result } = renderHook(() => useExerciseBundleImport(), { wrapper });
-
-    let response: Awaited<ReturnType<(typeof result.current)[0]>> | undefined;
-    await act(async () => {
-      response = await result.current[0]({ variables });
-    });
-
-    expect(response?.data?.importExerciseBundle.exercisesUpserted).toBe(3);
-    expect(response?.data?.importExerciseBundle.mediaCopy).toBeUndefined();
-    expect(asked.filter((name) => name === 'ImportExerciseBundle')).toHaveLength(1);
-    expect(asked.filter((name) => name === 'ImportExerciseBundleWithMediaCopy')).toHaveLength(1);
-  });
-
-  it.each([
     ['błąd sieci', { error: new TypeError('Failed to fetch') }],
     ['HTTP 500', { error: http(500) }],
     ['HTTP 504', { error: http(504) }],
-    [
-      'błąd wykonania ze ścieżką pola',
-      { result: { errors: [new GraphQLError('boom', { path: ['importExerciseBundle'] })] } },
-    ],
-  ])('inny błąd mutacji (%s): bez ponowienia, import nie idzie drugi raz', async (_name, failure) => {
+    ['HTTP 400 bez treści GraphQL', { error: http(400) }],
+    ['przekroczony limit wykonania HC0045 (po zapisie)', recorded('timeout')],
+    ['nieznane pole (walidacja schematu)', recorded('unknownField')],
+    ['nieznany argument (walidacja schematu)', recorded('unknownArg')],
+    ['brak autoryzacji', recorded('unauth')],
+    ['wyjątek resolvera', recorded('resolver')],
+  ])('błąd mutacji z raportem (%s): pokazany użytkownikowi, import wysłany dokładnie raz', async (_name, failure) => {
     const { asked, wrapper } = lookup([
       resultFields(fieldsOf(['success', 'mediaCopy'])),
       { request: { query: IMPORT_EXERCISE_BUNDLE_WITH_MEDIA_COPY_MUTATION, variables }, ...failure },
@@ -222,6 +207,7 @@ describe('wynik pytania o schemat nie zostaje na całą sesję', () => {
     expect(asked.filter((name) => name.startsWith('ImportExerciseBundle'))).toEqual([
       'ImportExerciseBundleWithMediaCopy',
     ]);
+    expect(result.current[1].loading).toBe(false);
   });
 
   it('zawieszone pytanie o schemat nie wstrzymuje importu: po limicie idzie stara mutacja', async () => {

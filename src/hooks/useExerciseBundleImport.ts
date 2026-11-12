@@ -14,7 +14,6 @@ import {
 import { GET_ORGANIZATION_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
-import { isSchemaValidationError } from '@/lib/graphql/isSchemaValidationError';
 
 interface TypeFields {
   fields?: ReadonlyArray<{ name?: string | null } | null> | null;
@@ -86,15 +85,11 @@ export function useExerciseBundleImport() {
     async ({ variables }: { variables: ImportExerciseBundleVariables }) => {
       setLoading(true);
       try {
-        if (!(await supportsMediaCopyReport(client))) return await importPlain({ variables });
-        try {
-          return await importWithMediaCopy({ variables });
-        } catch (error) {
-          // Backend zmienił się po pytaniu o schemat i nie zna dokumentu: walidacja jest przed wykonaniem, więc nic
-          // nie zapisano i jedna próba starą mutacją nie dubluje importu. Każdy inny błąd wraca bez ponowienia.
-          if (!isSchemaValidationError(error)) throw error;
-          return await importPlain({ variables });
-        }
+        // Mutację wybiera wyłącznie pytanie o schemat przed wysłaniem. Każdy błąd mutacji wraca do użytkownika bez
+        // drugiego wysłania: błąd po zapisie (np. przekroczony limit wykonania) wygląda jak odrzucenie, a import
+        // nie może pójść dwa razy.
+        const runImport = (await supportsMediaCopyReport(client)) ? importWithMediaCopy : importPlain;
+        return await runImport({ variables });
       } finally {
         setLoading(false);
       }
