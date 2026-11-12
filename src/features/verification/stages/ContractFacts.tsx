@@ -1,7 +1,9 @@
 import type { VerificationFact } from '../utils/verificationFacts';
 import { StageSection } from './StageSection';
 
-export const CONTRACT_FACTS_HINT = 'Tylko do odczytu. Te pola zmienisz w formularzu ćwiczenia.';
+/** These facts are set by the content package import; neither this screen nor the exercise form writes them. */
+export const CONTRACT_FACTS_HINT =
+  'Tylko do odczytu. Te pola przychodzą z importu paczki treści; tutaj ani w formularzu ćwiczenia ich nie zmienisz.';
 
 interface ContractFactsProps {
   title: string;

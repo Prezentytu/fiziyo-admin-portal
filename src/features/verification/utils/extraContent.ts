@@ -13,7 +13,7 @@ export type ExtraContentField =
   | { id: string; label: string; kind: 'text'; source: 'core'; field: ExtraCoreField; hint?: string };
 
 export interface ExtraContentGroup {
-  id: 'patient' | 'therapist' | 'search';
+  id: 'patient' | 'therapist' | 'search' | 'variants';
   title: string;
   fields: ExtraContentField[];
 }
@@ -122,6 +122,17 @@ export const INSTRUCTION_CONTENT_GROUP_V33: ExtraContentGroup = {
   id: 'patient',
   title: 'Odczucia i kontekst',
   fields: pickFields(LEGACY_PATIENT_GROUP, ['should-feel', 'should-not-feel', 'why', 'when-to-do']),
+};
+
+/** Contract v3.3: easier and harder variants and the breathing sentence, edited in the instruction stage. */
+export const VARIANTS_CONTENT_GROUP_V33: ExtraContentGroup = {
+  id: 'variants',
+  title: 'Łatwiej, trudniej, oddech',
+  fields: [
+    { id: 'easier', label: LABELS.easier, kind: 'text', source: 'enrichment', path: 'patient.easier' },
+    { id: 'harder', label: LABELS.harder, kind: 'text', source: 'enrichment', path: 'patient.harder' },
+    { id: 'breathing', label: LABELS.breathing, kind: 'text', source: 'enrichment', path: 'breathing.text' },
+  ],
 };
 
 /**

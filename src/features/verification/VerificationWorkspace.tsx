@@ -1219,7 +1219,7 @@ export function VerificationWorkspace({
                 <ContractFacts
                   title="Pochodzenie i klasyfikacja"
                   facts={[...contractFacts.classification, ...(showTeamFields ? contractFacts.team : [])]}
-                  hint="Tylko do odczytu. Kody ze słownika; te pola zmienisz w formularzu ćwiczenia."
+                  hint="Tylko do odczytu. Kody ze słownika; przychodzą z importu paczki treści i nie zmienisz ich tutaj ani w formularzu ćwiczenia."
                   collapsible
                   data-testid="verification-contract-facts"
                 />

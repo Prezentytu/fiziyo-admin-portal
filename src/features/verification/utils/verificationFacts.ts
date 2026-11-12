@@ -178,37 +178,16 @@ export function buildVerificationFactsV33(exercise: ExerciseContentSource): Veri
       fact('prescription-progression', 'Progresja', prescriptionStep(asRecord(prescription?.progression))),
       fact('prescription-regression', 'Regresja', prescriptionStep(asRecord(prescription?.regression))),
     ],
-    instruction: [
-      fact('easier', 'Łatwiej', content.easier),
-      fact('harder', 'Trudniej', content.harder),
-      fact(
-        'breathing',
-        'Oddech',
-        content.breathing
-          ? [content.breathing.text, content.breathing.pattern ? `Wzorzec: ${content.breathing.pattern}` : null]
-          : null
-      ),
-    ],
+    // Easier, harder and the breathing sentence are edited in the stage; only the dictionary code stays a fact.
+    instruction: content.breathing?.pattern
+      ? [fact('breathing-pattern', 'Wzorzec oddechu', content.breathing.pattern)]
+      : [],
     safety: [
       fact('pain-rule', 'Reguła bólu', content.painRule),
       fact('safety-flags', 'Flagi bezpieczeństwa', content.safetyFlags),
     ],
+    // Checkpoints and the clinical note are edited in the stage; indications are dictionary codes.
     therapist: [
-      fact(
-        'checkpoints',
-        'Punkty kontrolne',
-        content.checkpoints.map((checkpoint) => {
-          const details = joined(
-            [
-              checkpoint.evidence ? `dowód: ${checkpoint.evidence}` : null,
-              checkpoint.view ? `widok: ${checkpoint.view}` : null,
-            ],
-            ', '
-          );
-          return details ? `${checkpoint.text} (${details})` : checkpoint.text;
-        })
-      ),
-      fact('therapist-note', 'Uwagi kliniczne', content.therapistNote),
       fact(
         'indications',
         'Wskazania',

@@ -17,7 +17,7 @@ import type {
   ExerciseEnrichmentData,
   ExerciseEnrichmentPatientV3,
 } from '@/graphql/types/exerciseEnrichment.types';
-import { INSTRUCTION_CONTENT_GROUP_V33, SUMMARY_FIELD_V33 } from '../utils/extraContent';
+import { INSTRUCTION_CONTENT_GROUP_V33, SUMMARY_FIELD_V33, VARIANTS_CONTENT_GROUP_V33 } from '../utils/extraContent';
 import type { VerificationFact } from '../utils/verificationFacts';
 import type { InstructionProposal } from '../utils/instructionProposal';
 import {
@@ -441,11 +441,14 @@ export function InstructionStage({
             onEnrichmentPathChange={v33.onEnrichmentPathChange}
             onCoreFieldChange={ignoreCoreField}
           />
-          <ContractFacts
-            title="Łatwiej, trudniej, oddech"
-            facts={v33.facts}
-            data-testid="verification-instruction-facts"
+          <ExtraContentGroupSection
+            group={VARIANTS_CONTENT_GROUP_V33}
+            enrichment={v33.enrichment}
+            core={NO_CORE_FIELDS}
+            onEnrichmentPathChange={v33.onEnrichmentPathChange}
+            onCoreFieldChange={ignoreCoreField}
           />
+          <ContractFacts title="Wzorzec oddechu" facts={v33.facts} data-testid="verification-instruction-facts" />
         </>
       )}
     </div>

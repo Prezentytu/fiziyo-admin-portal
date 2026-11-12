@@ -285,7 +285,7 @@ export function MaterialStage({
         <ContractFacts
           title="Media w treści ćwiczenia"
           facts={contractFacts}
-          hint="Tylko do odczytu. Wymiana zdjęcia tutaj nie zmienia tej listy; poprawisz ją w formularzu ćwiczenia."
+          hint="Tylko do odczytu. Wymiana zdjęcia tutaj nie zmienia tej listy; przychodzi z importu paczki treści."
           data-testid="verification-material-facts"
         />
       )}

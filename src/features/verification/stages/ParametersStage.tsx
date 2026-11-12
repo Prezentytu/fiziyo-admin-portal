@@ -446,7 +446,8 @@ export function ParametersStage({
               )}
               {v33?.sideDiffersFromDocument && (
                 <span className="text-[13px] text-status-warning" data-testid="verification-param-side-mismatch-note">
-                  Tryb strony w treści ćwiczenia jest inny. Popraw go w formularzu ćwiczenia.
+                  Tryb strony w treści ćwiczenia jest inny. Przychodzi z importu paczki treści; w formularzu go nie
+                  zmienisz.
                 </span>
               )}
             </div>
@@ -562,7 +563,12 @@ export function ParametersStage({
       </StageSection>
 
       {v33 && (
-        <ContractFacts title="Strona, sprzęt i zakresy" facts={v33.facts} data-testid="verification-param-facts" />
+        <ContractFacts
+          title="Strona, sprzęt i zakresy"
+          facts={v33.facts}
+          hint="Tylko do odczytu. Sprzęt zmienisz w formularzu ćwiczenia; strona, cel i zakresy przychodzą z importu paczki treści."
+          data-testid="verification-param-facts"
+        />
       )}
     </div>
   );

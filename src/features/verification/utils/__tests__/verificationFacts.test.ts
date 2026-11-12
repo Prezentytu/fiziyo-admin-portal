@@ -15,21 +15,19 @@ function lines(group: VerificationFact[], id: string): string[] {
 }
 
 describe('buildVerificationFactsV33', () => {
-  it('etap Instrukcja: łatwiej, trudniej, oddech', () => {
-    expect(lines(facts.instruction, 'easier')).toEqual([golden.patient?.easier]);
-    expect(lines(facts.instruction, 'harder')).toEqual([golden.patient?.harder]);
-    expect(lines(facts.instruction, 'breathing')).toEqual([golden.breathing?.text]);
+  it('etap Instrukcja: tylko wzorzec oddechu jest faktem; łatwiej, trudniej i zdanie o oddechu edytuje etap', () => {
+    expect(facts.instruction).toEqual([]);
+    const withPattern = buildVerificationFactsV33({
+      enrichmentData: { ...golden, breathing: { ...golden.breathing, pattern: 'exhale_on_effort' } },
+    });
+    expect(lines(withPattern.instruction, 'breathing-pattern')).toEqual(['exhale_on_effort']);
   });
 
-  it('etap Bezpieczeństwo: reguła bólu, flagi, punkty kontrolne, wskazania jako kody', () => {
+  it('etap Bezpieczeństwo: reguła bólu, flagi i wskazania jako kody; punkty kontrolne i uwagi edytuje etap', () => {
     expect(lines(facts.safety, 'pain-rule')).toEqual(['WS-3']);
     expect(lines(facts.safety, 'safety-flags')).toContain('supine_pregnancy');
-    expect(lines(facts.therapist, 'checkpoints')).toHaveLength(5);
-    expect(lines(facts.therapist, 'checkpoints')[0]).toBe(
-      'nogi wyprostowane, mały zrolowany ręcznik pod kolanem nogi ćwiczonej, druga noga bez ręcznika (dowód: frame, widok: side)'
-    );
+    expect(facts.therapist.map((item) => item.id)).toEqual(['indications']);
     expect(lines(facts.therapist, 'indications')).toEqual(['osteoarthritis', 'patellofemoral_syndrome']);
-    expect(lines(facts.therapist, 'therapist-note')).toEqual([]);
   });
 
   it('etap Parametry: strona, sprzęt, zakresy, progresja', () => {

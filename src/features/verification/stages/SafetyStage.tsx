@@ -3,6 +3,12 @@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  EXERCISE_CONTENT_LABELS as LABELS,
+  EXERCISE_PRECAUTIONS_HINT,
+} from '@/components/shared/enrichment/enrichmentFieldLabels';
+import { NEW_PRECAUTION_GROUP } from '@/components/shared/exercise/writeExerciseContent';
+import { TextItemsEditor, TherapistNoteField } from '@/features/exercises/ExerciseV33Editors';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import { readContraindicationTextsV33, writeContraindicationsV33 } from '../utils/contentV33';
 import type { VerificationFact } from '../utils/verificationFacts';
@@ -81,16 +87,49 @@ export function SafetyStage({
 
       {v33 ? (
         <>
+          <StageSection
+            title={LABELS.precautions}
+            hint={EXERCISE_PRECAUTIONS_HINT}
+            data-testid="verification-safety-precautions-section"
+          >
+            <TextItemsEditor
+              title="Zdania dla pacjenta"
+              items={enrichment.safety?.precautions ?? []}
+              placeholder="np. W ciąży ćwicz w pozycji półleżącej."
+              addLabel="Dodaj ostrożność"
+              onChange={(items) => onEnrichmentPathChange('safety.precautions', items)}
+              testIdPrefix="verification-safety-precautions"
+              newItemDefaults={{ group: NEW_PRECAUTION_GROUP }}
+            />
+          </StageSection>
           <ContractFacts
             title="Reguła bólu i flagi"
             facts={v33.safetyFacts}
-            hint="Tylko do odczytu. Kody ze słownika; te pola zmienisz w formularzu ćwiczenia."
+            hint="Tylko do odczytu. Kody ze słownika; przychodzą z importu paczki treści i nie zmienisz ich tutaj ani w formularzu ćwiczenia."
             data-testid="verification-safety-facts"
           />
-          <ContractFacts
+          <StageSection
             title="Dla fizjoterapeuty"
+            hint="Pacjent tego nie widzi."
+            data-testid="verification-safety-therapist-section"
+          >
+            <TextItemsEditor
+              title={LABELS.checkpoints}
+              items={enrichment.therapist?.checkpoints ?? []}
+              placeholder="np. biodro i tułów nieruchome"
+              addLabel="Dodaj punkt kontrolny"
+              onChange={(items) => onEnrichmentPathChange('therapist.checkpoints', items)}
+              testIdPrefix="verification-safety-checkpoints"
+            />
+            <TherapistNoteField
+              value={enrichment.therapist?.note ?? ''}
+              onChange={(value) => onEnrichmentPathChange('therapist.note', value)}
+            />
+          </StageSection>
+          <ContractFacts
+            title="Wskazania"
             facts={v33.therapistFacts}
-            hint="Pacjent tego nie widzi. Tylko do odczytu; wskazania to kody ze słownika. Te pola zmienisz w formularzu ćwiczenia."
+            hint="Pacjent tego nie widzi. Tylko do odczytu; kody ze słownika przychodzą z importu paczki treści i nie zmienisz ich tutaj ani w formularzu ćwiczenia."
             data-testid="verification-safety-therapist-facts"
           />
         </>
