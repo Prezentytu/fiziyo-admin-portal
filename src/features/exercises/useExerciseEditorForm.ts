@@ -450,7 +450,7 @@ export function useExerciseEditorForm({
     setInitialEnrichment(enrichmentRef.current);
   }, []);
 
-  const performSave = useCallback(async () => {
+  const runSave = useCallback(async () => {
     const currentCore = coreRef.current;
     const currentEnrichment = enrichmentRef.current;
     const isV33 = contentVersion === '3.3';
@@ -462,7 +462,8 @@ export function useExerciseEditorForm({
       : composeEnrichmentPayload(currentEnrichment);
     const currentEnrichmentDirty = isV33
       ? Object.keys(v33Edits).length > 0
-      : JSON.stringify(currentEnrichmentPayload) !== initialEnrichmentPayload;
+      : JSON.stringify(currentEnrichmentPayload) !==
+        JSON.stringify(composeEnrichmentPayload(initialEnrichmentRef.current));
 
     if (!currentCoreDirty && !currentEnrichmentDirty) return;
     if (conflictDocumentRef.current) return;
@@ -476,6 +477,7 @@ export function useExerciseEditorForm({
         if (fetched == null) throw new Error('Nie udało się pobrać aktualnej wersji ćwiczenia.');
         const current = loadV33Document(fetched);
         if (!isSameV33Document(initialEnrichmentRef.current, current)) {
+          conflictDocumentRef.current = current;
           setConflictDocument(current);
           setSaveStatus('idle');
           return;
@@ -488,12 +490,15 @@ export function useExerciseEditorForm({
         await updateEnrichment(currentEnrichmentPayload);
       }
       setSaveStatus('success');
-      if (isV33) {
-        // The baseline is the document that was sent, so the next save starts from what the backend holds.
-        setInitialCore(currentCore);
-        if (currentEnrichmentDirty) setInitialEnrichment(currentEnrichmentPayload);
-      } else {
-        markSaved();
+      // The baseline is what was sent, so the next save starts from what the backend holds and an edit typed
+      // while this one was in flight stays unsaved. Refs first: a save queued behind this one runs before React
+      // re-renders and must compare against the new baseline, not the one from before this save.
+      initialCoreRef.current = currentCore;
+      setInitialCore(currentCore);
+      if (currentEnrichmentDirty) {
+        const savedEnrichment = isV33 ? currentEnrichmentPayload : currentEnrichment;
+        initialEnrichmentRef.current = savedEnrichment;
+        setInitialEnrichment(savedEnrichment);
       }
       onSaved?.();
     } catch (error) {
@@ -501,16 +506,21 @@ export function useExerciseEditorForm({
       setSaveStatus('error');
       onError?.(error);
     }
-  }, [
-    contentVersion,
-    fetchCurrentEnrichment,
-    initialEnrichmentPayload,
-    markSaved,
-    onError,
-    onSaved,
-    updateCore,
-    updateEnrichment,
-  ]);
+  }, [contentVersion, fetchCurrentEnrichment, onError, onSaved, updateCore, updateEnrichment]);
+
+  /**
+   * Saves of one form run one after another: autosave and a save from a button or a decision used to overlap,
+   * and the second one read back the document written by the first and reported a conflict with itself.
+   * A queued save starts when the previous one has finished and takes the baseline that save left.
+   */
+  const runSaveRef = useRef(runSave);
+  runSaveRef.current = runSave;
+  const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const performSave = useCallback(() => {
+    const next = saveQueueRef.current.then(() => runSaveRef.current());
+    saveQueueRef.current = next.catch(() => undefined);
+    return next;
+  }, []);
 
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
