@@ -203,6 +203,79 @@ describe("agent-guard: merge przez agenta", () => {
     assert.equal(classifyShellCommand("gh api repos/o/r/pulls/12/comments").permission, "allow");
   });
 
+  it("blocks gh pr merge inside shell constructs, even with consent", () => {
+    const dir = zgoda({ repo: "prezentytu/fiziyo-admin-portal" });
+    const m = `gh pr merge 12 -R ${REPO} --merge --match-head-commit ${SHA}`;
+    for (const command of [
+      `for i in 1; do ${m}; done`,
+      `if true; then ${m}; fi`,
+      `if false; then :; else ${m}; fi`,
+      `exec ${m}`,
+      `echo 12 | xargs ${m}`,
+      `xargs -n1 ${m}`,
+      `( ${m} )`,
+      `{ ${m}; }`,
+      `echo $(${m})`,
+      `echo \`${m}\``,
+      `echo "$(${m})"`,
+      `echo "\`${m}\`"`,
+      `\\${m}`,
+      m.replace("gh ", '"gh" '),
+      m.replace("gh ", "'gh' "),
+    ]) {
+      assert.equal(classifyShellCommand(command, { consentDir: dir }).permission, "deny", command);
+    }
+    assert.equal(classifyShellCommand(m, { consentDir: dir }).permission, "allow");
+  });
+
+  it("blocks gh alias set and import when the alias holds merge, review or api", () => {
+    for (const command of [
+      "gh alias set m 'pr merge'",
+      "gh alias set --shell x 'gh pr merge $1'",
+      "gh alias set r 'pr review'",
+      "gh alias set a 'api'",
+      "gh alias import aliases.yml merge",
+      "/opt/homebrew/bin/gh alias set m 'pr merge'",
+    ]) {
+      assert.equal(classifyShellCommand(command).permission, "deny", command);
+    }
+    assert.equal(classifyShellCommand("gh alias set co 'pr checkout'").permission, "allow");
+    assert.equal(classifyShellCommand("gh alias list").permission, "allow");
+  });
+
+  it("blocks API merge variants always", () => {
+    for (const command of [
+      "gh api graphql -f query='mutation { enablePullRequestAutoMerge(input:{pullRequestId:\"x\"}) { clientMutationId } }'",
+      `gh api -X POST repos/${REPO}/merges -f base=main -f head=x`,
+      `gh api repos/${REPO}/merges -f base=main -f head=x`,
+      `gh api -X PATCH repos/${REPO}/git/refs/heads/main -f sha=${SHA}`,
+      `gh api --method PUT repos/${REPO}/git/refs/heads/master -f sha=${SHA}`,
+      `gh api repos/${REPO}/git/refs/heads/main -f sha=${SHA}`,
+      `gh api repos/${REPO}/git/refs/heads/main --input ref.json`,
+      "gh api graphql -f query=@merge.graphql",
+      "gh api graphql -F query=@merge.graphql",
+      "gh api graphql --input query.json",
+    ]) {
+      assert.equal(classifyShellCommand(command).permission, "deny", command);
+    }
+    assert.equal(classifyShellCommand(`gh api repos/${REPO}/git/refs/heads/main`).permission, "allow");
+    assert.equal(classifyShellCommand(`gh api repos/${REPO}/git/refs/heads/feature-x -X PATCH -f sha=${SHA}`).permission, "allow");
+  });
+
+  it("blocks review writes through the API unless event is visibly COMMENT or REQUEST_CHANGES", () => {
+    assert.equal(classifyShellCommand("gh api repos/o/r/pulls/12/reviews -X POST -f body=x").permission, "deny");
+    assert.equal(classifyShellCommand("gh api repos/o/r/pulls/12/reviews -X POST -f event=COMMENT -f body=x").permission, "allow");
+    assert.equal(classifyShellCommand("gh api graphql -f query='mutation { submitPullRequestReview(input:{event: REQUEST_CHANGES}) { clientMutationId } }'").permission, "allow");
+    assert.equal(classifyShellCommand("gh api graphql -f query='mutation { submitPullRequestReview(input:{event: APPROVE}) { clientMutationId } }'").permission, "deny");
+  });
+
+  it("blocks bundled short flags containing R", () => {
+    const dir = zgoda({ repo: "prezentytu/fiziyo-admin-portal" });
+    assert.equal(classifyShellCommand(`gh pr merge 12 -dR ${REPO} --merge --match-head-commit ${SHA}`, { consentDir: dir }).permission, "deny");
+    assert.equal(classifyShellCommand(`gh pr merge 12 -dR${REPO} --merge --match-head-commit ${SHA}`, { consentDir: dir }).permission, "deny");
+    assert.equal(classifyShellCommand(`gh pr merge 12 -R ${REPO} -d --merge --match-head-commit ${SHA}`, { consentDir: dir }).permission, "allow");
+  });
+
   it("explains the reason in the hook response", () => {
     const response = hookResponse("gh pr merge 12 --merge");
     assert.equal(response.permission, "deny");

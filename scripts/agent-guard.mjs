@@ -7,7 +7,13 @@ import path from "node:path";
 
 const PUSH_MAIN = /\bgit\b[\s\S]*\bpush\b[\s\S]*(?:\borigin\/)?(?:HEAD:)?(?:refs\/heads\/)?main\b/;
 const GH_MERGE = /\bgh\b[\s\S]*\bpr\b[\s\S]*\bmerge\b/;
-const API_MERGE = /\/pulls\/\d+\/merge\b|\bmergePullRequest\b|\benablePullRequestAutoMerge\b/;
+const API_MERGE = /\/pulls\/\d+\/merge\b|\bmergePullRequest\b|\benablePullRequestAutoMerge\b|\brepos\/[^/\s]+\/[^/\s]+\/merges\b/;
+const API_WRITE = /(^|\s)((-X|--method)[\s=]*(POST|PUT|PATCH|DELETE)\b|(-f|-F|--field|--raw-field|--input)(\s|=))/i;
+const API_MAIN_REF = /\bgit\/refs\/heads\/(main|master)\b/;
+// GraphQL z pliku albo stdin: strażnik nie widzi, czy to merge albo approve.
+const API_GRAPHQL_FILE = /\bgraphql\b[\s\S]*((^|\s)(-f|-F|--field|--raw-field)[\s=]*query=@|(^|\s)--input(\s|=))/;
+// gh musi być pierwszym słowem segmentu; `do gh`, `exec gh`, `xargs gh`, `( gh`, `$(gh`, `\\gh`, `"gh"` to konstrukcje powłoki.
+const GH_FIRST = /^(\S*\/)?gh\s/;
 const VERCEL_PROD = /\bvercel\b[\s\S]*--prod\b/;
 const PROMOTE = /\b(?:npm|pnpm|yarn|npx|gh)\b[\s\S]*\bpromote\b|\bworkflow[\s\S]*promote|\bpromote(?:\.yml|\.yaml)\b/;
 
@@ -109,10 +115,15 @@ export function classifyShellCommand(command, options = {}) {
   const raw = String(command ?? "");
   const reasons = [];
   if (API_MERGE.test(raw)) reasons.push("pull request merge przez API");
+  if (API_MAIN_REF.test(raw) && API_WRITE.test(raw)) reasons.push("zapis refs/heads/main przez API");
+  if (API_GRAPHQL_FILE.test(raw)) reasons.push("GraphQL z pliku albo stdin: podaj zapytanie w -f query=");
   if (reviewApiDenied(raw)) reasons.push("review przez API: przepuszczam tylko jawne event=COMMENT albo REQUEST_CHANGES w argumentach");
   for (const segment of commandSegments(raw)) {
     if (PUSH_MAIN.test(segment)) reasons.push("push to main");
-    if (GH_MERGE.test(segment)) reasons.push(...mergeDenials(segment, raw, deps));
+    if (GH_MERGE.test(segment)) {
+      reasons.push(...(GH_FIRST.test(segment) ? mergeDenials(segment, raw, deps) : ["pull request merge wewnątrz konstrukcji powłoki: wywołaj `gh pr merge` osobno"]));
+    }
+    if (/\bgh\b[\s\S]*\balias\s+(set|import)\b/.test(segment) && /merge|review|api/.test(segment)) reasons.push("alias gh na merge, review albo api");
     if (GH_PR_REVIEW.test(segment) && approveDenial(segment)) reasons.push("approve robi człowiek");
     if (VERCEL_PROD.test(segment)) reasons.push("production deploy");
     if (PROMOTE.test(segment)) reasons.push("promote workflow");
