@@ -7,6 +7,11 @@ import { parseOverrideMap } from '@/components/shared/exercise/exercisePersonali
 import type { ExerciseMapping } from '../types';
 import { sortMappingsByOrder } from './sortMappingsByOrder';
 
+function seedClearable(mappingValue: string | null | undefined, templateValue: string | null | undefined): string | undefined {
+  if (mappingValue === null) return '';
+  return mappingValue ?? templateValue ?? undefined;
+}
+
 /**
  * Seed Assignment Wizard / set-builder params from a source mapping,
  * including template-set overridesJson (SPEC-023 / SPEC-024).
@@ -85,18 +90,14 @@ export function seedBuilderParamsFromMapping(
       exercise?.side ??
       exercise?.exerciseSide ??
       undefined,
-    rangeOfMotion: mappingOverrides.rangeOfMotion ?? exercise?.rangeOfMotion ?? undefined,
+    // null = wyczyszczone w pozycji; '' w builderze zapisze się z powrotem jako null, a nie wróci z katalogu.
+    rangeOfMotion: seedClearable(mappingOverrides.rangeOfMotion, exercise?.rangeOfMotion),
     resistance: mappingOverrides.resistance ?? exercise?.resistance ?? undefined,
     equipment: mappingOverrides.equipment ?? exercise?.equipment ?? undefined,
-    difficultyLevel:
-      mappingOverrides.difficultyLevel ?? exercise?.difficultyLevel ?? undefined,
-    patientDescription:
-      mappingOverrides.patientDescription ??
-      exercise?.patientDescription ??
-      undefined,
-    clinicalDescription:
-      mappingOverrides.clinicalDescription ?? exercise?.clinicalDescription ?? undefined,
-    audioCue: mappingOverrides.audioCue ?? exercise?.audioCue ?? undefined,
+    difficultyLevel: seedClearable(mappingOverrides.difficultyLevel, exercise?.difficultyLevel),
+    patientDescription: seedClearable(mappingOverrides.patientDescription, exercise?.patientDescription),
+    clinicalDescription: seedClearable(mappingOverrides.clinicalDescription, exercise?.clinicalDescription),
+    audioCue: seedClearable(mappingOverrides.audioCue, exercise?.audioCue),
     ...(contentSeed ?? { enrichment: applyEnrichmentOverride(exercise?.enrichmentData, mappingOverrides.enrichment) }),
   };
 }

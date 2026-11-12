@@ -134,6 +134,8 @@ export interface ExerciseMapping {
     images?: string[];
     videoUrl?: string;
     description?: string;
+    /** Dokument treści; pobiera go `PATIENT_ASSIGNMENT_FULL_FRAGMENT`. Podgląd bierze z niego kroki. */
+    enrichmentData?: import('@/graphql/types/exerciseEnrichment.types').ExerciseEnrichmentData | null;
     sets?: number;
     reps?: number;
     duration?: number;

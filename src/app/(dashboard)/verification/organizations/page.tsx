@@ -12,6 +12,14 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { VerificationStatsCards } from '@/features/verification/VerificationStatsCards';
+import { VerificationQueueOrderingControls } from '@/features/verification/VerificationQueueOrderingControls';
+import {
+  appendQueueOrderingParams,
+  parseQueueOrdering,
+  queueDateLabel,
+  queueOrderingVariables,
+  type VerificationQueueOrdering,
+} from '@/features/verification/utils/queueOrdering';
 import { VerificationTaskCard } from '@/features/verification/VerificationTaskCard';
 import { VerificationSelectionToolbar } from '@/features/verification/VerificationSelectionToolbar';
 import { VerificationArchiveDialog } from '@/features/verification/VerificationArchiveDialog';
@@ -52,6 +60,7 @@ export default function CrossOrgVerificationPage() {
   const [filter, setFilter] = useState<CrossOrgFilter>(parseFilter(searchParams.get('filter')));
   const [page, setPage] = useState(Number(searchParams.get('page') ?? '1') || 1);
   const [pageSize] = useState(20);
+  const [ordering, setOrdering] = useState<VerificationQueueOrdering>(() => parseQueueOrdering(searchParams));
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
 
   const {
@@ -77,6 +86,7 @@ export default function CrossOrgVerificationPage() {
         search: search.trim() || null,
         page,
         pageSize,
+        ...queueOrderingVariables(ordering),
       },
       skip: !isSiteSuperAdmin,
       fetchPolicy: 'cache-and-network',
@@ -122,7 +132,12 @@ export default function CrossOrgVerificationPage() {
     },
   });
 
-  const updateUrl = (nextFilter: CrossOrgFilter, nextSearch: string, nextPage: number) => {
+  const updateUrl = (
+    nextFilter: CrossOrgFilter,
+    nextSearch: string,
+    nextPage: number,
+    nextOrdering: VerificationQueueOrdering = ordering
+  ) => {
     const params = new URLSearchParams();
     params.set('filter', nextFilter);
     if (nextSearch.trim()) {
@@ -130,6 +145,7 @@ export default function CrossOrgVerificationPage() {
     }
     params.set('page', String(nextPage));
     params.set('pageSize', String(pageSize));
+    appendQueueOrderingParams(params, nextOrdering);
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
@@ -141,8 +157,8 @@ export default function CrossOrgVerificationPage() {
     }
     params.set('page', String(page));
     params.set('pageSize', String(pageSize));
-    return params.toString();
-  }, [filter, search, page, pageSize]);
+    return appendQueueOrderingParams(params, ordering).toString();
+  }, [filter, search, page, pageSize, ordering]);
 
   const handleArchiveSelected = async () => {
     const selectedIds = selection.selectedIds;
@@ -228,6 +244,18 @@ export default function CrossOrgVerificationPage() {
           />
         </div>
       </div>
+
+      <VerificationQueueOrderingControls
+        ordering={ordering}
+        onChange={(nextOrdering) => {
+          selection.clear();
+          setOrdering(nextOrdering);
+          setPage(1);
+          updateUrl(filter, search, 1, nextOrdering);
+        }}
+        dateLabel={queueDateLabel('organization', filter)}
+        testIdPrefix="cross-org-verification"
+      />
 
       <VerificationSelectionToolbar
         selectedCount={selection.selectedCount}

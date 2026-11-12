@@ -27,6 +27,7 @@ import {
   buildEnrichmentUpdateVariables,
   isExerciseSaveAuthError,
 } from '@/features/exercises/utils/buildEnrichmentUpdateVariables';
+import { parseQueueOrdering, queueOrderingVariables } from '@/features/verification/utils/queueOrdering';
 import {
   buildOrganizationVerificationDetailHref,
   buildOrganizationVerificationListHref,
@@ -55,15 +56,16 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
   const search = searchParams.get('search') ?? '';
   const page = Number(searchParams.get('page') ?? '1') || 1;
   const pageSize = Number(searchParams.get('pageSize') ?? '20') || 20;
+  const ordering = useMemo(() => parseQueueOrdering(searchParams), [searchParams]);
 
   const listHref = useMemo(
-    () => buildOrganizationVerificationListHref({ filter, search, page, pageSize, view: 'grid' }),
-    [filter, search, page, pageSize]
+    () => buildOrganizationVerificationListHref({ filter, search, page, pageSize, view: 'grid', ordering }),
+    [filter, search, page, pageSize, ordering]
   );
   const buildDetailUrl = useCallback(
     (exerciseId: string) =>
-      buildOrganizationVerificationDetailHref(exerciseId, { filter, search, page, pageSize, view: 'grid' }),
-    [filter, search, page, pageSize]
+      buildOrganizationVerificationDetailHref(exerciseId, { filter, search, page, pageSize, view: 'grid', ordering }),
+    [filter, search, page, pageSize, ordering]
   );
 
   const { data, loading, refetch } = useQuery<{ exerciseByIdForOrgVerification: AdminExercise | null }>(
@@ -78,7 +80,13 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
   const { data: navigatorData } = useQuery<{ organizationVerificationQueueNavigator: VerificationQueueNavigator }>(
     GET_ORGANIZATION_VERIFICATION_QUEUE_NAVIGATOR_QUERY,
     {
-      variables: { organizationId: organizationId ?? '', currentExerciseId: id, filter, search: search || null },
+      variables: {
+        organizationId: organizationId ?? '',
+        currentExerciseId: id,
+        filter,
+        search: search || null,
+        ...queueOrderingVariables(ordering),
+      },
       skip: !organizationId || !canManageOrganization,
       fetchPolicy: 'cache-and-network',
     }

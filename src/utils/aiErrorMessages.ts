@@ -9,7 +9,7 @@
 
 import { polishPlural } from './polishPlural';
 
-export type AiErrorKind = 'insufficient_credits' | 'provider_failure';
+export type AiErrorKind = 'insufficient_credits' | 'provider_failure' | 'forbidden';
 
 export interface AiErrorMapping {
   kind: AiErrorKind;
@@ -19,6 +19,13 @@ export interface AiErrorMapping {
 }
 
 const PROVIDER_FAILURE_FALLBACK = 'Asystent AI jest chwilowo niedostępny. Spróbuj ponownie.';
+
+/**
+ * `AIController.CheckAndUseCredits` wpuszcza tylko personel aktywnego gabinetu (właściciel, admin,
+ * fizjoterapeuta, personel). Inna rola albo token bez gabinetu dostaje 403 `forbidden`; ponowienie nic nie da.
+ */
+export const AI_FORBIDDEN_MESSAGE =
+  'Asystent AI jest dostępny dla personelu gabinetu. Poproś właściciela gabinetu o dostęp.';
 
 /** Pierwszy dzień następnego miesiąca w UTC, tak jak `AICreditsService.GetNextResetDate`. */
 export function nextAiCreditsResetDate(now: Date): Date {
@@ -93,6 +100,10 @@ export function mapAiErrorResponse(status: number, bodyText: string, now: Date =
 
   if ((status === 400 || status === 402 || status === 403) && body.error === 'insufficient_credits') {
     return { kind: 'insufficient_credits', code: body.error, message: insufficientAiCreditsMessage(now, body) };
+  }
+
+  if (status === 403 && body.error === 'forbidden') {
+    return { kind: 'forbidden', code: body.error, message: AI_FORBIDDEN_MESSAGE };
   }
 
   if (status === 502 && (body.message || body.error)) {

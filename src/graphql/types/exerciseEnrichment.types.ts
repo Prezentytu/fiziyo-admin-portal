@@ -117,7 +117,7 @@ export interface EnrichmentContraindicationV33 {
 
 /** Ostrożność dla grupy szczególnej: jedno zdanie dla pacjenta, pokazywane osobnym blokiem na końcu karty. */
 export interface EnrichmentPrecautionV33 {
-  /** Kod grupy (np. `ciaza`, `inne`). */
+  /** Kod grupy z listy zamkniętej kontraktu §6.1 (np. `pregnancy_postpartum`, `other`); słownik: `V33_PRECAUTION_GROUPS`. */
   group?: string;
   text?: string;
 }

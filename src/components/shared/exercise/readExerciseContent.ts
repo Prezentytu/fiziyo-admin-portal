@@ -89,7 +89,7 @@ export interface ExerciseContentBreathing {
 export interface ExerciseContentSide {
   /** 3.3: `side.mode` (`none`, `each_side`, `alternating`, `left`, `right`). Rekord stary: wartość kolumny strony. */
   mode: string | null;
-  /** Dawka liczona na stronę. Rekord stary zawsze `false` (liczy łącznie). */
+  /** Dawka liczona na stronę. 3.3 przy dwóch stronach: tak, chyba że dokument mówi wprost `false`. Rekord stary zawsze `false` (liczy łącznie). */
   perSideDose: boolean;
   start: string | null;
   shownInMedia: string | null;
@@ -131,14 +131,16 @@ export interface ExerciseContent {
   side: ExerciseContentSide;
   /** Stara kolumna opisu klinicznego. Tylko rekord stary. */
   clinicalDescription: string | null;
-  /** Kolumna notatek. Nie ma pola w kontrakcie, więc czytamy ją w obu wersjach. */
+  /** Kolumna notatek. Tylko rekord stary: kontrakt v3.3 §2 ją wycofał (uwaga fizjoterapeuty należy do pozycji planu). */
   notes: string | null;
-  /** Kolumna podpowiedzi głosowej. Jak `notes`: w obu wersjach. */
+  /** Kolumna podpowiedzi głosowej. Tylko rekord stary: w v3.3 zastępują ją `patient.cues`. */
   audioCue: string | null;
 }
 
 const CUE_PHASES: readonly EnrichmentCuePhaseV3[] = ['preparation', 'work', 'rest'];
 const FIRST_NEW_READER_VERSION = [3, 3] as const;
+/** `side.mode` z kontraktu oraz wartość kolumny strony („obie”), gdy dokument nie ma sekcji `side`. */
+const TWO_SIDED_MODES = ['each_side', 'alternating', 'both'];
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -258,7 +260,8 @@ function readEquipment(
 ): ExerciseContentEquipmentItem[] {
   const fromDocument = isNew ? readEquipmentItems(document) : textEquipment(asTextList(document.equipment));
   if (fromDocument.length > 0) return fromDocument;
-  // Kolumnę sprzętu backend liczy z `equipment_items`, więc nie jest drugą prawdą, tylko zapasem, gdy dokument milczy.
+  // Zapas, gdy dokument milczy (np. rekord podniesiony mechanicznie). Kontrakt §1 zakłada, że kolumnę liczy backend
+  // z `equipment_items`; dziś backend tego nie robi, więc kolumna bywa starsza od dokumentu.
   const column = asText(source.equipment);
   return column ? textEquipment([column]) : [];
 }
@@ -266,9 +269,12 @@ function readEquipment(
 function readSide(isNew: boolean, document: UnknownRecord, source: ExerciseContentSource): ExerciseContentSide {
   const column = asText(source.side) ?? asText(source.exerciseSide);
   const side = isNew ? asRecord(document.side) : null;
+  const mode = asText(side?.mode) ?? column;
+  // Kontrakt §6.7: w 3.3 przy dwóch stronach `reps` jest zawsze na stronę; brak sekcji albo klucza znaczy to samo.
+  const twoSided = isNew && TWO_SIDED_MODES.includes((mode ?? '').toLowerCase());
   return {
-    mode: asText(side?.mode) ?? column,
-    perSideDose: side?.per_side_dose === true,
+    mode,
+    perSideDose: twoSided ? side?.per_side_dose !== false : side?.per_side_dose === true,
     start: asText(side?.start),
     shownInMedia: asText(side?.shown_in_media),
   };
@@ -361,8 +367,8 @@ export function readExerciseContent(exercise: ExerciseContentSource | null | und
     equipment: readEquipment(isNew, document, source),
     side: readSide(isNew, document, source),
     clinicalDescription: isNew ? null : asText(source.clinicalDescription),
-    notes: asText(source.notes),
-    audioCue: asText(source.audioCue),
+    notes: isNew ? null : asText(source.notes),
+    audioCue: isNew ? null : asText(source.audioCue),
   };
 }
 

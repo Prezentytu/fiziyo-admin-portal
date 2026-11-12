@@ -155,8 +155,24 @@ export const GET_VERIFICATION_STATS_QUERY = gql`
 `;
 
 export const GET_VERIFICATION_QUEUE_PAGE_QUERY = gql`
-  query GetVerificationQueuePage($filter: String!, $search: String, $page: Int!, $pageSize: Int!) {
-    verificationQueuePage(filter: $filter, search: $search, page: $page, pageSize: $pageSize) {
+  query GetVerificationQueuePage(
+    $filter: String!
+    $search: String
+    $page: Int!
+    $pageSize: Int!
+    $sort: VerificationQueueSort
+    $dateFrom: DateTime
+    $dateTo: DateTime
+  ) {
+    verificationQueuePage(
+      filter: $filter
+      search: $search
+      page: $page
+      pageSize: $pageSize
+      sort: $sort
+      dateFrom: $dateFrom
+      dateTo: $dateTo
+    ) {
       items {
         ...VerificationQueueItemFragment
       }
@@ -174,8 +190,22 @@ export const GET_VERIFICATION_QUEUE_PAGE_QUERY = gql`
 `;
 
 export const GET_VERIFICATION_QUEUE_NAVIGATOR_QUERY = gql`
-  query GetVerificationQueueNavigator($currentExerciseId: String!, $filter: String!, $search: String) {
-    verificationQueueNavigator(currentExerciseId: $currentExerciseId, filter: $filter, search: $search) {
+  query GetVerificationQueueNavigator(
+    $currentExerciseId: String!
+    $filter: String!
+    $search: String
+    $sort: VerificationQueueSort
+    $dateFrom: DateTime
+    $dateTo: DateTime
+  ) {
+    verificationQueueNavigator(
+      currentExerciseId: $currentExerciseId
+      filter: $filter
+      search: $search
+      sort: $sort
+      dateFrom: $dateFrom
+      dateTo: $dateTo
+    ) {
       currentExerciseId
       positionInQueue
       totalInQueue
@@ -208,6 +238,9 @@ export const GET_ORGANIZATION_VERIFICATION_QUEUE_PAGE_QUERY = gql`
     $search: String
     $page: Int!
     $pageSize: Int!
+    $sort: VerificationQueueSort
+    $dateFrom: DateTime
+    $dateTo: DateTime
   ) {
     organizationVerificationQueuePage(
       organizationId: $organizationId
@@ -215,6 +248,9 @@ export const GET_ORGANIZATION_VERIFICATION_QUEUE_PAGE_QUERY = gql`
       search: $search
       page: $page
       pageSize: $pageSize
+      sort: $sort
+      dateFrom: $dateFrom
+      dateTo: $dateTo
     ) {
       items {
         ...VerificationQueueItemFragment
@@ -238,12 +274,18 @@ export const GET_ORGANIZATION_VERIFICATION_QUEUE_NAVIGATOR_QUERY = gql`
     $currentExerciseId: String!
     $filter: String!
     $search: String
+    $sort: VerificationQueueSort
+    $dateFrom: DateTime
+    $dateTo: DateTime
   ) {
     organizationVerificationQueueNavigator(
       organizationId: $organizationId
       currentExerciseId: $currentExerciseId
       filter: $filter
       search: $search
+      sort: $sort
+      dateFrom: $dateFrom
+      dateTo: $dateTo
     ) {
       currentExerciseId
       positionInQueue

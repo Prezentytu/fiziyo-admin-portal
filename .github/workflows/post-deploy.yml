@@ -1,0 +1,32 @@
+# Po merge'u do main sprawdza, czy devportal (DEV) zwraca SHA merge commita albo późniejszy, i komentuje zmergowany PR.
+# Nie dotyka PROD: skrypt odrzuca każdy adres poza devportal.fiziyo.pl.
+name: Raport po wdrożeniu DEV
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: post-deploy-${{ github.sha }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  raport:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      # Push do main checkoutuje commit z main, więc skrypt jest zatwierdzony kodem, nie kodem z PR.
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Czekaj na devportal i skomentuj PR
+        run: node scripts/post-deploy-report.mjs --sha "$GITHUB_SHA" --timeout-min 20
+        env:
+          GH_TOKEN: ${{ github.token }}

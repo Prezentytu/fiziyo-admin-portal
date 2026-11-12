@@ -36,6 +36,11 @@ export interface VerificationStagesInput {
   descriptionNumberCount: number;
   hasPendingProposal: boolean;
   stopIfCount: number;
+  /**
+   * Set for a record in contract v3.3: gaps come from contract places, never from retired columns.
+   * `stepCount` counts filled `patient.steps`.
+   */
+  v33?: { stepCount: number };
 }
 
 export interface VerificationStagesResult {
@@ -55,7 +60,7 @@ export function hasPatientVideo(media: { videoUrl?: string | null; gifUrl?: stri
 /** Content an exercise needs before it can be published; the exercise page shows the same gaps. */
 export type ContentGapsInput = Pick<
   VerificationStagesInput,
-  'name' | 'patientDescription' | 'therapistDescription' | 'hasVideo' | 'imageCount' | 'stopIfCount'
+  'name' | 'patientDescription' | 'therapistDescription' | 'hasVideo' | 'imageCount' | 'stopIfCount' | 'v33'
 >;
 
 export function listContentGaps(input: ContentGapsInput): StageIssue[] {
@@ -65,6 +70,13 @@ export function listContentGaps(input: ContentGapsInput): StageIssue[] {
   }
   if (input.name.trim().length < MIN_NAME_LENGTH) {
     gaps.push({ stage: 'instruction', text: 'Wpisz nazwę ćwiczenia.' });
+  }
+  if (input.v33) {
+    // Contract v3.3: the description columns are retired and `safety.stop_if` is optional.
+    if (input.v33.stepCount === 0) {
+      gaps.push({ stage: 'instruction', text: 'Dodaj co najmniej jeden krok wykonania.' });
+    }
+    return gaps;
   }
   if (input.patientDescription.trim().length < MIN_PATIENT_DESCRIPTION_LENGTH) {
     gaps.push({

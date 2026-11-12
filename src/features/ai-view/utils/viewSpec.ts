@@ -31,7 +31,13 @@ export type ChatViewSpec =
   | { component: 'ExerciseResults'; query: string; exerciseIds: string[]; patientId?: string }
   | { component: 'PatientPeek'; patientId?: string; filter?: 'inactive' }
   | { component: 'Navigate'; route: NavigateRoute }
-  | { component: 'Clarify'; question: string; options: string[] }
+  | {
+      component: 'Clarify';
+      question: string;
+      options: string[];
+      /** Answers tied to a set or patient (backend-validated IDs); present only when at least one has an ID. */
+      choices?: ClarifyChoice[];
+    }
   | {
       component: 'AddPatient';
       name?: string;
@@ -41,6 +47,12 @@ export type ChatViewSpec =
       contextLabel?: string;
     }
   | { component: 'CreateExercise'; name?: string; description?: string };
+
+export interface ClarifyChoice {
+  label: string;
+  setId?: string;
+  patientId?: string;
+}
 
 export type ChatViewComponent = ChatViewSpec['component'];
 
@@ -65,6 +77,10 @@ const RAW_SPEC_SCHEMA = z.object({
   route: optionalText,
   question: optionalText,
   options: z.array(z.string()).nullish(),
+  choices: z
+    .array(z.object({ label: z.string(), setId: optionalText, patientId: optionalText }))
+    .nullish()
+    .catch(null),
   note: optionalText,
 });
 
@@ -126,7 +142,18 @@ export function toChatViewSpec(input: unknown): ChatViewSpec {
         .map((option) => option.trim())
         .filter(Boolean)
         .slice(0, MAX_CLARIFY_OPTIONS);
-      return raw.question ? { component: 'Clarify', question: raw.question, options } : UNSUPPORTED_SPEC;
+      if (!raw.question) return UNSUPPORTED_SPEC;
+      const choices: ClarifyChoice[] = (raw.choices ?? [])
+        .map((choice) => ({ label: choice.label.trim(), setId: choice.setId, patientId: choice.patientId }))
+        .filter((choice) => choice.label && options.includes(choice.label))
+        .map(({ label, setId, patientId }) => ({
+          label,
+          ...(setId ? { setId } : {}),
+          ...(patientId ? { patientId } : {}),
+        }));
+      return choices.some((choice) => choice.setId || choice.patientId)
+        ? { component: 'Clarify', question: raw.question, options, choices }
+        : { component: 'Clarify', question: raw.question, options };
     }
     default:
       return UNSUPPORTED_SPEC;
