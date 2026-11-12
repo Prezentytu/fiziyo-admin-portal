@@ -22,6 +22,8 @@ export interface DuplicateExerciseSource {
   exerciseSide?: string | null;
   difficultyLevel?: string | null;
   videoUrl?: string | null;
+  gifUrl?: string | null;
+  imageUrl?: string | null;
   defaultSets?: number | null;
   defaultReps?: number | null;
   defaultDuration?: number | null;
@@ -51,9 +53,32 @@ function toTagIds(tags: TagValue[] | null | undefined): string[] | null {
 }
 
 /**
- * Dokument treści idzie do kopii bez zmian: bez konwersji wersji i bez odsiewania kluczy,
- * więc `schemaVersion` i pola, których panel jeszcze nie zna, zostają.
- * Pusty albo nieczytelny dokument daje `null`, jak dla ćwiczenia bez treści.
+ * „Duplikuj” tworzy rekord gabinetu z treści i mediów źródła. Rekord puli demo ma cudze media z licencją
+ * tylko na demo, więc go nie kopiujemy. Bez pola `availability` (API sprzed puli demo) działa jak dotąd;
+ * ostateczną bramką jest backend.
+ */
+export function canDuplicateExercise(exercise: { availability?: string | null } | null | undefined): boolean {
+  return exercise?.availability !== 'DEMO';
+}
+
+/**
+ * Kopia jest nowym rekordem: nie dziedziczy tożsamości źródła (`key`, powtórzenie klucza źródłowego
+ * `SourceResearchId`) ani jego statusu weryfikacji (`lifecycle.status`). Reszta dokumentu zostaje.
+ */
+function withoutSourceIdentity(document: Record<string, unknown>): Record<string, unknown> {
+  const { key: _sourceKey, ...copy } = document;
+  const lifecycle = copy.lifecycle;
+  if (lifecycle != null && typeof lifecycle === 'object' && !Array.isArray(lifecycle)) {
+    const { status: _verificationStatus, ...lifecycleCopy } = lifecycle as Record<string, unknown>;
+    copy.lifecycle = lifecycleCopy;
+  }
+  return copy;
+}
+
+/**
+ * Dokument treści idzie do kopii bez konwersji wersji i bez odsiewania nieznanych kluczy,
+ * więc `schemaVersion` i pola, których panel jeszcze nie zna, zostają. Odpada tylko tożsamość
+ * źródła (`withoutSourceIdentity`). Pusty albo nieczytelny dokument daje `null`, jak dla ćwiczenia bez treści.
  */
 function readEnrichmentDocument(value: DuplicateExerciseSource['enrichmentData']): ExerciseEnrichmentData | null {
   let document: unknown = value;
@@ -65,7 +90,8 @@ function readEnrichmentDocument(value: DuplicateExerciseSource['enrichmentData']
     }
   }
   if (document == null || typeof document !== 'object' || Array.isArray(document)) return null;
-  return Object.keys(document).length > 0 ? (document as ExerciseEnrichmentData) : null;
+  const copy = withoutSourceIdentity(document as Record<string, unknown>);
+  return Object.keys(copy).length > 0 ? (copy as ExerciseEnrichmentData) : null;
 }
 
 /** Zmienne `createExercise` dla „Duplikuj”: kolumny i cały dokument treści ćwiczenia źródłowego. */
@@ -100,6 +126,8 @@ export function buildDuplicateExerciseVariables({
       executionTime: source.defaultExecutionTime ?? null,
       loadKg: resolveLoadKg(source.defaultLoad) ?? null,
       images: source.images?.length ? source.images : null,
+      gifUrl: source.gifUrl || null,
+      imageUrl: source.imageUrl || null,
       mainTags: toTagIds(source.mainTags),
       additionalTags: toTagIds(source.additionalTags),
       enrichmentData: readEnrichmentDocument(source.enrichmentData),
