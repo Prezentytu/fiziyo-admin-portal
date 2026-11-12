@@ -8,6 +8,10 @@ import {
   V33_PATIENT_VISIBLE_PATHS,
 } from '@/components/shared/exercise/writeExerciseContent';
 import goldenV33 from '@/components/shared/exercise/__tests__/fixtures/enrichmentV33.fx-0073.json';
+import {
+  GOLDEN_LEAF_PATHS,
+  V33_PATHS_EVERY_EDITOR_COVERS,
+} from '@/components/shared/exercise/__tests__/fixtures/v33GoldenPaths';
 import { VerificationWorkspace, type OrganizationDecision } from './VerificationWorkspace';
 import type { AdminExercise } from '@/graphql/types/adminExercise.types';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
@@ -375,6 +379,24 @@ describe('VerificationWorkspace – rekord v3.3', () => {
       'safety.requires_supervision': { stage: 'safety', testId: 'verification-safety-supervision-checkbox' },
     };
     expect(Object.keys(PLACES).sort()).toEqual([...V33_PATIENT_VISIBLE_PATHS].sort());
+    // Źródłem jest złoty rekord: każdy jego liść z sekcji, z których czyta API pacjenta, ma miejsce w weryfikacji
+    // albo jest tu nazwany z powodem. Nowe pole kontraktu w tych sekcjach wywraca test.
+    const PATIENT_SECTIONS = ['patient', 'breathing', 'side', 'safety', 'equipment_items'];
+    const NOT_FOR_PATIENT: Record<string, string> = {
+      'breathing.pattern': 'wzorzec oddechu to dane dla timera, pacjent dostaje zdanie breathing.text',
+      'safety.contraindications': 'przeciwwskazania widzi fizjoterapeuta, nie pacjent (kontrakt §3)',
+      'safety.flags': 'flagi bezpieczeństwa są dla fizjoterapeuty i reguł doboru',
+      'safety.pain_rule': 'reguła bólu steruje aplikacją, nie jest tekstem dla pacjenta',
+    };
+    const covers = (rule: string, leaf: string) => leaf === rule || leaf.startsWith(`${rule}.`);
+    const patientLeaves = GOLDEN_LEAF_PATHS.filter((leaf) => PATIENT_SECTIONS.some((name) => covers(name, leaf)));
+    expect(patientLeaves.length).toBeGreaterThan(20);
+    expect(
+      patientLeaves.filter(
+        (leaf) => ![...Object.keys(PLACES), ...Object.keys(NOT_FOR_PATIENT)].some((rule) => covers(rule, leaf))
+      )
+    ).toEqual([]);
+    expect(Object.keys(NOT_FOR_PATIENT).filter((rule) => !patientLeaves.some((leaf) => covers(rule, leaf)))).toEqual([]);
 
     const document = {
       ...golden,
@@ -433,8 +455,15 @@ describe('VerificationWorkspace – rekord v3.3', () => {
       'ai.keywords': { stage: 'decision', act: addChip('verification-extra-keywords') },
     };
     /** Zapisywalne, ale nie z tego ekranu: sprzęt edytuje formularz ćwiczenia, a zdjęcia kroków operacje na zdjęciach. */
-    const NOT_EDITED_HERE = ['equipment_items', 'patient.step_images'];
-    expect([...Object.keys(EDITS), ...NOT_EDITED_HERE].sort()).toEqual([...V33_EDITABLE_PATHS].sort());
+    const NOT_EDITED_HERE: Record<string, string> = {
+      equipment_items: 'sprzęt edytuje formularz ćwiczenia',
+      'patient.step_images': 'zdjęcia kroków zmieniają operacje na zdjęciach, nie pole tekstowe',
+    };
+    // Źródłem listy jest złoty rekord 3.3 (plus ścieżki edytowalne, których w nim nie ma), nie lista pisana tutaj.
+    expect([...V33_PATHS_EVERY_EDITOR_COVERS].sort()).toEqual([...V33_EDITABLE_PATHS].sort());
+    expect([...Object.keys(EDITS), ...Object.keys(NOT_EDITED_HERE)].sort()).toEqual(
+      [...V33_PATHS_EVERY_EDITOR_COVERS].sort()
+    );
 
     renderWorkspace(buildGoldenExercise());
     const user = userEvent.setup();

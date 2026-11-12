@@ -192,4 +192,30 @@ describe('VerificationWorkspace – rekord v3.3, zmiana zapisana przez kogoś in
       safety: { ...golden.safety, stop_if: `${golden.safety?.stop_if}${MY_EDIT}` },
     });
   });
+
+  it('to samo pole zmienione przez obie osoby: ekran pokazuje obie wersje i nie wczytuje bez wyboru', async () => {
+    const OTHER_STOP_IF = 'Objaw zapisany przez drugą osobę.';
+    const server = fakeServer(golden);
+    renderWorkspace(server.fetch);
+    const user = userEvent.setup();
+    server.state.document = { ...golden, safety: { ...golden.safety, stop_if: OTHER_STOP_IF } };
+
+    await editStopIf(user);
+    await user.click(screen.getByTestId('verification-skip-btn'));
+
+    const collision = await screen.findByTestId('exercise-save-conflict-collision-safety.stop_if');
+    expect(collision).toHaveTextContent(MY_EDIT.trim());
+    expect(collision).toHaveTextContent(OTHER_STOP_IF);
+    expect(screen.getByTestId('exercise-save-conflict-load-btn')).toBeDisabled();
+    expect(enrichmentSaves()).toEqual([]);
+
+    await user.click(screen.getByTestId('exercise-save-conflict-keep-theirs-safety.stop_if-btn'));
+    await user.click(screen.getByTestId('exercise-save-conflict-load-btn'));
+
+    expect(screen.queryByTestId('exercise-save-conflict-notice')).not.toBeInTheDocument();
+    expect(screen.getByTestId('verification-safety-stop-if-input')).toHaveValue(OTHER_STOP_IF);
+    await user.click(screen.getByTestId('verification-skip-btn'));
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/verification'));
+    expect(server.state.document.safety?.stop_if).toBe(OTHER_STOP_IF);
+  });
 });
