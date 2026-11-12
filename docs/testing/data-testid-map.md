@@ -329,6 +329,9 @@ Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu r
 | `exercise-detail-precautions-remove-{i}`            | 3.3: usuń ostrożność                                     | `ExerciseV33Editors.tsx`         |
 | `exercise-save-conflict-notice`                     | 3.3: komunikat, że ktoś zmienił ćwiczenie przed zapisem  | `ExerciseSaveConflictNotice.tsx` |
 | `exercise-save-conflict-load-btn`                   | 3.3: wczytaj aktualną wersję, zostaw własne zmiany       | `ExerciseSaveConflictNotice.tsx` |
+| `exercise-save-conflict-collision-{path}`           | 3.3: pole zmienione przez obie osoby, obie wersje        | `ExerciseSaveConflictNotice.tsx` |
+| `exercise-save-conflict-keep-mine-{path}-btn`       | 3.3: w polu kolizji zostaw wersję z ekranu               | `ExerciseSaveConflictNotice.tsx` |
+| `exercise-save-conflict-keep-theirs-{path}-btn`     | 3.3: w polu kolizji zostaw wersję zapisaną, odrzuć swoją | `ExerciseSaveConflictNotice.tsx` |
 | `exercise-detail-checkpoints-add-btn`               | 3.3: dodaj punkt kontrolny                               | `ExerciseV33Editors.tsx`         |
 | `exercise-detail-checkpoints-item-{i}`              | 3.3: tekst punktu kontrolnego                            | `ExerciseV33Editors.tsx`         |
 | `exercise-detail-checkpoints-remove-{i}`            | 3.3: usuń punkt kontrolny                                | `ExerciseV33Editors.tsx`         |

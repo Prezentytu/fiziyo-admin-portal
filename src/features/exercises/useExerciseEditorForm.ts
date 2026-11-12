@@ -17,10 +17,12 @@ import { readExerciseContent, type ExerciseContentVersion } from '@/components/s
 import {
   buildV33Document,
   collectV33Edits,
+  findV33EditCollisions,
   isSameV33Document,
   isV33EditablePath,
   loadV33Document,
   rebaseV33Draft,
+  type V33EditCollision,
 } from '@/components/shared/exercise/writeExerciseContent';
 
 /**
@@ -269,6 +271,9 @@ export function buildChangedCoreVariables(
   return variables;
 }
 
+/** Wybór wersji dla pól zmienionych przez obie osoby: ścieżka → która wersja zostaje. */
+export type SaveCollisionResolution = Readonly<Record<string, 'mine' | 'theirs'>>;
+
 export function useExerciseEditorForm({
   source,
   updateCore,
@@ -414,14 +419,26 @@ export function useExerciseEditorForm({
   const conflictDocumentRef = useRef(conflictDocument);
   conflictDocumentRef.current = conflictDocument;
 
+  /** Pola zmienione i na tym ekranie, i w bazie: przy każdym fizjoterapeuta wybiera, która wersja zostaje. */
+  const saveCollisions = useMemo<V33EditCollision[]>(
+    () => (conflictDocument ? findV33EditCollisions(initialEnrichment, enrichment, conflictDocument) : []),
+    [conflictDocument, enrichment, initialEnrichment]
+  );
+
   /**
    * Po konflikcie: szkic przechodzi na aktualną wersję z bazy i zachowuje niezapisane zmiany z ekranu.
-   * Niczego nie zapisuje; fizjoterapeuta widzi wynik i zapisuje sam.
+   * Pole zmienione przez obie osoby wymaga wyboru: `mine` zostawia wersję z ekranu (nadpisze cudzą przy
+   * zapisie), `theirs` odrzuca zmianę z ekranu. Bez wyboru dla każdej kolizji nic się nie dzieje, żeby żadna
+   * wersja nie znikła po cichu. Niczego nie zapisuje; fizjoterapeuta widzi wynik i zapisuje sam.
    */
-  const loadCurrentVersion = useCallback(() => {
+  const loadCurrentVersion = useCallback((resolution?: SaveCollisionResolution) => {
     const current = conflictDocumentRef.current;
     if (!current) return;
-    setEnrichment(rebaseV33Draft(initialEnrichmentRef.current, enrichmentRef.current, current));
+    const collisions = findV33EditCollisions(initialEnrichmentRef.current, enrichmentRef.current, current);
+    const choices = (resolution ?? {}) as Record<string, unknown>;
+    if (collisions.some(({ path }) => choices[path] !== 'mine' && choices[path] !== 'theirs')) return;
+    const keepTheirs = collisions.filter(({ path }) => choices[path] === 'theirs').map(({ path }) => path);
+    setEnrichment(rebaseV33Draft(initialEnrichmentRef.current, enrichmentRef.current, current, keepTheirs));
     setInitialEnrichment(current);
     setConflictDocument(null);
     setSaveStatus('idle');
@@ -556,6 +573,7 @@ export function useExerciseEditorForm({
       isPathDirty,
       saveStatus,
       hasSaveConflict: conflictDocument !== null,
+      saveCollisions,
       loadCurrentVersion,
       save,
       flush,
@@ -577,6 +595,7 @@ export function useExerciseEditorForm({
       replaceEnrichment,
       reset,
       save,
+      saveCollisions,
       saveStatus,
       savedLoadLabel,
       setCoreField,

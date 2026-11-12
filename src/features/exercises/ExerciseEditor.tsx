@@ -300,7 +300,9 @@ export function ExerciseEditor({
 
   return (
     <div className={cn('space-y-4', className)}>
-      {form.hasSaveConflict && <ExerciseSaveConflictNotice onLoadCurrent={form.loadCurrentVersion} />}
+      {form.hasSaveConflict && (
+        <ExerciseSaveConflictNotice collisions={form.saveCollisions} onLoadCurrent={form.loadCurrentVersion} />
+      )}
       {showNameField && (
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground" htmlFor="exercise-editor-name">
