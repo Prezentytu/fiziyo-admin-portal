@@ -22,8 +22,8 @@ function zgoda({ repo = REPO, pr = 12, sha = SHA, ageMs = 0 } = {}) {
   return dir;
 }
 
-const merge = (extra = "") => `gh pr merge 12 --merge --match-head-commit ${SHA} --delete-branch ${extra}`.trim();
-const opts = (consentDir) => ({ consentDir, remoteUrl: () => `git@github.com:${REPO}.git` });
+const merge = (extra = "") => `gh pr merge 12 -R ${REPO} --merge --match-head-commit ${SHA} --delete-branch ${extra}`.trim();
+const opts = (consentDir) => ({ consentDir });
 
 describe("agent-guard", () => {
   it("blocks push to main, promote and vercel prod", () => {
@@ -57,7 +57,7 @@ describe("agent-guard", () => {
 describe("agent-guard: merge przez agenta", () => {
   it("blocks a merge without consent", () => {
     assert.equal(classifyShellCommand("gh pr merge --squash 12").permission, "deny");
-    assert.equal(classifyShellCommand("gh pr merge 12 --merge", opts(zgoda())).permission, "deny");
+    assert.equal(classifyShellCommand(`gh pr merge 12 -R ${REPO} --merge`, opts(zgoda())).permission, "deny");
   });
 
   it("allows a merge with --match-head-commit and a fresh consent file", () => {
@@ -71,51 +71,13 @@ describe("agent-guard: merge przez agenta", () => {
     assert.equal(classifyShellCommand(`gh pr merge 12 --merge --match-head-commit ${SHA} -R Prezentytu/inne`, opts(dir)).permission, "allow");
   });
 
-  it("takes owner, repo and number from a PR url", () => {
-    const dir = zgoda({ repo: "Prezentytu/inne", pr: 7 });
-    const command = `gh pr merge https://github.com/Prezentytu/inne/pull/7 --merge --match-head-commit ${SHA}`;
-    assert.equal(classifyShellCommand(command, { consentDir: dir, remoteUrl: () => undefined }).permission, "allow");
-  });
-
-  it("takes the repo from the origin remote of the command directory", () => {
-    const dir = zgoda();
-    let asked;
-    const result = classifyShellCommand(merge(), {
-      consentDir: dir,
-      cwd: "/work/tree",
-      remoteUrl: (cwd) => {
-        asked = cwd;
-        return `https://github.com/${REPO}.git`;
-      },
-    });
-    assert.equal(result.permission, "allow");
-    assert.equal(asked, "/work/tree");
-  });
-
-  it("follows cd inside the command for the remote lookup", () => {
-    let asked;
-    classifyShellCommand(`cd /other/repo && ${merge()}`, {
-      consentDir: zgoda(),
-      cwd: "/work/tree",
-      remoteUrl: (cwd) => {
-        asked = cwd;
-        return `git@github.com:${REPO}.git`;
-      },
-    });
-    assert.equal(asked, "/other/repo");
-  });
-
-  it("blocks when the repo cannot be determined", () => {
-    const result = classifyShellCommand(merge(), { consentDir: zgoda(), remoteUrl: () => undefined });
-    assert.equal(result.permission, "deny");
-  });
-
   it("blocks a missing, short or substituted head sha", () => {
     const dir = zgoda();
-    assert.equal(classifyShellCommand("gh pr merge 12 --merge", opts(dir)).permission, "deny");
-    assert.equal(classifyShellCommand("gh pr merge 12 --merge --match-head-commit 0123456", opts(dir)).permission, "deny");
-    assert.equal(classifyShellCommand("gh pr merge 12 --merge --match-head-commit $(git rev-parse HEAD)", opts(dir)).permission, "deny");
-    assert.equal(classifyShellCommand("gh pr merge 12 --merge --match-head-commit `git rev-parse HEAD`", opts(dir)).permission, "deny");
+    const base = `gh pr merge 12 -R ${REPO} --merge`;
+    assert.equal(classifyShellCommand(base, opts(dir)).permission, "deny");
+    assert.equal(classifyShellCommand(`${base} --match-head-commit 0123456`, opts(dir)).permission, "deny");
+    assert.equal(classifyShellCommand(`${base} --match-head-commit $(git rev-parse HEAD)`, opts(dir)).permission, "deny");
+    assert.equal(classifyShellCommand(`${base} --match-head-commit \`git rev-parse HEAD\``, opts(dir)).permission, "deny");
   });
 
   it("blocks --admin and --auto even with consent", () => {
@@ -140,13 +102,13 @@ describe("agent-guard: merge przez agenta", () => {
   });
 
   it("blocks a merge without a pull request number", () => {
-    assert.equal(classifyShellCommand(`gh pr merge --merge --match-head-commit ${SHA}`, opts(zgoda())).permission, "deny");
+    assert.equal(classifyShellCommand(`gh pr merge -R ${REPO} --merge --match-head-commit ${SHA}`, opts(zgoda())).permission, "deny");
   });
 
   it("does not let a merge ride along with another blocked command", () => {
     const dir = zgoda();
     assert.equal(classifyShellCommand(`${merge()} && git push origin main`, opts(dir)).permission, "deny");
-    assert.equal(classifyShellCommand(`${merge()} && gh pr merge 99 --merge --match-head-commit ${SHA}`, opts(dir)).permission, "deny");
+    assert.equal(classifyShellCommand(`${merge()} && gh pr merge 99 -R ${REPO} --merge --match-head-commit ${SHA}`, opts(dir)).permission, "deny");
   });
 
   it("keeps merge through the API blocked, also with consent", () => {
@@ -154,6 +116,63 @@ describe("agent-guard: merge przez agenta", () => {
     assert.equal(classifyShellCommand(`gh api -X PUT repos/${REPO}/pulls/12/merge -f sha=${SHA}`, opts(dir)).permission, "deny");
     assert.equal(classifyShellCommand(`gh api graphql -f query='mutation { mergePullRequest(input:{pullRequestId:"x"}) { clientMutationId } }'`, opts(dir)).permission, "deny");
     assert.equal(classifyShellCommand(`curl -X PUT https://api.github.com/repos/${REPO}/pulls/12/merge`, opts(dir)).permission, "deny");
+  });
+
+  it("takes the repo only from an explicit -R/--repo in every spelling", () => {
+    const dir = zgoda({ repo: "prezentytu/fiziyo-admin-portal" });
+    for (const flag of [`-R ${REPO}`, `-R=${REPO}`, `-R${REPO}`, `--repo ${REPO}`, `--repo=${REPO}`]) {
+      assert.equal(classifyShellCommand(`gh pr merge 12 ${flag} --merge --match-head-commit ${SHA}`, { consentDir: dir }).permission, "allow", flag);
+    }
+  });
+
+  it("ignores the origin remote, cwd and a PR url: no explicit repo means deny", () => {
+    const options = { consentDir: zgoda(), cwd: "/work/tree", remoteUrl: () => `git@github.com:${REPO}.git` };
+    assert.equal(classifyShellCommand(`gh pr merge 12 --merge --match-head-commit ${SHA}`, options).permission, "deny");
+    assert.equal(classifyShellCommand(`cd /x && gh pr merge 12 --merge --match-head-commit ${SHA}`, options).permission, "deny");
+    assert.equal(classifyShellCommand(`gh pr merge https://github.com/${REPO}/pull/12 --merge --match-head-commit ${SHA}`, options).permission, "deny");
+  });
+
+  it("denies GH_REPO and GH_HOST assignments in the command", () => {
+    const dir = zgoda();
+    assert.equal(classifyShellCommand(`GH_REPO=inne/repo ${merge()}`, opts(dir)).permission, "deny");
+    assert.equal(classifyShellCommand(`GH_HOST=example.com ${merge()}`, opts(dir)).permission, "deny");
+    assert.equal(classifyShellCommand(`export GH_REPO=inne/repo && ${merge()}`, opts(dir)).permission, "deny");
+  });
+
+  it("lowercases owner, repo and sha, also in the consent path", () => {
+    const dir = zgoda({ repo: "prezentytu/fiziyo-admin-portal" });
+    assert.equal(classifyShellCommand(`gh pr merge 12 -R PREZENTYTU/Fiziyo-Admin-Portal --merge --match-head-commit ${SHA.toUpperCase()}`, { consentDir: dir }).permission, "allow");
+    assert.equal(classifyShellCommand(merge(), { consentDir: dir }).permission, "allow");
+  });
+
+  it("lets the exact ship.mjs command through", () => {
+    const dir = zgoda({ repo: "prezentytu/fiziyo-admin-portal" });
+    const command = `gh pr merge 12 -R ${REPO} --merge --match-head-commit ${SHA} --delete-branch --body "Merge agenta (ship.mjs gotowe-agent) @ ${SHA.slice(0, 7)}"`;
+    assert.equal(classifyShellCommand(command, { consentDir: dir }).permission, "allow");
+  });
+
+  it("treats gh under a full path like gh", () => {
+    const dir = zgoda({ repo: "prezentytu/fiziyo-admin-portal" });
+    assert.equal(classifyShellCommand(`/opt/homebrew/bin/gh pr merge 12 -R ${REPO} --merge`, { consentDir: dir }).permission, "deny");
+    assert.equal(classifyShellCommand(merge().replace("gh ", "/opt/homebrew/bin/gh "), { consentDir: dir }).permission, "allow");
+    assert.equal(classifyShellCommand("/opt/homebrew/bin/gh pr review 12 --approve").permission, "deny");
+    assert.equal(classifyShellCommand("/usr/local/bin/gh api repos/o/r/pulls/12/reviews -f event=APPROVE").permission, "deny");
+  });
+
+  it("blocks approve in every form", () => {
+    for (const command of [
+      "gh pr review 12 --approve",
+      "gh pr review 12 --approve=true",
+      "gh pr review 12 -a",
+      "gh pr review 12 -ab 'ok'",
+      'gh pr review 12 "--approve"',
+      "gh pr review 12 '-a'",
+      "gh api repos/o/r/pulls/12/reviews -f event=APPROVE",
+    ]) {
+      assert.equal(classifyShellCommand(command).permission, "deny", command);
+    }
+    assert.equal(classifyShellCommand("gh pr review 12 --comment -b 'ok'").permission, "allow");
+    assert.equal(classifyShellCommand("gh pr review 12 --request-changes -b 'x'").permission, "allow");
   });
 
   it("explains the reason in the hook response", () => {

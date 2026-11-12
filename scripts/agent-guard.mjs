@@ -1,6 +1,5 @@
 // Client-side shell gate for Cloud Agents. Not a permission boundary.
 // Merge agenta: polityka https://github.com/Prezentytu/baza-wiedzy/blob/main/praca-z-agentami/merge-agenta.md
-import { spawnSync } from "node:child_process";
 import { statSync } from "node:fs";
 import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
@@ -34,39 +33,29 @@ function tokenize(segment) {
   return tokens;
 }
 
-function remoteUrlFromGit(cwd) {
-  const result = spawnSync("git", ["-C", cwd, "remote", "get-url", "origin"], { encoding: "utf8" });
-  return result.status === 0 ? result.stdout.trim() : undefined;
-}
+// Repo tylko jawnie (-R/--repo): origin, cwd i GH_REPO bywają innym repo niż to, które gh zmerguje.
+const REPO_NAME = /^[\w.-]+\/[\w.-]+$/;
 
-function parseRepo(text) {
-  const match = /github\.com[:/]([^/\s]+)\/([^/\s#?]+?)(?:\.git)?(?:\/|$)/.exec(String(text ?? ""));
-  return match ? { owner: match[1], repo: match[2] } : undefined;
-}
-
-function consentExists({ owner, repo, number, sha }, { consentDir, now }) {
-  const names = [[owner, repo], [owner.toLowerCase(), repo.toLowerCase()]];
-  for (const [o, r] of names) {
-    try {
-      const age = now - statSync(path.join(consentDir, o, r, `${number}__${sha}`)).mtimeMs;
-      if (age < CONSENT_MAX_AGE_MS && age > -CONSENT_MAX_FUTURE_MS) return true;
-    } catch {
-      // brak pliku zgody
-    }
+function consentExists({ repo, number, sha }, { consentDir, now }) {
+  try {
+    const age = now - statSync(path.join(consentDir, ...repo.split("/"), `${number}__${sha}`)).mtimeMs;
+    return age < CONSENT_MAX_AGE_MS && age > -CONSENT_MAX_FUTURE_MS;
+  } catch {
+    return false;
   }
-  return false;
 }
 
 // Zwraca listę powodów blokady; pusta lista = merge dopuszczony (warunki z polityki merge'a agenta).
-function mergeDenials(segment, cwd, deps) {
+function mergeDenials(segment, command, deps) {
+  if (/(^|\s)GH_(REPO|HOST)=/.test(command)) return ["pull request merge: GH_REPO/GH_HOST w poleceniu, repo podaj jawnie przez -R"];
   const tokens = tokenize(segment);
   const at = tokens.findIndex((token, i) => token === "pr" && tokens[i + 1] === "merge");
   if (at < 0) return ["pull request merge: nie umiem odczytać komendy"];
   const denials = [];
   const args = tokens.slice(at + 2);
   let sha;
-  let repoFlag;
-  let target;
+  let repo;
+  let number;
   for (let i = 0; i < args.length; i += 1) {
     const arg = args[i];
     const [flag, inline] = arg.startsWith("--") && arg.includes("=") ? [arg.slice(0, arg.indexOf("=")), arg.slice(arg.indexOf("=") + 1)] : [arg, undefined];
@@ -75,36 +64,45 @@ function mergeDenials(segment, cwd, deps) {
     else if (VALUE_FLAGS.has(flag)) {
       const value = inline ?? args[(i += 1)];
       if (flag === "--match-head-commit") sha = value;
-      if (flag === "-R" || flag === "--repo") repoFlag = value;
-    } else if (/^-R./.test(arg)) repoFlag = arg.slice(2);
-    else if (!arg.startsWith("-") && target === undefined) target = arg;
+      if (flag === "--repo") repo = value;
+      if (flag === "-R") repo = value;
+    } else if (arg.startsWith("-R=")) repo = arg.slice(3);
+    else if (/^-R./.test(arg)) repo = arg.slice(2);
+    else if (!arg.startsWith("-") && number === undefined) number = arg;
   }
-  if (!FULL_SHA.test(sha ?? "")) denials.push("pull request merge: wymaga --match-head-commit <40 hex> (bez podstawień powłoki)");
-  const numberMatch = /^(?:#)?(\d+)$/.exec(target ?? "") ?? /\/pull\/(\d+)/.exec(target ?? "");
-  if (!numberMatch) denials.push("pull request merge: podaj numer PR albo jego URL");
-  const repo = parseRepo(repoFlag && !repoFlag.includes("github.com") ? `github.com/${repoFlag}` : repoFlag) ?? parseRepo(target) ?? parseRepo(deps.remoteUrl(cwd));
-  if (!repo) denials.push("pull request merge: nie ustaliłem repo (-R albo origin)");
+  if (!/^\d+$/.test(number ?? "")) denials.push("pull request merge: podaj numer PR (bez URL-a)");
+  if (!/^[0-9a-fA-F]{40}$/.test(sha ?? "")) denials.push("pull request merge: wymaga --match-head-commit <40 hex> (bez podstawień powłoki)");
+  if (!REPO_NAME.test(repo ?? "")) denials.push("pull request merge: wymaga jawnego -R owner/repo");
   if (denials.length) return denials;
-  if (!consentExists({ ...repo, number: numberMatch[1], sha }, deps)) {
-    return [`pull request merge: brak świeżej zgody ${repo.owner}/${repo.repo}/${numberMatch[1]}__${sha.slice(0, 7)}… w ${deps.consentDir} (ship.mjs, do 30 min)`];
+  repo = repo.toLowerCase();
+  sha = sha.toLowerCase();
+  if (!consentExists({ repo, number, sha }, deps)) {
+    return [`pull request merge: brak świeżej zgody ${repo}/${number}__${sha.slice(0, 7)}… w ${deps.consentDir} (ship.mjs, do 30 min)`];
   }
   return [];
 }
+
+// Agent działa z tokenu człowieka: approve z jego konta podrobiłby zgodę na drzwi jednokierunkowe.
+function approveDenial(segment) {
+  const tokens = tokenize(segment);
+  return tokens.some((t) => t === "--approve" || t.startsWith("--approve=") || /^-[a-zA-Z]*a[a-zA-Z]*$/.test(t));
+}
+
+const GH_PR_REVIEW = /^(\S*\/)?gh\s[\s\S]*\bpr\s+review\b/;
 
 export function classifyShellCommand(command, options = {}) {
   const deps = {
     consentDir: options.consentDir ?? path.join(homedir(), ".claude", "merge-zgody"),
     now: options.now ?? Date.now(),
-    remoteUrl: options.remoteUrl ?? remoteUrlFromGit,
   };
-  let cwd = options.cwd ?? process.cwd();
+  const raw = String(command ?? "");
   const reasons = [];
-  if (API_MERGE.test(String(command ?? ""))) reasons.push("pull request merge przez API");
-  for (const segment of commandSegments(command)) {
-    const cd = /^cd (\S+)$/.exec(segment);
-    if (cd) cwd = path.resolve(cwd, cd[1].replace(/^["']|["']$/g, ""));
+  if (API_MERGE.test(raw)) reasons.push("pull request merge przez API");
+  if (/\/pulls\/\d+\/reviews\b/.test(raw) && /APPROVE\b/i.test(raw)) reasons.push("approve przez API");
+  for (const segment of commandSegments(raw)) {
     if (PUSH_MAIN.test(segment)) reasons.push("push to main");
-    if (GH_MERGE.test(segment)) reasons.push(...mergeDenials(segment, cwd, deps));
+    if (GH_MERGE.test(segment)) reasons.push(...mergeDenials(segment, raw, deps));
+    if (GH_PR_REVIEW.test(segment) && approveDenial(segment)) reasons.push("approve robi człowiek");
     if (VERCEL_PROD.test(segment)) reasons.push("production deploy");
     if (PROMOTE.test(segment)) reasons.push("promote workflow");
   }
@@ -132,14 +130,12 @@ async function readStdin() {
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const argvCommand = process.argv.slice(2).join(" ").trim();
   let command = argvCommand;
-  let cwd;
   if (!command) {
-    // Cursor: { command, cwd }; Claude Code: { tool_input: { command }, cwd }.
+    // Cursor: { command }; Claude Code: { tool_input: { command } }.
     const payload = JSON.parse((await readStdin()) || "{}");
     command = payload.command ?? payload.tool_input?.command ?? "";
-    cwd = payload.cwd;
   }
-  const response = hookResponse(command, { cwd });
+  const response = hookResponse(command);
   process.stdout.write(`${JSON.stringify(response)}\n`);
   if (response.permission === "deny") process.exitCode = 2;
 }
