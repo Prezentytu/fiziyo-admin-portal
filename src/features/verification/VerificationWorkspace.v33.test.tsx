@@ -254,6 +254,46 @@ describe('VerificationWorkspace – rekord v3.3', () => {
     }
   });
 
+  it('rekord 3.3 bez znacznika $schema: zapis dopisuje znacznik i nie gubi żadnego klucza', async () => {
+    const { $schema: _marker, ...unmarked } = golden;
+    const document = { ...unmarked, klucz_spoza_kontraktu: { lista: [], puste: null } } as ExerciseEnrichmentData;
+    renderWorkspace(buildGoldenExercise({ enrichmentData: document }));
+    await addContraindicationAndSave(userEvent.setup());
+
+    const saved = JSON.parse(String(savedVariables()[0].value)) as ExerciseEnrichmentData;
+    expect(saved.$schema).toBe('fiziyo-exercise-v3');
+    expect(saved.schemaVersion).toBe('3.3');
+    const { $schema: _saved, ...savedRest } = saved;
+    expect({ ...savedRest, safety: { ...saved.safety, contraindications: golden.safety?.contraindications } }).toEqual(
+      document
+    );
+  });
+
+  it('edycja kroku i wskazówki w etapie Instrukcja zapisuje się pod ścieżkami kontraktu, reszta bez zmian', async () => {
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+    renderWorkspace(buildGoldenExercise());
+    const user = userEvent.setup();
+    await user.click(screen.getByTestId('verification-stage-instruction-btn'));
+    await user.type(screen.getByTestId('verification-step-1-input'), ' Dopisane.');
+    await user.type(screen.getByTestId('verification-cue-1-input'), ' Dopisane.');
+    await user.click(screen.getByTestId('verification-skip-btn'));
+    await waitFor(() =>
+      expect(savedVariables().some((variables) => variables.fieldName === 'enrichmentData')).toBe(true)
+    );
+
+    const saved = JSON.parse(
+      String(savedVariables().find((variables) => variables.fieldName === 'enrichmentData')?.value)
+    ) as ExerciseEnrichmentData;
+    expect(saved.patient?.steps?.[0]).toBe(`${golden.patient?.steps?.[0]} Dopisane.`);
+    expect(saved.patient?.cues?.[0]).toBe(`${golden.patient?.cues?.[0]} Dopisane.`);
+    expect({ ...saved, patient: { ...saved.patient, steps: golden.patient?.steps, cues: golden.patient?.cues } }).toEqual(
+      golden
+    );
+    // The form hook reports a path the 3.3 save would drop; the verification center must not use one.
+    expect(errors.mock.calls.filter(([message]) => String(message).includes('nie jest zapisywana'))).toEqual([]);
+    errors.mockRestore();
+  });
+
   it('tor organizacji zapisuje ten sam dokument przez własną mutację', async () => {
     const saveEnrichment = vi.fn().mockResolvedValue(undefined);
     const exercise = buildGoldenExercise();

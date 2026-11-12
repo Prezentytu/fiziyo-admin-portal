@@ -43,7 +43,7 @@ Moduł obsługuje dwa niezależne tory:
 ## Ćwiczenie w kontrakcie v3.3 (SPEC-037)
 
 - Wersję rozstrzyga `readExerciseContent`; rekord stary zachowuje dotychczasowe zachowanie.
-- Zapis rekordu 3.3 idzie przez `applyVerificationEditsV33` (`utils/contentV33.ts`): kopia wczytanego dokumentu plus ścieżki z `V33_EDITABLE_PATHS`. Nowe pole edytowalne dopisujesz do tej listy; nigdy nie piszesz do `therapist.indications`, `therapist.contraindications`, `equipment` ani kolumn opisu.
+- Zapis rekordu 3.3 idzie przez hook formularza i wspólny moduł `src/components/shared/exercise/writeExerciseContent.ts` (ten sam co w formularzu ćwiczenia): kopia wczytanego dokumentu plus ścieżki z `V33_EDITABLE_PATHS`, zawsze ze znacznikiem `$schema`. Nowe pole edytowalne dopisujesz do tej listy; hook odrzuca każdą inną ścieżkę. Nigdy nie piszesz do `therapist.indications`, `therapist.contraindications`, `equipment` ani kolumn opisu.
 - Fakty tylko do odczytu buduje `utils/verificationFacts.ts`, a etap dla faktu bierze się z macierzy FR-007.
 
 ## Test checklist

@@ -58,12 +58,7 @@ import { SafetyStage } from './stages/SafetyStage';
 import { VerificationFloatingBar } from './stages/VerificationFloatingBar';
 import { VerificationStageNav, type StageNavItem, type StageNavState } from './stages/VerificationStageNav';
 import { countFilledMistakes, countFilledTexts, summarizeChanges, toChangeSnapshot } from './utils/changeSummary';
-import {
-  applyVerificationEditsV33,
-  omitRetiredCoreVariablesV33,
-  readContraindicationTextsV33,
-  withV3SchemaMarker,
-} from './utils/contentV33';
+import { readContraindicationTextsV33 } from './utils/contentV33';
 import { EXTRA_CONTENT_GROUPS_V33 } from './utils/extraContent';
 import { buildVerificationFactsV33, sideColumnDiffersFromMode } from './utils/verificationFacts';
 import {
@@ -224,12 +219,6 @@ export function VerificationWorkspace({
   // Contract v3.3 (FR-007): the record is read and saved in contract places; a legacy record keeps the old path.
   const isV33 = useMemo(() => readExerciseContent(exercise).version === '3.3', [exercise]);
   const contractFacts = useMemo(() => (isV33 ? buildVerificationFactsV33(exercise) : null), [exercise, isV33]);
-  const formSource = useMemo(
-    () => (isV33 ? { ...exercise, enrichmentData: withV3SchemaMarker(exercise.enrichmentData) } : exercise),
-    [exercise, isV33]
-  );
-  const loadedEnrichmentRef = useRef(exercise.enrichmentData);
-  loadedEnrichmentRef.current = exercise.enrichmentData;
 
   // ============================================
   // MUTATIONS
@@ -260,20 +249,15 @@ export function VerificationWorkspace({
 
   const updateCore = useCallback(
     async (variables: Record<string, unknown>) => {
-      if (isV33) {
-        const contractVariables = omitRetiredCoreVariablesV33(variables);
-        if (Object.keys(contractVariables).length === 0) return;
-        await updateExerciseDetails({ variables: { exerciseId: exercise.id, ...contractVariables } });
-        return;
-      }
+      // A 3.3 record: the form hook already leaves the retired description columns out of `variables`.
       await updateExerciseDetails({ variables: { exerciseId: exercise.id, ...variables } });
     },
-    [exercise.id, isV33, updateExerciseDetails]
+    [exercise.id, updateExerciseDetails]
   );
 
   const updateEnrichment = useCallback(
-    async (draftPayload: ExerciseEnrichmentData) => {
-      const payload = isV33 ? applyVerificationEditsV33(loadedEnrichmentRef.current, draftPayload) : draftPayload;
+    // A 3.3 record: `payload` is the loaded document with the edited paths only (`writeExerciseContent`).
+    async (payload: ExerciseEnrichmentData) => {
       if (saveEnrichment) {
         await saveEnrichment(payload);
         return;
@@ -282,11 +266,11 @@ export function VerificationWorkspace({
         variables: { exerciseId: exercise.id, fieldName: 'enrichmentData', value: JSON.stringify(payload ?? {}) },
       });
     },
-    [exercise.id, isV33, saveEnrichment, updateExerciseField]
+    [exercise.id, saveEnrichment, updateExerciseField]
   );
 
   const form = useExerciseEditorForm({
-    source: formSource,
+    source: exercise,
     updateCore,
     updateEnrichment,
     onError: onSaveError ?? (() => toast.error('Nie udało się zapisać zmian')),
@@ -294,6 +278,24 @@ export function VerificationWorkspace({
   });
   const { core, enrichment, setCoreField, setEnrichmentPath, flush } = form;
   const patient = useMemo<ExerciseEnrichmentPatientV3>(() => enrichment.patient ?? {}, [enrichment.patient]);
+  /**
+   * A 3.3 record is saved path by path, so a changed `patient` goes in as its changed keys: a key outside
+   * the editable list is then refused by the form hook instead of vanishing at save.
+   */
+  const setPatient = useCallback(
+    (next: ExerciseEnrichmentPatientV3) => {
+      if (!isV33) {
+        setEnrichmentPath('patient', next);
+        return;
+      }
+      const before = patient as Record<string, unknown>;
+      const after = next as Record<string, unknown>;
+      for (const key of new Set([...Object.keys(before), ...Object.keys(after)])) {
+        if (JSON.stringify(before[key]) !== JSON.stringify(after[key])) setEnrichmentPath(`patient.${key}`, after[key]);
+      }
+    },
+    [isV33, patient, setEnrichmentPath]
+  );
   // The text the patient reads first: the description column on a legacy record, `patient.summary` in v3.3.
   const patientLead = isV33 ? (patient.summary ?? '') : core.patientDescription;
   const therapistLead = isV33 ? '' : core.clinicalDescription;
@@ -1166,11 +1168,11 @@ export function VerificationWorkspace({
               proposal={proposal}
               isGeneratingProposal={isGeneratingProposal}
               onCoreFieldChange={setCoreField}
-              onPatientChange={(nextPatient) => setEnrichmentPath('patient', nextPatient)}
+              onPatientChange={setPatient}
               onRequestProposal={() => void handleRequestProposal()}
               onInsertProposal={() => {
                 if (!proposal) return;
-                setEnrichmentPath('patient', applyInstructionProposal(patient, proposal));
+                setPatient(applyInstructionProposal(patient, proposal));
                 setProposal(null);
               }}
               onDismissProposal={() => setProposal(null)}
