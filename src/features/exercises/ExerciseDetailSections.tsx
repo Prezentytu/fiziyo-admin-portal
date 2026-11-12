@@ -23,12 +23,12 @@ import {
   readExerciseContent,
   type ExerciseContentEquipmentItem,
 } from '@/components/shared/exercise/readExerciseContent';
+import { NEW_PRECAUTION_GROUP } from '@/components/shared/exercise/writeExerciseContent';
 import { describeEquipmentItem } from '@/features/exercises/utils/equipmentItemText';
 import { cn } from '@/lib/utils';
 import type { ExerciseContentVersion } from '@/components/shared/exercise/readExerciseContent';
 import type { EnrichmentPatientMistakeV3, ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import { EquipmentItemsEditor, TextItemsEditor, TherapistNoteField } from './ExerciseV33Editors';
-import { NEW_PRECAUTION_GROUP } from './utils/enrichmentV33Document';
 
 /**
  * Dokument dla sekcji w trybie odczytu. Szkic formularza przechodzi przez `toV3`, które dla dokumentu

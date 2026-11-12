@@ -14,7 +14,12 @@ import { normalizeExerciseType } from '@/utils/exerciseEnums';
 import type { ExerciseParametersTimingType } from '@/components/shared/exercise/ExerciseParametersFields';
 import { describeSavedNonKgLoad, readSavedLoadKg } from './utils/describeSavedLoad';
 import { readExerciseContent, type ExerciseContentVersion } from '@/components/shared/exercise/readExerciseContent';
-import { buildV33Document, collectV33Edits, loadV33Document } from './utils/enrichmentV33Document';
+import {
+  buildV33Document,
+  collectV33Edits,
+  isV33EditablePath,
+  loadV33Document,
+} from '@/components/shared/exercise/writeExerciseContent';
 
 /**
  * Pojedynczy model formularza edytora ćwiczenia (v3).
@@ -337,14 +342,22 @@ export function useExerciseEditorForm({
     setSaveStatus('idle');
   }, []);
 
-  const setEnrichmentPath = useCallback((path: string, value: unknown) => {
-    setEnrichment((previous) => {
-      const next = deepCloneEnrichment(previous);
-      setEnrichmentAtPath(next as Record<string, unknown>, path, value);
-      return next;
-    });
-    setSaveStatus('idle');
-  }, []);
+  const setEnrichmentPath = useCallback(
+    (path: string, value: unknown) => {
+      if (contentVersion === '3.3' && !isV33EditablePath(path)) {
+        // The 3.3 save sends only `V33_EDITABLE_PATHS`; a field wired to any other path would lose its value silently.
+        console.error(`[ExerciseEditor] Ścieżka „${path}” nie jest zapisywana w rekordzie 3.3; zmiana pominięta.`);
+        return;
+      }
+      setEnrichment((previous) => {
+        const next = deepCloneEnrichment(previous);
+        setEnrichmentAtPath(next as Record<string, unknown>, path, value);
+        return next;
+      });
+      setSaveStatus('idle');
+    },
+    [contentVersion]
+  );
 
   const replaceEnrichment = useCallback((next: ExerciseEnrichmentData) => {
     setEnrichment(next);

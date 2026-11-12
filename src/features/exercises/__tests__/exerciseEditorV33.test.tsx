@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import fixture from '@/components/shared/exercise/__tests__/fixtures/enrichmentV33.fx-0073.json';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { isV33EditablePath, V33_EDITABLE_PATHS } from '@/components/shared/exercise/writeExerciseContent';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 
 import { ExerciseEditor } from '../ExerciseEditor';
@@ -145,6 +146,8 @@ describe('zapis rekordu 3.3: dokument', () => {
       result.current.setEnrichmentPath('safety.intensity_guide', '5/10');
     });
     expect(result.current.isDirty).toBe(false);
+    // The hook refuses a path the save would drop, so a screen that wires one shows it at once.
+    expect(result.current.enrichment).toEqual(document);
     await act(async () => {
       await result.current.save();
     });
@@ -417,19 +420,19 @@ describe('ostrożności dla grup szczególnych w formularzu 3.3', () => {
     );
   });
 
-  it('nowy wiersz dostaje kod grupy „inne”, także pierwszy w rekordzie bez ostrożności', async () => {
+  it('nowy wiersz dostaje kod grupy „other” z kontraktu §6.1, także pierwszy w rekordzie bez ostrożności', async () => {
     const { unmount } = render(<Editor source={withPrecautions} />);
     fireEvent.click(screen.getByTestId('exercise-detail-precautions-add-btn'));
     fireEvent.change(screen.getByTestId('exercise-detail-precautions-item-2'), { target: { value: 'Seniorzy: ćwicz przy oparciu.' } });
     await saveDraft();
-    expect(sentPrecautions()).toEqual([...precautions, { group: 'inne', text: 'Seniorzy: ćwicz przy oparciu.' }]);
+    expect(sentPrecautions()).toEqual([...precautions, { group: 'other', text: 'Seniorzy: ćwicz przy oparciu.' }]);
     unmount();
     updateEnrichment.mockClear();
 
     render(<Editor />);
     fireEvent.change(screen.getByTestId('exercise-detail-precautions-item-0'), { target: { value: 'Przy zawrotach głowy ćwicz na siedząco.' } });
     await saveDraft();
-    expect(sentPrecautions()).toEqual([{ group: 'inne', text: 'Przy zawrotach głowy ćwicz na siedząco.' }]);
+    expect(sentPrecautions()).toEqual([{ group: 'other', text: 'Przy zawrotach głowy ćwicz na siedząco.' }]);
   });
 
   it('usunięcie wszystkich wierszy usuwa klucz z dokumentu', async () => {
@@ -520,5 +523,56 @@ describe('AI i panel JSON w rekordzie 3.3', () => {
 
     expect(sentDocument().patient?.summary).toBe('Z panelu JSON.');
     expect(withoutKeys(sentDocument(), ['patient.summary'])).toEqual(withoutKeys(document, ['patient.summary']));
+  });
+});
+
+describe('zapadka: pola formularza 3.3 a lista ścieżek zapisu', () => {
+  function RecordingEditor({ seen }: Readonly<{ seen: Set<string> }>) {
+    const form = useExerciseEditorForm({ source: v33Source, updateCore, updateEnrichment });
+    const recording = {
+      ...form,
+      isPathDirty: (path: string) => {
+        seen.add(path);
+        return form.isPathDirty(path);
+      },
+      setEnrichmentPath: (path: string, value: unknown) => {
+        seen.add(path);
+        form.setEnrichmentPath(path, value);
+      },
+    };
+    return (
+      <TooltipProvider>
+        <ExerciseEditor form={recording} />
+      </TooltipProvider>
+    );
+  }
+
+  it('każde pole treści formularza 3.3 pisze pod ścieżkę, którą zapis przyjmuje', () => {
+    const seen = new Set<string>();
+    render(<RecordingEditor seen={seen} />);
+    fireEvent.change(screen.getByTestId('exercise-execution-steps-editor-item-0'), { target: { value: 'Zmieniony krok.' } });
+    fireEvent.change(screen.getByTestId('exercise-audio-cues-editor-item-0'), { target: { value: 'Zmieniona wskazówka.' } });
+
+    expect([...seen].filter((path) => !isV33EditablePath(path))).toEqual([]);
+    // Lista pól formularza; `patient.step_images`, `patient.cue_phases` i `ai.keywords` edytuje centrum weryfikacji.
+    expect([...seen].sort()).toEqual(
+      V33_EDITABLE_PATHS.filter(
+        (path) => !['patient.step_images', 'patient.cue_phases', 'ai.keywords'].includes(path)
+      ).sort()
+    );
+  });
+
+  it('hook w rekordzie 3.3 nie przyjmuje ścieżki spoza listy, w rekordzie starym przyjmuje jak dotąd', () => {
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { result } = renderForm();
+    act(() => result.current.setEnrichmentPath('classification.position', 'standing'));
+    expect(result.current.enrichment).toEqual(document);
+    expect(errors).toHaveBeenCalledTimes(1);
+    errors.mockRestore();
+
+    const legacy = renderForm({ id: 'old', name: 'Stare', type: 'REPS', enrichmentData: { patient: { steps: ['Krok.'] } } });
+    act(() => legacy.result.current.setEnrichmentPath('ai.problems', ['ból']));
+    expect(legacy.result.current.enrichment.ai?.problems).toEqual(['ból']);
+    expect(legacy.result.current.isDirty).toBe(true);
   });
 });

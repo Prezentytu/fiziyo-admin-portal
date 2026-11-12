@@ -10,15 +10,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { DirtyDot } from '@/components/shared/enrichment/DirtyDot';
 import { ListEditor } from '@/components/shared/enrichment/ListEditor';
 import { EXERCISE_CONTENT_LABELS as LABELS } from '@/components/shared/enrichment/enrichmentFieldLabels';
+import { readTextItem, withTextItem } from '@/components/shared/exercise/writeExerciseContent';
 import { cn } from '@/lib/utils';
 import type { EnrichmentEquipmentItemV33 } from '@/graphql/types/exerciseEnrichment.types';
 
-import {
-  acceptTherapistNoteInput,
-  readTextItem,
-  THERAPIST_NOTE_MAX_LENGTH,
-  withTextItem,
-} from './utils/enrichmentV33Document';
+import { acceptTherapistNoteInput, THERAPIST_NOTE_MAX_LENGTH } from './utils/enrichmentV33Document';
 
 /**
  * Editors of the v3.3 content facts that have no place in the old form (SPEC-038).
@@ -37,7 +33,7 @@ interface TextItemsEditorProps {
   dirty?: boolean;
   onChange: (items: unknown[]) => void;
   testIdPrefix: string;
-  /** Keys a row added in the form starts with, next to an empty `text` (e.g. `{ group: 'inne' }`). */
+  /** Keys a row added in the form starts with, next to an empty `text` (e.g. `{ group: 'other' }`). */
   newItemDefaults?: Readonly<Record<string, unknown>>;
   /** One sentence under the rows. */
   hint?: string;
