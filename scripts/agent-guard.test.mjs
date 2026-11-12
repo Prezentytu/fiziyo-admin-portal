@@ -196,9 +196,8 @@ describe("agent-guard: merge przez agenta", () => {
       "gh api repos/o/r/pulls/12/reviews -f event=REQUEST_CHANGES -f body=x",
       "gh api repos/o/r/pulls/12/reviews -f event=COMMENT",
       "gh api graphql -f query='mutation { addPullRequestReview(input:{pullRequestId:\"x\", event: COMMENT}) { clientMutationId } }'",
-      "gh api repos/o/r/pulls/12/reviews",
     ]) {
-      assert.equal(classifyShellCommand(command).permission, command.endsWith("12/reviews") ? "deny" : "allow", command);
+      assert.equal(classifyShellCommand(command).permission, "allow", command);
     }
     assert.equal(classifyShellCommand("gh api repos/o/r/pulls/12/comments").permission, "allow");
   });
@@ -274,6 +273,35 @@ describe("agent-guard: merge przez agenta", () => {
     assert.equal(classifyShellCommand(`gh pr merge 12 -dR ${REPO} --merge --match-head-commit ${SHA}`, { consentDir: dir }).permission, "deny");
     assert.equal(classifyShellCommand(`gh pr merge 12 -dR${REPO} --merge --match-head-commit ${SHA}`, { consentDir: dir }).permission, "deny");
     assert.equal(classifyShellCommand(`gh pr merge 12 -R ${REPO} -d --merge --match-head-commit ${SHA}`, { consentDir: dir }).permission, "allow");
+  });
+
+  it("treats quoted text as data: gh in a commit or PR text is not a command", () => {
+    for (const command of [
+      'git commit -m"fix gh pr merge"',
+      'git commit -m "fix gh pr merge"',
+      'git commit -m "guard: \\"do\\" i gh pr merge w pętli"',
+      'gh pr create --title t --body="Po review: gh pr merge 12"',
+      'gh pr create --title t --body "Po review: gh pr merge 12; potem gh pr review --approve"',
+      "git commit -m 'gh pr merge 12 && gh alias set m merge'",
+    ]) {
+      assert.equal(classifyShellCommand(command).permission, "allow", command);
+    }
+    assert.equal(classifyShellCommand('echo "$(gh pr merge 12)"').permission, "deny");
+    assert.equal(classifyShellCommand("nice -n 5 gh pr merge 12").permission, "deny");
+  });
+
+  it("treats an explicit GET with -f/-F as a read, plain GET lists too", () => {
+    assert.equal(classifyShellCommand("gh api -X GET repos/o/r/pulls/12/reviews -F per_page=100").permission, "allow");
+    assert.equal(classifyShellCommand('gh api repos/o/r/pulls/12/reviews --method GET -f per_page=100 --jq ".[].state"').permission, "allow");
+    assert.equal(classifyShellCommand("gh api -X GET repos/o/r/git/refs/heads/main -f x=1").permission, "allow");
+    assert.equal(classifyShellCommand("gh api repos/o/r/pulls/12/reviews").permission, "allow");
+    assert.equal(classifyShellCommand("gh api -X GET repos/o/r/pulls/12/reviews --input body.json").permission, "deny");
+  });
+
+  it("blocks enqueuePullRequest and GraphQL queries built by substitution", () => {
+    assert.equal(classifyShellCommand('gh api graphql -f query="mutation{enqueuePullRequest(input:{pullRequestId:1}){clientMutationId}}"').permission, "deny");
+    assert.equal(classifyShellCommand('gh api graphql -f query="$(cat q.graphql)"').permission, "deny");
+    assert.equal(classifyShellCommand("gh api graphql -f query=`cat q.graphql`").permission, "deny");
   });
 
   it("explains the reason in the hook response", () => {
