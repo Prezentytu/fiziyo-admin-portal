@@ -13,7 +13,7 @@ jobs:
     timeout-minutes: 3
     steps:
       - name: Verify deployment and dispatch scoped E2E
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         env:
           TESTS_REPO_OWNER: ${{ vars.E2E_TESTS_REPO_OWNER }}
           TESTS_REPO_NAME: ${{ vars.E2E_TESTS_REPO_NAME }}

@@ -56,6 +56,8 @@ import type { CreateExerciseMutationResult, CreateExerciseVariables } from '@/gr
 
 import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { aiService } from '@/services/aiService';
+import type { AiErrorMapping } from '@/utils/aiErrorMessages';
+import { AiSuggestionFailure } from './AiSuggestionFailure';
 import type { ExerciseSuggestionResponse } from '@/services/aiService';
 import { useExerciseImageGeneration } from './useExerciseImageGeneration';
 import { ImageStylePicker } from './ImageStylePicker';
@@ -369,6 +371,7 @@ function NameSuggestionHero({
 interface AIDiffDrawerProps {
   currentData: ExerciseData;
   suggestion: ExerciseSuggestionResponse | null;
+  failure: AiErrorMapping | null;
   isLoading: boolean;
   onAcceptField: (field: keyof ExerciseData, value: unknown) => void;
   onAcceptAll: () => void;
@@ -379,6 +382,7 @@ interface AIDiffDrawerProps {
 function AIDiffDrawer({
   currentData,
   suggestion,
+  failure,
   isLoading,
   onAcceptField,
   onAcceptAll,
@@ -401,19 +405,7 @@ function AIDiffDrawer({
   }
 
   if (!suggestion) {
-    return (
-      <div className="w-[420px] border-l border-border bg-card p-6 flex flex-col items-center justify-center gap-4">
-        <AlertTriangle className="h-8 w-8 text-warning" />
-        <p className="text-sm text-muted-foreground text-center">
-          Nie udało się wygenerować sugestii.
-          <br />
-          Spróbuj ponownie.
-        </p>
-        <Button variant="outline" size="sm" onClick={onClose}>
-          Zamknij
-        </Button>
-      </div>
-    );
+    return <AiSuggestionFailure failure={failure} onClose={onClose} />;
   }
 
   // === Analiza danych ===
@@ -1015,6 +1007,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
   // AI Enhancement states
   const [showAIDiff, setShowAIDiff] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState<ExerciseSuggestionResponse | null>(null);
+  const [aiFailure, setAiFailure] = useState<AiErrorMapping | null>(null);
   const [isLoadingAI, setIsLoadingAI] = useState(false);
 
   // Whole-exercise AI draft: name variants, then one fill of every field (reviewed before save).
@@ -1181,6 +1174,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
     setShowAdvanced(false);
     setShowAIDiff(false);
     setAiSuggestion(null);
+    setAiFailure(null);
     setIsLoadingAI(false);
     setAiVariants(null);
     setIsLoadingVariants(false);
@@ -1386,12 +1380,10 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
     try {
       const tagNames = tags.map((t) => t.name);
       const existingNames = rankExerciseNamesForDuplicateCheck(data.name, existingExercises);
-      const suggestion = await aiService.getExerciseSuggestion(data.name, tagNames, existingNames);
-      setAiSuggestion(suggestion);
-    } catch (error) {
-      console.error('AI enhancement error:', error);
-      toast.error('Nie udało się uzyskać sugestii AI');
-      setAiSuggestion(null);
+      // Powód porażki (kredyty, rola, dostawca) już pokazał toast z aiService; panel mówi to samo, bez „spróbuj ponownie”.
+      const result = await aiService.suggestExercise(data.name, tagNames, existingNames);
+      setAiSuggestion(result.status === 'ok' ? result.suggestion : null);
+      setAiFailure(result.status === 'error' ? result.failure : null);
     } finally {
       aiPendingRef.current = Math.max(0, aiPendingRef.current - 1);
       setIsLoadingAI(false);
@@ -1463,6 +1455,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
     aiService.abortEndpoint('exercise-suggest');
     setShowAIDiff(false);
     setAiSuggestion(null);
+    setAiFailure(null);
     setIsLoadingAI(false);
   }, []);
 
@@ -1523,8 +1516,8 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
 
       const tagNames = tags.map((t) => t.name);
       const existingNames = rankExerciseNamesForDuplicateCheck(exerciseName, existingExercises);
-      const [suggestion, enrichmentResponse] = await Promise.all([
-        aiService.getExerciseSuggestion(exerciseName, tagNames, existingNames),
+      const [suggestionResult, enrichmentResponse] = await Promise.all([
+        aiService.suggestExercise(exerciseName, tagNames, existingNames),
         aiService.generateEnrichment({
           exerciseName,
           patientDescription: dataRef.current.description.trim() || undefined,
@@ -1538,9 +1531,13 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
       setIsFillingAll(false);
       setFillingVariantName(null);
 
+      const suggestion = suggestionResult.status === 'ok' ? suggestionResult.suggestion : null;
       const aiEnrichment = enrichmentResponse?.success ? enrichmentResponse.enrichmentData : null;
       if (!suggestion && !aiEnrichment) {
-        toast.error('Nie udało się przygotować ćwiczenia z AI. Spróbuj ponownie.');
+        // Rozpoznany powód (kredyty, rola, dostawca) pokazał już toast z aiService; drugi, sprzeczny „spróbuj ponownie” myli.
+        if (suggestionResult.status === 'ok' || suggestionResult.failure === null) {
+          toast.error('Nie udało się przygotować ćwiczenia z AI. Spróbuj ponownie.');
+        }
         return;
       }
 
@@ -2230,6 +2227,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
             <AIDiffDrawer
               currentData={data}
               suggestion={aiSuggestion}
+              failure={aiFailure}
               isLoading={isLoadingAI}
               onAcceptField={handleAcceptAIField}
               onAcceptAll={handleAcceptAllAI}
