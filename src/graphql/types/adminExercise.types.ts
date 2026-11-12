@@ -9,6 +9,19 @@ import type { ExerciseEnrichmentData } from './exerciseEnrichment.types';
 // Enums
 // ============================================
 
+/** Kierunek kolejki weryfikacji po dacie kolejki (backend `VerificationQueueSort`, domyślnie NEWEST). */
+export type VerificationQueueSort = 'NEWEST' | 'OLDEST';
+
+/**
+ * Opcjonalne argumenty kolejek weryfikacji: `dateFrom` włącznie, `dateTo` wyłącznie, ISO w UTC.
+ * Pomijane, gdy domyślne; nigdy `null`, bo `sort` w schemacie jest niepusty z domyślną wartością.
+ */
+export interface VerificationQueueOrderingVariables {
+  sort?: VerificationQueueSort;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
 /**
  * Exercise content status in the verification workflow
  * Matches backend ContentStatus enum
@@ -281,7 +294,7 @@ export interface VerificationQueueNavigator {
   search?: string | null;
 }
 
-export interface GetVerificationQueuePageVariables {
+export interface GetVerificationQueuePageVariables extends VerificationQueueOrderingVariables {
   filter: string;
   search?: string | null;
   page: number;
@@ -296,7 +309,7 @@ export interface GetCrossOrgVerificationQueuePageResponse {
   crossOrgVerificationQueuePage: CrossOrgVerificationQueuePage;
 }
 
-export interface GetVerificationQueueNavigatorVariables {
+export interface GetVerificationQueueNavigatorVariables extends VerificationQueueOrderingVariables {
   currentExerciseId: string;
   filter: string;
   search?: string | null;
