@@ -3,7 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import fixture from '@/components/shared/exercise/__tests__/fixtures/enrichmentV33.fx-0073.json';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { isV33EditablePath, V33_EDITABLE_PATHS } from '@/components/shared/exercise/writeExerciseContent';
+import { V33_PATHS_EVERY_EDITOR_COVERS } from '@/components/shared/exercise/__tests__/fixtures/v33GoldenPaths';
+import { isV33EditablePath } from '@/components/shared/exercise/writeExerciseContent';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 
 import { ExerciseEditor } from '../ExerciseEditor';
@@ -554,12 +555,14 @@ describe('zapadka: pola formularza 3.3 a lista ścieżek zapisu', () => {
     fireEvent.change(screen.getByTestId('exercise-audio-cues-editor-item-0'), { target: { value: 'Zmieniona wskazówka.' } });
 
     expect([...seen].filter((path) => !isV33EditablePath(path))).toEqual([]);
-    // Lista pól formularza; `patient.step_images`, `patient.cue_phases` i `ai.keywords` edytuje centrum weryfikacji.
-    expect([...seen].sort()).toEqual(
-      V33_EDITABLE_PATHS.filter(
-        (path) => !['patient.step_images', 'patient.cue_phases', 'ai.keywords'].includes(path)
-      ).sort()
-    );
+    // Źródłem listy jest złoty rekord 3.3 (plus ścieżki edytowalne, których w nim nie ma), nie lista pisana tutaj.
+    const notEditedHere: Record<string, string> = {
+      'patient.step_images': 'zdjęcia przypina do kroków centrum weryfikacji',
+      'patient.cue_phases': 'fazy wskazówek ustawia centrum weryfikacji',
+      'ai.keywords': 'słowa kluczowe edytuje centrum weryfikacji (tor katalogu)',
+    };
+    expect(Object.keys(notEditedHere).filter((path) => !V33_PATHS_EVERY_EDITOR_COVERS.includes(path))).toEqual([]);
+    expect([...seen].sort()).toEqual(V33_PATHS_EVERY_EDITOR_COVERS.filter((path) => !(path in notEditedHere)).sort());
   });
 
   it('hook w rekordzie 3.3 nie przyjmuje ścieżki spoza listy, w rekordzie starym przyjmuje jak dotąd', () => {
