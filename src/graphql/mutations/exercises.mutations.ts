@@ -824,6 +824,8 @@ export const IMPORT_EXERCISE_BUNDLE_WITH_MEDIA_COPY_MUTATION = gql`
         planned
         kept
         failed
+        deferred
+        notCopied
         items {
           sourceUrl
           targetUrl
@@ -835,10 +837,18 @@ export const IMPORT_EXERCISE_BUNDLE_WITH_MEDIA_COPY_MUTATION = gql`
   }
 `;
 
-/** Pola wyniku importu znane temu API; odpowiedź bez `mediaCopy` albo błąd = import bez raportu kopii mediów. */
+/**
+ * Pola wyniku importu i raportu kopii mediów znane temu API; odpowiedź bez `mediaCopy`, bez liczników
+ * `deferred` i `notCopied` albo błąd = import bez raportu kopii mediów.
+ */
 export const GET_EXERCISE_BUNDLE_IMPORT_RESULT_FIELDS_QUERY = gql`
   query GetExerciseBundleImportResultFields {
     __type(name: "ExerciseBundleImportResultDto") {
+      fields {
+        name
+      }
+    }
+    mediaCopyType: __type(name: "ExerciseBundleMediaCopyDto") {
       fields {
         name
       }

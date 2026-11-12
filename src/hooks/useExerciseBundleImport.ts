@@ -14,24 +14,50 @@ import {
 import { GET_ORGANIZATION_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
+import { isSchemaValidationError } from '@/lib/graphql/isSchemaValidationError';
+
+interface TypeFields {
+  fields?: ReadonlyArray<{ name?: string | null } | null> | null;
+}
 
 interface ImportResultFieldsResponse {
-  __type?: { fields?: ReadonlyArray<{ name?: string | null } | null> | null } | null;
+  __type?: TypeFields | null;
+  mediaCopyType?: TypeFields | null;
+}
+
+/** Pytanie o schemat nie może wstrzymać importu dłużej niż ten czas; po nim import idzie jak na main. */
+const SCHEMA_QUESTION_TIMEOUT_MS = 5000;
+
+function hasFields(type: TypeFields | null | undefined, names: readonly string[]): boolean {
+  return names.every((name) => type?.fields?.some((field) => field?.name === name) === true);
 }
 
 /**
- * Czy API zna raport kopii mediów (fizjo-app#432). Pytanie o schemat, nie próba mutacji: import nie może pójść
- * dwa razy. Każda niepewność (błąd, wyłączona introspekcja, brak pola) = import jak dotąd, bez raportu.
+ * Czy API zna raport kopii mediów razem z licznikami `deferred` i `notCopied` (fizjo-app#432). Pytanie o schemat
+ * idzie przy każdym imporcie (`network-only`), więc wdrożenie albo wycofanie backendu nie zostaje w pamięci karty.
+ * Każda niepewność (błąd, wyłączona introspekcja, brak pola, brak odpowiedzi w czasie) = import jak dotąd, bez raportu.
  */
 async function supportsMediaCopyReport(client: ApolloClient): Promise<boolean> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
   try {
-    const { data } = await client.query<ImportResultFieldsResponse>({
-      query: GET_EXERCISE_BUNDLE_IMPORT_RESULT_FIELDS_QUERY,
-      errorPolicy: 'ignore',
+    const question = client
+      .query<ImportResultFieldsResponse>({
+        query: GET_EXERCISE_BUNDLE_IMPORT_RESULT_FIELDS_QUERY,
+        fetchPolicy: 'network-only',
+        errorPolicy: 'ignore',
+      })
+      .then(
+        ({ data }) =>
+          hasFields(data?.__type, ['mediaCopy']) && hasFields(data?.mediaCopyType, ['deferred', 'notCopied'])
+      );
+    const timeout = new Promise<boolean>((resolve) => {
+      timer = setTimeout(() => resolve(false), SCHEMA_QUESTION_TIMEOUT_MS);
     });
-    return data?.__type?.fields?.some((field) => field?.name === 'mediaCopy') === true;
+    return await Promise.race([question, timeout]);
   } catch {
     return false;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -60,8 +86,15 @@ export function useExerciseBundleImport() {
     async ({ variables }: { variables: ImportExerciseBundleVariables }) => {
       setLoading(true);
       try {
-        const runImport = (await supportsMediaCopyReport(client)) ? importWithMediaCopy : importPlain;
-        return await runImport({ variables });
+        if (!(await supportsMediaCopyReport(client))) return await importPlain({ variables });
+        try {
+          return await importWithMediaCopy({ variables });
+        } catch (error) {
+          // Backend zmienił się po pytaniu o schemat i nie zna dokumentu: walidacja jest przed wykonaniem, więc nic
+          // nie zapisano i jedna próba starą mutacją nie dubluje importu. Każdy inny błąd wraca bez ponowienia.
+          if (!isSchemaValidationError(error)) throw error;
+          return await importPlain({ variables });
+        }
       } finally {
         setLoading(false);
       }

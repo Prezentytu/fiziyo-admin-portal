@@ -7,7 +7,16 @@ import {
   type ExerciseBundleMediaCopy,
 } from './catalogBundleMediaCopy';
 
-const EMPTY: ExerciseBundleMediaCopy = { copied: 0, alreadyPresent: 0, planned: 0, kept: 0, failed: 0, items: [] };
+const EMPTY: ExerciseBundleMediaCopy = {
+  copied: 0,
+  alreadyPresent: 0,
+  planned: 0,
+  kept: 0,
+  failed: 0,
+  deferred: 0,
+  notCopied: 0,
+  items: [],
+};
 
 describe('summarizeMediaCopy', () => {
   it('zwraca null, gdy import nie dotknął mediów', () => {
@@ -23,6 +32,8 @@ describe('summarizeMediaCopy', () => {
       planned: 0,
       kept: 1,
       failed: 1,
+      deferred: 0,
+      notCopied: 0,
       items: [
         { sourceUrl: 'https://dev/a.jpg', targetUrl: 'https://prod/a.jpg', outcome: 'COPIED', reason: null },
         { sourceUrl: 'https://dev/b.jpg', targetUrl: 'https://prod/b.jpg', outcome: 'COPIED', reason: null },
@@ -54,6 +65,77 @@ describe('summarizeMediaCopy', () => {
   });
 });
 
+describe('odłożone i niekopiowane (fizjo-app#432 @ 45ef69a3)', () => {
+  const report = {
+    copied: 1,
+    alreadyPresent: 0,
+    planned: 0,
+    kept: 0,
+    failed: 0,
+    deferred: 2,
+    notCopied: 1,
+    items: [
+      { sourceUrl: 'https://dev/a.jpg', targetUrl: 'https://prod/a.jpg', outcome: 'COPIED', reason: null },
+      {
+        sourceUrl: 'https://dev/b.mp4',
+        targetUrl: null,
+        outcome: 'DEFERRED',
+        reason: 'Limit kopii mediów na jedno żądanie',
+      },
+      {
+        sourceUrl: 'https://dev/c.mp4',
+        targetUrl: null,
+        outcome: 'DEFERRED',
+        reason: 'Limit kopii mediów na jedno żądanie',
+      },
+      {
+        sourceUrl: 'https://dev/d.jpg',
+        targetUrl: null,
+        outcome: 'NOT_COPIED',
+        reason: 'Pozycja z tym adresem jest odrzucona',
+      },
+    ],
+  };
+
+  it('liczniki odłożonych i niekopiowanych są w podsumowaniu i zgadzają się z liczbą adresów', () => {
+    const summary = summarizeMediaCopy(readMediaCopy(report));
+
+    expect(summary?.counts.map((entry) => [entry.key, entry.label, entry.count])).toEqual([
+      ['copied', 'skopiowane', 1],
+      ['deferred', 'odłożone', 2],
+      ['notCopied', 'niekopiowane', 1],
+    ]);
+    expect(summary?.counts.reduce((sum, entry) => sum + entry.count, 0)).toBe(summary?.totalUrls);
+  });
+
+  it('wynik pozycji ma polski opis, a nie surową nazwę', () => {
+    expect(mediaCopyOutcomeLabel('DEFERRED')).not.toBe('DEFERRED');
+    expect(mediaCopyOutcomeLabel('NOT_COPIED')).not.toBe('NOT_COPIED');
+    expect(mediaCopyOutcomeLabel('DEFERRED')).toMatch(/wyślij/i);
+  });
+
+  it('brakujące liczniki liczy z listy, także dla nowych wyników', () => {
+    const read = readMediaCopy({ items: report.items });
+
+    expect(read).toMatchObject({ copied: 1, deferred: 2, notCopied: 1 });
+  });
+
+  it('odpowiedź sprzed tych pól (bez deferred i notCopied) daje ekran jak dotąd', () => {
+    const read = readMediaCopy({
+      copied: 1,
+      alreadyPresent: 0,
+      planned: 0,
+      kept: 0,
+      failed: 0,
+      items: [report.items[0]],
+    });
+    const summary = summarizeMediaCopy(read);
+
+    expect(read).toMatchObject({ deferred: 0, notCopied: 0 });
+    expect(summary?.counts.map((entry) => entry.key)).toEqual(['copied']);
+  });
+});
+
 describe('mediaCopyOutcomeLabel', () => {
   it('odróżnia magazyn środowiska od filmu osadzanego', () => {
     expect(mediaCopyOutcomeLabel('KEPT_OWN')).not.toBe(mediaCopyOutcomeLabel('KEPT_EMBEDDED'));
@@ -69,6 +151,8 @@ describe('readMediaCopy', () => {
       planned: 0,
       kept: 1,
       failed: 0,
+      deferred: 0,
+      notCopied: 0,
       items: [
         {
           __typename: 'ExerciseBundleMediaCopyItemDto',
@@ -87,6 +171,8 @@ describe('readMediaCopy', () => {
       planned: 0,
       kept: 1,
       failed: 0,
+      deferred: 0,
+      notCopied: 0,
       items: [
         { sourceUrl: 'https://dev/a.jpg', targetUrl: 'https://prod/a.jpg', outcome: 'COPIED', reason: null },
         { sourceUrl: 'https://vimeo.com/1', targetUrl: null, outcome: 'KEPT_EMBEDDED', reason: null },
@@ -116,7 +202,12 @@ describe('readMediaCopy', () => {
     });
 
     expect(report).toMatchObject({ copied: 1, alreadyPresent: 0, planned: 0, kept: 2, failed: 1 });
-    expect(report?.items[0]).toEqual({ sourceUrl: 'https://dev/a.jpg', targetUrl: null, outcome: 'COPIED', reason: null });
+    expect(report?.items[0]).toEqual({
+      sourceUrl: 'https://dev/a.jpg',
+      targetUrl: null,
+      outcome: 'COPIED',
+      reason: null,
+    });
   });
 
   it('nieznane pola i nieznany wynik nie psują raportu', () => {
@@ -129,7 +220,13 @@ describe('readMediaCopy', () => {
       quarantined: 1,
       bytesCopied: 2048,
       items: [
-        { sourceUrl: 'https://dev/a.jpg', targetUrl: 'https://prod/a.jpg', outcome: 'COPIED', reason: null, bytes: 2048 },
+        {
+          sourceUrl: 'https://dev/a.jpg',
+          targetUrl: 'https://prod/a.jpg',
+          outcome: 'COPIED',
+          reason: null,
+          bytes: 2048,
+        },
         { sourceUrl: 'https://dev/b.mp4', targetUrl: null, outcome: 'QUARANTINED', reason: 'licencja', attempt: 2 },
       ],
     });
@@ -151,10 +248,18 @@ describe('readMediaCopy', () => {
     const report = readMediaCopy({
       copied: '3',
       failed: -1,
-      items: [null, 'x', { outcome: 'COPIED' }, { sourceUrl: 'https://dev/a.jpg' }, { sourceUrl: 'https://dev/b.jpg', outcome: 'COPIED' }],
+      items: [
+        null,
+        'x',
+        { outcome: 'COPIED' },
+        { sourceUrl: 'https://dev/a.jpg' },
+        { sourceUrl: 'https://dev/b.jpg', outcome: 'COPIED' },
+      ],
     });
 
-    expect(report?.items).toEqual([{ sourceUrl: 'https://dev/b.jpg', targetUrl: null, outcome: 'COPIED', reason: null }]);
+    expect(report?.items).toEqual([
+      { sourceUrl: 'https://dev/b.jpg', targetUrl: null, outcome: 'COPIED', reason: null },
+    ]);
     expect(report?.copied).toBe(1);
     expect(report?.failed).toBe(0);
   });

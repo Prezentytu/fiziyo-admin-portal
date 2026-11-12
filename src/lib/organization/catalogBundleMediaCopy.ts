@@ -17,11 +17,15 @@ export interface ExerciseBundleMediaCopy {
   planned: number;
   kept: number;
   failed: number;
+  /** Odłożone przez limit jednego żądania; pozycje z takim adresem nie są zapisane, plik trzeba wysłać ponownie. */
+  deferred: number;
+  /** Nie kopiowane, bo pozycja z tym adresem została odrzucona. */
+  notCopied: number;
   items: ExerciseBundleMediaCopyItem[];
 }
 
 export interface MediaCopyCount {
-  key: 'copied' | 'alreadyPresent' | 'planned' | 'kept' | 'failed';
+  key: 'copied' | 'alreadyPresent' | 'planned' | 'kept' | 'deferred' | 'notCopied' | 'failed';
   label: string;
   count: number;
   tone: MediaCopyTone;
@@ -39,6 +43,8 @@ const COUNT_LABELS: ReadonlyArray<Omit<MediaCopyCount, 'count'>> = [
   { key: 'alreadyPresent', label: 'już w magazynie', tone: 'success' },
   { key: 'planned', label: 'do skopiowania', tone: 'warning' },
   { key: 'kept', label: 'bez zmian', tone: 'secondary' },
+  { key: 'deferred', label: 'odłożone', tone: 'warning' },
+  { key: 'notCopied', label: 'niekopiowane', tone: 'secondary' },
   { key: 'failed', label: 'nieudane', tone: 'destructive' },
 ];
 
@@ -49,6 +55,8 @@ const OUTCOME_LABELS: Record<string, string> = {
   KEPT_OWN: 'bez zmian, magazyn tego środowiska',
   KEPT_EMBEDDED: 'bez zmian, film osadzany',
   FAILED: 'nieudane, adres bez zmian',
+  DEFERRED: 'odłożone (limit jednego żądania), pozycji nie zapisano; wyślij plik ponownie',
+  NOT_COPIED: 'nie skopiowano, pozycji z tym adresem nie zapisano',
 };
 
 /** Licznik, do którego wpada wynik adresu, gdy API nie podało liczników; nieznany wynik nie wpada do żadnego. */
@@ -59,6 +67,8 @@ const COUNT_KEY_BY_OUTCOME: Record<string, MediaCopyCount['key']> = {
   KEPT_OWN: 'kept',
   KEPT_EMBEDDED: 'kept',
   FAILED: 'failed',
+  DEFERRED: 'deferred',
+  NOT_COPIED: 'notCopied',
 };
 
 export function mediaCopyOutcomeLabel(outcome: ExerciseBundleMediaCopyOutcome): string {
@@ -103,6 +113,8 @@ export function readMediaCopy(value: unknown): ExerciseBundleMediaCopy | null {
     alreadyPresent: count('alreadyPresent'),
     planned: count('planned'),
     kept: count('kept'),
+    deferred: count('deferred'),
+    notCopied: count('notCopied'),
     failed: count('failed'),
     items,
   };
