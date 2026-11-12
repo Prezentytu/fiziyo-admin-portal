@@ -796,6 +796,28 @@ export const IMPORT_EXERCISE_BUNDLE_MUTATION = gql`
       skipped
       errors
       warnings
+    }
+  }
+`;
+
+/**
+ * Ten sam import z raportem kopii mediów (fizjo-app#432). Osobny dokument: API sprzed #432 nie zna pola
+ * `mediaCopy` i odrzuciłoby całą mutację, więc karta importu sięga po niego dopiero, gdy API potwierdzi pole.
+ */
+export const IMPORT_EXERCISE_BUNDLE_WITH_MEDIA_COPY_MUTATION = gql`
+  mutation ImportExerciseBundleWithMediaCopy($organizationId: String!, $json: String!, $asGlobal: Boolean) {
+    importExerciseBundle(organizationId: $organizationId, json: $json, asGlobal: $asGlobal) {
+      success
+      fileKind
+      exercisesUpserted
+      mediaReplaced
+      tagsUpserted
+      categoriesUpserted
+      tagLinks
+      relations
+      skipped
+      errors
+      warnings
       mediaCopy {
         copied
         alreadyPresent
@@ -813,30 +835,16 @@ export const IMPORT_EXERCISE_BUNDLE_MUTATION = gql`
   }
 `;
 
-export type ExerciseBundleMediaCopyOutcome =
-  | 'COPIED'
-  | 'ALREADY_PRESENT'
-  | 'PLANNED'
-  | 'KEPT_OWN'
-  | 'KEPT_EMBEDDED'
-  | 'FAILED';
-
-export interface ExerciseBundleMediaCopyItem {
-  sourceUrl: string;
-  targetUrl: string | null;
-  outcome: ExerciseBundleMediaCopyOutcome;
-  reason: string | null;
-}
-
-/** Copy of bundle media into this environment's storage, done before the import writes records. */
-export interface ExerciseBundleMediaCopy {
-  copied: number;
-  alreadyPresent: number;
-  planned: number;
-  kept: number;
-  failed: number;
-  items: ExerciseBundleMediaCopyItem[];
-}
+/** Pola wyniku importu znane temu API; odpowiedź bez `mediaCopy` albo błąd = import bez raportu kopii mediów. */
+export const GET_EXERCISE_BUNDLE_IMPORT_RESULT_FIELDS_QUERY = gql`
+  query GetExerciseBundleImportResultFields {
+    __type(name: "ExerciseBundleImportResultDto") {
+      fields {
+        name
+      }
+    }
+  }
+`;
 
 export interface ExerciseBundleImportResult {
   success: boolean;
@@ -850,7 +858,8 @@ export interface ExerciseBundleImportResult {
   skipped: number;
   errors: string[];
   warnings: string[];
-  mediaCopy: ExerciseBundleMediaCopy;
+  /** Tylko z API po fizjo-app#432; kształt czyta `readMediaCopy`, bo raport może zyskać pola i wartości. */
+  mediaCopy?: unknown;
 }
 
 export interface ImportExerciseBundleData {
