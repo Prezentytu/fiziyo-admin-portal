@@ -15,6 +15,8 @@ import {
 } from '@/graphql/queries/exercises.queries';
 import { GET_ORGANIZATION_DEMO_POOL_QUERY } from '@/graphql/queries/organizations.queries';
 
+import { HOTCHOCOLATE_RESPONSES } from '@/lib/graphql/hotChocolateResponses.fixture';
+
 import { DemoPoolQueryProvider, ExerciseDemoBadge, useDemoPool } from './demoPool';
 import { useExerciseLibraryPage } from './useExerciseLibraryPage';
 import type { ExerciseLibraryDemoFilter } from './utils/exerciseLibraryUrlState';
@@ -143,6 +145,14 @@ describe('biblioteka na API bez puli demo (przed fizjo-app#388)', () => {
   });
 });
 
+/** Błąd walidacji z prawdziwej odpowiedzi HotChocolate 15.1.14 (nieznany argument), z `specifiedBy`. */
+function realValidationErrors(): GraphQLError[] {
+  const { errors } = JSON.parse(HOTCHOCOLATE_RESPONSES.unknownArg.body) as {
+    errors: Array<{ message: string; extensions?: Record<string, unknown> }>;
+  };
+  return errors.map(({ message, extensions }) => new GraphQLError(message, { extensions }));
+}
+
 function http(status: number): ServerError {
   return new ServerError(`Response not successful: Received status code ${status}`, {
     response: new Response('{}', { status }),
@@ -174,7 +184,10 @@ describe('filtr demo po błędzie listy', () => {
   });
 
   it('błąd walidacji schematu (HTTP 400) chowa filtr i wraca do zwykłej listy', async () => {
-    const { result } = renderLibrary([plainList, poolOn, demoIds, demoList({ error: http(400) })], 'only');
+    const { result } = renderLibrary(
+      [plainList, poolOn, demoIds, demoList({ result: { errors: realValidationErrors() } })],
+      'only'
+    );
 
     await waitFor(() => expect(result.current.demoFilterAvailable).toBe(false));
     await waitFor(() => expect(result.current.data?.availableExercisesPage.totalCount).toBe(40));
@@ -214,12 +227,7 @@ describe('biblioteka na API z pulą demo', () => {
 
   it('API odrzuca filtr listy: biblioteka wraca do zwykłej listy i chowa filtr', async () => {
     const { result } = renderLibrary(
-      [
-        plainList,
-        poolOn,
-        demoIds,
-        demoList({ result: { errors: [new GraphQLError('The argument `availability` does not exist.')] } }),
-      ],
+      [plainList, poolOn, demoIds, demoList({ result: { errors: realValidationErrors() } })],
       'only'
     );
 
