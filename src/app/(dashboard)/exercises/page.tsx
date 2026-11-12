@@ -29,6 +29,7 @@ import {
   GET_AVAILABLE_EXERCISES_PAGE_QUERY,
 } from '@/graphql/queries/exercises.queries';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
+import { GET_ORGANIZATION_DEMO_POOL_QUERY } from '@/graphql/queries/organizations.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
 import {
   DELETE_EXERCISE_MUTATION,
@@ -41,12 +42,19 @@ import { useExerciseBuilder, type BuilderExercise } from '@/contexts/ExerciseBui
 import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
 import { useRealtimeExercises } from '@/hooks/useRealtimeExercises';
 import { ORG_VERIFICATION_REFETCH_QUERIES } from '@/hooks/useOrganizationVerificationRealtime';
-import type { AvailableExercisesPageResponse, ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
+import type {
+  AvailableExercisesPageResponse,
+  ExerciseTagsResponse,
+  OrganizationByIdResponse,
+  TagCategoriesResponse,
+} from '@/types/apollo';
 import {
   buildExerciseLibraryQueryString,
   EXERCISE_LIBRARY_PAGE_SIZES,
   parseExerciseLibraryUrlState,
+  toExerciseAvailability,
   toExerciseLibraryTab,
+  type ExerciseLibraryDemoFilter,
   type ExerciseLibraryUrlState,
 } from '@/features/exercises/utils/exerciseLibraryUrlState';
 import { EXERCISE_BODY_REGIONS, findExerciseBodyRegion } from '@/features/exercises/utils/exerciseBodyRegions';
@@ -147,6 +155,7 @@ export default function ExercisesPage() {
         tab: toExerciseLibraryTab(sourceFilter),
         search: committedSearch || null,
         region: bodyRegion?.region ?? null,
+        availability: toExerciseAvailability(listState.demo),
         page: listState.page,
         pageSize: listState.pageSize,
       },
@@ -172,6 +181,13 @@ export default function ExercisesPage() {
     onUpdated: () => toast.info('Ćwiczenie zostało zaktualizowane'),
     onDeleted: () => toast.info('Ćwiczenie zostało usunięte'),
   });
+
+  // The demo filter only matters for an organization with the demo pool; elsewhere the API never returns demo.
+  const { data: demoPoolData } = useQuery<OrganizationByIdResponse>(GET_ORGANIZATION_DEMO_POOL_QUERY, {
+    variables: { id: organizationId },
+    skip: !organizationId,
+  });
+  const showDemoFilter = Boolean(demoPoolData?.organizationById?.demoPoolEnabled) || listState.demo !== 'all';
 
   // Get tags for mapping
   const { data: tagsData } = useQuery(GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY, {
@@ -215,7 +231,7 @@ export default function ExercisesPage() {
   const counts = libraryPage?.counts;
   const totalCount = counts?.all ?? 0;
   const isSearching = searchQuery.trim().length > 0;
-  const isFiltered = Boolean(committedSearch) || bodyRegion !== null;
+  const isFiltered = Boolean(committedSearch) || bodyRegion !== null || listState.demo !== 'all';
   const isInitialLoading = loading && !libraryPage;
   useSearchTelemetry({
     event: 'exercise_catalog:search',
@@ -404,6 +420,33 @@ export default function ExercisesPage() {
               </ChoiceChip>
             ))}
           </div>
+
+          {showDemoFilter && (
+            <div
+              role="group"
+              aria-label="Pula demo"
+              className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1"
+              data-testid="exercise-demo-filter"
+            >
+              {(
+                [
+                  { id: 'all', label: 'Z pulą demo' },
+                  { id: 'hide', label: 'Bez demo' },
+                  { id: 'only', label: 'Tylko demo' },
+                ] as const satisfies readonly { id: ExerciseLibraryDemoFilter; label: string }[]
+              ).map((option) => (
+                <ChoiceChip
+                  key={option.id}
+                  variant={listState.demo === option.id ? 'chosen' : 'default'}
+                  aria-pressed={listState.demo === option.id}
+                  onClick={() => updateListState({ demo: option.id })}
+                  data-testid={`exercise-demo-${option.id}`}
+                >
+                  {option.label}
+                </ChoiceChip>
+              ))}
+            </div>
+          )}
 
           {/* Results info */}
           {(isSearching || bodyRegion) && (

@@ -50,6 +50,8 @@ export interface UserByIdResponse {
 export interface Organization {
   id: string;
   name: string;
+  /** Dostęp do puli demo (W-4); ustawiany w panelu Ops. */
+  demoPoolEnabled?: boolean;
   description?: string;
   isActive: boolean;
   logoUrl?: string;
@@ -160,6 +162,8 @@ export interface Exercise {
   enrichmentData?: ExerciseEnrichmentData | null;
   // Status i widoczność
   scope?: 'PERSONAL' | 'ORGANIZATION' | 'GLOBAL';
+  /** Only queried by the library page; absent elsewhere. */
+  availability?: ExerciseAvailability;
   status?:
     | 'DRAFT'
     | 'PENDING_REVIEW'
@@ -222,6 +226,9 @@ export interface AvailableExercisesResponse {
 }
 
 export type ExerciseLibraryTab = 'ALL' | 'ORGANIZATION' | 'FIZIYO' | 'NEEDS_CHANGES';
+
+/** Pula demo (W-4): `DEMO` widzą tylko gabinety z dostępem do puli demo. */
+export type ExerciseAvailability = 'STANDARD' | 'DEMO';
 
 export type ExerciseBodyRegion =
   | 'CERVICAL_SPINE'

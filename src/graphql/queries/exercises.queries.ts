@@ -77,6 +77,7 @@ export const GET_AVAILABLE_EXERCISES_PAGE_QUERY = gql`
     $page: Int!
     $pageSize: Int!
     $region: ExerciseBodyRegion
+    $availability: ExerciseAvailability
   ) {
     availableExercisesPage(
       organizationId: $organizationId
@@ -85,9 +86,11 @@ export const GET_AVAILABLE_EXERCISES_PAGE_QUERY = gql`
       page: $page
       pageSize: $pageSize
       region: $region
+      availability: $availability
     ) {
       items {
         ...ExerciseFullFragment
+        availability
       }
       totalCount
       page
