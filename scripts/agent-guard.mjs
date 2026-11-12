@@ -132,24 +132,10 @@ function consentExists({ repo, number, sha }, { consentDir, now }) {
 function mergeDenials(segment, command, deps) {
   if (/(^|\s)GH_(REPO|HOST)=/.test(command)) return ["pull request merge: GH_REPO/GH_HOST w poleceniu, repo podaj jawnie przez -R"];
   const tokens = tokenize(segment);
-  // Każda flaga przed podkomendą (`gh --admin=true pr merge`, `gh pr -R x merge`) działa jak na końcu: idzie do args. Wartość bierze tylko -R/--repo.
-  const rest = tokens.slice(1);
-  const moved = [];
-  let sawPr = false;
-  let at = -1;
-  for (let i = 0; i < rest.length; i += 1) {
-    const word = rest[i];
-    if (word === "pr" && !sawPr) sawPr = true;
-    else if (word === "merge" && sawPr) {
-      at = i + 1;
-      break;
-    } else if (word === "-R" || word === "--repo") moved.push(word, rest[(i += 1)]);
-    else if (word.startsWith("-")) moved.push(word);
-    else break;
-  }
-  if (at < 0) return ["pull request merge: nie umiem odczytać komendy"];
+  // Forma kanoniczna: `gh pr merge …` zaraz po gh (ship.mjs podaje tylko ją); każda inna, także z flagą przed `pr merge`, to odmowa.
+  if (tokens[1] !== "pr" || tokens[2] !== "merge") return ["pull request merge: tylko forma `gh pr merge <N> -R owner/repo --match-head-commit <sha>`, flagi po `merge`"];
+  const args = tokens.slice(3);
   const denials = [];
-  const args = [...moved, ...rest.slice(at)];
   let sha;
   let repo;
   let number;
@@ -230,7 +216,7 @@ function stripHeredocs(text, onlyQuoted = false) {
 // Zagnieżdżone gh: $(gh …) i `gh …` w całym surowym poleceniu, bez modelowania cudzysłowów (każdy model coś gubił).
 const NESTED_GH = /(?:\$\(|`)\s*((?:\S*\/)?gh\s[^)`]*)/g;
 
-const GH_PR_REVIEW = /^(\S*\/)?gh\s[\s\S]*\bpr\s+review\b/;
+const GH_PR_REVIEW = /^(\S*\/)?gh\s[\s\S]*\bpr\b[\s\S]*\breview\b/;
 
 export function classifyShellCommand(command, options = {}) {
   const deps = {

@@ -360,19 +360,12 @@ describe("agent-guard: merge przez agenta", () => {
     assert.equal(classifyShellCommand("echo $(gh pr view 12 --json state)").permission, "allow");
   });
 
-  it("reads repo flags placed before the subcommand like gh does", () => {
+  it("denies repo flags before the subcommand (only the canonical form passes, even with consent)", () => {
     const dir = zgoda({ repo: "prezentytu/fiziyo-admin-portal" });
     const tail = `--merge --match-head-commit ${SHA}`;
-    for (const command of [
-      `gh -R ${REPO} pr merge 12 ${tail}`,
-      `gh --repo ${REPO} pr merge 12 ${tail}`,
-      `gh --repo=${REPO} pr merge 12 ${tail}`,
-      `gh pr -R ${REPO} merge 12 ${tail}`,
-    ]) {
-      assert.equal(classifyShellCommand(command, { consentDir: dir }).permission, "allow", command);
-      assert.equal(classifyShellCommand(command, { consentDir: zgoda({ sha: OTHER_SHA, repo: "prezentytu/fiziyo-admin-portal" }) }).permission, "deny", `${command} (bez zgody)`);
+    for (const command of [`gh -R ${REPO} pr merge 12 ${tail}`, `gh --repo ${REPO} pr merge 12 ${tail}`, `gh --repo=${REPO} pr merge 12 ${tail}`, `gh pr -R ${REPO} merge 12 ${tail}`]) {
+      assert.equal(classifyShellCommand(command, { consentDir: dir }).permission, "deny", command);
     }
-    assert.equal(classifyShellCommand(`gh -R ${REPO} pr merge 12 ${tail} --admin`, { consentDir: dir }).permission, "deny");
     assert.equal(classifyShellCommand(`gh -R ${REPO} pr review 12 --approve`).permission, "deny");
     assert.equal(classifyShellCommand("gh -R o/r alias set m 'pr merge'").permission, "deny");
     assert.equal(classifyShellCommand("gh -R o/r pr view 12").permission, "allow");
@@ -385,22 +378,26 @@ describe("agent-guard: merge przez agenta", () => {
     assert.equal(classifyShellCommand(`gh pr create --body "$(cat <<EOF\n${body}\nEOF\n)"`).permission, "deny");
   });
 
-  it("moves every flag placed before the gh subcommand to the end", () => {
+  it("recognises the gh subcommand by bare words and denies non-canonical merge forms", () => {
     const dir = zgoda({ repo: "prezentytu/fiziyo-admin-portal" });
     const tail = `-R ${REPO} --merge --match-head-commit ${SHA}`;
     for (const command of [
+      `gh -R ${REPO} pr merge 12 --match-head-commit ${SHA}`,
+      `gh -b x pr merge 12 ${tail}`,
       `gh --admin=true pr merge 12 ${tail}`,
-      `gh pr --admin=true merge 12 ${tail}`,
-      `gh pr --auto=true merge 12 ${tail}`,
+      `gh pr --delete-branch=true merge 12 ${tail}`,
+      `gh pr -R ${REPO} merge 12 --match-head-commit ${SHA}`,
       "gh --approve=true pr review 12",
+      "gh -a pr review 12",
       "gh --method=PUT api repos/o/r/git/refs/heads/main -f sha=x",
-      "gh --method=POST api repos/o/r/pulls/12/reviews -f body=x",
+      "gh -X PUT api repos/o/r/git/refs/heads/main -f sha=x",
     ]) {
       assert.equal(classifyShellCommand(command, { consentDir: dir }).permission, "deny", command);
     }
-    assert.equal(classifyShellCommand(`gh --delete-branch pr merge 12 ${tail}`, { consentDir: dir }).permission, "allow");
-    assert.equal(classifyShellCommand(`gh pr --delete-branch=true merge 12 ${tail}`, { consentDir: dir }).permission, "allow");
-    assert.equal(classifyShellCommand("gh --json=number pr view 57").permission, "allow");
+    assert.equal(classifyShellCommand(`gh pr merge 12 ${tail}`, { consentDir: dir }).permission, "allow");
+    for (const command of ["gh --json number pr view 57", 'gh pr list --search "merge"', 'gh pr comment 12 --body="pr merge"', 'read -r a b <<< "$r"']) {
+      assert.equal(classifyShellCommand(command).permission, "allow", command);
+    }
   });
 
   it("treats the heredoc delimiter as the whole shell word: <<'E'OF ends at EOF", () => {
@@ -413,6 +410,7 @@ describe("agent-guard: merge przez agenta", () => {
 
   it("does not take a here-string for a heredoc", () => {
     assert.equal(classifyShellCommand("cat <<< EOF\necho $(gh pr merge 12)").permission, "deny");
+    assert.equal(classifyShellCommand('cat <<< "x"\ngh pr merge 12').permission, "deny");
   });
 
   it("explains the reason in the hook response", () => {
