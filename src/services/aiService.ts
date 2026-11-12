@@ -8,7 +8,7 @@ import { getBackendToken } from '@/lib/tokenCache';
 import { triggerCreditsRefresh } from '@/lib/aiCreditsRefresh';
 import { decodeGeneratedImage } from '@/features/exercises/utils/decodeGeneratedImage';
 import { normalizeAiExerciseVariants, type AiExerciseVariant } from '@/features/exercises/utils/aiFullExercise';
-import { insufficientAiCreditsMessage, mapAiErrorResponse } from '@/utils/aiErrorMessages';
+import { insufficientAiCreditsMessage, mapAiErrorResponse, type AiErrorMapping } from '@/utils/aiErrorMessages';
 import type {
   ExerciseSuggestionRequest,
   ExerciseSuggestionResponse,
@@ -31,6 +31,29 @@ import type {
 } from '@/types/ai.types';
 
 const isDev = process.env.NODE_ENV === 'development';
+
+const AI_ERROR_PREFIX: Record<AiErrorMapping['kind'], string> = {
+  insufficient_credits: 'AI_TEMPORARILY_UNAVAILABLE',
+  provider_failure: 'AI_PROVIDER_FAILURE',
+  forbidden: 'AI_FORBIDDEN',
+};
+
+/** Rozpoznany błąd `/api/ai/*`; komunikat dla użytkownika jest w `mapping.message` (toast już pokazany, chyba że wyciszony). */
+export class AiRequestError extends Error {
+  constructor(readonly mapping: AiErrorMapping) {
+    super(`${AI_ERROR_PREFIX[mapping.kind]}:${mapping.code}:${mapping.message}`);
+    this.name = 'AiRequestError';
+  }
+}
+
+function knownAiFailure(error: unknown): AiErrorMapping | null {
+  return error instanceof AiRequestError ? error.mapping : null;
+}
+
+/** Sugestia albo powód porażki; `failure` jest `null`, gdy błąd nie jest rozpoznany (np. sieć, przerwanie). */
+export type ExerciseSuggestionResult =
+  | { status: 'ok'; suggestion: ExerciseSuggestionResponse }
+  | { status: 'error'; failure: AiErrorMapping | null };
 
 /**
  * Centralny serwis AI z dedykowanymi endpointami
@@ -136,11 +159,7 @@ class AIService {
             if (!suppressToast) {
               toast.error(mapped.message);
             }
-            throw new Error(
-              mapped.kind === 'insufficient_credits'
-                ? `AI_TEMPORARILY_UNAVAILABLE:${mapped.code}:${mapped.message}`
-                : `AI_PROVIDER_FAILURE:${mapped.code}:${mapped.message}`
-            );
+            throw new AiRequestError(mapped);
           }
 
           throw new Error(`Błąd AI: ${response.status} - ${errorText}`);
@@ -182,8 +201,18 @@ class AIService {
     availableTags?: string[],
     existingExerciseNames?: string[]
   ): Promise<ExerciseSuggestionResponse | null> {
+    const result = await this.suggestExercise(exerciseName, availableTags, existingExerciseNames);
+    return result.status === 'ok' ? result.suggestion : null;
+  }
+
+  /** Jak `getExerciseSuggestion`, ale mówi, dlaczego się nie udało (brak kredytów, rola, awaria dostawcy). */
+  async suggestExercise(
+    exerciseName: string,
+    availableTags?: string[],
+    existingExerciseNames?: string[]
+  ): Promise<ExerciseSuggestionResult> {
     if (!exerciseName.trim() || exerciseName.length < 2) {
-      return null;
+      return { status: 'error', failure: null };
     }
 
     try {
@@ -193,12 +222,13 @@ class AIService {
         existingExerciseNames,
       };
 
-      return await this.request<ExerciseSuggestionResponse>('exercise-suggest', request);
+      const suggestion = await this.request<ExerciseSuggestionResponse>('exercise-suggest', request);
+      return suggestion ? { status: 'ok', suggestion } : { status: 'error', failure: null };
     } catch (error) {
       if (isDev) {
-        console.error('[AIService] getExerciseSuggestion error:', error);
+        console.error('[AIService] suggestExercise error:', error);
       }
-      return null;
+      return { status: 'error', failure: knownAiFailure(error) };
     }
   }
 
@@ -218,9 +248,8 @@ class AIService {
     } catch (error) {
       const message = error instanceof Error ? error.message : '';
       const aborted = error instanceof Error && (error.name === 'AbortError' || message.includes('aborted'));
-      // Known AI errors (credits, provider) were already shown by request(); the rest needs a message here.
-      const alreadyShown =
-        message.startsWith('AI_TEMPORARILY_UNAVAILABLE') || message.startsWith('AI_PROVIDER_FAILURE');
+      // Known AI errors (credits, role, provider) were already shown by request(); the rest needs a message here.
+      const alreadyShown = knownAiFailure(error) !== null;
       if (!aborted && !alreadyShown) {
         toast.error('Nie udało się pobrać propozycji nazw. Spróbuj ponownie.');
       }
@@ -420,6 +449,11 @@ class AIService {
     } catch (error) {
       if (error instanceof Error && (error.name === 'AbortError' || error.message.includes('aborted'))) {
         return { status: 'error', code: 'cancelled', message: 'Generowanie obrazu zostało anulowane.' };
+      }
+
+      const known = knownAiFailure(error);
+      if (known?.kind === 'forbidden') {
+        return { status: 'error', code: 'unknown', message: known.message };
       }
 
       if (error instanceof Error) {

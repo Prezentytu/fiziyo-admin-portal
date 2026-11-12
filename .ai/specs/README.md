@@ -110,6 +110,7 @@ Każda specyfikacja powinna mieć sekcję Changelog na końcu:
 | 033 | [Exercise library pages](SPEC-033-2026-10-31-exercise-library-pages.md)                               | Lista ćwiczeń stronami z API z licznikami zakładek             | in-progress |
 | 034 | [Verification queue header](SPEC-034-2026-11-02-verification-queue-header.md)                         | Jeden nagłówek kolejek weryfikacji z licznikami i główną akcją | implemented |
 | 035 | [Exercise view v3.3](SPEC-035-2026-11-11-exercise-view-v33.md)                                        | Widok ćwiczenia czyta treść v3.3 przez wspólny czytnik         | in-progress |
+| 036 | [Patient instruction readers](SPEC-036-2026-11-11-patient-instruction-readers.md)                     | Wydruk i podglądy pokazują instrukcję ćwiczenia v3.3           | in-progress |
 
 ## Numery bez specu
 

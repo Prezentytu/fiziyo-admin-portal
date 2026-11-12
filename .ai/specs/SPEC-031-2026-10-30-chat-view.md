@@ -113,6 +113,11 @@ Błędy: `400 invalid_message`, `400 insufficient_credits`, `403 forbidden`, `50
 
 ## Changelog
 
+### 2026-11-12
+
+- `Clarify` czyta addytywne `choices` (`label`, `setId?`, `patientId?`) z backendu; wybór z `setId` otwiera `SetDraft` lokalnie, bez kredytu (`utils/clarifyChoice.ts`, raport 01.11 P0-3).
+- `PatientPeek` jednego pacjenta pokazuje plan tylko do odczytu: bieżące plany, ćwiczenia z dawką po nadpisaniach i realizację w tym tygodniu (`utils/patientPlan.ts`); przycisk „Zmień plan” prowadzi do karty pacjenta. Edycja planu kartą czatu (przedłużenie, zmiana dawki) to osobny krok.
+
 ### 2026-11-04
 
 - Poprawki P0 z testu użyteczności 01.11 (raport w PR #171): podwójne nazwisko jednym aliasem (bez „Anna Czat-Nowak-Anna Czat-Nowak”), bez „pacjent” i „alias” w tekście i przyciskach, bez zdań o zapisie, którego nie było, pacjent karty zgodny z tekstem i rozmową, plany pacjenta dla modelu (`FindPatientSets`), formularz nowego pacjenta wypełniony z wiadomości i bez przykładowego numeru w polu, skan wizyty z „czy chodziło o…?” zamiast błędnego ✓, wyszukiwaniem czatu dla pozycji bez dopasowania i dawkami z notatki; ikony wiersza zestawu widoczne bez najechania na tablecie.
