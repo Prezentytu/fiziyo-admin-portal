@@ -3,6 +3,7 @@ import {
   buildMappingOverridesJson,
   mergeOverrideLayers,
   parseMappingOverridesJson,
+  resolveMappingClearedKeys,
 } from '../mappingOverrides';
 
 describe('mappingOverrides', () => {
@@ -114,6 +115,55 @@ describe('mappingOverrides', () => {
     );
     expect(JSON.parse(json ?? '{}')).toEqual({
       enrichment: { patient: { steps: ['X'] } },
+    });
+  });
+
+  describe('świadome wyczyszczenie pola pozycji jako null (FR-007, decyzja A)', () => {
+    const template = {
+      exerciseSide: 'both',
+      rangeOfMotion: 'pełny',
+      resistance: 'Lekki',
+      equipment: 'Guma',
+      difficultyLevel: 'MEDIUM',
+      patientDescription: 'Opis',
+      clinicalDescription: 'Kliniczny',
+      audioCue: 'Wdech',
+    };
+
+    it('buildMappingOverridesJson zapisuje wyczyszczony tekst jako null, a opór i sprzęt jako pusty napis', () => {
+      const json = buildMappingOverridesJson(template, {
+        side: 'none',
+        rangeOfMotion: '',
+        resistance: '',
+        equipment: '',
+        difficultyLevel: '',
+        patientDescription: '',
+        clinicalDescription: '',
+        audioCue: '',
+      });
+      expect(JSON.parse(json ?? '{}')).toEqual({
+        exerciseSide: 'none',
+        rangeOfMotion: null,
+        resistance: '',
+        equipment: '',
+        difficultyLevel: null,
+        patientDescription: null,
+        clinicalDescription: null,
+        audioCue: null,
+      });
+    });
+
+    it('parseMappingOverridesJson zachowuje null w polach tekstowych, a w oporze i sprzęcie dalej pomija', () => {
+      const parsed = parseMappingOverridesJson(
+        JSON.stringify({ rangeOfMotion: null, audioCue: null, resistance: null, equipment: null, exerciseSide: null })
+      );
+      expect(parsed).toEqual({ rangeOfMotion: null, audioCue: null });
+    });
+
+    it('mergeOverrideLayers nie przenosi null do warstwy, a resolveMappingClearedKeys go zgłasza', () => {
+      const mapping = parseMappingOverridesJson(JSON.stringify({ rangeOfMotion: null, audioCue: null }));
+      expect(mergeOverrideLayers(mapping, { audioCue: 'Od pacjenta' })).toEqual({ audioCue: 'Od pacjenta' });
+      expect([...resolveMappingClearedKeys(mapping, { audioCue: 'Od pacjenta' })]).toEqual(['rangeOfMotion']);
     });
   });
 });

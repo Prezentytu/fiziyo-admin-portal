@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { seedBuilderParamsFromMapping } from '../seedBuilderParamsFromMapping';
+import { buildMappingOverridesFromParams } from '@/features/exercise-sets/utils/buildMappingOverridesFromParams';
 import type { ExerciseMapping } from '../../types';
 
 describe('seedBuilderParamsFromMapping', () => {
@@ -33,6 +34,34 @@ describe('seedBuilderParamsFromMapping', () => {
     expect(params.difficultyLevel).toBe('HARD');
     expect(params.patientDescription).toBe('Wersja z zestawu');
     expect(params.audioCue).toBe('Szablon cue');
+  });
+
+  it('pole wyczyszczone w pozycji (null) seeduje się puste i po zapisie zostaje null (FR-007)', () => {
+    const exercise = {
+      id: 'e1',
+      name: 'Martwy ciąg',
+      side: 'both',
+      difficultyLevel: 'MEDIUM',
+      rangeOfMotion: 'Pełny',
+      patientDescription: 'Szablon',
+      clinicalDescription: 'Kliniczny',
+      audioCue: 'Szablon cue',
+    };
+    const mapping: ExerciseMapping = {
+      id: 'm1',
+      exerciseId: 'e1',
+      overridesJson: JSON.stringify({ audioCue: null, patientDescription: null, difficultyLevel: 'HARD' }),
+      exercise,
+    };
+
+    const params = seedBuilderParamsFromMapping(mapping);
+    expect(params.audioCue).toBe('');
+    expect(params.patientDescription).toBe('');
+    expect(params.difficultyLevel).toBe('HARD');
+    expect(params.rangeOfMotion).toBe('Pełny');
+
+    const saved = JSON.parse(buildMappingOverridesFromParams(exercise, params) ?? '{}');
+    expect(saved).toEqual({ audioCue: null, patientDescription: null, difficultyLevel: 'HARD' });
   });
 
   it('bez overridesJson bierze wartości z szablonu ćwiczenia', () => {
