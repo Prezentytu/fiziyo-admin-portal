@@ -14,6 +14,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { VerificationStatsCards } from '@/features/verification/VerificationStatsCards';
+import { VerificationQueueOrderingControls } from '@/features/verification/VerificationQueueOrderingControls';
+import {
+  appendQueueOrderingParams,
+  parseQueueOrdering,
+  queueDateLabel,
+  queueOrderingVariables,
+  type VerificationQueueOrdering,
+} from '@/features/verification/utils/queueOrdering';
 import { VerificationTaskCard } from '@/features/verification/VerificationTaskCard';
 import { ReviewerAchievements } from '@/features/verification/ReviewerAchievements';
 import { VerificationIntro } from '@/features/verification/VerificationIntro';
@@ -246,6 +254,7 @@ export default function VerificationPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(initialView);
   const [page, setPage] = useState(initialPage);
   const [pageSize, setPageSize] = useState(initialPageSize);
+  const [ordering, setOrdering] = useState<VerificationQueueOrdering>(() => parseQueueOrdering(searchParams));
   const [pageOpenReports, setPageOpenReports] = useState<ExerciseReport[]>([]);
   const [pageReportsLoading, setPageReportsLoading] = useState(false);
   const [reportedExercises, setReportedExercises] = useState<AdminExercise[]>([]);
@@ -268,6 +277,7 @@ export default function VerificationPage() {
       page?: number;
       pageSize?: number;
       view?: 'grid' | 'list';
+      ordering?: VerificationQueueOrdering;
     }) => {
       const nextFilter = nextState.filter ?? activeFilter;
       const nextSearch = nextState.search ?? searchQuery;
@@ -281,11 +291,12 @@ export default function VerificationPage() {
         page: nextPage,
         pageSize: nextPageSize,
         view: nextView,
+        ordering: nextState.ordering ?? ordering,
       });
 
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     },
-    [activeFilter, searchQuery, page, pageSize, viewMode, router, pathname]
+    [activeFilter, searchQuery, page, pageSize, viewMode, ordering, router, pathname]
   );
 
   useEffect(() => {
@@ -319,8 +330,9 @@ export default function VerificationPage() {
       search: debouncedSearch || null,
       page,
       pageSize,
+      ...queueOrderingVariables(ordering),
     }),
-    [activeFilter, debouncedSearch, page, pageSize]
+    [activeFilter, debouncedSearch, page, pageSize, ordering]
   );
 
   const {
@@ -623,8 +635,9 @@ export default function VerificationPage() {
     params.set('page', String(pageMeta.page));
     params.set('pageSize', String(pageMeta.pageSize));
     params.set('view', viewMode);
-    return params.toString();
-  }, [activeFilter, debouncedSearch, pageMeta.page, pageMeta.pageSize, viewMode]);
+    // Reported nie jest kolejką backendu, więc nie niesie sortowania (detal i tak wraca do `pending`).
+    return (activeFilter === 'reported' ? params : appendQueueOrderingParams(params, ordering)).toString();
+  }, [activeFilter, debouncedSearch, pageMeta.page, pageMeta.pageSize, viewMode, ordering]);
 
   const handleRefresh = () => {
     refetchStats();
@@ -669,6 +682,13 @@ export default function VerificationPage() {
     setSearchQuery(value);
     setPage(1);
     updateUrlState({ search: value, page: 1 });
+  };
+
+  const handleOrderingChange = (nextOrdering: VerificationQueueOrdering) => {
+    selection.clear();
+    setOrdering(nextOrdering);
+    setPage(1);
+    updateUrlState({ ordering: nextOrdering, page: 1 });
   };
 
   const handleViewModeChange = (nextView: 'grid' | 'list') => {
@@ -833,6 +853,15 @@ export default function VerificationPage() {
           </div>
         </div>
       </div>
+
+      {activeFilter !== 'reported' && (
+        <VerificationQueueOrderingControls
+          ordering={ordering}
+          onChange={handleOrderingChange}
+          dateLabel={queueDateLabel('global', activeFilter)}
+          testIdPrefix="verification"
+        />
+      )}
 
       <VerificationSelectionToolbar
         selectedCount={selection.selectedCount}

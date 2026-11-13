@@ -3,18 +3,25 @@ name: CI
 on:
   pull_request:
     branches: [main]
+    # ready_for_review: claude-review.yml pomija drafty i rusza dopiero po oznaczeniu gotowości, więc gate musi przejść jeszcze raz.
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # Na main każdy merge dostaje własny przebieg; anulujemy tylko starsze przebiegi tego samego PR.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   validate:
     runs-on: ubuntu-latest
+    # Ostatnie przebiegi trwają 3-5 min; limit ~3x zapasu zamiast domyślnych 360 min.
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 24
           cache: npm
@@ -41,6 +48,19 @@ jobs:
       - name: Design tokens guard
         run: npm run check:design-tokens
 
+      # Schemat z wdrożonego API DEV (HotChocolate `?sdl`, bez tokenu): pole, którego panel używa, musi istnieć we
+      # wdrożonym backendzie, nie tylko w gałęzi fizjo-app. Brak albo pusty SDL zatrzymuje job (--require-schema).
+      - name: Backend GraphQL schema (DEV API)
+        run: |
+          curl -fsS --retry 4 --retry-delay 5 --retry-all-errors --max-time 30 \
+            -o "$RUNNER_TEMP/schema.graphql" 'https://fizjo-app-api.azurewebsites.net/graphql?sdl'
+          test -s "$RUNNER_TEMP/schema.graphql"
+
+      - name: GraphQL documents vs backend schema
+        run: npm run graphql:validate
+        env:
+          GRAPHQL_SCHEMA_PATH: ${{ runner.temp }}/schema.graphql
+
       - name: Type check
         run: npm run type-check
 
@@ -55,3 +75,55 @@ jobs:
           SKIP_ENV_VALIDATION: true
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+
+  # Audyt zależności produkcyjnych. Na start tylko raportuje (AUDIT_MODE=report), bo main ma dziś znaleziska;
+  # po ich naprawie zmień na enforce, a gate zacznie blokować.
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: npm audit (omit dev, high)
+        run: node scripts/ci-gate.mjs audit
+        env:
+          AUDIT_MODE: report
+
+  # Jeden check końcowy dla rulesetu na main. Wariant "gate czeka przez API checków": claude-review.yml zostaje osobnym
+  # workflow (osobny trigger i uprawnienia id-token), a gate pada, gdy którykolwiek wymagany job padł, został
+  # anulowany albo pominięty, oraz gdy review nie skończy się w limicie czasu.
+  gate:
+    if: always()
+    needs: [validate, audit]
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: read
+      checks: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Wymagane joby tego workflow
+        run: node scripts/ci-gate.mjs needs
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+
+      # Review dotyczy PR; push na main nie ma head.sha PR-a do sprawdzenia.
+      - name: Czekaj na review (claude-review.yml)
+        if: github.event_name == 'pull_request'
+        run: node scripts/ci-gate.mjs wait
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_DRAFT: ${{ github.event.pull_request.draft }}
+          # Nazwa joba w claude-review.yml.
+          REQUIRED_CHECKS: review
+          WAIT_TIMEOUT_MIN: 25

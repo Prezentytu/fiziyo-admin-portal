@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({
   setActive: vi.fn(),
 }));
 
-vi.mock('@clerk/nextjs', () => ({
+vi.mock('@clerk/nextjs/legacy', () => ({
   useSignIn: () => ({
     isLoaded: true,
     setActive: mocks.setActive,
