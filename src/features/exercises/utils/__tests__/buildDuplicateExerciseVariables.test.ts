@@ -87,8 +87,11 @@ describe('buildDuplicateExerciseVariables', () => {
 
   it('dokument bez klucza i cyklu życia kopiuje się bez dopisywania pustych sekcji', () => {
     const copied = JSON.parse(
-      duplicate({ ...columnsOnly, enrichmentData: { patient: { steps: ['Krok'] }, lifecycle: null } as ExerciseEnrichmentData })
-        .enrichmentDataJson ?? 'null'
+      duplicate({
+        ...columnsOnly,
+        // Dokument spoza typu (pusty cykl życia) podany celowo: kopia ma go przenieść bez zmian.
+        enrichmentData: { patient: { steps: ['Krok'] }, lifecycle: null } as unknown as ExerciseEnrichmentData,
+      }).enrichmentDataJson ?? 'null'
     );
 
     expect(copied).toEqual({ patient: { steps: ['Krok'] }, lifecycle: null });
