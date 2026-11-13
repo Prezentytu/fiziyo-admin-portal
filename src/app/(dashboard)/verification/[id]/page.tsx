@@ -147,12 +147,14 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
   /**
    * Stored document past the cache: the workspace compares it with the loaded one before a 3.3 save.
    * A one-off read, not `refetch`: a failed read must fail the save only, never put this page into its error state.
+   * `no-cache`: the answer must not reach the cache this page renders from. A record that is gone would turn
+   * the page into "Nie znaleziono" and unmount the workspace with the unsaved text.
    */
   const fetchCurrentEnrichment = useCallback(async () => {
     const result = await apolloClient.query<ExerciseByIdForAdminResponse>({
       query: GET_EXERCISE_BY_ID_FOR_ADMIN_QUERY,
       variables: { id },
-      fetchPolicy: 'network-only',
+      fetchPolicy: 'no-cache',
     });
     const current = result.data?.exerciseByIdForAdmin as unknown as AdminExercise | null | undefined;
     if (!current) throw new Error('Nie udało się pobrać aktualnej wersji ćwiczenia.');

@@ -133,12 +133,14 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
   /**
    * Stored document past the cache: the workspace compares it with the loaded one before a 3.3 save.
    * A one-off read, not `refetch`: a failed read must fail the save only and leave this page's query alone.
+   * `no-cache`: the answer must not reach the cache this page renders from. A record that is gone would turn
+   * the page into "Nie znaleziono" and unmount the workspace with the unsaved text.
    */
   const fetchCurrentEnrichment = useCallback(async () => {
     const result = await apolloClient.query<{ exerciseByIdForOrgVerification: AdminExercise | null }>({
       query: GET_EXERCISE_BY_ID_FOR_ORG_VERIFICATION_QUERY,
       variables: { organizationId: organizationId ?? '', id },
-      fetchPolicy: 'network-only',
+      fetchPolicy: 'no-cache',
     });
     const current = result.data?.exerciseByIdForOrgVerification;
     if (!current) throw new Error('Nie udało się pobrać aktualnej wersji ćwiczenia.');
