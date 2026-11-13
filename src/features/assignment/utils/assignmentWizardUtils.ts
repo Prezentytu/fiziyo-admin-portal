@@ -54,3 +54,13 @@ export function toAssignmentNotePayload(note: string): string | null {
   const trimmed = note.trim();
   return trimmed.length > 0 ? trimmed : null;
 }
+
+/**
+ * Notatka do `updateExerciseSetAssignment` przy edycji planu. `undefined` = bez zmiany (nie wysyłamy),
+ * pusty tekst = usuń notatkę (w API `null` znaczy „bez zmian”), inaczej przycięta treść.
+ */
+export function toAssignmentNoteUpdatePayload(note: string, initialNote: string | null | undefined): string | undefined {
+  const next = note.trim();
+  const previous = initialNote?.trim() ?? '';
+  return next === previous ? undefined : next;
+}

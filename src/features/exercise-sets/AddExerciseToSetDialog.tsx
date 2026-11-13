@@ -100,16 +100,6 @@ export function AddExerciseToSetDialog({
         .map((instance) => instance.exerciseId),
     [selectedInstances]
   );
-  const {
-    exercises: pickerExercises,
-    loading: loadingExercises,
-    detailsPending,
-    ensureDetailsReady,
-  } = useExercisePickerLibrary<PickerExerciseRecord>({
-    organizationId,
-    skip: !open,
-    detailExerciseIds: newExerciseIds,
-  });
 
   const { data: tagsData } = useQuery(GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY, {
     variables: { organizationId },
@@ -130,6 +120,24 @@ export function AddExerciseToSetDialog({
     skip: !exerciseSetId || !open,
   });
 
+  const exercisePopularity = useMemo(
+    () => countExerciseUsage(exerciseUsageData?.exerciseSets ?? []),
+    [exerciseUsageData]
+  );
+  const shownExerciseIds = useMemo(() => selectedInstances.map((instance) => instance.exerciseId), [selectedInstances]);
+  const {
+    exercises: pickerExercises,
+    library,
+    detailsPending,
+    ensureDetailsReady,
+  } = useExercisePickerLibrary<PickerExerciseRecord>({
+    organizationId,
+    skip: !open,
+    detailExerciseIds: newExerciseIds,
+    recordExerciseIds: shownExerciseIds,
+    popularity: exercisePopularity,
+  });
+
   const tags = useMemo(() => (tagsData as ExerciseTagsResponse)?.exerciseTags || [], [tagsData]);
   const categories = useMemo(
     () => (categoriesData as TagCategoriesResponse)?.tagsByOrganizationId || [],
@@ -140,11 +148,6 @@ export function AddExerciseToSetDialog({
   const availableExercises: BuilderExercise[] = useMemo(
     () => toBuilderExercises(pickerExercises, tagsMap),
     [pickerExercises, tagsMap]
-  );
-
-  const exercisePopularity = useMemo(
-    () => countExerciseUsage(exerciseUsageData?.exerciseSets ?? []),
-    [exerciseUsageData]
   );
 
   const builderTags: ExerciseTag[] = useMemo(
@@ -328,9 +331,8 @@ export function AddExerciseToSetDialog({
               exerciseParams={exerciseParams}
               onExerciseParamsChange={setExerciseParams}
               availableExercises={availableExercises}
-              loadingExercises={loadingExercises}
+              library={library}
               tags={builderTags}
-              exercisePopularity={exercisePopularity}
               showAI={false}
               hideNameSection
               onPreviewExercise={handlePreviewExercise}

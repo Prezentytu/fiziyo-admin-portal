@@ -41,6 +41,19 @@ describe('CustomizeSetStep preview details flow', () => {
             images: ['/image-1.jpg'],
           },
         ]}
+        library={{
+          itemIds: ['exercise-1'],
+          popularIds: [],
+          counts: { all: 1, organization: 0, fiziyo: 1 },
+          loading: false,
+          loadingMore: false,
+          remaining: 0,
+          loadMore: () => {},
+          search: '',
+          onSearchChange: () => {},
+          sourceFilter: 'all',
+          onSourceFilterChange: () => {},
+        }}
         organizationId="org-1"
       />
     );

@@ -9,6 +9,8 @@ import { cn } from '@/lib/utils';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import type { EnrichmentStepImageV3 } from '@/graphql/types/exerciseEnrichment.types';
 import { stepsForImage } from '../utils/stepMedia';
+import type { VerificationFact } from '../utils/verificationFacts';
+import { ContractFacts } from './ContractFacts';
 import { StageSection } from './StageSection';
 
 export interface PendingPhoto {
@@ -36,6 +38,8 @@ interface MaterialStageProps {
   onAcceptPending: () => void;
   onRetryPending: () => void;
   onDiscardPending: () => void;
+  /** Contract v3.3: media facts of the document, read-only. */
+  contractFacts?: VerificationFact[];
 }
 
 function VideoCard({
@@ -111,6 +115,7 @@ export function MaterialStage({
   onAcceptPending,
   onRetryPending,
   onDiscardPending,
+  contractFacts,
 }: MaterialStageProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const isBusy = isGenerating || isSavingPhoto;
@@ -276,6 +281,14 @@ export function MaterialStage({
           data-testid="verification-material-photo-file-input"
         />
       </StageSection>
+      {contractFacts && (
+        <ContractFacts
+          title="Media w treści ćwiczenia"
+          facts={contractFacts}
+          hint="Tylko do odczytu. Wymiana zdjęcia tutaj nie zmienia tej listy; przychodzi z importu paczki treści."
+          data-testid="verification-material-facts"
+        />
+      )}
     </div>
   );
 }

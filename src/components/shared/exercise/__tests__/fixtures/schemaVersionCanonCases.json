@@ -1,0 +1,1117 @@
+[
+  {
+    "id": "doc-obj|\"3.3\"",
+    "enrichmentData": {
+      "schemaVersion": "3.3"
+    },
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-json|\"3.3\"",
+    "enrichmentData": "{\"schemaVersion\":\"3.3\"}",
+    "expected": "3.3"
+  },
+  {
+    "id": "col|\"3.3\"",
+    "column": "3.3",
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-obj|num 3.3",
+    "enrichmentData": {
+      "schemaVersion": 3.3
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|num 3.3",
+    "enrichmentData": "{\"schemaVersion\":3.3}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col-nonstring|num 3.3",
+    "column": 3.3,
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-obj|\"3.3.0\"",
+    "enrichmentData": {
+      "schemaVersion": "3.3.0"
+    },
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-json|\"3.3.0\"",
+    "enrichmentData": "{\"schemaVersion\":\"3.3.0\"}",
+    "expected": "3.3"
+  },
+  {
+    "id": "col|\"3.3.0\"",
+    "column": "3.3.0",
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-obj|\"3.10\"",
+    "enrichmentData": {
+      "schemaVersion": "3.10"
+    },
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-json|\"3.10\"",
+    "enrichmentData": "{\"schemaVersion\":\"3.10\"}",
+    "expected": "3.3"
+  },
+  {
+    "id": "col|\"3.10\"",
+    "column": "3.10",
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-obj|\"3.2\"",
+    "enrichmentData": {
+      "schemaVersion": "3.2"
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|\"3.2\"",
+    "enrichmentData": "{\"schemaVersion\":\"3.2\"}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col|\"3.2\"",
+    "column": "3.2",
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-obj|\"4.0\"",
+    "enrichmentData": {
+      "schemaVersion": "4.0"
+    },
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-json|\"4.0\"",
+    "enrichmentData": "{\"schemaVersion\":\"4.0\"}",
+    "expected": "3.3"
+  },
+  {
+    "id": "col|\"4.0\"",
+    "column": "4.0",
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-obj|\"03.3\"",
+    "enrichmentData": {
+      "schemaVersion": "03.3"
+    },
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-json|\"03.3\"",
+    "enrichmentData": "{\"schemaVersion\":\"03.3\"}",
+    "expected": "3.3"
+  },
+  {
+    "id": "col|\"03.3\"",
+    "column": "03.3",
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-obj|\"3.3-beta\"",
+    "enrichmentData": {
+      "schemaVersion": "3.3-beta"
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|\"3.3-beta\"",
+    "enrichmentData": "{\"schemaVersion\":\"3.3-beta\"}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col|\"3.3-beta\"",
+    "column": "3.3-beta",
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-obj|\"3.3x\"",
+    "enrichmentData": {
+      "schemaVersion": "3.3x"
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|\"3.3x\"",
+    "enrichmentData": "{\"schemaVersion\":\"3.3x\"}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col|\"3.3x\"",
+    "column": "3.3x",
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-obj|\"v3.3\"",
+    "enrichmentData": {
+      "schemaVersion": "v3.3"
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|\"v3.3\"",
+    "enrichmentData": "{\"schemaVersion\":\"v3.3\"}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col|\"v3.3\"",
+    "column": "v3.3",
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-obj|\" 3.3 \"",
+    "enrichmentData": {
+      "schemaVersion": " 3.3 "
+    },
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-json|\" 3.3 \"",
+    "enrichmentData": "{\"schemaVersion\":\" 3.3 \"}",
+    "expected": "3.3"
+  },
+  {
+    "id": "col|\" 3.3 \"",
+    "column": " 3.3 ",
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-obj|TAB 3.3 TAB",
+    "enrichmentData": {
+      "schemaVersion": "\t3.3\t"
+    },
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-json|TAB 3.3 TAB",
+    "enrichmentData": "{\"schemaVersion\":\"\\t3.3\\t\"}",
+    "expected": "3.3"
+  },
+  {
+    "id": "col|TAB 3.3 TAB",
+    "column": "\t3.3\t",
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-obj|NL 3.3 NL",
+    "enrichmentData": {
+      "schemaVersion": "\n3.3\n"
+    },
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-json|NL 3.3 NL",
+    "enrichmentData": "{\"schemaVersion\":\"\\n3.3\\n\"}",
+    "expected": "3.3"
+  },
+  {
+    "id": "col|NL 3.3 NL",
+    "column": "\n3.3\n",
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-obj|NBSP 3.3 NBSP",
+    "enrichmentData": {
+      "schemaVersion": "\u00a03.3\u00a0"
+    },
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-json|NBSP 3.3 NBSP",
+    "enrichmentData": "{\"schemaVersion\":\"\u00a03.3\u00a0\"}",
+    "expected": "3.3"
+  },
+  {
+    "id": "col|NBSP 3.3 NBSP",
+    "column": "\u00a03.3\u00a0",
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-obj|NBSP lead only",
+    "enrichmentData": {
+      "schemaVersion": "\u00a03.3"
+    },
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-json|NBSP lead only",
+    "enrichmentData": "{\"schemaVersion\":\"\u00a03.3\"}",
+    "expected": "3.3"
+  },
+  {
+    "id": "col|NBSP lead only",
+    "column": "\u00a03.3",
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-obj|16 znakow \"0003.00003.00000\"... ",
+    "enrichmentData": {
+      "schemaVersion": "00003.0003.00000"
+    },
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-json|16 znakow \"0003.00003.00000\"... ",
+    "enrichmentData": "{\"schemaVersion\":\"00003.0003.00000\"}",
+    "expected": "3.3"
+  },
+  {
+    "id": "col|16 znakow \"0003.00003.00000\"... ",
+    "column": "00003.0003.00000",
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-obj|17 znakow \"00003.00003.00000\"",
+    "enrichmentData": {
+      "schemaVersion": "00003.00003.00000"
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|17 znakow \"00003.00003.00000\"",
+    "enrichmentData": "{\"schemaVersion\":\"00003.00003.00000\"}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col|17 znakow \"00003.00003.00000\"",
+    "column": "00003.00003.00000",
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-obj|5 segmentow \"3.3.0.0.0\"",
+    "enrichmentData": {
+      "schemaVersion": "3.3.0.0.0"
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|5 segmentow \"3.3.0.0.0\"",
+    "enrichmentData": "{\"schemaVersion\":\"3.3.0.0.0\"}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col|5 segmentow \"3.3.0.0.0\"",
+    "column": "3.3.0.0.0",
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-obj|4 segmenty \"3.3.0.0\"",
+    "enrichmentData": {
+      "schemaVersion": "3.3.0.0"
+    },
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-json|4 segmenty \"3.3.0.0\"",
+    "enrichmentData": "{\"schemaVersion\":\"3.3.0.0\"}",
+    "expected": "3.3"
+  },
+  {
+    "id": "col|4 segmenty \"3.3.0.0\"",
+    "column": "3.3.0.0",
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-obj|\"123456.0\" (6 cyfr)",
+    "enrichmentData": {
+      "schemaVersion": "123456.0"
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|\"123456.0\" (6 cyfr)",
+    "enrichmentData": "{\"schemaVersion\":\"123456.0\"}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col|\"123456.0\" (6 cyfr)",
+    "column": "123456.0",
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-obj|\"99999.0\"",
+    "enrichmentData": {
+      "schemaVersion": "99999.0"
+    },
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-json|\"99999.0\"",
+    "enrichmentData": "{\"schemaVersion\":\"99999.0\"}",
+    "expected": "3.3"
+  },
+  {
+    "id": "col|\"99999.0\"",
+    "column": "99999.0",
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-obj|\"3.\"",
+    "enrichmentData": {
+      "schemaVersion": "3."
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|\"3.\"",
+    "enrichmentData": "{\"schemaVersion\":\"3.\"}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col|\"3.\"",
+    "column": "3.",
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-obj|\".3\"",
+    "enrichmentData": {
+      "schemaVersion": ".3"
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|\".3\"",
+    "enrichmentData": "{\"schemaVersion\":\".3\"}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col|\".3\"",
+    "column": ".3",
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-obj|\"3..3\"",
+    "enrichmentData": {
+      "schemaVersion": "3..3"
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|\"3..3\"",
+    "enrichmentData": "{\"schemaVersion\":\"3..3\"}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col|\"3..3\"",
+    "column": "3..3",
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-obj|\"3,3\"",
+    "enrichmentData": {
+      "schemaVersion": "3,3"
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|\"3,3\"",
+    "enrichmentData": "{\"schemaVersion\":\"3,3\"}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col|\"3,3\"",
+    "column": "3,3",
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-obj|\"\" pusty",
+    "enrichmentData": {
+      "schemaVersion": ""
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|\"\" pusty",
+    "enrichmentData": "{\"schemaVersion\":\"\"}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col|\"\" pusty",
+    "column": "",
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-obj|\"   \" spacje",
+    "enrichmentData": {
+      "schemaVersion": "   "
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|\"   \" spacje",
+    "enrichmentData": "{\"schemaVersion\":\"   \"}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col|\"   \" spacje",
+    "column": "   ",
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-obj|null",
+    "enrichmentData": {
+      "schemaVersion": null
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|null",
+    "enrichmentData": "{\"schemaVersion\":null}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col|null",
+    "column": null,
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-obj|num 0",
+    "enrichmentData": {
+      "schemaVersion": 0
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|num 0",
+    "enrichmentData": "{\"schemaVersion\":0}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col-nonstring|num 0",
+    "column": 0,
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-obj|true",
+    "enrichmentData": {
+      "schemaVersion": true
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|true",
+    "enrichmentData": "{\"schemaVersion\":true}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col-nonstring|true",
+    "column": true,
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-obj|false",
+    "enrichmentData": {
+      "schemaVersion": false
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|false",
+    "enrichmentData": "{\"schemaVersion\":false}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col-nonstring|false",
+    "column": false,
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-obj|obiekt {}",
+    "enrichmentData": {
+      "schemaVersion": {}
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|obiekt {}",
+    "enrichmentData": "{\"schemaVersion\":{}}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col-nonstring|obiekt {}",
+    "column": {},
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-obj|obiekt {v:\"3.3\"}",
+    "enrichmentData": {
+      "schemaVersion": {
+        "v": "3.3"
+      }
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|obiekt {v:\"3.3\"}",
+    "enrichmentData": "{\"schemaVersion\":{\"v\":\"3.3\"}}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col-nonstring|obiekt {v:\"3.3\"}",
+    "column": {
+      "v": "3.3"
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-obj|tablica []",
+    "enrichmentData": {
+      "schemaVersion": []
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|tablica []",
+    "enrichmentData": "{\"schemaVersion\":[]}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col-nonstring|tablica []",
+    "column": [],
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-obj|tablica [\"3.3\"]",
+    "enrichmentData": {
+      "schemaVersion": ["3.3"]
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|tablica [\"3.3\"]",
+    "enrichmentData": "{\"schemaVersion\":[\"3.3\"]}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col-nonstring|tablica [\"3.3\"]",
+    "column": ["3.3"],
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-obj|\"3\"",
+    "enrichmentData": {
+      "schemaVersion": "3"
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|\"3\"",
+    "enrichmentData": "{\"schemaVersion\":\"3\"}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col|\"3\"",
+    "column": "3",
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-obj|\"3.0\"",
+    "enrichmentData": {
+      "schemaVersion": "3.0"
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|\"3.0\"",
+    "enrichmentData": "{\"schemaVersion\":\"3.0\"}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col|\"3.0\"",
+    "column": "3.0",
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-obj|\"2.9.9\"",
+    "enrichmentData": {
+      "schemaVersion": "2.9.9"
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|\"2.9.9\"",
+    "enrichmentData": "{\"schemaVersion\":\"2.9.9\"}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col|\"2.9.9\"",
+    "column": "2.9.9",
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-obj|\"3.3.0.1\"",
+    "enrichmentData": {
+      "schemaVersion": "3.3.0.1"
+    },
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-json|\"3.3.0.1\"",
+    "enrichmentData": "{\"schemaVersion\":\"3.3.0.1\"}",
+    "expected": "3.3"
+  },
+  {
+    "id": "col|\"3.3.0.1\"",
+    "column": "3.3.0.1",
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-obj|\"3.30\"",
+    "enrichmentData": {
+      "schemaVersion": "3.30"
+    },
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-json|\"3.30\"",
+    "enrichmentData": "{\"schemaVersion\":\"3.30\"}",
+    "expected": "3.3"
+  },
+  {
+    "id": "col|\"3.30\"",
+    "column": "3.30",
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-obj|NEL(U+0085) 3.3 NEL",
+    "enrichmentData": {
+      "schemaVersion": "\u00853.3\u0085"
+    },
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-json|NEL(U+0085) 3.3 NEL",
+    "enrichmentData": "{\"schemaVersion\":\"\u00853.3\u0085\"}",
+    "expected": "3.3"
+  },
+  {
+    "id": "col|NEL(U+0085) 3.3 NEL",
+    "column": "\u00853.3\u0085",
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-obj|BOM(U+FEFF) 3.3",
+    "enrichmentData": {
+      "schemaVersion": "\ufeff3.3"
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|BOM(U+FEFF) 3.3",
+    "enrichmentData": "{\"schemaVersion\":\"\ufeff3.3\"}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col|BOM(U+FEFF) 3.3",
+    "column": "\ufeff3.3",
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-obj|LS(U+2028) 3.3 LS",
+    "enrichmentData": {
+      "schemaVersion": "\u20283.3\u2028"
+    },
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-json|LS(U+2028) 3.3 LS",
+    "enrichmentData": "{\"schemaVersion\":\"\u20283.3\u2028\"}",
+    "expected": "3.3"
+  },
+  {
+    "id": "col|LS(U+2028) 3.3 LS",
+    "column": "\u20283.3\u2028",
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-obj|ZWSP 3.3 (U+200B)",
+    "enrichmentData": {
+      "schemaVersion": "3.3\u200b"
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|ZWSP 3.3 (U+200B)",
+    "enrichmentData": "{\"schemaVersion\":\"3.3\u200b\"}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col|ZWSP 3.3 (U+200B)",
+    "column": "3.3\u200b",
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-obj|cyfry arabsko-indyjskie",
+    "enrichmentData": {
+      "schemaVersion": "\u0663.\u0663"
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|cyfry arabsko-indyjskie",
+    "enrichmentData": "{\"schemaVersion\":\"\u0663.\u0663\"}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col|cyfry arabsko-indyjskie",
+    "column": "\u0663.\u0663",
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-obj|3.3 NUL",
+    "enrichmentData": {
+      "schemaVersion": "3.3\u0000"
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|3.3 NUL",
+    "enrichmentData": "{\"schemaVersion\":\"3.3\\u0000\"}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col|3.3 NUL",
+    "column": "3.3\u0000",
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-obj|\"3.3\\n\" koniec nl (po zwyk\u0142ym znaku)",
+    "enrichmentData": {
+      "schemaVersion": "3.3\n"
+    },
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-json|\"3.3\\n\" koniec nl (po zwyk\u0142ym znaku)",
+    "enrichmentData": "{\"schemaVersion\":\"3.3\\n\"}",
+    "expected": "3.3"
+  },
+  {
+    "id": "col|\"3.3\\n\" koniec nl (po zwyk\u0142ym znaku)",
+    "column": "3.3\n",
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-obj|\"3 .3\"",
+    "enrichmentData": {
+      "schemaVersion": "3 .3"
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|\"3 .3\"",
+    "enrichmentData": "{\"schemaVersion\":\"3 .3\"}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col|\"3 .3\"",
+    "column": "3 .3",
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-obj|\"+3.3\"",
+    "enrichmentData": {
+      "schemaVersion": "+3.3"
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|\"+3.3\"",
+    "enrichmentData": "{\"schemaVersion\":\"+3.3\"}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col|\"+3.3\"",
+    "column": "+3.3",
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-obj|\"-3.3\"",
+    "enrichmentData": {
+      "schemaVersion": "-3.3"
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|\"-3.3\"",
+    "enrichmentData": "{\"schemaVersion\":\"-3.3\"}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col|\"-3.3\"",
+    "column": "-3.3",
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-obj|\"3.3e0\"",
+    "enrichmentData": {
+      "schemaVersion": "3.3e0"
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|\"3.3e0\"",
+    "enrichmentData": "{\"schemaVersion\":\"3.3e0\"}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col|\"3.3e0\"",
+    "column": "3.3e0",
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-obj|\"3.3 beta\"",
+    "enrichmentData": {
+      "schemaVersion": "3.3 beta"
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|\"3.3 beta\"",
+    "enrichmentData": "{\"schemaVersion\":\"3.3 beta\"}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col|\"3.3 beta\"",
+    "column": "3.3 beta",
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-obj|\"3.3.0\\n0\" nl wewn.",
+    "enrichmentData": {
+      "schemaVersion": "3.3\n0"
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|\"3.3.0\\n0\" nl wewn.",
+    "enrichmentData": "{\"schemaVersion\":\"3.3\\n0\"}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col|\"3.3.0\\n0\" nl wewn.",
+    "column": "3.3\n0",
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-obj|FS(U+001C) 3.3 FS",
+    "enrichmentData": {
+      "schemaVersion": "\u001c3.3\u001c"
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|FS(U+001C) 3.3 FS",
+    "enrichmentData": "{\"schemaVersion\":\"\\u001c3.3\\u001c\"}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col|FS(U+001C) 3.3 FS",
+    "column": "\u001c3.3\u001c",
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-obj|VT 3.3 VT",
+    "enrichmentData": {
+      "schemaVersion": "\u000b3.3\u000b"
+    },
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-json|VT 3.3 VT",
+    "enrichmentData": "{\"schemaVersion\":\"\\u000b3.3\\u000b\"}",
+    "expected": "3.3"
+  },
+  {
+    "id": "col|VT 3.3 VT",
+    "column": "\u000b3.3\u000b",
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-obj|U+3000 3.3",
+    "enrichmentData": {
+      "schemaVersion": "\u30003.3\u3000"
+    },
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-json|U+3000 3.3",
+    "enrichmentData": "{\"schemaVersion\":\"\u30003.3\u3000\"}",
+    "expected": "3.3"
+  },
+  {
+    "id": "col|U+3000 3.3",
+    "column": "\u30003.3\u3000",
+    "expected": "3.3"
+  },
+  {
+    "id": "doc-obj|U+180E 3.3",
+    "enrichmentData": {
+      "schemaVersion": "\u180e3.3"
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "doc-json|U+180E 3.3",
+    "enrichmentData": "{\"schemaVersion\":\"\u180e3.3\"}",
+    "expected": "legacy"
+  },
+  {
+    "id": "col|U+180E 3.3",
+    "column": "\u180e3.3",
+    "expected": "legacy"
+  },
+  {
+    "id": "doc brak klucza",
+    "enrichmentData": {},
+    "expected": "legacy"
+  },
+  {
+    "id": "brak rekordu (bez kolumny i dokumentu)",
+    "expected": "legacy"
+  },
+  {
+    "id": "doc nie-JSON tekst",
+    "enrichmentData": "to nie json",
+    "expected": "legacy"
+  },
+  {
+    "id": "doc JSON tablica",
+    "enrichmentData": "[1]",
+    "expected": "legacy"
+  },
+  {
+    "id": "doc JSON tekst z wersja w cudzyslowach (podwojne kodowanie)",
+    "enrichmentData": "\"{\\\"schemaVersion\\\":\\\"3.3\\\"}\"",
+    "expected": "legacy"
+  },
+  {
+    "id": "col 3.2 + doc 3.3",
+    "column": "3.2",
+    "enrichmentData": {
+      "schemaVersion": "3.3"
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "col 3.3 + doc 3.2",
+    "column": "3.3",
+    "enrichmentData": {
+      "schemaVersion": "3.2"
+    },
+    "expected": "3.3"
+  },
+  {
+    "id": "col \"\" + doc 3.3",
+    "column": "",
+    "enrichmentData": {
+      "schemaVersion": "3.3"
+    },
+    "expected": "3.3"
+  },
+  {
+    "id": "col \"  \" + doc 3.3",
+    "column": "  ",
+    "enrichmentData": {
+      "schemaVersion": "3.3"
+    },
+    "expected": "3.3"
+  },
+  {
+    "id": "col null + doc 3.3",
+    "column": null,
+    "enrichmentData": {
+      "schemaVersion": "3.3"
+    },
+    "expected": "3.3"
+  },
+  {
+    "id": "col garbage + doc 3.3",
+    "column": "garbage",
+    "enrichmentData": {
+      "schemaVersion": "3.3"
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "col 3.3 + doc garbage",
+    "column": "3.3",
+    "enrichmentData": {
+      "schemaVersion": "garbage"
+    },
+    "expected": "3.3"
+  },
+  {
+    "id": "col 3.3 + doc num 3.3",
+    "column": "3.3",
+    "enrichmentData": {
+      "schemaVersion": 3.3
+    },
+    "expected": "3.3"
+  },
+  {
+    "id": "col 3.3 + doc brak klucza",
+    "column": "3.3",
+    "enrichmentData": {},
+    "expected": "3.3"
+  },
+  {
+    "id": "col 4.0 + doc 3.3",
+    "column": "4.0",
+    "enrichmentData": {
+      "schemaVersion": "3.3"
+    },
+    "expected": "3.3"
+  },
+  {
+    "id": "col \"3.3-beta\" + doc 3.3",
+    "column": "3.3-beta",
+    "enrichmentData": {
+      "schemaVersion": "3.3"
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "col num 3.3 + doc \"3.3\"",
+    "column": 3.3,
+    "enrichmentData": {
+      "schemaVersion": "3.3"
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "col \"\" + doc \"\"",
+    "column": "",
+    "enrichmentData": {
+      "schemaVersion": ""
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "col \"\" + doc 3.2",
+    "column": "",
+    "enrichmentData": {
+      "schemaVersion": "3.2"
+    },
+    "expected": "legacy"
+  },
+  {
+    "id": "col \" 3.3 \" + doc 3.2",
+    "column": " 3.3 ",
+    "enrichmentData": {
+      "schemaVersion": "3.2"
+    },
+    "expected": "3.3"
+  }
+]

@@ -44,6 +44,7 @@ import {
   SafetySection,
   TherapistSection,
   MetadataSection,
+  readViewDocument,
 } from '@/features/exercises/ExerciseDetailSections';
 import { CreateSetWizard } from '@/features/exercise-sets';
 import { SubmitToGlobalDialog } from '@/features/exercises/SubmitToGlobalDialog';
@@ -52,7 +53,7 @@ import { FeedbackBanner } from '@/features/exercises/FeedbackBanner';
 import { resolveExerciseReviewFeedback } from '@/features/exercises/utils/resolveExerciseReviewFeedback';
 import { ReportExerciseDialog } from '@/features/exercises/ReportExerciseDialog';
 import { InternalNotesPanel } from '@/features/exercises/InternalNotesPanel';
-import { ContentGapsNotice } from '@/features/exercises/ContentGapsNotice';
+import { ContentGapsNotice, listExerciseContentGaps } from '@/features/exercises/ContentGapsNotice';
 import { canReportExerciseIssue } from '@/features/exercises/utils/exerciseReportRouting';
 import { MediaGallery, buildMediaItems } from '@/components/shared';
 import {
@@ -95,36 +96,23 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import type { ExerciseByIdResponse, ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
 import {
   buildEnrichmentUpdateVariables,
+  fetchCurrentEnrichmentData,
   isExerciseSaveAuthError,
 } from '@/features/exercises/utils/buildEnrichmentUpdateVariables';
 import { getNextExerciseCopyName } from '@/features/exercises/utils/getNextExerciseCopyName';
-import { buildCreateExerciseVariables } from '@/features/exercises/utils/buildCreateExerciseVariables';
+import { buildDuplicateExerciseVariables } from '@/features/exercises/utils/buildDuplicateExerciseVariables';
+import { isDuplicateAllowed, useExerciseAvailability } from '@/hooks/useExerciseAvailability';
 import { normalizeExerciseType } from '@/utils/exerciseEnums';
 import { canOpenVideoOutsidePortal } from '@/utils/videoEmbed';
 import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
-import { resolveLoadKg } from '@/utils/exerciseLoadMutation';
 import { verificationCopy } from '@/features/verification/verificationCopy';
-import {
-  countStopIfSymptoms,
-  hasPatientVideo,
-  listContentGaps,
-} from '@/features/verification/utils/verificationStages';
+import { hasPatientVideo } from '@/features/verification/utils/verificationStages';
 import { useSystemRole } from '@/hooks/useSystemRole';
 import { ORG_VERIFICATION_REFETCH_QUERIES } from '@/hooks/useOrganizationVerificationRealtime';
 import { PageSheet } from '@/components/shared/page';
 
 interface ExerciseDetailPageProps {
   params: Promise<{ id: string }>;
-}
-
-interface ExerciseTag {
-  id: string;
-  name: string;
-  color: string;
-}
-
-function isTagObject(tag: string | ExerciseTag): tag is ExerciseTag {
-  return typeof tag === 'object' && 'name' in tag;
 }
 
 export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) {
@@ -154,6 +142,11 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const { data, loading, error } = useQuery(GET_EXERCISE_BY_ID_QUERY, {
     variables: { id },
   });
+  // Rekord puli demo ma cudze media; kopia do gabinetu jest niedostępna dla demo i dopóki dostępność jest nieznana
+  // (ładowanie, błąd sieci). API bez pola (sprzed fizjo-app#388) nie ma rekordów demo: kopia działa jak dotąd.
+  const availabilityState = useExerciseAvailability(id);
+  const canDuplicate = isDuplicateAllowed(availabilityState);
+  const availabilityPending = availabilityState.status === 'loading' || availabilityState.status === 'error';
   const { data: organizationExercisesData } = useQuery(GET_ORGANIZATION_EXERCISE_NAMES_QUERY, {
     variables: { organizationId },
     skip: !organizationId,
@@ -242,10 +235,13 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
     toast.error('Nie udało się zapisać zmian');
   }, []);
 
+  const fetchCurrentEnrichment = useCallback(() => fetchCurrentEnrichmentData(apolloClient, id), [apolloClient, id]);
+
   const exerciseEditorForm = useExerciseEditorForm({
     source: rawExercise,
     updateCore,
     updateEnrichment,
+    fetchCurrentEnrichment,
     onSaved: handleSaved,
     onError: handleSaveError,
   });
@@ -306,58 +302,17 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
     }
   };
 
-  const normalizeTagIds = (tagValues: (string | ExerciseTag)[] | undefined) => {
-    if (!tagValues || tagValues.length === 0) return null;
-    const tagIds = tagValues
-      .map((tag) => (isTagObject(tag) ? tag.id : tag))
-      .filter((tag): tag is string => Boolean(tag));
-    return tagIds.length > 0 ? tagIds : null;
-  };
-
   const handleDuplicateExercise = async () => {
-    if (!organizationId || !exercise) return;
+    if (!organizationId || !exercise || !canDuplicate) return;
 
     const duplicatedExerciseName = getNextExerciseCopyName(exercise.name, organizationExerciseNames);
-    const exerciseWithLoad = exercise as typeof exercise & {
-      defaultLoad?: {
-        loadWeightKg?: number | null;
-        value?: number | null;
-        unit?: string | null;
-      } | null;
-    };
-    const loadKg = resolveLoadKg(exerciseWithLoad.defaultLoad) ?? null;
 
     try {
       const result = await createExercise({
-        variables: buildCreateExerciseVariables({
+        variables: buildDuplicateExerciseVariables({
           organizationId,
-          draft: {
-            name: duplicatedExerciseName,
-            patientDescription: exercise.patientDescription || exercise.description || '',
-            clinicalDescription: exercise.clinicalDescription,
-            notes: exercise.notes,
-            audioCue: exercise.audioCue,
-            tempo: exercise.tempo,
-            rangeOfMotion: exercise.rangeOfMotion,
-            resistance: exercise.resistance,
-            equipment: exercise.equipment,
-            type: exercise.type,
-            side: exercise.side || exercise.exerciseSide,
-            difficultyLevel: exercise.difficultyLevel,
-            videoUrl: exercise.videoUrl,
-            // GraphQL Exercise ma tylko pola default* (bez sets/restSets/executionTime).
-            sets: exercise.defaultSets ?? null,
-            reps: exercise.defaultReps ?? null,
-            duration: exercise.defaultDuration ?? null,
-            restSets: exercise.defaultRestBetweenSets ?? null,
-            restReps: exercise.defaultRestBetweenReps ?? null,
-            preparationTime: exercise.preparationTime ?? null,
-            executionTime: exercise.defaultExecutionTime ?? null,
-            loadKg,
-            images: exercise.images?.length ? exercise.images : null,
-            mainTags: normalizeTagIds(exercise.mainTags),
-            additionalTags: normalizeTagIds(exercise.additionalTags),
-          },
+          source: exercise,
+          name: duplicatedExerciseName,
         }),
       });
 
@@ -550,6 +505,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
     tempo: normalizedFields.tempo ?? undefined,
     side: normalizedFields.side ?? undefined,
     type: exercise.type,
+    alternatingPerSide: normalizedFields.alternatingPerSide,
   });
 
   const exerciseDurationSummary =
@@ -561,17 +517,14 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         }
       : undefined;
 
-  const physiotherapistDescription = exercise.clinicalDescription || '';
   const audioCue = (exercise as { audioCue?: string }).audioCue || '';
-  const contentGaps = listContentGaps({
-    name: exercise.name ?? '',
-    // Same sources as the verification gate (useExerciseEditorForm + VerificationWorkspace).
-    patientDescription: exercise.patientDescription ?? exercise.description ?? '',
-    therapistDescription: physiotherapistDescription,
+  const contentGaps = listExerciseContentGaps({
+    exercise,
+    enrichment,
     hasVideo: hasPatientVideo(exercise),
     imageCount: imageItemsCount,
-    stopIfCount: countStopIfSymptoms(enrichment.safety?.stop_if),
   });
+  const readEnrichment = readViewDocument(rawExercise?.enrichmentData, enrichment);
 
   const isPendingOrganizationReview = exercise.organizationVerificationStatus === 'PENDING_ORG_REVIEW';
   const isLocked = isGlobalExercise || isPendingReview || isPendingOrganizationReview;
@@ -626,14 +579,23 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={handleDuplicateExercise}
-                disabled={duplicating}
-                data-testid="exercise-detail-duplicate-btn"
-              >
-                <Copy className="mr-2 h-4 w-4" />
-                {duplicating ? 'Tworzenie kopii...' : 'Duplikuj'}
-              </DropdownMenuItem>
+              {(canDuplicate || availabilityPending) && (
+                <DropdownMenuItem
+                  onClick={handleDuplicateExercise}
+                  disabled={duplicating || !canDuplicate}
+                  title={
+                    availabilityPending
+                      ? availabilityState.status === 'loading'
+                        ? 'Sprawdzam dostępność ćwiczenia...'
+                        : 'Nie udało się sprawdzić dostępności ćwiczenia. Odśwież stronę.'
+                      : undefined
+                  }
+                  data-testid="exercise-detail-duplicate-btn"
+                >
+                  <Copy className="mr-2 h-4 w-4" />
+                  {duplicating ? 'Tworzenie kopii...' : 'Duplikuj'}
+                </DropdownMenuItem>
+              )}
               {canOpenVideoOutsidePortal(exercise.videoUrl) && (
                 <DropdownMenuItem asChild>
                   <a
@@ -952,7 +914,9 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                   ? 'Edycja zablokowana podczas weryfikacji. Uwagi do ćwiczenia przekaż w trwającej weryfikacji.'
                   : canReviewExercises
                     ? 'Ćwiczenie z bazy FiziYo. Poprawiasz je w weryfikacji, zmiana trafi do wszystkich gabinetów.'
-                    : 'Ćwiczenie z bazy FiziYo — tylko do odczytu. Użyj "Duplikuj" aby je edytować.'}
+                    : canDuplicate || availabilityPending
+                      ? 'Ćwiczenie z bazy FiziYo — tylko do odczytu. Użyj "Duplikuj" aby je edytować.'
+                      : 'Ćwiczenie z puli demo — tylko do odczytu. Ma media dostępne wyłącznie w puli demo, więc nie można go duplikować.'}
               </span>
               {isGlobalExercise && canReviewExercises && (
                 <Button
@@ -988,7 +952,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
 
               {/* 2. Instrukcje dla pacjenta */}
               <PatientLeadSection
-                data={enrichment}
+                data={readEnrichment}
                 patientDescription={core.patientDescription}
                 editable={false}
                 patientDescriptionDirty={isCoreFieldDirty('patientDescription')}
@@ -997,23 +961,23 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                 setPath={setEnrichmentPath}
               />
 
-              <ExerciseExecutionSteps enrichmentData={enrichment} editable={false} />
+              <ExerciseExecutionSteps enrichmentData={readEnrichment} editable={false} />
 
-              <ExerciseAudioCues audioCue={audioCue} enrichmentData={enrichment} editable={false} />
+              <ExerciseAudioCues audioCue={audioCue} enrichmentData={readEnrichment} editable={false} />
 
               <PatientExtrasSection
-                data={enrichment}
+                data={readEnrichment}
                 editable={false}
                 isPathDirty={isPathDirty}
                 setPath={setEnrichmentPath}
               />
 
               {/* 3. Bezpieczeństwo */}
-              <SafetySection data={enrichment} editable={false} isPathDirty={isPathDirty} setPath={setEnrichmentPath} />
+              <SafetySection data={readEnrichment} editable={false} isPathDirty={isPathDirty} setPath={setEnrichmentPath} />
 
               {/* 4. Dla terapeuty */}
               <TherapistSection
-                data={enrichment}
+                data={readEnrichment}
                 clinicalDescription={core.clinicalDescription}
                 editable={false}
                 clinicalDescriptionDirty={isCoreFieldDirty('clinicalDescription')}
@@ -1026,7 +990,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
 
               {/* 5. Metadane */}
               <MetadataSection
-                data={enrichment}
+                data={readEnrichment}
                 videoUrl={core.videoUrl}
                 notes={core.notes}
                 editable={false}

@@ -103,3 +103,19 @@ describe('ExerciseCard menu actions', () => {
     expect(screen.getByText('Oczekuje na weryfikację org')).toBeInTheDocument();
   });
 });
+
+describe('ExerciseCard pula demo', () => {
+  it.each([true, false])('oznacza ćwiczenie z puli demo znaczkiem „Demo” (compact=%s)', (compact) => {
+    render(<ExerciseCard exercise={{ ...baseExercise, scope: 'GLOBAL', availability: 'DEMO' }} compact={compact} />);
+
+    expect(screen.getByTestId('exercise-card-exercise-1-demo-badge')).toHaveTextContent('Demo');
+  });
+
+  it('nie oznacza zwykłego ćwiczenia ani ćwiczenia bez pola dostępności', () => {
+    const { rerender } = render(<ExerciseCard exercise={{ ...baseExercise, availability: 'STANDARD' }} />);
+    expect(screen.queryByTestId('exercise-card-exercise-1-demo-badge')).not.toBeInTheDocument();
+
+    rerender(<ExerciseCard exercise={baseExercise} />);
+    expect(screen.queryByTestId('exercise-card-exercise-1-demo-badge')).not.toBeInTheDocument();
+  });
+});

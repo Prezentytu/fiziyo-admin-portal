@@ -20,7 +20,7 @@ import {
   formatSessionDuration,
   formatWithUnit,
   fromSliderValue,
-  sideFactor,
+  resolveSideDose,
   sliderPercent,
   toSliderValue,
   type AcknowledgeKey,
@@ -30,6 +30,8 @@ import {
   type ParameterKey,
   type ParameterValues,
 } from '../utils/parameterRules';
+import type { VerificationFact } from '../utils/verificationFacts';
+import { ContractFacts } from './ContractFacts';
 import { StageSection } from './StageSection';
 
 interface ParametersStageProps {
@@ -45,6 +47,8 @@ interface ParametersStageProps {
   onCoreFieldChange: <K extends keyof ExerciseCoreDraft>(field: K, value: ExerciseCoreDraft[K]) => void;
   /** Saved load the kilogram field cannot show (band, RPE, text). */
   savedLoadLabel?: string | null;
+  /** Set for a record in contract v3.3: side facts of the document and the remaining parameter facts, read-only. */
+  v33?: { sideDiffersFromDocument: boolean; facts: VerificationFact[] };
 }
 
 const FIELD_INFO: Partial<Record<ParameterKey, string>> = {
@@ -339,9 +343,11 @@ export function ParametersStage({
   onAcknowledgeDescription,
   onCoreFieldChange,
   savedLoadLabel = null,
+  v33,
 }: ParametersStageProps) {
   const sessionFinding = evaluation.findings.find((finding) => finding.key === 'session');
   const sessionText = formatSessionDuration(evaluation.sessionSeconds, evaluation.sessionIsEstimate);
+  const sideDose = resolveSideDose(core.side, v33 !== undefined);
 
   return (
     <div className="flex flex-col gap-4" data-testid="verification-stage-parameters">
@@ -428,8 +434,20 @@ export function ParametersStage({
                   ))}
                 </SelectContent>
               </Select>
-              {sideFactor(core.side) === 2 && (
-                <span className="text-[13px] text-label-secondary">Czas liczony podwójnie</span>
+              {sideDose.timeNote && <span className="text-[13px] text-label-secondary">{sideDose.timeNote}</span>}
+              {sideDose.doseNote && (
+                <span
+                  className="text-[13px] font-semibold text-foreground"
+                  data-testid="verification-param-per-side-note"
+                >
+                  {sideDose.doseNote}
+                </span>
+              )}
+              {v33?.sideDiffersFromDocument && (
+                <span className="text-[13px] text-status-warning" data-testid="verification-param-side-mismatch-note">
+                  Tryb strony w treści ćwiczenia jest inny. Przychodzi z importu paczki treści; w formularzu go nie
+                  zmienisz.
+                </span>
               )}
             </div>
           </div>
@@ -542,6 +560,15 @@ export function ParametersStage({
           ))}
         </div>
       </StageSection>
+
+      {v33 && (
+        <ContractFacts
+          title="Strona, sprzęt i zakresy"
+          facts={v33.facts}
+          hint="Tylko do odczytu. Sprzęt zmienisz w formularzu ćwiczenia; strona, cel i zakresy przychodzą z importu paczki treści."
+          data-testid="verification-param-facts"
+        />
+      )}
     </div>
   );
 }

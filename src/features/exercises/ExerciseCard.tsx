@@ -76,6 +76,8 @@ export interface Exercise {
   organizationVerificationStatus?:
     'NOT_SUBMITTED' | 'PENDING_ORG_REVIEW' | 'ORG_VERIFIED' | 'ORG_CHANGES_REQUESTED' | 'ORG_ARCHIVED';
   scope?: 'PERSONAL' | 'ORGANIZATION' | 'GLOBAL';
+  /** Pula demo (W-4); znaczek „Demo” na karcie. */
+  availability?: 'STANDARD' | 'DEMO';
   adminReviewNotes?: string;
   // Global submission tracking (nowy model weryfikacji)
   globalSubmissionId?: string;
@@ -148,6 +150,7 @@ export function ExerciseCard({
 
   // Check if exercise is from global FiziYo database (read-only)
   const isGlobalExercise = exercise.scope === 'GLOBAL';
+  const isDemo = exercise.availability === 'DEMO';
   const canReportIssue =
     !!onReportIssue && canReportExerciseIssue({ scope: exercise.scope, canReviewExercises, isRoleLoading });
 
@@ -280,6 +283,7 @@ export function ExerciseCard({
                 </button>
               </p>
               {/* Status badges in compact view */}
+              {isDemo && <DemoBadge size="compact" exerciseId={exercise.id} />}
               {isGlobalExercise && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -560,6 +564,11 @@ export function ExerciseCard({
             )}
 
             {/* Status badges - top left */}
+            {isDemo && (
+              <div className="absolute bottom-3 left-3 z-10">
+                <DemoBadge size="full" exerciseId={exercise.id} />
+              </div>
+            )}
             {(isGlobalExercise ||
               isSubmittedToGlobal ||
               isPendingReview ||
@@ -797,5 +806,28 @@ export function ExerciseCard({
         )}
       </>
     </TooltipProvider>
+  );
+}
+
+/** Ćwiczenie z puli demo: widoczne tylko w gabinetach z dostępem do puli demo (W-4). */
+function DemoBadge({ size, exerciseId }: { size: 'compact' | 'full'; exerciseId: string }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Badge
+          variant="outline"
+          data-testid={`exercise-card-${exerciseId}-demo-badge`}
+          className={cn(
+            'shrink-0 cursor-help border-status-warning/30 bg-status-warning-muted text-status-warning',
+            size === 'compact' ? 'text-[9px]' : 'text-[10px] font-semibold shadow-lg backdrop-blur-md'
+          )}
+        >
+          Demo
+        </Badge>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-[220px] text-xs">
+        Ćwiczenie z puli demo. Widzą je tylko gabinety z dostępem do puli demo.
+      </TooltipContent>
+    </Tooltip>
   );
 }

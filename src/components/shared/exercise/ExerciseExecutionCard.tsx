@@ -178,6 +178,7 @@ export function ExerciseExecutionCard({
         tempo: exercise.tempo,
         side: exercise.side,
         isTimeBased: exercise.isTimeBased,
+        alternatingPerSide: exercise.alternatingPerSide,
       }),
     [
       exercise.isTimeBased,
@@ -189,6 +190,7 @@ export function ExerciseExecutionCard({
       exercise.restSets,
       exercise.sets,
       exercise.side,
+      exercise.alternatingPerSide,
       exercise.tempo,
     ]
   );
@@ -727,6 +729,7 @@ export function ExerciseExecutionCard({
               <ExerciseParametersFields
                 surface={cardSurface === 'patientPlan' ? 'patientPlan' : 'mapping'}
                 exerciseType={exercise.isTimeBased ? 'time' : 'reps'}
+                alternatingPerSide={exercise.alternatingPerSide}
                 values={parameterValues}
                 onChange={handleParametersChange}
                 omitFields={omitFields}

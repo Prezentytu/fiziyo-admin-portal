@@ -163,3 +163,41 @@ describe('listContentGaps', () => {
     expect(listContentGaps(readyInput)).toEqual([]);
   });
 });
+
+describe('bramki rekordu v3.3', () => {
+  const v33Input: VerificationStagesInput = {
+    ...readyInput,
+    patientDescription: '',
+    therapistDescription: '',
+    stopIfCount: 0,
+    v33: { stepCount: 8 },
+  };
+
+  it('nie wymagają wycofanych kolumn opisu ani „Przerwij, gdy”', () => {
+    const result = computeVerificationStages(v33Input);
+
+    expect(result.canPublish).toBe(true);
+    expect(result.issues.instruction).toEqual([]);
+    expect(result.issues.safety).toEqual([]);
+  });
+
+  it('wymagają kroków, nazwy i materiału', () => {
+    const gaps = listContentGaps({ ...v33Input, name: ' ', hasVideo: false, imageCount: 0, v33: { stepCount: 0 } });
+
+    expect(gaps).toEqual([
+      { stage: 'material', text: 'Dodaj nagranie albo zdjęcie.' },
+      { stage: 'instruction', text: 'Wpisz nazwę ćwiczenia.' },
+      { stage: 'instruction', text: 'Dodaj co najmniej jeden krok wykonania.' },
+    ]);
+  });
+
+  it('wypełniona stara kolumna opisu nie zastępuje kroków', () => {
+    const result = computeVerificationStages({
+      ...v33Input,
+      patientDescription: readyInput.patientDescription,
+      v33: { stepCount: 0 },
+    });
+
+    expect(result.openStages).toEqual(['instruction']);
+  });
+});

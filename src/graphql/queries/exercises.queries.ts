@@ -106,6 +106,48 @@ export const GET_AVAILABLE_EXERCISES_PAGE_QUERY = gql`
   ${EXERCISE_FULL_FRAGMENT}
 `;
 
+// Ta sama strona biblioteki zawężona filtrem puli demo (fizjo-app#388). Osobny dokument: argumentu
+// `availability` nie zna API sprzed #388, więc zwykła lista (wyżej) go nie niesie i działa na każdym backendzie.
+// Biblioteka sięga po ten dokument dopiero, gdy API potwierdzi pulę demo gabinetu i terapeuta wybierze filtr.
+export const GET_AVAILABLE_EXERCISES_DEMO_PAGE_QUERY = gql`
+  query GetAvailableExercisesDemoPage(
+    $organizationId: String!
+    $tab: ExerciseLibraryTab!
+    $search: String
+    $page: Int!
+    $pageSize: Int!
+    $region: ExerciseBodyRegion
+    $availability: ExerciseAvailability
+  ) {
+    availableExercisesPage(
+      organizationId: $organizationId
+      tab: $tab
+      search: $search
+      page: $page
+      pageSize: $pageSize
+      region: $region
+      availability: $availability
+    ) {
+      items {
+        ...ExerciseFullFragment
+      }
+      totalCount
+      page
+      pageSize
+      totalPages
+      hasPreviousPage
+      hasNextPage
+      counts {
+        all
+        organization
+        fiziyo
+        needsChanges
+      }
+    }
+  }
+  ${EXERCISE_FULL_FRAGMENT}
+`;
+
 // Same root field as GET_AVAILABLE_EXERCISES_PICKER_QUERY, so a cached picker list answers it without a network trip.
 export const GET_AVAILABLE_EXERCISE_NAMES_QUERY = gql`
   query GetAvailableExerciseNames($organizationId: String!) {
@@ -126,6 +168,18 @@ export const GET_EXERCISE_BY_ID_QUERY = gql`
     }
   }
   ${EXERCISE_FULL_FRAGMENT}
+`;
+
+// Dostępność ćwiczenia (pula demo, fizjo-app#388). Osobny dokument pytany z errorPolicy 'ignore':
+// API bez pola `availability` odrzuca tylko to zapytanie, a widok ćwiczenia ładuje się jak dotąd.
+// Nie dopisuj tego pola do ExerciseFullFragment, dopóki backend z #388 nie jest na każdym środowisku.
+export const GET_EXERCISE_AVAILABILITY_QUERY = gql`
+  query GetExerciseAvailability($id: String!) {
+    exerciseById(id: $id) {
+      id
+      availability
+    }
+  }
 `;
 
 // Query do pobierania ćwiczeń organizacji (używa dedykowanej metody z Scope filtering)
@@ -205,7 +259,7 @@ export const EXERCISE_PICKER_FRAGMENT = gql`
   }
 `;
 
-// Detail views use GET_EXERCISE_BY_ID_QUERY; chosen exercises get their enrichment via GET_EXERCISE_ENRICHMENT_QUERY.
+// Full library for the chat (ai-view) only; set, assignment and patient pickers use GET_AVAILABLE_EXERCISES_PICKER_PAGE_QUERY.
 export const GET_AVAILABLE_EXERCISES_PICKER_QUERY = gql`
   query GetAvailableExercisesForPicker($organizationId: String!) {
     availableExercises(organizationId: $organizationId) {
@@ -215,16 +269,93 @@ export const GET_AVAILABLE_EXERCISES_PICKER_QUERY = gql`
   ${EXERCISE_PICKER_FRAGMENT}
 `;
 
-// Enrichment of one exercise chosen in a picker (the picker list itself omits it).
-export const GET_EXERCISE_ENRICHMENT_QUERY = gql`
-  query GetExerciseEnrichment($id: String!) {
+// One page of the picker library (sets, assignment, patient): same page and search as the library list,
+// light fields only. Exercises outside the loaded pages come by id (GET_EXERCISE_PICKER_RECORD_QUERY).
+export const GET_AVAILABLE_EXERCISES_PICKER_PAGE_QUERY = gql`
+  query GetAvailableExercisesPickerPage(
+    $organizationId: String!
+    $tab: ExerciseLibraryTab!
+    $search: String
+    $page: Int!
+    $pageSize: Int!
+  ) {
+    availableExercisesPage(
+      organizationId: $organizationId
+      tab: $tab
+      search: $search
+      page: $page
+      pageSize: $pageSize
+    ) {
+      items {
+        ...ExercisePickerFragment
+      }
+      totalCount
+      page
+      pageSize
+      hasNextPage
+      counts {
+        all
+        organization
+        fiziyo
+      }
+    }
+  }
+  ${EXERCISE_PICKER_FRAGMENT}
+`;
+
+// Picker records by id through the library's visibility rule (availableExercises is the list the page shares
+// its rule with): an exercise the library hides is not returned, so it cannot show up as "Popularne".
+// The API cuts the list to 5000 by name before `where` applies, so two windows cover 10 000 visible exercises.
+export const GET_VISIBLE_EXERCISE_PICKER_RECORDS_QUERY = gql`
+  query GetVisibleExercisePickerRecords(
+    $organizationId: String!
+    $ids: [String!]!
+    $withEnrichment: Boolean! = false
+    $withSecondWindow: Boolean! = true
+  ) {
+    firstWindow: availableExercises(organizationId: $organizationId, skip: 0, take: 5000, where: { id: { in: $ids } }) {
+      ...ExercisePickerFragment
+      enrichmentData @include(if: $withEnrichment)
+    }
+    secondWindow: availableExercises(
+      organizationId: $organizationId
+      skip: 5000
+      take: 5000
+      where: { id: { in: $ids } }
+    ) @include(if: $withSecondWindow) {
+      ...ExercisePickerFragment
+      enrichmentData @include(if: $withEnrichment)
+    }
+  }
+  ${EXERCISE_PICKER_FRAGMENT}
+`;
+
+// One picker record by id, for exercises already in the set (shown, not offered for adding).
+// exerciseById does not apply the library's visibility rule; never use it to offer an exercise.
+export const GET_EXERCISE_PICKER_RECORD_QUERY = gql`
+  query GetExercisePickerRecord($id: String!) {
     exerciseById(id: $id) {
-      id
-      updatedAt
+      ...ExercisePickerFragment
+    }
+  }
+  ${EXERCISE_PICKER_FRAGMENT}
+`;
+
+// A chosen exercise: its picker record and enrichment (the picker pages omit enrichment).
+export const GET_EXERCISE_PICKER_DETAILS_QUERY = gql`
+  query GetExercisePickerDetails($id: String!) {
+    exerciseById(id: $id) {
+      ...ExercisePickerFragment
       enrichmentData
     }
   }
+  ${EXERCISE_PICKER_FRAGMENT}
 `;
 
-/** Refresh both the picker library (set and assignment pickers) and the paged list after exercise writes. */
-export const EXERCISE_LIBRARY_REFETCH_QUERIES = [GET_AVAILABLE_EXERCISES_PICKER_QUERY, GET_AVAILABLE_EXERCISES_PAGE_QUERY];
+/** Refresh the pickers (paged and the chat's full list) and the library list after exercise writes. */
+export const EXERCISE_LIBRARY_REFETCH_QUERIES = [
+  GET_AVAILABLE_EXERCISES_PICKER_QUERY,
+  GET_AVAILABLE_EXERCISES_PICKER_PAGE_QUERY,
+  GET_AVAILABLE_EXERCISES_PAGE_QUERY,
+  GET_AVAILABLE_EXERCISES_DEMO_PAGE_QUERY,
+];

@@ -1,7 +1,7 @@
 'use client';
 
 import { use, useCallback, useMemo } from 'react';
-import { useMutation, useQuery } from '@apollo/client/react';
+import { useApolloClient, useMutation, useQuery } from '@apollo/client/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Archive, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
@@ -47,6 +47,7 @@ interface OrganizationVerificationDetailPageProps {
 export default function OrganizationVerificationDetailPage({ params }: Readonly<OrganizationVerificationDetailPageProps>) {
   const { id } = use(params);
   const router = useRouter();
+  const apolloClient = useApolloClient();
   const searchParams = useSearchParams();
   const { currentOrganization } = useOrganization();
   const { canManageOrganization, isLoading: roleLoading } = useRoleAccess();
@@ -73,7 +74,8 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
     {
       variables: { organizationId: organizationId ?? '', id },
       skip: !organizationId || !canManageOrganization,
-      fetchPolicy: 'cache-and-network',
+      // The workspace takes its baseline once, on open; a cached (older) document would raise a false save conflict.
+      fetchPolicy: 'network-only',
     }
   );
 
@@ -127,6 +129,23 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
     const result = await refetch();
     return result.data?.exerciseByIdForOrgVerification?.images ?? [];
   }, [refetch]);
+
+  /**
+   * Stored document past the cache: the workspace compares it with the loaded one before a 3.3 save.
+   * A one-off read, not `refetch`: a failed read must fail the save only and leave this page's query alone.
+   * `no-cache`: the answer must not reach the cache this page renders from. A record that is gone would turn
+   * the page into "Nie znaleziono" and unmount the workspace with the unsaved text.
+   */
+  const fetchCurrentEnrichment = useCallback(async () => {
+    const result = await apolloClient.query<{ exerciseByIdForOrgVerification: AdminExercise | null }>({
+      query: GET_EXERCISE_BY_ID_FOR_ORG_VERIFICATION_QUERY,
+      variables: { organizationId: organizationId ?? '', id },
+      fetchPolicy: 'no-cache',
+    });
+    const current = result.data?.exerciseByIdForOrgVerification;
+    if (!current) throw new Error('Nie udało się pobrać aktualnej wersji ćwiczenia.');
+    return current.enrichmentData ?? null;
+  }, [apolloClient, id, organizationId]);
 
   const decision = useMemo<OrganizationDecision>(
     () => ({
@@ -190,6 +209,7 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
       listUrl={listHref}
       buildDetailUrl={buildDetailUrl}
       reloadImages={reloadImages}
+      fetchCurrentEnrichment={fetchCurrentEnrichment}
       organizationDecision={decision}
       saveEnrichment={saveEnrichment}
       onSaveError={handleSaveError}

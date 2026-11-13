@@ -65,7 +65,7 @@ describe('isSchemaValidationError na prawdziwych odpowiedziach HotChocolate 15.1
       .query({
         query: gql`
           query {
-            a
+            __typename
           }
         `,
       })

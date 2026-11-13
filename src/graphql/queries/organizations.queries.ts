@@ -33,6 +33,16 @@ export const GET_ORGANIZATION_BY_ID_QUERY = gql`
   ${ORGANIZATION_FULL_FRAGMENT}
 `;
 
+// Whether the organization sees the demo pool (W-4); the library shows the demo filter only then.
+export const GET_ORGANIZATION_DEMO_POOL_QUERY = gql`
+  query GetOrganizationDemoPool($id: String!) {
+    organizationById(id: $id) {
+      id
+      demoPoolEnabled
+    }
+  }
+`;
+
 // Query do pobierania członków organizacji
 export const GET_ORGANIZATION_MEMBERS_QUERY = gql`
   query GetOrganizationMembers($organizationId: String!) {
