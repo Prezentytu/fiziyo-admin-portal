@@ -6,6 +6,7 @@ import { toV3 } from '@/features/verification/utils/enrichmentToV3';
 import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
 import {
   composeEnrichmentPayload,
+  composeEnrichmentSavePayload,
   deepCloneEnrichment,
   setEnrichmentAtPath,
 } from './useEnrichmentDraft';
@@ -463,12 +464,13 @@ export function useExerciseEditorForm({
     const coreVariables = buildChangedCoreVariables(initialCoreRef.current, currentCore, contentVersion);
     const currentCoreDirty = Object.keys(coreVariables).length > 0;
     const v33Edits = isV33 ? collectV33Edits(initialEnrichmentRef.current, currentEnrichment) : {};
+    // The mutation replaces the whole document: keys the user did not touch go back as loaded.
     const currentEnrichmentPayload = isV33
       ? buildV33Document(initialEnrichmentRef.current, v33Edits)
-      : composeEnrichmentPayload(currentEnrichment);
+      : composeEnrichmentSavePayload(initialEnrichmentRef.current, currentEnrichment);
     const currentEnrichmentDirty = isV33
       ? Object.keys(v33Edits).length > 0
-      : JSON.stringify(currentEnrichmentPayload) !==
+      : JSON.stringify(composeEnrichmentPayload(currentEnrichment)) !==
         JSON.stringify(composeEnrichmentPayload(initialEnrichmentRef.current));
 
     if (!currentCoreDirty && !currentEnrichmentDirty) return 'clean';
