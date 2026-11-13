@@ -1,6 +1,6 @@
 # Cloud agent policy — agent w chmurze na repo FiziYo
 
-Dotyczy: **Cursor Cloud Agents** i **Cursor Automations** uruchamianych na `fizjo-app`, `fiziyo-admin-portal`, `fiziyo-tests`, oraz zleceń, które kieruje do nich Grok Bot (Szef Sztabu). Nie dotyczy lokalnej pracy w Cursorze — tam obowiązuje `AGENTS.md` bez zmian. Kopia tych zasad dla portalu: `fiziyo-admin-portal/docs/architecture/cloud-agent-policy.md` (przy zmianie zaktualizuj obie).
+Dotyczy: **Cursor Cloud Agents** (subskrypcja Cursora anulowana 2026-11-12; zasady obowiązują każdego agenta w chmurze) uruchamianych na `fizjo-app`, `fiziyo-admin-portal`, `fiziyo-tests`, oraz zleceń, które kieruje do nich Grok Bot (Szef Sztabu). Nie dotyczy lokalnej pracy w Cursorze — tam obowiązuje `AGENTS.md` bez zmian. Kopia tych zasad dla portalu: `fiziyo-admin-portal/docs/architecture/cloud-agent-policy.md` (przy zmianie zaktualizuj obie).
 
 Decyzja 2026-09-10 (D-09-10-a): kod FiziYo w chmurze wyłącznie przez Cursor Cloud Agents — osobne VM od Grok Bota, checkout jednego repo z GitHuba. Grok Bot **nie klonuje** repo na swój współdzielony komputer.
 
@@ -90,35 +90,17 @@ Tryb `advise` (rola doradcy): agent czyta repo, spec, issue `idea` i pisze rapor
 
 Etykiety PR: `agent`, plus `needs-adam` gdy jest Ask First, `verify` gdy Tester ma sprawdzić na DEV po merge.
 
-## 5. Automations — katalog i zakres
+## 5. Automations — wycofane
 
-Szczegółowe prompty i triggery: `notatki-adam/workflow-agentow/automations.md` (poza repo; tu tylko kontrakt).
-
-| #   | Nazwa                   | Trigger                       | Repo                            | Wynik                                                                                | Nie robi                                     |
-| --- | ----------------------- | ----------------------------- | ------------------------------- | ------------------------------------------------------------------------------------ | -------------------------------------------- |
-| 1   | PR review               | PR opened / pushed            | fizjo-app, portal               | komentarz review (skill `review`; `sec-report` gdy diff dotyka auth/tenant)          | nie edytuje brancha, nie approve/merge       |
-| 2   | Nocny skan zdrowia kodu | zlecenie Adama w oknie nocnym | fizjo-app, portal               | issue z odtwarzalnym problemem; poprawka tylko na zlecenie Adama                     | nie rusza kontraktów, zależności, workflowów |
-| 3   | Triage E2E / CI         | checks completed = failure    | fiziyo-tests, fizjo-app, portal | issue `flaky` albo `bot-finding` z artefaktami i proponowanym repo                   | nie naprawia; nie retriguje CI               |
-| 4   | Dryf speców             | cron niedziela 18:00          | fizjo-app, portal               | PR `agent/drift-…`: frontmatter `prs`, status w README, PROVEN → czyszczenie, raport | nie zmienia treści decyzji w specach         |
-| 5   | Po merge do main        | PR merged                     | fizjo-app, portal               | stan zmergowane; verify dopiero po udanym deployment DEV tego SHA                    | nie deployuje, nie Promote                   |
-
-Wszystkie opisy są konfiguracją projektowaną, dopóki rejestr aktywacji nie zawiera rzeczywistych ID, wersji i dowodów. Przed aktywacją wymagane są dwie różne zaakceptowane próby każdej rutyny. W pilocie jeden worker; zwiększenie do dwóch globalnie i jednego na repo dopiero po dziesięciu małych zadaniach i odbiorze. Nowe implementacje zatrzymują się przy trzech PR oczekujących na Adama; review i diagnoza mogą trwać. Nocne okno 22:30–06:30 Europe/Warsaw, deadline 90 minut/run. Opóźnienia schedulera mogą opóźnić anulowanie, więc deadline nie jest twardym limitem kosztów dostawcy.
+Subskrypcja Cursora jest anulowana (2026-11-12), więc repo nie trzyma już konfiguracji Cursor Automations (`.cursor/automations/*`, `.cursor/environment.json`) i żadna automacja nie działa na tym repo. Recenzję każdego PR robi workflow `.github/workflows/claude-review.yml`; triage CI, nocny skan, dryf speców i stan po merge robi człowiek albo ręcznie uruchomiona sesja agenta. Stare automacje w panelu Cursora, jeśli jeszcze istnieją, wymagają jawnego wyłączenia (edycja plików nie zmienia usługi).
 
 ## 5a. Zdolności automacji (Tools / Memories / MCP)
 
-Reguła nadrzędna: **niezaufane wejście wyklucza trwałą pamięć i MCP.** Wejście jest niezaufane, gdy treść pochodzi spoza tego repozytorium i spoza Adama — issue od bota, wklejka z doca Przemka, log CI, payload z monitoringu. Parser i reguła instrukcyjna nie gwarantują ochrony przed wstrzyknięciem; pierwszy blok karty, kod i własny diff również są niezaufanymi danymi. Wstrzyknięcie zapisane w pamięci przeżywa przebieg i steruje kolejnymi, nie zostawiając śladu w żadnym diffie. Dlatego automacje karmione cudzym tekstem pracują bez pamięci i bez dodatkowych narzędzi.
+Reguła nadrzędna: **niezaufane wejście wyklucza trwałą pamięć i MCP.** Wejście jest niezaufane, gdy treść pochodzi spoza tego repozytorium i spoza Adama — issue od bota, wklejka z doca Przemka, log CI, payload z monitoringu. Parser i reguła instrukcyjna nie gwarantują ochrony przed wstrzyknięciem; pierwszy blok karty, kod i własny diff również są niezaufanymi danymi. Wstrzyknięcie zapisane w pamięci przeżywa przebieg i steruje kolejnymi, nie zostawiając śladu w żadnym diffie. Dlatego agenty karmione cudzym tekstem pracują bez pamięci i bez dodatkowych narzędzi.
 
-| #   | Automation      | Wejście     | PR creation | Komentarz | Computer use | Memories | MCP |
-| --- | --------------- | ----------- | ----------- | --------- | ------------ | -------- | --- |
-| 1   | PR review       | własny diff | nie         | tak       | nie          | nie      | nie |
-| 2   | Nocny skan      | własny kod  | tak         | tak       | nie          | nie      | nie |
-| 3   | Triage E2E / CI | log CI      | nie         | tak       | tak          | nie      | nie |
-| 4   | Dryf speców     | własne repo | tak         | nie       | nie          | nie      | nie |
-| 5   | Po merge        | własny PR   | tak         | tak       | nie          | nie      | nie |
+**Powierzchnia agenta ma lokalny manifest.** Kontrakt karty, role subagentów i szablony issue tego portalu są zadeklarowane w `.ai/agent-adapter.json`. Ten repozytorium nie ma `npm run agent:export` ani `.ai/agent-workflow.json`. Wspólne pliki z `fizjo-app` przenosi człowiek w PR; skrypt nie kasuje plików w celu.
 
-**Powierzchnia agenta ma lokalny manifest.** Kontrakt karty, role subagentów, prompty automacji i szablony issue tego portalu są zadeklarowane w `.ai/agent-adapter.json`. Ten repozytorium nie ma `npm run agent:export` ani `.ai/agent-workflow.json`. Wspólne pliki z `fizjo-app` przenosi człowiek w PR; skrypt nie kasuje plików w celu.
-
-**Memories.** Trzymają wyłącznie **fakty o przebiegach**, nigdy **reguł o kodzie**. Reguły o kodzie mieszkają w `lessons.md` i `.cursor/rules`, bo tam podlegają review i wersjonowaniu; wiedza recenzencka w `.cursor/BUGBOT.md` i w regułach uczonych Bugbota (`@cursor remember`). Trzy równoległe pamięci o tym samym oznaczają, że dwa miejsca roszczą sobie prawo do tej samej decyzji. W pilocie automacje nie korzystają z Memories; odrzucone klasy szumu trafiają do wersjonowanego materiału do review. Przegląd tej pamięci co niedzielę razem z miarami z §8.
+**Memories.** Trzymają wyłącznie **fakty o przebiegach**, nigdy **reguł o kodzie**. Reguły o kodzie mieszkają w `lessons.md` i `.cursor/rules`, bo tam podlegają review i wersjonowaniu; wiedza recenzencka w `.cursor/BUGBOT.md` i w regułach uczonych Bugbota (`@cursor remember`). Trzy równoległe pamięci o tym samym oznaczają, że dwa miejsca roszczą sobie prawo do tej samej decyzji. Agenci nie korzystają z Memories; odrzucone klasy szumu trafiają do wersjonowanego materiału do review. Przegląd tej pamięci co niedzielę razem z miarami z §8.
 
 **Deduplikacja nie używa pamięci** — kluczem jest pole `Źródło` wyszukiwane w Issues (§3). Stan widoczny w GitHubie jest lepszy od stanu ukrytego w automacji: przeżywa jej skasowanie i da się go obejrzeć bez logowania do Cursora.
 
@@ -126,7 +108,7 @@ Reguła nadrzędna: **niezaufane wejście wyklucza trwałą pamięć i MCP.** We
 
 **MCP.** Każdy serwer MCP to nowa granica zaufania, nie nowe udogodnienie — podłączenie daje agentowi **wszystkie** narzędzia tego serwera. Traktujemy go jak nową zależność produkcyjną: nazwany właściciel, nazwany powód, wypisane narzędzia, wpis w `fizjo-app/.ai/BOARD.md` w sekcji DECYZJE. Zakazane bez wyjątku: MCP z dostępem do bazy (dane pacjentów, także na DEV) oraz jakikolwiek MCP w automacji przetwarzającej cudzy tekst — wstrzyknięcie dostaje wtedy narzędzia do ręki. Serwer monitoringu jest kandydatem dopiero po ustaleniu, jak czyścimy PII z payloadu błędu.
 
-**Skille i subagenci z repo działają też w chmurze.** Automacja #1 nie powtarza zasad recenzji w prompcie — woła subagenta `reviewer` (i `sec-auditor`, gdy diff dotyka auth albo tenanta). Jeden opis roli, ta sama treść lokalnie i w chmurze.
+**Skille i subagenci z repo działają też w chmurze.** Recenzja nie powtarza zasad w prompcie — woła subagenta `reviewer` (i `sec-auditor`, gdy diff dotyka auth albo tenanta). Jeden opis roli, ta sama treść lokalnie i w chmurze.
 
 ## 6. Grok Bot ↔ Cloud Agent
 

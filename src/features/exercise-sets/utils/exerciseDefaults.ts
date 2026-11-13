@@ -105,7 +105,8 @@ export function getExerciseDefaultParams(exercise: ExerciseLikeForDefaults): Exe
     restReps: exercise.defaultRestBetweenReps ?? exercise.restReps ?? EXERCISE_PARAM_DEFAULTS.restReps,
     preparationTime: exercise.preparationTime ?? 0,
     executionTime: exercise.defaultExecutionTime ?? 0,
-    notes: exercise.notes ?? '',
+    // Notatka z katalogu nie jest uwagą fizjoterapeuty dla pacjenta (S-01 R2.2).
+    notes: '',
     exerciseSide: normalizeExerciseSide(exercise.side) ?? normalizeExerciseSide(exercise.exerciseSide) ?? 'both',
     customName: '',
     customDescription: '',

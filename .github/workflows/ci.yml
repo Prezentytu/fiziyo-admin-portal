@@ -3,6 +3,8 @@ name: CI
 on:
   pull_request:
     branches: [main]
+    # ready_for_review: claude-review.yml pomija drafty i rusza dopiero po oznaczeniu gotowości, więc gate musi przejść jeszcze raz.
+    types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches: [main]
 
@@ -16,9 +18,9 @@ jobs:
     # Ostatnie przebiegi trwają 3-5 min; limit ~3x zapasu zamiast domyślnych 360 min.
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 24
           cache: npm
@@ -75,3 +77,53 @@ jobs:
           SKIP_ENV_VALIDATION: true
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+
+  # Audyt zależności produkcyjnych. Na start tylko raportuje (AUDIT_MODE=report), bo main ma dziś znaleziska;
+  # po ich naprawie zmień na enforce, a gate zacznie blokować.
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: npm audit (omit dev, high)
+        run: node scripts/ci-gate.mjs audit
+        env:
+          AUDIT_MODE: report
+
+  # Jeden check końcowy dla rulesetu na main. Wariant "gate czeka przez API checków": claude-review.yml zostaje osobnym
+  # workflow (osobny trigger i uprawnienia id-token), a gate pada, gdy którykolwiek wymagany job padł, został
+  # anulowany albo pominięty, oraz gdy review nie skończy się w limicie czasu.
+  gate:
+    if: always()
+    needs: [validate, audit]
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: read
+      checks: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Wymagane joby tego workflow
+        run: node scripts/ci-gate.mjs needs
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+
+      - name: Czekaj na review (claude-review.yml)
+        run: node scripts/ci-gate.mjs wait
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_DRAFT: ${{ github.event.pull_request.draft }}
+          # Nazwa joba w claude-review.yml.
+          REQUIRED_CHECKS: review
+          WAIT_TIMEOUT_MIN: 25

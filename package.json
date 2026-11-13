@@ -10,7 +10,7 @@
     "skills:check": "node scripts/sync-cursor-skills.mjs --check",
     "skills:test": "node --test scripts/sync-cursor-skills.test.mjs",
     "skills:lint": "node scripts/sync-cursor-skills.mjs --lint",
-    "agent:check": "node scripts/check-agent-adapter.mjs && node scripts/check-specs-index.mjs && node scripts/check-agent-docs-graphql.mjs && node scripts/check-trunk-main.mjs && node scripts/check-agent-context.mjs && node scripts/check-agent-words.mjs",
+    "agent:check": "node scripts/check-agent-adapter.mjs && node scripts/check-specs-index.mjs && node scripts/check-agent-docs-graphql.mjs && node scripts/check-trunk-main.mjs && node scripts/check-agent-context.mjs && node scripts/check-agent-words.mjs && node scripts/check-funkcje.mjs",
     "docs:sync": "node scripts/sync-shared-docs.mjs",
     "principles:sync": "node scripts/sync-principles.mjs",
     "principles:check": "node scripts/sync-principles.mjs --check",
@@ -28,7 +28,8 @@
     "test:coverage": "vitest run --coverage",
     "analyze": "ANALYZE=true next build",
     "validate": "npm run lint && npm run check:testids && npm run check:design-tokens && npm run type-check && npm run test:run && npm run build",
-    "prepare": "husky"
+    "prepare": "husky",
+    "check:funkcje": "node scripts/check-funkcje.mjs"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
