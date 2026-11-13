@@ -40,13 +40,16 @@ export const SAVE_COLLISION_FIELD_LABELS: Readonly<Record<string, string>> = {
   'ai.keywords': 'Słowa kluczowe',
 };
 
+/** Every plain value of a row, nested lists and objects included, so a difference deep in the row stays visible. */
+function rowParts(value: unknown): string[] {
+  if (value === null || value === undefined) return [];
+  if (Array.isArray(value)) return value.flatMap(rowParts);
+  if (typeof value === 'object') return Object.values(value as Record<string, unknown>).flatMap(rowParts);
+  return [String(value)];
+}
+
 function describeRow(row: unknown): string {
-  if (row !== null && typeof row === 'object') {
-    return Object.values(row as Record<string, unknown>)
-      .filter((part) => typeof part === 'string' || typeof part === 'number' || typeof part === 'boolean')
-      .join(' · ');
-  }
-  return String(row);
+  return row !== null && typeof row === 'object' ? rowParts(row).join(' · ') : String(row);
 }
 
 /** One version of a collided field as lines of text; an emptied field says so. */

@@ -381,6 +381,139 @@ describe('ochrona przed nadpisaniem cudzej zmiany (rekord 3.3)', () => {
     });
   });
 
+  describe('baza oddaje klucze obiektów w innej kolejności, niż wysłał portal (odbiór 13.11, n4)', () => {
+    /** Kolumna JSONB: klucze obiektu posortowane po długości, potem bajtowo; kolejność elementów listy zostaje. */
+    function asJsonbReturns<T>(value: T): T {
+      if (Array.isArray(value)) return value.map(asJsonbReturns) as T;
+      if (value && typeof value === 'object') {
+        const record = value as Record<string, unknown>;
+        const keys = Object.keys(record).sort((a, b) => a.length - b.length || (a < b ? -1 : a > b ? 1 : 0));
+        return Object.fromEntries(keys.map((key) => [key, asJsonbReturns(record[key])])) as T;
+      }
+      return value;
+    }
+
+    /** `fakeServer`, which stores every document the way JSONB hands it back. */
+    function jsonbServer() {
+      const server = fakeServer(asJsonbReturns(document));
+      const write = server.write.getMockImplementation()!;
+      server.write.mockImplementation((next) => write(asJsonbReturns(next)));
+      return {
+        ...server,
+        /** Another person saves a change to the stored document. */
+        otherSaves: async (change: (patient: Record<string, unknown>) => void) => {
+          const next = JSON.parse(JSON.stringify(server.stored())) as ExerciseEnrichmentData;
+          change(next.patient as Record<string, unknown>);
+          await server.write(next);
+          server.writes.pop();
+        },
+      };
+    }
+
+    // Key order as the portal builds the rows; JSONB returns the opposite one for each of them.
+    const CASES = [
+      {
+        name: 'zdjęcia kroków, potem kroki',
+        first: { path: 'patient.step_images', value: [{ step: 1, url: 'https://example.test/a.jpg' }, { step: 2, url: 'https://example.test/b.jpg' }] },
+        second: { path: 'patient.steps', value: ['Krok pierwszy, poprawiony.', 'Krok drugi.', 'Krok trzeci.'] },
+      },
+      {
+        name: 'fazy wskazówek, potem wskazówki',
+        first: { path: 'patient.cue_phases', value: [{ phase: 'work', cue: 0 }, { phase: 'rest', cue: 1 }] },
+        second: { path: 'patient.cues', value: ['Wskazówka pierwsza, poprawiona.', 'Wskazówka druga.'] },
+      },
+      {
+        name: 'częste błędy, potem poprawka jednego z nich',
+        first: { path: 'patient.mistakes', value: [{ mistake: 'Biodro ucieka w bok.', fix: 'Ustaw miednicę równo.' }] },
+        second: { path: 'patient.mistakes', value: [{ mistake: 'Biodro ucieka w bok, poprawione.', fix: 'Ustaw miednicę równo.' }] },
+      },
+    ] as const;
+
+    const at = (value: ExerciseEnrichmentData | undefined, path: string) =>
+      (value?.patient as Record<string, unknown> | undefined)?.[path.split('.')[1]];
+
+    it.each(CASES)('$name: cudza zmiana innego pola nie jest kolizją, obie zmiany się zapisują', async ({ first, second }) => {
+      const server = jsonbServer();
+      const editor = openEditor(server);
+      act(() => editor.result.current.setEnrichmentPath(first.path, JSON.parse(JSON.stringify(first.value))));
+      await act(async () => {
+        await editor.result.current.save();
+      });
+      expect(server.writes).toHaveLength(1);
+      expect(JSON.stringify(at(server.stored(), first.path))).not.toBe(JSON.stringify(first.value));
+
+      await server.otherSaves((patient) => {
+        patient.why = 'Cudze po co.';
+      });
+      act(() => editor.result.current.setEnrichmentPath(second.path, JSON.parse(JSON.stringify(second.value))));
+      await act(async () => {
+        await editor.result.current.save();
+      });
+
+      // The stored document changed, so the save stops; nothing in it collides with my edit.
+      expect(editor.result.current.hasSaveConflict).toBe(true);
+      expect(editor.result.current.saveCollisions).toEqual([]);
+      expect(at(editor.result.current.enrichment, second.path)).toEqual(second.value);
+
+      act(() => editor.result.current.loadCurrentVersion());
+      expect(editor.result.current.hasSaveConflict).toBe(false);
+      await act(async () => {
+        await editor.result.current.save();
+      });
+
+      expect(server.writes).toHaveLength(2);
+      expect(server.stored().patient?.why).toBe('Cudze po co.');
+      expect(at(server.stored(), second.path)).toEqual(second.value);
+      if (first.path !== second.path) expect(at(server.stored(), first.path)).toEqual(first.value);
+    });
+
+    it.each(CASES)('$name: bez cudzej zmiany drugi zapis przechodzi od razu', async ({ first, second }) => {
+      const server = jsonbServer();
+      const editor = openEditor(server);
+      act(() => editor.result.current.setEnrichmentPath(first.path, JSON.parse(JSON.stringify(first.value))));
+      await act(async () => {
+        await editor.result.current.save();
+      });
+      act(() => editor.result.current.setEnrichmentPath(second.path, JSON.parse(JSON.stringify(second.value))));
+      await act(async () => {
+        await editor.result.current.save();
+      });
+
+      expect(editor.result.current.hasSaveConflict).toBe(false);
+      expect(server.writes).toHaveLength(2);
+      expect(at(server.stored(), second.path)).toEqual(second.value);
+    });
+
+    it('prawdziwa cudza zmiana w parze nadal jest kolizją pary, a w błędach kolizją pola', async () => {
+      const server = jsonbServer();
+      const editor = openEditor(server);
+      act(() => editor.result.current.setEnrichmentPath('patient.step_images', [{ step: 1, url: 'https://example.test/a.jpg' }]));
+      act(() => editor.result.current.setEnrichmentPath('patient.mistakes', [{ mistake: 'Błąd.', fix: 'Poprawka.' }]));
+      await act(async () => {
+        await editor.result.current.save();
+      });
+      await server.otherSaves((patient) => {
+        patient.step_images = [{ url: 'https://example.test/cudze.jpg', step: 1 }];
+        patient.mistakes = [{ fix: 'Poprawka.', mistake: 'Cudzy błąd.' }];
+      });
+      act(() => editor.result.current.setEnrichmentPath('patient.steps', ['Mój krok.']));
+      act(() => editor.result.current.setEnrichmentPath('patient.mistakes', [{ mistake: 'Mój błąd.', fix: 'Poprawka.' }]));
+      await act(async () => {
+        await editor.result.current.save();
+      });
+
+      expect(server.writes).toHaveLength(1);
+      expect(editor.result.current.saveCollisions.map(({ path }) => path).sort()).toEqual([
+        'patient.mistakes',
+        'patient.step_images',
+        'patient.steps',
+      ]);
+      const mistakes = editor.result.current.saveCollisions.find(({ path }) => path === 'patient.mistakes');
+      expect(mistakes?.mine).toEqual([{ mistake: 'Mój błąd.', fix: 'Poprawka.' }]);
+      expect(mistakes?.theirs).toEqual([{ mistake: 'Cudzy błąd.', fix: 'Poprawka.' }]);
+    });
+  });
+
   it('bez cudzej zmiany zapis przechodzi, także drugi z rzędu i przy innej kolejności kluczy w bazie', async () => {
     const server = fakeServer();
     const editor = openEditor(server);
@@ -526,5 +659,14 @@ describe('komunikat konfliktu: nazwy pól i wartości', () => {
     expect(describeCollisionValue(true)).toEqual(['tak']);
     expect(describeCollisionValue(undefined)).toEqual(['(puste)']);
     expect(describeCollisionValue([])).toEqual(['(puste)']);
+  });
+
+  it('różnica w zagnieżdżonym kluczu wiersza jest widoczna w obu wersjach (odbiór 13.11)', () => {
+    const mine = [{ label: 'Taśma', code: 'band', substitutes: ['ręcznik'], evidence: { source: 'A', level: 2 } }];
+    const theirs = [{ label: 'Taśma', code: 'band', substitutes: ['pasek'], evidence: { source: 'B', level: 2 } }];
+
+    expect(describeCollisionValue(mine)).toEqual(['Taśma · band · ręcznik · A · 2']);
+    expect(describeCollisionValue(theirs)).toEqual(['Taśma · band · pasek · B · 2']);
+    expect(describeCollisionValue([{ text: 'Punkt.', view: null }])).toEqual(['Punkt.']);
   });
 });
