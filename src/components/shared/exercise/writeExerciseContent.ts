@@ -205,8 +205,9 @@ function deleteAtPath(target: UnknownRecord, path: string): void {
 /**
  * Ta sama wartość JSON. Kolejność kluczy obiektu nie ma znaczenia (kolumna JSONB oddaje je w innej, niż dostała),
  * kolejność elementów listy ma. Klucz z wartością `null` to co innego niż brak klucza.
+ * Jedyna funkcja porównania wartości 3.3: wykrywanie zmian i kolizji poza tym plikiem też woła tę.
  */
-function sameJson(first: unknown, second: unknown): boolean {
+export function sameJson(first: unknown, second: unknown): boolean {
   return JSON.stringify(canonical(first)) === JSON.stringify(canonical(second));
 }
 

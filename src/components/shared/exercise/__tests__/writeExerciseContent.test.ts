@@ -13,6 +13,7 @@ import {
   precautionGroupLabel,
   readTextItem,
   rebaseV33Draft,
+  sameJson,
   V33_CUE_PHASES,
   V33_EDITABLE_PATHS,
   V33_PATIENT_VISIBLE_PATHS,
@@ -836,6 +837,16 @@ describe('kolejność kluczy obiektu nie jest zmianą (odbiór 13.11, n4)', () =
 
   const sent = sentByPortal();
   const stored = asJsonbReturns(sent);
+
+  it('wspólna funkcja porównania: dwa dokumenty różne tylko kolejnością kluczy to ta sama wartość', () => {
+    expect(JSON.stringify(stored)).not.toBe(JSON.stringify(sent));
+    expect(sameJson(sent, stored)).toBe(true);
+    expect(sameJson([{ step: 1, url: 'a' }], [{ url: 'a', step: 1 }])).toBe(true);
+    expect(sameJson([{ step: 1, url: 'a' }], [{ url: 'b', step: 1 }])).toBe(false);
+    expect(sameJson(['a', 'b'], ['b', 'a'])).toBe(false);
+    expect(sameJson({ a: 1, b: null }, { a: 1 })).toBe(false);
+    expect(sameJson(undefined, undefined)).toBe(true);
+  });
 
   it('serwer z testu naprawdę przestawia klucze, a nie elementy list', () => {
     expect(JSON.stringify(stored)).not.toBe(JSON.stringify(sent));
