@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@apollo/client/react';
 import { useUser, useReverification } from '@clerk/nextjs';
-import type { EmailAddressResource } from '@clerk/types';
+import type { EmailAddressResource } from '@clerk/nextjs/types';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import * as z from 'zod';

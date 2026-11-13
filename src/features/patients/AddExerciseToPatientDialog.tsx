@@ -30,8 +30,8 @@ import { cn } from '@/lib/utils';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
 
-import { useDebouncedValue } from '@/hooks/useDebouncedValue';
-import { useExercisePickerPages } from '@/hooks/useExercisePickerPages';
+import { useExercisePickerLibrary } from '@/hooks/useExercisePickerLibrary';
+import { isV33ExerciseRecord } from '@/utils/exerciseRecordVersion';
 import {
   ADD_EXERCISE_TO_EXERCISE_SET_MUTATION,
   UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION,
@@ -185,8 +185,8 @@ function AddExerciseToPatientDialogContent({
   onHasChanges,
 }: AddExerciseToPatientDialogContentProps) {
   // State
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
+  const selectedExerciseId = selectedExercise?.id;
   const [sets, setSets] = useState(3);
   const [reps, setReps] = useState(10);
   const [duration, setDuration] = useState<number | undefined>(30);
@@ -288,13 +288,22 @@ function AddExerciseToPatientDialogContent({
     []
   );
 
-  const debouncedSearch = useDebouncedValue(searchQuery.trim());
-  const exercisePages = useExercisePickerPages<Exercise>({
+  // Lista idzie stronami z API (wyszukiwanie po stronie serwera). Treść (wersja rekordu) dociąga się tylko
+  // dla wybranego ćwiczenia. Bez niej nie wiadomo, czy „naprzemiennie” liczy na stronę (rekord 3.3), więc
+  // zapis czeka na treść.
+  const {
+    exercises: libraryExercises,
+    library: exercisePages,
+    detailsReady,
+    detailsPending,
+    ensureDetailsReady,
+  } = useExercisePickerLibrary<Exercise>({
     organizationId,
-    search: debouncedSearch,
-    sourceFilter: 'all',
+    detailExerciseIds: selectedExerciseId ? [selectedExerciseId] : [],
   });
   const loadingExercises = exercisePages.loading;
+  const searchQuery = exercisePages.search;
+  const setSearchQuery = exercisePages.onSearchChange;
 
   const [addExerciseToSet, { loading: adding }] = useMutation(ADD_EXERCISE_TO_EXERCISE_SET_MUTATION);
   const [updateOverrides, { loading: updatingOverrides }] = useMutation(
@@ -312,10 +321,12 @@ function AddExerciseToPatientDialogContent({
   }, [assignment]);
 
   // Search and paging come from the API; exercises already in the set are left out of each page.
-  const exercises: Exercise[] = useMemo(
-    () => exercisePages.items.filter((exercise) => !existingExerciseIds.has(exercise.id)),
-    [exercisePages.items, existingExerciseIds]
-  );
+  const exercises: Exercise[] = useMemo(() => {
+    const byId = new Map(libraryExercises.map((exercise) => [exercise.id, exercise]));
+    return exercisePages.itemIds
+      .filter((exerciseId) => !existingExerciseIds.has(exerciseId))
+      .flatMap((exerciseId) => byId.get(exerciseId) ?? []);
+  }, [exercisePages.itemIds, libraryExercises, existingExerciseIds]);
   const visibleExercises = exercises;
   const remainingExercises = exercisePages.loadingMore ? 0 : exercisePages.remaining;
   const showMoreExercises = exercisePages.loadMore;
@@ -324,6 +335,10 @@ function AddExerciseToPatientDialogContent({
 
   // Track changes
   const hasChanges = selectedExercise !== null;
+  const alternatingPerSide = useMemo(
+    () => isV33ExerciseRecord(libraryExercises.find((exercise) => exercise.id === selectedExerciseId)),
+    [libraryExercises, selectedExerciseId]
+  );
 
   React.useEffect(() => {
     onHasChanges(hasChanges);
@@ -359,6 +374,7 @@ function AddExerciseToPatientDialogContent({
   // Handle save — real mapping on PATIENT_PLAN (not synthetic isPatientAdded JSON).
   const handleSave = async () => {
     if (!selectedExercise) return;
+    if (!ensureDetailsReady()) return;
     const exerciseSetId = assignment.exerciseSetId ?? assignment.exerciseSet?.id;
     if (!exerciseSetId) {
       toast.error('Brak planu pacjenta do dodania ćwiczenia');
@@ -550,6 +566,8 @@ function AddExerciseToPatientDialogContent({
                 surface="patientOverride"
                 exerciseType={normalizeExerciseType(selectedExercise?.type) ?? 'draft'}
                 values={parameterValues}
+                alternatingPerSide={alternatingPerSide}
+                versionPending={!detailsReady}
                 onChange={handleParametersChange}
                 showContentSection
                 showMappingOnlyFields
@@ -636,11 +654,11 @@ function AddExerciseToPatientDialogContent({
         </Button>
         <Button
           onClick={handleSave}
-          disabled={!selectedExercise || saving}
+          disabled={!selectedExercise || saving || detailsPending}
           className="shadow-lg shadow-primary/20"
           data-testid="add-exercise-submit-btn"
         >
-          {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {(saving || detailsPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Dodaj ćwiczenie
         </Button>
       </div>

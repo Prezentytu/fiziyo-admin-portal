@@ -10,11 +10,13 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MediaGallery, buildMediaItems } from '@/components/shared';
+import { readExerciseContent } from '@/components/shared/exercise/readExerciseContent';
 import { PageSheet } from '@/components/shared/page';
 import { useExerciseEditorForm } from '@/features/exercises/useExerciseEditorForm';
 import { useExerciseImageGeneration } from '@/features/exercises/useExerciseImageGeneration';
 import { toV3 } from '@/features/verification/utils/enrichmentToV3';
 
+import { useSystemRole } from '@/hooks/useSystemRole';
 import { useVerificationHotkeys } from '@/hooks/useVerificationHotkeys';
 import { aiService } from '@/services/aiService';
 import { resolveExerciseReports } from '@/services/exerciseReportService';
@@ -45,6 +47,8 @@ import { DecisionStage, type DecisionRow } from './stages/DecisionStage';
 import { DuplicateDialog, type DuplicateTarget } from './stages/DuplicateDialog';
 import { RelatedExercisesSection } from '@/features/exercises/RelatedExercisesSection';
 
+import { ContractFacts } from './stages/ContractFacts';
+import { ExerciseSaveConflictNotice } from '@/features/exercises/ExerciseSaveConflictNotice';
 import { ExtraContentSection } from './stages/ExtraContentSection';
 import { InstructionStage } from './stages/InstructionStage';
 import { MaterialStage, type PendingPhoto } from './stages/MaterialStage';
@@ -55,6 +59,9 @@ import { SafetyStage } from './stages/SafetyStage';
 import { VerificationFloatingBar } from './stages/VerificationFloatingBar';
 import { VerificationStageNav, type StageNavItem, type StageNavState } from './stages/VerificationStageNav';
 import { countFilledMistakes, countFilledTexts, summarizeChanges, toChangeSnapshot } from './utils/changeSummary';
+import { readContraindicationTextsV33 } from './utils/contentV33';
+import { EXTRA_CONTENT_GROUPS_V33 } from './utils/extraContent';
+import { buildVerificationFactsV33, sideColumnDiffersFromMode } from './utils/verificationFacts';
 import {
   applyInstructionProposal,
   buildInstructionProposal,
@@ -147,6 +154,11 @@ interface VerificationWorkspaceProps {
   /** Overrides the default enrichment save (admin `updateExerciseField`). */
   saveEnrichment?: (payload: ExerciseEnrichmentData) => Promise<void>;
   onSaveError?: (error: unknown) => void;
+  /**
+   * Reads the stored document past the cache. With it a 3.3 save first checks that nobody else changed
+   * the record since it was loaded; a difference stops the save and every decision that depends on it.
+   */
+  fetchCurrentEnrichment?: () => Promise<ExerciseEnrichmentData | string | null | undefined>;
   backTestId?: string;
   /** Active organization from the token; enables the related exercises section. */
   organizationId?: string | null;
@@ -154,6 +166,21 @@ interface VerificationWorkspaceProps {
 }
 
 const NO_REPORTS: ExerciseReport[] = [];
+
+/** Pending edits did not reach the database, so the action that needed them was stopped. */
+class UnsavedChangesError extends Error {
+  constructor(readonly outcome: 'conflict' | 'error') {
+    super(
+      outcome === 'conflict'
+        ? 'Ktoś zmienił to ćwiczenie. Wczytaj aktualną wersję, zanim przejdziesz dalej.'
+        : 'Zmiany nie zostały zapisane. Spróbuj ponownie, zanim przejdziesz dalej.'
+    );
+  }
+}
+
+function actionErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof UnsavedChangesError ? error.message : fallback;
+}
 
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -201,13 +228,19 @@ export function VerificationWorkspace({
   organizationDecision,
   saveEnrichment,
   onSaveError,
+  fetchCurrentEnrichment,
   backTestId = 'verification-back-btn',
   organizationId = null,
   'data-testid': rootTestId = 'verification-workspace',
 }: VerificationWorkspaceProps) {
   const router = useRouter();
   const { user } = useUser();
+  const { canReviewExercises } = useSystemRole();
   const rootRef = useRef<HTMLDivElement | null>(null);
+
+  // Contract v3.3 (FR-007): the record is read and saved in contract places; a legacy record keeps the old path.
+  const isV33 = useMemo(() => readExerciseContent(exercise).version === '3.3', [exercise]);
+  const contractFacts = useMemo(() => (isV33 ? buildVerificationFactsV33(exercise) : null), [exercise, isV33]);
 
   // ============================================
   // MUTATIONS
@@ -238,12 +271,14 @@ export function VerificationWorkspace({
 
   const updateCore = useCallback(
     async (variables: Record<string, unknown>) => {
+      // A 3.3 record: the form hook already leaves the retired description columns out of `variables`.
       await updateExerciseDetails({ variables: { exerciseId: exercise.id, ...variables } });
     },
     [exercise.id, updateExerciseDetails]
   );
 
   const updateEnrichment = useCallback(
+    // A 3.3 record: `payload` is the loaded document with the edited paths only (`writeExerciseContent`).
     async (payload: ExerciseEnrichmentData) => {
       if (saveEnrichment) {
         await saveEnrichment(payload);
@@ -262,9 +297,45 @@ export function VerificationWorkspace({
     updateEnrichment,
     onError: onSaveError ?? (() => toast.error('Nie udało się zapisać zmian')),
     autosaveDelayMs: 900,
+    fetchCurrentEnrichment,
   });
-  const { core, enrichment, setCoreField, setEnrichmentPath, flush } = form;
+  const { core, enrichment, setCoreField, setEnrichmentPath, flush: flushForm } = form;
+  /**
+   * Saves pending edits before an action that relies on them. A 3.3 record throws when the save was refused
+   * (someone else changed the record) or failed, so nothing gets published or left behind unsaved.
+   * A legacy record keeps its behaviour: a failed save is reported by the hook and the action goes on.
+   */
+  const flush = useCallback(async () => {
+    const outcome = await flushForm();
+    if (isV33 && (outcome === 'conflict' || outcome === 'error')) throw new UnsavedChangesError(outcome);
+  }, [flushForm, isV33]);
+  /** A decision never rests on content that was not saved, whatever the record version. */
+  const flushBeforeDecision = useCallback(async () => {
+    const outcome = await flushForm();
+    if (outcome === 'conflict' || outcome === 'error') throw new UnsavedChangesError(outcome);
+  }, [flushForm]);
   const patient = useMemo<ExerciseEnrichmentPatientV3>(() => enrichment.patient ?? {}, [enrichment.patient]);
+  /**
+   * A 3.3 record is saved path by path, so a changed `patient` goes in as its changed keys: a key outside
+   * the editable list is then refused by the form hook instead of vanishing at save.
+   */
+  const setPatient = useCallback(
+    (next: ExerciseEnrichmentPatientV3) => {
+      if (!isV33) {
+        setEnrichmentPath('patient', next);
+        return;
+      }
+      const before = patient as Record<string, unknown>;
+      const after = next as Record<string, unknown>;
+      for (const key of new Set([...Object.keys(before), ...Object.keys(after)])) {
+        if (JSON.stringify(before[key]) !== JSON.stringify(after[key])) setEnrichmentPath(`patient.${key}`, after[key]);
+      }
+    },
+    [isV33, patient, setEnrichmentPath]
+  );
+  // The text the patient reads first: the description column on a legacy record, `patient.summary` in v3.3.
+  const patientLead = isV33 ? (patient.summary ?? '') : core.patientDescription;
+  const therapistLead = isV33 ? '' : core.clinicalDescription;
 
   // ============================================
   // STATE
@@ -329,7 +400,7 @@ export function VerificationWorkspace({
     steps: patient.steps ?? [],
     stepImages: patient.step_images,
     photos,
-    description: core.patientDescription,
+    description: patientLead,
     hasVideo,
   });
   const isFollowingText = stage === 'instruction' && isMediaFollowingText;
@@ -372,6 +443,7 @@ export function VerificationWorkspace({
           restReps: core.restReps,
           preparationTime: core.preparationTime,
         },
+        isV33,
       }),
     [
       parameterValues,
@@ -383,11 +455,12 @@ export function VerificationWorkspace({
       core.preparationTime,
       parameterReview.acknowledged,
       parameterReview.acknowledgedSessionSeconds,
+      isV33,
     ]
   );
   const descriptionNumbers = useMemo(
-    () => (descriptionAcknowledged ? [] : findHardcodedNumbers(core.patientDescription)),
-    [descriptionAcknowledged, core.patientDescription]
+    () => (descriptionAcknowledged || isV33 ? [] : findHardcodedNumbers(core.patientDescription)),
+    [descriptionAcknowledged, isV33, core.patientDescription]
   );
   const stopIfCount = countStopIfSymptoms(enrichment.safety?.stop_if);
 
@@ -404,8 +477,11 @@ export function VerificationWorkspace({
         descriptionNumberCount: descriptionNumbers.length,
         hasPendingProposal: proposal !== null,
         stopIfCount,
+        v33: isV33 ? { stepCount: countFilledTexts(patient.steps) } : undefined,
       }),
     [
+      isV33,
+      patient.steps,
       core.name,
       core.patientDescription,
       core.clinicalDescription,
@@ -419,11 +495,17 @@ export function VerificationWorkspace({
     ]
   );
 
-  const [initialSnapshot] = useState(() => toChangeSnapshot(core, photos.length, enrichment));
+  const contentVersion = isV33 ? '3.3' : 'legacy';
+  const [initialSnapshot] = useState(() => toChangeSnapshot(core, photos.length, enrichment, contentVersion));
 
   const changes = useMemo(
-    () => summarizeChanges(initialSnapshot, toChangeSnapshot(core, photos.length, enrichment), replacedPhotoCount),
-    [initialSnapshot, core, photos.length, enrichment, replacedPhotoCount]
+    () =>
+      summarizeChanges(
+        initialSnapshot,
+        toChangeSnapshot(core, photos.length, enrichment, contentVersion),
+        replacedPhotoCount
+      ),
+    [initialSnapshot, core, photos.length, enrichment, contentVersion, replacedPhotoCount]
   );
 
   const latestReport = useMemo(
@@ -562,7 +644,7 @@ export function VerificationWorkspace({
         .join(' ');
       const file = await imageGeneration.generate({
         exerciseName: core.name,
-        exerciseDescription: [core.patientDescription, corrections].filter(Boolean).join(' '),
+        exerciseDescription: [patientLead, corrections].filter(Boolean).join(' '),
         exerciseType: mode === 'hold' ? 'time' : 'reps',
       });
       setGeneratingIndex(null);
@@ -570,7 +652,7 @@ export function VerificationWorkspace({
       const previewUrl = await fileToDataUrl(file);
       setPendingPhoto({ index, previewUrl });
     },
-    [core.name, core.patientDescription, imageGeneration, mode]
+    [core.name, patientLead, imageGeneration, mode]
   );
 
   const handleRetryPhoto = useCallback(() => {
@@ -649,8 +731,8 @@ export function VerificationWorkspace({
     try {
       const response = await aiService.generateEnrichment({
         exerciseName: core.name,
-        patientDescription: core.patientDescription,
-        clinicalDescription: core.clinicalDescription,
+        patientDescription: patientLead,
+        clinicalDescription: therapistLead,
         type: mode === 'hold' ? 'time' : 'reps',
         tags: [...core.mainTags, ...core.additionalTags],
         existingEnrichmentJson: JSON.stringify(enrichment),
@@ -668,13 +750,16 @@ export function VerificationWorkspace({
     } finally {
       setIsGeneratingProposal(false);
     }
-  }, [core, enrichment, mode, patient]);
+  }, [core, enrichment, mode, patient, patientLead, therapistLead]);
 
   // ============================================
   // HANDLERS: decisions
   // ============================================
 
   const isOrganization = organizationDecision !== undefined;
+  // DEC-20261110-01: pola zespołu i AI rekordu 3.3 tylko w torze katalogu Fizjo. O torze decyduje trasa
+  // (prop `organizationDecision`), a nie rola ani parametr adresu: w weryfikacji organizacji nie widzi ich nikt.
+  const showTeamFields = canReviewExercises && !isOrganization;
   const organizationStatus = organizationDecision?.status;
   const canDecide = isOrganization
     ? canApproveOrganizationExercise(organizationStatus)
@@ -687,33 +772,33 @@ export function VerificationWorkspace({
     setIsLeaving(true);
     if (organizationDecision) {
       try {
-        await flush();
+        await flushBeforeDecision();
         await organizationDecision.onApprove();
         toast.success('Ćwiczenie zweryfikowane w gabinecie');
         leaveToNext();
       } catch (error) {
         console.error('Błąd zatwierdzania w organizacji:', error);
-        toast.error('Nie udało się zatwierdzić ćwiczenia');
+        toast.error(actionErrorMessage(error, 'Nie udało się zatwierdzić ćwiczenia'));
         setIsLeaving(false);
       }
       return;
     }
     try {
-      await flush();
+      await flushBeforeDecision();
       await approveExercise({ variables: { exerciseId: exercise.id, reviewNotes: null } });
       toast.success('Zweryfikowane i opublikowane w Katalogu FiziYo');
       void resolveReports('Poprawione i opublikowane w weryfikacji');
       leaveToNext();
     } catch (error) {
       console.error('Błąd zatwierdzania:', error);
-      toast.error('Nie udało się zatwierdzić ćwiczenia');
+      toast.error(actionErrorMessage(error, 'Nie udało się zatwierdzić ćwiczenia'));
       setIsLeaving(false);
     }
   }, [
     approveExercise,
     canDecide,
     exercise.id,
-    flush,
+    flushBeforeDecision,
     leaveToNext,
     organizationDecision,
     resolveReports,
@@ -725,34 +810,34 @@ export function VerificationWorkspace({
       if (!organizationDecision || !canRequestChanges) return;
       setIsLeaving(true);
       try {
-        await flush();
+        await flushBeforeDecision();
         await organizationDecision.onRequestChanges(notes);
         toast.success('Ćwiczenie odesłane do poprawek');
         setIsChangesOpen(false);
         leaveToNext();
       } catch (error) {
         console.error('Błąd odsyłania do poprawek:', error);
-        toast.error('Nie udało się odesłać ćwiczenia do poprawek');
+        toast.error(actionErrorMessage(error, 'Nie udało się odesłać ćwiczenia do poprawek'));
         setIsLeaving(false);
       }
     },
-    [canRequestChanges, flush, leaveToNext, organizationDecision]
+    [canRequestChanges, flushBeforeDecision, leaveToNext, organizationDecision]
   );
 
   const handleArchive = useCallback(async () => {
     if (!organizationDecision || !canArchive) return;
     setIsLeaving(true);
     try {
-      await flush();
+      await flushBeforeDecision();
       await organizationDecision.onArchive();
       toast.success('Ćwiczenie zarchiwizowane');
       router.push(listUrl);
     } catch (error) {
       console.error('Błąd archiwizacji:', error);
-      toast.error('Nie udało się zarchiwizować ćwiczenia');
+      toast.error(actionErrorMessage(error, 'Nie udało się zarchiwizować ćwiczenia'));
       setIsLeaving(false);
     }
-  }, [canArchive, flush, listUrl, organizationDecision, router]);
+  }, [canArchive, flushBeforeDecision, listUrl, organizationDecision, router]);
 
   const handleMarkDuplicate = useCallback(
     async (target: DuplicateTarget) => {
@@ -760,7 +845,7 @@ export function VerificationWorkspace({
       setIsLeaving(true);
       const notes = `To ćwiczenie jest już w bazie jako „${target.name}” (ID: ${target.id}).`;
       try {
-        await flush();
+        await flushBeforeDecision();
         await rejectExercise({
           variables: { exerciseId: exercise.id, rejectionReason: 'POTENTIAL_DUPLICATE', notes },
         });
@@ -770,19 +855,32 @@ export function VerificationWorkspace({
         leaveToNext();
       } catch (error) {
         console.error('Błąd oznaczania duplikatu:', error);
-        toast.error('Nie udało się oznaczyć duplikatu');
+        toast.error(actionErrorMessage(error, 'Nie udało się oznaczyć duplikatu'));
         setIsLeaving(false);
       }
     },
-    [canDecide, exercise.id, flush, leaveToNext, rejectExercise, resolveReports]
+    [canDecide, exercise.id, flushBeforeDecision, leaveToNext, rejectExercise, resolveReports]
   );
 
   const handleSkip = useCallback(() => {
-    void flush().then(leaveToNext);
+    flush().then(leaveToNext, (error: unknown) =>
+      toast.error(actionErrorMessage(error, 'Nie udało się zapisać zmian'))
+    );
   }, [flush, leaveToNext]);
 
+  /** The back arrow leaves only after pending edits are saved; a refused or failed 3.3 save keeps the screen. */
+  const handleBack = useCallback(() => {
+    flush().then(
+      () => router.push(listUrl),
+      (error: unknown) => toast.error(actionErrorMessage(error, 'Nie udało się zapisać zmian'))
+    );
+  }, [flush, listUrl, router]);
+
   const handleSave = useCallback(() => {
-    void flush().then(() => toast.success('Zmiany zapisane'));
+    flush().then(
+      () => toast.success('Zmiany zapisane'),
+      (error: unknown) => toast.error(actionErrorMessage(error, 'Nie udało się zapisać zmian'))
+    );
   }, [flush]);
 
   const stageHasIssues = (key: VerificationStageKey) =>
@@ -828,6 +926,7 @@ export function VerificationWorkspace({
     stopIfCount,
     canDecide,
     signerName: user?.fullName ?? 'Twoje konto',
+    isV33,
     organization: isOrganization
       ? {
           statusLabel: getVerificationStatusBadge(
@@ -857,7 +956,7 @@ export function VerificationWorkspace({
     {
       key: 'parameters',
       title: STAGE_TITLES.parameters,
-      summary: `${buildPatientParameterLine(parameterValues, mode, core.side)} · ${formatSessionDuration(evaluation.sessionSeconds, evaluation.sessionIsEstimate)}`,
+      summary: `${buildPatientParameterLine(parameterValues, mode, core.side, isV33)} · ${formatSessionDuration(evaluation.sessionSeconds, evaluation.sessionIsEstimate)}`,
       changes: changes.parameters,
       issues: stages.issues.parameters,
     },
@@ -865,7 +964,7 @@ export function VerificationWorkspace({
       key: 'instruction',
       title: STAGE_TITLES.instruction,
       summary: [
-        'Opis',
+        isV33 ? 'Podsumowanie' : 'Opis',
         pluralizePl(countFilledTexts(patient.steps), 'krok', 'kroki', 'kroków'),
         pluralizePl(countFilledTexts(patient.cues), 'wskazówka głosowa', 'wskazówki głosowe', 'wskazówek głosowych'),
         pluralizePl(countFilledMistakes(patient.mistakes), 'typowy błąd', 'typowe błędy', 'typowych błędów'),
@@ -879,7 +978,9 @@ export function VerificationWorkspace({
       summary: [
         pluralizePl(stopIfCount, 'objaw przerwania', 'objawy przerwania', 'objawów przerwania'),
         pluralizePl(
-          countFilledTexts(enrichment.therapist?.contraindications),
+          isV33
+            ? readContraindicationTextsV33(enrichment).length
+            : countFilledTexts(enrichment.therapist?.contraindications),
           'przeciwwskazanie',
           'przeciwwskazania',
           'przeciwwskazań'
@@ -930,7 +1031,7 @@ export function VerificationWorkspace({
           className="-ml-2"
           aria-label="Lista ćwiczeń"
           title="Lista ćwiczeń"
-          onClick={() => router.push(listUrl)}
+          onClick={handleBack}
           data-testid={backTestId}
         >
           <ArrowLeft />
@@ -972,6 +1073,10 @@ export function VerificationWorkspace({
           Odłóż na później
         </Button>
       </header>
+
+      {form.hasSaveConflict && (
+        <ExerciseSaveConflictNotice collisions={form.saveCollisions} onLoadCurrent={form.loadCurrentVersion} />
+      )}
 
       {latestReport && reportStage && (
         <div
@@ -1084,6 +1189,7 @@ export function VerificationWorkspace({
               }}
               onRetryPending={handleRetryPhoto}
               onDiscardPending={() => setPendingPhoto(null)}
+              contractFacts={contractFacts?.material}
             />
           )}
 
@@ -1096,12 +1202,20 @@ export function VerificationWorkspace({
               descriptionNumbers={descriptionNumbers}
               onValueChange={handleParameterChange}
               onAcknowledge={handleAcknowledge}
-              onFixDescription={() =>
-                setCoreField('patientDescription', replaceHardcodedNumbers(core.patientDescription))
-              }
+              onFixDescription={() => {
+                if (!isV33) setCoreField('patientDescription', replaceHardcodedNumbers(core.patientDescription));
+              }}
               onAcknowledgeDescription={() => setDescriptionAcknowledged(true)}
               onCoreFieldChange={setCoreField}
               savedLoadLabel={form.savedLoadLabel}
+              v33={
+                contractFacts
+                  ? {
+                      sideDiffersFromDocument: sideColumnDiffersFromMode(core.side, enrichment.side?.mode ?? null),
+                      facts: contractFacts.parameters,
+                    }
+                  : undefined
+              }
             />
           )}
 
@@ -1113,16 +1227,21 @@ export function VerificationWorkspace({
               proposal={proposal}
               isGeneratingProposal={isGeneratingProposal}
               onCoreFieldChange={setCoreField}
-              onPatientChange={(nextPatient) => setEnrichmentPath('patient', nextPatient)}
+              onPatientChange={setPatient}
               onRequestProposal={() => void handleRequestProposal()}
               onInsertProposal={() => {
                 if (!proposal) return;
-                setEnrichmentPath('patient', applyInstructionProposal(patient, proposal));
+                setPatient(applyInstructionProposal(patient, proposal));
                 setProposal(null);
               }}
               onDismissProposal={() => setProposal(null)}
               focusedStep={focusedStep}
               onFocusStep={handleFocusStep}
+              v33={
+                contractFacts
+                  ? { enrichment, onEnrichmentPathChange: setEnrichmentPath, facts: contractFacts.instruction }
+                  : undefined
+              }
             />
           )}
 
@@ -1132,18 +1251,35 @@ export function VerificationWorkspace({
               therapistDescription={core.clinicalDescription}
               onTherapistDescriptionChange={(value) => setCoreField('clinicalDescription', value)}
               onEnrichmentPathChange={setEnrichmentPath}
+              v33={
+                contractFacts
+                  ? { safetyFacts: contractFacts.safety, therapistFacts: contractFacts.therapist }
+                  : undefined
+              }
             />
           )}
 
           {stage === 'decision' && (
             <>
               <DecisionStage rows={decisionRows} onGoToStage={goToStage} />
-              <ExtraContentSection
-                enrichment={enrichment}
-                core={{ audioCue: core.audioCue, notes: core.notes }}
-                onEnrichmentPathChange={setEnrichmentPath}
-                onCoreFieldChange={setCoreField}
-              />
+              {(!isV33 || showTeamFields) && (
+                <ExtraContentSection
+                  enrichment={enrichment}
+                  core={{ audioCue: core.audioCue, notes: core.notes }}
+                  onEnrichmentPathChange={setEnrichmentPath}
+                  onCoreFieldChange={setCoreField}
+                  groups={isV33 ? EXTRA_CONTENT_GROUPS_V33 : undefined}
+                />
+              )}
+              {contractFacts && (
+                <ContractFacts
+                  title="Pochodzenie i klasyfikacja"
+                  facts={[...contractFacts.classification, ...(showTeamFields ? contractFacts.team : [])]}
+                  hint="Tylko do odczytu. Kody ze słownika; przychodzą z importu paczki treści i nie zmienisz ich tutaj ani w formularzu ćwiczenia."
+                  collapsible
+                  data-testid="verification-contract-facts"
+                />
+              )}
               {organizationId && (
                 <RelatedExercisesSection
                   organizationId={organizationId}

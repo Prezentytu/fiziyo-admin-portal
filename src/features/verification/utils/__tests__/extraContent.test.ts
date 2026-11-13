@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
 import { enrichmentSchema } from '../enrichment';
-import { EXTRA_CONTENT_GROUPS, countFilledExtraFields, isExtraFieldFilled, readExtraList } from '../extraContent';
+import {
+  EXTRA_CONTENT_GROUPS,
+  EXTRA_CONTENT_GROUPS_V33,
+  INSTRUCTION_CONTENT_GROUP_V33,
+  SUMMARY_FIELD_V33,
+  countFilledExtraFields,
+  isExtraFieldFilled,
+  readExtraList,
+} from '../extraContent';
 
 const EMPTY_CORE = { audioCue: '', notes: '' };
 const FIELDS = EXTRA_CONTENT_GROUPS.flatMap((group) => group.fields);
@@ -54,5 +62,27 @@ describe('pozostałe treści w weryfikacji', () => {
 
     expect(readExtraList(keywords, { ai: { keywords: ['kolano', 3 as unknown as string] } })).toEqual(['kolano']);
     expect(isExtraFieldFilled(keywords, {}, EMPTY_CORE)).toBe(false);
+  });
+});
+
+describe('pozostałe treści rekordu v3.3', () => {
+  it('nie proponują do edycji żadnego wycofanego miejsca', () => {
+    const fields = [SUMMARY_FIELD_V33, ...INSTRUCTION_CONTENT_GROUP_V33.fields, ...EXTRA_CONTENT_GROUPS_V33[0].fields];
+
+    expect(fields.map((field) => (field.source === 'enrichment' ? field.path : field.field))).toEqual([
+      'patient.summary',
+      'patient.should_feel',
+      'patient.should_not_feel',
+      'patient.why',
+      'patient.when_to_do',
+      'ai.keywords',
+    ]);
+  });
+
+  it('licznik liczy tylko podane grupy', () => {
+    expect(countFilledExtraFields({ ai: { keywords: ['kolano'] } }, EMPTY_CORE, EXTRA_CONTENT_GROUPS_V33)).toEqual({
+      filled: 1,
+      total: 1,
+    });
   });
 });

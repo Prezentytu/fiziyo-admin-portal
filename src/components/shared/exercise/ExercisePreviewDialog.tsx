@@ -19,6 +19,7 @@ import {
   type ExerciseFieldGroup,
   type ExerciseFieldMetadata,
 } from './displayRegistry';
+import { resolvePatientInstruction } from './patientInstruction';
 import type { ExerciseExecutionCardData } from './types';
 
 interface ExercisePreviewDialogProps {
@@ -117,10 +118,21 @@ export function ExercisePreviewDialog({
   const hasMultipleMedia = mediaItems.length > 1;
   const currentMedia = mediaItems[currentMediaIndex] ?? null;
 
+  // „Opis dla pacjenta” to instrukcja, którą dostanie pacjent: nadpisanie, opis rekordu starego albo kroki.
+  const fieldSource = {
+    ...exercise,
+    patientDescription:
+      resolvePatientInstruction({
+        override: exercise.patientDescriptionOverride,
+        exercise: { patientDescription: exercise.patientDescription },
+        enrichment: exercise.enrichment,
+      }).text ?? undefined,
+  };
+
   const dialogFields = DIALOG_EXERCISE_FIELD_ORDER.map((fieldKey) => {
     const field = EXERCISE_FIELD_METADATA[fieldKey];
     if (!field.isDialogVisible) return null;
-    const value = formatFieldValueWithPlaceholder(field, exercise, field.group === 'content' ? 'Nie ustawiono' : '—');
+    const value = formatFieldValueWithPlaceholder(field, fieldSource, field.group === 'content' ? 'Nie ustawiono' : '—');
     return { field, value };
   }).filter((item): item is { field: ExerciseFieldMetadata; value: string } => item !== null);
 

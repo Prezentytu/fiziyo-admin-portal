@@ -1,11 +1,48 @@
 import { Sparkles } from 'lucide-react';
 
-import type { StageIssue } from '@/features/verification/utils/verificationStages';
+import { readExerciseContent, type ExerciseContentSource } from '@/components/shared/exercise/readExerciseContent';
+import {
+  countStopIfSymptoms,
+  listContentGaps,
+  type StageIssue,
+} from '@/features/verification/utils/verificationStages';
+import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 
 interface ContentGapsNoticeProps {
   gaps: StageIssue[];
   /** Włącza edycję; bez niej (ćwiczenie zablokowane) braki zostają samym tekstem. */
   onFix?: () => void;
+}
+
+interface ExerciseContentGapsInput {
+  /** Zapisany rekord: z niego czytamy wersję treści i kolumny rekordu starego. */
+  exercise: ExerciseContentSource & { name?: string | null };
+  /** Szkic formularza; rekord stary liczy z niego „Przerwij, gdy”, jak bramka weryfikacji. */
+  enrichment: ExerciseEnrichmentData;
+  hasVideo: boolean;
+  imageCount: number;
+}
+
+/**
+ * Braki treści na stronie ćwiczenia. Rekord 3.3 liczymy z jego pól (kroki), bo kolumny opisu
+ * są w nim wycofane i puste z założenia; rekord stary jak dotąd, z kolumn.
+ */
+export function listExerciseContentGaps({
+  exercise,
+  enrichment,
+  hasVideo,
+  imageCount,
+}: ExerciseContentGapsInput): StageIssue[] {
+  const content = readExerciseContent(exercise);
+  return listContentGaps({
+    name: exercise.name ?? '',
+    patientDescription: exercise.patientDescription ?? exercise.description ?? '',
+    therapistDescription: exercise.clinicalDescription || '',
+    hasVideo,
+    imageCount,
+    stopIfCount: countStopIfSymptoms(enrichment.safety?.stop_if),
+    v33: content.version === '3.3' ? { stepCount: content.instruction.steps.length } : undefined,
+  });
 }
 
 export function ContentGapsNotice({ gaps, onFix }: ContentGapsNoticeProps) {

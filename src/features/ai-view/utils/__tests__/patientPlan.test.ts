@@ -47,4 +47,25 @@ describe('summarizePatientPlans', () => {
     expect(plans[0].exercises).toHaveLength(3);
     expect(plans[0].thisWeek).toBeUndefined();
   });
+
+  it('names the dose "na każdą stronę" for alternating exercises of a 3.3 record only', () => {
+    const plan = (record: object) =>
+      summarizePatientPlans([
+        {
+          id: 'pa-alt',
+          status: 'active',
+          exerciseSet: {
+            id: 'set-alt',
+            name: 'Biodro',
+            exerciseMappings: [
+              { id: 'm1', order: 1, sets: 3, reps: 10, exercise: { name: 'Wykrok', type: 'reps', side: 'alternating', ...record } },
+              { id: 'm2', order: 2, sets: 3, reps: 10, exercise: { name: 'Unik', type: 'reps', side: 'both', ...record } },
+            ],
+          },
+        },
+      ])[0].exercises.map((exercise) => exercise.dose);
+
+    expect(plan({ enrichmentData: { schemaVersion: '3.3' } })).toEqual(['3 × 10 na każdą stronę', '3 × 10']);
+    expect(plan({ enrichmentData: {} })).toEqual(['3 × 10', '3 × 10']);
+  });
 });

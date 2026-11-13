@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildMediaItems } from '../mediaItems';
+import { buildMediaItems, getMediaItemLabels, type MediaItem } from '../mediaItems';
 
 describe('buildMediaItems', () => {
   it('keeps stable order and deduplicates image sources', () => {
@@ -55,5 +55,25 @@ describe('buildMediaItems', () => {
 
   it('returns empty array when no media exists', () => {
     expect(buildMediaItems({})).toEqual([]);
+  });
+});
+
+describe('getMediaItemLabels', () => {
+  const image = (src: string): MediaItem => ({ kind: 'image', src });
+
+  it('names a single item of each kind without a number', () => {
+    const items: MediaItem[] = [image('a.jpg'), { kind: 'video', src: 'v' }, { kind: 'gif', src: 'g.gif' }];
+
+    expect(getMediaItemLabels(items)).toEqual(['Zdjęcie', 'Film', 'GIF']);
+  });
+
+  it('numbers repeated kinds within their kind, not across the gallery', () => {
+    const items: MediaItem[] = [image('a.jpg'), image('b.jpg'), { kind: 'video', src: 'v' }, image('c.jpg')];
+
+    expect(getMediaItemLabels(items)).toEqual(['Zdjęcie 1 z 3', 'Zdjęcie 2 z 3', 'Film', 'Zdjęcie 3 z 3']);
+  });
+
+  it('returns empty list for empty gallery', () => {
+    expect(getMediaItemLabels([])).toEqual([]);
   });
 });

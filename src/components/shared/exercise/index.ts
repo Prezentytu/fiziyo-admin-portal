@@ -138,3 +138,39 @@ export type {
   PersonalizationPatch,
   SplitPersonalizationResult,
 } from './exercisePersonalizationWriter';
+export { printableInstructionLines, readExerciseContent, readExerciseSchemaVersion } from './readExerciseContent';
+export type {
+  ExerciseContent,
+  ExerciseContentBreathing,
+  ExerciseContentCheckpoint,
+  ExerciseContentCue,
+  ExerciseContentEquipmentItem,
+  ExerciseContentIndication,
+  ExerciseContentInstruction,
+  ExerciseContentMistake,
+  ExerciseContentSide,
+  ExerciseContentSource,
+  ExerciseContentVersion,
+  PrintableInstructionOptions,
+} from './readExerciseContent';
+export {
+  NEW_PRECAUTION_GROUP,
+  V33_CUE_PHASES,
+  V33_EDITABLE_PATHS,
+  V33_PATIENT_VISIBLE_PATHS,
+  V33_PRECAUTION_GROUPS,
+  V33_PRECAUTION_GROUP_CODES,
+  V33_WRITTEN_DICTIONARIES,
+  buildV33Document,
+  collectV33Edits,
+  findV33EditCollisions,
+  isSameV33Document,
+  isV33EditablePath,
+  loadV33Document,
+  precautionGroupLabel,
+  readTextItem,
+  rebaseV33Draft,
+  sameJson,
+  withTextItem,
+} from './writeExerciseContent';
+export type { V33EditCollision, V33Edits, V33PrecautionGroupCode } from './writeExerciseContent';

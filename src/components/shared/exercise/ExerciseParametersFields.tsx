@@ -33,6 +33,7 @@ import { getExecutionTimeFieldHint } from './executionTimeFieldHint';
 import { parseNumberFieldDraft } from './numberFieldDraft';
 import { applyTextSuggestion, isTextSuggestionActive, suggestionTestIdSlug } from './textSuggestions';
 import { getTimerModeDescription, getTimerModeLabel } from './timerModeCopy';
+import { getExerciseSideHelp } from '@/utils/exerciseSideLabels';
 
 /** Normalized values for the shared parameter presentation layer. */
 export interface ExerciseParameterValues {
@@ -92,7 +93,16 @@ export interface ExerciseParametersFieldsProps {
   className?: string;
   /** Extra content rendered after advanced sections (e.g. source info tiles). */
   advancedFooter?: React.ReactNode;
+  /** Rekord ćwiczenia jest w kontrakcie 3.3 (`isV33ExerciseRecord`): „naprzemiennie” to liczba na każdą stronę. */
+  alternatingPerSide?: boolean;
+  /**
+   * Treść ćwiczenia (a z nią wersja rekordu) jeszcze nie dotarła albo się nie wczytała: dla strony „naprzemiennie”
+   * kafle czasu i podpowiedź strony nie pokazują liczby, która mogłaby być błędna.
+   */
+  versionPending?: boolean;
 }
+
+const SIDE_HELP_PENDING = 'Wczytuję treść ćwiczenia: dopiero z nią wiadomo, czy liczba powtórzeń jest na każdą stronę.';
 
 function InfoTooltip({ label, testId }: Readonly<{ label: string; testId: string }>) {
   return (
@@ -406,6 +416,7 @@ function SelectField({
   inherited,
   testId,
   infoTestId,
+  tooltip,
   onChange,
 }: Readonly<{
   config: ExerciseFieldEditConfig;
@@ -416,6 +427,8 @@ function SelectField({
   inherited?: boolean;
   testId: string;
   infoTestId: string;
+  /** Zastępuje domyślną podpowiedź pola (strona różni się zależnie od wersji rekordu). */
+  tooltip?: string;
   onChange: (value: string) => void;
 }>) {
   const metadata = EXERCISE_FIELD_METADATA[config.key];
@@ -425,7 +438,7 @@ function SelectField({
     <div className="space-y-1">
       <FieldLabel
         label={metadata.label}
-        tooltip={metadata.tooltip}
+        tooltip={tooltip ?? metadata.tooltip}
         dirty={dirty}
         infoTestId={infoTestId}
         inherited={inherited}
@@ -492,8 +505,12 @@ function readText(values: ExerciseParameterValues, key: ExerciseFieldKey): strin
   return typeof value === 'string' ? value : '';
 }
 
-function formatInheritedDisplay(key: ExerciseFieldKey, values: ExerciseParameterValues): string {
-  if (key === 'side') return formatSideLabel(values.side ?? undefined) || '—';
+function formatInheritedDisplay(
+  key: ExerciseFieldKey,
+  values: ExerciseParameterValues,
+  alternatingPerSide = false
+): string {
+  if (key === 'side') return formatSideLabel(values.side ?? undefined, alternatingPerSide) || '—';
   if (key === 'difficultyLevel') return formatDifficultyLabel(values.difficultyLevel ?? undefined) || '—';
   if (key === 'load') return values.loadKg != null ? `${values.loadKg} kg` : '—';
   const value = values[key as keyof ExerciseParameterValues];
@@ -533,6 +550,8 @@ export function ExerciseParametersFields({
   disabled = false,
   className,
   advancedFooter,
+  alternatingPerSide = false,
+  versionPending = false,
 }: Readonly<ExerciseParametersFieldsProps>) {
   const [advancedOpen, setAdvancedOpen] = useState(advancedDefaultOpen || !collapseAdvanced);
   const resolveTestId = (key: ExerciseFieldKey | MappingOnlyFieldKey, kind: ParameterTestIdKind) => {
@@ -558,6 +577,7 @@ export function ExerciseParametersFields({
   const advancedSections = sections.filter((section) => section.advanced);
 
   const isTimeBased = (values.executionTime ?? 0) > 0;
+  const timeUnknown = versionPending && values.side?.toLowerCase() === 'alternating';
 
   const seriesSeconds = calculateExerciseTotalSeconds({
     sets: 1,
@@ -570,6 +590,7 @@ export function ExerciseParametersFields({
     tempo: values.tempo || undefined,
     side: values.side || undefined,
     type: exerciseType === 'draft' ? undefined : exerciseType,
+    alternatingPerSide,
   });
 
   const totalSeconds = calculateExerciseTotalSeconds({
@@ -583,6 +604,7 @@ export function ExerciseParametersFields({
     tempo: values.tempo || undefined,
     side: values.side || undefined,
     type: exerciseType === 'draft' ? undefined : exerciseType,
+    alternatingPerSide,
   });
 
   const dirty = (key: ExerciseFieldKey) => Boolean(isDirtyField?.(key));
@@ -606,7 +628,7 @@ export function ExerciseParametersFields({
         <InheritedReadonlyField
           key={key}
           fieldKey={key}
-          value={formatInheritedDisplay(key, values)}
+          value={formatInheritedDisplay(key, values, alternatingPerSide)}
           testIdPrefix={structuralTestIdPrefix}
         />
       );
@@ -651,6 +673,7 @@ export function ExerciseParametersFields({
           inherited={showInheritedBadge}
           testId={inputTestId}
           infoTestId={infoTestId}
+          tooltip={key === 'side' ? (timeUnknown ? SIDE_HELP_PENDING : getExerciseSideHelp(alternatingPerSide)) : undefined}
           onChange={(next) => commitText(key, next)}
         />
       );
@@ -761,7 +784,7 @@ export function ExerciseParametersFields({
               <InheritedReadonlyField
                 key={field.key}
                 fieldKey={field.key}
-                value={formatInheritedDisplay(field.key, values)}
+                value={formatInheritedDisplay(field.key, values, alternatingPerSide)}
                 testIdPrefix={structuralTestIdPrefix}
               />
             ))}
@@ -861,7 +884,7 @@ export function ExerciseParametersFields({
               <ComputedChip
                 label="Czas serii (wyliczany)"
                 value={
-                  seriesSeconds.seconds > 0
+                  seriesSeconds.seconds > 0 && !timeUnknown
                     ? formatExerciseDuration(seriesSeconds.seconds, seriesSeconds.isEstimate)
                     : '—'
                 }
@@ -871,7 +894,7 @@ export function ExerciseParametersFields({
               <ComputedChip
                 label="Czas ćwiczenia (wyliczany)"
                 value={
-                  totalSeconds.seconds > 0
+                  totalSeconds.seconds > 0 && !timeUnknown
                     ? formatExerciseDuration(totalSeconds.seconds, totalSeconds.isEstimate)
                     : '—'
                 }

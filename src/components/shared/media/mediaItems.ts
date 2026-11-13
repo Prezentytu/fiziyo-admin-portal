@@ -81,3 +81,25 @@ function dedupeMediaItems(items: MediaItem[]): MediaItem[] {
     return true;
   });
 }
+
+const MEDIA_KIND_LABEL: Record<MediaItemKind, string> = {
+  image: 'Zdjęcie',
+  video: 'Film',
+  gif: 'GIF',
+};
+
+/**
+ * Accessible names for gallery thumbnails. A kind that occurs once gets its bare name
+ * ("Film"); repeated kinds are numbered within the kind ("Zdjęcie 2 z 3").
+ */
+export function getMediaItemLabels(items: readonly MediaItem[]): string[] {
+  const totals: Record<MediaItemKind, number> = { image: 0, video: 0, gif: 0 };
+  for (const item of items) totals[item.kind] += 1;
+
+  const seen: Record<MediaItemKind, number> = { image: 0, video: 0, gif: 0 };
+  return items.map((item) => {
+    seen[item.kind] += 1;
+    const label = MEDIA_KIND_LABEL[item.kind];
+    return totals[item.kind] > 1 ? `${label} ${seen[item.kind]} z ${totals[item.kind]}` : label;
+  });
+}

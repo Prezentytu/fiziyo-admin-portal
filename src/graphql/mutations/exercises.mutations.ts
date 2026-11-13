@@ -499,6 +499,7 @@ export const UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION = gql`
     $status: AssignmentStatus
     $statusLegacy: String
     $exerciseOverrides: String
+    $notes: String
   ) {
     updateExerciseSetAssignment(
       assignmentId: $assignmentId
@@ -508,12 +509,14 @@ export const UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION = gql`
       status: $status
       statusLegacy: $statusLegacy
       exerciseOverrides: $exerciseOverrides
+      notes: $notes
     ) {
       id
       userId
       assignedById
       exerciseSetId
       exerciseOverrides
+      notes
       assignedAt
       startDate
       endDate
