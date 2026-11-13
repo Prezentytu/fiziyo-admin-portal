@@ -40,6 +40,7 @@ import {
 import type { PatientAssignment, ExerciseMapping, ExerciseOverride } from './PatientAssignmentCard';
 import { resolveOverrideInheritedParams } from './utils/overrideInheritedParams';
 import { normalizeExerciseType } from '@/utils/exerciseEnums';
+import { isV33ExerciseRecord } from '@/utils/exerciseRecordVersion';
 
 const OVERRIDE_FIELD_TESTID_MAP: Record<
   ExerciseFieldKey | MappingOnlyFieldKey,
@@ -117,9 +118,13 @@ interface EditExerciseOverrideDialogProps {
 }
 
 // Helper
-const translateSide = (side?: string) => {
+const translateSide = (side?: string, alternatingPerSide = false) => {
   if (!side) return '';
   const normalizedSide = side.toLowerCase();
+  // Rekord 3.3 liczy „naprzemiennie” na każdą stronę, rekord bez wersji łącznie (KONTRAKT-v3.3 §6.7).
+  if (normalizedSide === 'alternating') {
+    return alternatingPerSide ? 'naprzemiennie, na każdą stronę' : 'naprzemiennie, łącznie';
+  }
   const sides: Record<string, string> = {
     left: 'tylko lewa',
     right: 'tylko prawa',
@@ -214,6 +219,7 @@ function EditExerciseOverrideDialogContent({
   onHasChanges,
 }: EditExerciseOverrideDialogContentProps) {
   const exercise = mapping.exercise;
+  const alternatingPerSide = isV33ExerciseRecord(exercise);
 
   // Initial values for change detection
   const inherited = resolveOverrideInheritedParams(mapping);
@@ -698,7 +704,7 @@ function EditExerciseOverrideDialogContent({
                     (exercise?.side || exercise?.exerciseSide) !== 'none' &&
                     (exercise?.side || exercise?.exerciseSide)?.toLowerCase() !== 'none' && (
                       <Badge variant="outline" className="text-xs">
-                        {translateSide(exercise?.side || exercise?.exerciseSide)}
+                        {translateSide(exercise?.side || exercise?.exerciseSide, alternatingPerSide)}
                       </Badge>
                     )}
                 </div>
@@ -715,6 +721,7 @@ function EditExerciseOverrideDialogContent({
             </div>
             <ExerciseParametersFields
               exerciseType={normalizeExerciseType(exercise?.type) ?? 'draft'}
+              alternatingPerSide={alternatingPerSide}
               surface="patientOverride"
               values={parameterValues}
               onChange={handleParametersChange}

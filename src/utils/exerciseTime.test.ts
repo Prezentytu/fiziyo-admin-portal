@@ -149,15 +149,25 @@ describe('calculateExerciseTotalSeconds', () => {
     ).toBe(165);
   });
 
-  it('liczy „naprzemiennie” na stronę: 2 × reps powtórzeń w serii, jak player (decyzja 12.11)', () => {
+  it('liczy „naprzemiennie” w rekordzie 3.3 na stronę: 2 × reps powtórzeń w serii, jak player (wariant B 13.11)', () => {
     const dose = { sets: 2, reps: 10, executionTime: 3, restSets: 20, restReps: 1, preparationTime: 5, type: 'reps' };
     // 5 + 2 × (20 × 3 + 19 × 1) + 20 = 183, ta sama liczba co `calculateEstimatedExerciseTime` w fizjo-app.
-    expect(calculateExerciseTotalSeconds({ ...dose, side: 'alternating' }).seconds).toBe(183);
-    expect(calculateExerciseTotalSeconds({ ...dose, side: 'ALTERNATING' }).seconds).toBe(183);
+    expect(calculateExerciseTotalSeconds({ ...dose, side: 'alternating', alternatingPerSide: true }).seconds).toBe(183);
+    expect(calculateExerciseTotalSeconds({ ...dose, side: 'ALTERNATING', alternatingPerSide: true }).seconds).toBe(183);
     // Bez przygotowania przed drugą stroną, w odróżnieniu od „na każdą stronę”.
     expect(calculateExerciseTotalSeconds({ ...dose, side: 'both' }).seconds).toBe(191);
     // Szkic z czasem serii: czas serii też na stronę.
-    expect(calculateExerciseTotalSeconds({ sets: 1, duration: 30, side: 'alternating' }).seconds).toBe(60);
+    expect(
+      calculateExerciseTotalSeconds({ sets: 1, duration: 30, side: 'alternating', alternatingPerSide: true }).seconds
+    ).toBe(60);
+  });
+
+  it('liczy „naprzemiennie” w rekordzie bez wersji łącznie, jak przed zmianą kontraktu', () => {
+    const dose = { sets: 2, reps: 10, executionTime: 3, restSets: 20, restReps: 1, preparationTime: 5, type: 'reps' };
+    // 5 + 2 × (10 × 3 + 9 × 1) + 20 = 103; to samo co strona „razem”.
+    expect(calculateExerciseTotalSeconds({ ...dose, side: 'alternating' }).seconds).toBe(103);
+    expect(calculateExerciseTotalSeconds({ ...dose, side: 'alternating', alternatingPerSide: false }).seconds).toBe(103);
+    expect(calculateExerciseTotalSeconds({ ...dose, side: 'none' }).seconds).toBe(103);
   });
 
   it('daje priorytet executionTime nad duration', () => {

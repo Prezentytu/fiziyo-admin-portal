@@ -21,9 +21,22 @@ export function calculateEstimatedTime(params: {
   preparationTime?: number;
   tempo?: string;
   type?: string;
+  /** Rekord 3.3: „naprzemiennie” liczy się na stronę (patrz `calculateExerciseTotalSeconds`). */
+  alternatingPerSide?: boolean;
 }): number {
-  const { sets, reps, duration, executionTime, rest = 60, restReps = 0, side, preparationTime, tempo, type } =
-    params;
+  const {
+    sets,
+    reps,
+    duration,
+    executionTime,
+    rest = 60,
+    restReps = 0,
+    side,
+    preparationTime,
+    tempo,
+    type,
+    alternatingPerSide,
+  } = params;
   return calculateExerciseTotalSeconds({
     sets,
     reps,
@@ -35,6 +48,7 @@ export function calculateEstimatedTime(params: {
     preparationTime,
     tempo,
     type,
+    alternatingPerSide,
   }).seconds;
 }
 
@@ -96,6 +110,11 @@ export function calculateExerciseTotalSeconds(params: {
   side?: string;
   /** Zapisany typ ćwiczenia. REPS ignoruje `duration` (player mobile). Brak typu: szkic, `duration` działa. */
   type?: string;
+  /**
+   * Rekord 3.3 (`isV33ExerciseRecord`): „naprzemiennie” liczy się na stronę (2 × reps ruchów w serii).
+   * Brak flagi albo `false` (rekord bez wersji): liczba łącznie, jak przed zmianą kontraktu.
+   */
+  alternatingPerSide?: boolean;
 }): { seconds: number; isEstimate: boolean } {
   const sets = Math.max(0, Math.floor(params.sets));
   if (sets <= 0) {
@@ -105,9 +124,9 @@ export function calculateExerciseTotalSeconds(params: {
   const prescribedReps = Math.max(1, Math.floor(params.reps ?? 10));
   const side = params.side?.toLowerCase();
   const sideMultiplier = side === 'both' ? 2 : 1;
-  // ALTERNATING: liczba jest na stronę (decyzja 12.11, KONTRAKT-v3.3 §6.7), więc w jednym przebiegu serii
-  // jest 2 × reps powtórzeń, L, P, L, P… Ten sam wzór co player (`resolveExerciseSideDose`, fizjo-app).
-  const alternatingMultiplier = side === 'alternating' ? 2 : 1;
+  // ALTERNATING w rekordzie 3.3: liczba jest na stronę (KONTRAKT-v3.3 §6.7, wariant B z 13.11), więc w jednym
+  // przebiegu serii jest 2 × reps powtórzeń, L, P, L, P… Rekord bez wersji liczy „naprzemiennie” łącznie (×1).
+  const alternatingMultiplier = side === 'alternating' && params.alternatingPerSide === true ? 2 : 1;
   const reps = prescribedReps * alternatingMultiplier;
 
   const preparationTime = normalizePositiveNumber(params.preparationTime);
@@ -193,10 +212,13 @@ export function formatEstimatedTime(seconds: number): string {
  *
  * - None → razem (ruch obustronny naraz)
  * - Both → na każdą stronę (lewa, potem prawa w serii)
- * - Alternating → na każdą stronę, strona zmienia się po każdym powtórzeniu
+ * - Alternating → strona zmienia się po każdym powtórzeniu; w rekordzie 3.3 liczba jest na każdą stronę
  * - Left / Right
  */
-export function getSideIndicator(side: string | undefined | null): { icon: string; label: string; showBadge: boolean } {
+export function getSideIndicator(
+  side: string | undefined | null,
+  alternatingPerSide = false
+): { icon: string; label: string; showBadge: boolean } {
   const normalizedSide = side?.toLowerCase() || 'none';
 
   switch (normalizedSide) {
@@ -205,7 +227,7 @@ export function getSideIndicator(side: string | undefined | null): { icon: strin
     case 'right':
       return { icon: 'R', label: formatExerciseSideLabel('right'), showBadge: true };
     case 'alternating':
-      return { icon: '⟳', label: formatExerciseSideLabel('alternating'), showBadge: true };
+      return { icon: '⟳', label: formatExerciseSideLabel('alternating', alternatingPerSide), showBadge: true };
     case 'both':
       return { icon: 'L+P', label: formatExerciseSideLabel('both'), showBadge: true };
     case 'none':

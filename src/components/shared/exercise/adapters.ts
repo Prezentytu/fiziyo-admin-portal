@@ -10,6 +10,7 @@ import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.
 import { resolveLoadKg } from '@/utils/exerciseLoadMutation';
 import { getMediaUrl, getMediaUrls } from '@/utils/mediaUrl';
 import { calculateExerciseTotalSeconds } from '@/utils/exerciseTime';
+import { isV33ExerciseRecord } from '@/utils/exerciseRecordVersion';
 
 type CardDurationInput = Pick<
   ExerciseExecutionCardData,
@@ -23,6 +24,7 @@ type CardDurationInput = Pick<
   | 'tempo'
   | 'side'
   | 'isTimeBased'
+  | 'alternatingPerSide'
 >;
 
 /**
@@ -41,6 +43,7 @@ export function calculateCardTotalSeconds(card: CardDurationInput): { seconds: n
     tempo: card.tempo,
     side: card.side,
     type: card.isTimeBased ? 'time' : 'reps',
+    alternatingPerSide: card.alternatingPerSide,
   });
 }
 
@@ -195,6 +198,7 @@ export function fromExerciseMapping(
     customName: effective.customName,
     customDescription: effective.customDescription,
     side: effective.side,
+    alternatingPerSide: effective.alternatingPerSide,
     isTimeBased: effective.isTimeBased,
     enrichment: effective.effectiveEnrichment,
     templateEnrichment: toV3(exercise?.enrichmentData),
@@ -327,6 +331,7 @@ export function fromBuilderExercise(
       normalizeExerciseSide(params.exerciseSide) ??
       normalizeExerciseSide(exercise.side ?? exercise.exerciseSide) ??
       'both',
+    alternatingPerSide: isV33ExerciseRecord(exercise),
     isTimeBased,
     enrichment: params.enrichment ?? applyEnrichmentOverride(exercise.enrichmentData, null),
     templateEnrichment: toV3(exercise.enrichmentData),

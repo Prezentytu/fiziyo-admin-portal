@@ -136,7 +136,7 @@ export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, o
     audioCue: exercise?.audioCue,
     notes: normalizedOverride?.notes || normalizedMapping.notes,
     loadText: effectiveLoadDisplayText,
-    defaultLoad: exercise?.defaultLoad,
+    defaultLoad: exercise?.defaultLoad, enrichmentData: exercise?.enrichmentData,
   });
   const parameterFieldOrder = [
     EXERCISE_FIELD_METADATA.sets,
@@ -277,12 +277,12 @@ export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, o
             </div>
 
             {/* Additional info */}
-            {translateExerciseSidePolish(effectiveSide) && (
+            {translateExerciseSidePolish(effectiveSide, Boolean(normalizedFields.alternatingPerSide)) && (
               <div className="flex items-center gap-3 p-3 rounded-xl bg-surface-light/50 border border-border/40">
                 <ArrowLeftRight className="h-5 w-5 text-muted-foreground shrink-0" />
                 <div>
                   <p className="text-xs text-muted-foreground">Strona wykonania</p>
-                  <p className="text-sm font-medium">{translateExerciseSidePolish(effectiveSide)}</p>
+                  <p className="text-sm font-medium">{translateExerciseSidePolish(effectiveSide, Boolean(normalizedFields.alternatingPerSide))}</p>
                 </div>
               </div>
             )}

@@ -6,6 +6,7 @@ import {
   type EffectiveMappingSource,
 } from '@/components/shared/exercise/resolveEffectiveExerciseParams';
 import { normalizeExerciseSide, normalizeExerciseType } from '@/utils/exerciseEnums';
+import { isV33ExerciseRecord } from '@/utils/exerciseRecordVersion';
 import type { ExerciseOverrideFields } from '@/components/shared/exercise/exerciseOverride';
 import { parseOverrideMap } from '@/components/shared/exercise/exercisePersonalizationWriter';
 
@@ -75,6 +76,7 @@ export function toPdfExercise(mapping: PdfMappingSource, override?: ExerciseOver
     description: effective.patientDescription || exercise?.patientDescription || exercise?.description,
     type,
     exerciseSide: normalizeExerciseSide(effective.side),
+    alternatingPerSide: isV33ExerciseRecord(exercise),
     imageUrl: effective.customImages?.[0] || resolvePdfExerciseImageUrl(exercise),
     images: effective.customImages?.length ? effective.customImages : exercise?.images,
     notes: effective.notes || undefined,

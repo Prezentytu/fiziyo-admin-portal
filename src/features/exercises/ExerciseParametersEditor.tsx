@@ -38,6 +38,8 @@ interface ExerciseParametersEditorProps {
    * `create` — TIER 1–2 widoczne; TIER 3–4 w collapsible (lean create).
    */
   variant?: ExerciseParametersEditorVariant;
+  /** Rekord w kontrakcie 3.3 (`isV33ExerciseRecord`): „naprzemiennie” liczy się na stronę. Brak: łącznie. */
+  alternatingPerSide?: boolean;
 }
 
 function coreToValues(core: ExerciseCoreDraft): ExerciseParameterValues {
@@ -73,6 +75,7 @@ export function ExerciseParametersEditor({
   onDifficultyChange,
   disabled = false,
   variant = 'full',
+  alternatingPerSide = false,
 }: Readonly<ExerciseParametersEditorProps>) {
   const values = useMemo(() => coreToValues(core), [core]);
 
@@ -109,6 +112,7 @@ export function ExerciseParametersEditor({
   return (
     <ExerciseParametersFields
       exerciseType={exerciseType}
+      alternatingPerSide={alternatingPerSide}
       surface="template"
       values={values}
       onChange={handleChange}

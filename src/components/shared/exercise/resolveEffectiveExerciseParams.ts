@@ -1,5 +1,6 @@
 import { resolveLoadKg } from '@/utils/exerciseLoadMutation';
 import { calculateEstimatedTime } from '@/utils/exerciseTime';
+import { isV33ExerciseRecord } from '@/utils/exerciseRecordVersion';
 import { normalizeExerciseSide, normalizeExerciseType } from '@/utils/exerciseEnums';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import type { ExerciseOverrideFields } from './exerciseOverride';
@@ -118,6 +119,8 @@ export interface EffectiveExerciseParams {
   customImages?: string[];
   hidden: boolean;
   isTimeBased: boolean;
+  /** Rekord ćwiczenia w kontrakcie 3.3 (`isV33ExerciseRecord`): „naprzemiennie” liczy się na stronę. */
+  alternatingPerSide: boolean;
   /** Field keys present on the override object (for per-field badges). */
   overriddenKeys: string[];
   /**
@@ -290,6 +293,7 @@ export function resolveEffectiveExerciseParams(
     customImages: layered?.customImages,
     hidden: layered?.hidden ?? false,
     isTimeBased,
+    alternatingPerSide: isV33ExerciseRecord(exercise),
     overriddenKeys,
     effectiveEnrichment,
   };
@@ -311,5 +315,6 @@ export function estimateEffectiveExerciseSeconds(effective: EffectiveExercisePar
     preparationTime: effective.preparationTime,
     tempo: effective.tempo,
     type: effective.isTimeBased ? 'time' : 'reps',
+    alternatingPerSide: effective.alternatingPerSide,
   });
 }

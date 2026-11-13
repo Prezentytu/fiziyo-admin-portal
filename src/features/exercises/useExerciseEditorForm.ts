@@ -11,6 +11,7 @@ import {
 } from './useEnrichmentDraft';
 import { shouldRehydrateExerciseEditorDraft } from './utils/shouldRehydrateExerciseEditorDraft';
 import { normalizeExerciseType } from '@/utils/exerciseEnums';
+import { isV33ExerciseRecord } from '@/utils/exerciseRecordVersion';
 import type { ExerciseParametersTimingType } from '@/components/shared/exercise/ExerciseParametersFields';
 import { describeSavedNonKgLoad, readSavedLoadKg } from './utils/describeSavedLoad';
 
@@ -439,12 +440,14 @@ export function useExerciseEditorForm({
   }, []);
 
   const exerciseType: ExerciseParametersTimingType = normalizeExerciseType(source?.type) ?? 'draft';
+  const alternatingPerSide = useMemo(() => isV33ExerciseRecord(source), [source]);
   const savedLoadLabel = useMemo(() => describeSavedNonKgLoad(source), [source]);
 
   return useMemo(
     () => ({
       core,
       exerciseType,
+      alternatingPerSide,
       savedLoadLabel,
       enrichment,
       setCoreField,
@@ -462,6 +465,7 @@ export function useExerciseEditorForm({
     [
       core,
       exerciseType,
+      alternatingPerSide,
       enrichment,
       flush,
       isCoreFieldDirty,

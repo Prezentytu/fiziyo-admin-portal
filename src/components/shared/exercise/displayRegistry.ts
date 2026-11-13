@@ -52,6 +52,8 @@ export interface ExerciseFieldMetadata {
 }
 
 export interface ExerciseFieldValueSource {
+  /** Rekord w kontrakcie 3.3 (`isV33ExerciseRecord`): „naprzemiennie” to liczba na każdą stronę. */
+  alternatingPerSide?: boolean;
   sets?: number;
   reps?: number;
   duration?: number;
@@ -114,9 +116,11 @@ const asTrimmedText = (value?: string): string | null => {
   return normalized ? normalized : null;
 };
 
-export function formatSideLabel(side?: string): string | null {
+export function formatSideLabel(side?: string, alternatingPerSide = false): string | null {
   if (!side) return null;
-  return SIDE_LABELS[side.toLowerCase()] ?? null;
+  const normalized = side.toLowerCase();
+  if (normalized === 'alternating' && alternatingPerSide) return `${SIDE_LABELS.alternating}, na każdą stronę`;
+  return SIDE_LABELS[normalized] ?? null;
 }
 
 export function formatDifficultyLabel(difficulty?: string): string | null {
@@ -257,7 +261,7 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
     group: 'execution',
     isInlineVisible: true,
     isDialogVisible: true,
-    formatValue: (viewModel) => formatSideLabel(viewModel.side),
+    formatValue: (viewModel) => formatSideLabel(viewModel.side, viewModel.alternatingPerSide),
   },
   rangeOfMotion: {
     key: 'rangeOfMotion',

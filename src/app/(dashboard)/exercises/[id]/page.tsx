@@ -550,6 +550,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
     tempo: normalizedFields.tempo ?? undefined,
     side: normalizedFields.side ?? undefined,
     type: exercise.type,
+    alternatingPerSide: normalizedFields.alternatingPerSide,
   });
 
   const exerciseDurationSummary =

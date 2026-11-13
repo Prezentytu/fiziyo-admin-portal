@@ -38,6 +38,7 @@ import {
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useSystemRole } from '@/hooks/useSystemRole';
 import { useExerciseBuilder, type BuilderExercise } from '@/contexts/ExerciseBuilderContext';
+import { isV33ExerciseRecord } from '@/utils/exerciseRecordVersion';
 import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
 import { useRealtimeExercises } from '@/hooks/useRealtimeExercises';
 import { ORG_VERIFICATION_REFETCH_QUERIES } from '@/hooks/useOrganizationVerificationRealtime';
@@ -94,6 +95,7 @@ export default function ExercisesPage() {
         tempo: exercise.tempo,
         side: exercise.side,
         exerciseSide: defaults.exerciseSide,
+        alternatingPerSide: isV33ExerciseRecord(exercise),
         preparationTime: exercise.preparationTime,
         thumbnailUrl: exercise.thumbnailUrl,
         imageUrl: exercise.imageUrl,

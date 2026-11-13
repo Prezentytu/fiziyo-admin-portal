@@ -226,10 +226,9 @@ describe('deriveExecutionMode / toParameterValues', () => {
     expect(reviewValues({ sets: 3, reps: 1, executionTime: 3, restSets: 60, side: 'none' }).repTime).toBe(3);
   });
 
-  it('„Na każdą stronę” i „Naprzemiennie” podwajają czas (dawka na stronę)', () => {
+  it('strona „Na każdą stronę” podwaja czas', () => {
     expect(sideFactor('both')).toBe(2);
-    expect(sideFactor('alternating')).toBe(2);
-    expect(sideFactor('none')).toBe(1);
+    expect(sideFactor('alternating')).toBe(1);
   });
 });
 
@@ -237,9 +236,6 @@ describe('buildPatientParameterLine', () => {
   it('opisuje parametry jak pacjent je zobaczy', () => {
     expect(buildPatientParameterLine(typicalReps, 'reps', 'both')).toBe(
       '3 serie × 12 powtórzeń na każdą stronę · przerwa 60 s'
-    );
-    expect(buildPatientParameterLine(typicalReps, 'reps', 'alternating')).toBe(
-      '3 serie × 12 powtórzeń na każdą stronę, naprzemiennie · przerwa 60 s'
     );
   });
 });

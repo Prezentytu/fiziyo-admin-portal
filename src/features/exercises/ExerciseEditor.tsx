@@ -288,6 +288,7 @@ export function ExerciseEditor({
         <ExerciseParametersEditor
           core={core}
           exerciseType={form.exerciseType}
+          alternatingPerSide={form.alternatingPerSide}
           isDirtyField={isCoreFieldDirty}
           disabled={disabled}
           onNumberChange={(field, value) => setCoreField(field, value)}
