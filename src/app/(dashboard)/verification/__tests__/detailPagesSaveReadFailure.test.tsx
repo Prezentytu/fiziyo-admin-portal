@@ -243,10 +243,17 @@ describe('strony szczegółu weryfikacji: nieudany odczyt przed zapisem 3.3 nie 
 
     it('po udanym zapisie widok pokazuje stan po zapisie, a cudza zmiana nadal zatrzymuje następny zapis', async () => {
       const { network, user } = await openOnSafetyStage(Page, query);
+      const photo = (url: string) => document.querySelector(`img[src="${url}"]`);
+      expect(photo('https://cdn.test/fx-0073-1.jpg')).toBeInTheDocument();
 
+      // Someone else swaps the photo while I type; the answer of my save carries the record as it is now.
+      network.state.stored = { ...network.state.stored, images: ['https://cdn.test/fx-0073-nowe.jpg'] };
       await user.type(screen.getByTestId(STOP_IF_INPUT), MY_EDIT);
       await waitFor(() => expect(network.state.mutations).toBe(1), { timeout: 4000 });
       await settle();
+
+      expect(photo('https://cdn.test/fx-0073-nowe.jpg')).toBeInTheDocument();
+      expect(photo('https://cdn.test/fx-0073-1.jpg')).not.toBeInTheDocument();
 
       expect(storedStopIf(network.state.stored)).toBe(`${STORED_STOP_IF}${MY_EDIT}`.trim());
       expect(screen.getByTestId(STOP_IF_INPUT)).toHaveValue(`${STORED_STOP_IF}${MY_EDIT}`);
