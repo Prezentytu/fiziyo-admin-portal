@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import goldenV33 from './fixtures/enrichmentV33.fx-0073.json';
+import schemaVersionCanonCases from './fixtures/schemaVersionCanonCases.json';
 import { printableInstructionLines, readExerciseContent, type ExerciseContentSource } from '../readExerciseContent';
 
 const golden = goldenV33 as ExerciseEnrichmentData;
@@ -472,5 +473,50 @@ describe('readExerciseContent: reguła wersji jak w aplikacji i backendzie', () 
   it('oddaje zapisaną wersję bez spacji z brzegów', () => {
     expect(readExerciseContent({ schemaVersion: ' 3.3 ' }).schemaVersion).toBe('3.3');
     expect(readExerciseContent({ enrichmentData: { schemaVersion: '3.4' } }).schemaVersion).toBe('3.4');
+  });
+});
+
+/**
+ * Wynik kanonu dla 191 wejść z odbioru E1 (13.11), policzony uruchomieniem kodu z `origin/main` fizjo-app:
+ * dokument przez backend (`ExerciseSchemaVersion.ReadDeclared`, kolumna wyprowadzana przy zapisie; odrzucony zapis
+ * i brak wersji to pusta kolumna), potem kolumna przez aplikację (`selectExerciseReader`). Jawna niepusta kolumna
+ * idzie od razu do aplikacji. `CountsAlternatingPerSide` backendu daje na tych samych wejściach ten sam wynik.
+ */
+interface CanonCase {
+  id: string;
+  column?: unknown;
+  enrichmentData?: unknown;
+  expected: 'legacy' | '3.3';
+}
+
+describe('readExerciseContent: wersja rekordu jak kanon (backend ReadDeclared i aplikacja)', () => {
+  it.each(schemaVersionCanonCases as CanonCase[])('$id -> $expected', ({ column, enrichmentData, expected }) => {
+    const record = { schemaVersion: column, enrichmentData } as unknown as ExerciseContentSource;
+    expect(readExerciseContent(record).version).toBe(expected);
+  });
+
+  // Klasy, w których JS `trim()` i .NET `Trim()` się rozchodzą, oraz wartości odrzucane przez backend.
+  it.each([
+    ['NEL U+0085 w dokumencie: backend przycina, kolumna "3.3"', { schemaVersion: '\u00853.3\u0085' }, '3.3'],
+    ['BOM U+FEFF w dokumencie: backend nie przycina i odrzuca', { schemaVersion: '\ufeff3.3' }, 'legacy'],
+    ['NBSP w dokumencie', { schemaVersion: '\u00a03.3\u00a0' }, '3.3'],
+    ['U+2028 w dokumencie', { schemaVersion: '\u20283.3\u2028' }, '3.3'],
+    ['VT w dokumencie', { schemaVersion: '\u000b3.3\u000b' }, '3.3'],
+    ['U+3000 w dokumencie', { schemaVersion: '\u30003.3\u3000' }, '3.3'],
+    ['17 znaków w dokumencie: ponad długość kolumny, backend odrzuca', { schemaVersion: '00003.00003.00000' }, 'legacy'],
+    ['16 znaków w dokumencie', { schemaVersion: '00003.0003.00000' }, '3.3'],
+    ['liczba zamiast tekstu', { schemaVersion: 3.3 }, 'legacy'],
+    ['"3.3-beta"', { schemaVersion: '3.3-beta' }, 'legacy'],
+    ['"v3.3"', { schemaVersion: 'v3.3' }, 'legacy'],
+  ])('%s', (_label, enrichmentData, expected) => {
+    expect(readExerciseContent({ enrichmentData } as ExerciseContentSource).version).toBe(expected);
+  });
+
+  it.each([
+    ['NEL U+0085 w kolumnie: aplikacja nie przycina', '\u00853.3\u0085', 'legacy'],
+    ['BOM U+FEFF w kolumnie: aplikacja przycina', '\ufeff3.3', '3.3'],
+    ['17 znaków w kolumnie: aplikacja nie liczy długości', '00003.00003.00000', '3.3'],
+  ])('%s', (_label, schemaVersion, expected) => {
+    expect(readExerciseContent({ schemaVersion }).version).toBe(expected);
   });
 });
