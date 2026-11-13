@@ -3,7 +3,12 @@ import { describe, expect, it } from 'vitest';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import goldenV33 from './fixtures/enrichmentV33.fx-0073.json';
 import schemaVersionCanonCases from './fixtures/schemaVersionCanonCases.json';
-import { printableInstructionLines, readExerciseContent, type ExerciseContentSource } from '../readExerciseContent';
+import {
+  printableInstructionLines,
+  readExerciseContent,
+  readExerciseSchemaVersion,
+  type ExerciseContentSource,
+} from '../readExerciseContent';
 
 const golden = goldenV33 as ExerciseEnrichmentData;
 
@@ -492,7 +497,9 @@ interface CanonCase {
 describe('readExerciseContent: wersja rekordu jak kanon (backend ReadDeclared i aplikacja)', () => {
   it.each(schemaVersionCanonCases as CanonCase[])('$id -> $expected', ({ column, enrichmentData, expected }) => {
     const record = { schemaVersion: column, enrichmentData } as unknown as ExerciseContentSource;
-    expect(readExerciseContent(record).version).toBe(expected);
+    const content = readExerciseContent(record);
+    expect(content.version).toBe(expected);
+    expect(readExerciseSchemaVersion(record)).toBe(content.schemaVersion);
   });
 
   // Klasy, w których JS `trim()` i .NET `Trim()` się rozchodzą, oraz wartości odrzucane przez backend.
