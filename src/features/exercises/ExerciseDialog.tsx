@@ -252,11 +252,21 @@ export function ExerciseDialog({
     return fetchCurrentEnrichmentData(apolloClient, exercise.id);
   }, [apolloClient, exercise]);
 
+  // Same messages as the exercise page shows for a failed save.
+  const handleSaveError = useCallback((error?: unknown) => {
+    if (error && isExerciseSaveAuthError(error)) {
+      toast.error('Brak uprawnień do zapisu tych zmian');
+      return;
+    }
+    toast.error('Nie udało się zapisać zmian');
+  }, []);
+
   const editorForm = useExerciseEditorForm({
     source: exercise,
     updateCore,
     updateEnrichment,
     fetchCurrentEnrichment,
+    onError: handleSaveError,
   });
 
   React.useEffect(() => {
@@ -383,7 +393,10 @@ export function ExerciseDialog({
   const handleSave = async () => {
     if (!exercise) return;
     try {
-      await editorForm.save();
+      const outcome = await editorForm.save();
+      // A failed save has already shown its error and a refused one shows the conflict notice in the form:
+      // neither is a success, so the dialog stays open with what the therapist typed.
+      if (outcome === 'error' || outcome === 'conflict') return;
 
       const mediaChangeSet = buildExerciseMediaChangeSet({
         initialExistingUrls: initialMediaUrls,

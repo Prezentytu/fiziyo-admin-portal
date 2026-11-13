@@ -132,6 +132,12 @@ export interface ExerciseEditorSource {
 
 export type ExerciseSaveStatus = 'idle' | 'saving' | 'success' | 'error';
 
+/**
+ * What one save attempt ended with: nothing to save, saved, refused because someone else changed the record,
+ * or failed. A caller that acts on saved content (publish, leave) must stop on the last two.
+ */
+export type ExerciseSaveOutcome = 'clean' | 'saved' | 'conflict' | 'error';
+
 interface UseExerciseEditorFormParams {
   source: ExerciseEditorSource | null | undefined;
   updateCore: (variables: Record<string, unknown>) => Promise<void>;
@@ -450,7 +456,7 @@ export function useExerciseEditorForm({
     setInitialEnrichment(enrichmentRef.current);
   }, []);
 
-  const runSave = useCallback(async () => {
+  const runSave = useCallback(async (): Promise<ExerciseSaveOutcome> => {
     const currentCore = coreRef.current;
     const currentEnrichment = enrichmentRef.current;
     const isV33 = contentVersion === '3.3';
@@ -465,8 +471,8 @@ export function useExerciseEditorForm({
       : JSON.stringify(currentEnrichmentPayload) !==
         JSON.stringify(composeEnrichmentPayload(initialEnrichmentRef.current));
 
-    if (!currentCoreDirty && !currentEnrichmentDirty) return;
-    if (conflictDocumentRef.current) return;
+    if (!currentCoreDirty && !currentEnrichmentDirty) return 'clean';
+    if (conflictDocumentRef.current) return 'conflict';
 
     setSaveStatus('saving');
     try {
@@ -480,7 +486,7 @@ export function useExerciseEditorForm({
           conflictDocumentRef.current = current;
           setConflictDocument(current);
           setSaveStatus('idle');
-          return;
+          return 'conflict';
         }
       }
       if (currentCoreDirty) {
@@ -501,10 +507,12 @@ export function useExerciseEditorForm({
         setInitialEnrichment(savedEnrichment);
       }
       onSaved?.();
+      return 'saved';
     } catch (error) {
       console.error('[ExerciseEditor] Save failed:', error);
       setSaveStatus('error');
       onError?.(error);
+      return 'error';
     }
   }, [contentVersion, fetchCurrentEnrichment, onError, onSaved, updateCore, updateEnrichment]);
 
@@ -515,7 +523,7 @@ export function useExerciseEditorForm({
    */
   const runSaveRef = useRef(runSave);
   runSaveRef.current = runSave;
-  const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const saveQueueRef = useRef<Promise<unknown>>(Promise.resolve());
   const performSave = useCallback(() => {
     const next = saveQueueRef.current.then(() => runSaveRef.current());
     saveQueueRef.current = next.catch(() => undefined);
@@ -524,17 +532,15 @@ export function useExerciseEditorForm({
 
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const flush = useCallback(async () => {
+  const flush = useCallback(async (): Promise<ExerciseSaveOutcome> => {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
       debounceTimerRef.current = null;
     }
-    await performSave();
+    return performSave();
   }, [performSave]);
 
-  const save = useCallback(async () => {
-    await flush();
-  }, [flush]);
+  const save = useCallback(async (): Promise<ExerciseSaveOutcome> => flush(), [flush]);
 
   useEffect(() => {
     if (!isAutosave) return;
