@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useSignIn } from '@clerk/nextjs';
+import { useSignIn } from '@clerk/nextjs/legacy';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {

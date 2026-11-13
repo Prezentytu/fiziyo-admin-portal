@@ -29,6 +29,7 @@ import type { ExerciseInstance, ExerciseParams } from '@/components/shared/Exerc
 import {
   canProceedFromStep,
   toAssignmentNotePayload,
+  toAssignmentNoteUpdatePayload,
   wizardEnterAdvances,
   wizardEnterSubmits,
 } from './utils/assignmentWizardUtils';
@@ -395,6 +396,7 @@ function AssignmentWizardContent({
     setFrequency(normalizeFrequencySeed(initialAssignment.frequency));
     setStartDate(new Date(initialAssignment.startDate));
     setEndDate(new Date(initialAssignment.endDate));
+    setAssignmentNote(initialAssignment.notes ?? '');
   }, [open, isEditMode, initialAssignment, preselectedPatient]);
 
   // Handle set change - create Ghost Copy and apply Smart Defaults
@@ -1249,6 +1251,7 @@ function AssignmentWizardContent({
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString(),
           frequency: buildAssignmentFrequencyPayload(frequency),
+          notes: toAssignmentNoteUpdatePayload(assignmentNote, initialAssignment.notes),
         },
         refetchQueries: [
           ...(patientId
@@ -1714,7 +1717,7 @@ function AssignmentWizardContent({
                 onEndDateChange={setEndDate}
                 onFrequencyChange={setFrequency}
                 note={assignmentNote}
-                onNoteChange={isEditMode ? undefined : setAssignmentNote}
+                onNoteChange={setAssignmentNote}
               />
             </div>
             {summaryExerciseSet && (
