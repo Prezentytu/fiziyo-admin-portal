@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { CheckCircle2, FileJson, Loader2, Upload } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, FileJson, Loader2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import type { ExerciseBundleImportResult } from '@/graphql/mutations/exercises.m
 import { useExerciseBundleImport } from '@/hooks/useExerciseBundleImport';
 import { checkCatalogBundleText } from '@/lib/organization/catalogBundleFile';
 import { describeImportFailure } from '@/lib/organization/catalogBundleImportError';
+import { describeMediaNotice } from '@/lib/organization/catalogBundleMediaNotice';
 
 import { CatalogBundleMediaCopyReport } from './CatalogBundleMediaCopyReport';
 
@@ -36,6 +37,7 @@ export function CatalogBundleImportCard({ organizationId }: CatalogBundleImportC
   const [importBundle, { loading }] = useExerciseBundleImport();
   const [lastResult, setLastResult] = useState<ExerciseBundleImportResult | null>(null);
   const [lastFileName, setLastFileName] = useState<string | null>(null);
+  const [mediaNotice, setMediaNotice] = useState<string | null>(null);
 
   const handleFile = async (file: File | undefined) => {
     if (!file) {
@@ -67,8 +69,16 @@ export function CatalogBundleImportCard({ organizationId }: CatalogBundleImportC
       setLastResult(result);
       setLastFileName(file.name);
 
+      const notice = describeMediaNotice(text, result);
+      setMediaNotice(notice?.kind === 'not-copied' ? notice.message : null);
+
       if (!result.success) {
-        toast.error(result.errors[0] ?? 'Plik odrzucony. Popraw JSON i wgraj ponownie.');
+        toast.error(notice?.message ?? result.errors[0] ?? 'Plik odrzucony. Popraw JSON i wgraj ponownie.');
+        return;
+      }
+
+      if (notice) {
+        toast.warning(notice.message);
         return;
       }
 
@@ -146,6 +156,16 @@ export function CatalogBundleImportCard({ organizationId }: CatalogBundleImportC
               <p className="text-sm font-medium text-foreground">{lastFileName}</p>
               <p className="text-sm text-muted-foreground">{summarizeResult(lastResult)}</p>
             </div>
+          </div>
+        ) : null}
+
+        {mediaNotice ? (
+          <div
+            className="flex items-start gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4"
+            data-testid="settings-catalog-import-media-notice"
+          >
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+            <p className="text-sm text-foreground">{mediaNotice}</p>
           </div>
         ) : null}
 
