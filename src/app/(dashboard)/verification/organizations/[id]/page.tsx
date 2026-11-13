@@ -1,7 +1,7 @@
 'use client';
 
 import { use, useCallback, useMemo } from 'react';
-import { useMutation, useQuery } from '@apollo/client/react';
+import { useApolloClient, useMutation, useQuery } from '@apollo/client/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Archive, ShieldCheck } from 'lucide-react';
 import {
@@ -50,6 +50,7 @@ function parseFilter(value: string | null): CrossOrgFilter {
 export default function CrossOrgVerificationDetailPage({ params }: Readonly<CrossOrgVerificationDetailPageProps>) {
   const { id } = use(params);
   const router = useRouter();
+  const apolloClient = useApolloClient();
   const searchParams = useSearchParams();
   const { isSiteSuperAdmin, isLoading: roleLoading } = useSystemRole();
 
@@ -80,7 +81,8 @@ export default function CrossOrgVerificationDetailPage({ params }: Readonly<Cros
     {
       variables: { exerciseId: id },
       skip: !isSiteSuperAdmin,
-      fetchPolicy: 'cache-and-network',
+      // The workspace takes its baseline once, on open; a cached (older) document would raise a false save conflict.
+      fetchPolicy: 'network-only',
     }
   );
 
@@ -110,6 +112,23 @@ export default function CrossOrgVerificationDetailPage({ params }: Readonly<Cros
     const result = await refetch();
     return result.data?.exerciseByIdForCrossOrgVerification?.images ?? [];
   }, [refetch]);
+
+  /**
+   * Stored document past the cache: the workspace compares it with the loaded one before a 3.3 save.
+   * A one-off read, not `refetch`: a failed read must fail the save only and leave this page's query alone.
+   * `no-cache`: the answer must not reach the cache this page renders from. A record that is gone would turn
+   * the page into "Nie znaleziono" and unmount the workspace with the unsaved text.
+   */
+  const fetchCurrentEnrichment = useCallback(async () => {
+    const result = await apolloClient.query<{ exerciseByIdForCrossOrgVerification: AdminExercise | null }>({
+      query: GET_EXERCISE_BY_ID_FOR_CROSS_ORG_VERIFICATION_QUERY,
+      variables: { exerciseId: id },
+      fetchPolicy: 'no-cache',
+    });
+    const current = result.data?.exerciseByIdForCrossOrgVerification;
+    if (!current) throw new Error('Nie udało się pobrać aktualnej wersji ćwiczenia.');
+    return current.enrichmentData ?? null;
+  }, [apolloClient, id]);
 
   const decision = useMemo<OrganizationDecision>(
     () => ({
@@ -173,6 +192,7 @@ export default function CrossOrgVerificationDetailPage({ params }: Readonly<Cros
       listUrl={listHref}
       buildDetailUrl={buildDetailUrl}
       reloadImages={reloadImages}
+      fetchCurrentEnrichment={fetchCurrentEnrichment}
       organizationDecision={decision}
       backTestId="cross-org-verification-back-btn"
       data-testid="cross-org-verification-detail-page"

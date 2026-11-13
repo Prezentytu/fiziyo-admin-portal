@@ -20,6 +20,8 @@ export interface StageCopyInput {
   signerName: string;
   /** Organization track: approval stays inside the clinic; `statusLabel` describes an exercise that is not awaiting review. */
   organization?: { statusLabel: string };
+  /** Record in contract v3.3: the instruction opens with `patient.summary`, not the description column. */
+  isV33?: boolean;
 }
 
 interface StageCopy {
@@ -41,10 +43,10 @@ function parametersSub({ stages, parameters, sessionLine }: StageCopyInput): str
   return `Sprawdź: ${stages.issues.parameters.length}`;
 }
 
-function instructionSub({ stages, hasPendingProposal }: StageCopyInput): string {
+function instructionSub({ stages, hasPendingProposal, isV33 }: StageCopyInput): string {
   if (hasPendingProposal) return 'Propozycja do decyzji';
   if (stages.issues.instruction.length > 0) return `Do poprawy: ${stages.issues.instruction.length}`;
-  return 'Opis, kroki, wskazówki';
+  return isV33 ? 'Podsumowanie, kroki, wskazówki' : 'Opis, kroki, wskazówki';
 }
 
 function safetySub({ stages, stopIfCount }: StageCopyInput): string {
@@ -75,9 +77,12 @@ function parametersHint({ stages, parameters, hasVideo }: StageCopyInput): strin
   return hasVideo ? 'Porównaj parametry z nagraniem.' : 'Porównaj parametry ze zdjęciami.';
 }
 
-function instructionHint({ stages, hasPendingProposal }: StageCopyInput): string {
+function instructionHint({ stages, hasPendingProposal, isV33 }: StageCopyInput): string {
   if (hasPendingProposal) return 'Wstaw propozycję agenta albo ją pomiń.';
-  return stages.issues.instruction[0]?.text ?? 'Przeczytaj opis oczami pacjenta.';
+  return (
+    stages.issues.instruction[0]?.text ??
+    (isV33 ? 'Przeczytaj instrukcję oczami pacjenta.' : 'Przeczytaj opis oczami pacjenta.')
+  );
 }
 
 function decisionHint({ stages, canDecide, signerName, organization }: StageCopyInput): string {

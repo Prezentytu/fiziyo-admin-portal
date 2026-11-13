@@ -1,7 +1,7 @@
 'use client';
 
 import { use, useCallback, useEffect, useMemo, useState } from 'react';
-import { useQuery } from '@apollo/client/react';
+import { useApolloClient, useQuery } from '@apollo/client/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FileText } from 'lucide-react';
 
@@ -45,6 +45,7 @@ interface VerificationDetailPageProps {
 export default function VerificationDetailPage({ params }: Readonly<VerificationDetailPageProps>) {
   const { id } = use(params);
   const router = useRouter();
+  const apolloClient = useApolloClient();
   const { currentOrganization } = useOrganization();
   const searchParams = useSearchParams();
   const { canReviewExercises, isLoading: roleLoading } = useSystemRole();
@@ -52,6 +53,8 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
 
   const { data, loading, error, refetch } = useQuery<ExerciseByIdForAdminResponse>(GET_EXERCISE_BY_ID_FOR_ADMIN_QUERY, {
     variables: { id },
+    // The workspace takes its baseline once, on open; a cached (older) document would raise a false save conflict.
+    fetchPolicy: 'network-only',
   });
 
   const queueFilter = useMemo(() => {
@@ -141,6 +144,23 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
     return refreshed?.images ?? [];
   }, [refetch]);
 
+  /**
+   * Stored document past the cache: the workspace compares it with the loaded one before a 3.3 save.
+   * A one-off read, not `refetch`: a failed read must fail the save only, never put this page into its error state.
+   * `no-cache`: the answer must not reach the cache this page renders from. A record that is gone would turn
+   * the page into "Nie znaleziono" and unmount the workspace with the unsaved text.
+   */
+  const fetchCurrentEnrichment = useCallback(async () => {
+    const result = await apolloClient.query<ExerciseByIdForAdminResponse>({
+      query: GET_EXERCISE_BY_ID_FOR_ADMIN_QUERY,
+      variables: { id },
+      fetchPolicy: 'no-cache',
+    });
+    const current = result.data?.exerciseByIdForAdmin as unknown as AdminExercise | null | undefined;
+    if (!current) throw new Error('Nie udało się pobrać aktualnej wersji ćwiczenia.');
+    return current.enrichmentData ?? null;
+  }, [apolloClient, id]);
+
   if (!roleLoading && !canReviewExercises) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -153,7 +173,9 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
     return <VerificationWorkspaceSkeleton />;
   }
 
-  if (error || !exercise) {
+  // An error with the exercise on screen (a failed reload after a photo change) must not unmount the workspace:
+  // its unsaved edits live only there.
+  if (!exercise) {
     return (
       <div className="flex h-full items-center justify-center">
         <EmptyState
@@ -178,6 +200,7 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
       listUrl={listUrl}
       buildDetailUrl={buildDetailUrl}
       reloadImages={reloadImages}
+      fetchCurrentEnrichment={fetchCurrentEnrichment}
       organizationId={currentOrganization?.organizationId ?? null}
     />
   );

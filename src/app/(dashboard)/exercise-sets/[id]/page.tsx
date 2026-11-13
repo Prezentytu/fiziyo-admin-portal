@@ -874,6 +874,8 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
                       name: m.exercise.name,
                       description: m.exercise.patientDescription || m.exercise.description,
                       patientDescription: m.exercise.patientDescription,
+                      // Bez dokumentu treści kreator nie ma kroków i dla rekordu 3.3 pokazuje „Brak opisu ćwiczenia.”.
+                      enrichmentData: m.exercise.enrichmentData,
                       type: m.exercise.type,
                       imageUrl: m.exercise.thumbnailUrl || m.exercise.imageUrl,
                       thumbnailUrl: m.exercise.thumbnailUrl,

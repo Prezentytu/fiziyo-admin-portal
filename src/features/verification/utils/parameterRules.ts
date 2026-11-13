@@ -135,8 +135,41 @@ function positive(value: number | null | undefined): number | null {
   return value != null && Number.isFinite(value) && value > 0 ? value : null;
 }
 
-export function sideFactor(side: string): number {
-  return side.toLowerCase() === 'both' ? 2 : 1;
+/** Jak tryb strony przekłada się na dawkę: z tego jednego miejsca biorą liczbę, etykietę i czas. */
+export interface SideDose {
+  /** Ile razy dawka z kafli przypada na serię. */
+  factor: 1 | 2;
+  /** Seria „naprzemiennie” w rekordzie 3.3: 2 × powtórzenia bez przerwy na zmianę strony (kontrakt §6.7). */
+  alternatesPerSide: boolean;
+  /** Dopisek po liczbie powtórzeń w linii pacjenta. */
+  patientSuffix: string;
+  /** Uwaga pod wyborem strony o czasie; null, gdy czas liczy dawkę raz. */
+  timeNote: string | null;
+  /** Uwaga pod wyborem strony o dawce; tylko rekord 3.3. */
+  doseNote: string | null;
+}
+
+/**
+ * Rekord bez wersji zachowuje się jak dotąd: podwaja tylko „na każdą stronę”, a „naprzemiennie” to liczba łączna.
+ * Reguła „na stronę” dla „naprzemiennie” (kontrakt 3.3 §6.7) obowiązuje wyłącznie rekord 3.3.
+ */
+export function resolveSideDose(side: string, isV33 = false): SideDose {
+  const normalized = side.toLowerCase();
+  const alternatesPerSide = isV33 && normalized === 'alternating';
+  if (normalized !== 'both' && !alternatesPerSide) {
+    return { factor: 1, alternatesPerSide: false, patientSuffix: '', timeNote: null, doseNote: null };
+  }
+  return {
+    factor: 2,
+    alternatesPerSide,
+    patientSuffix: alternatesPerSide ? ' na każdą stronę, naprzemiennie' : ' na każdą stronę',
+    timeNote: 'Czas liczony podwójnie',
+    doseNote: isV33 ? 'Serie i powtórzenia podane na jedną stronę' : null,
+  };
+}
+
+export function sideFactor(side: string, isV33 = false): number {
+  return resolveSideDose(side, isV33).factor;
 }
 
 export function deriveExecutionMode(
@@ -244,9 +277,13 @@ function computeSession(
   values: ParameterValues,
   mode: ExecutionMode,
   side: string,
-  timing: SessionTiming = {}
+  timing: SessionTiming = {},
+  isV33 = false
 ): { seconds: number; isEstimate: boolean } {
   const sets = positive(values.sets) ?? 0;
+  // Rekord 3.3 „naprzemiennie”: 2·reps powtórzeń z rzędu, czyli wzór wspólny z podwojoną liczbą (§6.7).
+  const alternatesPerSide = resolveSideDose(side, isV33).alternatesPerSide;
+  const repsPerSet = (reps: number) => (alternatesPerSide ? reps * 2 : reps);
   const shared = {
     sets,
     restSets: values.rest ?? undefined,
@@ -254,11 +291,18 @@ function computeSession(
     side,
   };
   if (mode === 'hold') {
-    return calculateExerciseTotalSeconds({ ...shared, reps: 1, executionTime: positive(values.hold) ?? 0 });
+    return calculateExerciseTotalSeconds({
+      ...shared,
+      reps: repsPerSet(1),
+      executionTime: positive(values.hold) ?? 0,
+      // Utrzymanie to jedno powtórzenie, więc przerwy między powtórzeniami nie ma. Wyjątek: rekord 3.3
+      // „naprzemiennie” robi dwa utrzymania z rzędu (strona po stronie) i przerwa wypada między nimi (§6.7).
+      restReps: alternatesPerSide ? (timing.restReps ?? undefined) : undefined,
+    });
   }
   return calculateExerciseTotalSeconds({
     ...shared,
-    reps: positive(values.reps) ?? 0,
+    reps: repsPerSet(positive(values.reps) ?? 0),
     executionTime: positive(values.repTime) ?? undefined,
     duration: timing.duration ?? undefined,
     tempo: timing.tempo ?? undefined,
@@ -271,9 +315,10 @@ export function computeSessionSeconds(
   values: ParameterValues,
   mode: ExecutionMode,
   side: string,
-  timing: SessionTiming = {}
+  timing: SessionTiming = {},
+  isV33 = false
 ): number {
-  return computeSession(values, mode, side, timing).seconds;
+  return computeSession(values, mode, side, timing, isV33).seconds;
 }
 
 /** Same wording as the exercise page, so both views show one number. */
@@ -400,6 +445,8 @@ interface EvaluateParametersInput {
   /** Session length the therapist confirmed with „OK”; any change in seconds reopens it. */
   acknowledgedSessionSeconds?: number | null;
   timing?: SessionTiming;
+  /** Rekord 3.3: „naprzemiennie” to dawka na stronę. Rekord bez wersji liczy jak dotąd. */
+  isV33?: boolean;
 }
 
 export function evaluateParameters({
@@ -409,6 +456,7 @@ export function evaluateParameters({
   acknowledged = new Set<ParameterKey>(),
   acknowledgedSessionSeconds = null,
   timing,
+  isV33 = false,
 }: EvaluateParametersInput): ParameterEvaluation {
   const fields: ParameterFieldState[] = [];
   const findings: ParameterFinding[] = [];
@@ -419,7 +467,7 @@ export function evaluateParameters({
     if (finding) findings.push(finding);
   }
 
-  const { seconds: sessionSeconds, isEstimate: sessionIsEstimate } = computeSession(values, mode, side, timing);
+  const { seconds: sessionSeconds, isEstimate: sessionIsEstimate } = computeSession(values, mode, side, timing, isV33);
   let sessionLevel: ParameterEvaluation['sessionLevel'] = 'ok';
   if (sessionSeconds > SESSION_LIMIT_SECONDS) sessionLevel = 'limit';
   else if (sessionSeconds > SESSION_WARNING_SECONDS) sessionLevel = 'warning';
@@ -465,11 +513,16 @@ export function describeFieldNote(field: ParameterFieldState): string {
   }
 }
 
-export function buildPatientParameterLine(values: ParameterValues, mode: ExecutionMode, side: string): string {
+export function buildPatientParameterLine(
+  values: ParameterValues,
+  mode: ExecutionMode,
+  side: string,
+  isV33 = false
+): string {
   const sets = positive(values.sets);
   const volume =
     mode === 'reps' ? `${positive(values.reps) ?? '–'} powtórzeń` : `${positive(values.hold) ?? '–'} s utrzymania`;
-  const sideText = sideFactor(side) === 2 ? ' na każdą stronę' : '';
+  const sideText = resolveSideDose(side, isV33).patientSuffix;
   const rest = positive(values.rest);
   const restText = rest ? ` · przerwa ${rest} s` : '';
   return `${sets ?? '–'} serie × ${volume}${sideText}${restText}`;

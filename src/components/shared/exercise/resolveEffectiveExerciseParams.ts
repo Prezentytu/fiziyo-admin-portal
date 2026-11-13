@@ -103,6 +103,11 @@ export interface EffectiveExerciseParams {
   customName?: string;
   customDescription?: string;
   patientDescription?: string;
+  /**
+   * Sama część nadpisana `patientDescription` (przypisanie, pozycja zestawu albo `customDescription`), bez kolumny
+   * ćwiczenia. Czytniki instrukcji (`resolvePatientInstruction`) potrzebują jej, bo rekord 3.3 pomija kolumnę.
+   */
+  patientDescriptionOverride?: string;
   clinicalDescription?: string;
   audioCue?: string;
   rangeOfMotion?: string;
@@ -247,9 +252,13 @@ export function resolveEffectiveExerciseParams(
     'difficultyLevel',
     pickDefined(layered?.difficultyLevel, exercise?.difficultyLevel)
   );
+  const patientDescriptionOverride = unlessCleared(
+    'patientDescription',
+    pickDefined(layered?.patientDescription, customDescription)
+  );
   const patientDescription = unlessCleared(
     'patientDescription',
-    pickDefined(layered?.patientDescription, customDescription, exercise?.patientDescription, exercise?.description)
+    pickDefined(patientDescriptionOverride, exercise?.patientDescription, exercise?.description)
   );
   const clinicalDescription = unlessCleared(
     'clinicalDescription',
@@ -276,6 +285,7 @@ export function resolveEffectiveExerciseParams(
     customName,
     customDescription,
     patientDescription,
+    patientDescriptionOverride,
     clinicalDescription,
     audioCue,
     rangeOfMotion,

@@ -13,7 +13,7 @@ export type ExtraContentField =
   | { id: string; label: string; kind: 'text'; source: 'core'; field: ExtraCoreField; hint?: string };
 
 export interface ExtraContentGroup {
-  id: 'patient' | 'therapist' | 'search';
+  id: 'patient' | 'therapist' | 'search' | 'variants';
   title: string;
   fields: ExtraContentField[];
 }
@@ -108,6 +108,41 @@ export const EXTRA_CONTENT_GROUPS: ExtraContentGroup[] = [
   },
 ];
 
+const [LEGACY_PATIENT_GROUP, , LEGACY_SEARCH_GROUP] = EXTRA_CONTENT_GROUPS;
+
+function pickFields(group: ExtraContentGroup, ids: string[]): ExtraContentField[] {
+  return group.fields.filter((field) => ids.includes(field.id));
+}
+
+/** Contract v3.3: the summary sits at the top of the instruction stage, so it is a field on its own. */
+export const SUMMARY_FIELD_V33 = pickFields(LEGACY_PATIENT_GROUP, ['summary'])[0];
+
+/** Contract v3.3: patient texts the reviewer edits in the instruction stage (`patient.*`). */
+export const INSTRUCTION_CONTENT_GROUP_V33: ExtraContentGroup = {
+  id: 'patient',
+  title: 'Odczucia i kontekst',
+  fields: pickFields(LEGACY_PATIENT_GROUP, ['should-feel', 'should-not-feel', 'why', 'when-to-do']),
+};
+
+/** Contract v3.3: easier and harder variants and the breathing sentence, edited in the instruction stage. */
+export const VARIANTS_CONTENT_GROUP_V33: ExtraContentGroup = {
+  id: 'variants',
+  title: 'Łatwiej, trudniej, oddech',
+  fields: [
+    { id: 'easier', label: LABELS.easier, kind: 'text', source: 'enrichment', path: 'patient.easier' },
+    { id: 'harder', label: LABELS.harder, kind: 'text', source: 'enrichment', path: 'patient.harder' },
+    { id: 'breathing', label: LABELS.breathing, kind: 'text', source: 'enrichment', path: 'breathing.text' },
+  ],
+};
+
+/**
+ * Contract v3.3: what is left for the decision stage. Retired places (`therapist.clinical_notes`,
+ * `equipment`, `ai.problems`, the `notes` and `audioCue` columns…) are not offered for editing.
+ */
+export const EXTRA_CONTENT_GROUPS_V33: ExtraContentGroup[] = [
+  { id: 'search', title: 'Wyszukiwanie', fields: pickFields(LEGACY_SEARCH_GROUP, ['keywords']) },
+];
+
 function readPath(source: unknown, path: string): unknown {
   return path.split('.').reduce<unknown>((current, key) => {
     if (!current || typeof current !== 'object') return undefined;
@@ -141,9 +176,10 @@ export function isExtraFieldFilled(
 
 export function countFilledExtraFields(
   enrichment: ExerciseEnrichmentData,
-  core: Record<ExtraCoreField, string>
+  core: Record<ExtraCoreField, string>,
+  groups: ExtraContentGroup[] = EXTRA_CONTENT_GROUPS
 ): { filled: number; total: number } {
-  const fields = EXTRA_CONTENT_GROUPS.flatMap((group) => group.fields);
+  const fields = groups.flatMap((group) => group.fields);
   return {
     filled: fields.filter((field) => isExtraFieldFilled(field, enrichment, core)).length,
     total: fields.length,
