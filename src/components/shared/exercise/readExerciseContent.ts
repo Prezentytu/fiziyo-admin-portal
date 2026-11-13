@@ -141,6 +141,24 @@ const CUE_PHASES: readonly EnrichmentCuePhaseV3[] = ['preparation', 'work', 'res
 const FIRST_NEW_READER_VERSION: readonly number[] = [3, 3];
 /** Ten sam wzorzec co `isValidVersion` w aplikacji i `AppVersion.IsValid` w backendzie. */
 const VERSION_PATTERN = /^\d{1,5}(\.\d{1,5}){0,3}$/;
+/** Długość kolumny `Exercise.SchemaVersion` (`ExerciseSchemaVersion.MaxLength`); dłuższą wersję backend odrzuca. */
+const MAX_DOCUMENT_VERSION_LENGTH = 16;
+/**
+ * Znaki, które z brzegów przycina `string.Trim()` w .NET (`char.IsWhiteSpace`): tak backend czyta wersję
+ * z dokumentu (`ExerciseSchemaVersion.ReadDeclared`), tak samo przycina migracja wypełniająca kolumnę.
+ * Jest tu U+0085, nie ma U+FEFF.
+ */
+const DOTNET_TRIM_CHARS =
+  '\t\n\u000b\u000c\r \u0085\u00a0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a' +
+  '\u2028\u2029\u202f\u205f\u3000';
+/**
+ * Znaki, które z brzegów przycina `String.prototype.trim` (ECMAScript WhiteSpace i LineTerminator): tak aplikacja
+ * czyta kolumnę wersji (`selectExerciseReader`), a backend liczy dawkę (`ExerciseSchemaVersion.JsWhitespace`).
+ * Jest tu U+FEFF, nie ma U+0085.
+ */
+const JS_TRIM_CHARS =
+  '\t\n\u000b\u000c\r \u00a0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a' +
+  '\u2028\u2029\u202f\u205f\u3000\ufeff';
 /** `side.mode` z kontraktu oraz wartość kolumny strony („obie”), gdy dokument nie ma sekcji `side`. */
 const TWO_SIDED_MODES = ['each_side', 'alternating', 'both'];
 
@@ -175,36 +193,67 @@ function parseDocument(value: ExerciseContentSource['enrichmentData']): UnknownR
   }
 }
 
+function trimEdges(value: string, chars: string): string {
+  let start = 0;
+  let end = value.length;
+  while (start < end && chars.includes(value[start])) start += 1;
+  while (end > start && chars.includes(value[end - 1])) end -= 1;
+  return value.slice(start, end);
+}
+
 /**
- * Zadeklarowana wersja rekordu: kolumna `schemaVersion` ma pierwszeństwo, pusta albo brakująca oddaje głos
- * dokumentowi. Wartość wraca bez oceny; czy jest wersją, rozstrzyga `newReaderVersion`.
+ * Kolumna wersji, którą backend wyprowadzi z dokumentu przy zapisie (`ExerciseSchemaVersion.ReadDeclared`) i którą
+ * migracja wpisała istniejącym rekordom: tekst przycięty jak .NET `Trim()`, poprawna wersja, najwyżej 16 znaków.
+ * Inna wartość (liczba, `"v3.3"`, `"3.3-beta"`, BOM, 17 znaków) to pusta kolumna: backend odrzuca taki zapis,
+ * a migracja zostawia NULL.
  */
-function readDeclaredVersion(source: ExerciseContentSource, document: UnknownRecord | null): unknown {
-  for (const candidate of [source.schemaVersion, document?.schemaVersion]) {
-    if (candidate == null) continue;
-    if (typeof candidate === 'string' && candidate.trim() === '') continue;
-    return candidate;
-  }
-  return null;
+function columnFromDocument(document: UnknownRecord | null): string | null {
+  const declared = document?.schemaVersion;
+  if (typeof declared !== 'string') return null;
+  const version = trimEdges(declared, DOTNET_TRIM_CHARS);
+  return version.length <= MAX_DOCUMENT_VERSION_LENGTH && VERSION_PATTERN.test(version) ? version : null;
+}
+
+/**
+ * Wersja, po której aplikacja wybiera czytnik: kolumna `schemaVersion` (niepusta po JS `trim()`) ma pierwszeństwo
+ * i idzie wprost do reguły aplikacji; pusta albo brakująca oznacza kolumnę wyprowadzaną przez backend z dokumentu.
+ */
+function readerInput(source: ExerciseContentSource, document: UnknownRecord | null): string | null {
+  const column = source.schemaVersion;
+  if (column == null) return columnFromDocument(document);
+  if (typeof column !== 'string') return null;
+  const version = trimEdges(column, JS_TRIM_CHARS);
+  return version === '' ? columnFromDocument(document) : version;
 }
 
 /**
  * Wersja rekordu, gdy czyta się go po nowemu (3.3 i każda późniejsza: czytnik rośnie, nie wraca do starej
- * kolumny); `null` dla rekordu bez wersji. Reguła jest ta sama co w aplikacji pacjenta (`selectExerciseReader`,
- * `isValidVersion`) i w backendzie (`ExerciseSchemaVersion.ReadDeclared`, `AppVersion.IsValid`): tylko tekst,
- * dopasowany w całości. Liczba (`3.3`) i tekst z dopiskiem (`3.3-beta`) to rekord bez wersji, bo inaczej portal
- * pokazałby fizjoterapeucie inną treść i dawkę niż aplikacja pacjentowi.
+ * kolumny); `null` dla rekordu bez wersji. Ta sama reguła co w aplikacji pacjenta (`selectExerciseReader`,
+ * `isValidVersion`) czytającej kolumnę, którą backend wyprowadza z dokumentu (`ExerciseSchemaVersion.ReadDeclared`).
+ * Liczba (`3.3`) i tekst z dopiskiem (`3.3-beta`) to rekord bez wersji, bo inaczej portal pokazałby fizjoterapeucie
+ * inną treść i dawkę niż aplikacja pacjentowi.
  */
-function newReaderVersion(declared: unknown): string | null {
-  if (typeof declared !== 'string') return null;
-  const version = declared.trim();
-  if (!VERSION_PATTERN.test(version)) return null;
+function newReaderVersion(version: string | null): string | null {
+  if (version === null || !VERSION_PATTERN.test(version)) return null;
   const parts = version.split('.').map(Number);
   for (let index = 0; index < Math.max(parts.length, FIRST_NEW_READER_VERSION.length); index += 1) {
     const difference = (parts[index] ?? 0) - (FIRST_NEW_READER_VERSION[index] ?? 0);
     if (difference !== 0) return difference > 0 ? version : null;
   }
   return version;
+}
+
+/**
+ * Jedyna reguła portalu „czy rekord jest 3.3”: wersja (np. `"3.3"`), gdy rekord czyta się po nowemu, `null` dla
+ * rekordu bez wersji albo starszego. Od niej zależy treść i dawka „naprzemiennie” (3.3 liczy na stronę). Ekrany,
+ * które potrzebują tylko tej odpowiedzi, wołają ją zamiast trzymać własną kopię; daje to samo co
+ * `readExerciseContent(source).schemaVersion`. Wejścia i wyniki: `__tests__/fixtures/schemaVersionCanonCases.json`.
+ */
+export function readExerciseSchemaVersion(
+  source: Pick<ExerciseContentSource, 'schemaVersion' | 'enrichmentData'> | null | undefined
+): string | null {
+  const record = source ?? {};
+  return newReaderVersion(readerInput(record, parseDocument(record.enrichmentData)));
 }
 
 /** Rekord stary: v2 sprowadzamy do v3 istniejącym `toV3`; gdy dokument jest zbyt uszkodzony, czytamy go wprost. */
@@ -331,13 +380,13 @@ function readIndications(
  * Czyta treść ćwiczenia do jednego modelu widoku. Nie zmienia wejścia i nie rzuca na uszkodzonym dokumencie.
  *
  * Rekord jest „3.3”, gdy mówi to kolumna `schemaVersion` albo `enrichmentData.schemaVersion`
- * (tekst z wersją 3.3 lub wyższą, patrz `newReaderVersion`); w każdym innym razie jest stary. Dla 3.3 stare kolumny opisu
+ * (tekst z wersją 3.3 lub wyższą, patrz `readExerciseSchemaVersion`); w każdym innym razie jest stary. Dla 3.3 stare kolumny opisu
  * (`patientDescription`, `clinicalDescription`) są pomijane, nawet gdy zostały wypełnione.
  */
 export function readExerciseContent(exercise: ExerciseContentSource | null | undefined): ExerciseContent {
   const source: ExerciseContentSource = exercise ?? {};
   const rawDocument = parseDocument(source.enrichmentData);
-  const schemaVersion = newReaderVersion(readDeclaredVersion(source, rawDocument));
+  const schemaVersion = newReaderVersion(readerInput(source, rawDocument));
   const isNew = schemaVersion !== null;
   const document = isNew ? (rawDocument ?? {}) : toLegacyDocument(rawDocument);
 
