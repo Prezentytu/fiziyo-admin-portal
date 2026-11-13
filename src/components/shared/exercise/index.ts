@@ -170,6 +170,7 @@ export {
   precautionGroupLabel,
   readTextItem,
   rebaseV33Draft,
+  sameJson,
   withTextItem,
 } from './writeExerciseContent';
 export type { V33EditCollision, V33Edits, V33PrecautionGroupCode } from './writeExerciseContent';
