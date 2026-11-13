@@ -153,8 +153,8 @@ interface UseExerciseEditorFormParams {
   onError?: (error: unknown) => void;
   /**
    * Włącza tryb autosave (debounce po każdej zmianie, bez przycisku "Zapisz").
-   * Baseline (dirty-tracking) jest wtedy aktualizowany wyłącznie przez `markSaved()`
-   * po udanym zapisie — nie resetuje się przy każdej zmianie referencji `source`
+   * Baseline (dirty-tracking) jest wtedy aktualizowany wyłącznie po udanym zapisie
+   * (wysłanym dokumentem) — nie resetuje się przy każdej zmianie referencji `source`
    * (np. po zapisie innego pola w tym samym ćwiczeniu), żeby nie gubić edycji "w locie".
    */
   autosaveDelayMs?: number;

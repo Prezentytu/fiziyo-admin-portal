@@ -94,6 +94,7 @@ export function ExerciseDialog({
   } = useExerciseImageGeneration();
   const [isMediaStateReady, setIsMediaStateReady] = useState(false);
   const mediaFileInputRef = useRef<HTMLInputElement>(null);
+  const saveInFlightRef = useRef(false);
   // Only needed for the copy-name suggestion; don't fetch the whole library while the dialog is closed.
   const { data: organizationExercisesData } = useQuery(GET_ORGANIZATION_EXERCISE_NAMES_QUERY, {
     variables: { organizationId },
@@ -390,8 +391,19 @@ export function ExerciseDialog({
     }
   };
 
+  const isSaveBlocked =
+    updating ||
+    isResubmitting ||
+    uploadingMedia ||
+    deletingMedia ||
+    isGeneratingMedia ||
+    editorForm.saveStatus === 'saving';
+
   const handleSave = async () => {
     if (!exercise) return;
+    // Skrót klawiszowy i przycisk prowadzą tutaj; drugi zapis nie rusza, póki pierwszy trwa.
+    if (isSaveBlocked || saveInFlightRef.current) return;
+    saveInFlightRef.current = true;
     try {
       const outcome = await editorForm.save();
       // A failed save has already shown its error and a refused one shows the conflict notice in the form:
@@ -461,6 +473,8 @@ export function ExerciseDialog({
         return;
       }
       toast.error('Nie udało się zaktualizować ćwiczenia');
+    } finally {
+      saveInFlightRef.current = false;
     }
   };
 
@@ -816,14 +830,7 @@ export function ExerciseDialog({
               <Button
                 type="button"
                 onClick={() => void handleSave()}
-                disabled={
-                  updating ||
-                  isResubmitting ||
-                  uploadingMedia ||
-                  deletingMedia ||
-                  isGeneratingMedia ||
-                  editorForm.saveStatus === 'saving'
-                }
+                disabled={isSaveBlocked}
                 data-testid="exercise-dialog-save-btn"
               >
                 {(updating ||
