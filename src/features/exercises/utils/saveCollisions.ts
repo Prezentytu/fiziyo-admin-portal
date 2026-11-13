@@ -3,6 +3,7 @@ import {
   collectV33Edits,
   findV33EditCollisions,
   rebaseV33Draft,
+  sameJson,
   type V33EditCollision,
 } from '@/components/shared/exercise/writeExerciseContent';
 
@@ -33,10 +34,6 @@ function getAtPath(source: unknown, path: string): unknown {
     current = (current as Record<string, unknown>)[key];
   }
   return current;
-}
-
-function sameJson(first: unknown, second: unknown): boolean {
-  return JSON.stringify(first) === JSON.stringify(second);
 }
 
 /** Every change of `some` is also in `all`, with the same value: nothing of `some` can be lost. */
