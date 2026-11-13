@@ -59,7 +59,7 @@ describe('readExerciseContent: wersja rekordu', () => {
   it('wersję 3.3 mówi dokument albo kolumna rekordu', () => {
     expect(readExerciseContent({ enrichmentData: { schemaVersion: '3.3' } }).version).toBe('3.3');
     expect(readExerciseContent({ schemaVersion: '3.3', enrichmentData: {} }).version).toBe('3.3');
-    expect(readExerciseContent({ schemaVersion: 3.3, enrichmentData: null }).version).toBe('3.3');
+    expect(readExerciseContent({ schemaVersion: ' 3.3 ', enrichmentData: null }).version).toBe('3.3');
     expect(readExerciseContent({ enrichmentData: { schemaVersion: '3.3' } }).schemaVersion).toBe('3.3');
   });
 
@@ -388,5 +388,89 @@ describe('printableInstructionLines', () => {
   it('numerację można wyłączyć', () => {
     const content = readExerciseContent({ enrichmentData: { patient: { steps: ['A', 'B'] } } });
     expect(printableInstructionLines(content, { numbered: false })).toEqual(['A', 'B']);
+  });
+});
+
+/**
+ * Ta sama tabela co w aplikacji (`selectExerciseReader`, utils/__tests__/exerciseSchema.test.ts), w backendzie
+ * (`ExerciseSchemaVersion.ReadDeclared`) i w `isV33ExerciseRecord` (src/utils/exerciseSideDose.vectors.test.ts, #234):
+ * nowy czytnik tylko dla tekstu z poprawną wersją >= 3.3. Liczba i tekst z dopiskiem to rekord bez wersji,
+ * bo tak przeczyta go aplikacja pacjenta.
+ */
+const VERSION_CASES: [label: string, declared: unknown, isNew: boolean][] = [
+  ['3.3', '3.3', true],
+  ['3.3.0', '3.3.0', true],
+  ['3.3.0.0', '3.3.0.0', true],
+  ['3.10', '3.10', true],
+  ['3.4', '3.4', true],
+  ['4.0', '4.0', true],
+  ['10', '10', true],
+  [' 3.3 ', ' 3.3 ', true],
+  ['3.2', '3.2', false],
+  ['3.2.9', '3.2.9', false],
+  ['3', '3', false],
+  ['2.0', '2.0', false],
+  ['3.3-beta', '3.3-beta', false],
+  ['3.3x', '3.3x', false],
+  ['v3.3', 'v3.3', false],
+  ['3.3.0.0.0', '3.3.0.0.0', false],
+  ['3.', '3.', false],
+  ['123456.0', '123456.0', false],
+  ['newest', 'newest', false],
+  ['pusty', '', false],
+  ['spacje', '   ', false],
+  ['liczba 3.3', 3.3, false],
+  ['liczba 4', 4, false],
+  ['null', null, false],
+  ['obiekt', {}, false],
+];
+
+/** Rekord z dowolną wartością w miejscu wersji, także taką, której typ nie przewiduje. */
+const isNewReader = (record: unknown) => readExerciseContent(record as ExerciseContentSource).version === '3.3';
+
+describe('readExerciseContent: reguła wersji jak w aplikacji i backendzie', () => {
+  describe.each(VERSION_CASES)('wersja %s', (_label, declared, isNew) => {
+    it('w dokumencie enrichmentData (obiekt)', () => {
+      expect(isNewReader({ enrichmentData: { schemaVersion: declared } })).toBe(isNew);
+    });
+    it('w dokumencie enrichmentData (tekst JSON)', () => {
+      expect(isNewReader({ enrichmentData: JSON.stringify({ schemaVersion: declared }) })).toBe(isNew);
+    });
+    it('w kolumnie schemaVersion', () => {
+      expect(isNewReader({ schemaVersion: declared })).toBe(isNew);
+    });
+  });
+
+  it('brak wersji, brak dokumentu i zepsuty dokument to stary rekord', () => {
+    expect(isNewReader({ enrichmentData: {} })).toBe(false);
+    expect(isNewReader({ enrichmentData: 'nie json' })).toBe(false);
+    expect(isNewReader({ enrichmentData: null })).toBe(false);
+    expect(isNewReader({})).toBe(false);
+    expect(isNewReader(null)).toBe(false);
+    expect(isNewReader(undefined)).toBe(false);
+  });
+
+  it('kolumna ma pierwszeństwo przed dokumentem, pusta kolumna oddaje głos dokumentowi', () => {
+    expect(isNewReader({ schemaVersion: '3.2', enrichmentData: { schemaVersion: '3.3' } })).toBe(false);
+    expect(isNewReader({ schemaVersion: '3.3', enrichmentData: { schemaVersion: '3.2' } })).toBe(true);
+    expect(isNewReader({ schemaVersion: '', enrichmentData: { schemaVersion: '3.3' } })).toBe(true);
+    expect(isNewReader({ schemaVersion: null, enrichmentData: { schemaVersion: '3.3' } })).toBe(true);
+    expect(isNewReader({ schemaVersion: 'v3.3', enrichmentData: { schemaVersion: '3.3' } })).toBe(false);
+  });
+
+  it('rekord z wersją jako liczbą pokazuje stary opis pacjenta, jak aplikacja', () => {
+    const record = {
+      patientDescription: 'Stary opis dla pacjenta.',
+      enrichmentData: { schemaVersion: 3.3, patient: { summary: 'Nowe podsumowanie.' } },
+    };
+    const content = readExerciseContent(record as unknown as ExerciseContentSource);
+    expect(content.version).toBe('legacy');
+    expect(content.schemaVersion).toBeNull();
+    expect(content.instruction.description).toBe('Stary opis dla pacjenta.');
+  });
+
+  it('oddaje zapisaną wersję bez spacji z brzegów', () => {
+    expect(readExerciseContent({ schemaVersion: ' 3.3 ' }).schemaVersion).toBe('3.3');
+    expect(readExerciseContent({ enrichmentData: { schemaVersion: '3.4' } }).schemaVersion).toBe('3.4');
   });
 });

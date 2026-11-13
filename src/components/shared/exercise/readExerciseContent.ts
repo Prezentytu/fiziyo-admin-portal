@@ -138,7 +138,9 @@ export interface ExerciseContent {
 }
 
 const CUE_PHASES: readonly EnrichmentCuePhaseV3[] = ['preparation', 'work', 'rest'];
-const FIRST_NEW_READER_VERSION = [3, 3] as const;
+const FIRST_NEW_READER_VERSION: readonly number[] = [3, 3];
+/** Ten sam wzorzec co `isValidVersion` w aplikacji i `AppVersion.IsValid` w backendzie. */
+const VERSION_PATTERN = /^\d{1,5}(\.\d{1,5}){0,3}$/;
 /** `side.mode` z kontraktu oraz wartość kolumny strony („obie”), gdy dokument nie ma sekcji `side`. */
 const TWO_SIDED_MODES = ['each_side', 'alternating', 'both'];
 
@@ -173,23 +175,36 @@ function parseDocument(value: ExerciseContentSource['enrichmentData']): UnknownR
   }
 }
 
-function readSchemaVersion(source: ExerciseContentSource, document: UnknownRecord | null): string | null {
+/**
+ * Zadeklarowana wersja rekordu: kolumna `schemaVersion` ma pierwszeństwo, pusta albo brakująca oddaje głos
+ * dokumentowi. Wartość wraca bez oceny; czy jest wersją, rozstrzyga `newReaderVersion`.
+ */
+function readDeclaredVersion(source: ExerciseContentSource, document: UnknownRecord | null): unknown {
   for (const candidate of [source.schemaVersion, document?.schemaVersion]) {
-    if (typeof candidate === 'number' && Number.isFinite(candidate)) return String(candidate);
-    const text = asText(candidate);
-    if (text) return text;
+    if (candidate == null) continue;
+    if (typeof candidate === 'string' && candidate.trim() === '') continue;
+    return candidate;
   }
   return null;
 }
 
-/** 3.3 i każda późniejsza wersja czyta się po nowemu: czytnik rośnie, nie wraca do starej kolumny. */
-function isNewReaderVersion(schemaVersion: string | null): boolean {
-  const match = schemaVersion?.match(/^(\d+)(?:\.(\d+))?/);
-  if (!match) return false;
-  const major = Number(match[1]);
-  const minor = Number(match[2] ?? 0);
-  const [minMajor, minMinor] = FIRST_NEW_READER_VERSION;
-  return major > minMajor || (major === minMajor && minor >= minMinor);
+/**
+ * Wersja rekordu, gdy czyta się go po nowemu (3.3 i każda późniejsza: czytnik rośnie, nie wraca do starej
+ * kolumny); `null` dla rekordu bez wersji. Reguła jest ta sama co w aplikacji pacjenta (`selectExerciseReader`,
+ * `isValidVersion`) i w backendzie (`ExerciseSchemaVersion.ReadDeclared`, `AppVersion.IsValid`): tylko tekst,
+ * dopasowany w całości. Liczba (`3.3`) i tekst z dopiskiem (`3.3-beta`) to rekord bez wersji, bo inaczej portal
+ * pokazałby fizjoterapeucie inną treść i dawkę niż aplikacja pacjentowi.
+ */
+function newReaderVersion(declared: unknown): string | null {
+  if (typeof declared !== 'string') return null;
+  const version = declared.trim();
+  if (!VERSION_PATTERN.test(version)) return null;
+  const parts = version.split('.').map(Number);
+  for (let index = 0; index < Math.max(parts.length, FIRST_NEW_READER_VERSION.length); index += 1) {
+    const difference = (parts[index] ?? 0) - (FIRST_NEW_READER_VERSION[index] ?? 0);
+    if (difference !== 0) return difference > 0 ? version : null;
+  }
+  return version;
 }
 
 /** Rekord stary: v2 sprowadzamy do v3 istniejącym `toV3`; gdy dokument jest zbyt uszkodzony, czytamy go wprost. */
@@ -316,14 +331,14 @@ function readIndications(
  * Czyta treść ćwiczenia do jednego modelu widoku. Nie zmienia wejścia i nie rzuca na uszkodzonym dokumencie.
  *
  * Rekord jest „3.3”, gdy mówi to kolumna `schemaVersion` albo `enrichmentData.schemaVersion`
- * (3.3 lub wyżej); w każdym innym razie jest stary. Dla 3.3 stare kolumny opisu
+ * (tekst z wersją 3.3 lub wyższą, patrz `newReaderVersion`); w każdym innym razie jest stary. Dla 3.3 stare kolumny opisu
  * (`patientDescription`, `clinicalDescription`) są pomijane, nawet gdy zostały wypełnione.
  */
 export function readExerciseContent(exercise: ExerciseContentSource | null | undefined): ExerciseContent {
   const source: ExerciseContentSource = exercise ?? {};
   const rawDocument = parseDocument(source.enrichmentData);
-  const schemaVersion = readSchemaVersion(source, rawDocument);
-  const isNew = isNewReaderVersion(schemaVersion);
+  const schemaVersion = newReaderVersion(readDeclaredVersion(source, rawDocument));
+  const isNew = schemaVersion !== null;
   const document = isNew ? (rawDocument ?? {}) : toLegacyDocument(rawDocument);
 
   const patient = asRecord(document.patient);
@@ -338,7 +353,7 @@ export function readExerciseContent(exercise: ExerciseContentSource | null | und
 
   return {
     version: isNew ? '3.3' : 'legacy',
-    schemaVersion: isNew ? schemaVersion : null,
+    schemaVersion,
     instruction,
     hasInstruction:
       instruction.description !== null || instruction.summary !== null || instruction.steps.length > 0,
