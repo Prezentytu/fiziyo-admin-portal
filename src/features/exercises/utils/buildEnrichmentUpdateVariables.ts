@@ -31,7 +31,10 @@ export async function fetchCurrentEnrichmentData(
   const { data } = await client.query({
     query: GET_EXERCISE_BY_ID_QUERY,
     variables: { id: exerciseId },
-    fetchPolicy: 'network-only',
+    // `no-cache`, not `network-only`: the answer must not reach the cache. A record that is gone would turn the
+    // page that renders from this query into "not found" and unmount the form with the unsaved text; an answer
+    // without data would come back as the cached document and let the save overwrite someone else's change.
+    fetchPolicy: 'no-cache',
   });
   const exercise = (data as { exerciseById?: { enrichmentData?: ExerciseEnrichmentData | string | null } | null } | undefined)
     ?.exerciseById;
