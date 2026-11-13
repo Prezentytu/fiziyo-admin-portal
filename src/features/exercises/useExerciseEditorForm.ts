@@ -504,7 +504,9 @@ export function useExerciseEditorForm({
       initialCoreRef.current = currentCore;
       setInitialCore(currentCore);
       if (currentEnrichmentDirty) {
-        const savedEnrichment = isV33 ? currentEnrichmentPayload : currentEnrichment;
+        // Never the draft: it still holds what compaction cut (a blank step, a cleared field), and as a baseline
+        // it would bring all of that back in the next save of a record read as older.
+        const savedEnrichment = currentEnrichmentPayload;
         initialEnrichmentRef.current = savedEnrichment;
         setInitialEnrichment(savedEnrichment);
       }
