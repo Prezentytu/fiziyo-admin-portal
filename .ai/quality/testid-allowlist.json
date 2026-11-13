@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-12T17:17:22.663Z",
+  "generatedAt": "2026-11-13T08:24:16.006Z",
   "description": "Legacy interactive elements without data-testid. Keep shrinking this list; CI fails on new entries.",
   "entries": [
     "src/app/(auth)/invite/page.tsx:183:Button",
@@ -94,11 +94,11 @@
     "src/features/exercises/CreateExerciseWizard.tsx:844:Button",
     "src/features/exercises/CreateExerciseWizard.tsx:925:Button",
     "src/features/exercises/CreateExerciseWizard.tsx:948:Button",
-    "src/features/exercises/ExerciseDialog.tsx:488:Button",
-    "src/features/exercises/ExerciseDialog.tsx:491:Button",
-    "src/features/exercises/ExerciseDialog.tsx:532:Button",
-    "src/features/exercises/ExerciseDialog.tsx:732:input",
-    "src/features/exercises/ExerciseDialog.tsx:768:Button",
+    "src/features/exercises/ExerciseDialog.tsx:502:Button",
+    "src/features/exercises/ExerciseDialog.tsx:505:Button",
+    "src/features/exercises/ExerciseDialog.tsx:546:Button",
+    "src/features/exercises/ExerciseDialog.tsx:746:input",
+    "src/features/exercises/ExerciseDialog.tsx:782:Button",
     "src/features/exercises/FeedbackBanner.tsx:73:Button",
     "src/features/exercises/ImageStylePicker.tsx:35:button",
     "src/features/exercises/ReportExerciseDialog.tsx:161:Select",
