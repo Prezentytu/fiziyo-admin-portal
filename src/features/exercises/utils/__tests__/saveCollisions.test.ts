@@ -8,7 +8,7 @@ import {
 } from '@/components/shared/exercise/writeExerciseContent';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 
-import { linkedPathsOf, SAVE_COLLISION_LINKED_PATHS } from '../saveCollisions';
+import { findSaveCollisions, linkedPathsOf, SAVE_COLLISION_LINKED_PATHS } from '../saveCollisions';
 
 type Doc = Record<string, Record<string, unknown>>;
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
@@ -67,5 +67,61 @@ describe('pary powiązanych list w komunikacie kolizji zgadzają się z regułą
     const all = SAVE_COLLISION_LINKED_PATHS.flat();
     expect(all.filter((path) => !V33_EDITABLE_PATHS.includes(path))).toEqual([]);
     expect(new Set(all).size).toBe(all.length);
+  });
+});
+
+describe('ta sama zmiana pary u obu osób, różna tylko kolejnością kluczy (odbiór 13.11, n7)', () => {
+  const PAIRS = [
+    {
+      name: 'kroki i zdjęcia kroków',
+      list: 'steps',
+      links: 'step_images',
+      // The portal builds { step, url }; the JSONB column hands back { url, step }.
+      mine: [{ step: 1, url: 'https://example.test/wspolne.jpg' }],
+      theirs: [{ url: 'https://example.test/wspolne.jpg', step: 1 }],
+      theirList: ['Krok zmieniony przez drugą osobę.', 'Drugi krok.'],
+    },
+    {
+      name: 'wskazówki i fazy wskazówek',
+      list: 'cues',
+      links: 'cue_phases',
+      mine: [{ phase: 'rest', cue: 0 }],
+      theirs: [{ cue: 0, phase: 'rest' }],
+      theirList: ['Wskazówka zmieniona przez drugą osobę.'],
+    },
+  ] as const;
+
+  it.each(PAIRS)('$name: nie ma kolizji, gdy obie osoby przypięły to samo, a druga zmieniła jeszcze listę', (pair) => {
+    const loaded = loadedDocument();
+    const draft = clone(loaded);
+    draft.patient[pair.links] = clone(pair.mine);
+    const current = clone(loaded);
+    current.patient[pair.links] = clone(pair.theirs);
+    current.patient[pair.list] = [...pair.theirList];
+
+    expect(JSON.stringify(pair.mine)).not.toBe(JSON.stringify(pair.theirs));
+    expect(
+      findSaveCollisions(
+        loaded as ExerciseEnrichmentData,
+        draft as ExerciseEnrichmentData,
+        current as ExerciseEnrichmentData
+      )
+    ).toEqual([]);
+  });
+
+  it.each(PAIRS)('$name: inna wartość w tym samym miejscu nadal jest kolizją pary', (pair) => {
+    const loaded = loadedDocument();
+    const draft = clone(loaded);
+    draft.patient[pair.links] = clone(pair.mine);
+    const current = clone(loaded);
+    current.patient[pair.links] = [];
+    current.patient[pair.list] = [...pair.theirList];
+
+    const collisions = findSaveCollisions(
+      loaded as ExerciseEnrichmentData,
+      draft as ExerciseEnrichmentData,
+      current as ExerciseEnrichmentData
+    );
+    expect(collisions.map(({ path }) => path)).toEqual([`patient.${pair.list}`, `patient.${pair.links}`]);
   });
 });
