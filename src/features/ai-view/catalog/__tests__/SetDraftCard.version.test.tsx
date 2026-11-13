@@ -11,9 +11,18 @@ let listItems: Array<Record<string, unknown>> = [];
 
 const apolloClient = { query: mockClientQuery };
 vi.mock('@apollo/client/react', () => ({
-  // Jedna odpowiedź na każde zapytanie listy: ćwiczenia i (puste) tagi.
+  // Jedna odpowiedź na każde zapytanie: strona listy (useExercisePickerPages) i (puste) tagi.
   useQuery: () => ({
-    data: { availableExercises: listItems, exerciseTags: [] },
+    data: {
+      availableExercisesPage: {
+        items: listItems,
+        totalCount: listItems.length,
+        page: 1,
+        hasNextPage: false,
+        counts: { all: listItems.length, organization: 0, fiziyo: listItems.length },
+      },
+      exerciseTags: [],
+    },
     loading: false,
     error: undefined,
     refetch: vi.fn(),

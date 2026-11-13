@@ -10,9 +10,19 @@ let listItems: Array<Record<string, unknown>> = [];
 
 const apolloClient = { query: mockClientQuery };
 const queryResult = (data: unknown) => ({ data, loading: false, error: undefined, refetch: vi.fn() });
+// Lista idzie stronami (useExercisePickerPages): jedna strona, ta sama tablica `items` przy każdym renderze.
+const pageOf = (items: Array<Record<string, unknown>>) => ({
+  availableExercisesPage: {
+    items,
+    totalCount: items.length,
+    page: 1,
+    hasNextPage: false,
+    counts: { all: items.length, organization: 0, fiziyo: items.length },
+  },
+});
 
 vi.mock('@apollo/client/react', () => ({
-  useQuery: () => queryResult({ availableExercises: listItems }),
+  useQuery: () => queryResult(pageOf(listItems)),
   useMutation: () => [mockMutate, { loading: false }],
   useApolloClient: () => apolloClient,
 }));
