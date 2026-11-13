@@ -540,9 +540,7 @@ export function useExerciseEditorForm({
     return performSave();
   }, [performSave]);
 
-  const save = useCallback(async () => {
-    await flush();
-  }, [flush]);
+  const save = useCallback(async (): Promise<ExerciseSaveOutcome> => flush(), [flush]);
 
   useEffect(() => {
     if (!isAutosave) return;
