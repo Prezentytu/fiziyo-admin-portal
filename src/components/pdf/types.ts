@@ -6,6 +6,8 @@ export interface PDFExercise {
   description?: string;
   type?: 'reps' | 'time';
   exerciseSide?: 'left' | 'right' | 'alternating' | 'both' | 'none';
+  /** Rekord w kontrakcie 3.3 (`isV33ExerciseRecord`): „naprzemiennie” to liczba na każdą stronę, inaczej łącznie. */
+  alternatingPerSide?: boolean;
   imageUrl?: string;
   images?: string[];
   notes?: string;

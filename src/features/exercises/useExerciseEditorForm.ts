@@ -12,6 +12,7 @@ import {
 } from './useEnrichmentDraft';
 import { shouldRehydrateExerciseEditorDraft } from './utils/shouldRehydrateExerciseEditorDraft';
 import { normalizeExerciseType } from '@/utils/exerciseEnums';
+import { isV33ExerciseRecord } from '@/utils/exerciseRecordVersion';
 import type { ExerciseParametersTimingType } from '@/components/shared/exercise/ExerciseParametersFields';
 import { describeSavedNonKgLoad, readSavedLoadKg } from './utils/describeSavedLoad';
 import { readExerciseContent, type ExerciseContentVersion } from '@/components/shared/exercise/readExerciseContent';
@@ -576,12 +577,14 @@ export function useExerciseEditorForm({
   }, []);
 
   const exerciseType: ExerciseParametersTimingType = normalizeExerciseType(source?.type) ?? 'draft';
+  const alternatingPerSide = useMemo(() => isV33ExerciseRecord(source), [source]);
   const savedLoadLabel = useMemo(() => describeSavedNonKgLoad(source), [source]);
 
   return useMemo(
     () => ({
       core,
       exerciseType,
+      alternatingPerSide,
       savedLoadLabel,
       enrichment,
       contentVersion,
@@ -604,6 +607,7 @@ export function useExerciseEditorForm({
       contentVersion,
       core,
       exerciseType,
+      alternatingPerSide,
       enrichment,
       conflictDocument,
       flush,

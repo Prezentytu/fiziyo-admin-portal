@@ -43,6 +43,8 @@ export interface BuilderExercise {
   loadWeightKg?: number;
   loadSource?: string;
   type?: string;
+  /** Rekord w kontrakcie 3.3 (`isV33ExerciseRecord`): „naprzemiennie” liczy się na stronę. Brak: łącznie. */
+  alternatingPerSide?: boolean;
 }
 
 interface ExerciseBuilderContextValue {
@@ -200,6 +202,7 @@ export function ExerciseBuilderProvider({ children }: ExerciseBuilderProviderPro
         tempo: exercise.tempo,
         side: exercise.exerciseSide ?? exercise.side,
         type: exercise.type,
+        alternatingPerSide: exercise.alternatingPerSide,
       });
 
       totalSeconds += duration.seconds;

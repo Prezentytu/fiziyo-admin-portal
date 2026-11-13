@@ -24,7 +24,7 @@ export function ExercisePDFItem({ exercise, index, showImage, compact }: Exercis
   const imageUrl = exercise.imageUrl?.startsWith('data:')
     ? exercise.imageUrl
     : getMediaUrl(exercise.imageUrl);
-  const sideLabel = translateExerciseSidePolish(exercise.exerciseSide);
+  const sideLabel = translateExerciseSidePolish(exercise.exerciseSide, exercise.alternatingPerSide);
   const parameterItems = formatExecutionParameters({
     sets: exercise.sets,
     reps: exercise.reps,
