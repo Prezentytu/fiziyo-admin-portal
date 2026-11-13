@@ -202,8 +202,12 @@ function deleteAtPath(target: UnknownRecord, path: string): void {
   delete current[keys[keys.length - 1]];
 }
 
+/**
+ * Ta sama wartość JSON. Kolejność kluczy obiektu nie ma znaczenia (kolumna JSONB oddaje je w innej, niż dostała),
+ * kolejność elementów listy ma. Klucz z wartością `null` to co innego niż brak klucza.
+ */
 function sameJson(first: unknown, second: unknown): boolean {
-  return JSON.stringify(first) === JSON.stringify(second);
+  return JSON.stringify(canonical(first)) === JSON.stringify(canonical(second));
 }
 
 function cloneJson<T>(value: T): T {
@@ -461,10 +465,7 @@ export function isSameV33Document(
   first: ExerciseEnrichmentData | string | null | undefined,
   second: ExerciseEnrichmentData | string | null | undefined
 ): boolean {
-  return sameJson(
-    canonical(withoutSchemaMarker(loadV33Document(first))),
-    canonical(withoutSchemaMarker(loadV33Document(second)))
-  );
+  return sameJson(withoutSchemaMarker(loadV33Document(first)), withoutSchemaMarker(loadV33Document(second)));
 }
 
 /** Pole zmienione i na tym ekranie, i w bazie od wczytania. `undefined` znaczy: pole opróżnione. */
