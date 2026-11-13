@@ -91,7 +91,9 @@ describe('wektory „naprzemiennie” (§6.7, wariant B)', () => {
  * `string.Trim()`, najwyżej 16 znaków. Wejścia identyczne z `naprzemiennie-wersje.md` (scratchpad zlecenia).
  * Wynik `true` = aplikacja wybiera czytnik v3_3 (także dla 3.4 i 4.0, z `supported: false`).
  */
-const VERSION_CASES: [label: string, declared: unknown, isNew: boolean][] = [
+// Czwarta wartość: wynik dla kolumny `schemaVersion`, gdy różni się od dokumentu. Kolumnę portal czyta jak
+// aplikacja pacjenta (przycięcie JS, bez limitu długości), dokument jak backend (`string.Trim()`, 16 znaków).
+const VERSION_CASES: [label: string, declared: unknown, isNew: boolean, isNewInColumn?: boolean][] = [
   ["3.3", "3.3", true],
   ["3.3.0", "3.3.0", true],
   ["3.3.0.0", "3.3.0.0", true],
@@ -109,8 +111,8 @@ const VERSION_CASES: [label: string, declared: unknown, isNew: boolean][] = [
   ["3.3 z nową linią", "3.3\n", true],
   ["3.3 z NBSP", "\u00a03.3\u00a0", true],
   ["3.3 z em-space", "\u20033.3\u2003", true],
-  ["3.3 z U+0085", "\u00853.3\u0085", true],
-  ["3.3 z U+FEFF", "\ufeff3.3", false],
+  ["3.3 z U+0085", "\u00853.3\u0085", true, false],
+  ["3.3 z U+FEFF", "\ufeff3.3", false, true],
   ["3.3 ze znakiem w środku", "3. 3", false],
   ["3.2", "3.2", false],
   ["3.2.9", "3.2.9", false],
@@ -124,7 +126,7 @@ const VERSION_CASES: [label: string, declared: unknown, isNew: boolean][] = [
   [".3.3", ".3.3", false],
   ["123456.0", "123456.0", false],
   ["16 znaków", "00003.00003.0000", true],
-  ["00003.00003.00000", "00003.00003.00000", false],
+  ["00003.00003.00000", "00003.00003.00000", false, true],
   ["cyfry arabsko-indyjskie", "\u0663.\u0663", false],
   ["3,3", "3,3", false],
   ["pusty", "", false],
@@ -137,7 +139,7 @@ const VERSION_CASES: [label: string, declared: unknown, isNew: boolean][] = [
 ];
 
 describe('isV33ExerciseRecord: jedna reguła „czy rekord jest 3.3”, tabela jak w aplikacji i backendzie', () => {
-  describe.each(VERSION_CASES)('wersja %s', (_label, declared, isNew) => {
+  describe.each(VERSION_CASES)('wersja %s', (_label, declared, isNew, isNewInColumn = isNew) => {
     it('w dokumencie enrichmentData (obiekt)', () => {
       expect(isV33ExerciseRecord({ enrichmentData: { schemaVersion: declared } })).toBe(isNew);
     });
@@ -145,7 +147,7 @@ describe('isV33ExerciseRecord: jedna reguła „czy rekord jest 3.3”, tabela j
       expect(isV33ExerciseRecord({ enrichmentData: JSON.stringify({ schemaVersion: declared }) })).toBe(isNew);
     });
     it('w kolumnie schemaVersion', () => {
-      expect(isV33ExerciseRecord({ schemaVersion: declared })).toBe(isNew);
+      expect(isV33ExerciseRecord({ schemaVersion: declared })).toBe(isNewInColumn);
     });
   });
 
