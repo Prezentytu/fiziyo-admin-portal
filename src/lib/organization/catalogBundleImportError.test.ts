@@ -25,7 +25,7 @@ async function failureOf(response: { status: number; body: string }): Promise<un
         }),
     }),
   });
-  return client.mutate({ mutation: gql`mutation M { noop }` }).then(
+  return client.mutate({ mutation: gql`mutation M { __typename }` }).then(
     () => null,
     (error: unknown) => error
   );
