@@ -6,6 +6,7 @@ import { toV3 } from '@/features/verification/utils/enrichmentToV3';
 import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
 import {
   composeEnrichmentPayload,
+  composeEnrichmentSavePayload,
   deepCloneEnrichment,
   setEnrichmentAtPath,
 } from './useEnrichmentDraft';
@@ -358,9 +359,11 @@ export function useExerciseEditorForm({
   const coreRef = useRef(core);
   const enrichmentRef = useRef(enrichment);
   const initialCoreRef = useRef(initialCore);
+  const initialEnrichmentRef = useRef(initialEnrichment);
   coreRef.current = core;
   enrichmentRef.current = enrichment;
   initialCoreRef.current = initialCore;
+  initialEnrichmentRef.current = initialEnrichment;
 
   /** Snapshotuje aktualny draft jako nową baseline bez refetchu — używane po autosave. */
   const markSaved = useCallback(() => {
@@ -372,8 +375,8 @@ export function useExerciseEditorForm({
     const currentCore = coreRef.current;
     const currentEnrichment = enrichmentRef.current;
     const currentCoreDirty = Object.keys(buildChangedCoreVariables(initialCoreRef.current, currentCore)).length > 0;
-    const currentEnrichmentPayload = composeEnrichmentPayload(currentEnrichment);
-    const currentEnrichmentDirty = JSON.stringify(currentEnrichmentPayload) !== initialEnrichmentPayload;
+    const currentEnrichmentDirty =
+      JSON.stringify(composeEnrichmentPayload(currentEnrichment)) !== initialEnrichmentPayload;
 
     if (!currentCoreDirty && !currentEnrichmentDirty) return;
 
@@ -383,7 +386,8 @@ export function useExerciseEditorForm({
         await updateCore(buildChangedCoreVariables(initialCoreRef.current, currentCore));
       }
       if (currentEnrichmentDirty) {
-        await updateEnrichment(currentEnrichmentPayload);
+        // The mutation replaces the whole document: keys the user did not touch go back as loaded.
+        await updateEnrichment(composeEnrichmentSavePayload(initialEnrichmentRef.current, currentEnrichment));
       }
       setSaveStatus('success');
       markSaved();
