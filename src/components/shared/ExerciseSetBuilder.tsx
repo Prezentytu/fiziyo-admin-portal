@@ -48,14 +48,11 @@ import {
 } from '@/components/shared/exercise';
 import type { ExerciseExecutionCardData } from '@/components/shared/exercise';
 import { ColorBadge } from '@/components/shared/ColorBadge';
-import { filterExercisesBySource, countBySource } from '@/utils/exerciseSourceFilter';
 import { formatExerciseDuration } from '@/utils/exerciseTime';
 import { buildExerciseLoadParamFields } from '@/utils/exerciseLoadMutation';
-import type { ExerciseSourceFilter } from '@/utils/exerciseSourceFilter';
 import { cn } from '@/lib/utils';
 import { EMPTY_EXERCISE_PARAMS, getExerciseDefaultParams } from '@/features/exercise-sets/utils/exerciseDefaults';
-import { filterExercisesBySearch } from '@/features/exercises/utils/exerciseSearch';
-import { useIncrementalList } from '@/hooks/useIncrementalList';
+import type { ExercisePickerLibraryView } from '@/hooks/useExercisePickerLibrary';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import { applyEnrichmentOverride, type EnrichmentOverride } from '@/components/shared/exercise/enrichmentOverride';
 
@@ -180,15 +177,13 @@ export interface ExerciseSetBuilderProps {
   exerciseParams: Map<string, ExerciseParams>;
   onExerciseParamsChange: (params: Map<string, ExerciseParams>) => void;
 
-  // Available exercises
+  /** Every exercise record the picker knows (listed, popular and chosen); chosen instances resolve here. */
   availableExercises: BuilderExercise[];
-  loadingExercises?: boolean;
+  /** Library list from server pages (search, source tab, popular, show more); see useExercisePickerLibrary. */
+  library: ExercisePickerLibraryView;
 
   // Tags for filtering
   tags?: ExerciseTag[];
-
-  // Exercise popularity for "Popular" section
-  exercisePopularity?: Record<string, number>;
 
   // AI integration
   showAI?: boolean;
@@ -516,8 +511,7 @@ export function ExerciseSetBuilder({
   exerciseParams,
   onExerciseParamsChange,
   availableExercises,
-  loadingExercises = false,
-  exercisePopularity = {},
+  library,
   showAI = false,
   onAIClick,
   aiButtonLabel = 'Wygeneruj nazwę AI',
@@ -536,8 +530,6 @@ export function ExerciseSetBuilder({
   createExerciseDescription = 'Dodaj ćwiczenie i od razu wstaw je do planu',
   createExerciseTestId = 'assignment-create-exercise-tile-btn',
 }: Readonly<ExerciseSetBuilderProps>) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sourceFilter, setSourceFilter] = useState<ExerciseSourceFilter>('all');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [instanceToRemove, setInstanceToRemove] = useState<string | null>(null);
 
@@ -552,42 +544,29 @@ export function ExerciseSetBuilder({
     return [...(ex.mainTags || []), ...(ex.additionalTags || [])].filter((tag) => tag && tag.name);
   }, []);
 
-  // Popular exercises
-  const popularExercises = useMemo(() => {
-    return [...availableExercises]
-      .filter((ex) => exercisePopularity[ex.id] > 0)
-      .sort((a, b) => (exercisePopularity[b.id] || 0) - (exercisePopularity[a.id] || 0))
-      .slice(0, 10);
-  }, [availableExercises, exercisePopularity]);
-
-  // Source filter: by scope (all / Moje = ORGANIZATION|PERSONAL / FiziYo = GLOBAL)
-  const sourceFilteredExercises = useMemo(
-    () => filterExercisesBySource(availableExercises, sourceFilter),
-    [availableExercises, sourceFilter]
-  );
-
-  const { total: totalCount, organization: organizationCount, fiziyo: fiziyoCount } = useMemo(
-    () => countBySource(availableExercises),
+  const exerciseById = useMemo(
+    () => new Map(availableExercises.map((exercise) => [exercise.id, exercise])),
     [availableExercises]
   );
+  const resolveExercises = useCallback(
+    (exerciseIds: readonly string[]) =>
+      exerciseIds
+        .map((exerciseId) => exerciseById.get(exerciseId))
+        .filter((exercise): exercise is BuilderExercise => exercise !== undefined),
+    [exerciseById]
+  );
 
-  // Filtered exercises: source first, then search
-  const filteredExercises = useMemo(() => {
-    return filterExercisesBySearch(sourceFilteredExercises, searchQuery);
-  }, [sourceFilteredExercises, searchQuery]);
+  const { search: searchQuery, sourceFilter, counts } = library;
+  const popularExercises = useMemo(() => resolveExercises(library.popularIds), [library.popularIds, resolveExercises]);
+  const pageExercises = useMemo(() => resolveExercises(library.itemIds), [library.itemIds, resolveExercises]);
 
   // Popularne są pokazane osobno nad listą, więc lista „Wszystkie” ich nie powtarza.
-  const showPopular = !searchQuery && sourceFilter === 'all' && popularExercises.length > 0;
+  const showPopular = !searchQuery.trim() && sourceFilter === 'all' && popularExercises.length > 0;
   const listedExercises = useMemo(() => {
-    if (!showPopular) return filteredExercises;
+    if (!showPopular) return pageExercises;
     const popularIds = new Set(popularExercises.map((e) => e.id));
-    return filteredExercises.filter((e) => !popularIds.has(e.id));
-  }, [filteredExercises, popularExercises, showPopular]);
-  const {
-    visibleItems: visibleExercises,
-    remaining: remainingExercises,
-    showMore: showMoreExercises,
-  } = useIncrementalList(listedExercises, `${sourceFilter}|${searchQuery}`);
+    return pageExercises.filter((e) => !popularIds.has(e.id));
+  }, [pageExercises, popularExercises, showPopular]);
 
   // Params helpers
   const getDefaultParams = useCallback(
@@ -609,7 +588,7 @@ export function ExerciseSetBuilder({
     (instanceId: string, field: keyof ExerciseParams, value: ExerciseParamValue) => {
       const next = new Map(exerciseParams);
       const instance = selectedInstances.find((i) => i.instanceId === instanceId);
-      const exercise = availableExercises.find((e) => e.id === instance?.exerciseId);
+      const exercise = instance ? exerciseById.get(instance.exerciseId) : undefined;
 
       const current = exercise
         ? resolveInstanceParams(instanceId, exercise)
@@ -618,7 +597,7 @@ export function ExerciseSetBuilder({
       next.set(instanceId, { ...current, [field]: normalizedValue });
       onExerciseParamsChange(next);
     },
-    [availableExercises, resolveInstanceParams, selectedInstances, exerciseParams, onExerciseParamsChange]
+    [exerciseById, resolveInstanceParams, selectedInstances, exerciseParams, onExerciseParamsChange]
   );
 
   const addExerciseToSet = useCallback(
@@ -672,11 +651,11 @@ export function ExerciseSetBuilder({
   const selectedInstancesData = useMemo(() => {
     return selectedInstances
       .map((si) => {
-        const exercise = availableExercises.find((ex) => ex.id === si.exerciseId);
+        const exercise = exerciseById.get(si.exerciseId);
         return exercise ? { ...si, exercise } : null;
       })
       .filter((item): item is { instanceId: string; exerciseId: string; exercise: BuilderExercise } => item !== null);
-  }, [availableExercises, selectedInstances]);
+  }, [exerciseById, selectedInstances]);
 
   // Sum of the cards' own durations, so the header never disagrees with a card.
   const totalSetDuration = useMemo(() => {
@@ -758,7 +737,7 @@ export function ExerciseSetBuilder({
               <Input
                 data-testid={`${testIdPrefix}-search-input`}
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => library.onSearchChange(e.target.value)}
                 placeholder="Szukaj ćwiczeń..."
                 className="h-10 pl-10 bg-surface border-border placeholder:text-muted-foreground/50"
               />
@@ -771,7 +750,7 @@ export function ExerciseSetBuilder({
               <button
                 data-testid={`${testIdPrefix}-filter-all`}
                 type="button"
-                onClick={() => setSourceFilter('all')}
+                onClick={() => library.onSourceFilterChange('all')}
                 className={cn(
                   'px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all border flex items-center gap-1.5',
                   sourceFilter === 'all'
@@ -781,12 +760,12 @@ export function ExerciseSetBuilder({
               >
                 <Dumbbell className="h-3.5 w-3.5 shrink-0" />
                 <span>Wszystkie</span>
-                <span className="font-semibold">{totalCount}</span>
+                <span className="font-semibold">{counts?.all}</span>
               </button>
               <button
                 data-testid={`${testIdPrefix}-filter-organization`}
                 type="button"
-                onClick={() => setSourceFilter('organization')}
+                onClick={() => library.onSourceFilterChange('organization')}
                 className={cn(
                   'px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all border flex items-center gap-1.5',
                   sourceFilter === 'organization'
@@ -796,12 +775,12 @@ export function ExerciseSetBuilder({
               >
                 <Dumbbell className="h-3.5 w-3.5 shrink-0" />
                 <span>Moje ćwiczenia</span>
-                <span className="font-semibold">{organizationCount}</span>
+                <span className="font-semibold">{counts?.organization}</span>
               </button>
               <button
                 data-testid={`${testIdPrefix}-filter-fiziyo`}
                 type="button"
-                onClick={() => setSourceFilter('fiziyo')}
+                onClick={() => library.onSourceFilterChange('fiziyo')}
                 className={cn(
                   'px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all border flex items-center gap-1.5',
                   sourceFilter === 'fiziyo'
@@ -811,7 +790,7 @@ export function ExerciseSetBuilder({
               >
                 <Sparkles className="h-3.5 w-3.5 shrink-0" />
                 <span>FiziYo</span>
-                <span className="font-semibold">{fiziyoCount}</span>
+                <span className="font-semibold">{counts?.fiziyo}</span>
               </button>
             </div>
           </div>
@@ -830,11 +809,11 @@ export function ExerciseSetBuilder({
                   />
                 </div>
               )}
-              {loadingExercises ? (
+              {library.loading ? (
                 <div className="flex items-center justify-center py-16">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
-              ) : filteredExercises.length === 0 ? (
+              ) : listedExercises.length === 0 && !showPopular ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
                   <Dumbbell className="h-12 w-12 text-muted-foreground/50 mb-4" />
                   <p className="text-sm font-medium text-muted-foreground">
@@ -876,7 +855,7 @@ export function ExerciseSetBuilder({
                       </div>
                     )}
                     <div className="grid gap-2">
-                      {visibleExercises.map((exercise) => (
+                      {listedExercises.map((exercise) => (
                         <ExercisePickerItem
                           key={exercise.id}
                           testIdPrefix={testIdPrefix}
@@ -888,9 +867,14 @@ export function ExerciseSetBuilder({
                         />
                       ))}
                     </div>
+                    {library.loadingMore && (
+                      <div className="flex justify-center py-2">
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                      </div>
+                    )}
                     <ShowMoreTrigger
-                      remaining={remainingExercises}
-                      onShowMore={showMoreExercises}
+                      remaining={library.loadingMore ? 0 : library.remaining}
+                      onShowMore={library.loadMore}
                       dataTestId={`${testIdPrefix}-show-more-btn`}
                     />
                   </div>

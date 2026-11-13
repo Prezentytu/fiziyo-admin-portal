@@ -1,4 +1,5 @@
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
+import { isV33Document } from './contentVersion';
 import { ENRICHMENT_SCHEMA_V3 } from './enrichmentToV3';
 import { EXERCISE_CONTENT_LABELS } from '@/components/shared/enrichment/enrichmentFieldLabels';
 
@@ -150,11 +151,66 @@ export const ENRICHMENT_SECTIONS: EnrichmentSectionMeta[] = [
   },
 ];
 
+const LEGACY_SECTION_IDS_KEPT_IN_V33 = [
+  'summary',
+  'steps',
+  'cues',
+  'mistakes',
+  'feel',
+  'why_when',
+  'safety',
+  'keywords',
+];
+
+/**
+ * Sections of a record in contract v3.3 (KONTRAKT-v3.3 §1). Retired places (§2) are not counted;
+ * `therapist.note` is left out because the contract keeps it empty by default.
+ */
+export const ENRICHMENT_SECTIONS_V33: EnrichmentSectionMeta[] = [
+  ...ENRICHMENT_SECTIONS.filter((section) => LEGACY_SECTION_IDS_KEPT_IN_V33.includes(section.id)),
+  {
+    id: 'easier_harder',
+    label: 'Łatwiej i trudniej',
+    isFilled: (data) => isNonEmptyText(data.patient?.easier) && isNonEmptyText(data.patient?.harder),
+  },
+  {
+    id: 'breathing',
+    label: 'Oddech',
+    isFilled: (data) => isNonEmptyText(data.breathing?.text),
+  },
+  {
+    id: 'pain_rule',
+    label: 'Reguła bólu',
+    isFilled: (data) => isNonEmptyText(data.safety?.pain_rule),
+  },
+  {
+    id: 'contraindications',
+    label: EXERCISE_CONTENT_LABELS.contraindications,
+    isFilled: (data) => hasArrayItems(data.safety?.contraindications),
+  },
+  {
+    id: 'checkpoints',
+    label: 'Punkty kontrolne',
+    isFilled: (data) => hasArrayItems(data.therapist?.checkpoints),
+  },
+  {
+    id: 'indications',
+    label: EXERCISE_CONTENT_LABELS.indications,
+    isFilled: (data) => hasArrayItems(data.classification?.indications),
+  },
+  {
+    id: 'equipment_items',
+    label: 'Sprzęt',
+    isFilled: (data) => hasArrayItems(data.equipment_items),
+  },
+];
+
 export function computeCompleteness(data: ExerciseEnrichmentData): EnrichmentCompleteness {
-  const missing = ENRICHMENT_SECTIONS.filter((section) => !section.isFilled(data));
+  const sections = isV33Document(data) ? ENRICHMENT_SECTIONS_V33 : ENRICHMENT_SECTIONS;
+  const missing = sections.filter((section) => !section.isFilled(data));
   return {
-    filled: ENRICHMENT_SECTIONS.length - missing.length,
-    total: ENRICHMENT_SECTIONS.length,
+    filled: sections.length - missing.length,
+    total: sections.length,
     missing,
   };
 }

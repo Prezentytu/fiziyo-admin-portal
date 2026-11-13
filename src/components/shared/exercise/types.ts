@@ -44,6 +44,11 @@ export interface ExerciseExecutionCardData {
   equipment?: string;
   notes?: string;
   patientDescription?: string;
+  /**
+   * Sama nadpisana część `patientDescription`, bez kolumny ćwiczenia. Tylko do odczytu w podglądzie
+   * (`resolvePatientInstruction`); zapis nadal liczy różnicę z `patientDescription`.
+   */
+  patientDescriptionOverride?: string;
   clinicalDescription?: string;
   audioCue?: string;
   rangeOfMotion?: string;
@@ -54,6 +59,11 @@ export interface ExerciseExecutionCardData {
   customDescription?: string;
   /** Side: none | left | right | both | alternating */
   side?: string;
+  /**
+   * Rekord ćwiczenia jest w kontrakcie 3.3 (`isV33ExerciseRecord`): „naprzemiennie” liczy się na stronę.
+   * Brak flagi: liczba łącznie, jak dotąd.
+   */
+  alternatingPerSide?: boolean;
   /** When true, second primary column shows duration (s) instead of repetitions. */
   isTimeBased?: boolean;
 }

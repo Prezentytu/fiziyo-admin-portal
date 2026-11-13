@@ -31,7 +31,7 @@ export interface PlanAdherenceSource {
 export interface PatientPlanExercise {
   mappingId: string;
   name: string;
-  /** "3 × 10" or "2 × 30 sekund"; one dose like on the patient card in the panel. */
+  /** "3 × 10", "3 × 10 na każdą stronę" (naprzemiennie w rekordzie 3.3) or "2 × 30 sekund"; one dose like on the patient card. */
   dose: string;
 }
 
@@ -85,7 +85,9 @@ export function summarizePatientPlans(
           dose:
             effective.isTimeBased && effective.duration
               ? `${effective.sets} × ${formatSecondsPolish(effective.duration)}`
-              : `${effective.sets} × ${effective.reps}`,
+              : `${effective.sets} × ${effective.reps}${
+                  effective.alternatingPerSide && effective.side?.toLowerCase() === 'alternating' ? ' na każdą stronę' : ''
+                }`,
         }));
       const week = adherence.find((entry) => entry.assignmentId === assignment.id);
       return {

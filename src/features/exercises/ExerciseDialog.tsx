@@ -33,7 +33,11 @@ import type { Exercise } from './ExerciseCard';
 import { verificationCopy } from '@/features/verification/verificationCopy';
 import { getNextExerciseCopyName } from './utils/getNextExerciseCopyName';
 import { buildExerciseMediaChangeSet, getExerciseMediaGalleryUrls } from './utils/exerciseMedia';
-import { buildEnrichmentUpdateVariables, isExerciseSaveAuthError } from './utils/buildEnrichmentUpdateVariables';
+import {
+  buildEnrichmentUpdateVariables,
+  fetchCurrentEnrichmentData,
+  isExerciseSaveAuthError,
+} from './utils/buildEnrichmentUpdateVariables';
 import { useExerciseImageGeneration } from './useExerciseImageGeneration';
 import { ImageStylePicker } from './ImageStylePicker';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
@@ -244,10 +248,26 @@ export function ExerciseDialog({
     [exercise, updateExercise]
   );
 
+  const fetchCurrentEnrichment = useCallback(async () => {
+    if (!exercise) return null;
+    return fetchCurrentEnrichmentData(apolloClient, exercise.id);
+  }, [apolloClient, exercise]);
+
+  // Same messages as the exercise page shows for a failed save.
+  const handleSaveError = useCallback((error?: unknown) => {
+    if (error && isExerciseSaveAuthError(error)) {
+      toast.error('Brak uprawnień do zapisu tych zmian');
+      return;
+    }
+    toast.error('Nie udało się zapisać zmian');
+  }, []);
+
   const editorForm = useExerciseEditorForm({
     source: exercise,
     updateCore,
     updateEnrichment,
+    fetchCurrentEnrichment,
+    onError: handleSaveError,
   });
 
   React.useEffect(() => {
@@ -385,7 +405,10 @@ export function ExerciseDialog({
     if (isSaveBlocked || saveInFlightRef.current) return;
     saveInFlightRef.current = true;
     try {
-      await editorForm.save();
+      const outcome = await editorForm.save();
+      // A failed save has already shown its error and a refused one shows the conflict notice in the form:
+      // neither is a success, so the dialog stays open with what the therapist typed.
+      if (outcome === 'error' || outcome === 'conflict') return;
 
       const mediaChangeSet = buildExerciseMediaChangeSet({
         initialExistingUrls: initialMediaUrls,

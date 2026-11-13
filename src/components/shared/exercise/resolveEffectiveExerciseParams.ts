@@ -1,5 +1,6 @@
 import { resolveLoadKg } from '@/utils/exerciseLoadMutation';
 import { calculateEstimatedTime } from '@/utils/exerciseTime';
+import { isV33ExerciseRecord } from '@/utils/exerciseRecordVersion';
 import { normalizeExerciseSide, normalizeExerciseType } from '@/utils/exerciseEnums';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import type { ExerciseOverrideFields } from './exerciseOverride';
@@ -103,6 +104,11 @@ export interface EffectiveExerciseParams {
   customName?: string;
   customDescription?: string;
   patientDescription?: string;
+  /**
+   * Sama część nadpisana `patientDescription` (przypisanie, pozycja zestawu albo `customDescription`), bez kolumny
+   * ćwiczenia. Czytniki instrukcji (`resolvePatientInstruction`) potrzebują jej, bo rekord 3.3 pomija kolumnę.
+   */
+  patientDescriptionOverride?: string;
   clinicalDescription?: string;
   audioCue?: string;
   rangeOfMotion?: string;
@@ -118,6 +124,8 @@ export interface EffectiveExerciseParams {
   customImages?: string[];
   hidden: boolean;
   isTimeBased: boolean;
+  /** Rekord ćwiczenia w kontrakcie 3.3 (`isV33ExerciseRecord`): „naprzemiennie” liczy się na stronę. */
+  alternatingPerSide: boolean;
   /** Field keys present on the override object (for per-field badges). */
   overriddenKeys: string[];
   /**
@@ -247,9 +255,13 @@ export function resolveEffectiveExerciseParams(
     'difficultyLevel',
     pickDefined(layered?.difficultyLevel, exercise?.difficultyLevel)
   );
+  const patientDescriptionOverride = unlessCleared(
+    'patientDescription',
+    pickDefined(layered?.patientDescription, customDescription)
+  );
   const patientDescription = unlessCleared(
     'patientDescription',
-    pickDefined(layered?.patientDescription, customDescription, exercise?.patientDescription, exercise?.description)
+    pickDefined(patientDescriptionOverride, exercise?.patientDescription, exercise?.description)
   );
   const clinicalDescription = unlessCleared(
     'clinicalDescription',
@@ -276,6 +288,7 @@ export function resolveEffectiveExerciseParams(
     customName,
     customDescription,
     patientDescription,
+    patientDescriptionOverride,
     clinicalDescription,
     audioCue,
     rangeOfMotion,
@@ -290,6 +303,7 @@ export function resolveEffectiveExerciseParams(
     customImages: layered?.customImages,
     hidden: layered?.hidden ?? false,
     isTimeBased,
+    alternatingPerSide: isV33ExerciseRecord(exercise),
     overriddenKeys,
     effectiveEnrichment,
   };
@@ -311,5 +325,6 @@ export function estimateEffectiveExerciseSeconds(effective: EffectiveExercisePar
     preparationTime: effective.preparationTime,
     tempo: effective.tempo,
     type: effective.isTimeBased ? 'time' : 'reps',
+    alternatingPerSide: effective.alternatingPerSide,
   });
 }

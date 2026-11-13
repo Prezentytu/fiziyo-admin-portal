@@ -96,7 +96,7 @@ Serie × Powtórzenia [× Czas powtórzenia]
 - `executionTime` = 0/null → bez timera
 - NIE eksponuj terapeucie „typu ćwiczenia” jako osobnej etykiety; UI ma pokazywać parametry wykonania, a semantyka timera wynika z `executionTime`
 - W `CreateExerciseWizard` pole wejściowe TIER 1 to `Czas powtórzenia`; `Czas serii` jest pokazywany jako wartość wyliczana, a `duration` pozostaje w sekcji zaawansowanej dla ćwiczeń liczonych czasem.
-- Kafle „Czas serii/ćwiczenia (wyliczany)” liczą `calculateExerciseTotalSeconds` — ten sam wzór co player (`computePlannedDurationSec`): `sideMultiplier` tylko na bloku pracy, `restSets` raz; `both` = `preparationTime` na starcie oraz `preparationTime` przed prawą stroną każdej serii. Przekaż zapisany `type`: REPS nie liczy pozostałego `duration` (jak player); bez `type` (szkic) `duration` działa jako czas serii.
+- Kafle „Czas serii/ćwiczenia (wyliczany)” liczą `calculateExerciseTotalSeconds` — ten sam wzór co player (`computePlannedDurationSec`): `sideMultiplier` tylko na bloku pracy, `restSets` raz; `both` = `preparationTime` na starcie oraz `preparationTime` przed prawą stroną każdej serii. „Naprzemiennie” liczy `alternatingPerSide` (`isV33ExerciseRecord`, `src/utils/exerciseRecordVersion.ts`, jedyna reguła „czy rekord jest 3.3”): rekord 3.3 = liczba na stronę (`2 × reps` ruchów w jednym przebiegu, KONTRAKT-v3.3 §6.7), rekord bez wersji = liczba łącznie jak dotąd. Wektory: `src/utils/exerciseSideDose.vectors.test.ts`. Przekaż zapisany `type`: REPS nie liczy pozostałego `duration` (jak player); bez `type` (szkic) `duration` działa jako czas serii.
 
 Przykłady: `3 × 10`, `3 × 10 × 10s`, `3 × 1 × 30s`
 
@@ -105,6 +105,7 @@ Przykłady: `3 × 10`, `3 × 10 × 10s`, `3 × 1 × 30s`
 - Prezentacja parametrów (SSOT UI): `src/components/shared/exercise/ExerciseParametersFields.tsx` + `PARAMETER_SECTIONS` w `fieldContract.ts`
 - Adapter szablonu: `ExerciseParametersEditor.tsx` → Fields (`variant="create"|"full"`)
 - Treść (enrichment): `ExerciseContentSections.tsx` — wspólne dla `ExerciseEditor` i `CreateExerciseWizard`
+- Rekord w kontrakcie v3.3: formularz i zapis według `.ai/specs/SPEC-038-2026-11-11-exercise-edit-v33.md`. Dokument do wysłania buduje wspólny moduł `src/components/shared/exercise/writeExerciseContent.ts` (formularz i centrum weryfikacji) z dokumentu wczytanego; nowe pole edytowalne dopisujesz do `V33_EDITABLE_PATHS`, nigdy przez `compactEnrichment` ani `toV3`. Hook odrzuca ścieżkę spoza listy. Każdy host podaje `fetchCurrentEnrichment`: przed zapisem hook porównuje dokument z bazy z wczytanym i przy różnicy nie zapisuje (`hasSaveConflict`, `ExerciseSaveConflictNotice`).
 - Kreator: `CreateExerciseWizard.tsx` + `utils/createExerciseSubmit.ts` (create → optional enrichment update)
 - AI całego ćwiczenia w kreatorze: `AiFullExercisePanel.tsx` + `utils/aiFullExercise.ts` (warianty nazwy, szkic wszystkich pól, odrzucenie wartości spoza `AI_PARAM_RANGES`); wynik to tylko szkic formularza z „Cofnij”, zapis robi fizjoterapeuta.
 - Dialog edycji: `ExerciseDialog.tsx` → ten sam `ExerciseEditor`

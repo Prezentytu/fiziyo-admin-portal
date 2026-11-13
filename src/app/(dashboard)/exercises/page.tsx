@@ -37,7 +37,8 @@ import {
 } from '@/graphql/mutations/exercises.mutations';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useSystemRole } from '@/hooks/useSystemRole';
-import { useExerciseBuilder, type BuilderExercise } from '@/contexts/ExerciseBuilderContext';
+import { useExerciseBuilder } from '@/contexts/ExerciseBuilderContext';
+import { toBuilderExercise } from '@/features/exercises/utils/toBuilderExercise';
 import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
 import { useRealtimeExercises } from '@/hooks/useRealtimeExercises';
 import { ORG_VERIFICATION_REFETCH_QUERIES } from '@/hooks/useOrganizationVerificationRealtime';
@@ -50,7 +51,6 @@ import {
   type ExerciseLibraryUrlState,
 } from '@/features/exercises/utils/exerciseLibraryUrlState';
 import { EXERCISE_BODY_REGIONS, findExerciseBodyRegion } from '@/features/exercises/utils/exerciseBodyRegions';
-import { getExerciseDefaultParams } from '@/features/exercise-sets/utils/exerciseDefaults';
 import { PageHeader } from '@/components/shared/page';
 import { useUrlSearchInput } from '@/features/exercises/useUrlSearchInput';
 import { getExerciseDialogSuccessRoute } from '@/features/exercises/utils/exerciseDialogSuccessRoute';
@@ -82,42 +82,7 @@ export default function ExercisesPage() {
   // Handler for toggling exercise in builder
   const handleToggleBuilder = useCallback(
     (exercise: Exercise) => {
-      const defaults = getExerciseDefaultParams(exercise);
-      const builderExercise: BuilderExercise = {
-        id: exercise.id,
-        name: exercise.name,
-        description: exercise.description,
-        patientDescription: exercise.patientDescription ?? exercise.description,
-        clinicalDescription: exercise.clinicalDescription,
-        audioCue: exercise.audioCue,
-        notes: exercise.notes,
-        tempo: exercise.tempo,
-        side: exercise.side,
-        exerciseSide: defaults.exerciseSide,
-        preparationTime: exercise.preparationTime,
-        thumbnailUrl: exercise.thumbnailUrl,
-        imageUrl: exercise.imageUrl,
-        images: exercise.images,
-        defaultSets: exercise.defaultSets,
-        defaultReps: exercise.defaultReps,
-        defaultDuration: exercise.defaultDuration,
-        defaultExecutionTime: exercise.defaultExecutionTime,
-        defaultRestBetweenSets: exercise.defaultRestBetweenSets,
-        defaultRestBetweenReps: exercise.defaultRestBetweenReps,
-        sets: defaults.sets,
-        reps: defaults.reps,
-        duration: defaults.duration,
-        executionTime: defaults.executionTime,
-        restSets: defaults.restSets,
-        restReps: defaults.restReps,
-        customName: defaults.customName,
-        customDescription: defaults.customDescription,
-        loadType: defaults.loadType,
-        loadValue: defaults.loadValue,
-        loadUnit: defaults.loadUnit,
-        loadText: defaults.loadText,
-        type: exercise.type,
-      };
+      const builderExercise = toBuilderExercise(exercise);
       toggleExercise(builderExercise);
     },
     [toggleExercise]

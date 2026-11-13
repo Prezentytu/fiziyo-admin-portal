@@ -15,6 +15,7 @@ import {
   normalizeExerciseFieldValues,
   resolveEffectiveExerciseParams,
 } from '@/components/shared/exercise';
+import { resolvePatientInstruction } from '@/components/shared/exercise/patientInstruction';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import type { ExerciseMapping, ExerciseOverride } from './PatientAssignmentCard';
 import type { ExerciseLoad } from '@/features/assignment/types';
@@ -109,12 +110,13 @@ export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, o
   const effectiveTempo = normalizedOverride?.tempo ?? normalizedMapping.tempo ?? exercise?.tempo;
   const effectiveLoadDisplayText = normalizedMapping.loadText ?? exercise?.defaultLoad?.text ?? exercise?.loadText;
   const effectiveName = normalizedOverride?.customName ?? normalizedMapping.customName ?? exercise?.name;
+  // Nadpisanie z przypisania (także warstwa personalizacji), potem z pozycji planu; dalej instrukcja rekordu, jak na wydruku.
   const effectivePatientDescription =
-    normalizedOverride?.customDescription ??
-    normalizedMapping.customDescription ??
-    exercise?.patientDescription ??
-    exercise?.description ??
-    '';
+    resolvePatientInstruction({
+      override: effective.patientDescriptionOverride,
+      exercise,
+      enrichment: effective.effectiveEnrichment,
+    }).text ?? '';
   const effectiveClinicalDescription = exercise?.clinicalDescription ?? '';
   const effectiveSide = effective.side;
   const normalizedFields = normalizeExerciseFieldValues({
@@ -136,7 +138,7 @@ export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, o
     audioCue: exercise?.audioCue,
     notes: normalizedOverride?.notes || normalizedMapping.notes,
     loadText: effectiveLoadDisplayText,
-    defaultLoad: exercise?.defaultLoad,
+    defaultLoad: exercise?.defaultLoad, enrichmentData: exercise?.enrichmentData,
   });
   const parameterFieldOrder = [
     EXERCISE_FIELD_METADATA.sets,
@@ -277,12 +279,12 @@ export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, o
             </div>
 
             {/* Additional info */}
-            {translateExerciseSidePolish(effectiveSide) && (
+            {translateExerciseSidePolish(effectiveSide, Boolean(normalizedFields.alternatingPerSide)) && (
               <div className="flex items-center gap-3 p-3 rounded-xl bg-surface-light/50 border border-border/40">
                 <ArrowLeftRight className="h-5 w-5 text-muted-foreground shrink-0" />
                 <div>
                   <p className="text-xs text-muted-foreground">Strona wykonania</p>
-                  <p className="text-sm font-medium">{translateExerciseSidePolish(effectiveSide)}</p>
+                  <p className="text-sm font-medium">{translateExerciseSidePolish(effectiveSide, Boolean(normalizedFields.alternatingPerSide))}</p>
                 </div>
               </div>
             )}
