@@ -9,8 +9,9 @@ import { isV33ExerciseRecord } from './exerciseRecordVersion';
  * rep_s, rest (między powtórzeniami), rest_s (między seriami), prep → ruchów, seria s, całość s.
  */
 type Version = '3.3' | 'bez wersji';
+type Mode = 'none' | 'alternating' | 'each_side' | 'alternating_time';
 type Vector = [
-  mode: 'alternating' | 'each_side',
+  mode: Mode,
   version: Version,
   reps: number,
   sets: number,
@@ -23,22 +24,22 @@ type Vector = [
   totalSeconds: number,
 ];
 
+// Dokładnie wiersze 1-10 pliku wektorów (kolumny jak wyżej), w tej samej kolejności.
 const VECTORS: Vector[] = [
-  ['alternating', '3.3', 10, 3, 3, 2, 30, 5, 20, 98, 359],
+  ['none', 'bez wersji', 10, 3, 3, 2, 30, 5, 10, 48, 209],
   ['alternating', 'bez wersji', 10, 3, 3, 2, 30, 5, 10, 48, 209],
-  ['each_side', '3.3', 10, 3, 3, 2, 30, 5, 20, 101, 368],
+  ['alternating', '3.3', 10, 3, 3, 2, 30, 5, 20, 98, 359],
   ['each_side', 'bez wersji', 10, 3, 3, 2, 30, 5, 20, 101, 368],
-  ['alternating', '3.3', 7, 3, 2, 1, 20, 5, 14, 41, 168],
-  ['alternating', 'bez wersji', 7, 3, 2, 1, 20, 5, 7, 20, 105],
-  ['alternating', '3.3', 1, 3, 30, 2, 20, 0, 2, 62, 226],
-  ['alternating', 'bez wersji', 1, 3, 30, 2, 20, 0, 1, 30, 130],
-  ['alternating', '3.3', 9, 1, 4, 0, 0, 0, 18, 72, 72],
-  ['alternating', 'bez wersji', 9, 1, 4, 0, 0, 0, 9, 36, 36],
-  ['each_side', 'bez wersji', 5, 2, 3, 1, 15, 3, 10, 41, 100],
-  ['alternating', '3.3', 5, 2, 3, 1, 15, 3, 10, 39, 96],
+  ['each_side', '3.3', 10, 3, 3, 2, 30, 5, 20, 101, 368],
+  ['alternating', 'bez wersji', 7, 2, 4, 1, 20, 0, 7, 34, 88],
+  ['alternating', '3.3', 7, 2, 4, 1, 20, 0, 14, 69, 158],
+  ['alternating', '3.3', 1, 1, 3, 2, 0, 5, 2, 8, 13],
+  ['alternating_time', 'bez wersji', 3, 2, 30, 5, 40, 5, 3, 100, 245],
+  ['alternating_time', '3.3', 3, 2, 30, 5, 40, 5, 6, 205, 455],
 ];
 
-const sideOf = (mode: Vector[0]) => (mode === 'each_side' ? 'both' : 'alternating');
+const sideOf = (mode: Mode) => (mode === 'each_side' ? 'both' : mode === 'none' ? 'none' : 'alternating');
+const typeOf = (mode: Mode) => (mode === 'alternating_time' ? 'time' : 'reps');
 const recordOf = (version: Version) => (version === '3.3' ? { enrichmentData: { schemaVersion: '3.3' } } : { enrichmentData: {} });
 
 describe('wektory „naprzemiennie” (§6.7, wariant B)', () => {
@@ -50,7 +51,7 @@ describe('wektory „naprzemiennie” (§6.7, wariant B)', () => {
       restSets,
       preparationTime: prep,
       side: sideOf(mode),
-      type: 'reps',
+      type: typeOf(mode),
       alternatingPerSide: isV33ExerciseRecord(recordOf(version)),
     };
     expect(calculateExerciseTotalSeconds({ ...dose, sets: 1, restSets: 0, preparationTime: 0 }).seconds).toBe(
@@ -84,19 +85,66 @@ describe('wektory „naprzemiennie” (§6.7, wariant B)', () => {
   });
 });
 
-describe('isV33ExerciseRecord: jedna reguła „czy rekord jest 3.3”', () => {
-  it('3.3 i późniejsze są nowe, brak wersji i starsze są stare', () => {
-    expect(isV33ExerciseRecord({ enrichmentData: { schemaVersion: '3.3' } })).toBe(true);
-    expect(isV33ExerciseRecord({ enrichmentData: { schemaVersion: '3.10' } })).toBe(true);
-    expect(isV33ExerciseRecord({ enrichmentData: { schemaVersion: '4.0' } })).toBe(true);
-    expect(isV33ExerciseRecord({ enrichmentData: JSON.stringify({ schemaVersion: '3.3' }) })).toBe(true);
-    expect(isV33ExerciseRecord({ schemaVersion: 3.3 })).toBe(true);
+/**
+ * Ta sama tabela co w aplikacji (`selectExerciseReader`, utils/__tests__/exerciseSchema.test.ts) i w backendzie
+ * (`ExerciseSchemaVersion.ReadDeclared`): czytnik v3_3 tylko dla tekstu z poprawną wersją >= 3.3.
+ * Wynik `true` = aplikacja wybiera czytnik v3_3 (także dla 3.4 i 4.0, z `supported: false`).
+ */
+const VERSION_CASES: [label: string, declared: unknown, isNew: boolean][] = [
+  ['3.3', '3.3', true],
+  ['3.3.0', '3.3.0', true],
+  ['3.3.0.0', '3.3.0.0', true],
+  ['3.10', '3.10', true],
+  ['3.4', '3.4', true],
+  ['4.0', '4.0', true],
+  ['10', '10', true],
+  [' 3.3 ', ' 3.3 ', true],
+  ['3.2', '3.2', false],
+  ['3.2.9', '3.2.9', false],
+  ['3', '3', false],
+  ['2.0', '2.0', false],
+  ['3.3-beta', '3.3-beta', false],
+  ['3.3x', '3.3x', false],
+  ['v3.3', 'v3.3', false],
+  ['3.3.0.0.0', '3.3.0.0.0', false],
+  ['3.', '3.', false],
+  ['123456.0', '123456.0', false],
+  ['newest', 'newest', false],
+  ['pusty', '', false],
+  ['spacje', '   ', false],
+  ['liczba 3.3', 3.3, false],
+  ['liczba 4', 4, false],
+  ['null', null, false],
+  ['obiekt', {}, false],
+];
+
+describe('isV33ExerciseRecord: jedna reguła „czy rekord jest 3.3”, tabela jak w aplikacji i backendzie', () => {
+  describe.each(VERSION_CASES)('wersja %s', (_label, declared, isNew) => {
+    it('w dokumencie enrichmentData (obiekt)', () => {
+      expect(isV33ExerciseRecord({ enrichmentData: { schemaVersion: declared } })).toBe(isNew);
+    });
+    it('w dokumencie enrichmentData (tekst JSON)', () => {
+      expect(isV33ExerciseRecord({ enrichmentData: JSON.stringify({ schemaVersion: declared }) })).toBe(isNew);
+    });
+    it('w kolumnie schemaVersion', () => {
+      expect(isV33ExerciseRecord({ schemaVersion: declared })).toBe(isNew);
+    });
+  });
+
+  it('brak wersji, brak dokumentu i zepsuty dokument to stary rekord', () => {
     expect(isV33ExerciseRecord({ enrichmentData: {} })).toBe(false);
-    expect(isV33ExerciseRecord({ enrichmentData: { schemaVersion: '3.2' } })).toBe(false);
-    expect(isV33ExerciseRecord({ enrichmentData: { schemaVersion: '3' } })).toBe(false);
     expect(isV33ExerciseRecord({ enrichmentData: 'nie json' })).toBe(false);
     expect(isV33ExerciseRecord({ enrichmentData: null })).toBe(false);
+    expect(isV33ExerciseRecord({})).toBe(false);
     expect(isV33ExerciseRecord(null)).toBe(false);
     expect(isV33ExerciseRecord(undefined)).toBe(false);
+  });
+
+  it('kolumna ma pierwszeństwo przed dokumentem, pusta kolumna oddaje głos dokumentowi', () => {
+    expect(isV33ExerciseRecord({ schemaVersion: '3.2', enrichmentData: { schemaVersion: '3.3' } })).toBe(false);
+    expect(isV33ExerciseRecord({ schemaVersion: '3.3', enrichmentData: { schemaVersion: '3.2' } })).toBe(true);
+    expect(isV33ExerciseRecord({ schemaVersion: '', enrichmentData: { schemaVersion: '3.3' } })).toBe(true);
+    expect(isV33ExerciseRecord({ schemaVersion: null, enrichmentData: { schemaVersion: '3.3' } })).toBe(true);
+    expect(isV33ExerciseRecord({ schemaVersion: 'v3.3', enrichmentData: { schemaVersion: '3.3' } })).toBe(false);
   });
 });

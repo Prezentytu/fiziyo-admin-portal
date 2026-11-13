@@ -474,7 +474,7 @@ function EditExerciseOverrideDialogContent({
       descParts.push(`Opis: ${exerciseDesc}`);
     }
     if (exerciseSide && exerciseSide !== 'none') {
-      descParts.push(`Strona: ${translateSide(exerciseSide)}`);
+      descParts.push(`Strona: ${translateSide(exerciseSide, alternatingPerSide)}`);
     }
     const fullDescription = descParts.join('. ');
 
@@ -495,7 +495,7 @@ function EditExerciseOverrideDialogContent({
       toast.success('Obraz wygenerowany przez AI!');
     };
     reader.readAsDataURL(file);
-  }, [exercise, customName, customDescription, exerciseSide, generateExerciseImage, imageStyle]);
+  }, [exercise, customName, customDescription, exerciseSide, alternatingPerSide, generateExerciseImage, imageStyle]);
 
   const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

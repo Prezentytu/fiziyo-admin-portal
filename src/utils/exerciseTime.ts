@@ -212,13 +212,10 @@ export function formatEstimatedTime(seconds: number): string {
  *
  * - None → razem (ruch obustronny naraz)
  * - Both → na każdą stronę (lewa, potem prawa w serii)
- * - Alternating → strona zmienia się po każdym powtórzeniu; w rekordzie 3.3 liczba jest na każdą stronę
+ * - Alternating → strona zmienia się po każdym powtórzeniu
  * - Left / Right
  */
-export function getSideIndicator(
-  side: string | undefined | null,
-  alternatingPerSide = false
-): { icon: string; label: string; showBadge: boolean } {
+export function getSideIndicator(side: string | undefined | null): { icon: string; label: string; showBadge: boolean } {
   const normalizedSide = side?.toLowerCase() || 'none';
 
   switch (normalizedSide) {
@@ -227,7 +224,7 @@ export function getSideIndicator(
     case 'right':
       return { icon: 'R', label: formatExerciseSideLabel('right'), showBadge: true };
     case 'alternating':
-      return { icon: '⟳', label: formatExerciseSideLabel('alternating', alternatingPerSide), showBadge: true };
+      return { icon: '⟳', label: formatExerciseSideLabel('alternating'), showBadge: true };
     case 'both':
       return { icon: 'L+P', label: formatExerciseSideLabel('both'), showBadge: true };
     case 'none':
