@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { CheckCircle2, FileJson, Loader2, Upload } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, FileJson, Loader2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import type { ExerciseBundleImportResult } from '@/graphql/mutations/exercises.mutations';
 import { useExerciseBundleImport } from '@/hooks/useExerciseBundleImport';
 import { checkCatalogBundleText } from '@/lib/organization/catalogBundleFile';
+import { describeImportFailure } from '@/lib/organization/catalogBundleImportError';
+import { describeMediaNotice } from '@/lib/organization/catalogBundleMediaNotice';
+
+import { CatalogBundleMediaCopyReport } from './CatalogBundleMediaCopyReport';
 
 const STEPS = ['tag-categories.json', 'tags.json', 'exercises-001.json', 'kolejne exercises-00x.json'] as const;
 
@@ -33,6 +37,7 @@ export function CatalogBundleImportCard({ organizationId }: CatalogBundleImportC
   const [importBundle, { loading }] = useExerciseBundleImport();
   const [lastResult, setLastResult] = useState<ExerciseBundleImportResult | null>(null);
   const [lastFileName, setLastFileName] = useState<string | null>(null);
+  const [mediaNotice, setMediaNotice] = useState<string | null>(null);
 
   const handleFile = async (file: File | undefined) => {
     if (!file) {
@@ -64,14 +69,22 @@ export function CatalogBundleImportCard({ organizationId }: CatalogBundleImportC
       setLastResult(result);
       setLastFileName(file.name);
 
+      const notice = describeMediaNotice(text, result);
+      setMediaNotice(notice);
+
       if (!result.success) {
         toast.error(result.errors[0] ?? 'Plik odrzucony. Popraw JSON i wgraj ponownie.');
         return;
       }
 
+      if (notice) {
+        toast.warning(notice);
+        return;
+      }
+
       toast.success(`Zaimportowano ${file.name}`);
-    } catch {
-      toast.error('Import nie powiódł się. Backend musi znać mutację importExerciseBundle.');
+    } catch (error) {
+      toast.error(describeImportFailure(error));
     } finally {
       if (inputRef.current) {
         inputRef.current.value = '';
@@ -145,6 +158,18 @@ export function CatalogBundleImportCard({ organizationId }: CatalogBundleImportC
             </div>
           </div>
         ) : null}
+
+        {mediaNotice ? (
+          <div
+            className="flex items-start gap-3 rounded-xl border border-status-warning/40 bg-status-warning-muted p-4"
+            data-testid="settings-catalog-import-media-notice"
+          >
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-status-warning" />
+            <p className="text-sm text-foreground">{mediaNotice}</p>
+          </div>
+        ) : null}
+
+        {lastResult ? <CatalogBundleMediaCopyReport mediaCopy={lastResult.mediaCopy} /> : null}
       </CardContent>
     </Card>
   );

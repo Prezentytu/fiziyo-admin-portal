@@ -803,6 +803,73 @@ export const IMPORT_EXERCISE_BUNDLE_MUTATION = gql`
   }
 `;
 
+/**
+ * Ten sam import z raportem kopii mediów (fizjo-app#432). Osobny dokument: API sprzed #432 nie zna pola
+ * `mediaCopy` i odrzuciłoby całą mutację, więc karta importu sięga po niego dopiero, gdy API potwierdzi pole.
+ */
+export const IMPORT_EXERCISE_BUNDLE_WITH_MEDIA_COPY_MUTATION = gql`
+  mutation ImportExerciseBundleWithMediaCopy($organizationId: String!, $json: String!, $asGlobal: Boolean) {
+    importExerciseBundle(organizationId: $organizationId, json: $json, asGlobal: $asGlobal) {
+      success
+      fileKind
+      exercisesUpserted
+      mediaReplaced
+      tagsUpserted
+      categoriesUpserted
+      tagLinks
+      relations
+      skipped
+      errors
+      warnings
+      mediaCopy {
+        copied
+        alreadyPresent
+        planned
+        kept
+        failed
+        deferred
+        notCopied
+        items {
+          sourceUrl
+          targetUrl
+          outcome
+          reason
+        }
+      }
+    }
+  }
+`;
+
+/**
+ * Sonda wyboru mutacji, bez introspekcji (HotChocolate poza Development odrzuca `__type` z HC0046). To ta sama
+ * mutacja z raportem kopii mediów, ale z polem głównym pominiętym przez `@skip(if: true)` i argumentami wpisanymi
+ * wprost. Serwer ją waliduje, ale nie uruchamia resolvera, więc nic nie zapisuje. Odpowiedź bez błędów = API zna
+ * `mediaCopy`, `deferred` i `notCopied` (fizjo-app#432). Każda inna (błąd walidacji, sieć, 401, 5xx, brak odpowiedzi)
+ * = import starą mutacją.
+ */
+export const PROBE_EXERCISE_BUNDLE_MEDIA_COPY_MUTATION = gql`
+  mutation ProbeExerciseBundleMediaCopy {
+    importExerciseBundle(organizationId: "probe", json: "{}", asGlobal: false) @skip(if: true) {
+      success
+      mediaCopy {
+        copied
+        alreadyPresent
+        planned
+        kept
+        failed
+        deferred
+        notCopied
+        items {
+          sourceUrl
+          targetUrl
+          outcome
+          reason
+        }
+      }
+    }
+  }
+`;
+
 export interface ExerciseBundleImportResult {
   success: boolean;
   fileKind: string;
@@ -815,6 +882,8 @@ export interface ExerciseBundleImportResult {
   skipped: number;
   errors: string[];
   warnings: string[];
+  /** Tylko z API po fizjo-app#432; kształt czyta `readMediaCopy`, bo raport może zyskać pola i wartości. */
+  mediaCopy?: unknown;
 }
 
 export interface ImportExerciseBundleData {
