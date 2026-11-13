@@ -228,4 +228,59 @@ describe('useExerciseEditorForm: zapis nie gubi kluczy dokumentu', () => {
     expect(sent.patient).not.toHaveProperty('why');
     expect(sent.patient?.summary).toBe(document.patient?.summary);
   });
+
+  // Po zapisie punktem odniesienia jest wysłany dokument, nie szkic: to, co pierwszy zapis wyciął (pusty krok,
+  // wyczyszczone pole), nie wraca w następnym. Pacjent widziałby inaczej kroki „1. A, 3. C”.
+  it('drugi zapis nie przywraca tego, co pierwszy wyciął', async () => {
+    const document = {
+      $schema: 'fiziyo-exercise-v3',
+      patient: {
+        summary: 'S',
+        why: 'Po co',
+        steps: ['A', 'B', 'C'],
+        step_images: [
+          { step: 1, url: 'uA' },
+          { step: 3, url: 'uC' },
+        ],
+      },
+    } as unknown as ExerciseEnrichmentData;
+    const updateEnrichment = vi.fn(async (_payload: ExerciseEnrichmentData) => undefined);
+    const updateCore = vi.fn(async (_variables: Record<string, unknown>) => undefined);
+    const source: ExerciseEditorSource = { id: 'ex-kroki', name: 'Kroki', enrichmentData: document };
+    const { result } = renderHook(() => useExerciseEditorForm({ source, updateCore, updateEnrichment }));
+    const expectedPatient = {
+      steps: ['A', 'C'],
+      step_images: [
+        { step: 1, url: 'uA' },
+        { step: 2, url: 'uC' },
+      ],
+    };
+
+    act(() => {
+      result.current.setEnrichmentPath('patient.steps', ['A', '', 'C']);
+      result.current.setEnrichmentPath('patient.why', '');
+    });
+    await act(async () => {
+      await result.current.save();
+    });
+    // Zapis samego pola rdzenia między zapisami treści też nie cofa punktu odniesienia do szkicu.
+    act(() => {
+      result.current.setCoreField('sets', 5);
+    });
+    await act(async () => {
+      await result.current.save();
+    });
+    act(() => {
+      result.current.setEnrichmentPath('patient.summary', 'S2');
+    });
+    await act(async () => {
+      await result.current.save();
+    });
+
+    expect(updateCore).toHaveBeenCalledTimes(1);
+    expect(updateEnrichment).toHaveBeenCalledTimes(2);
+    const [first, second] = updateEnrichment.mock.calls.map(([payload]) => payload.patient);
+    expect(first).toEqual({ summary: 'S', ...expectedPatient });
+    expect(second).toEqual({ summary: 'S2', ...expectedPatient });
+  });
 });
