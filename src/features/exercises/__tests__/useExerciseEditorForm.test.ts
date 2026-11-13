@@ -152,3 +152,16 @@ describe('useExerciseEditorForm hydration', () => {
     expect(result.current.isDirty).toBe(false);
   });
 });
+
+describe('useExerciseEditorForm: wersja rekordu', () => {
+  const hook = (source: ExerciseEditorSource) =>
+    renderHook(() =>
+      useExerciseEditorForm({ source, updateCore: async () => {}, updateEnrichment: async () => {} })
+    ).result.current;
+
+  it('rekord 3.3 daje alternatingPerSide, rekord bez wersji nie', () => {
+    expect(hook({ id: 'a', name: 'A', enrichmentData: { schemaVersion: '3.3' } } as ExerciseEditorSource).alternatingPerSide).toBe(true);
+    expect(hook({ id: 'a', name: 'A', enrichmentData: {} } as ExerciseEditorSource).alternatingPerSide).toBe(false);
+    expect(hook({ id: 'a', name: 'A', schemaVersion: '3.3-beta' } as ExerciseEditorSource).alternatingPerSide).toBe(false);
+  });
+});

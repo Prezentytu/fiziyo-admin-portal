@@ -297,6 +297,7 @@ function AddExerciseToPatientDialogContent({
   const {
     exercises: libraryExercises,
     loading: loadingExercises,
+    detailsReady,
     detailsPending,
     ensureDetailsReady,
   } = useExercisePickerLibrary<Exercise>({
@@ -571,6 +572,7 @@ function AddExerciseToPatientDialogContent({
                 exerciseType={normalizeExerciseType(selectedExercise?.type) ?? 'draft'}
                 values={parameterValues}
                 alternatingPerSide={alternatingPerSide}
+                versionPending={!detailsReady}
                 onChange={handleParametersChange}
                 showContentSection
                 showMappingOnlyFields

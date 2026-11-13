@@ -95,7 +95,14 @@ export interface ExerciseParametersFieldsProps {
   advancedFooter?: React.ReactNode;
   /** Rekord ćwiczenia jest w kontrakcie 3.3 (`isV33ExerciseRecord`): „naprzemiennie” to liczba na każdą stronę. */
   alternatingPerSide?: boolean;
+  /**
+   * Treść ćwiczenia (a z nią wersja rekordu) jeszcze nie dotarła albo się nie wczytała: dla strony „naprzemiennie”
+   * kafle czasu i podpowiedź strony nie pokazują liczby, która mogłaby być błędna.
+   */
+  versionPending?: boolean;
 }
+
+const SIDE_HELP_PENDING = 'Wczytuję treść ćwiczenia: dopiero z nią wiadomo, czy liczba powtórzeń jest na każdą stronę.';
 
 function InfoTooltip({ label, testId }: Readonly<{ label: string; testId: string }>) {
   return (
@@ -544,6 +551,7 @@ export function ExerciseParametersFields({
   className,
   advancedFooter,
   alternatingPerSide = false,
+  versionPending = false,
 }: Readonly<ExerciseParametersFieldsProps>) {
   const [advancedOpen, setAdvancedOpen] = useState(advancedDefaultOpen || !collapseAdvanced);
   const resolveTestId = (key: ExerciseFieldKey | MappingOnlyFieldKey, kind: ParameterTestIdKind) => {
@@ -569,6 +577,7 @@ export function ExerciseParametersFields({
   const advancedSections = sections.filter((section) => section.advanced);
 
   const isTimeBased = (values.executionTime ?? 0) > 0;
+  const timeUnknown = versionPending && values.side?.toLowerCase() === 'alternating';
 
   const seriesSeconds = calculateExerciseTotalSeconds({
     sets: 1,
@@ -664,7 +673,7 @@ export function ExerciseParametersFields({
           inherited={showInheritedBadge}
           testId={inputTestId}
           infoTestId={infoTestId}
-          tooltip={key === 'side' ? getExerciseSideHelp(alternatingPerSide) : undefined}
+          tooltip={key === 'side' ? (timeUnknown ? SIDE_HELP_PENDING : getExerciseSideHelp(alternatingPerSide)) : undefined}
           onChange={(next) => commitText(key, next)}
         />
       );
@@ -875,7 +884,7 @@ export function ExerciseParametersFields({
               <ComputedChip
                 label="Czas serii (wyliczany)"
                 value={
-                  seriesSeconds.seconds > 0
+                  seriesSeconds.seconds > 0 && !timeUnknown
                     ? formatExerciseDuration(seriesSeconds.seconds, seriesSeconds.isEstimate)
                     : '—'
                 }
@@ -885,7 +894,7 @@ export function ExerciseParametersFields({
               <ComputedChip
                 label="Czas ćwiczenia (wyliczany)"
                 value={
-                  totalSeconds.seconds > 0
+                  totalSeconds.seconds > 0 && !timeUnknown
                     ? formatExerciseDuration(totalSeconds.seconds, totalSeconds.isEstimate)
                     : '—'
                 }

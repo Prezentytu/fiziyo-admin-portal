@@ -41,6 +41,8 @@ import { ChatCard, ChatCardEmpty, ChatCardNote } from './ChatCard';
 import { useSaveTemplateSet } from './useChatWrites';
 
 // A chat draft becomes a plan's mappings: fields a mapping does not keep are not offered.
+const isAlternating = (item: DraftItem) => item.side?.toLowerCase() === 'alternating';
+
 const UNSAVED_FIELDS = ['side', 'rangeOfMotion', 'resistance', 'equipment', 'difficultyLevel'] as const;
 
 interface RowProps {
@@ -48,15 +50,18 @@ interface RowProps {
   readonly exercise?: ChatCatalogExercise;
   readonly alternatives: ChatCatalogExercise[];
   readonly locked: boolean;
+  /** Treść ćwiczeń jeszcze nie dotarła: czas „naprzemiennie” byłby liczony bez wersji rekordu. */
+  readonly versionPending: boolean;
   readonly testId: string;
   readonly onRemove: () => void;
   readonly onSwap: (exercise: ChatCatalogExercise) => void;
   readonly onChange: (patch: Partial<ExerciseParameterValues>) => void;
 }
 
-function DraftRow({ item, exercise, alternatives, locked, testId, onRemove, onSwap, onChange }: RowProps) {
+function DraftRow({ item, exercise, alternatives, locked, versionPending, testId, onRemove, onSwap, onChange }: RowProps) {
   const [panel, setPanel] = useState<'none' | 'swap' | 'edit'>('none');
   const name = exercise?.name ?? 'Ćwiczenie';
+  const timeUnknown = versionPending && isAlternating(item);
   const toggle = (next: 'swap' | 'edit') => setPanel((current) => (current === next ? 'none' : next));
 
   return (
@@ -73,7 +78,8 @@ function DraftRow({ item, exercise, alternatives, locked, testId, onRemove, onSw
         <div className="min-w-0 flex-1">
           <p className="truncate text-[15px] font-medium leading-[21px] text-foreground">{name}</p>
           <p className="truncate text-[13px] leading-[18px] tabular-nums text-label-secondary">
-            {formatDraftParams(item)} · ok. {itemMinutes(item)} min
+            {formatDraftParams(item)}
+            {timeUnknown ? '' : ` · ok. ${itemMinutes(item)} min`}
           </p>
         </div>
         {!locked && (
@@ -144,6 +150,7 @@ function DraftRow({ item, exercise, alternatives, locked, testId, onRemove, onSw
               exerciseType={normalizeExerciseType(exercise?.type) ?? 'draft'}
               values={draftParameterValues(item)}
               alternatingPerSide={item.alternatingPerSide === true}
+              versionPending={versionPending}
               onChange={onChange}
               omitFields={UNSAVED_FIELDS}
               density="compact"
@@ -167,7 +174,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen }: CardProps<'Set
   const [items, setItems] = useState<DraftItem[] | null>(null);
   // Treść ćwiczeń szkicu (wersja rekordu) dociąga się osobno: lista z czatu jej nie niesie, a od wersji zależy,
   // czy „naprzemiennie” liczy na stronę jak w aplikacji pacjenta.
-  const { exercises, loading, detailsPending } = useAvailableExercises(
+  const { exercises, loading, detailsReady, detailsPending, ensureDetailsReady } = useAvailableExercises(
     organizationId,
     true,
     (items ?? []).map((item) => item.exerciseId)
@@ -243,8 +250,12 @@ export function SetDraftCard({ spec, testId, messageId, chosen }: CardProps<'Set
   );
   const draft: SetDraftPayload = { name, patientId: patient?.id, sourceSetId: set?.id, items: draftItems };
   const minutes = draftMinutes(draftItems);
+  const versionPending = !detailsReady;
+  const minutesUnknown = versionPending && draftItems.some(isAlternating);
 
   const handleNext = () => {
+    // Treść nie dotarła (błąd sieci): ponawiamy i nie przechodzimy dalej z dawką liczoną bez wersji rekordu.
+    if (!ensureDetailsReady()) return;
     markChosen(messageId, 'next');
     if (patient) {
       appendExchange('Dalej: harmonogram', {
@@ -260,6 +271,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen }: CardProps<'Set
   };
 
   const handleSaveTemplate = async () => {
+    if (!ensureDetailsReady()) return;
     const saved = await saveTemplateSet(organizationId, name, items);
     if (!saved) return;
     markChosen(messageId, 'saved');
@@ -325,6 +337,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen }: CardProps<'Set
                 exercise={exercise}
                 alternatives={exercise ? findAlternatives(exercise, exercises, draftIds) : []}
                 locked={locked}
+                versionPending={versionPending}
                 testId={testId}
                 onRemove={() => removeItem(index)}
                 onSwap={(alternative) => updateItem(index, draftItemFromExercise(alternative))}
@@ -402,7 +415,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen }: CardProps<'Set
         <div className="flex flex-wrap items-center justify-between gap-3 border-t-[0.5px] border-hairline pt-3 text-[14px] tabular-nums text-label-secondary">
           <span>{formatExerciseCount(items.length)}</span>
           <span>
-            dziennie ok. <b className="text-[16px] font-semibold text-foreground">{minutes} min</b>
+            dziennie ok. <b className="text-[16px] font-semibold text-foreground">{minutesUnknown ? '—' : `${minutes} min`}</b>
           </span>
         </div>
       )}

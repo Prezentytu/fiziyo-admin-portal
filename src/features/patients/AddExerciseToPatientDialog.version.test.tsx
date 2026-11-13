@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AddExerciseToPatientDialog } from './AddExerciseToPatientDialog';
 
 const mockClientQuery = vi.hoisted(() => vi.fn());
+const mockMutate = vi.hoisted(() => vi.fn());
+const mockToastError = vi.hoisted(() => vi.fn());
 let listItems: Array<Record<string, unknown>> = [];
 
 const apolloClient = { query: mockClientQuery };
@@ -11,10 +13,10 @@ const queryResult = (data: unknown) => ({ data, loading: false, error: undefined
 
 vi.mock('@apollo/client/react', () => ({
   useQuery: () => queryResult({ availableExercises: listItems }),
-  useMutation: () => [vi.fn(), { loading: false }],
+  useMutation: () => [mockMutate, { loading: false }],
   useApolloClient: () => apolloClient,
 }));
-vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
+vi.mock('sonner', () => ({ toast: { error: mockToastError, success: vi.fn() } }));
 vi.mock('next/image', () => ({
   default: ({ src, alt }: { src: string; alt?: string }) => <img src={src} alt={alt ?? ''} />,
 }));
@@ -48,6 +50,9 @@ const timesText = () =>
 describe('AddExerciseToPatientDialog: wersja rekordu wybranego ćwiczenia', () => {
   beforeEach(() => {
     mockClientQuery.mockReset();
+    mockMutate.mockReset();
+    mockMutate.mockResolvedValue({ data: {} });
+    mockToastError.mockReset();
     listItems = [alternatingExercise];
   });
 
@@ -86,5 +91,47 @@ describe('AddExerciseToPatientDialog: wersja rekordu wybranego ćwiczenia', () =
     fireEvent.click(screen.getByTestId('add-exercise-item-ex-alt'));
     await waitFor(() => expect(mockClientQuery).toHaveBeenCalledTimes(1));
     expect(mockClientQuery.mock.calls[0][0].variables).toEqual({ id: 'ex-alt' });
+  });
+
+  it('dopóki treść się wczytuje, czas „naprzemiennie” i podpowiedź strony nie pokazują liczby', async () => {
+    mockClientQuery.mockReturnValue(new Promise(() => {}));
+    renderDialog();
+    fireEvent.click(screen.getByTestId('add-exercise-item-ex-alt'));
+
+    expect(timesText()).toBe('Czas serii (wyliczany)—Czas ćwiczenia (wyliczany)—');
+    expect(screen.getByTestId('add-exercise-submit-btn')).toBeDisabled();
+  });
+
+  it('po błędzie wczytania treści nie zapisuje, ponawia z komunikatem, a po udanym ponowieniu zapisuje', async () => {
+    mockClientQuery
+      .mockRejectedValueOnce(new Error('network'))
+      .mockResolvedValue({
+        data: { exerciseById: { id: 'ex-alt', updatedAt: 't1', enrichmentData: { schemaVersion: '3.3' } } },
+      });
+    renderDialog();
+    fireEvent.click(screen.getByTestId('add-exercise-item-ex-alt'));
+
+    // Po błędzie czas dalej nie jest liczbą z innej wersji, a przycisk jest aktywny, żeby dało się ponowić.
+    await waitFor(() => expect(screen.getByTestId('add-exercise-submit-btn')).not.toBeDisabled());
+    expect(timesText()).toBe('Czas serii (wyliczany)—Czas ćwiczenia (wyliczany)—');
+
+    fireEvent.click(screen.getByTestId('add-exercise-submit-btn'));
+    expect(mockToastError).toHaveBeenCalledTimes(1);
+    expect(mockMutate).not.toHaveBeenCalled();
+
+    await waitFor(() => expect(timesText()).toBe('Czas serii (wyliczany)~1 minCzas ćwiczenia (wyliczany)~5 min'));
+    fireEvent.click(screen.getByTestId('add-exercise-submit-btn'));
+    await waitFor(() => expect(mockMutate).toHaveBeenCalledTimes(1));
+  });
+
+  it('rekord bez wersji po udanym wczytaniu nie jest blokowany (enrichmentData: null)', async () => {
+    mockClientQuery.mockResolvedValue({
+      data: { exerciseById: { id: 'ex-alt', updatedAt: 't1', enrichmentData: null } },
+    });
+    renderDialog();
+    fireEvent.click(screen.getByTestId('add-exercise-item-ex-alt'));
+    await waitFor(() => expect(timesText()).toBe('Czas serii (wyliczany)~30 sCzas ćwiczenia (wyliczany)~4 min'));
+    fireEvent.click(screen.getByTestId('add-exercise-submit-btn'));
+    await waitFor(() => expect(mockMutate).toHaveBeenCalledTimes(1));
   });
 });

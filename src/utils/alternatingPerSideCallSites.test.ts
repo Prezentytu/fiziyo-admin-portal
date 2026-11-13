@@ -8,22 +8,36 @@ import { describe, expect, it } from 'vitest';
  * po cichu liczyć łącznie tam, gdzie pacjent ma na stronę (KONTRAKT-v3.3 §6.7, wariant B).
  *
  * Wyjątki są jawne i mają powód; wyjątek, który już podaje wersję, też jest błędem (lista nie może się zestarzeć).
+ * Jawne `alternatingPerSide: false` / `={false}` w wywołaniu też jest błędem (wersja ma pochodzić z rekordu).
+ *
+ * Znana granica: to skan tekstu, nie analiza typów. Nie wykryje wywołania przez alias importu (`as calc`),
+ * re-eksport (`export { f as g } from`), `import * as T` + `T.f(...)`, rozproszenia argumentów (`...props`)
+ * ani flagi podanej, ale wyliczonej błędnie w innym miejscu (to łapią testy zachowania obok i okablowanie niżej).
+ * Nowy sposób wołania tych funkcji ma przejść przez review, a nie przez ten test.
  */
 const SRC = join(__dirname, '..');
 
 const CALL_TARGETS = [
   { name: 'calculateExerciseTotalSeconds', kind: 'call' },
   { name: 'calculateEstimatedTime', kind: 'call' },
+  // Karta z `fromBuilderExercise` / `fromExerciseMapping` niesie flagę w sobie.
+  { name: 'calculateCardTotalSeconds', kind: 'call', alsoAccepts: /fromBuilderExercise|fromExerciseMapping/ },
+  { name: 'formatExerciseSideLabel', kind: 'call' },
+  { name: 'formatSideLabel', kind: 'call' },
   { name: 'translateExerciseSidePolish', kind: 'call' },
   { name: 'ExerciseParametersFields', kind: 'jsx' },
-] as const;
+] as ReadonlyArray<{ name: string; kind: 'call' | 'jsx'; alsoAccepts?: RegExp }>;
 
-/** Plik -> powód, dla którego wywołanie bez wersji jest poprawne. */
+/** `plik#funkcja` -> powód, dla którego wywołanie bez wersji jest poprawne. */
 const EXEMPT: Record<string, string> = {
-  'features/exercises/CreateExerciseWizard.tsx':
+  'features/exercises/CreateExerciseWizard.tsx#calculateExerciseTotalSeconds':
     'Nowe ćwiczenie, jeszcze bez rekordu: portal nie zapisuje schemaVersion, więc liczy łącznie jak rekord bez wersji.',
-  'features/verification/utils/parameterRules.ts':
+  'features/verification/utils/parameterRules.ts#calculateExerciseTotalSeconds':
     'Weryfikacja treści (stos #223): reguła wersji i dawka na stronę żyją tam (resolveSideDose); ten PR jej nie dotyka.',
+  'features/verification/utils/changeSummary.ts#formatExerciseSideLabel':
+    'Zestawienie zmian w centrum weryfikacji (stos #223): porównuje stronę przed i po, nie opisuje dawki rekordu.',
+  'utils/exerciseTime.ts#formatExerciseSideLabel':
+    'getSideIndicator: pomocnik bez wywołań w kodzie, opisuje stronę ogólnie (jak na main).',
 };
 
 /**
@@ -32,7 +46,8 @@ const EXEMPT: Record<string, string> = {
  * zachowania obok).
  */
 const WIRING: Record<string, string[]> = {
-  'app/(dashboard)/exercises/page.tsx': ['alternatingPerSide: isV33ExerciseRecord(exercise)'],
+  'app/(dashboard)/exercises/page.tsx': ['toBuilderExercise(exercise)'],
+  'features/exercises/utils/toBuilderExercise.ts': ['alternatingPerSide: isV33ExerciseRecord(exercise)'],
   'features/exercises/useExerciseEditorForm.ts': ['isV33ExerciseRecord(source)'],
   'features/exercises/ExerciseEditor.tsx': ['alternatingPerSide={form.alternatingPerSide}'],
   'features/patients/EditExerciseOverrideDialog.tsx': [
@@ -75,6 +90,7 @@ interface Site {
   target: string;
   line: number;
   passesVersion: boolean;
+  explicitFalse: boolean;
 }
 
 function findSites(): Site[] {
@@ -82,7 +98,7 @@ function findSites(): Site[] {
   for (const path of sourceFiles(SRC)) {
     const file = relative(SRC, path);
     const text = stripComments(readFileSync(path, 'utf8'));
-    for (const { name, kind } of CALL_TARGETS) {
+    for (const { name, kind, alsoAccepts } of CALL_TARGETS) {
       const pattern = kind === 'jsx' ? new RegExp(`<${name}\\b`, 'g') : new RegExp(`(?<![\\w.])${name}\\s*\\(`, 'g');
       for (const match of text.matchAll(pattern)) {
         const before = text.slice(Math.max(0, match.index - 20), match.index);
@@ -98,7 +114,8 @@ function findSites(): Site[] {
           file,
           target: name,
           line: text.slice(0, match.index).split('\n').length,
-          passesVersion: /alternatingPerSide/.test(body),
+          passesVersion: /alternatingPerSide/.test(body) || Boolean(alsoAccepts?.test(body)),
+          explicitFalse: /alternatingPerSide\s*[:=]\s*\{?\s*false\b/.test(body),
         });
       }
     }
@@ -116,20 +133,26 @@ describe('zapadka wersji rekordu: każde wywołanie dawki / czasu „naprzemienn
 
   it('żadne wywołanie spoza listy wyjątków nie pomija alternatingPerSide', () => {
     const missing = sites
-      .filter((site) => !site.passesVersion && !(site.file in EXEMPT))
+      .filter((site) => !site.passesVersion && !(`${site.file}#${site.target}` in EXEMPT))
       .map((site) => `${site.file}:${site.line} ${site.target}`);
     expect(missing).toEqual([]);
   });
 
   it('wyjątki wciąż istnieją i żaden nie podaje już wersji (inaczej wyjątek jest zbędny)', () => {
-    for (const file of Object.keys(EXEMPT)) {
-      const own = sites.filter((site) => site.file === file);
-      expect(own.length, `${file} nie ma już wywołań z listy`).toBeGreaterThan(0);
+    for (const key of Object.keys(EXEMPT)) {
+      const [file, target] = key.split('#');
+      const own = sites.filter((site) => site.file === file && site.target === target);
+      expect(own.length, `${key} nie ma już wywołań z listy`).toBeGreaterThan(0);
       expect(
         own.filter((site) => site.passesVersion).map((site) => `${site.file}:${site.line}`),
         'wyjątek podaje już wersję: usuń go z listy'
       ).toEqual([]);
     }
+  });
+
+  it('jawne alternatingPerSide: false w wywołaniu jest błędem', () => {
+    const explicit = sites.filter((site) => site.explicitFalse).map((site) => `${site.file}:${site.line} ${site.target}`);
+    expect(explicit).toEqual([]);
   });
 
   it.each(Object.entries(WIRING))('%s niesie wersję rekordu do dawki', (file, fragments) => {

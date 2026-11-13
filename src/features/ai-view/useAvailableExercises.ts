@@ -28,7 +28,9 @@ export function useAvailableExercises(
     exercises: listed,
     loading,
     error,
+    detailsReady,
     detailsPending,
+    ensureDetailsReady,
   } = useExercisePickerLibrary<ChatCatalogExercise & { updatedAt?: string | null }>({
     organizationId,
     skip,
@@ -42,5 +44,5 @@ export function useAvailableExercises(
     () => withTagNames(listed, tagsData?.exerciseTags ?? NO_TAGS),
     [listed, tagsData]
   );
-  return { exercises, loading, error, detailsPending };
+  return { exercises, loading, error, detailsReady, detailsPending, ensureDetailsReady };
 }

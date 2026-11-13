@@ -5,6 +5,8 @@ import { SetDraftCard } from '../SetDraftCard';
 
 const mockClientQuery = vi.hoisted(() => vi.fn());
 const appendExchange = vi.hoisted(() => vi.fn());
+const mockToastError = vi.hoisted(() => vi.fn());
+const mockSaveTemplateSet = vi.hoisted(() => vi.fn());
 let listItems: Array<Record<string, unknown>> = [];
 
 const apolloClient = { query: mockClientQuery };
@@ -19,14 +21,17 @@ vi.mock('@apollo/client/react', () => ({
   useMutation: () => [vi.fn(), { loading: false }],
   useApolloClient: () => apolloClient,
 }));
-vi.mock('sonner', () => ({ toast: Object.assign(vi.fn(), { error: vi.fn(), success: vi.fn() }) }));
+vi.mock('../useChatWrites', () => ({
+  useSaveTemplateSet: () => ({ saveTemplateSet: mockSaveTemplateSet, saving: false }),
+}));
+vi.mock('sonner', () => ({ toast: Object.assign(vi.fn(), { error: mockToastError, success: vi.fn() }) }));
 vi.mock('next/image', () => ({
   default: ({ src, alt }: { src: string; alt?: string }) => <img src={src} alt={alt ?? ''} />,
 }));
 vi.mock('../../ChatSessionContext', () => ({
   useChatActions: () => ({
     organizationId: 'org-1',
-    patients: [],
+    patients: [{ id: 'p1', name: 'Anna' }],
     organizationSets: [],
     setsReady: true,
     appendExchange,
@@ -64,6 +69,9 @@ describe('SetDraftCard: wersja rekordu ćwiczeń szkicu', () => {
   beforeEach(() => {
     mockClientQuery.mockReset();
     appendExchange.mockReset();
+    mockToastError.mockReset();
+    mockSaveTemplateSet.mockReset();
+    mockSaveTemplateSet.mockResolvedValue(true);
     listItems = [alternating];
   });
 
@@ -108,5 +116,59 @@ describe('SetDraftCard: wersja rekordu ćwiczeń szkicu', () => {
     screen.getByTestId('draft-primary-btn').click();
     const spec = appendExchange.mock.calls[0][1].spec;
     expect(spec.draft.items[0]).toMatchObject({ exerciseId: 'ex-alt', alternatingPerSide: true });
+  });
+
+  it('dopóki treść się wczytuje, czas „naprzemiennie” nie jest liczbą (wiersz i suma dzienna)', async () => {
+    mockClientQuery.mockReturnValue(new Promise(() => {}));
+    renderCard();
+    await screen.findByTestId('draft-item-ex-alt');
+    expect(screen.getByTestId('draft-item-ex-alt').textContent).not.toMatch(/ok\. \d+ min/);
+    expect(screen.getByTestId('draft').textContent).toMatch(/dziennie ok\. —/);
+  });
+
+  it('po błędzie wczytania: „Dalej” ponawia z komunikatem i nie przechodzi, po ponowieniu pyta o harmonogram z 6 min', async () => {
+    mockClientQuery
+      .mockRejectedValueOnce(new Error('network'))
+      .mockResolvedValue({
+        data: { exerciseById: { id: 'ex-alt', updatedAt: 't1', enrichmentData: { schemaVersion: '3.3' } } },
+      });
+    render(
+      <SetDraftCard
+        spec={{ component: 'SetDraft', exerciseIds: ['ex-alt'], patientId: 'p1' } as never}
+        testId="draft"
+        messageId="m1"
+      />
+    );
+    await screen.findByTestId('draft-item-ex-alt');
+    await waitFor(() => expect(mockToastError).not.toHaveBeenCalled());
+    await waitFor(() => expect(screen.getByTestId('draft-primary-btn')).not.toBeDisabled());
+
+    // Błąd: ani minut z innej wersji, ani przejścia dalej.
+    expect(screen.getByTestId('draft').textContent).toMatch(/dziennie ok\. —/);
+    screen.getByTestId('draft-primary-btn').click();
+    expect(mockToastError).toHaveBeenCalledTimes(1);
+    expect(appendExchange).not.toHaveBeenCalled();
+
+    await waitFor(() => expect(dailyMinutes()).toBe('6'));
+    screen.getByTestId('draft-primary-btn').click();
+    expect(appendExchange.mock.calls[0][1].text).toContain('ok. 6 min dziennie');
+  });
+
+  it('po błędzie wczytania „Zapisz w katalogu” też ponawia i nie zapisuje', async () => {
+    mockClientQuery.mockRejectedValueOnce(new Error('network')).mockResolvedValue({
+      data: { exerciseById: { id: 'ex-alt', updatedAt: 't1', enrichmentData: { schemaVersion: '3.3' } } },
+    });
+    renderCard();
+    await screen.findByTestId('draft-item-ex-alt');
+    await waitFor(() => expect(screen.getByTestId('draft-save-template-btn')).not.toBeDisabled());
+    screen.getByTestId('draft-save-template-btn').click();
+    await waitFor(() => expect(mockToastError).toHaveBeenCalledTimes(1));
+    expect(mockSaveTemplateSet).not.toHaveBeenCalled();
+    expect(appendExchange).not.toHaveBeenCalled();
+
+    // Po udanym ponowieniu zapis idzie z szkicem, którego wersja jest znana.
+    await waitFor(() => expect(dailyMinutes()).toBe('6'));
+    screen.getByTestId('draft-save-template-btn').click();
+    await waitFor(() => expect(mockSaveTemplateSet).toHaveBeenCalledTimes(1));
   });
 });
