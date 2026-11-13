@@ -183,6 +183,10 @@ const PAGES: Array<[string, DetailPage, DocumentNode]> = [
 
 const STORED_STOP_IF = (goldenV33 as { safety: { stop_if: string } }).safety.stop_if;
 const STOP_IF_INPUT = 'verification-safety-stop-if-input';
+// Real page, real typing and a 900 ms autosave per edit: slow by nature, slower when the whole suite runs in parallel.
+const OPEN_TIMEOUT_MS = 10_000;
+const SAVE_TIMEOUT_MS = 8_000;
+const TEST_TIMEOUT_MS = 60_000;
 
 /** Opens the page on the safety stage, where the edited field lives. */
 async function openOnSafetyStage(Page: DetailPage, query: DocumentNode) {
@@ -199,7 +203,7 @@ async function openOnSafetyStage(Page: DetailPage, query: DocumentNode) {
     await params;
   });
   const user = userEvent.setup();
-  await user.click(await screen.findByTestId('verification-stage-safety-btn'));
+  await user.click(await screen.findByTestId('verification-stage-safety-btn', undefined, { timeout: OPEN_TIMEOUT_MS }));
   return { network, user };
 }
 
@@ -231,7 +235,7 @@ describe('strony szczegółu weryfikacji: nieudany odczyt przed zapisem 3.3 nie 
       network.state.read = read;
       await user.type(screen.getByTestId(STOP_IF_INPUT), MY_EDIT);
       // The autosave (900 ms after the last key) reads the stored document first; that read gives no record.
-      await waitFor(() => expect(toast.error).toHaveBeenCalled(), { timeout: 4000 });
+      await waitFor(() => expect(toast.error).toHaveBeenCalled(), { timeout: SAVE_TIMEOUT_MS });
       await settle();
 
       expect(network.state.exerciseReads).toBeGreaterThan(readsOnOpen);
@@ -239,7 +243,7 @@ describe('strony szczegółu weryfikacji: nieudany odczyt przed zapisem 3.3 nie 
       expect(screen.getByTestId(STOP_IF_INPUT)).toHaveValue(`${STORED_STOP_IF}${MY_EDIT}`);
       expect(vi.mocked(toast.error).mock.calls.map(([message]) => String(message)).join(' ')).toMatch(/zapis/i);
       expect(network.state.mutations).toBe(0);
-    });
+    }, TEST_TIMEOUT_MS);
 
     it('po udanym zapisie widok pokazuje stan po zapisie, a cudza zmiana nadal zatrzymuje następny zapis', async () => {
       const { network, user } = await openOnSafetyStage(Page, query);
@@ -249,7 +253,7 @@ describe('strony szczegółu weryfikacji: nieudany odczyt przed zapisem 3.3 nie 
       // Someone else swaps the photo while I type; the answer of my save carries the record as it is now.
       network.state.stored = { ...network.state.stored, images: ['https://cdn.test/fx-0073-nowe.jpg'] };
       await user.type(screen.getByTestId(STOP_IF_INPUT), MY_EDIT);
-      await waitFor(() => expect(network.state.mutations).toBe(1), { timeout: 4000 });
+      await waitFor(() => expect(network.state.mutations).toBe(1), { timeout: SAVE_TIMEOUT_MS });
       await settle();
 
       expect(photo('https://cdn.test/fx-0073-nowe.jpg')).toBeInTheDocument();
@@ -262,7 +266,7 @@ describe('strony szczegółu weryfikacji: nieudany odczyt przed zapisem 3.3 nie 
 
       // No one else touched the record: the next edit saves at once, although the base returned other key order.
       await user.type(screen.getByTestId(STOP_IF_INPUT), ' Drugie zdanie.');
-      await waitFor(() => expect(network.state.mutations).toBe(2), { timeout: 4000 });
+      await waitFor(() => expect(network.state.mutations).toBe(2), { timeout: SAVE_TIMEOUT_MS });
       await settle();
       expect(storedStopIf(network.state.stored)).toBe(`${STORED_STOP_IF}${MY_EDIT} Drugie zdanie.`.trim());
       expect(screen.queryByTestId('exercise-save-conflict-notice')).not.toBeInTheDocument();
@@ -272,7 +276,7 @@ describe('strony szczegółu weryfikacji: nieudany odczyt przed zapisem 3.3 nie 
       theirs.patient.why = 'Po co, zapisane przez drugą osobę.';
       network.state.stored = { ...network.state.stored, enrichmentData: theirs };
       await user.type(screen.getByTestId(STOP_IF_INPUT), ' Trzecie zdanie.');
-      expect(await screen.findByTestId('exercise-save-conflict-notice', undefined, { timeout: 4000 })).toBeInTheDocument();
+      expect(await screen.findByTestId('exercise-save-conflict-notice', undefined, { timeout: SAVE_TIMEOUT_MS })).toBeInTheDocument();
       await settle();
 
       expect(network.state.mutations).toBe(2);
@@ -280,6 +284,6 @@ describe('strony szczegółu weryfikacji: nieudany odczyt przed zapisem 3.3 nie 
       expect((network.state.stored.enrichmentData as { patient: { why: string } }).patient.why).toBe(
         'Po co, zapisane przez drugą osobę.'
       );
-    });
+    }, TEST_TIMEOUT_MS);
   });
 });
