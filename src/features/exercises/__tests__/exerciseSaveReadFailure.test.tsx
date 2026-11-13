@@ -152,7 +152,12 @@ function otherPersonSaves(network: Network) {
   network.state.stored = next;
 }
 
-async function openPage(network: Network) {
+/** What the host was asked to do with the editor: the dialog asks to be closed, the page has nothing to close. */
+interface OpenedEditor {
+  closeRequests: () => number;
+}
+
+async function openPage(network: Network): Promise<OpenedEditor> {
   const params = Promise.resolve({ id: EXERCISE_ID });
   await act(async () => {
     render(
@@ -168,28 +173,26 @@ async function openPage(network: Network) {
   });
   fireEvent.click(await screen.findByTestId('exercise-detail-edit-btn', undefined, { timeout: 10_000 }));
   await screen.findByTestId(EASIER_INPUT);
+  return { closeRequests: () => 0 };
 }
 
-async function openDialog(network: Network) {
+async function openDialog(network: Network): Promise<OpenedEditor> {
   const exercise = { ...RECORD, enrichmentData: goldenV33 } as unknown as Exercise;
+  const onOpenChange = vi.fn();
   render(
     <ApolloProvider client={network.client}>
       <TooltipProvider>
-        <ExerciseDialog open onOpenChange={vi.fn()} exercise={exercise} organizationId="org-1" />
+        <ExerciseDialog open onOpenChange={onOpenChange} exercise={exercise} organizationId="org-1" />
       </TooltipProvider>
     </ApolloProvider>
   );
   await screen.findByTestId(EASIER_INPUT, undefined, { timeout: 10_000 });
+  return { closeRequests: () => onOpenChange.mock.calls.filter(([open]) => open === false).length };
 }
 
-/**
- * `reportsFailedSave`: the page tells the therapist that the save failed. The dialog does not look at the result
- * of the save at all (it reports success and asks its host to close, as on main), so that part is checked only
- * for the page.
- */
-const HOSTS: Array<[string, (network: Network) => Promise<void>, string, boolean]> = [
-  ['strona ćwiczenia', openPage, 'exercise-detail-save-btn', true],
-  ['okno edycji z listy', openDialog, 'exercise-dialog-save-btn', false],
+const HOSTS: Array<[string, (network: Network) => Promise<OpenedEditor>, string]> = [
+  ['strona ćwiczenia', openPage, 'exercise-detail-save-btn'],
+  ['okno edycji z listy', openDialog, 'exercise-dialog-save-btn'],
 ];
 
 beforeEach(() => {
@@ -198,10 +201,10 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-describe.each(HOSTS)('edytor ćwiczenia 3.3, %s: odczyt bez rekordu przed zapisem', (_host, open, saveButton, reportsFailedSave) => {
+describe.each(HOSTS)('edytor ćwiczenia 3.3, %s: odczyt bez rekordu przed zapisem', (_host, open, saveButton) => {
   it.each(FAILED_READS)('%s: nic nie idzie do bazy, wpisana treść zostaje na ekranie', async (_case, read) => {
     const network = fakeNetwork();
-    await open(network);
+    const editor = await open(network);
     // The read of this exercise is in the cache, as after opening it from the list or after an earlier save.
     await network.client.query({ query: GET_EXERCISE_BY_ID_QUERY, variables: { id: EXERCISE_ID } });
     await settle();
@@ -219,22 +222,28 @@ describe.each(HOSTS)('edytor ćwiczenia 3.3, %s: odczyt bez rekordu przed zapise
     expect(network.state.stored.patient.why).toBe('Po co, zapisane przez drugą osobę.');
     expect(screen.queryByText('Nie znaleziono ćwiczenia')).not.toBeInTheDocument();
     expect(screen.getByTestId(EASIER_INPUT)).toHaveValue(MY_EDIT);
-    if (reportsFailedSave) {
-      expect(toast.success).not.toHaveBeenCalled();
-      expect(vi.mocked(toast.error).mock.calls.map(([message]) => String(message)).join(' ')).toMatch(/zapis/i);
-    }
+    // The therapist is told the save failed, not that it worked, and the editor stays open.
+    expect(toast.success).not.toHaveBeenCalled();
+    expect(vi.mocked(toast.error).mock.calls.map(([message]) => String(message))).toEqual(['Nie udało się zapisać zmian']);
+    expect(editor.closeRequests()).toBe(0);
   }, 60_000);
 
   it('odczyt z rekordem: cudza zmiana zatrzymuje zapis komunikatem, bez cudzej zmiany zapis przechodzi', async () => {
     const network = fakeNetwork();
-    await open(network);
+    const editor = await open(network);
 
     otherPersonSaves(network);
     fireEvent.change(screen.getByTestId(EASIER_INPUT), { target: { value: MY_EDIT } });
     fireEvent.click(screen.getByTestId(saveButton));
     expect(await screen.findByTestId('exercise-save-conflict-notice', undefined, { timeout: 8_000 })).toBeInTheDocument();
+    await settle(300);
     expect(network.state.mutations).toBe(0);
     expect(screen.getByTestId(EASIER_INPUT)).toHaveValue(MY_EDIT);
+    // A refused save is not a success: no success message, the editor stays open with the notice.
+    expect(toast.success).not.toHaveBeenCalled();
+    expect(toast.error).not.toHaveBeenCalled();
+    expect(editor.closeRequests()).toBe(0);
+    expect(screen.getByTestId('exercise-save-conflict-notice')).toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId('exercise-save-conflict-load-btn'));
     fireEvent.click(screen.getByTestId(saveButton));
@@ -243,5 +252,9 @@ describe.each(HOSTS)('edytor ćwiczenia 3.3, %s: odczyt bez rekordu przed zapise
 
     expect(network.state.stored.patient.easier).toBe(MY_EDIT);
     expect(network.state.stored.patient.why).toBe('Po co, zapisane przez drugą osobę.');
+    // A save that went through behaves as before: success message, and the dialog asks to be closed.
+    await waitFor(() => expect(toast.success).toHaveBeenCalledTimes(1), { timeout: 8_000 });
+    expect(toast.error).not.toHaveBeenCalled();
+    if (saveButton === 'exercise-dialog-save-btn') await waitFor(() => expect(editor.closeRequests()).toBe(1));
   }, 60_000);
 });
