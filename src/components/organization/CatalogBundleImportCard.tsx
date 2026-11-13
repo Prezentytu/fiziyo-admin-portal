@@ -161,10 +161,10 @@ export function CatalogBundleImportCard({ organizationId }: CatalogBundleImportC
 
         {mediaNotice ? (
           <div
-            className="flex items-start gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4"
+            className="flex items-start gap-3 rounded-xl border border-status-warning/40 bg-status-warning-muted p-4"
             data-testid="settings-catalog-import-media-notice"
           >
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-status-warning" />
             <p className="text-sm text-foreground">{mediaNotice}</p>
           </div>
         ) : null}
