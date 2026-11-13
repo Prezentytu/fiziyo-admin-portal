@@ -1,5 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import goldenV33 from '@/components/shared/exercise/__tests__/fixtures/enrichmentV33.fx-0073.json';
+import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import {
   buildChangedCoreVariables,
   useExerciseEditorForm,
@@ -150,5 +152,135 @@ describe('useExerciseEditorForm hydration', () => {
 
     expect(result.current.core.restSets).toBe(45);
     expect(result.current.isDirty).toBe(false);
+  });
+});
+
+/** Każda ścieżka do liścia dokumentu (klucze obiektów i indeksy list), z wartością. */
+function leafPaths(value: unknown, prefix = ''): Map<string, unknown> {
+  const paths = new Map<string, unknown>();
+  const isContainer = value !== null && typeof value === 'object';
+  const entries = isContainer ? Object.entries(value as Record<string, unknown>) : [];
+  if (!isContainer || entries.length === 0) {
+    paths.set(prefix, value);
+    return paths;
+  }
+  for (const [key, entry] of entries) {
+    for (const [path, leaf] of leafPaths(entry, prefix ? `${prefix}.${key}` : key)) paths.set(path, leaf);
+  }
+  return paths;
+}
+
+describe('useExerciseEditorForm: zapis nie gubi kluczy dokumentu', () => {
+  // Rekord fx-0073 z różnymi wartościami wersji. Czytnik uzna część za starsze, ale dokument ma klucze 3.3
+  // z pustymi wartościami (`[]`, `null`), których użytkownik nie dotknął.
+  it.each([
+    ['tekst "3.3"', '3.3'],
+    ['liczba 3.3', 3.3],
+    ['"3.3-beta"', '3.3-beta'],
+    ['"v3.3"', 'v3.3'],
+    ['bez wersji', undefined],
+  ])('wersja %s: edycja jednego pola wysyła cały dokument', async (_label, schemaVersion) => {
+    const { schemaVersion: _golden, ...rest } = structuredClone(goldenV33);
+    const document = (schemaVersion === undefined ? rest : { ...rest, schemaVersion }) as ExerciseEnrichmentData;
+    const updateEnrichment = vi.fn(async (_payload: ExerciseEnrichmentData) => undefined);
+    const source: ExerciseEditorSource = { id: 'fx-0073', name: 'Most biodrowy', enrichmentData: document };
+    const { result } = renderHook(() =>
+      useExerciseEditorForm({ source, updateCore: async () => undefined, updateEnrichment })
+    );
+
+    await act(async () => {
+      await result.current.save();
+    });
+    expect(updateEnrichment).not.toHaveBeenCalled();
+
+    act(() => {
+      result.current.setEnrichmentPath('patient.summary', 'Nowe podsumowanie.');
+    });
+    await act(async () => {
+      await result.current.save();
+    });
+
+    expect(updateEnrichment).toHaveBeenCalledTimes(1);
+    const sent = updateEnrichment.mock.calls[0][0];
+    const sentPaths = leafPaths(sent);
+    const lost = [...leafPaths(document).keys()].filter((path) => path !== 'patient.summary' && !sentPaths.has(path));
+    expect(lost).toEqual([]);
+    expect(sent.patient?.summary).toBe('Nowe podsumowanie.');
+    expect((sent as Record<string, unknown>).schemaVersion).toBe(schemaVersion);
+  });
+
+  it('pole wyczyszczone przez użytkownika nie wraca z wczytanego dokumentu', async () => {
+    const document = { ...structuredClone(goldenV33), schemaVersion: 3.3 } as unknown as ExerciseEnrichmentData;
+    const updateEnrichment = vi.fn(async (_payload: ExerciseEnrichmentData) => undefined);
+    const source: ExerciseEditorSource = { id: 'fx-0073', name: 'Most biodrowy', enrichmentData: document };
+    const { result } = renderHook(() =>
+      useExerciseEditorForm({ source, updateCore: async () => undefined, updateEnrichment })
+    );
+
+    act(() => {
+      result.current.setEnrichmentPath('patient.why', '');
+    });
+    await act(async () => {
+      await result.current.save();
+    });
+
+    const sent = updateEnrichment.mock.calls[0][0];
+    expect(sent.patient).not.toHaveProperty('why');
+    expect(sent.patient?.summary).toBe(document.patient?.summary);
+  });
+
+  // Po zapisie punktem odniesienia jest wysłany dokument, nie szkic: to, co pierwszy zapis wyciął (pusty krok,
+  // wyczyszczone pole), nie wraca w następnym. Pacjent widziałby inaczej kroki „1. A, 3. C”.
+  it('drugi zapis nie przywraca tego, co pierwszy wyciął', async () => {
+    const document = {
+      $schema: 'fiziyo-exercise-v3',
+      patient: {
+        summary: 'S',
+        why: 'Po co',
+        steps: ['A', 'B', 'C'],
+        step_images: [
+          { step: 1, url: 'uA' },
+          { step: 3, url: 'uC' },
+        ],
+      },
+    } as unknown as ExerciseEnrichmentData;
+    const updateEnrichment = vi.fn(async (_payload: ExerciseEnrichmentData) => undefined);
+    const updateCore = vi.fn(async (_variables: Record<string, unknown>) => undefined);
+    const source: ExerciseEditorSource = { id: 'ex-kroki', name: 'Kroki', enrichmentData: document };
+    const { result } = renderHook(() => useExerciseEditorForm({ source, updateCore, updateEnrichment }));
+    const expectedPatient = {
+      steps: ['A', 'C'],
+      step_images: [
+        { step: 1, url: 'uA' },
+        { step: 2, url: 'uC' },
+      ],
+    };
+
+    act(() => {
+      result.current.setEnrichmentPath('patient.steps', ['A', '', 'C']);
+      result.current.setEnrichmentPath('patient.why', '');
+    });
+    await act(async () => {
+      await result.current.save();
+    });
+    // Zapis samego pola rdzenia między zapisami treści też nie cofa punktu odniesienia do szkicu.
+    act(() => {
+      result.current.setCoreField('sets', 5);
+    });
+    await act(async () => {
+      await result.current.save();
+    });
+    act(() => {
+      result.current.setEnrichmentPath('patient.summary', 'S2');
+    });
+    await act(async () => {
+      await result.current.save();
+    });
+
+    expect(updateCore).toHaveBeenCalledTimes(1);
+    expect(updateEnrichment).toHaveBeenCalledTimes(2);
+    const [first, second] = updateEnrichment.mock.calls.map(([payload]) => payload.patient);
+    expect(first).toEqual({ summary: 'S', ...expectedPatient });
+    expect(second).toEqual({ summary: 'S2', ...expectedPatient });
   });
 });
