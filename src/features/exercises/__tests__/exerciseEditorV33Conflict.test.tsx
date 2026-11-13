@@ -660,4 +660,13 @@ describe('komunikat konfliktu: nazwy pól i wartości', () => {
     expect(describeCollisionValue(undefined)).toEqual(['(puste)']);
     expect(describeCollisionValue([])).toEqual(['(puste)']);
   });
+
+  it('różnica w zagnieżdżonym kluczu wiersza jest widoczna w obu wersjach (odbiór 13.11)', () => {
+    const mine = [{ label: 'Taśma', code: 'band', substitutes: ['ręcznik'], evidence: { source: 'A', level: 2 } }];
+    const theirs = [{ label: 'Taśma', code: 'band', substitutes: ['pasek'], evidence: { source: 'B', level: 2 } }];
+
+    expect(describeCollisionValue(mine)).toEqual(['Taśma · band · ręcznik · A · 2']);
+    expect(describeCollisionValue(theirs)).toEqual(['Taśma · band · pasek · B · 2']);
+    expect(describeCollisionValue([{ text: 'Punkt.', view: null }])).toEqual(['Punkt.']);
+  });
 });
