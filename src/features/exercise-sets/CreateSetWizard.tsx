@@ -84,6 +84,9 @@ export function CreateSetWizard({
   const [showNameError, setShowNameError] = useState(false);
   const nameInputRef = useRef<HTMLInputElement | null>(null);
   const initializedFromInitialRef = useRef(false);
+  // Exercises passed in from outside (e.g. from the library) load by id until they are put into the set;
+  // afterwards only the chosen ones count, so one that failed to load does not block saving.
+  const [awaitingInitialExercises, setAwaitingInitialExercises] = useState(true);
 
   const hasChanges = name.trim().length > 0 || description.trim().length > 0 || selectedInstances.length > 0;
 
@@ -112,24 +115,18 @@ export function CreateSetWizard({
       setIsGeneratingName(false);
       setShowNameError(false);
       initializedFromInitialRef.current = false;
+      setAwaitingInitialExercises(true);
     }
   }, [open, patientName]);
 
   const apolloClient = useApolloClient();
-  const selectedExerciseIds = useMemo(
-    () => selectedInstances.map((instance) => instance.exerciseId),
-    [selectedInstances]
+  const detailExerciseIds = useMemo(
+    () => [
+      ...(awaitingInitialExercises ? (initialExerciseIds ?? []) : []),
+      ...selectedInstances.map((instance) => instance.exerciseId),
+    ],
+    [awaitingInitialExercises, initialExerciseIds, selectedInstances]
   );
-  const {
-    exercises: pickerExercises,
-    loading: loadingExercises,
-    detailsPending,
-    ensureDetailsReady,
-  } = useExercisePickerLibrary<ExerciseWithTags>({
-    organizationId,
-    skip: !open,
-    detailExerciseIds: selectedExerciseIds,
-  });
 
   const { data: tagsData } = useQuery(GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY, {
     variables: { organizationId },
@@ -144,6 +141,22 @@ export function CreateSetWizard({
   const { data: exerciseUsageData } = useQuery<OrganizationExerciseSetsResponse>(GET_ORGANIZATION_EXERCISE_USAGE_QUERY, {
     variables: { organizationId },
     skip: !organizationId || !open,
+  });
+
+  const exercisePopularity = useMemo(
+    () => countExerciseUsage(exerciseUsageData?.exerciseSets ?? []),
+    [exerciseUsageData]
+  );
+  const {
+    exercises: pickerExercises,
+    library,
+    detailsPending,
+    ensureDetailsReady,
+  } = useExercisePickerLibrary<ExerciseWithTags>({
+    organizationId,
+    skip: !open,
+    detailExerciseIds,
+    popularity: exercisePopularity,
   });
 
   const { data: clinicalNotesData } = useQuery<PatientClinicalNotesQueryData>(GET_PATIENT_CLINICAL_NOTES_QUERY, {
@@ -196,10 +209,6 @@ export function CreateSetWizard({
     [tags]
   );
 
-  const exercisePopularity = useMemo(
-    () => countExerciseUsage(exerciseUsageData?.exerciseSets ?? []),
-    [exerciseUsageData]
-  );
 
   const getDefaultParams = useCallback(
     (exercise: BuilderExercise): ExerciseParams => getExerciseDefaultParams(exercise),
@@ -213,7 +222,7 @@ export function CreateSetWizard({
     if (!initialExerciseIds || initialExerciseIds.length === 0) {
       return;
     }
-    if (exercises.length === 0) {
+    if (detailsPending) {
       return;
     }
 
@@ -243,7 +252,8 @@ export function CreateSetWizard({
     }
 
     initializedFromInitialRef.current = true;
-  }, [open, initialExerciseIds, exercises, getDefaultParams]);
+    setAwaitingInitialExercises(false);
+  }, [open, initialExerciseIds, exercises, detailsPending, getDefaultParams]);
 
   const handlePreviewExercise = useCallback(
     (exercise: BuilderExercise, params?: ExerciseParams) => {
@@ -443,9 +453,8 @@ export function CreateSetWizard({
             exerciseParams={exerciseParams}
             onExerciseParamsChange={setExerciseParams}
             availableExercises={exercises}
-            loadingExercises={loadingExercises}
+            library={library}
             tags={builderTags}
-            exercisePopularity={exercisePopularity}
             hideNameSection
             onPreviewExercise={handlePreviewExercise}
             testIdPrefix="set-create-wizard"

@@ -10,13 +10,37 @@ import { ListEditor } from '@/components/shared/enrichment/ListEditor';
 import { TherapistNotesSection } from '@/components/shared/enrichment/TherapistNotesSection';
 import { DirtyDot } from '@/components/shared/enrichment/DirtyDot';
 import { DescriptionPlayerHintCounter } from '@/components/shared/enrichment/PlayerHintLengthCounter';
-import { EXERCISE_CONTENT_LABELS as LABELS, EXERCISE_NOTES_HINT } from '@/components/shared/enrichment/enrichmentFieldLabels';
+import {
+  EXERCISE_CONTENT_LABELS as LABELS,
+  EXERCISE_NOTES_HINT,
+  EXERCISE_PRECAUTIONS_HINT,
+} from '@/components/shared/enrichment/enrichmentFieldLabels';
 import {
   canRemovePlaceholderRow,
   isMistakeRowEmpty,
 } from '@/components/shared/enrichment/canRemovePlaceholderRow';
+import {
+  readExerciseContent,
+  type ExerciseContentEquipmentItem,
+} from '@/components/shared/exercise/readExerciseContent';
+import { NEW_PRECAUTION_GROUP } from '@/components/shared/exercise/writeExerciseContent';
+import { describeEquipmentItem } from '@/features/exercises/utils/equipmentItemText';
 import { cn } from '@/lib/utils';
+import type { ExerciseContentVersion } from '@/components/shared/exercise/readExerciseContent';
 import type { EnrichmentPatientMistakeV3, ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
+import { EquipmentItemsEditor, TextItemsEditor, TherapistNoteField } from './ExerciseV33Editors';
+
+/**
+ * Dokument dla sekcji w trybie odczytu. Szkic formularza przechodzi przez `toV3`, które dla dokumentu
+ * bez znacznika `$schema` gubi `schemaVersion`; rekord 3.3 czytamy więc wprost z zapisanego dokumentu.
+ */
+export function readViewDocument(
+  source: ExerciseEnrichmentData | string | null | undefined,
+  draft: ExerciseEnrichmentData
+): ExerciseEnrichmentData {
+  if (!source || typeof source !== 'object') return draft;
+  return readExerciseContent({ enrichmentData: source }).version === '3.3' ? source : draft;
+}
 
 /** Function to check whether an enrichment path differs from the saved baseline. */
 type IsPathDirty = (path: string) => boolean;
@@ -27,6 +51,28 @@ function hasText(value: string | undefined | null): value is string {
 
 function hasListItems(values: string[] | undefined): boolean {
   return Boolean(values?.some((value) => hasText(value)));
+}
+
+/** Etykiety bloków, które widok odczytu pokazuje od v3.3 (FR-007); edycja ich jeszcze nie ma. */
+const READ_LABELS = {
+  breathing: 'Oddech',
+  easier: 'Łatwiej',
+  harder: 'Trudniej',
+  painRule: 'Reguła bólu',
+  precautions: 'Ostrożności dla grup szczególnych',
+  precautionsHint: 'Pacjent widzi je w osobnym bloku na końcu karty ćwiczenia.',
+  checkpoints: 'Punkty kontrolne',
+  therapistNote: 'Uwagi kliniczne',
+  substitutes: 'Zamienniki',
+} as const;
+
+function ReadLine({ label, text, testId }: Readonly<{ label: string; text: string | null; testId?: string }>) {
+  if (!text) return null;
+  return (
+    <p className="text-sm text-muted-foreground" data-testid={testId}>
+      <span className="font-medium text-foreground">{label}:</span> {text}
+    </p>
+  );
 }
 
 function ReadList({ label, items, testId }: Readonly<{ label: string; items: string[]; testId?: string }>) {
@@ -144,9 +190,12 @@ export function PatientLeadSection({
   setPath,
   showPatientDescription = true,
 }: Readonly<PatientLeadSectionProps>) {
-  const summary = data.patient?.summary ?? '';
-  const hasReadContent =
-    (showPatientDescription && hasText(patientDescription)) || hasText(summary);
+  // Odczyt idzie przez wspólny czytnik: rekord 3.3 nie ma opisu z kolumny, nawet gdy kolumna jest wypełniona.
+  const content = readExerciseContent({ enrichmentData: data, patientDescription });
+  const showDescription = showPatientDescription && (editable || content.version === 'legacy');
+  const description = editable ? patientDescription : (content.instruction.description ?? '');
+  const summary = editable ? (data.patient?.summary ?? '') : (content.instruction.summary ?? '');
+  const hasReadContent = (showDescription && hasText(description)) || hasText(summary);
   if (!editable && !hasReadContent) return null;
 
   return (
@@ -155,10 +204,10 @@ export function PatientLeadSection({
       icon={<HeartPulse className="h-4 w-4 text-muted-foreground" />}
       testId="exercise-detail-patient-lead"
     >
-      {showPatientDescription ? (
+      {showDescription ? (
         <EditableTextBlock
           label="Opis dla pacjenta"
-          value={patientDescription}
+          value={description}
           placeholder="Prostym językiem: co pacjent ma zrobić i na co uważać."
           editable={editable}
           disabled={disabled}
@@ -280,6 +329,8 @@ interface PatientExtrasSectionProps {
   disabled?: boolean;
   isPathDirty: IsPathDirty;
   setPath: (path: string, value: unknown) => void;
+  /** `3.3` adds the editors of facts that exist only in contract v3.3 (edit mode). */
+  contentVersion?: ExerciseContentVersion;
 }
 
 export function PatientExtrasSection({
@@ -288,6 +339,7 @@ export function PatientExtrasSection({
   disabled = false,
   isPathDirty,
   setPath,
+  contentVersion = 'legacy',
 }: Readonly<PatientExtrasSectionProps>) {
   const mistakes = data.patient?.mistakes ?? [];
   const shouldFeel = data.patient?.should_feel ?? '';
@@ -295,8 +347,18 @@ export function PatientExtrasSection({
   const why = data.patient?.why ?? '';
   const whenToDo = data.patient?.when_to_do ?? '';
 
+  const content = readExerciseContent({ enrichmentData: data });
   const hasAnyReadContent =
-    mistakes.length > 0 || hasText(shouldFeel) || hasText(shouldNotFeel) || hasText(why) || hasText(whenToDo);
+    content.mistakes.length > 0 ||
+    [
+      content.shouldFeel,
+      content.shouldNotFeel,
+      content.why,
+      content.whenToDo,
+      content.breathing?.text,
+      content.easier,
+      content.harder,
+    ].some(Boolean);
 
   if (!editable && !hasAnyReadContent) return null;
 
@@ -360,17 +422,59 @@ export function PatientExtrasSection({
             onChange={(value) => setPath('patient.when_to_do', value)}
             testId="exercise-detail-when-to-do-input"
           />
+          {contentVersion === '3.3' ? (
+            <>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <EditableTextBlock
+                  label={LABELS.easier}
+                  value={data.patient?.easier ?? ''}
+                  placeholder="np. napinaj słabiej albo podłóż większy ręcznik"
+                  editable
+                  disabled={disabled}
+                  minHeight="min-h-[64px]"
+                  emptyText="—"
+                  dirty={isPathDirty('patient.easier')}
+                  onChange={(value) => setPath('patient.easier', value)}
+                  testId="exercise-detail-easier-input"
+                />
+                <EditableTextBlock
+                  label={LABELS.harder}
+                  value={data.patient?.harder ?? ''}
+                  placeholder="np. przytrzymaj dłużej w końcowej pozycji"
+                  editable
+                  disabled={disabled}
+                  minHeight="min-h-[64px]"
+                  emptyText="—"
+                  dirty={isPathDirty('patient.harder')}
+                  onChange={(value) => setPath('patient.harder', value)}
+                  testId="exercise-detail-harder-input"
+                />
+              </div>
+              <EditableTextBlock
+                label={LABELS.breathing}
+                value={data.breathing?.text ?? ''}
+                placeholder="np. wydech przy napinaniu, wdech przy rozluźnianiu"
+                editable
+                disabled={disabled}
+                minHeight="min-h-[64px]"
+                emptyText="—"
+                dirty={isPathDirty('breathing.text')}
+                onChange={(value) => setPath('breathing.text', value)}
+                testId="exercise-detail-breathing-input"
+              />
+            </>
+          ) : null}
         </div>
       ) : (
         <div className="space-y-3">
-          {mistakes.length > 0 && (
+          {content.mistakes.length > 0 && (
             <div className="space-y-2">
-              {mistakes.map((mistake, index) => (
-                <div key={`${mistake.mistake ?? ''}-${index}`} className="text-sm text-muted-foreground">
+              {content.mistakes.map((mistake, index) => (
+                <div key={`${mistake.mistake}-${index}`} className="text-sm text-muted-foreground">
                   <p>
-                    <span className="font-medium text-foreground">Błąd:</span> {mistake.mistake || 'Brak opisu'}
+                    <span className="font-medium text-foreground">Błąd:</span> {mistake.mistake}
                   </p>
-                  {hasText(mistake.fix) && (
+                  {mistake.fix && (
                     <p>
                       <span className="font-medium text-foreground">Korekta:</span> {mistake.fix}
                     </p>
@@ -379,22 +483,17 @@ export function PatientExtrasSection({
               ))}
             </div>
           )}
-          {hasText(shouldFeel) && (
-            <p className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">{LABELS.shouldFeel}:</span> {shouldFeel}
-            </p>
-          )}
-          {hasText(shouldNotFeel) && (
-            <p className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">{LABELS.shouldNotFeel}:</span> {shouldNotFeel}
-            </p>
-          )}
-          {hasText(why) && <p className="text-sm text-muted-foreground">{why}</p>}
-          {hasText(whenToDo) && (
-            <p className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">{LABELS.whenToDo}:</span> {whenToDo}
-            </p>
-          )}
+          <ReadLine label={LABELS.shouldFeel} text={content.shouldFeel} />
+          <ReadLine label={LABELS.shouldNotFeel} text={content.shouldNotFeel} />
+          {content.why && <p className="text-sm text-muted-foreground">{content.why}</p>}
+          <ReadLine label={LABELS.whenToDo} text={content.whenToDo} />
+          <ReadLine
+            label={READ_LABELS.breathing}
+            text={content.breathing?.text ?? null}
+            testId="exercise-detail-breathing-text"
+          />
+          <ReadLine label={READ_LABELS.easier} text={content.easier} testId="exercise-detail-easier-text" />
+          <ReadLine label={READ_LABELS.harder} text={content.harder} testId="exercise-detail-harder-text" />
         </div>
       )}
     </SectionCard>
@@ -411,6 +510,8 @@ interface SafetySectionProps {
   disabled?: boolean;
   isPathDirty: IsPathDirty;
   setPath: (path: string, value: unknown) => void;
+  /** `3.3` hides the retired intensity guide and edits `safety.contraindications` (edit mode). */
+  contentVersion?: ExerciseContentVersion;
 }
 
 export function SafetySection({
@@ -419,12 +520,25 @@ export function SafetySection({
   disabled = false,
   isPathDirty,
   setPath,
+  contentVersion = 'legacy',
 }: Readonly<SafetySectionProps>) {
   const stopIf = data.safety?.stop_if ?? '';
   const intensityGuide = data.safety?.intensity_guide ?? '';
   const requiresSupervision = Boolean(data.safety?.requires_supervision);
 
-  const hasAnyReadContent = hasText(stopIf) || hasText(intensityGuide) || requiresSupervision;
+  const content = readExerciseContent({ enrichmentData: data });
+  const isLegacy = content.version === 'legacy';
+  // Rekord stary trzyma przeciwwskazania w bloku fizjoterapeuty; 3.3 ma je w `safety.contraindications`.
+  const contraindications = isLegacy ? [] : content.contraindications;
+  // `intensity_guide` jest w 3.3 wycofane na rzecz reguły bólu.
+  const readIntensityGuide = isLegacy ? intensityGuide : '';
+  const hasAnyReadContent =
+    content.stopIf !== null ||
+    hasText(readIntensityGuide) ||
+    content.requiresSupervision === true ||
+    contraindications.length > 0 ||
+    content.painRule !== null ||
+    content.precautions.length > 0;
   if (!editable && !hasAnyReadContent) return null;
 
   return (
@@ -443,18 +557,31 @@ export function SafetySection({
             onChange={(value) => setPath('safety.stop_if', value)}
             testId="exercise-detail-stop-if-input"
           />
-          <EditableTextBlock
-            label={LABELS.intensityGuide}
-            value={intensityGuide}
-            placeholder="np. utrzymuj intensywność 5–6/10 w skali odczuwanego wysiłku"
-            editable
-            disabled={disabled}
-            minHeight="min-h-[70px]"
-            emptyText="—"
-            dirty={isPathDirty('safety.intensity_guide')}
-            onChange={(value) => setPath('safety.intensity_guide', value)}
-            testId="exercise-detail-intensity-guide-input"
-          />
+          {contentVersion === '3.3' ? (
+            <TextItemsEditor
+              title={LABELS.contraindications}
+              items={data.safety?.contraindications ?? []}
+              placeholder="np. świeży uraz kolana"
+              addLabel="Dodaj przeciwwskazanie"
+              disabled={disabled}
+              dirty={isPathDirty('safety.contraindications')}
+              onChange={(items) => setPath('safety.contraindications', items)}
+              testIdPrefix="exercise-detail-contraindications"
+            />
+          ) : (
+            <EditableTextBlock
+              label={LABELS.intensityGuide}
+              value={intensityGuide}
+              placeholder="np. utrzymuj intensywność 5–6/10 w skali odczuwanego wysiłku"
+              editable
+              disabled={disabled}
+              minHeight="min-h-[70px]"
+              emptyText="—"
+              dirty={isPathDirty('safety.intensity_guide')}
+              onChange={(value) => setPath('safety.intensity_guide', value)}
+              testId="exercise-detail-intensity-guide-input"
+            />
+          )}
           <div
             className={cn(
               'flex items-center gap-3 rounded-xl border p-3 transition-colors',
@@ -472,22 +599,53 @@ export function SafetySection({
             <Label>Wymaga nadzoru fizjoterapeuty</Label>
             <DirtyDot active={isPathDirty('safety.requires_supervision')} className="ml-auto" />
           </div>
+          {contentVersion === '3.3' ? (
+            <TextItemsEditor
+              title={LABELS.precautions}
+              items={data.safety?.precautions ?? []}
+              placeholder="np. W ciąży ćwicz w pozycji półleżącej."
+              addLabel="Dodaj ostrożność"
+              disabled={disabled}
+              dirty={isPathDirty('safety.precautions')}
+              onChange={(items) => setPath('safety.precautions', items)}
+              testIdPrefix="exercise-detail-precautions"
+              newItemDefaults={{ group: NEW_PRECAUTION_GROUP }}
+              hint={EXERCISE_PRECAUTIONS_HINT}
+            />
+          ) : null}
         </div>
       ) : (
         <div className="space-y-2">
-          {requiresSupervision && (
+          {content.requiresSupervision === true && (
             <p className="text-sm font-medium text-status-warning">Wymaga nadzoru fizjoterapeuty</p>
           )}
-          {hasText(stopIf) && (
+          {content.stopIf && (
             <div className="space-y-1 text-sm text-muted-foreground" data-testid="exercise-detail-stop-if-text">
               <p className="font-medium text-foreground">{LABELS.stopIf}</p>
-              <p className="whitespace-pre-line">{stopIf}</p>
+              <p className="whitespace-pre-line">{content.stopIf}</p>
             </div>
           )}
-          {hasText(intensityGuide) && (
+          {hasText(readIntensityGuide) && (
             <p className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">{LABELS.intensityGuide}:</span> {intensityGuide}
+              <span className="font-medium text-foreground">{LABELS.intensityGuide}:</span> {readIntensityGuide}
             </p>
+          )}
+          <ReadList
+            label={LABELS.contraindications}
+            items={contraindications}
+            testId="exercise-detail-safety-contraindications"
+          />
+          <ReadLine label={READ_LABELS.painRule} text={content.painRule} testId="exercise-detail-pain-rule-text" />
+          {content.precautions.length > 0 && (
+            <div className="space-y-1 text-sm text-muted-foreground" data-testid="exercise-detail-safety-precautions">
+              <p className="font-medium text-foreground">{READ_LABELS.precautions}:</p>
+              <p className="text-xs">{READ_LABELS.precautionsHint}</p>
+              <ul className="list-disc space-y-0.5 pl-5">
+                {content.precautions.map((precaution, index) => (
+                  <li key={`${index}-${precaution.text}`}>{precaution.text}</li>
+                ))}
+              </ul>
+            </div>
           )}
         </div>
       )}
@@ -508,6 +666,9 @@ interface TherapistSectionProps {
   onClinicalDescriptionChange: (value: string) => void;
   setPath: (path: string, value: unknown) => void;
   persist: () => Promise<void>;
+  /** `3.3` replaces the retired description and notes with checkpoints and one clinical note (edit mode). */
+  contentVersion?: ExerciseContentVersion;
+  isPathDirty?: IsPathDirty;
 }
 
 export function TherapistSection({
@@ -519,47 +680,97 @@ export function TherapistSection({
   onClinicalDescriptionChange,
   setPath,
   persist,
+  contentVersion = 'legacy',
+  isPathDirty = () => false,
 }: Readonly<TherapistSectionProps>) {
   const therapist = data.therapist ?? {};
+
+  if (editable && contentVersion === '3.3') {
+    return (
+      <SectionCard title="Dla fizjoterapeuty" icon={<Stethoscope className="h-4 w-4 text-muted-foreground" />} testId="exercise-detail-therapist">
+        <TextItemsEditor
+          title={LABELS.checkpoints}
+          items={therapist.checkpoints ?? []}
+          placeholder="np. biodro i tułów nieruchome"
+          addLabel="Dodaj punkt kontrolny"
+          disabled={disabled}
+          dirty={isPathDirty('therapist.checkpoints')}
+          onChange={(items) => setPath('therapist.checkpoints', items)}
+          testIdPrefix="exercise-detail-checkpoints"
+        />
+        <TherapistNoteField
+          value={therapist.note ?? ''}
+          disabled={disabled}
+          dirty={isPathDirty('therapist.note')}
+          onChange={(value) => setPath('therapist.note', value)}
+        />
+      </SectionCard>
+    );
+  }
+
+  const content = readExerciseContent({ enrichmentData: data, clinicalDescription });
+  const isLegacy = content.version === 'legacy';
+  // 3.3: opis z kolumny, przeciwwskazania i notatki o progresji mają nowe miejsca, więc stare są pomijane.
+  const readClinicalDescription = content.clinicalDescription ?? '';
+  const checkpoints = content.checkpoints.map((checkpoint) => checkpoint.text);
+  // 3.3 niesie wskazania jako kody ze słownika; portal nie ma jeszcze ich etykiet, więc pokazuje kod.
+  const indications = content.indications
+    .map((indication) => indication.text ?? indication.code)
+    .filter((entry): entry is string => entry !== null);
+  const contraindications = isLegacy ? content.contraindications : [];
+  const progressionNotes = isLegacy ? therapist.progression_notes : undefined;
+  // Kontrakt v3.3 §5: fazy i korzyści przeszły do `therapist.note`, stare listy nie są czytane.
+  const rehabPhases = isLegacy ? (therapist.rehab_phases ?? []) : [];
+  const clinicalBenefits = isLegacy ? (therapist.clinical_benefits ?? []) : [];
   const hasTherapistReadContent =
-    hasText(clinicalDescription) ||
-    hasText(therapist.clinical_notes) ||
-    hasListItems(therapist.indications) ||
-    hasListItems(therapist.contraindications) ||
-    hasListItems(therapist.rehab_phases) ||
-    hasListItems(therapist.clinical_benefits) ||
-    hasText(therapist.progression_notes);
+    hasText(readClinicalDescription) ||
+    content.therapistNote !== null ||
+    checkpoints.length > 0 ||
+    indications.length > 0 ||
+    contraindications.length > 0 ||
+    hasListItems(rehabPhases) ||
+    hasListItems(clinicalBenefits) ||
+    hasText(progressionNotes);
 
   if (!editable && !hasTherapistReadContent) return null;
 
   return (
     <SectionCard title="Dla fizjoterapeuty" icon={<Stethoscope className="h-4 w-4 text-muted-foreground" />} testId="exercise-detail-therapist">
-      <EditableTextBlock
-        label={LABELS.clinicalDescription}
-        value={clinicalDescription}
-        placeholder="Cel, biomechanika, uwagi terapeutyczne."
-        editable={editable}
-        disabled={disabled}
-        emptyText="Brak opisu dla fizjoterapeuty."
-        dirty={clinicalDescriptionDirty}
-        onChange={onClinicalDescriptionChange}
-        testId="exercise-detail-clinical-description-input"
-      />
+      {editable || isLegacy ? (
+        <EditableTextBlock
+          label={LABELS.clinicalDescription}
+          value={editable ? clinicalDescription : readClinicalDescription}
+          placeholder="Cel, biomechanika, uwagi terapeutyczne."
+          editable={editable}
+          disabled={disabled}
+          emptyText="Brak opisu dla fizjoterapeuty."
+          dirty={clinicalDescriptionDirty}
+          onChange={onClinicalDescriptionChange}
+          testId="exercise-detail-clinical-description-input"
+        />
+      ) : null}
 
       {editable ? (
         <TherapistNotesSection draft={data} disabled={disabled} setPath={setPath} persist={persist} />
       ) : (
         <div className="space-y-2">
-          {hasText(therapist.clinical_notes) && (
-            <p className="text-sm text-muted-foreground">{therapist.clinical_notes}</p>
+          {isLegacy ? (
+            content.therapistNote && <p className="text-sm text-muted-foreground">{content.therapistNote}</p>
+          ) : (
+            <ReadLine
+              label={READ_LABELS.therapistNote}
+              text={content.therapistNote}
+              testId="exercise-detail-therapist-note"
+            />
           )}
-          <ReadList label={LABELS.indications} items={therapist.indications ?? []} />
-          <ReadList label={LABELS.contraindications} items={therapist.contraindications ?? []} />
-          <ReadList label={LABELS.rehabPhases} items={therapist.rehab_phases ?? []} />
-          <ReadList label={LABELS.clinicalBenefits} items={therapist.clinical_benefits ?? []} />
-          {hasText(therapist.progression_notes) && (
+          <ReadList label={READ_LABELS.checkpoints} items={checkpoints} testId="exercise-detail-checkpoints" />
+          <ReadList label={LABELS.indications} items={indications} testId="exercise-detail-indications" />
+          <ReadList label={LABELS.contraindications} items={contraindications} />
+          <ReadList label={LABELS.rehabPhases} items={rehabPhases} />
+          <ReadList label={LABELS.clinicalBenefits} items={clinicalBenefits} />
+          {hasText(progressionNotes) && (
             <p className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">{LABELS.progressionNotes}:</span> {therapist.progression_notes}
+              <span className="font-medium text-foreground">{LABELS.progressionNotes}:</span> {progressionNotes}
             </p>
           )}
         </div>
@@ -584,6 +795,8 @@ interface MetadataSectionProps {
   onVideoUrlChange: (value: string) => void;
   onNotesChange: (value: string) => void;
   setPath: (path: string, value: unknown) => void;
+  /** `3.3` keeps the video link and edits `equipment_items`; retired and team-only fields are not rendered (edit mode). */
+  contentVersion?: ExerciseContentVersion;
 }
 
 function ReadChips({ label, items }: Readonly<{ label: string; items: string[] }>) {
@@ -605,6 +818,70 @@ function ReadChips({ label, items }: Readonly<{ label: string; items: string[] }
   );
 }
 
+function VideoUrlField({
+  value,
+  dirty,
+  disabled,
+  onChange,
+}: Readonly<{ value: string; dirty: boolean; disabled: boolean; onChange: (value: string) => void }>) {
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-1">
+        <Label className="text-xs text-muted-foreground" htmlFor="exercise-detail-video-url">
+          Link do filmu
+        </Label>
+        <DirtyDot active={dirty} />
+      </div>
+      <Input
+        data-testid="exercise-detail-video-url-input"
+        id="exercise-detail-video-url"
+        value={value}
+        placeholder="https://..."
+        onChange={(event) => onChange(event.target.value)}
+        disabled={disabled}
+        className={cn(
+          'h-9 text-sm transition-colors',
+          dirty && 'border-status-warning/70 bg-status-warning-muted dark:border-status-warning/40'
+        )}
+      />
+    </div>
+  );
+}
+
+/** Sprzęt z v3.3 (`equipment_items`): nazwa z liczbą sztuk, wymagany albo opcjonalny, zamienniki. */
+function ReadEquipmentItems({ items }: Readonly<{ items: ExerciseContentEquipmentItem[] }>) {
+  if (items.length === 0) return null;
+  return (
+    <div className="space-y-1.5" data-testid="exercise-detail-equipment-items">
+      <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">{LABELS.equipment}</p>
+      <ul className="space-y-1">
+        {items.map((item, index) => {
+          const text = describeEquipmentItem(item);
+          return (
+            <li
+              key={`${index}-${item.label}`}
+              className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-muted-foreground"
+              data-testid={`exercise-detail-equipment-item-${index}`}
+            >
+              <span className="text-foreground">{text.name}</span>
+              {text.requirement && (
+                <span className="rounded-full border border-border/60 bg-background px-2 py-0.5 text-[11px]">
+                  {text.requirement}
+                </span>
+              )}
+              {text.substitutes && (
+                <span>
+                  {READ_LABELS.substitutes}: {text.substitutes}
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 export function MetadataSection({
   data,
   videoUrl,
@@ -617,48 +894,50 @@ export function MetadataSection({
   onVideoUrlChange,
   onNotesChange,
   setPath,
+  contentVersion = 'legacy',
 }: Readonly<MetadataSectionProps>) {
+  const isV33Edit = editable && contentVersion === '3.3';
   const equipment = data.equipment ?? [];
   const keywords = data.ai?.keywords ?? [];
   const problems = data.ai?.problems ?? [];
   const suitableFor = data.ai?.suitable_for ?? [];
   const contraindicatedFor = data.ai?.contraindicated_for ?? [];
 
+  // Kolumny sprzętu czytnikowi nie podajemy: ta sekcja jej dotąd nie pokazywała.
+  const content = readExerciseContent({ enrichmentData: data, notes });
+  // Kontrakt v3.3 §2 wycofał kolumnę notatek i `ai.problems`: rekord 3.3 ich nie pokazuje.
+  const readNotes = content.notes;
+  const readProblems = content.version === 'legacy' ? problems : [];
   const hasReadContent =
     hasText(videoUrl) ||
-    hasText(notes) ||
-    hasListItems(equipment) ||
+    hasText(readNotes) ||
+    content.equipment.length > 0 ||
     hasListItems(keywords) ||
-    hasListItems(problems) ||
+    hasListItems(readProblems) ||
     hasListItems(suitableFor) ||
     hasListItems(contraindicatedFor);
 
   if (!editable && !hasReadContent) return null;
 
   return (
-    <SectionCard title="Metadane i wyszukiwanie" icon={<Tags className="h-4 w-4 text-muted-foreground" />} testId="exercise-detail-metadata">
-      {editable ? (
+    <SectionCard
+      title={isV33Edit ? 'Sprzęt i film' : 'Metadane i wyszukiwanie'}
+      icon={<Tags className="h-4 w-4 text-muted-foreground" />}
+      testId="exercise-detail-metadata"
+    >
+      {isV33Edit ? (
         <div className="space-y-4">
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-1">
-              <Label className="text-xs text-muted-foreground" htmlFor="exercise-detail-video-url">
-                Link do filmu
-              </Label>
-              <DirtyDot active={videoUrlDirty} />
-            </div>
-            <Input
-              data-testid="exercise-detail-video-url-input"
-              id="exercise-detail-video-url"
-              value={videoUrl}
-              placeholder="https://..."
-              onChange={(event) => onVideoUrlChange(event.target.value)}
-              disabled={disabled}
-              className={cn(
-                'h-9 text-sm transition-colors',
-                videoUrlDirty && 'border-status-warning/70 bg-status-warning-muted dark:border-status-warning/40'
-              )}
-            />
-          </div>
+          <VideoUrlField value={videoUrl} dirty={videoUrlDirty} disabled={disabled} onChange={onVideoUrlChange} />
+          <EquipmentItemsEditor
+            items={data.equipment_items ?? []}
+            disabled={disabled}
+            dirty={isPathDirty('equipment_items')}
+            onChange={(items) => setPath('equipment_items', items)}
+          />
+        </div>
+      ) : editable ? (
+        <div className="space-y-4">
+          <VideoUrlField value={videoUrl} dirty={videoUrlDirty} disabled={disabled} onChange={onVideoUrlChange} />
           <EditableTextBlock
             label={LABELS.notes}
             value={notes}
@@ -729,13 +1008,17 @@ export function MetadataSection({
               <span className="font-medium text-foreground">Film:</span> {videoUrl}
             </p>
           )}
-          {hasText(notes) && (
+          {hasText(readNotes) && (
             <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">{LABELS.notes}:</span> {notes}
+              <span className="font-medium text-foreground">{LABELS.notes}:</span> {readNotes}
             </p>
           )}
-          <ReadChips label={LABELS.equipment} items={equipment} />
-          <ReadChips label={LABELS.problems} items={problems} />
+          {content.version === 'legacy' ? (
+            <ReadChips label={LABELS.equipment} items={content.equipment.map((item) => item.label)} />
+          ) : (
+            <ReadEquipmentItems items={content.equipment} />
+          )}
+          <ReadChips label={LABELS.problems} items={readProblems} />
           <ReadChips label={LABELS.suitableFor} items={suitableFor} />
           <ReadChips label={LABELS.contraindicatedFor} items={contraindicatedFor} />
           <ReadChips label={LABELS.keywords} items={keywords} />

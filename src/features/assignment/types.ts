@@ -172,6 +172,8 @@ export interface AssignmentEditInput {
   frequency: Frequency;
   /** JSON map keyed by mapping.id — used for editMode prefill + merge on save. */
   exerciseOverrides?: string | null;
+  /** Notatka do całego planu (`PatientAssignment.notes`), edytowalna w trybie edycji. */
+  notes?: string | null;
   exerciseSet: ExerciseSet;
 }
 

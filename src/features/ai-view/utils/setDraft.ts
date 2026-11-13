@@ -23,6 +23,8 @@ export interface DraftItem {
   tempo?: string;
   loadKg?: number;
   notes?: string;
+  /** Rekord ćwiczenia w 3.3: „naprzemiennie” liczy się na stronę. Ustawiane przy karcie, z treści ćwiczenia. */
+  alternatingPerSide?: boolean;
 }
 
 /** Numbers a source wrote for an exercise (a visit note's "3×15"); they win over the catalog defaults. */
@@ -142,6 +144,7 @@ export function itemSeconds(item: DraftItem): number {
     restReps: item.restReps,
     preparationTime: item.preparationTime,
     side: item.side,
+    alternatingPerSide: item.alternatingPerSide === true,
   });
 }
 

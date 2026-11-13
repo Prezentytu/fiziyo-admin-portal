@@ -1,6 +1,7 @@
 import { normalizeExerciseSide } from '@/utils/exerciseEnums';
 import { formatLoad } from '@/utils/loadParser';
 import type { ExerciseLoad } from '@/features/assignment/types';
+import { isV33ExerciseRecord } from '@/utils/exerciseRecordVersion';
 import type { ExerciseFieldValueSource } from './displayRegistry';
 
 interface ExerciseSourceLike {
@@ -22,6 +23,9 @@ interface ExerciseSourceLike {
   loadType?: string | null;
   loadValue?: number | null;
   loadUnit?: string | null;
+  /** Dokument treści i wersja rekordu: z nich wynika, czy „naprzemiennie” liczy się na stronę. */
+  enrichmentData?: unknown;
+  schemaVersion?: string | number | null;
 }
 
 interface ExerciseDefaultSourceLike extends ExerciseSourceLike {
@@ -106,5 +110,6 @@ export function normalizeExerciseFieldValues(source: ExerciseDefaultSourceLike):
     clinicalDescription: toOptionalString(source.clinicalDescription),
     audioCue: toOptionalString(source.audioCue),
     notes: toOptionalString(source.notes),
+    ...(isV33ExerciseRecord(source) ? { alternatingPerSide: true } : {}),
   };
 }

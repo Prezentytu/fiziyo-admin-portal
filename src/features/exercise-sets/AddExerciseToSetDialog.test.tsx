@@ -19,7 +19,6 @@ describe('AddExerciseToSetDialog', () => {
   beforeEach(() => {
     mockUseQuery.mockReturnValue({
       data: {
-        availableExercises: [],
         exerciseTags: [],
         tagsByOrganizationId: [],
         exerciseSets: [],
@@ -95,17 +94,23 @@ describe('AddExerciseToSetDialog', () => {
 
     mockUseQuery.mockReturnValue({
       data: {
-        availableExercises: [
-          {
-            id: 'exercise-1',
-            name: 'Mostek',
-            imageUrl: '/image-1.jpg',
-            images: ['/image-1.jpg', '/image-2.jpg'],
-            defaultSets: 3,
-            defaultReps: 10,
-            scope: 'ORGANIZATION',
-          },
-        ],
+        availableExercisesPage: {
+          items: [
+            {
+              id: 'exercise-1',
+              name: 'Mostek',
+              imageUrl: '/image-1.jpg',
+              images: ['/image-1.jpg', '/image-2.jpg'],
+              defaultSets: 3,
+              defaultReps: 10,
+              scope: 'ORGANIZATION',
+            },
+          ],
+          totalCount: 1,
+          page: 1,
+          hasNextPage: false,
+          counts: { all: 1, organization: 1, fiziyo: 0 },
+        },
         exerciseTags: [],
         tagsByOrganizationId: [],
         exerciseSets: [],

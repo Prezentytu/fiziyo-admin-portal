@@ -29,6 +29,7 @@ import type { ExerciseInstance, ExerciseParams } from '@/components/shared/Exerc
 import {
   canProceedFromStep,
   toAssignmentNotePayload,
+  toAssignmentNoteUpdatePayload,
   wizardEnterAdvances,
   wizardEnterSubmits,
 } from './utils/assignmentWizardUtils';
@@ -61,6 +62,7 @@ import {
 import { normalizeExerciseSide } from '@/utils/exerciseEnums';
 import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
 import { buildMappingOverridesFromParams } from '@/features/exercise-sets/utils/buildMappingOverridesFromParams';
+import { countExerciseUsage } from '@/features/exercise-sets/utils/builderExercises';
 import {
   getWizardSteps,
   createGhostCopy,
@@ -81,6 +83,7 @@ import { aiService } from '@/services/aiService';
 import {
   GET_ORGANIZATION_EXERCISE_SETS_QUERY,
   GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY,
+  GET_ORGANIZATION_EXERCISE_USAGE_QUERY,
 } from '@/graphql/queries/exerciseSets.queries';
 import { GET_ORGANIZATION_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
 import {
@@ -395,6 +398,7 @@ function AssignmentWizardContent({
     setFrequency(normalizeFrequencySeed(initialAssignment.frequency));
     setStartDate(new Date(initialAssignment.startDate));
     setEndDate(new Date(initialAssignment.endDate));
+    setAssignmentNote(initialAssignment.notes ?? '');
   }, [open, isEditMode, initialAssignment, preselectedPatient]);
 
   // Handle set change - create Ghost Copy and apply Smart Defaults
@@ -481,9 +485,18 @@ function AssignmentWizardContent({
       ),
     [initialAssignment, selectedSet]
   );
+  const { data: exerciseUsageData } = useQuery<OrganizationExerciseSetsResponse>(GET_ORGANIZATION_EXERCISE_USAGE_QUERY, {
+    variables: { organizationId },
+    skip: !organizationId || !open,
+  });
+  const exercisePopularity = useMemo(
+    () => countExerciseUsage(exerciseUsageData?.exerciseSets ?? []),
+    [exerciseUsageData]
+  );
   const {
     exercises: rawAvailableExercises,
-    refetch: refetchAvailableExercises,
+    library: exerciseLibrary,
+    loadExercise,
     detailsPending,
     ensureDetailsReady,
   } = useExercisePickerLibrary<RawAvailableExercise>({
@@ -491,6 +504,7 @@ function AssignmentWizardContent({
     skip: !open,
     detailExerciseIds: builderExerciseIds,
     knownEnrichment,
+    popularity: exercisePopularity,
   });
 
   // Apollo client - uzywany do final refetch po petli mutacji w handleEditSubmit,
@@ -735,9 +749,8 @@ function AssignmentWizardContent({
         return;
       }
 
-      const refetchResult = await refetchAvailableExercises();
-      const refreshedExercises = mapAvailableExercises(refetchResult.data?.availableExercises);
-      const createdExercise = refreshedExercises.find((exercise) => exercise.id === event.exerciseId);
+      const createdRecord = await loadExercise(event.exerciseId);
+      const [createdExercise] = mapAvailableExercises(createdRecord ? [createdRecord] : []);
 
       if (!createdExercise) {
         toast.success('Ćwiczenie utworzone. Możesz dodać je z listy wyszukiwarki.');
@@ -788,7 +801,7 @@ function AssignmentWizardContent({
       toast.success(`Dodano ćwiczenie "${createdExercise.name}" do planu`);
       restoreFocusAfterDialog('[data-testid="create-set-step"], [data-testid="customize-set-step"]');
     },
-    [builderInstances, refetchAvailableExercises, restoreFocusAfterDialog]
+    [builderInstances, loadExercise, restoreFocusAfterDialog]
   );
 
   const handlePatientCreated = useCallback(
@@ -1249,6 +1262,7 @@ function AssignmentWizardContent({
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString(),
           frequency: buildAssignmentFrequencyPayload(frequency),
+          notes: toAssignmentNoteUpdatePayload(assignmentNote, initialAssignment.notes),
         },
         refetchQueries: [
           ...(patientId
@@ -1656,7 +1670,7 @@ function AssignmentWizardContent({
             exerciseParams={builderParams}
             onExerciseParamsChange={setBuilderParams}
             availableExercises={availableExercises}
-            loadingExercises={false}
+            library={exerciseLibrary}
             organizationId={organizationId}
             patientName={preselectedPatient?.name}
             showAI={true}
@@ -1714,7 +1728,7 @@ function AssignmentWizardContent({
                 onEndDateChange={setEndDate}
                 onFrequencyChange={setFrequency}
                 note={assignmentNote}
-                onNoteChange={isEditMode ? undefined : setAssignmentNote}
+                onNoteChange={setAssignmentNote}
               />
             </div>
             {summaryExerciseSet && (

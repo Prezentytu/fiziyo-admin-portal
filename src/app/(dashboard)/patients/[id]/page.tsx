@@ -49,6 +49,7 @@ import { REMOVE_PATIENT_FROM_THERAPIST_MUTATION } from '@/graphql/mutations/ther
 import { usePatientPremium } from '@/hooks/usePatientPremium';
 import { resolveAssignmentDisplayStatus } from '@/features/patients/utils/assignmentDisplayStatus';
 import { usePatientTherapyActions } from '@/features/patients/hooks/usePatientTherapyActions';
+import { useTherapistNoteStamps } from '@/features/patients/hooks/useTherapistNoteStamps';
 import type { OrganizationPatientsResponse, UserByIdResponse } from '@/types/apollo';
 
 // Dialogs
@@ -154,6 +155,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
 
   // Filter only exercise set assignments (not individual exercises)
   const setAssignments = assignments.filter((a) => a.exerciseSetId && !isRemovedAssignment(a.status));
+  const therapistNoteStamps = useTherapistNoteStamps(id, setAssignments);
 
   const handleEditPlan = useCallback((assignment: PatientAssignment) => {
     setEditingPlanAssignment(assignment);
@@ -179,6 +181,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
       exerciseSetId: editingPlanAssignment.exerciseSetId,
       startDate: editingPlanAssignment.startDate || nowIso,
       endDate: editingPlanAssignment.endDate || nowIso,
+      notes: editingPlanAssignment.notes ?? null,
       frequency: {
         timesPerDay: editingPlanAssignment.frequency?.timesPerDay || 1,
         timesPerWeek: editingPlanAssignment.frequency?.timesPerWeek,
@@ -361,6 +364,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
             assignment={assignment}
             patientId={id}
             patientPremiumValidUntil={patientPremiumValidUntil}
+            noteStamps={therapistNoteStamps}
             onEditPlan={handleEditPlan}
             onEditExercise={handleEditExercise}
             onPreviewExercise={handlePreviewExercise}

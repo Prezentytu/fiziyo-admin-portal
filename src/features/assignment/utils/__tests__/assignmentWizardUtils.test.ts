@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   canProceedFromStep,
   toAssignmentNotePayload,
+  toAssignmentNoteUpdatePayload,
   wizardEnterAdvances,
   wizardEnterSubmits,
   type CanProceedContext,
@@ -109,5 +110,21 @@ describe('toAssignmentNotePayload', () => {
   it('sends no note when the field is blank', () => {
     expect(toAssignmentNotePayload('')).toBeNull();
     expect(toAssignmentNotePayload('   ')).toBeNull();
+  });
+});
+
+describe('toAssignmentNoteUpdatePayload (edycja planu, S-01 R3)', () => {
+  it('nie wysyła notatki, gdy się nie zmieniła', () => {
+    expect(toAssignmentNoteUpdatePayload(' Ćwicz rano. ', 'Ćwicz rano.')).toBeUndefined();
+    expect(toAssignmentNoteUpdatePayload('', null)).toBeUndefined();
+    expect(toAssignmentNoteUpdatePayload('   ', undefined)).toBeUndefined();
+  });
+
+  it('wysyła przyciętą nową notatkę', () => {
+    expect(toAssignmentNoteUpdatePayload('  Przerwa przy bólu > 5/10.\n', 'Ćwicz rano.')).toBe('Przerwa przy bólu > 5/10.');
+  });
+
+  it('wyczyszczenie wysyła pusty tekst, bo null w API znaczy „bez zmian”', () => {
+    expect(toAssignmentNoteUpdatePayload('  ', 'Ćwicz rano.')).toBe('');
   });
 });

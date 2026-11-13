@@ -33,7 +33,11 @@ import type { Exercise } from './ExerciseCard';
 import { verificationCopy } from '@/features/verification/verificationCopy';
 import { getNextExerciseCopyName } from './utils/getNextExerciseCopyName';
 import { buildExerciseMediaChangeSet, getExerciseMediaGalleryUrls } from './utils/exerciseMedia';
-import { buildEnrichmentUpdateVariables, isExerciseSaveAuthError } from './utils/buildEnrichmentUpdateVariables';
+import {
+  buildEnrichmentUpdateVariables,
+  fetchCurrentEnrichmentData,
+  isExerciseSaveAuthError,
+} from './utils/buildEnrichmentUpdateVariables';
 import { useExerciseImageGeneration } from './useExerciseImageGeneration';
 import { ImageStylePicker } from './ImageStylePicker';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
@@ -90,6 +94,7 @@ export function ExerciseDialog({
   } = useExerciseImageGeneration();
   const [isMediaStateReady, setIsMediaStateReady] = useState(false);
   const mediaFileInputRef = useRef<HTMLInputElement>(null);
+  const saveInFlightRef = useRef(false);
   // Only needed for the copy-name suggestion; don't fetch the whole library while the dialog is closed.
   const { data: organizationExercisesData } = useQuery(GET_ORGANIZATION_EXERCISE_NAMES_QUERY, {
     variables: { organizationId },
@@ -243,10 +248,26 @@ export function ExerciseDialog({
     [exercise, updateExercise]
   );
 
+  const fetchCurrentEnrichment = useCallback(async () => {
+    if (!exercise) return null;
+    return fetchCurrentEnrichmentData(apolloClient, exercise.id);
+  }, [apolloClient, exercise]);
+
+  // Same messages as the exercise page shows for a failed save.
+  const handleSaveError = useCallback((error?: unknown) => {
+    if (error && isExerciseSaveAuthError(error)) {
+      toast.error('Brak uprawnień do zapisu tych zmian');
+      return;
+    }
+    toast.error('Nie udało się zapisać zmian');
+  }, []);
+
   const editorForm = useExerciseEditorForm({
     source: exercise,
     updateCore,
     updateEnrichment,
+    fetchCurrentEnrichment,
+    onError: handleSaveError,
   });
 
   React.useEffect(() => {
@@ -370,10 +391,24 @@ export function ExerciseDialog({
     }
   };
 
+  const isSaveBlocked =
+    updating ||
+    isResubmitting ||
+    uploadingMedia ||
+    deletingMedia ||
+    isGeneratingMedia ||
+    editorForm.saveStatus === 'saving';
+
   const handleSave = async () => {
     if (!exercise) return;
+    // Skrót klawiszowy i przycisk prowadzą tutaj; drugi zapis nie rusza, póki pierwszy trwa.
+    if (isSaveBlocked || saveInFlightRef.current) return;
+    saveInFlightRef.current = true;
     try {
-      await editorForm.save();
+      const outcome = await editorForm.save();
+      // A failed save has already shown its error and a refused one shows the conflict notice in the form:
+      // neither is a success, so the dialog stays open with what the therapist typed.
+      if (outcome === 'error' || outcome === 'conflict') return;
 
       const mediaChangeSet = buildExerciseMediaChangeSet({
         initialExistingUrls: initialMediaUrls,
@@ -438,6 +473,8 @@ export function ExerciseDialog({
         return;
       }
       toast.error('Nie udało się zaktualizować ćwiczenia');
+    } finally {
+      saveInFlightRef.current = false;
     }
   };
 
@@ -793,14 +830,7 @@ export function ExerciseDialog({
               <Button
                 type="button"
                 onClick={() => void handleSave()}
-                disabled={
-                  updating ||
-                  isResubmitting ||
-                  uploadingMedia ||
-                  deletingMedia ||
-                  isGeneratingMedia ||
-                  editorForm.saveStatus === 'saving'
-                }
+                disabled={isSaveBlocked}
                 data-testid="exercise-dialog-save-btn"
               >
                 {(updating ||

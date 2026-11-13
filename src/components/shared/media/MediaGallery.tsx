@@ -11,7 +11,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { cn } from '@/lib/utils';
 import { canOpenVideoOutsidePortal } from '@/utils/videoEmbed';
 
-import type { MediaItem } from './mediaItems';
+import { getMediaItemLabels, type MediaItem } from './mediaItems';
 
 type MediaGalleryLayout = 'stage' | 'fill';
 type MediaGalleryAspectRatio = 'video' | 'square' | 'portrait';
@@ -74,6 +74,7 @@ export function MediaGallery({
   const hasPrev = safeIndex > 0;
   const hasNext = safeIndex < items.length - 1;
 
+  const itemLabels = useMemo(() => getMediaItemLabels(items), [items]);
   const imageItems = useMemo(() => items.filter((item) => item.kind === 'image'), [items]);
   const selectedImageIndex = useMemo(
     () => imageItems.findIndex((imageItem) => imageItem.src === selectedItem?.src),
@@ -166,8 +167,9 @@ export function MediaGallery({
                 hasPrev ? 'hover:bg-background' : 'cursor-not-allowed opacity-30'
               )}
               data-testid={`${testIdPrefix}-prev-btn`}
+              aria-label="Poprzednie"
             >
-              <ChevronLeft className="h-5 w-5" />
+              <ChevronLeft className="h-5 w-5" aria-hidden="true" />
             </button>
             <button
               type="button"
@@ -179,8 +181,9 @@ export function MediaGallery({
                 hasNext ? 'hover:bg-background' : 'cursor-not-allowed opacity-30'
               )}
               data-testid={`${testIdPrefix}-next-btn`}
+              aria-label="Następne"
             >
-              <ChevronRight className="h-5 w-5" />
+              <ChevronRight className="h-5 w-5" aria-hidden="true" />
             </button>
           </>
         )}
@@ -237,6 +240,8 @@ export function MediaGallery({
                 type="button"
                 key={`${item.kind}-${item.src}-${index}`}
                 onClick={() => setSelectedIndex(index)}
+                aria-label={itemLabels[index]}
+                aria-pressed={index === safeIndex}
                 className={cn(
                   'group relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border-2 bg-surface',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',

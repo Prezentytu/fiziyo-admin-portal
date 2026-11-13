@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { ListEditor } from '@/components/shared/enrichment/ListEditor';
 import { PlayerHintLengthCounter } from '@/components/shared/enrichment/PlayerHintLengthCounter';
 import { isShownInPlayer } from '@/features/exercises/utils/playerHintLength';
+import { readExerciseContent } from '@/components/shared/exercise/readExerciseContent';
 import { cn } from '@/lib/utils';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import { EXERCISE_CONTENT_LABELS } from '@/components/shared/enrichment/enrichmentFieldLabels';
@@ -57,7 +58,9 @@ export function ExerciseAudioCues({
   const cuePhases = enrichmentData?.patient?.cue_phases;
   const phaseLabel = (index: number) =>
     CUE_PHASE_OPTIONS.find((option) => option.value === getCuePhase(cuePhases, index))?.label ?? '';
-  const hasAudioCue = Boolean(audioCue?.trim());
+  // Kontrakt v3.3 §2 wycofał kolumnę polecenia audio: w odczycie rekord 3.3 jej nie pokazuje.
+  const shownAudioCue = editable ? audioCue : readExerciseContent({ enrichmentData, audioCue }).audioCue;
+  const hasAudioCue = Boolean(shownAudioCue?.trim());
   const hasCues = cues.some((cue) => cue.trim());
   const showTtsBlock = showTtsCue && (editable || hasAudioCue);
 
@@ -106,7 +109,7 @@ export function ExerciseAudioCues({
               }}
             />
           ) : (
-            <p className="text-sm text-foreground">{audioCue}</p>
+            <p className="text-sm text-foreground">{shownAudioCue}</p>
           )}
         </div>
       )}

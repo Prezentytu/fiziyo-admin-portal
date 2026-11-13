@@ -6,6 +6,7 @@ import {
   draftNote,
   planNote,
   draftMinutes,
+  itemSeconds,
   formatDraftParams,
   scheduleQuestion,
   toMappingInput,
@@ -117,5 +118,27 @@ describe('draftNote and planNote', () => {
   it('speaks of a person only once there is a patient', () => {
     expect(draftNote({ fromCatalog: true, hasPatient: false })).not.toContain('tej osoby');
     expect(draftNote({ fromCatalog: false, hasPatient: true })).toContain('tylko dla tego pacjenta');
+  });
+});
+
+describe('itemSeconds: wersja rekordu', () => {
+  const alternating: DraftItem = {
+    ...ITEM,
+    side: 'alternating',
+    restSets: 30,
+    restReps: 2,
+    preparationTime: 5,
+  };
+
+  it('rekord 3.3 liczy „naprzemiennie” na stronę (359 s), bez flagi łącznie (209 s)', () => {
+    expect(itemSeconds({ ...alternating, alternatingPerSide: true })).toBe(359);
+    expect(itemSeconds(alternating)).toBe(209);
+    expect(itemSeconds({ ...alternating, alternatingPerSide: false })).toBe(209);
+  });
+
+  it('flaga nie zmienia innych stron', () => {
+    expect(itemSeconds({ ...alternating, side: 'both', alternatingPerSide: true })).toBe(
+      itemSeconds({ ...alternating, side: 'both' })
+    );
   });
 });

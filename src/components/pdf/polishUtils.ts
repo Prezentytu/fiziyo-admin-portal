@@ -109,8 +109,13 @@ export function translateExerciseTypeShort(type?: string): string {
  * Tłumaczenie strony ćwiczenia
  * Obsługuje zarówno LEFT/RIGHT/etc jak i left/right/etc
  */
-export function translateExerciseSidePolish(side?: string): string {
+export function translateExerciseSidePolish(side?: string, alternatingPerSide?: boolean): string {
   if (!side) return '';
+  // „Naprzemiennie” bez dopowiedzenia jest dwuznaczne obok liczby powtórzeń. Gdy znamy wersję rekordu
+  // (flaga podana), mówimy wprost: rekord 3.3 liczy na każdą stronę, rekord bez wersji łącznie.
+  if (side.toLowerCase() === 'alternating' && alternatingPerSide !== undefined) {
+    return alternatingPerSide ? 'Naprzemiennie, na każdą stronę' : 'Naprzemiennie, łącznie';
+  }
   const sides: Record<string, string> = {
     left: 'Tylko lewa',
     right: 'Tylko prawa',
