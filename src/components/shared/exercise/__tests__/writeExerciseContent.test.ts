@@ -801,6 +801,146 @@ describe('ochrona przed nadpisaniem cudzej zmiany', () => {
   });
 });
 
+describe('kolejność kluczy obiektu nie jest zmianą (odbiór 13.11, n4)', () => {
+  /** Kolumna JSONB oddaje klucze obiektu posortowane po długości, potem bajtowo; kolejność elementów listy zostaje. */
+  function asJsonbReturns<T>(value: T): T {
+    if (Array.isArray(value)) return value.map(asJsonbReturns) as T;
+    if (value && typeof value === 'object') {
+      const record = value as Doc;
+      const keys = Object.keys(record).sort((a, b) => a.length - b.length || (a < b ? -1 : a > b ? 1 : 0));
+      return Object.fromEntries(keys.map((key) => [key, asJsonbReturns(record[key])])) as T;
+    }
+    return value;
+  }
+
+  /** Dokument w kolejności kluczy, w jakiej buduje go portal: odwrotnej do tej, którą odda baza. */
+  function sentByPortal(): ExerciseEnrichmentData {
+    const document = draftOf();
+    const patient = section(document, 'patient');
+    patient.steps = ['Krok pierwszy.', 'Krok drugi.', 'Krok trzeci.'];
+    patient.step_images = [
+      { step: 1, url: 'https://example.test/a.png' },
+      { step: 2, url: 'https://example.test/b.png' },
+    ];
+    patient.cues = ['Wskazówka pierwsza.', 'Wskazówka druga.'];
+    patient.cue_phases = [
+      { phase: 'work', cue: 0 },
+      { phase: 'rest', cue: 1 },
+    ];
+    patient.mistakes = [
+      { mistake: 'Biodro ucieka w bok.', fix: 'Ustaw miednicę równo.' },
+      { mistake: 'Wstrzymany oddech.', fix: 'Oddychaj spokojnie.' },
+    ];
+    return document as ExerciseEnrichmentData;
+  }
+
+  const sent = sentByPortal();
+  const stored = asJsonbReturns(sent);
+
+  it('serwer z testu naprawdę przestawia klucze, a nie elementy list', () => {
+    expect(JSON.stringify(stored)).not.toBe(JSON.stringify(sent));
+    expect(Object.keys(stored.patient?.step_images?.[0] ?? {})).toEqual(['url', 'step']);
+    expect(Object.keys(stored.patient?.cue_phases?.[0] ?? {})).toEqual(['cue', 'phase']);
+    expect(Object.keys(stored.patient?.mistakes?.[0] ?? {})).toEqual(['fix', 'mistake']);
+    expect(stored).toEqual(sent);
+  });
+
+  it('dokument oddany przez bazę z innym układem kluczy nie ma żadnej zmiany względem wysłanego', () => {
+    expect(collectV33Edits(sent, stored)).toEqual({});
+    expect(collectV33Edits(stored, sent)).toEqual({});
+  });
+
+  it.each([
+    ['kroki', 'patient.steps', (patient: Doc) => (patient.steps = ['Krok pierwszy, poprawiony.', 'Krok drugi.', 'Krok trzeci.'])],
+    ['wskazówki', 'patient.cues', (patient: Doc) => (patient.cues = ['Wskazówka pierwsza, poprawiona.', 'Wskazówka druga.'])],
+  ] as const)('moja zmiana listy „%s” przy cudzej zmianie innego pola: baza nie zmieniła niczego w parze', (_name, path, edit) => {
+    const draft = draftOf(sent);
+    edit(section(draft, 'patient'));
+    const current = draftOf(stored) as ExerciseEnrichmentData;
+    section(current, 'patient').why = 'Cudze po co.';
+
+    expect(Object.keys(collectV33Edits(sent, current))).toEqual(['patient.why']);
+    expect(findV33EditCollisions(sent, draft as ExerciseEnrichmentData, current)).toEqual([]);
+    const rebased = rebaseV33Draft(sent, draft as ExerciseEnrichmentData, current);
+    expect(Object.keys(collectV33Edits(current, rebased))).toEqual([path]);
+  });
+
+  it('moja zmiana błędu przy cudzej zmianie innego pola nie jest kolizją', () => {
+    const draft = draftOf(sent);
+    section(draft, 'patient').mistakes = [
+      { mistake: 'Biodro ucieka w bok, poprawione.', fix: 'Ustaw miednicę równo.' },
+      { mistake: 'Wstrzymany oddech.', fix: 'Oddychaj spokojnie.' },
+    ];
+    const current = draftOf(stored) as ExerciseEnrichmentData;
+    section(current, 'patient').why = 'Cudze po co.';
+
+    expect(findV33EditCollisions(sent, draft as ExerciseEnrichmentData, current)).toEqual([]);
+  });
+
+  it('obie osoby wpisały ten sam błąd, tylko z innym układem kluczy: nie ma kolizji', () => {
+    const draft = draftOf(sent);
+    section(draft, 'patient').mistakes = [{ mistake: 'Nowy błąd.', fix: 'Nowa poprawka.' }];
+    const current = draftOf(stored) as ExerciseEnrichmentData;
+    section(current, 'patient').mistakes = [{ fix: 'Nowa poprawka.', mistake: 'Nowy błąd.' }];
+
+    expect(findV33EditCollisions(sent, draft as ExerciseEnrichmentData, current)).toEqual([]);
+  });
+
+  it('prawdziwa różnica wartości nadal jest kolizją, także gdy baza przestawiła klucze', () => {
+    const draft = draftOf(sent);
+    section(draft, 'patient').mistakes = [{ mistake: 'Mój błąd.', fix: 'Ustaw miednicę równo.' }];
+    section(draft, 'patient').step_images = [{ step: 1, url: 'https://example.test/moje.png' }];
+    const current = draftOf(stored) as ExerciseEnrichmentData;
+    section(current, 'patient').mistakes = [{ fix: 'Ustaw miednicę równo.', mistake: 'Cudzy błąd.' }];
+    section(current, 'patient').step_images = [{ url: 'https://example.test/cudze.png', step: 1 }];
+
+    expect(findV33EditCollisions(sent, draft as ExerciseEnrichmentData, current)).toEqual([
+      { path: 'patient.step_images', mine: [{ step: 1, url: 'https://example.test/moje.png' }], theirs: [{ url: 'https://example.test/cudze.png', step: 1 }] },
+      { path: 'patient.mistakes', mine: [{ mistake: 'Mój błąd.', fix: 'Ustaw miednicę równo.' }], theirs: [{ fix: 'Ustaw miednicę równo.', mistake: 'Cudzy błąd.' }] },
+    ]);
+  });
+
+  it('kolejność elementów listy nadal jest zmianą', () => {
+    const reordered = draftOf(stored);
+    section(reordered, 'patient').mistakes = [...(stored.patient?.mistakes ?? [])].reverse();
+    section(reordered, 'patient').step_images = [...(stored.patient?.step_images ?? [])].reverse();
+
+    expect(Object.keys(collectV33Edits(sent, reordered as ExerciseEnrichmentData)).sort()).toEqual([
+      'patient.mistakes',
+      'patient.step_images',
+    ]);
+  });
+
+  it('klucz z wartością null to nadal co innego niż brak klucza (stan sprzed poprawki)', () => {
+    const withNull = draftOf(sent);
+    section(withNull, 'patient').mistakes = [
+      { mistake: 'Biodro ucieka w bok.', fix: 'Ustaw miednicę równo.', note: null },
+      { mistake: 'Wstrzymany oddech.', fix: 'Oddychaj spokojnie.' },
+    ];
+    section(withNull, 'patient').step_images = [
+      { step: 1, url: 'https://example.test/a.png', alt: null },
+      { step: 2, url: 'https://example.test/b.png' },
+    ];
+
+    expect(Object.keys(collectV33Edits(sent, withNull as ExerciseEnrichmentData)).sort()).toEqual([
+      'patient.mistakes',
+      'patient.step_images',
+    ]);
+    expect(isSameV33Document(sent, withNull as ExerciseEnrichmentData)).toBe(false);
+    expect(isSameV33Document(stored, withNull as ExerciseEnrichmentData)).toBe(false);
+  });
+
+  it('null kontra brak klucza jest jedyną zmianą także wtedy, gdy baza przestawiła klucze', () => {
+    const withNull = draftOf(sent);
+    section(withNull, 'patient').mistakes = [
+      { mistake: 'Biodro ucieka w bok.', fix: 'Ustaw miednicę równo.', note: null },
+      { mistake: 'Wstrzymany oddech.', fix: 'Oddychaj spokojnie.' },
+    ];
+
+    expect(Object.keys(collectV33Edits(stored, withNull as ExerciseEnrichmentData))).toEqual(['patient.mistakes']);
+  });
+});
+
 describe('zapadka kontraktu: każdy liść złotego rekordu 3.3 jest sklasyfikowany', () => {
   function setLeaf(document: Doc, path: string, change: (value: unknown) => unknown): void {
     const keys = path.split('.');
