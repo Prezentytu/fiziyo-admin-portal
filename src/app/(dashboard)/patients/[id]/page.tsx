@@ -179,6 +179,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
       exerciseSetId: editingPlanAssignment.exerciseSetId,
       startDate: editingPlanAssignment.startDate || nowIso,
       endDate: editingPlanAssignment.endDate || nowIso,
+      notes: editingPlanAssignment.notes ?? null,
       frequency: {
         timesPerDay: editingPlanAssignment.frequency?.timesPerDay || 1,
         timesPerWeek: editingPlanAssignment.frequency?.timesPerWeek,

@@ -613,6 +613,14 @@ export function PatientAssignmentCard({
                     {assignment.assignedBy?.fullname && (
                       <p className="text-xs text-muted-foreground">Przypisał: {assignment.assignedBy.fullname}</p>
                     )}
+                    {assignment.notes?.trim() && (
+                      <div className="pt-1" data-testid={`patient-assignment-${assignment.id}-plan-note`}>
+                        <p className="text-xs font-medium text-muted-foreground">Notatka dla pacjenta</p>
+                        <p className="text-sm text-foreground whitespace-pre-line break-words">
+                          {assignment.notes.trim()}
+                        </p>
+                      </div>
+                    )}
                   </div>
                   <Button
                     size="sm"
