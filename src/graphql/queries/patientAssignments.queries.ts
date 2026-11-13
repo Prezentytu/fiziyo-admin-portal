@@ -166,3 +166,23 @@ export const GET_ALL_PATIENT_ASSIGNMENTS_QUERY = gql`
     }
   }
 `;
+
+// FR-007 6e (S-01 R3): znaczniki „pacjent przeczytał” uwag fizjoterapeuty. Osobne zapytanie z errorPolicy all,
+// żeby API bez tych pól gasiło tylko znacznik, a nie listę planów pacjenta.
+export const GET_PATIENT_THERAPIST_NOTE_STAMPS_QUERY = gql`
+  query GetPatientTherapistNoteStamps($userId: String!) {
+    patientAssignments(where: { userId: { eq: $userId } }) {
+      id
+      notesUpdatedAt
+      notesSeenAt
+      exerciseSet {
+        id
+        exerciseMappings {
+          id
+          notesUpdatedAt
+          notesSeenAt
+        }
+      }
+    }
+  }
+`;

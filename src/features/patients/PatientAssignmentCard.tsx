@@ -62,6 +62,13 @@ import {
 import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import { formatExerciseCount } from '@/utils/polishPlural';
+import { TherapistNoteReadBadge } from './TherapistNoteReadBadge';
+import {
+  EMPTY_THERAPIST_NOTE_STAMP_INDEX,
+  overrideEntryHasNotes,
+  resolveTherapistNoteReadState,
+  type TherapistNoteStampIndex,
+} from './utils/therapistNoteReadStatus';
 
 // Types
 export interface Frequency {
@@ -175,6 +182,8 @@ interface PatientAssignmentCardProps {
   readonly assignment: PatientAssignment;
   readonly patientId: string;
   readonly patientPremiumValidUntil?: string | null;
+  /** Znaczniki „pacjent przeczytał” uwag fizjoterapeuty (S-01 R3); bez nich nic nie pokazujemy. */
+  readonly noteStamps?: TherapistNoteStampIndex;
   readonly onEditPlan?: (assignment: PatientAssignment) => void;
   readonly onEditExercise?: (assignment: PatientAssignment, mapping: ExerciseMapping, override?: ExerciseOverride) => void;
   readonly onPreviewExercise?: (mapping: ExerciseMapping, override?: ExerciseOverride) => void;
@@ -213,6 +222,7 @@ export function PatientAssignmentCard({
   assignment,
   patientId,
   patientPremiumValidUntil,
+  noteStamps = EMPTY_THERAPIST_NOTE_STAMP_INDEX,
   onEditPlan,
   onEditExercise,
   onPreviewExercise,
@@ -619,6 +629,12 @@ export function PatientAssignmentCard({
                         <p className="text-sm text-foreground whitespace-pre-line break-words">
                           {assignment.notes.trim()}
                         </p>
+                        <TherapistNoteReadBadge
+                          state={resolveTherapistNoteReadState(noteStamps.plans.get(assignment.id), {
+                            noteText: assignment.notes,
+                          })}
+                          testId={`patient-assignment-${assignment.id}-plan-note-read`}
+                        />
                       </div>
                     )}
                   </div>
@@ -690,6 +706,15 @@ export function PatientAssignmentCard({
                                   onPreview={() => onPreviewExercise?.(mapping, override)}
                                   className="rounded-none border-0 bg-transparent"
                                 />
+                                <div className="px-4 pb-2 empty:hidden">
+                                  <TherapistNoteReadBadge
+                                    state={resolveTherapistNoteReadState(noteStamps.mappings.get(mapping.id), {
+                                      noteText: params.notes,
+                                      overrideHasNotes: overrideEntryHasNotes(exerciseOverrides, mapping),
+                                    })}
+                                    testId={`patient-assignment-exercise-${mapping.id}-note-read`}
+                                  />
+                                </div>
                                 {overriddenKeys.length > 0 ? (
                                   <div
                                     className="flex flex-wrap gap-1 px-4 pb-3"
