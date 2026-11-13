@@ -64,7 +64,7 @@ describe('CatalogBundleImportCard: media po imporcie', () => {
 
   it('REPLACE z pustym mediaCopy.items i mediami w paczce: ostrzeżenie, nie toast sukcesu', async () => {
     importBundleMock.mockResolvedValue({
-      data: { importExerciseBundle: { ...baseResult, mode: 'REPLACE', mediaCopy: emptyReport } },
+      data: { importExerciseBundle: { ...baseResult, mediaCopy: emptyReport } },
     });
     await upload(bundleWithMedia);
 
@@ -83,21 +83,13 @@ describe('CatalogBundleImportCard: media po imporcie', () => {
     expect(screen.queryByTestId('settings-catalog-import-media-notice')).toBeNull();
   });
 
-  it('success: false z kodami MEDIA_*: błąd z powodem dla użytkownika', async () => {
-    importBundleMock.mockResolvedValue({
-      data: {
-        importExerciseBundle: {
-          ...baseResult,
-          success: false,
-          errors: ['MEDIA_DEFERRED'],
-          items: [{ id: 'a', name: 'Przysiad', reasonCode: 'MEDIA_DEFERRED', reason: 'x' }],
-        },
-      },
-    });
-    await upload(bundleWithMedia);
+  it('paczka tylko z YouTube i Vimeo: zwykły toast sukcesu', async () => {
+    importBundleMock.mockResolvedValue({ data: { importExerciseBundle: { ...baseResult, mediaCopy: emptyReport } } });
+    await upload(
+      JSON.stringify({ exercises: [{ id: 'a', media: [{ url: 'https://vimeo.com/1' }, { url: 'https://youtu.be/abcdefghijk' }] }] })
+    );
 
-    await waitFor(() => expect(toastError).toHaveBeenCalled());
-    expect(toastError.mock.calls[0][0]).toContain('Przysiad: kopia mediów nie zmieściła się');
-    expect(toastSuccess).not.toHaveBeenCalled();
+    await waitFor(() => expect(toastSuccess).toHaveBeenCalled());
+    expect(toastWarning).not.toHaveBeenCalled();
   });
 });

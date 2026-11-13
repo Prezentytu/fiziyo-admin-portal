@@ -818,13 +818,6 @@ export const IMPORT_EXERCISE_BUNDLE_WITH_MEDIA_COPY_MUTATION = gql`
       skipped
       errors
       warnings
-      mode
-      items {
-        id
-        name
-        reasonCode
-        reason
-      }
       mediaCopy {
         copied
         alreadyPresent
@@ -855,13 +848,6 @@ export const PROBE_EXERCISE_BUNDLE_MEDIA_COPY_MUTATION = gql`
   mutation ProbeExerciseBundleMediaCopy {
     importExerciseBundle(organizationId: "probe", json: "{}", asGlobal: false) @skip(if: true) {
       success
-      mode
-      items {
-        id
-        name
-        reasonCode
-        reason
-      }
       mediaCopy {
         copied
         alreadyPresent
@@ -895,10 +881,6 @@ export interface ExerciseBundleImportResult {
   warnings: string[];
   /** Tylko z API po fizjo-app#432; kształt czyta `readMediaCopy`, bo raport może zyskać pola i wartości. */
   mediaCopy?: unknown;
-  /** REPLACE albo PATCH; tylko z API po fizjo-app#432. */
-  mode?: string;
-  /** Raport per pozycja (z #432); karta czyta z niego tylko odrzucenia z kodami `MEDIA_*`. */
-  items?: unknown;
 }
 
 export interface ImportExerciseBundleData {

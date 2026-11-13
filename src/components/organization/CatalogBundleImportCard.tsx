@@ -70,15 +70,15 @@ export function CatalogBundleImportCard({ organizationId }: CatalogBundleImportC
       setLastFileName(file.name);
 
       const notice = describeMediaNotice(text, result);
-      setMediaNotice(notice?.kind === 'not-copied' ? notice.message : null);
+      setMediaNotice(notice);
 
       if (!result.success) {
-        toast.error(notice?.message ?? result.errors[0] ?? 'Plik odrzucony. Popraw JSON i wgraj ponownie.');
+        toast.error(result.errors[0] ?? 'Plik odrzucony. Popraw JSON i wgraj ponownie.');
         return;
       }
 
       if (notice) {
-        toast.warning(notice.message);
+        toast.warning(notice);
         return;
       }
 
