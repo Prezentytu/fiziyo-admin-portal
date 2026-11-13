@@ -32,8 +32,6 @@ import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
 
 import { useExercisePickerLibrary } from '@/hooks/useExercisePickerLibrary';
 import { isV33ExerciseRecord } from '@/utils/exerciseRecordVersion';
-import { filterExercisesBySearch } from '@/features/exercises/utils/exerciseSearch';
-import { useIncrementalList } from '@/hooks/useIncrementalList';
 import {
   ADD_EXERCISE_TO_EXERCISE_SET_MUTATION,
   UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION,
@@ -187,7 +185,6 @@ function AddExerciseToPatientDialogContent({
   onHasChanges,
 }: AddExerciseToPatientDialogContentProps) {
   // State
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const selectedExerciseId = selectedExercise?.id;
   const [sets, setSets] = useState(3);
@@ -291,12 +288,12 @@ function AddExerciseToPatientDialogContent({
     []
   );
 
-    // Get exercises from organization
-  // Lista bez treści; treść (wersja rekordu) dociąga się tylko dla wybranego ćwiczenia. Bez niej nie wiadomo,
-  // czy „naprzemiennie” liczy na stronę (rekord 3.3), więc zapis czeka na treść.
+  // Lista idzie stronami z API (wyszukiwanie po stronie serwera). Treść (wersja rekordu) dociąga się tylko
+  // dla wybranego ćwiczenia. Bez niej nie wiadomo, czy „naprzemiennie” liczy na stronę (rekord 3.3), więc
+  // zapis czeka na treść.
   const {
     exercises: libraryExercises,
-    loading: loadingExercises,
+    library: exercisePages,
     detailsReady,
     detailsPending,
     ensureDetailsReady,
@@ -304,6 +301,9 @@ function AddExerciseToPatientDialogContent({
     organizationId,
     detailExerciseIds: selectedExerciseId ? [selectedExerciseId] : [],
   });
+  const loadingExercises = exercisePages.loading;
+  const searchQuery = exercisePages.search;
+  const setSearchQuery = exercisePages.onSearchChange;
 
   const [addExerciseToSet, { loading: adding }] = useMutation(ADD_EXERCISE_TO_EXERCISE_SET_MUTATION);
   const [updateOverrides, { loading: updatingOverrides }] = useMutation(
@@ -320,23 +320,18 @@ function AddExerciseToPatientDialogContent({
     return ids;
   }, [assignment]);
 
-  // Filter exercises
+  // Search and paging come from the API; exercises already in the set are left out of each page.
   const exercises: Exercise[] = useMemo(() => {
-    const all = libraryExercises;
-
-    // Filter out exercises already in the set
-    const filtered = all.filter((e) => !existingExerciseIds.has(e.id));
-
-    // Apply search filter
-    if (!searchQuery.trim()) return filtered;
-
-    return filterExercisesBySearch(filtered, searchQuery);
-  }, [libraryExercises, existingExerciseIds, searchQuery]);
-  const {
-    visibleItems: visibleExercises,
-    remaining: remainingExercises,
-    showMore: showMoreExercises,
-  } = useIncrementalList(exercises, searchQuery);
+    const byId = new Map(libraryExercises.map((exercise) => [exercise.id, exercise]));
+    return exercisePages.itemIds
+      .filter((exerciseId) => !existingExerciseIds.has(exerciseId))
+      .flatMap((exerciseId) => byId.get(exerciseId) ?? []);
+  }, [exercisePages.itemIds, libraryExercises, existingExerciseIds]);
+  const visibleExercises = exercises;
+  const remainingExercises = exercisePages.loadingMore ? 0 : exercisePages.remaining;
+  const showMoreExercises = exercisePages.loadMore;
+  // A page can hold only exercises already in the plan; the list is empty only when no page is left.
+  const moreExercisesToLoad = exercisePages.loadingMore || exercisePages.remaining > 0;
 
   // Track changes
   const hasChanges = selectedExercise !== null;
@@ -596,6 +591,10 @@ function AddExerciseToPatientDialogContent({
           <ScrollArea className="flex-1">
             <div className="px-6 py-4">
               {loadingExercises ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : exercises.length === 0 && moreExercisesToLoad ? (
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>

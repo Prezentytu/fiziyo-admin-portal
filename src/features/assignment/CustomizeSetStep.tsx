@@ -11,10 +11,9 @@ import {
 } from '@/components/shared/ExerciseSetBuilder';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
-import { GET_ORGANIZATION_EXERCISE_USAGE_QUERY } from '@/graphql/queries/exerciseSets.queries';
-import { countExerciseUsage } from '@/features/exercise-sets/utils/builderExercises';
 import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
-import type { ExerciseTagsResponse, TagCategoriesResponse, OrganizationExerciseSetsResponse } from '@/types/apollo';
+import type { ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
+import type { ExercisePickerLibraryView } from '@/hooks/useExercisePickerLibrary';
 import type { Exercise, ExerciseMapping } from './types';
 import { ExerciseDetailsDialog } from './ExerciseDetailsDialog';
 
@@ -54,7 +53,7 @@ interface CustomizeSetStepProps {
 
   // Available exercises from parent
   availableExercises: Exercise[];
-  loadingExercises?: boolean;
+  library: ExercisePickerLibraryView;
 
   // Organization context
   organizationId: string;
@@ -86,7 +85,7 @@ export function CustomizeSetStep({
   exerciseParams,
   onExerciseParamsChange,
   availableExercises,
-  loadingExercises = false,
+  library,
   organizationId,
   patientName,
   showAI = true,
@@ -109,11 +108,6 @@ export function CustomizeSetStep({
   });
 
   // Load existing sets for popularity calculation
-  const { data: exerciseUsageData } = useQuery<OrganizationExerciseSetsResponse>(GET_ORGANIZATION_EXERCISE_USAGE_QUERY, {
-    variables: { organizationId },
-    skip: !organizationId,
-  });
-
   // Process tags
   const tags = useMemo(() => (tagsData as ExerciseTagsResponse)?.exerciseTags || [], [tagsData]);
   const categories = useMemo(
@@ -132,11 +126,6 @@ export function CustomizeSetStep({
       additionalTags: normalizeExerciseTags(exercise.additionalTags),
     }));
   }, [availableExercises, tagsMap]);
-
-  const exercisePopularity = useMemo(
-    () => countExerciseUsage(exerciseUsageData?.exerciseSets ?? []),
-    [exerciseUsageData]
-  );
 
   // Convert tags to ExerciseTag format
   const builderTags: ExerciseTag[] = useMemo(() => {
@@ -211,9 +200,8 @@ export function CustomizeSetStep({
         exerciseParams={exerciseParams}
         onExerciseParamsChange={onExerciseParamsChange}
         availableExercises={exercisesWithTags}
-        loadingExercises={loadingExercises}
+        library={library}
         tags={builderTags}
-        exercisePopularity={exercisePopularity}
         showAI={showAI}
         onAIClick={onAIClick}
         aiButtonLabel="Dobierz za mnie"

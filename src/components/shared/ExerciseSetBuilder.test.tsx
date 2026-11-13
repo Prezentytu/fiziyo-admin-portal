@@ -2,13 +2,36 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
+import type { ExercisePickerLibraryView } from '@/hooks/useExercisePickerLibrary';
+
 import { ExerciseSetBuilder, type ExerciseSetBuilderProps } from './ExerciseSetBuilder';
 
 vi.mock('next/image', () => ({
   default: ({ alt }: { alt?: string }) => <span aria-label={alt ?? 'exercise-image'} />,
 }));
 
-function createProps(overrides: Partial<ExerciseSetBuilderProps> = {}): ExerciseSetBuilderProps {
+function createLibrary(overrides: Partial<ExercisePickerLibraryView> = {}): ExercisePickerLibraryView {
+  return {
+    itemIds: [],
+    popularIds: [],
+    counts: { all: 0, organization: 0, fiziyo: 0 },
+    loading: false,
+    loadingMore: false,
+    remaining: 0,
+    loadMore: vi.fn(),
+    search: '',
+    onSearchChange: vi.fn(),
+    sourceFilter: 'all',
+    onSourceFilterChange: vi.fn(),
+    ...overrides,
+  };
+}
+
+function createProps(
+  overrides: Partial<ExerciseSetBuilderProps> = {},
+  libraryOverrides: Partial<ExercisePickerLibraryView> = {}
+): ExerciseSetBuilderProps {
+  const availableExercises = overrides.availableExercises ?? [];
   return {
     name: 'Plan A',
     onNameChange: vi.fn(),
@@ -16,7 +39,8 @@ function createProps(overrides: Partial<ExerciseSetBuilderProps> = {}): Exercise
     onSelectedInstancesChange: vi.fn(),
     exerciseParams: new Map(),
     onExerciseParamsChange: vi.fn(),
-    availableExercises: [],
+    availableExercises,
+    library: createLibrary({ itemIds: availableExercises.map((exercise) => exercise.id), ...libraryOverrides }),
     showAI: true,
     onAIClick: vi.fn(),
     ...overrides,
@@ -112,7 +136,6 @@ describe('ExerciseSetBuilder preview semantics', () => {
         {...createProps({
           testIdPrefix: 'custom-builder',
           availableExercises: [exercise],
-          exercisePopularity: { 'exercise-1': 5 },
           selectedInstances: [
             { instanceId: 'first-instance', exerciseId: exercise.id },
             { instanceId: 'second-instance', exerciseId: exercise.id },
@@ -120,7 +143,7 @@ describe('ExerciseSetBuilder preview semantics', () => {
           onPreviewExercise,
           onSelectedInstancesChange,
           onCreateExercise: vi.fn(),
-        })}
+        }, { popularIds: [exercise.id] })}
       />
     );
 
@@ -275,5 +298,67 @@ describe('ExerciseSetBuilder total duration', () => {
     );
 
     expect(screen.getByTestId('set-builder-total-duration')).toHaveTextContent('42 min 40 s');
+  });
+});
+
+describe('ExerciseSetBuilder library from server pages', () => {
+  it('lists only exercises of the loaded page and still shows a chosen exercise from outside it', () => {
+    const listed = { id: 'listed', name: 'Na stronie' };
+    const chosen = { id: 'chosen', name: 'Wybrane wcześniej' };
+
+    render(
+      <ExerciseSetBuilder
+        {...createProps(
+          {
+            availableExercises: [listed, chosen],
+            selectedInstances: [{ instanceId: 'chosen-instance', exerciseId: chosen.id }],
+          },
+          { itemIds: [listed.id], remaining: 120 }
+        )}
+      />
+    );
+
+    expect(screen.getByTestId('set-builder-picker-listed')).toBeInTheDocument();
+    expect(screen.queryByTestId('set-builder-picker-chosen')).not.toBeInTheDocument();
+    expect(screen.getByTestId('set-builder-exercise-chosen')).toBeInTheDocument();
+    expect(screen.getByTestId('set-builder-show-more-btn')).toHaveTextContent('120');
+  });
+
+  it('offers for adding only what the library lists or confirms as popular, not every known record', () => {
+    const listed = { id: 'listed', name: 'Na stronie' };
+    const popular = { id: 'popular', name: 'Popularne z biblioteki' };
+    const hidden = { id: 'hidden', name: 'Ukryte w bibliotece, obecne w zestawie' };
+
+    render(
+      <ExerciseSetBuilder
+        {...createProps(
+          {
+            availableExercises: [listed, popular, hidden],
+            selectedInstances: [{ instanceId: 'hidden-instance', exerciseId: hidden.id }],
+          },
+          { itemIds: [listed.id], popularIds: [popular.id] }
+        )}
+      />
+    );
+
+    expect(screen.getByTestId('set-builder-picker-listed')).toBeInTheDocument();
+    expect(screen.getByTestId('set-builder-picker-popular')).toBeInTheDocument();
+    expect(screen.queryByTestId('set-builder-picker-hidden')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: `Dodaj ćwiczenie: ${hidden.name}` })).not.toBeInTheDocument();
+    expect(screen.getByTestId('set-builder-exercise-hidden')).toBeInTheDocument();
+  });
+
+  it('passes search and source tab to the library instead of filtering locally', async () => {
+    const user = userEvent.setup();
+    const onSearchChange = vi.fn();
+    const onSourceFilterChange = vi.fn();
+
+    render(<ExerciseSetBuilder {...createProps({}, { onSearchChange, onSourceFilterChange })} />);
+
+    await user.type(screen.getByTestId('set-builder-search-input'), 'k');
+    await user.click(screen.getByTestId('set-builder-filter-fiziyo'));
+
+    expect(onSearchChange).toHaveBeenCalledWith('k');
+    expect(onSourceFilterChange).toHaveBeenCalledWith('fiziyo');
   });
 });
