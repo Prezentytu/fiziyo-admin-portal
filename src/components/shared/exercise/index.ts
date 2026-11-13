@@ -138,7 +138,7 @@ export type {
   PersonalizationPatch,
   SplitPersonalizationResult,
 } from './exercisePersonalizationWriter';
-export { printableInstructionLines, readExerciseContent } from './readExerciseContent';
+export { printableInstructionLines, readExerciseContent, readExerciseSchemaVersion } from './readExerciseContent';
 export type {
   ExerciseContent,
   ExerciseContentBreathing,
