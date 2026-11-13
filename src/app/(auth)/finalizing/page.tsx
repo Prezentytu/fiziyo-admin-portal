@@ -46,7 +46,8 @@ export default function FinalizingRegistrationPage() {
   const hasRedirected = useRef(false);
 
   const checkTokenExchangeReady = useCallback(async (): Promise<boolean> => {
-    const clerkToken = await getToken();
+    // Clerk 7 bez sieci rzuca ClerkOfflineError; to tylko kolejna próba, nie koniec pollingu.
+    const clerkToken = await getToken().catch(() => null);
     if (!clerkToken) {
       return false;
     }
