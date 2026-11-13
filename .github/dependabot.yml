@@ -8,6 +8,15 @@ updates:
     open-pull-requests-limit: 10
     labels:
       - dependencies
+    ignore:
+      # Typy idą za runtime: CI i Vercel jadą na Node 24 (ci.yml, node-version).
+      - dependency-name: "@types/node"
+        update-types:
+          - version-update:semver-major
+      # typescript-eslint z eslint-config-next obsługuje TypeScript <6.1 (peer); 7.x wysypuje lint przy ładowaniu konfiguracji.
+      - dependency-name: typescript
+        versions:
+          - ">=6.1"
     groups:
       minor-and-patch:
         update-types:
