@@ -22,7 +22,10 @@ import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { getMediaUrl } from '@/utils/mediaUrl';
 
-import { UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION } from '@/graphql/mutations/exercises.mutations';
+import {
+  UPDATE_EXERCISE_IN_SET_MUTATION,
+  UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION,
+} from '@/graphql/mutations/exercises.mutations';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import { useExerciseImageGeneration } from '@/features/exercises/useExerciseImageGeneration';
 import { ImageStylePicker } from '@/features/exercises/ImageStylePicker';
@@ -38,6 +41,7 @@ import {
   type ParameterTestIdKind,
 } from '@/components/shared/exercise';
 import type { PatientAssignment, ExerciseMapping, ExerciseOverride } from './PatientAssignmentCard';
+import { resolvePlanNoteTarget } from './utils/planNoteWriteTarget';
 import { resolveOverrideInheritedParams } from './utils/overrideInheritedParams';
 import { normalizeExerciseType } from '@/utils/exerciseEnums';
 
@@ -450,7 +454,11 @@ function EditExerciseOverrideDialogContent({
   }, [hasChanges, onHasChanges]);
 
   // Mutation
-  const [updateOverrides, { loading }] = useMutation(UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION);
+  const [updateOverrides, { loading: savingOverrides }] = useMutation(
+    UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION
+  );
+  const [updateExerciseInSet, { loading: savingPlanNote }] = useMutation(UPDATE_EXERCISE_IN_SET_MUTATION);
+  const loading = savingOverrides || savingPlanNote;
 
   // Image handlers
   const handleGenerateImage = useCallback(async () => {
@@ -519,7 +527,22 @@ function EditExerciseOverrideDialogContent({
   }, []);
 
   const handleSave = async () => {
+    // S-01 R1: zmieniona uwaga idzie do pozycji planu (stąd „Nowa” i push u pacjenta), a nie do nadpisania.
+    const planNoteTarget = notes !== initialNotes ? resolvePlanNoteTarget(assignment.exerciseSet, mapping) : null;
+    const savedNotes = notes.trim();
+    let planNoteSaved = false;
     try {
+      if (planNoteTarget) {
+        // Najpierw pozycja planu: gdy zapis nadpisania padnie, ponowienie nadal zdejmie z niego starą uwagę.
+        const result = await updateExerciseInSet({
+          variables: { ...planNoteTarget, notes: savedNotes },
+        });
+        if (!result.data) {
+          throw new Error('Brak potwierdzenia zapisu uwagi w pozycji planu');
+        }
+        planNoteSaved = true;
+      }
+
       const newOverride = buildOverrideDelta(
         {
           sets: inheritedSets,
@@ -541,7 +564,8 @@ function EditExerciseOverrideDialogContent({
             exercise?.patientDescription ??
             exercise?.description ??
             '',
-          notes: mapping.notes ?? '',
+          // Po zapisie w pozycji planu uwaga jest odziedziczona, więc nadpisanie jej nie powtarza.
+          notes: planNoteTarget ? notes : mapping.notes ?? '',
           side: inheritedExerciseSide,
           exerciseSide: inheritedExerciseSide,
           difficultyLevel: inheritedDifficulty,
@@ -628,7 +652,11 @@ function EditExerciseOverrideDialogContent({
       onSuccess?.();
     } catch (error) {
       console.error('Błąd aktualizacji parametrów:', error);
-      toast.error('Nie udało się zaktualizować parametrów');
+      toast.error(
+        planNoteSaved
+          ? 'Uwaga została zapisana, ale pozostałych parametrów nie udało się zapisać. Spróbuj ponownie.'
+          : 'Nie udało się zaktualizować parametrów'
+      );
     }
   };
 
