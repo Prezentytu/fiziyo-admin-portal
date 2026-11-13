@@ -8,6 +8,7 @@ import { HOTCHOCOLATE_RESPONSES } from '@/lib/graphql/hotChocolateResponses.fixt
 import {
   describeImportFailure,
   IMPORT_MUTATION_UNKNOWN_MESSAGE,
+  IMPORT_NOT_AUTHORIZED_MESSAGE,
   IMPORT_UNCONFIRMED_MESSAGE,
 } from './catalogBundleImportError';
 
@@ -38,12 +39,26 @@ describe('describeImportFailure', () => {
     }
   );
 
-  it.each(['timeout', 'unauth', 'resolver'] as const)(
+  it.each(['timeout', 'resolver'] as const)(
     'błąd %s: zapis mógł się wykonać, komunikat bez twierdzenia o nieznanej mutacji',
     async (name) => {
       expect(describeImportFailure(await failureOf(HOTCHOCOLATE_RESPONSES[name]))).toBe(IMPORT_UNCONFIRMED_MESSAGE);
     }
   );
+
+  it('błąd autoryzacji (AUTH_*): zapis na pewno się nie wykonał, komunikat o sesji lub uprawnieniach', async () => {
+    expect(describeImportFailure(await failureOf(HOTCHOCOLATE_RESPONSES.unauth))).toBe(IMPORT_NOT_AUTHORIZED_MESSAGE);
+    expect(IMPORT_NOT_AUTHORIZED_MESSAGE).toContain('nic nie zostało zapisane');
+  });
+
+  it('HTTP 401 bez ciała GraphQL: ten sam komunikat o braku sesji', async () => {
+    expect(describeImportFailure(await failureOf({ status: 401, body: '{}' }))).toBe(IMPORT_NOT_AUTHORIZED_MESSAGE);
+  });
+
+  it('"Unexpected Execution Error" (wyjątek resolvera bez kodu): niepotwierdzony', async () => {
+    const body = '{"errors":[{"message":"Unexpected Execution Error","path":["importExerciseBundle"]}],"data":null}';
+    expect(describeImportFailure(await failureOf({ status: 200, body }))).toBe(IMPORT_UNCONFIRMED_MESSAGE);
+  });
 
   it.each([
     ['błąd sieci po wysłaniu', new TypeError('Failed to fetch')],
