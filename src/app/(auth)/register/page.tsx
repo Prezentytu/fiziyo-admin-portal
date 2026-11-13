@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { useSignUp } from '@clerk/nextjs';
+import { useSignUp } from '@clerk/nextjs/legacy';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, ArrowRight, Loader2, Mail, Lock, User, Building2, Check, Pencil } from 'lucide-react';
