@@ -385,19 +385,27 @@ export function useExerciseEditorForm({
       if (currentCoreDirty) {
         await updateCore(buildChangedCoreVariables(initialCoreRef.current, currentCore));
       }
-      if (currentEnrichmentDirty) {
-        // The mutation replaces the whole document: keys the user did not touch go back as loaded.
-        await updateEnrichment(composeEnrichmentSavePayload(initialEnrichmentRef.current, currentEnrichment));
+      // The mutation replaces the whole document: keys the user did not touch go back as loaded.
+      const sentEnrichment = currentEnrichmentDirty
+        ? composeEnrichmentSavePayload(initialEnrichmentRef.current, currentEnrichment)
+        : null;
+      if (sentEnrichment) {
+        await updateEnrichment(sentEnrichment);
       }
       setSaveStatus('success');
-      markSaved();
+      // The baseline is what was sent, never the draft: the draft still holds what compaction cut (a blank step,
+      // a cleared field), and as a baseline it would bring all of that back in the next save.
+      setInitialCore(currentCore);
+      if (sentEnrichment) {
+        setInitialEnrichment(sentEnrichment);
+      }
       onSaved?.();
     } catch (error) {
       console.error('[ExerciseEditor] Save failed:', error);
       setSaveStatus('error');
       onError?.(error);
     }
-  }, [initialEnrichmentPayload, markSaved, onError, onSaved, updateCore, updateEnrichment]);
+  }, [initialEnrichmentPayload, onError, onSaved, updateCore, updateEnrichment]);
 
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
