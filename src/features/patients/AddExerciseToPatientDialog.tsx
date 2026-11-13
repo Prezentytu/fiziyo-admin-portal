@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
 
+import { ExerciseDemoBadge } from '@/features/exercises/demoPool';
 import { useExercisePickerLibrary } from '@/hooks/useExercisePickerLibrary';
 import { isV33ExerciseRecord } from '@/utils/exerciseRecordVersion';
 import {
@@ -630,6 +631,7 @@ function AddExerciseToPatientDialogContent({
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-sm truncate">{exercise.name}</p>
                         </div>
+                        <ExerciseDemoBadge exerciseId={exercise.id} testId={`add-exercise-demo-${exercise.id}`} />
                       </button>
                     );
                   })}

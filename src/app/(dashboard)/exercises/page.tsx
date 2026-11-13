@@ -24,10 +24,7 @@ import { ExerciseBuilderSidebar } from '@/components/exercise-builder/ExerciseBu
 import { ExerciseBuilderFAB } from '@/components/exercise-builder/ExerciseBuilderFAB';
 import { cn } from '@/lib/utils';
 
-import {
-  EXERCISE_LIBRARY_REFETCH_QUERIES,
-  GET_AVAILABLE_EXERCISES_PAGE_QUERY,
-} from '@/graphql/queries/exercises.queries';
+import { EXERCISE_LIBRARY_REFETCH_QUERIES } from '@/graphql/queries/exercises.queries';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
 import {
@@ -42,14 +39,16 @@ import { toBuilderExercise } from '@/features/exercises/utils/toBuilderExercise'
 import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
 import { useRealtimeExercises } from '@/hooks/useRealtimeExercises';
 import { ORG_VERIFICATION_REFETCH_QUERIES } from '@/hooks/useOrganizationVerificationRealtime';
-import type { AvailableExercisesPageResponse, ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
+import type { ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
 import {
   buildExerciseLibraryQueryString,
   EXERCISE_LIBRARY_PAGE_SIZES,
   parseExerciseLibraryUrlState,
   toExerciseLibraryTab,
+  type ExerciseLibraryDemoFilter,
   type ExerciseLibraryUrlState,
 } from '@/features/exercises/utils/exerciseLibraryUrlState';
+import { useExerciseLibraryPage } from '@/features/exercises/useExerciseLibraryPage';
 import { EXERCISE_BODY_REGIONS, findExerciseBodyRegion } from '@/features/exercises/utils/exerciseBodyRegions';
 import { PageHeader } from '@/components/shared/page';
 import { useUrlSearchInput } from '@/features/exercises/useUrlSearchInput';
@@ -104,21 +103,15 @@ export default function ExercisesPage() {
   } = useUrlSearchInput(committedSearch, commitSearch);
 
   // One page of the library: tab, search, sorting and counts come from the API, not from 5k records in memory.
-  const { data, previousData, loading, error } = useQuery<AvailableExercisesPageResponse>(
-    GET_AVAILABLE_EXERCISES_PAGE_QUERY,
-    {
-      variables: {
-        organizationId,
-        tab: toExerciseLibraryTab(sourceFilter),
-        search: committedSearch || null,
-        region: bodyRegion?.region ?? null,
-        page: listState.page,
-        pageSize: listState.pageSize,
-      },
-      skip: !organizationId,
-      fetchPolicy: 'cache-and-network',
-    }
-  );
+  const { data, previousData, loading, error, demoFilter, demoFilterAvailable, demoExerciseIds } = useExerciseLibraryPage({
+    organizationId,
+    tab: toExerciseLibraryTab(sourceFilter),
+    search: committedSearch || null,
+    region: bodyRegion?.region ?? null,
+    demo: listState.demo,
+    page: listState.page,
+    pageSize: listState.pageSize,
+  });
   // Keep the previous page on screen while the next one loads instead of flashing skeletons,
   // but never another organization's exercises after switching organizations.
   const [loadedOrganizationId, setLoadedOrganizationId] = useState(organizationId);
@@ -175,12 +168,18 @@ export default function ExercisesPage() {
 
   // Map tag IDs to full tag objects (with colors resolved from categories)
   const tagsMap = useMemo(() => createTagsMap(tags, categories), [tags, categories]);
-  const exercises = useMemo(() => mapExercisesWithTags(rawExercises, tagsMap), [rawExercises, tagsMap]);
+  const exercises = useMemo(
+    () =>
+      mapExercisesWithTags(rawExercises, tagsMap).map((exercise) =>
+        demoExerciseIds.has(exercise.id) ? { ...exercise, availability: 'DEMO' as const } : exercise
+      ),
+    [rawExercises, tagsMap, demoExerciseIds]
+  );
 
   const counts = libraryPage?.counts;
   const totalCount = counts?.all ?? 0;
   const isSearching = searchQuery.trim().length > 0;
-  const isFiltered = Boolean(committedSearch) || bodyRegion !== null;
+  const isFiltered = Boolean(committedSearch) || bodyRegion !== null || demoFilter !== 'all';
   const isInitialLoading = loading && !libraryPage;
   useSearchTelemetry({
     event: 'exercise_catalog:search',
@@ -369,6 +368,33 @@ export default function ExercisesPage() {
               </ChoiceChip>
             ))}
           </div>
+
+          {demoFilterAvailable && (
+            <div
+              role="group"
+              aria-label="Pula demo"
+              className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1"
+              data-testid="exercise-demo-filter"
+            >
+              {(
+                [
+                  { id: 'all', label: 'Z pulą demo' },
+                  { id: 'hide', label: 'Bez demo' },
+                  { id: 'only', label: 'Tylko demo' },
+                ] as const satisfies readonly { id: ExerciseLibraryDemoFilter; label: string }[]
+              ).map((option) => (
+                <ChoiceChip
+                  key={option.id}
+                  variant={demoFilter === option.id ? 'chosen' : 'default'}
+                  aria-pressed={demoFilter === option.id}
+                  onClick={() => updateListState({ demo: option.id })}
+                  data-testid={`exercise-demo-${option.id}`}
+                >
+                  {option.label}
+                </ChoiceChip>
+              ))}
+            </div>
+          )}
 
           {/* Results info */}
           {(isSearching || bodyRegion) && (
