@@ -80,3 +80,71 @@ describe('liczniki podsumowania', () => {
     expect(countFilledMistakes([{ mistake: 'Plecy okrągłe' }, { fix: 'Prosto' }, { mistake: ' ', fix: '' }])).toBe(2);
   });
 });
+
+describe('summarizeChanges – rekord v3.3', () => {
+  const v33: ChangeSnapshot = {
+    ...base,
+    contentVersion: '3.3',
+    enrichment: {
+      schemaVersion: '3.3',
+      patient: { summary: 'Napinanie uda.', steps: ['a', 'b'], cues: ['Napnij udo.'] },
+      safety: { stop_if: 'Ból kolana', contraindications: [{ text: 'Świeży uraz' }] },
+    },
+  };
+
+  it('nie zgłasza zmiany wycofanych kolumn opisu', () => {
+    const result = summarizeChanges(
+      v33,
+      { ...v33, patientDescription: 'Inny opis', therapistDescription: 'Inny opis dla fizjo' },
+      0
+    );
+
+    expect(result.instruction).toEqual([]);
+    expect(result.safety).toEqual([]);
+  });
+
+  it('opisuje zmianę przeciwwskazań w safety.contraindications', () => {
+    const added = {
+      ...v33,
+      enrichment: {
+        ...v33.enrichment,
+        safety: { stop_if: 'Ból kolana', contraindications: [{ text: 'Świeży uraz' }, { text: 'Gorączka' }] },
+      },
+    };
+    const reworded = {
+      ...v33,
+      enrichment: {
+        ...v33.enrichment,
+        safety: { stop_if: 'Ból kolana', contraindications: [{ text: 'Świeży uraz kolana' }] },
+      },
+    };
+
+    expect(summarizeChanges(v33, added, 0).safety).toEqual(['przeciwwskazania: 1 → 2']);
+    expect(summarizeChanges(v33, reworded, 0).safety).toEqual(['poprawione przeciwwskazania']);
+  });
+
+  it('opisuje poprawiony tekst, gdy liczba pozycji się nie zmieniła', () => {
+    const result = summarizeChanges(
+      v33,
+      {
+        ...v33,
+        enrichment: {
+          ...v33.enrichment,
+          patient: { summary: 'Napinanie przodu uda.', steps: ['a', 'c'], cues: ['Napnij udo.', 'Oddychaj.'] },
+          safety: { stop_if: 'Ostry ból kolana', contraindications: [{ text: 'Świeży uraz' }] },
+        },
+      },
+      0
+    );
+
+    expect(result.instruction).toEqual(['poprawione podsumowanie', 'poprawione kroki', 'wskazówki: 1 → 2']);
+    expect(result.safety).toEqual(['poprawione objawy przerwania']);
+  });
+
+  it('parametry i materiał opisuje jak dla rekordu starego', () => {
+    const result = summarizeChanges(v33, { ...v33, sets: 3, imageCount: 4 }, 0);
+
+    expect(result.parameters).toEqual(['serie 100 → 3']);
+    expect(result.material).toEqual(['dodane zdjęcia: 1']);
+  });
+});

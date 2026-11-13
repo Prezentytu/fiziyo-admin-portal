@@ -226,3 +226,54 @@ describe('ParametersStage', () => {
     expect(input).toHaveValue('15');
   });
 });
+
+describe('ParametersStage: uwagi o stronie (odbiór 12.11, F1)', () => {
+  const timing = { restReps: 1, preparationTime: 5 };
+  const dose: ParameterValues = { sets: 3, reps: 10, repTime: 3, hold: null, rest: 60 };
+
+  function renderSide(side: string, isV33: boolean) {
+    render(
+      <ParametersStage
+        core={{ ...core, side, restReps: 1, preparationTime: 5 }}
+        mode="reps"
+        values={dose}
+        evaluation={evaluateParameters({ values: dose, mode: 'reps', side, timing, isV33 })}
+        descriptionNumbers={[]}
+        onValueChange={vi.fn()}
+        onAcknowledge={vi.fn()}
+        onFixDescription={vi.fn()}
+        onAcknowledgeDescription={vi.fn()}
+        onCoreFieldChange={vi.fn()}
+        v33={isV33 ? { sideDiffersFromDocument: false, facts: [] } : undefined}
+      />
+    );
+    return screen.getByTestId('verification-stage-parameters');
+  }
+
+  it('rekord bez wersji „Naprzemiennie”: bez wzmianki o stronie i bez podwojonego czasu, jak na main', () => {
+    const stage = renderSide('alternating', false);
+
+    expect(screen.queryByTestId('verification-param-per-side-note')).not.toBeInTheDocument();
+    expect(stage).not.toHaveTextContent('Czas liczony podwójnie');
+    expect(stage).not.toHaveTextContent('na jedną stronę');
+    // 242 s = 3 × (10 × 3 + 9 × 1) + 2 × 60 + 5
+    expect(stage).toHaveTextContent('4 min 2 s');
+  });
+
+  it('rekord bez wersji „Na każdą stronę”: tylko „Czas liczony podwójnie”, jak na main', () => {
+    const stage = renderSide('both', false);
+
+    expect(stage).toHaveTextContent('Czas liczony podwójnie');
+    expect(screen.queryByTestId('verification-param-per-side-note')).not.toBeInTheDocument();
+  });
+
+  it('rekord 3.3 „Naprzemiennie”: uwaga „na jedną stronę” i czas 362 s z tej samej reguły', () => {
+    const stage = renderSide('alternating', true);
+
+    expect(screen.getByTestId('verification-param-per-side-note')).toHaveTextContent(
+      'Serie i powtórzenia podane na jedną stronę'
+    );
+    expect(stage).toHaveTextContent('Czas liczony podwójnie');
+    expect(stage).toHaveTextContent('6 min 2 s');
+  });
+});

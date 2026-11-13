@@ -9,6 +9,7 @@ import { normalizeExerciseSide, normalizeExerciseType } from '@/utils/exerciseEn
 import { isV33ExerciseRecord } from '@/utils/exerciseRecordVersion';
 import type { ExerciseOverrideFields } from '@/components/shared/exercise/exerciseOverride';
 import { parseOverrideMap } from '@/components/shared/exercise/exercisePersonalizationWriter';
+import { resolvePatientInstruction } from '@/components/shared/exercise/patientInstruction';
 
 export interface ExerciseImageSource {
   thumbnailUrl?: string;
@@ -62,6 +63,8 @@ export interface PdfMappingSource extends EffectiveMappingSource {
  * Parametry, typ i strona idą przez `resolveEffectiveExerciseParams`, więc PDF pokazuje
  * te same liczby co karta zestawu, kreator przypisania i podsumowanie.
  * `override` to wpis z `exerciseOverrides` przypisania; wygrywa z mappingiem.
+ * Opis to instrukcja z `resolvePatientInstruction`: nadpisanie, potem opis rekordu starego, potem
+ * podsumowanie i kroki (zawsze dla rekordu 3.3), z krokami po nadpisaniach pozycji i przypisania.
  */
 export function toPdfExercise(mapping: PdfMappingSource, override?: ExerciseOverrideFields | null): PDFExercise {
   const exercise = mapping.exercise;
@@ -73,7 +76,12 @@ export function toPdfExercise(mapping: PdfMappingSource, override?: ExerciseOver
   return {
     id: mapping.id,
     name: exercise?.name || 'Nieznane ćwiczenie',
-    description: effective.patientDescription || exercise?.patientDescription || exercise?.description,
+    description:
+      resolvePatientInstruction({
+        override: effective.patientDescriptionOverride,
+        exercise,
+        enrichment: effective.effectiveEnrichment,
+      }).text ?? undefined,
     type,
     exerciseSide: normalizeExerciseSide(effective.side),
     alternatingPerSide: isV33ExerciseRecord(exercise),

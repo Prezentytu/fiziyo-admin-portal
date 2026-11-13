@@ -5,6 +5,7 @@ import { X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 
 interface ChipListEditorProps {
   items: string[];
@@ -13,6 +14,8 @@ interface ChipListEditorProps {
   inputLabel: string;
   placeholder?: string;
   testIdPrefix: string;
+  /** Items are whole sentences: a chip wraps instead of running out of the tile. */
+  multiline?: boolean;
 }
 
 export function ChipListEditor({
@@ -22,6 +25,7 @@ export function ChipListEditor({
   inputLabel,
   placeholder,
   testIdPrefix,
+  multiline = false,
 }: ChipListEditorProps) {
   const [draft, setDraft] = useState('');
   const [isAdding, setIsAdding] = useState(false);
@@ -52,14 +56,17 @@ export function ChipListEditor({
       {items.map((item, index) => (
         <span
           key={item}
-          className="inline-flex h-8 items-center gap-1 rounded-full bg-card pl-3 pr-1 text-[14px] text-foreground"
+          className={cn(
+            'inline-flex items-center gap-1 bg-card pl-3 pr-1 text-[14px] text-foreground',
+            multiline ? 'min-h-8 max-w-full rounded-2xl py-1' : 'h-8 rounded-full'
+          )}
         >
-          {item}
+          {multiline ? <span className="min-w-0 break-words">{item}</span> : item}
           <button
             type="button"
             aria-label={`Usuń: ${item}`}
             onClick={() => onChange(items.filter((_entry, entryIndex) => entryIndex !== index))}
-            className="grid h-6 w-6 place-items-center rounded-full text-label-secondary hover:bg-fill-quaternary hover:text-foreground"
+            className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-label-secondary hover:bg-fill-quaternary hover:text-foreground"
             data-testid={`${testIdPrefix}-remove-${index}-btn`}
           >
             <X className="h-3.5 w-3.5" />
