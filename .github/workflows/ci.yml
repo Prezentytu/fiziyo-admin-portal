@@ -10,7 +10,8 @@ on:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # Na main każdy merge dostaje własny przebieg; anulujemy tylko starsze przebiegi tego samego PR.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   validate:
@@ -47,21 +48,18 @@ jobs:
       - name: Design tokens guard
         run: npm run check:design-tokens
 
-      # Schemat backendu to zacommitowany SDL w prywatnym fizjo-app (jego CI pilnuje, że jest aktualny). Operacja panelu
-      # spoza schematu czerwieni PR, zanim zobaczy ją użytkownik. Token musi mieć contents:read do Prezentytu/fizjo-app.
-      - name: Backend GraphQL schema
-        uses: actions/checkout@v7
-        with:
-          repository: Prezentytu/fizjo-app
-          token: ${{ secrets.E2E_DISPATCH_PAT }}
-          sparse-checkout: backend/schema.graphql
-          sparse-checkout-cone-mode: false
-          path: .backend-schema
+      # Schemat z wdrożonego API DEV (HotChocolate `?sdl`, bez tokenu): pole, którego panel używa, musi istnieć we
+      # wdrożonym backendzie, nie tylko w gałęzi fizjo-app. Brak albo pusty SDL zatrzymuje job (--require-schema).
+      - name: Backend GraphQL schema (DEV API)
+        run: |
+          curl -fsS --retry 4 --retry-delay 5 --retry-all-errors --max-time 30 \
+            -o "$RUNNER_TEMP/schema.graphql" 'https://fizjo-app-api.azurewebsites.net/graphql?sdl'
+          test -s "$RUNNER_TEMP/schema.graphql"
 
       - name: GraphQL documents vs backend schema
         run: npm run graphql:validate
         env:
-          GRAPHQL_SCHEMA_PATH: .backend-schema/backend/schema.graphql
+          GRAPHQL_SCHEMA_PATH: ${{ runner.temp }}/schema.graphql
 
       - name: Type check
         run: npm run type-check
@@ -118,7 +116,9 @@ jobs:
         env:
           NEEDS_JSON: ${{ toJSON(needs) }}
 
+      # Review dotyczy PR; push na main nie ma head.sha PR-a do sprawdzenia.
       - name: Czekaj na review (claude-review.yml)
+        if: github.event_name == 'pull_request'
         run: node scripts/ci-gate.mjs wait
         env:
           GH_TOKEN: ${{ github.token }}

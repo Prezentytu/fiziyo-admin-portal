@@ -7,7 +7,7 @@ Decyzja 2026-09-10 (D-09-10-a): kod FiziYo w chmurze wyłącznie przez Cursor Cl
 ## 1. Co agent w chmurze może
 
 - Czytać całe repo, `AGENTS.md`, `.ai/` (VISION, specs, lessons, runs), `docs/`.
-- Uruchamiać `npm run validate`, `npm run agent:check`, `npm run agent:test`, `npm run skills:lint`, `npm run skills:check`, `npm run skills:test`. Brak narzędzia = `blocked` / `unverified`, nigdy „zielone”. Ten portal nie ma `dotnet`; `graphql:validate` wymaga SDL backendu (w CI pobierany z `fizjo-app`, lokalnie `GRAPHQL_SCHEMA_PATH`).
+- Uruchamiać `npm run validate`, `npm run agent:check`, `npm run agent:test`, `npm run skills:lint`, `npm run skills:check`, `npm run skills:test`. Brak narzędzia = `blocked` / `unverified`, nigdy „zielone”. Ten portal nie ma `dotnet`; `graphql:validate` wymaga SDL backendu: w CI pobierany z API DEV (`https://fizjo-app-api.azurewebsites.net/graphql?sdl`), lokalnie ten sam plik przez `GRAPHQL_SCHEMA_PATH`.
 - Tworzyć branch `agent/<typ>-<issue|YYYY-MM-DD>` (typy: `fix`, `spec`, `docs`, `health`, `drift`, `triage`) i **draft PR** do `main` z opisem wg sekcji 4. Ludzkie PR-y też targetują `main`. Gałąź `dev` nie jest w pociągu.
 - Komentować PR-y (review), tworzyć / komentować issues (`gh`), aktualizować `.ai/specs/*`, `lessons.md`, `docs/` w ramach swojego brancha. Kolejki pracy (Skrzynka, `zadania.md`, spece) opisuje `.cursor/rules/00-vision-board.mdc`; w PR linkujesz ticket albo `BW-FZ-n`, nie edytujesz tych kolejek.
 - Wołać DEV: `https://devportal.fiziyo.pl` — tylko kontami testowymi z `docs/testing/agent-access.md` (wskaźnik do dokumentu w `fizjo-app`).
