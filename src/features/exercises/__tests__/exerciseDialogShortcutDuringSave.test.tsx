@@ -130,6 +130,8 @@ describe('okno edycji ćwiczenia: skrót Cmd+Enter w trakcie zapisu', () => {
     pressShortcut();
     pressShortcut();
     pressShortcut();
+    // Zapis rusza z kolejki formularza, więc mutacja startuje tuż po naciśnięciu, nie w tym samym takcie.
+    await waitFor(() => expect(updateExerciseMock).toHaveBeenCalled());
     await act(async () => {
       contentSave.release();
     });
