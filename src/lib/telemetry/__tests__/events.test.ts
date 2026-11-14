@@ -40,13 +40,15 @@ describe('sanitizeProperties', () => {
 
 describe('redactUrl', () => {
   it('removes query string and hash that can hold search phrases', () => {
-    expect(redactUrl('https://portal.fiziyo.pl/patients?search=Kowalski#top')).toBe('https://portal.fiziyo.pl/patients');
+    expect(redactUrl('https://portal.fiziyo.pl/patients?search=Kowalski#top')).toBe(
+      'https://portal.fiziyo.pl/patients'
+    );
     expect(redactUrl('/exercises#x')).toBe('/exercises');
   });
 
   it('replaces record ids so a pageview never names a patient or exercise', () => {
     expect(redactUrl('https://portal.fiziyo.pl/patients/3f2a9c1e-5b7d-4e8a-9c21-7d4e5f6a8b90?tab=plan')).toBe(
-      'https://portal.fiziyo.pl/patients/:id',
+      'https://portal.fiziyo.pl/patients/:id'
     );
     expect(redactUrl('/exercises/a1b2c3d4e5f6789012345678901234ab')).toBe('/exercises/:id');
     expect(redactUrl('/verification/organizations/65f1a2b3c4d5e6f708192a3b')).toBe('/verification/organizations/:id');
@@ -87,7 +89,7 @@ describe('sanitizeExceptionProperties', () => {
     const result = sanitizeExceptionProperties({
       $exception_steps: [{ message: 'opened jan@example.com' }],
       $exception_list: [
-        { type: 'Error', value: 'Failed for jan@example.com phone 600 123 456', stacktrace: { frames: [] } },
+        { type: 'TypeError', value: 'Failed for jan@example.com phone 600 123 456', stacktrace: { frames: [] } },
         { type: 'TypeError' },
       ],
       $current_url: 'https://portal.fiziyo.pl/patients',
@@ -95,7 +97,7 @@ describe('sanitizeExceptionProperties', () => {
 
     expect(result).toEqual({
       $exception_list: [
-        { type: 'Error', value: 'Failed for [email] phone [num]', stacktrace: { frames: [] } },
+        { type: 'TypeError', value: 'Failed for [email] phone [num]', stacktrace: { frames: [] } },
         { type: 'TypeError' },
       ],
       $current_url: 'https://portal.fiziyo.pl/patients',
@@ -103,8 +105,28 @@ describe('sanitizeExceptionProperties', () => {
   });
 
   it('caps the message length', () => {
-    const result = sanitizeExceptionProperties({ $exception_list: [{ value: 'x'.repeat(500) }] });
+    const result = sanitizeExceptionProperties({ $exception_list: [{ type: 'TypeError', value: 'x'.repeat(500) }] });
 
     expect((result.$exception_list as { value: string }[])[0].value).toHaveLength(300);
+  });
+
+  it('keeps messages only for engine error types; app errors and SyntaxError are withheld', () => {
+    const result = sanitizeExceptionProperties({
+      $exception_list: [
+        { type: 'TypeError', value: "Cannot read properties of undefined (reading 'name')" },
+        { type: 'Error', value: 'Pacjent Jan Kowalski nie istnieje' },
+        { type: 'ApolloError', value: 'Brak dostępu do organizacji Kowalski' },
+        { type: 'SyntaxError', value: 'Unexpected token < in JSON at position 0: "<p>Jan</p>"' },
+        { value: 'bez typu' },
+      ],
+    });
+
+    expect((result.$exception_list as { value: string }[]).map((item) => item.value)).toEqual([
+      "Cannot read properties of undefined (reading 'name')",
+      'message withheld',
+      'message withheld',
+      'message withheld',
+      'message withheld',
+    ]);
   });
 });
