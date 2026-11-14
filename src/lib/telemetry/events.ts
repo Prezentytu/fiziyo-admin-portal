@@ -103,7 +103,8 @@ const MAX_EXCEPTION_MESSAGE_LENGTH = 300;
  * Engine errors describe code (`Cannot read properties of undefined`), so their message stays,
  * sanitized. Every other type (`Error`, `ApolloError`, app errors) can quote a server answer or a
  * record, and so can `SyntaxError` (V8 quotes the input of `JSON.parse`): its message is withheld,
- * like the backend's and the mobile app's.
+ * like the backend's and the mobile app's. Residual risk: an engine message can still quote a
+ * property name taken from data, and a thrown plain object can claim `name: 'TypeError'`.
  */
 const MESSAGE_SAFE_TYPES = new Set(['TypeError', 'ReferenceError', 'RangeError', 'URIError', 'EvalError']);
 export const WITHHELD_EXCEPTION_MESSAGE = 'message withheld';
