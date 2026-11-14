@@ -25,4 +25,3 @@ Przegląd tygodniowy (baza-wiedzy prompt-ulepszanie.md) naprawia PR-em albo odk�
 <!-- Co już sprawdzone. Obejście, którego użyłem (żeby następny wiedział, co zdjąć). -->
 
 ## Pliki
-
