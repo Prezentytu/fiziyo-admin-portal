@@ -118,15 +118,19 @@ describe('sanitizeExceptionProperties', () => {
         { type: 'ApolloError', value: 'Brak dostępu do organizacji Kowalski' },
         { type: 'SyntaxError', value: 'Unexpected token < in JSON at position 0: "<p>Jan</p>"' },
         { value: 'bez typu' },
+        { type: 'Error', value: { detail: 'Jan Kowalski' } },
+        { type: 'Error' },
       ],
     });
 
-    expect((result.$exception_list as { value: string }[]).map((item) => item.value)).toEqual([
+    expect((result.$exception_list as { value?: unknown }[]).map((item) => item.value)).toEqual([
       "Cannot read properties of undefined (reading 'name')",
       'message withheld',
       'message withheld',
       'message withheld',
       'message withheld',
+      'message withheld',
+      undefined,
     ]);
   });
 });

@@ -130,13 +130,17 @@ describe('portal telemetry consent', () => {
     const sent = config.before_send({
       event: '$exception',
       properties: {
-        $exception_list: [{ type: 'TypeError', value: 'Failed for jan@example.com' }],
+        $exception_list: [
+          { type: 'TypeError', value: 'Failed for jan@example.com' },
+          { type: 'Error', value: 'Pacjent Jan Kowalski nie istnieje' },
+        ],
         $exception_steps: [{ message: 'opened jan@example.com' }],
       },
     });
 
-    expect(JSON.stringify(sent)).not.toMatch(/jan@example\.com|\$exception_steps/);
+    expect(JSON.stringify(sent)).not.toMatch(/jan@example\.com|Kowalski|\$exception_steps/);
     expect(JSON.stringify(sent)).toContain('Failed for [email]');
+    expect(JSON.stringify(sent)).toContain('message withheld');
   });
 
   it('resumes for the therapist who opted in, under their own id', async () => {

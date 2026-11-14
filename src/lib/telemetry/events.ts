@@ -112,11 +112,11 @@ function sanitizeExceptionItem(item: unknown): unknown {
   if (item === null || typeof item !== 'object') {
     return item;
   }
-  const { type, value } = item as { type?: unknown; value?: unknown };
-  if (typeof value !== 'string') {
+  if (!('value' in item)) {
     return item;
   }
-  if (typeof type !== 'string' || !MESSAGE_SAFE_TYPES.has(type)) {
+  const { type, value } = item as { type?: unknown; value?: unknown };
+  if (typeof value !== 'string' || typeof type !== 'string' || !MESSAGE_SAFE_TYPES.has(type)) {
     return { ...item, value: WITHHELD_EXCEPTION_MESSAGE };
   }
   return {
