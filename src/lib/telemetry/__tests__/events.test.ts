@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { isForbiddenPropertyKey, redactUrl, redactUrlsDeep, sanitizeProperties } from '../events';
+import {
+  isForbiddenPropertyKey,
+  redactUrl,
+  redactUrlsDeep,
+  sanitizeExceptionProperties,
+  sanitizeProperties,
+} from '../events';
 
 describe('sanitizeProperties', () => {
   it('drops keys that could carry personal or clinical data', () => {
@@ -73,5 +79,32 @@ describe('redactUrlsDeep', () => {
       $exception_list: [{ value: 'Failed at /patients/:id' }],
       results_count: 3,
     });
+  });
+});
+
+describe('sanitizeExceptionProperties', () => {
+  it('cuts e-mails and digit runs out of exception messages and drops steps', () => {
+    const result = sanitizeExceptionProperties({
+      $exception_steps: [{ message: 'opened jan@example.com' }],
+      $exception_list: [
+        { type: 'Error', value: 'Failed for jan@example.com phone 600 123 456', stacktrace: { frames: [] } },
+        { type: 'TypeError' },
+      ],
+      $current_url: 'https://portal.fiziyo.pl/patients',
+    });
+
+    expect(result).toEqual({
+      $exception_list: [
+        { type: 'Error', value: 'Failed for [email] phone [num]', stacktrace: { frames: [] } },
+        { type: 'TypeError' },
+      ],
+      $current_url: 'https://portal.fiziyo.pl/patients',
+    });
+  });
+
+  it('caps the message length', () => {
+    const result = sanitizeExceptionProperties({ $exception_list: [{ value: 'x'.repeat(500) }] });
+
+    expect((result.$exception_list as { value: string }[])[0].value).toHaveLength(300);
   });
 });
