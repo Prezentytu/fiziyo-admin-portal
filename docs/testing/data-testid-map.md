@@ -312,6 +312,7 @@ Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu r
 | `exercise-detail-equipment-item-{index}`            | Pozycja sprzętu: nazwa, liczba, wymagany, zamienniki     | `ExerciseDetailSections.tsx`     |
 | `exercise-detail-content-gaps`                      | Braki treści według reguł publikacji                     | `exercises/[id]/page.tsx`        |
 | `exercise-detail-open-verification-btn`             | „Popraw w weryfikacji” (ćwiczenie globalne, weryfikator) | `exercises/[id]/page.tsx`        |
+| `exercise-detail-demo-release-btn`                  | „Przenieś do zwykłej bazy” (rekord demo, weryfikator)    | `DemoReleaseButton.tsx`          |
 | `exercise-internal-notes-section`                   | Notatki robocze (tylko FiziYo), też w weryfikacji        | `InternalNotesPanel.tsx`         |
 | `exercise-internal-notes-input`                     | Pole notatek roboczych, zapis po wyjściu z pola          | `InternalNotesPanel.tsx`         |
 | `exercise-internal-notes-status`                    | Stan zapisu notatek roboczych                            | `InternalNotesPanel.tsx`         |

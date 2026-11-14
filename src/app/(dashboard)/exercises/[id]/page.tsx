@@ -102,6 +102,8 @@ import {
 import { getNextExerciseCopyName } from '@/features/exercises/utils/getNextExerciseCopyName';
 import { buildDuplicateExerciseVariables } from '@/features/exercises/utils/buildDuplicateExerciseVariables';
 import { isDuplicateAllowed, useExerciseAvailability } from '@/hooks/useExerciseAvailability';
+import { DemoReleaseButton } from '@/features/exercises/DemoReleaseButton';
+import { canReleaseFromDemoPool } from '@/features/exercises/utils/demoRelease';
 import { normalizeExerciseType } from '@/utils/exerciseEnums';
 import { canOpenVideoOutsidePortal } from '@/utils/videoEmbed';
 import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
@@ -929,6 +931,11 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                   Popraw w weryfikacji
                 </Button>
               )}
+              {isGlobalExercise &&
+                canReleaseFromDemoPool({
+                  canReviewExercises,
+                  availability: availabilityState.status === 'known' ? availabilityState.availability : undefined,
+                }) && <DemoReleaseButton exerciseId={exercise.id} />}
             </div>
           )}
 
