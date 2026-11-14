@@ -97,3 +97,34 @@ export function redactUrlsDeep(value: unknown): unknown {
   }
   return value;
 }
+
+const EMAIL_PATTERN = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
+const DIGIT_RUN_PATTERN = /\+?\d(?:[ -]?\d){3,}/g;
+const MAX_EXCEPTION_MESSAGE_LENGTH = 300;
+
+function sanitizeExceptionItem(item: unknown): unknown {
+  if (item === null || typeof item !== 'object') {
+    return item;
+  }
+  const { value } = item as { value?: unknown };
+  return typeof value === 'string'
+    ? {
+        ...item,
+        value: value
+          .replace(EMAIL_PATTERN, '[email]')
+          .replace(DIGIT_RUN_PATTERN, '[num]')
+          .slice(0, MAX_EXCEPTION_MESSAGE_LENGTH),
+      }
+    : item;
+}
+
+/**
+ * `$exception` messages quote what failed (an e-mail, a phone number), and `$exception_steps` are
+ * free-text breadcrumbs: messages lose e-mails and digit runs, steps are dropped. Ids and URLs are
+ * handled by `redactUrlsDeep`.
+ */
+export function sanitizeExceptionProperties(properties: Record<string, unknown>): Record<string, unknown> {
+  const { $exception_steps: _steps, ...rest } = properties;
+  const list = rest.$exception_list;
+  return Array.isArray(list) ? { ...rest, $exception_list: list.map(sanitizeExceptionItem) } : rest;
+}

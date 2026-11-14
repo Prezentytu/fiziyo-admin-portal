@@ -20,7 +20,7 @@ jobs:
     timeout-minutes: 30
     steps:
       # Push do main checkoutuje commit z main, więc skrypt jest zatwierdzony kodem, nie kodem z PR.
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
 
       - uses: actions/setup-node@v7
         with:

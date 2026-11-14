@@ -4,6 +4,7 @@ import { getTelemetryConfig, type TelemetryConfig } from './config';
 import {
   redactUrl,
   redactUrlsDeep,
+  sanitizeExceptionProperties,
   sanitizeProperties,
   type TelemetryEventName,
   type TelemetryProperties,
@@ -27,12 +28,15 @@ function redactProperties<T extends EventProperties | undefined>(properties: T):
   return properties ? (redactUrlsDeep(properties) as T) : properties;
 }
 
-/** Last stop before the network: no URL in any field keeps a query or a record id. */
+/** Last stop before the network: no URL keeps a query or a record id, no exception an e-mail. */
 function stripUrls(event: CaptureResult | null): CaptureResult | null {
   if (!event) {
     return null;
   }
   event.properties = redactProperties(event.properties);
+  if (event.event === '$exception' && event.properties) {
+    event.properties = sanitizeExceptionProperties(event.properties);
+  }
   event.$set = redactProperties(event.$set);
   event.$set_once = redactProperties(event.$set_once);
   return event;

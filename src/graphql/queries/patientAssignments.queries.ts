@@ -53,6 +53,7 @@ export const PATIENT_ASSIGNMENT_FULL_FRAGMENT = gql`
       isActive
       creationTime
       organizationId
+      kind
       exerciseMappings {
         id
         exerciseId

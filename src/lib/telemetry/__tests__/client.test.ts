@@ -119,6 +119,26 @@ describe('portal telemetry consent', () => {
     expect(JSON.stringify(sent)).not.toMatch(/65f1a2b3c4d5e6f708192a3b|lopatka/);
   });
 
+  it('cuts e-mails out of exception messages and drops exception steps before sending', async () => {
+    const telemetry = await loadClient();
+    telemetry.setTelemetryUser(therapistA);
+    telemetry.setTelemetryConsent('granted');
+    const config = sdk.posthog.init.mock.lastCall?.[1] as {
+      before_send: (event: Record<string, unknown>) => Record<string, unknown> | null;
+    };
+
+    const sent = config.before_send({
+      event: '$exception',
+      properties: {
+        $exception_list: [{ type: 'Error', value: 'Failed for jan@example.com' }],
+        $exception_steps: [{ message: 'opened jan@example.com' }],
+      },
+    });
+
+    expect(JSON.stringify(sent)).not.toMatch(/jan@example\.com|\$exception_steps/);
+    expect(JSON.stringify(sent)).toContain('Failed for [email]');
+  });
+
   it('resumes for the therapist who opted in, under their own id', async () => {
     const telemetry = await loadClient();
     telemetry.setTelemetryUser(therapistA);
