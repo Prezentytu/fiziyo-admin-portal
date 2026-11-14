@@ -15,6 +15,10 @@ Czego ta zmiana świadomie nie robi (flaga, backfill, dodatkowe zabezpieczenie, 
 
 Stary tor, który zostaje: co skasować i po czym poznać, że wolno (albo link do issue). „Brak”, jeśli nic.
 
+## Po wydaniu
+
+Sygnał, który ma się zmienić u gabinetu albo pacjenta, gdzie go sprawdzić (zdarzenie albo wyjątek w PostHog, zgłoszenie w Skrzynce, log) i próg; ostatnia linia „Sprawdzić: RRRR-MM-DD”. „Nie dotyczy”, jeśli zmiana nie zmienia zachowania.
+
 ## Zmiany
 
 - ...
