@@ -176,6 +176,8 @@ export interface PatientAssignment {
     name: string;
     description?: string;
     organizationId?: string;
+    /** PATIENT_PLAN: uwaga z „Dostosuj parametry” idzie do pozycji planu (S-01 R1). */
+    kind?: 'TEMPLATE' | 'PATIENT_PLAN' | null;
     exerciseMappings?: ExerciseMapping[];
   };
 }
