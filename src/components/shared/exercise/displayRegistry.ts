@@ -56,6 +56,8 @@ export interface ExerciseFieldValueSource {
   alternatingPerSide?: boolean;
   sets?: number;
   reps?: number;
+  /** Zakres powtórzeń z recepty rekordu 3.3; kafelek pokazuje „min–max” zamiast wartości domyślnej. */
+  repsRange?: { min: number; max: number };
   duration?: number;
   executionTime?: number;
   restSets?: number;
@@ -157,7 +159,8 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
     group: 'dosage',
     isInlineVisible: true,
     isDialogVisible: true,
-    formatValue: (viewModel) => asPositiveNumber(viewModel.reps),
+    formatValue: (viewModel) =>
+      viewModel.repsRange ? `${viewModel.repsRange.min}–${viewModel.repsRange.max}` : asPositiveNumber(viewModel.reps),
   },
   duration: {
     key: 'duration',

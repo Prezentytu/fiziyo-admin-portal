@@ -97,7 +97,34 @@ function resolveEquipmentText(source: ExerciseSourceLike): string | undefined {
   return toOptionalString(names.join(', '));
 }
 
+function readDocument(enrichmentData: unknown): Record<string, unknown> | null {
+  let document = enrichmentData;
+  if (typeof document === 'string') {
+    try {
+      document = JSON.parse(document) as unknown;
+    } catch {
+      return null;
+    }
+  }
+  return document && typeof document === 'object' ? (document as Record<string, unknown>) : null;
+}
+
+/** Zakres powtórzeń z `prescription.params.reps` rekordu 3.3 (P-3c); tylko gdy min < max. */
+function prescriptionRepsRange(document: Record<string, unknown> | null): { min: number; max: number } | undefined {
+  const prescription = document?.prescription;
+  if (!prescription || typeof prescription !== 'object') return undefined;
+  const params = (prescription as { params?: unknown }).params;
+  if (!params || typeof params !== 'object') return undefined;
+  const reps = (params as { reps?: unknown }).reps;
+  if (!reps || typeof reps !== 'object') return undefined;
+  const { min, max } = reps as { min?: unknown; max?: unknown };
+  return typeof min === 'number' && typeof max === 'number' && min > 0 && min < max ? { min, max } : undefined;
+}
+
 export function normalizeExerciseFieldValues(source: ExerciseDefaultSourceLike): ExerciseFieldValueSource {
+  const isV33 = isV33ExerciseRecord(source);
+  const document = isV33 ? readDocument(source.enrichmentData) : null;
+  const repsRange = prescriptionRepsRange(document);
   return {
     // GraphQL `Exercise` ma tylko pola `default*` (bez `sets`/`restSets`).
     sets: toOptionalNumber(source.defaultSets),
@@ -118,6 +145,7 @@ export function normalizeExerciseFieldValues(source: ExerciseDefaultSourceLike):
     clinicalDescription: toOptionalString(source.clinicalDescription),
     audioCue: toOptionalString(source.audioCue),
     notes: toOptionalString(source.notes),
-    ...(isV33ExerciseRecord(source) ? { alternatingPerSide: true } : {}),
+    ...(isV33 ? { alternatingPerSide: true } : {}),
+    ...(repsRange ? { repsRange } : {}),
   };
 }
