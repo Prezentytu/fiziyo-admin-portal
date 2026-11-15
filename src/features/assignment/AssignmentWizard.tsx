@@ -51,6 +51,7 @@ import {
   seedBuilderParamsFromMapping,
 } from './utils/seedBuilderParamsFromMapping';
 import { mergeAssignmentOverridesOnEdit } from './utils/mergeAssignmentOverridesOnEdit';
+import { saveAssignmentOverridesOrRollback } from './utils/saveAssignmentOverridesOrRollback';
 import {
   buildAssignmentFrequencyPayload,
   normalizeFrequencySeed,
@@ -1520,19 +1521,20 @@ function AssignmentWizardContent({
 
         const assignmentId = responseData?.id;
         if (assignmentId && exerciseOverridesJson) {
-          try {
-            await updatePatientExerciseOverrides({
-              variables: {
-                assignmentId,
-                exerciseOverrides: exerciseOverridesJson,
-              },
-            });
-          } catch (overrideError) {
-            console.error('Błąd zapisu personalizacji ćwiczeń:', overrideError);
-            toast.warning(
-              `Przypisano plan dla ${patient.name}, ale nie udało się zapisać pełnej personalizacji parametrów`
-            );
-          }
+          await saveAssignmentOverridesOrRollback({
+            patientName: patient.name,
+            saveOverrides: () =>
+              updatePatientExerciseOverrides({
+                variables: {
+                  assignmentId,
+                  exerciseOverrides: exerciseOverridesJson,
+                },
+              }),
+            rollbackAssignment: () =>
+              removeAssignment({
+                variables: { exerciseSetId: exerciseSetIdToAssign, patientId: patient.id },
+              }),
+          });
         }
       }
 
