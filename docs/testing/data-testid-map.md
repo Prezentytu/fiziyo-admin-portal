@@ -560,6 +560,9 @@ Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu r
 | `assign-schedule-save-template-toggle`  | Kontener: zapisz jako szablon             | `AssignmentWizard.tsx`        |
 | `assign-schedule-save-template-switch`  | Przełącznik: zapisz jako szablon          | `AssignmentWizard.tsx`        |
 | `assign-schedule-save-template-label`   | Etykieta: zapisz kopię jako szablon       | `AssignmentWizard.tsx`        |
+| `assign-edit-restart`                   | Kontener: rozpocznij plan od nowa         | `AssignmentWizard.tsx`        |
+| `assign-edit-restart-switch`            | Przełącznik: rozpocznij plan od nowa      | `AssignmentWizard.tsx`        |
+| `assign-edit-restart-summary`           | Opis skutku: korekta albo odnowienie      | `AssignmentWizard.tsx`        |
 | `assign-summary-save-template-toggle`   | Przełącznik: zapisz jako szablon          | `SummaryStep.tsx`             |
 | `assign-summary-save-template-label`    | Etykieta: zapisz kopię planu jako szablon | `SummaryStep.tsx`             |
 | `assign-summary`                        | Podsumowanie                              | `SummaryStep.tsx`             |
