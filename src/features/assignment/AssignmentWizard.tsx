@@ -98,7 +98,11 @@ import {
   UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
 import { useExercisePickerLibrary } from '@/hooks/useExercisePickerLibrary';
-import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
+import {
+  GET_ASSIGNMENT_PLAN_VERSION_QUERY,
+  GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY,
+} from '@/graphql/queries/patientAssignments.queries';
+import { PLAN_VERSION_EDIT_HINT, planVersionSavedNotice } from './utils/planVersionNotice';
 import { GET_CURRENT_BILLING_STATUS_QUERY } from '@/graphql/queries/billing.queries';
 import type { OrganizationExerciseSetsResponse, OrganizationPatientsResponse } from '@/types/apollo';
 import type {
@@ -1334,7 +1338,17 @@ function AssignmentWizardContent({
         ],
       });
 
-      toast.success('Plan zaktualizowany');
+      // Wersja planu (FR-008): gdy pacjent ćwiczył już dziś, nowa wersja startuje jutro i fizjo ma to wiedzieć.
+      const versionNotice = await apolloClient
+        .query<{ patientAssignmentById: { planVersionStartsAt?: string | null } | null }>({
+          query: GET_ASSIGNMENT_PLAN_VERSION_QUERY,
+          variables: { id: initialAssignment.id },
+          fetchPolicy: 'network-only',
+        })
+        .then(({ data }) => planVersionSavedNotice(data?.patientAssignmentById?.planVersionStartsAt, new Date()))
+        .catch(() => null);
+
+      toast.success('Plan zaktualizowany', versionNotice ? { description: versionNotice } : undefined);
       onSuccess?.();
       _onOpenChange(false);
     } catch (error) {
@@ -1906,6 +1920,11 @@ function AssignmentWizardContent({
 
           {/* Right side - Navigation */}
           <div className="flex items-center gap-3">
+            {currentStep === 'schedule' && isEditMode && (
+              <p className="max-w-sm text-xs text-muted-foreground" data-testid="assign-edit-plan-version-hint">
+                {PLAN_VERSION_EDIT_HINT}
+              </p>
+            )}
             {currentStep === 'schedule' && !isEditMode && (
               <label
                 className="flex items-center gap-2.5 rounded-lg border border-border/60 bg-surface-light/40 px-3 py-2"
