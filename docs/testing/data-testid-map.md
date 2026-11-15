@@ -949,11 +949,6 @@ Tor organizacji (`/organization/verification/[id]`) i moderacja cross-org (`/ver
 | `common-search-clear-btn`           | Wyczyść wyszukiwanie   | `SearchInput.tsx`        |
 | `common-empty-state`                | Stan pusty             | `EmptyState.tsx`         |
 | `common-empty-state-action-btn`     | Akcja stanu pustego    | `EmptyState.tsx`         |
-| `common-table`                      | Tabela danych          | `DataTable.tsx`          |
-| `common-table-row-{id}`             | Wiersz tabeli          | `DataTable.tsx`          |
-| `common-table-pagination-prev`      | Poprzednia strona      | `DataTable.tsx`          |
-| `common-table-pagination-next`      | Następna strona        | `DataTable.tsx`          |
-| `common-table-page-size`            | Rozmiar strony         | `DataTable.tsx`          |
 | `common-file-upload`                | Upload pliku           | `FileUpload.tsx`         |
 | `common-file-upload-input`          | Input pliku            | `FileUpload.tsx`         |
 | `common-feedback-btn`               | Przycisk opinii        | `FeedbackButton.tsx`     |

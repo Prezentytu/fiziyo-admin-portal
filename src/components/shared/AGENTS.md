@@ -6,10 +6,6 @@ Komponenty reużywalne używane w wielu modułach. Preferuj import z `@/componen
 
 ## Kluczowe komponenty
 
-### DataTable
-
-Główna tabela z danymi. Używaj dla list (ćwiczenia, pacjenci, zestawy).
-
 ### ExerciseSetBuilder
 
 Builder zestawu ćwiczeń — listowanie, dodawanie, edycja, usuwanie ćwiczeń w zestawie. Współdzielony przez CreateSetWizard i Assignment Wizard.
@@ -70,7 +66,7 @@ Wspólny komponent read-only harmonogramu (`compact` / `card` / `inline-highligh
 ## Import
 
 ```typescript
-import { DataTable, EmptyState, ConfirmDialog } from '@/components/shared';
+import { EmptyState, ConfirmDialog } from '@/components/shared';
 import { ExerciseSetBuilder } from '@/components/shared';
 ```
 
