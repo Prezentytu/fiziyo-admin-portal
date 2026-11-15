@@ -2,7 +2,9 @@ import { normalizeExerciseSide } from '@/utils/exerciseEnums';
 import { formatLoad } from '@/utils/loadParser';
 import type { ExerciseLoad } from '@/features/assignment/types';
 import { isV33ExerciseRecord } from '@/utils/exerciseRecordVersion';
+import { describeEquipmentItem } from '@/features/exercises/utils/equipmentItemText';
 import type { ExerciseFieldValueSource } from './displayRegistry';
+import { readExerciseContent, type ExerciseContentSource } from './readExerciseContent';
 
 interface ExerciseSourceLike {
   side?: string | null;
@@ -89,6 +91,12 @@ export function resolveLoadDisplayText(source: ExerciseSourceLike): string | und
   return formattedLoad || undefined;
 }
 
+/** Sprzęt z dokumentu treści (`equipment_items`); kolumna `equipment` tylko, gdy dokument milczy (czyta to `readExerciseContent`). */
+function resolveEquipmentText(source: ExerciseSourceLike): string | undefined {
+  const names = readExerciseContent(source as ExerciseContentSource).equipment.map((item) => describeEquipmentItem(item).name);
+  return toOptionalString(names.join(', '));
+}
+
 export function normalizeExerciseFieldValues(source: ExerciseDefaultSourceLike): ExerciseFieldValueSource {
   return {
     // GraphQL `Exercise` ma tylko pola `default*` (bez `sets`/`restSets`).
@@ -104,7 +112,7 @@ export function normalizeExerciseFieldValues(source: ExerciseDefaultSourceLike):
     side: normalizeExerciseSide(source.side ?? source.exerciseSide),
     rangeOfMotion: toOptionalString(source.rangeOfMotion),
     resistance: toOptionalString(source.resistance),
-    equipment: toOptionalString(source.equipment),
+    equipment: resolveEquipmentText(source),
     difficultyLevel: toOptionalString(source.difficultyLevel),
     patientDescription: toOptionalString(source.patientDescription ?? source.description),
     clinicalDescription: toOptionalString(source.clinicalDescription),

@@ -49,6 +49,19 @@ describe('displayRegistry', () => {
     expect(formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.side, source, 'Nie ustawiono')).toBe('Tylko lewa');
   });
 
+  it('sprzęt rekordu 3.3 pochodzi z equipment_items, a kolumna jest tylko zapasem', () => {
+    const document = {
+      schemaVersion: '3.3',
+      equipment_items: [{ label: 'Mata' }, { label: 'Taśma oporowa', qty: 2 }],
+    };
+    expect(normalizeExerciseFieldValues({ enrichmentData: document }).equipment).toBe('Mata, Taśma oporowa × 2');
+    expect(normalizeExerciseFieldValues({ enrichmentData: document, equipment: 'Piłka' }).equipment).toBe(
+      'Mata, Taśma oporowa × 2'
+    );
+    expect(normalizeExerciseFieldValues({ equipment: 'Piłka' }).equipment).toBe('Piłka');
+    expect(normalizeExerciseFieldValues({}).equipment).toBeUndefined();
+  });
+
   it('normalizuje etykiety difficulty i side', () => {
     expect(formatDifficultyLabel('MEDIUM')).toBe('Średni');
     expect(formatDifficultyLabel('Custom')).toBe('Custom');
