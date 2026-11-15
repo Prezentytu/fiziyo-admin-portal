@@ -17,7 +17,8 @@ import { ChatCard, ChatCardEmpty } from './ChatCard';
 /** Search tiles: pick what fits and compose a set from it, or ask for a new exercise. */
 export function ExerciseResultsCard({ spec, testId, messageId, chosen }: CardProps<'ExerciseResults'>) {
   const { organizationId, patients, appendExchange, markChosen } = useChatActions();
-  const { exercises, loading } = useAvailableExercises(organizationId, true);
+  // Model proponuje ćwiczenia z całego katalogu; te spoza pierwszej strony dociągają się po id (P-4).
+  const { exercises, loading } = useAvailableExercises(organizationId, true, spec.exerciseIds);
   const patient = spec.patientId ? patients.find((candidate) => candidate.id === spec.patientId) : undefined;
   const [selectedIds, setSelectedIds] = useState<string[] | null>(null);
 

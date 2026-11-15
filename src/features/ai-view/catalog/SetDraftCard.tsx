@@ -177,7 +177,8 @@ export function SetDraftCard({ spec, testId, messageId, chosen }: CardProps<'Set
   const { exercises, loading, detailsReady, detailsPending, ensureDetailsReady } = useAvailableExercises(
     organizationId,
     true,
-    (items ?? []).map((item) => item.exerciseId)
+    // Przed zasianiem szkicu dociągamy proponowane id (także spoza pierwszej strony katalogu, P-4).
+    items === null ? spec.exerciseIds : items.map((item) => item.exerciseId)
   );
   const set = spec.setId ? organizationSets.find((candidate) => candidate.id === spec.setId) : undefined;
   const patient = spec.patientId ? patients.find((candidate) => candidate.id === spec.patientId) : undefined;
@@ -198,6 +199,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen }: CardProps<'Set
       setsReady,
       exercises,
       exercisesReady: !loading,
+      missingSettled: !detailsPending,
     });
     if (seed) {
       setItems(seed.items);

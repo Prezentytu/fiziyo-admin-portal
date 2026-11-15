@@ -29,6 +29,7 @@ import {
   type ParameterTestIdKind,
 } from './ExerciseParametersFields';
 import { ExercisePatientContentFields } from './ExercisePatientContentFields';
+import { readExerciseSchemaVersion, type ExerciseContentVersion } from './readExerciseContent';
 import {
   buildEnrichmentOverrideDelta,
   listOverriddenEnrichmentPaths,
@@ -38,6 +39,12 @@ import { toV3 } from '@/features/verification/utils/enrichmentToV3';
 import type { MappingOnlyFieldKey } from './fieldContract';
 import { ExercisePreviewDialog } from './ExercisePreviewDialog';
 import type { ExerciseExecutionCardSurface } from './types';
+
+const V33_RETIRED_COLUMN_FIELDS: ReadonlySet<EditableField> = new Set<EditableField>([
+  'patientDescription',
+  'clinicalDescription',
+  'audioCue',
+]);
 
 const CARD_FIELD_TESTID_MAP: Record<
   ExerciseFieldKey | MappingOnlyFieldKey,
@@ -198,7 +205,17 @@ export function ExerciseExecutionCard({
     totalDuration.seconds > 0 ? formatExerciseDuration(totalDuration.seconds, totalDuration.isEstimate) : null;
   const shouldShowDurationBadge = durationBadgeLabel !== null && !hideTimerBadge;
 
-  const canEditField = (field: EditableField) => canEdit && isFieldEditable(field, mode, editableFields);
+  // Rekord 3.3 nie ma już starych kolumn treści (opis dla pacjenta i fizjoterapeuty, polecenia audio): treść
+  // żyje w dokumencie, więc personalizacja w zestawie ich nie oferuje (P-2, lab 15.11.2026).
+  const contentVersion: ExerciseContentVersion = readExerciseSchemaVersion({
+    enrichmentData: exercise.templateEnrichment ?? exercise.enrichment,
+  })
+    ? '3.3'
+    : 'legacy';
+  const canEditField = (field: EditableField) =>
+    canEdit &&
+    !(contentVersion === '3.3' && V33_RETIRED_COLUMN_FIELDS.has(field)) &&
+    isFieldEditable(field, mode, editableFields);
   const setsField = EXERCISE_FIELD_METADATA.sets;
   const repsField = EXERCISE_FIELD_METADATA.reps;
   const cardSurface: ExerciseExecutionCardSurface = surface;
@@ -330,8 +347,9 @@ export function ExerciseExecutionCard({
   );
 
   const omitFields = useMemo(() => {
-    return ['sets', 'reps'] as ExerciseFieldKey[];
-  }, []);
+    const base: ExerciseFieldKey[] = ['sets', 'reps'];
+    return contentVersion === '3.3' ? [...base, ...(V33_RETIRED_COLUMN_FIELDS as ReadonlySet<ExerciseFieldKey>)] : base;
+  }, [contentVersion]);
 
   const sourceInfoFooter = (
     <div className="space-y-3 border-t border-border/30 pt-3">
@@ -781,6 +799,7 @@ export function ExerciseExecutionCard({
                       enrichmentOverride={enrichmentOverride}
                       onRestoreAll={handleRestoreEnrichment}
                       testIdPrefix={`${testId}-patient-content`}
+                      contentVersion={contentVersion}
                     />
                   ) : null}
                 </CollapsibleContent>
