@@ -4,8 +4,8 @@ import { gql } from '@apollo/client';
 // z errorPolicy 'ignore' i dopiero po potwierdzeniu puli demo gabinetu: ich błąd nie dotyka biblioteki ani wybieraków.
 
 // Znaczki „Demo”: identyfikatory z tej samej widoczności co biblioteka gabinetu. `availableExercises` oddaje
-// najwyżej 5000 rekordów na okno, stąd dwa okna (10 000 rekordów); dalej znaczka nie ma. `where` zawęża odpowiedź
-// do rekordów demo (filtr nakłada się na okno, więc zasięg jest ten sam). Pobierane leniwie, dopiero gdy ekran
+// najwyżej 5000 rekordów na okno, stąd dwa okna. API sprzed fizjo-app#534 nakładało `where` na okno (zasięg:
+// pierwsze 10 000 ćwiczeń biblioteki); nowsze filtruje przed oknem, więc okna mieszczą 10 000 rekordów demo. Pobierane leniwie, dopiero gdy ekran
 // pokazuje znaczki (DemoPoolQueryProvider).
 export const GET_DEMO_EXERCISE_IDS_QUERY = gql`
   query GetDemoExerciseIds($organizationId: String!) {
