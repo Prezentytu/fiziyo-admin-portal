@@ -89,7 +89,51 @@ export function resolveLoadDisplayText(source: ExerciseSourceLike): string | und
   return formattedLoad || undefined;
 }
 
+function readDocument(enrichmentData: unknown): Record<string, unknown> | null {
+  let document = enrichmentData;
+  if (typeof document === 'string') {
+    try {
+      document = JSON.parse(document) as unknown;
+    } catch {
+      return null;
+    }
+  }
+  return document && typeof document === 'object' ? (document as Record<string, unknown>) : null;
+}
+
+/**
+ * Sprzęt rekordu 3.3 z `equipment_items` dokumentu (P-3a): nowy rekord nie ma starej kolumny `equipment`.
+ * Etykieta pozycji, a bez niej kod; puste pozycje pomijamy.
+ */
+function equipmentItemsText(document: Record<string, unknown> | null): string | undefined {
+  const items = document?.equipment_items;
+  if (!Array.isArray(items)) return undefined;
+  const labels = items
+    .map((item) => {
+      if (!item || typeof item !== 'object') return undefined;
+      const { label, code } = item as { label?: unknown; code?: unknown };
+      return toOptionalString(typeof label === 'string' ? label : typeof code === 'string' ? code : undefined);
+    })
+    .filter((label): label is string => label !== undefined);
+  return labels.length > 0 ? labels.join(', ') : undefined;
+}
+
+/** Zakres powtórzeń z `prescription.params.reps` rekordu 3.3 (P-3c); tylko gdy min < max. */
+function prescriptionRepsRange(document: Record<string, unknown> | null): { min: number; max: number } | undefined {
+  const prescription = document?.prescription;
+  if (!prescription || typeof prescription !== 'object') return undefined;
+  const params = (prescription as { params?: unknown }).params;
+  if (!params || typeof params !== 'object') return undefined;
+  const reps = (params as { reps?: unknown }).reps;
+  if (!reps || typeof reps !== 'object') return undefined;
+  const { min, max } = reps as { min?: unknown; max?: unknown };
+  return typeof min === 'number' && typeof max === 'number' && min > 0 && min < max ? { min, max } : undefined;
+}
+
 export function normalizeExerciseFieldValues(source: ExerciseDefaultSourceLike): ExerciseFieldValueSource {
+  const isV33 = isV33ExerciseRecord(source);
+  const document = isV33 ? readDocument(source.enrichmentData) : null;
+  const repsRange = prescriptionRepsRange(document);
   return {
     // GraphQL `Exercise` ma tylko pola `default*` (bez `sets`/`restSets`).
     sets: toOptionalNumber(source.defaultSets),
@@ -104,12 +148,13 @@ export function normalizeExerciseFieldValues(source: ExerciseDefaultSourceLike):
     side: normalizeExerciseSide(source.side ?? source.exerciseSide),
     rangeOfMotion: toOptionalString(source.rangeOfMotion),
     resistance: toOptionalString(source.resistance),
-    equipment: toOptionalString(source.equipment),
+    equipment: toOptionalString(source.equipment) ?? equipmentItemsText(document),
     difficultyLevel: toOptionalString(source.difficultyLevel),
     patientDescription: toOptionalString(source.patientDescription ?? source.description),
     clinicalDescription: toOptionalString(source.clinicalDescription),
     audioCue: toOptionalString(source.audioCue),
     notes: toOptionalString(source.notes),
-    ...(isV33ExerciseRecord(source) ? { alternatingPerSide: true } : {}),
+    ...(isV33 ? { alternatingPerSide: true } : {}),
+    ...(repsRange ? { repsRange } : {}),
   };
 }
