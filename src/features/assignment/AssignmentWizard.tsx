@@ -100,7 +100,7 @@ import {
 } from '@/graphql/mutations/exercises.mutations';
 import { useExercisePickerLibrary } from '@/hooks/useExercisePickerLibrary';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
-import { planEditSummary, planRestartNotice } from './utils/planVersionNotice';
+import { planEditSummary, planEditToast } from './utils/planVersionNotice';
 import { GET_CURRENT_BILLING_STATUS_QUERY } from '@/graphql/queries/billing.queries';
 import type { OrganizationExerciseSetsResponse, OrganizationPatientsResponse } from '@/types/apollo';
 import type {
@@ -1346,18 +1346,19 @@ function AssignmentWizardContent({
       });
 
       // Odnowienie (FR-008) po zapisie zmian: ta sama edycja, więc backend łączy je w jedną wersję planu.
-      let restartNotice: string | null = null;
+      let restart: Parameters<typeof planEditToast>[0] = null;
       if (restartPlan) {
         try {
           const { data } = await restartAssignmentPlan({ variables: { assignmentId: initialAssignment.id } });
-          restartNotice = data ? planRestartNotice(data.restartAssignmentPlan.startsTomorrow) : null;
+          restart = data?.restartAssignmentPlan ?? 'failed';
         } catch (restartError) {
           console.error('Błąd odnowienia planu:', restartError);
-          toast.warning('Plan zaktualizowany, ale nie udało się rozpocząć go od nowa');
+          restart = 'failed';
         }
       }
 
-      toast.success('Plan zaktualizowany', restartNotice ? { description: restartNotice } : undefined);
+      const { kind, title, description } = planEditToast(restart);
+      toast[kind](title, description ? { description } : undefined);
       onSuccess?.();
       _onOpenChange(false);
     } catch (error) {

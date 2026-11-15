@@ -21,3 +21,28 @@ export function planEditSummary(restartPlan: boolean): string {
 export function planRestartNotice(startsTomorrow: boolean): string {
   return startsTomorrow ? PLAN_RESTART_STARTS_TOMORROW : PLAN_RESTART_STARTS_TODAY;
 }
+
+export interface PlanEditToast {
+  kind: 'success' | 'warning';
+  title: string;
+  description?: string;
+}
+
+/**
+ * Jeden komunikat po zapisie edycji planu. `restart`: `null`, gdy fizjoterapeuta nie prosił o odnowienie;
+ * `'failed'`, gdy odnowienie się nie udało (wtedy samo ostrzeżenie, bez zielonego sukcesu, który by je zakrył).
+ */
+export function planEditToast(restart: { startsTomorrow: boolean } | 'failed' | null): PlanEditToast {
+  if (restart === 'failed') {
+    return {
+      kind: 'warning',
+      title: 'Zmiany zapisane, ale nie udało się rozpocząć planu od nowa',
+      description: 'Postęp pacjenta liczy się jak dotąd. Otwórz edycję planu i spróbuj ponownie.',
+    };
+  }
+  return {
+    kind: 'success',
+    title: 'Plan zaktualizowany',
+    ...(restart ? { description: planRestartNotice(restart.startsTomorrow) } : {}),
+  };
+}
