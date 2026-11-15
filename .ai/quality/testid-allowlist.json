@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-15T14:46:56.984Z",
+  "generatedAt": "2026-11-15T15:18:43.395Z",
   "description": "Legacy interactive elements without data-testid. Keep shrinking this list; CI fails on new entries.",
   "entries": [
     "src/app/(auth)/invite/page.tsx:183:Button",
@@ -52,8 +52,6 @@
     "src/components/organization/WelcomeModal.tsx:145:button",
     "src/components/organization/WelcomeModal.tsx:261:Button",
     "src/components/settings/ProfileForm.tsx:326:input",
-    "src/components/shared/DataTable.tsx:155:Select",
-    "src/components/shared/DataTable.tsx:93:Button",
     "src/components/shared/EmptyState.tsx:43:Button",
     "src/components/shared/EmptyState.tsx:49:Button",
     "src/components/shared/GhostField.tsx:113:button",
