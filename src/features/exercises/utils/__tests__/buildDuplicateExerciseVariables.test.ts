@@ -118,6 +118,7 @@ describe('buildDuplicateExerciseVariables', () => {
   it('ćwiczenie bez dokumentu treści kopiuje się jak dotąd, z samych kolumn', () => {
     const expected = buildCreateExerciseVariables({
       organizationId: 'org-1',
+      schema: 'source',
       draft: {
         name: 'Kopia Napinanie uda',
         patientDescription: 'Napnij udo i przytrzymaj.',
