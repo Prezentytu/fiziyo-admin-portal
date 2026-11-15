@@ -2,7 +2,9 @@ import { normalizeExerciseSide } from '@/utils/exerciseEnums';
 import { formatLoad } from '@/utils/loadParser';
 import type { ExerciseLoad } from '@/features/assignment/types';
 import { isV33ExerciseRecord } from '@/utils/exerciseRecordVersion';
+import { describeEquipmentItem } from '@/features/exercises/utils/equipmentItemText';
 import type { ExerciseFieldValueSource } from './displayRegistry';
+import { readExerciseContent, type ExerciseContentSource } from './readExerciseContent';
 
 interface ExerciseSourceLike {
   side?: string | null;
@@ -12,6 +14,8 @@ interface ExerciseSourceLike {
   rangeOfMotion?: string | null;
   resistance?: string | null;
   equipment?: string | null;
+  /** Sprzęt nadpisany w przypisaniu albo pozycji zestawu; wygrywa z dokumentem i kolumną. */
+  equipmentOverride?: string | null;
   difficultyLevel?: string | null;
   patientDescription?: string | null;
   description?: string | null;
@@ -89,6 +93,17 @@ export function resolveLoadDisplayText(source: ExerciseSourceLike): string | und
   return formattedLoad || undefined;
 }
 
+/**
+ * Nadpisanie fizjoterapeuty, potem dla rekordu 3.3 dokument (`equipment_items`) z kolumną jako zapasem
+ * (czyta to `readExerciseContent`). Rekord stary czyta kolumnę: to ją zapisuje edycja ćwiczenia.
+ */
+function resolveEquipmentText(source: ExerciseSourceLike, isV33: boolean): string | undefined {
+  const override = toOptionalString(source.equipmentOverride);
+  if (override || !isV33) return override ?? toOptionalString(source.equipment);
+  const names = readExerciseContent(source as ExerciseContentSource).equipment.map((item) => describeEquipmentItem(item).name);
+  return toOptionalString(names.join(', '));
+}
+
 function readDocument(enrichmentData: unknown): Record<string, unknown> | null {
   let document = enrichmentData;
   if (typeof document === 'string') {
@@ -99,23 +114,6 @@ function readDocument(enrichmentData: unknown): Record<string, unknown> | null {
     }
   }
   return document && typeof document === 'object' ? (document as Record<string, unknown>) : null;
-}
-
-/**
- * Sprzęt rekordu 3.3 z `equipment_items` dokumentu (P-3a): nowy rekord nie ma starej kolumny `equipment`.
- * Etykieta pozycji, a bez niej kod; puste pozycje pomijamy.
- */
-function equipmentItemsText(document: Record<string, unknown> | null): string | undefined {
-  const items = document?.equipment_items;
-  if (!Array.isArray(items)) return undefined;
-  const labels = items
-    .map((item) => {
-      if (!item || typeof item !== 'object') return undefined;
-      const { label, code } = item as { label?: unknown; code?: unknown };
-      return toOptionalString(typeof label === 'string' ? label : typeof code === 'string' ? code : undefined);
-    })
-    .filter((label): label is string => label !== undefined);
-  return labels.length > 0 ? labels.join(', ') : undefined;
 }
 
 /** Zakres powtórzeń z `prescription.params.reps` rekordu 3.3 (P-3c); tylko gdy min < max. */
@@ -148,7 +146,7 @@ export function normalizeExerciseFieldValues(source: ExerciseDefaultSourceLike):
     side: normalizeExerciseSide(source.side ?? source.exerciseSide),
     rangeOfMotion: toOptionalString(source.rangeOfMotion),
     resistance: toOptionalString(source.resistance),
-    equipment: toOptionalString(source.equipment) ?? equipmentItemsText(document),
+    equipment: resolveEquipmentText(source, isV33),
     difficultyLevel: toOptionalString(source.difficultyLevel),
     patientDescription: toOptionalString(source.patientDescription ?? source.description),
     clinicalDescription: toOptionalString(source.clinicalDescription),

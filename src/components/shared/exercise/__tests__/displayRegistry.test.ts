@@ -49,6 +49,35 @@ describe('displayRegistry', () => {
     expect(formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.side, source, 'Nie ustawiono')).toBe('Tylko lewa');
   });
 
+  it('sprzęt rekordu 3.3 pochodzi z equipment_items, a kolumna jest tylko zapasem', () => {
+    const document = {
+      schemaVersion: '3.3',
+      equipment_items: [{ label: 'Mata' }, { label: 'Taśma oporowa', qty: 2 }],
+    };
+    expect(normalizeExerciseFieldValues({ enrichmentData: document }).equipment).toBe('Mata, Taśma oporowa × 2');
+    expect(normalizeExerciseFieldValues({ enrichmentData: document, equipment: 'Piłka' }).equipment).toBe(
+      'Mata, Taśma oporowa × 2'
+    );
+    expect(normalizeExerciseFieldValues({ equipment: 'Piłka' }).equipment).toBe('Piłka');
+    expect(normalizeExerciseFieldValues({}).equipment).toBeUndefined();
+  });
+
+  it('sprzęt nadpisany w przypisaniu albo pozycji zestawu wygrywa z dokumentem i kolumną', () => {
+    const document = { schemaVersion: '3.3', equipment_items: [{ label: 'Mata' }] };
+    expect(normalizeExerciseFieldValues({ enrichmentData: document, equipmentOverride: 'Krzesło' }).equipment).toBe('Krzesło');
+    expect(normalizeExerciseFieldValues({ equipment: 'Guma', equipmentOverride: 'Krzesło' }).equipment).toBe('Krzesło');
+    expect(normalizeExerciseFieldValues({ enrichmentData: document, equipmentOverride: ' ' }).equipment).toBe('Mata');
+  });
+
+  it('sprzęt rekordu starego pochodzi z kolumny, którą zapisuje edycja, nie z listy w dokumencie', () => {
+    const legacy = { $schema: 'fiziyo-exercise-v3', equipment: ['Mata'] };
+    expect(normalizeExerciseFieldValues({ equipment: 'Guma, krzesło', enrichmentData: legacy }).equipment).toBe('Guma, krzesło');
+    expect(normalizeExerciseFieldValues({ equipment: 'Guma, krzesło', enrichmentData: { equipment: ['Mata'] } }).equipment).toBe(
+      'Guma, krzesło'
+    );
+    expect(normalizeExerciseFieldValues({ equipment: null, enrichmentData: legacy }).equipment).toBeUndefined();
+  });
+
   it('normalizuje etykiety difficulty i side', () => {
     expect(formatDifficultyLabel('MEDIUM')).toBe('Średni');
     expect(formatDifficultyLabel('Custom')).toBe('Custom');
