@@ -147,7 +147,7 @@ export function PatientPeekCard({ spec, testId }: CardProps<'PatientPeek'>) {
     );
   }
 
-  const activity = getPatientActivityStatus(patient.lastActivity);
+  const activity = getPatientActivityStatus(patient.lastActivity, undefined, patient.attention);
   return (
     <ChatCard
       testId={testId}

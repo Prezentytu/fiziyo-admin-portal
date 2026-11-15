@@ -452,6 +452,18 @@ export interface TherapistPatientsResponse {
 // Organization Patients Types (Collaborative Care)
 // ========================================
 
+/** Serwerowa reguła „wymaga uwagi” z `organizationPatients.attention` (SPEC-039). */
+export interface PatientAttention {
+  tone: string;
+  reasons: string[];
+  maxPainLevel?: number | null;
+  lastSignalAt?: string | null;
+  daysSinceTraining?: number | null;
+  expectedGapDays?: number | null;
+  reviewedAt?: string | null;
+  hasPatientSignal: boolean;
+}
+
 export interface OrganizationPatientDto {
   patient: User;
   therapist?: {
@@ -471,6 +483,7 @@ export interface OrganizationPatientDto {
   premiumStatus?: 'FREE' | 'ACTIVE' | 'EXPIRED';
   // Activity Tracking
   lastActivity?: string;
+  attention?: PatientAttention | null;
 }
 
 export interface OrganizationPatientsResponse {

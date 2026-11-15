@@ -68,9 +68,11 @@ function PatientFacts({ patient }: { readonly patient: ChatPatient }) {
   const pains = sets
     .map((set) => set.avgPainLevel)
     .filter((pain): pain is number => typeof pain === 'number' && pain > 0);
-  const pain = pains.length > 0 ? Math.max(...pains) : undefined;
+  const averagePain = pains.length > 0 ? Math.max(...pains) : undefined;
+  // Najwyższy ból od przejrzenia (SPEC-039, D-5): pojedyncze 5/5 nie rozmywa się w średniej zestawu.
+  const maxPain = patient.attention?.maxPainLevel;
   const visit = lastVisit?.patientClinicalNotes?.[0];
-  const activity = getPatientActivityStatus(patient.lastActivity);
+  const activity = getPatientActivityStatus(patient.lastActivity, undefined, patient.attention);
 
   return (
     <>
@@ -99,7 +101,13 @@ function PatientFacts({ patient }: { readonly patient: ChatPatient }) {
         )}
         <Fact
           label="Ból"
-          value={pain !== undefined ? `${pain.toFixed(1)} / ${PATIENT_FEEDBACK_SCALE_MAX}` : 'brak zgłoszeń'}
+          value={
+            maxPain
+              ? `najwyżej ${maxPain} / ${PATIENT_FEEDBACK_SCALE_MAX}`
+              : averagePain !== undefined && !patient.attention
+                ? `${averagePain.toFixed(1)} / ${PATIENT_FEEDBACK_SCALE_MAX}`
+                : 'brak zgłoszeń'
+          }
           testId="common-chat-context-pain"
         />
         <Fact label="Zestaw" value={sets[0]?.name ?? 'brak aktywnego'} testId="common-chat-context-set" />

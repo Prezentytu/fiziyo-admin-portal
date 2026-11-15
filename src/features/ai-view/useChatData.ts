@@ -5,7 +5,7 @@ import { useQuery } from '@apollo/client/react';
 
 import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
 import { GET_ORGANIZATION_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
-import type { OrganizationExerciseSetsResponse, OrganizationPatientsResponse } from '@/types/apollo';
+import type { OrganizationExerciseSetsResponse, OrganizationPatientsResponse, PatientAttention } from '@/types/apollo';
 import { isTemplateSet } from '@/features/exercise-sets/utils/setKind';
 import type { ExerciseSet } from '@/features/assignment/types';
 import { normalizeFrequencySeed } from '@/features/assignment/utils/scheduleFrequencyUtils';
@@ -18,6 +18,7 @@ export interface ChatPatient {
   image?: string;
   isShadowUser?: boolean;
   lastActivity?: string;
+  attention?: PatientAttention | null;
   contextLabel?: string;
   therapistId?: string;
 }
@@ -68,6 +69,7 @@ export function useChatData(organizationId: string | undefined, withSets: boolea
         image: item.patient.image,
         isShadowUser: item.patient.isShadowUser,
         lastActivity: item.lastActivity,
+        attention: item.attention,
         contextLabel: item.contextLabel,
         therapistId: item.therapist?.id,
       })),

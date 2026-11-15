@@ -1,4 +1,4 @@
-import { comparePatientsByAttention, getPatientActivityStatus } from './patientActivityStatus';
+import { comparePatientsByAttention, getPatientActivityStatus, type PatientAttention } from './patientActivityStatus';
 import { hasActivePremium } from './premiumQueue';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -35,6 +35,7 @@ export type PatientSort = 'urgency' | 'name';
 interface SortInput {
   fullname?: string | null;
   lastActivity?: string | null;
+  attention?: PatientAttention | null;
   assignedAt?: string | null;
   therapist?: { id: string } | null;
 }
@@ -56,7 +57,7 @@ export function sortPatients<T extends SortInput>(
 ): T[] {
   const withActivity = patients.map((patient) => ({
     patient,
-    activity: getPatientActivityStatus(patient.lastActivity, now),
+    activity: getPatientActivityStatus(patient.lastActivity, now, patient.attention),
     lastActivity: patient.lastActivity,
     assignedAt: patient.assignedAt,
   }));

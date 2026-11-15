@@ -39,7 +39,8 @@ import { useSearchTelemetry } from '@/lib/telemetry/useSearchTelemetry';
 
 type TherapyFilterType = 'my' | 'all' | 'needs_attention' | 'subscription';
 
-const patientNeedsAttention = (patient: Patient): boolean => needsAttention(getPatientActivityStatus(patient.lastActivity));
+const patientNeedsAttention = (patient: Patient): boolean =>
+  needsAttention(getPatientActivityStatus(patient.lastActivity, undefined, patient.attention));
 
 // Expired, missing or ending within 7 days
 const hasSubscriptionIssue = (patient: Patient): boolean => {
@@ -128,6 +129,7 @@ export default function PatientsPage() {
     premiumStatus: item.premiumStatus,
     // Activity Tracking
     lastActivity: item.lastActivity,
+    attention: item.attention,
   }));
 
   // Calculate stats for filter counts (from all patients)

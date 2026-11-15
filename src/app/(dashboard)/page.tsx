@@ -49,6 +49,7 @@ import {
   getPatientActivityStatus,
   needsAttention,
   type PatientActivityStatus,
+  type PatientAttention,
 } from '@/features/patients/utils/patientActivityStatus';
 import { getPremiumQueue } from '@/features/patients/utils/premiumQueue';
 import { formatExerciseCount } from '@/utils/polishPlural';
@@ -93,6 +94,7 @@ interface PatientAssignmentData {
     isShadowUser?: boolean;
   };
   lastActivity?: string;
+  attention?: PatientAttention | null;
   premiumStatus?: 'FREE' | 'ACTIVE' | 'EXPIRED';
   premiumValidUntil?: string;
 }
@@ -232,6 +234,7 @@ function ClassicDashboard() {
         isShadowUser: item.patient.isShadowUser,
       },
       lastActivity: item.lastActivity,
+      attention: item.attention,
       premiumStatus: item.premiumStatus,
       premiumValidUntil: item.premiumValidUntil,
     }));
@@ -247,7 +250,10 @@ function ClassicDashboard() {
   const patientsWithActivity: PatientWithActivity[] = useMemo(
     () =>
       patients
-        .map((assignment) => ({ ...assignment, activity: getPatientActivityStatus(assignment.lastActivity) }))
+        .map((assignment) => ({
+          ...assignment,
+          activity: getPatientActivityStatus(assignment.lastActivity, undefined, assignment.attention),
+        }))
         .sort(comparePatientsByAttention),
     [patients]
   );

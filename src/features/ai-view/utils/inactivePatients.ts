@@ -3,11 +3,13 @@ import {
   getPatientActivityStatus,
   needsAttention,
   type PatientActivityStatus,
+  type PatientAttention,
 } from '@/features/patients/utils/patientActivityStatus';
 
 interface PeekablePatient {
   therapistId?: string;
   lastActivity?: string;
+  attention?: PatientAttention | null;
 }
 
 /**
@@ -22,7 +24,10 @@ export function selectInactivePatients<T extends PeekablePatient>(
   if (!therapistId) return null;
   return patients
     .filter((patient) => patient.therapistId === therapistId)
-    .map((patient) => ({ ...patient, activity: getPatientActivityStatus(patient.lastActivity, now) }))
+    .map((patient) => ({
+      ...patient,
+      activity: getPatientActivityStatus(patient.lastActivity, now, patient.attention),
+    }))
     .filter((patient) => needsAttention(patient.activity))
     .sort(comparePatientsByAttention);
 }

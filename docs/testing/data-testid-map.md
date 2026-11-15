@@ -166,14 +166,18 @@ Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu r
 
 #### Header (kontekst "tu i teraz")
 
-| data-testid               | Element                           | Plik         |
-| ------------------------- | --------------------------------- | ------------ |
-| `nav-header`              | Główny header                     | `Header.tsx` |
-| `nav-mobile-menu-btn`     | Menu mobilne                      | `Header.tsx` |
-| `nav-breadcrumbs`         | Breadcrumbs                       | `Header.tsx` |
-| `nav-breadcrumb-home`     | Home link                         | `Header.tsx` |
-| `nav-breadcrumb-item-{n}` | Element breadcrumb                | `Header.tsx` |
-| `nav-notifications-btn`   | Przycisk powiadomień (dzwoneczek) | `Header.tsx` |
+| data-testid                          | Element                                           | Plik                    |
+| ------------------------------------ | ------------------------------------------------- | ----------------------- |
+| `nav-header`                         | Główny header                                     | `Header.tsx`            |
+| `nav-mobile-menu-btn`                | Menu mobilne                                      | `Header.tsx`            |
+| `nav-breadcrumbs`                    | Breadcrumbs                                       | `Header.tsx`            |
+| `nav-breadcrumb-home`                | Home link                                         | `Header.tsx`            |
+| `nav-breadcrumb-item-{n}`            | Element breadcrumb                                | `Header.tsx`            |
+| `nav-notifications-btn`              | Przycisk powiadomień (dzwoneczek)                 | `NotificationsBell.tsx` |
+| `nav-notifications-count`            | Licznik pacjentów ze zgłoszeniem                  | `NotificationsBell.tsx` |
+| `nav-notifications-panel`            | Lista zgłoszeń pacjentów                          | `NotificationsBell.tsx` |
+| `nav-notifications-empty`            | Brak zgłoszeń                                     | `NotificationsBell.tsx` |
+| `nav-notifications-item-{patientId}` | Pacjent ze zgłoszeniem (`-link`, `-reviewed-btn`) | `NotificationsBell.tsx` |
 
 > **Uwaga:** UserMenu został usunięty z Headera. Wszystkie funkcje profilu są teraz w `UserProfileFooter` (lewy dolny róg sidebara) - wzorzec Linear/Slack.
 

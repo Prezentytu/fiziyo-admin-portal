@@ -130,3 +130,13 @@ export const REMOVE_PATIENT_FROM_ORGANIZATION_MUTATION = gql`
     removePatientFromOrganization(patientId: $patientId, organizationId: $organizationId)
   }
 `;
+
+/**
+ * Fizjoterapeuta przejrzał sygnały pacjenta (ból, trudność, notatka); gasną na liście i w dzwonku
+ * do następnego zgłoszenia (SPEC-039).
+ */
+export const MARK_PATIENT_SIGNALS_REVIEWED_MUTATION = gql`
+  mutation MarkPatientSignalsReviewed($organizationId: String!, $patientId: String!) {
+    markPatientSignalsReviewed(organizationId: $organizationId, patientId: $patientId)
+  }
+`;
