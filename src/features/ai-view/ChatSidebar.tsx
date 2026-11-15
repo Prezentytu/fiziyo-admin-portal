@@ -174,7 +174,7 @@ function SidebarBody({
               {row.href === '/patients' && inactiveCount > 0 && (
                 <span
                   className="rounded-full bg-status-warning-muted px-2 text-[12px] font-semibold text-status-warning"
-                  title="Nie ćwiczą od kilku dni"
+                  title="Przerwa w ćwiczeniach, ból albo trudność"
                   data-testid="nav-chat-inactive-count"
                 >
                   {inactiveCount}

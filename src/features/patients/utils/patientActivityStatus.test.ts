@@ -14,7 +14,7 @@ function daysAgo(days: number, hour = 9): string {
 
 describe('getPatientActivityStatus', () => {
   it('treats missing or invalid activity as neutral', () => {
-    expect(getPatientActivityStatus(undefined, NOW)).toEqual({ tone: 'none', label: 'Brak aktywności', daysSinceTraining: null });
+    expect(getPatientActivityStatus(undefined, NOW)).toMatchObject({ tone: 'none', label: 'Brak aktywności', daysSinceTraining: null });
     expect(getPatientActivityStatus('not a date', NOW).tone).toBe('none');
   });
 

@@ -1,6 +1,14 @@
 import type { OrganizationPatientDto } from '@/types/apollo';
 import { getPatientActivityStatus, type PatientActivityStatus } from './patientActivityStatus';
 
+/** A signal from a patient does not wait for a page reload, but the organization list is a heavy query. */
+export const PATIENT_SIGNALS_POLL_MS = 2 * 60 * 1000;
+
+/** Backend lets Owner, Admin and Therapist mark signals as reviewed; Staff sees the bell read-only (SPEC-039). */
+export function canMarkSignalsReviewed(role: string | null | undefined): boolean {
+  return ['owner', 'admin', 'therapist'].includes((role ?? '').toLowerCase());
+}
+
 export interface PatientSignalItem {
   patientId: string;
   name: string;

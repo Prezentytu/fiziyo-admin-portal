@@ -82,3 +82,26 @@ describe('describeIssue', () => {
     expect(describeIssue({ kind: 'ending', patientId: 'p', name: 'X', daysLeft: 3 })).toBe('Plan wygasa za 3 dni');
   });
 });
+
+describe('pain inside the plan gap is not a training break', () => {
+  it('a 1×/week patient who trained 5 days ago and reported pain is not listed as "Nie ćwiczy"', () => {
+    const fiveDaysAgo = new Date(NOW.getTime() - 5 * DAY).toISOString();
+    const agenda = buildTodayAgenda({
+      therapistId: 't1',
+      patients: [
+        {
+          id: 'p',
+          name: 'Jan',
+          therapistId: 't1',
+          lastActivity: fiveDaysAgo,
+          attention: { tone: 'danger', reasons: ['PAIN'], maxPainLevel: 4, lastSignalAt: fiveDaysAgo, daysSinceTraining: 5, expectedGapDays: 7, hasPatientSignal: true },
+        },
+      ],
+      notes: [],
+      assignments: [],
+      now: NOW,
+    });
+
+    expect(agenda.issues).toEqual([]);
+  });
+});

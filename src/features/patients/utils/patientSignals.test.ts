@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { OrganizationPatientDto, PatientAttention } from '@/types/apollo';
-import { selectPatientSignals } from './patientSignals';
+import { canMarkSignalsReviewed, selectPatientSignals } from './patientSignals';
 
 const quiet: PatientAttention = { tone: 'success', reasons: [], daysSinceTraining: 0, hasPatientSignal: false };
 
@@ -42,5 +42,12 @@ describe('selectPatientSignals', () => {
 
   it('has nothing to ring about when the API has no attention yet', () => {
     expect(selectPatientSignals([patient('old-api', 't-1', null)], 't-1')).toEqual([]);
+  });
+});
+
+describe('canMarkSignalsReviewed', () => {
+  it('follows the backend: owner, admin and therapist may, staff may not', () => {
+    expect(['OWNER', 'admin', 'Therapist'].map(canMarkSignalsReviewed)).toEqual([true, true, true]);
+    expect([canMarkSignalsReviewed('staff'), canMarkSignalsReviewed(undefined)]).toEqual([false, false]);
   });
 });

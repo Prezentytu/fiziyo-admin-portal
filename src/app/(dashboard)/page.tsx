@@ -51,6 +51,7 @@ import {
   type PatientActivityStatus,
   type PatientAttention,
 } from '@/features/patients/utils/patientActivityStatus';
+import { PATIENT_SIGNALS_POLL_MS } from '@/features/patients/utils/patientSignals';
 import { getPremiumQueue } from '@/features/patients/utils/premiumQueue';
 import { formatExerciseCount } from '@/utils/polishPlural';
 import { ChatView } from '@/features/ai-view/ChatView';
@@ -177,10 +178,16 @@ function ClassicDashboard() {
   });
 
   // Get patients assigned to the current therapist within the active organization
-  const { data: patientsData, loading: patientsLoading } = useQuery(GET_ORGANIZATION_PATIENTS_QUERY, {
+  const { data: patientsData, loading: patientsFetching } = useQuery(GET_ORGANIZATION_PATIENTS_QUERY, {
     variables: { organizationId, filter: 'my' },
     skip: !organizationId,
+    // A pain report must not wait for a page reload; the bell polls the same rule.
+    fetchPolicy: 'cache-and-network',
+    pollInterval: PATIENT_SIGNALS_POLL_MS,
+    skipPollAttempt: () => document.hidden,
   });
+  // A background poll must not swap the loaded list for a skeleton.
+  const patientsLoading = patientsFetching && !patientsData;
 
   // Get all assignments for activity data
   const { data: assignmentsData } = useQuery(GET_ALL_PATIENT_ASSIGNMENTS_QUERY, {

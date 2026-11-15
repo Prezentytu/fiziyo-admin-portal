@@ -8,6 +8,8 @@ export interface PatientActivityStatus {
   tone: PatientActivityTone;
   label: string;
   daysSinceTraining: number | null;
+  /** Break against the plan (server reason INACTIVE, or the legacy day threshold): only then a training reminder fits. */
+  isInactive: boolean;
   /** Ból, trudność albo notatka od pacjenta od ostatniego przejrzenia (liczy dzwonek). */
   hasPatientSignal?: boolean;
   lastSignalAt?: string | null;
@@ -61,6 +63,7 @@ export function getPatientActivityStatus(
       tone: attention.tone as PatientActivityTone,
       label: attentionLabel(attention, days),
       daysSinceTraining: days,
+      isInactive: attention.reasons.includes('INACTIVE'),
       hasPatientSignal: attention.hasPatientSignal,
       lastSignalAt: attention.lastSignalAt ?? null,
     };
@@ -70,17 +73,17 @@ export function getPatientActivityStatus(
 
 /** Thresholds from the v4 design: 0–1 days green, 2–3 orange, 4+ red, no training yet = neutral. */
 function getLegacyActivityStatus(lastActivity: string | null | undefined, now: Date): PatientActivityStatus {
-  if (!lastActivity) return { tone: 'none', label: 'Brak aktywności', daysSinceTraining: null };
+  if (!lastActivity) return { tone: 'none', label: 'Brak aktywności', daysSinceTraining: null, isInactive: false };
 
   const lastDate = new Date(lastActivity);
-  if (Number.isNaN(lastDate.getTime())) return { tone: 'none', label: 'Brak aktywności', daysSinceTraining: null };
+  if (Number.isNaN(lastDate.getTime())) return { tone: 'none', label: 'Brak aktywności', daysSinceTraining: null, isInactive: false };
 
   const days = calendarDaysBetween(lastDate, now);
-  if (days === 0) return { tone: 'success', label: 'Trening dziś', daysSinceTraining: 0 };
-  if (days < WARNING_FROM_DAYS) return { tone: 'success', label: 'Trening wczoraj', daysSinceTraining: days };
+  if (days === 0) return { tone: 'success', label: 'Trening dziś', daysSinceTraining: 0, isInactive: false };
+  if (days < WARNING_FROM_DAYS) return { tone: 'success', label: 'Trening wczoraj', daysSinceTraining: days, isInactive: false };
 
   const label = `Bez treningu od ${days} dni`;
-  return { tone: days >= DANGER_FROM_DAYS ? 'danger' : 'warning', label, daysSinceTraining: days };
+  return { tone: days >= DANGER_FROM_DAYS ? 'danger' : 'warning', label, daysSinceTraining: days, isInactive: true };
 }
 
 export function needsAttention(status: PatientActivityStatus): boolean {

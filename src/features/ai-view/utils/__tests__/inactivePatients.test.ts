@@ -30,3 +30,27 @@ describe('pendingReminderIds', () => {
     expect(pendingReminderIds(attention, [])).toHaveLength(50);
   });
 });
+
+describe('reminders go only to patients behind their plan', () => {
+  const today = '2026-10-30T08:00:00Z';
+  const patients = [
+    {
+      id: 'pain-trained-today',
+      therapistId: 'me',
+      lastActivity: today,
+      attention: { tone: 'danger', reasons: ['PAIN'], maxPainLevel: 5, lastSignalAt: today, daysSinceTraining: 0, hasPatientSignal: true },
+    },
+    {
+      id: 'behind-plan',
+      therapistId: 'me',
+      lastActivity: '2026-10-20T12:00:00Z',
+      attention: { tone: 'warning', reasons: ['INACTIVE'], daysSinceTraining: 10, hasPatientSignal: false },
+    },
+  ];
+
+  it('a patient who trained today and reported pain is listed but gets no training reminder', () => {
+    const list = selectInactivePatients(patients, 'me', NOW)!;
+    expect(list.map((patient) => patient.id)).toEqual(['pain-trained-today', 'behind-plan']);
+    expect(pendingReminderIds(list, [])).toEqual(['behind-plan']);
+  });
+});

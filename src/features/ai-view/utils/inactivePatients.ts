@@ -35,11 +35,17 @@ export function selectInactivePatients<T extends PeekablePatient>(
 // sendExerciseReminders takes at most 50 patients per call (MaxTherapistReminderPatients).
 const MAX_REMINDERS_PER_CALL = 50;
 
-/** "Przypomnij wszystkim": everyone on the list, not only the rows the card shows. */
-export function pendingReminderIds(attention: ReadonlyArray<{ id: string }>, remindedIds: readonly string[]): string[] {
+/**
+ * "Przypomnij wszystkim": everyone on the list who is behind the plan, not only the rows the card shows.
+ * A patient who trained and reported pain, difficulty or a note gets no "find time for your set" push.
+ */
+export function pendingReminderIds(
+  attention: ReadonlyArray<{ id: string; activity?: Pick<PatientActivityStatus, 'isInactive'> }>,
+  remindedIds: readonly string[]
+): string[] {
   const reminded = new Set(remindedIds);
   return attention
-    .filter((patient) => !reminded.has(patient.id))
+    .filter((patient) => patient.activity?.isInactive !== false && !reminded.has(patient.id))
     .slice(0, MAX_REMINDERS_PER_CALL)
     .map((patient) => patient.id);
 }

@@ -93,10 +93,10 @@ export function buildTodayAgenda(input: {
 
   const inactive: AgendaIssue[] = ownPatients
     .map((patient) => ({ patient, status: getPatientActivityStatus(patient.lastActivity, now, patient.attention) }))
-    // Dzień wolny w planie (status zielony) to nie przerwa, nawet po kilku dniach (SPEC-039, D-2).
+    // Dzień wolny w planie to nie przerwa, także gdy pacjent jest czerwony z powodu bólu (SPEC-039, D-2).
     .filter(
       ({ status }) =>
-        status.tone !== 'success' && status.daysSinceTraining !== null && status.daysSinceTraining >= INACTIVE_FROM_DAYS
+        status.isInactive && status.daysSinceTraining !== null && status.daysSinceTraining >= INACTIVE_FROM_DAYS
     )
     .sort((left, right) => (right.status.daysSinceTraining ?? 0) - (left.status.daysSinceTraining ?? 0))
     .map(({ patient, status }) => ({

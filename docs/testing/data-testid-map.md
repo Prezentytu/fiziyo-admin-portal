@@ -177,6 +177,7 @@ Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu r
 | `nav-notifications-count`            | Licznik pacjentów ze zgłoszeniem                  | `NotificationsBell.tsx` |
 | `nav-notifications-panel`            | Lista zgłoszeń pacjentów                          | `NotificationsBell.tsx` |
 | `nav-notifications-empty`            | Brak zgłoszeń                                     | `NotificationsBell.tsx` |
+| `nav-notifications-unavailable`      | Zgłoszenia się wczytują albo nie dało się wczytać | `NotificationsBell.tsx` |
 | `nav-notifications-item-{patientId}` | Pacjent ze zgłoszeniem (`-link`, `-reviewed-btn`) | `NotificationsBell.tsx` |
 
 > **Uwaga:** UserMenu został usunięty z Headera. Wszystkie funkcje profilu są teraz w `UserProfileFooter` (lewy dolny róg sidebara) - wzorzec Linear/Slack.

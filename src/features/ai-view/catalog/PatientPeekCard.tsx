@@ -67,7 +67,7 @@ function InactivePatients({ testId }: { readonly testId: string }) {
   if (attention.length === 0) {
     return (
       <ChatCard testId={testId} title="Wszyscy ćwiczą">
-        <ChatCardEmpty testId={`${testId}-empty`}>Każdy z Twoich pacjentów trenował w ostatnich dniach.</ChatCardEmpty>
+        <ChatCardEmpty testId={`${testId}-empty`}>Każdy z Twoich pacjentów ćwiczy zgodnie z planem i nikt nie zgłosił bólu ani trudności.</ChatCardEmpty>
       </ChatCard>
     );
   }
@@ -116,16 +116,18 @@ function InactivePatients({ testId }: { readonly testId: string }) {
                 {patient.name}
               </button>
               <ActivityStatusLabel tone={patient.activity.tone} label={patient.activity.label} />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => void remind([patient.id])}
-                disabled={isReminded || sending}
-                data-testid={`${testId}-remind-${patient.id}-btn`}
-              >
-                {isReminded ? <Check aria-hidden="true" /> : <Bell aria-hidden="true" />}
-                {isReminded ? 'Przypomniano' : 'Przypomnij'}
-              </Button>
+              {patient.activity.isInactive && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void remind([patient.id])}
+                  disabled={isReminded || sending}
+                  data-testid={`${testId}-remind-${patient.id}-btn`}
+                >
+                  {isReminded ? <Check aria-hidden="true" /> : <Bell aria-hidden="true" />}
+                  {isReminded ? 'Przypomniano' : 'Przypomnij'}
+                </Button>
+              )}
             </li>
           );
         })}
