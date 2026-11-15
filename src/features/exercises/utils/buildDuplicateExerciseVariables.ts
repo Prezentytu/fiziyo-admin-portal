@@ -102,6 +102,7 @@ export function buildDuplicateExerciseVariables({
 }: BuildDuplicateExerciseVariablesInput): CreateExerciseVariables {
   return buildCreateExerciseVariables({
     organizationId,
+    schema: 'source',
     draft: {
       name,
       patientDescription: source.patientDescription || source.description || '',
