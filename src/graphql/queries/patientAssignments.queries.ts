@@ -187,17 +187,3 @@ export const GET_PATIENT_THERAPIST_NOTE_STAMPS_QUERY = gql`
     }
   }
 `;
-
-/**
- * Start bieżącej wersji planu (FR-008) po zapisie edycji. Osobne zapytanie, nie pole mutacji: na backendzie bez
- * wersji planu zapytanie zwróci błąd, a zapis planu i tak się uda (komunikat po prostu się nie pojawi).
- */
-export const GET_ASSIGNMENT_PLAN_VERSION_QUERY = gql`
-  query GetAssignmentPlanVersion($id: String!) {
-    patientAssignmentById(id: $id) {
-      id
-      planVersion
-      planVersionStartsAt
-    }
-  }
-`;
