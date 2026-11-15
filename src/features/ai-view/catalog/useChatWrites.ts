@@ -15,6 +15,7 @@ import { formatPatientPhone, patientCreateRefetchQueries } from '@/features/pati
 import { CREATE_SHADOW_PATIENT_MUTATION } from '@/graphql/mutations/users.mutations';
 import { GET_CURRENT_BILLING_STATUS_QUERY } from '@/graphql/queries/billing.queries';
 import { GET_AVAILABLE_EXERCISES_PICKER_QUERY } from '@/graphql/queries/exercises.queries';
+import { fetchWholeLibrary } from '@/lib/graphql/wholeLibrary';
 import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import { GET_ORGANIZATION_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
@@ -190,9 +191,9 @@ export function useCreateExercise() {
         const result = await createExercise({ variables: buildCreateExerciseVariables({ organizationId, draft }) });
         const exercise = result.data?.createExercise;
         if (!exercise?.id) throw new Error('Nie udało się utworzyć ćwiczenia');
-        await apolloClient
-          .query({ query: GET_AVAILABLE_EXERCISES_PICKER_QUERY, variables: { organizationId }, fetchPolicy: 'network-only' })
-          .catch(() => undefined);
+        await fetchWholeLibrary(apolloClient, GET_AVAILABLE_EXERCISES_PICKER_QUERY, organizationId, 'network-only').catch(
+          () => undefined
+        );
         return { id: exercise.id, name: exercise.name };
       } catch (error) {
         toast.error(errorText(error, 'Nie udało się utworzyć ćwiczenia'));

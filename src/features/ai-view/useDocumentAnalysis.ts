@@ -4,6 +4,7 @@ import { useCallback } from 'react';
 import { useApolloClient } from '@apollo/client/react';
 
 import { GET_AVAILABLE_EXERCISES_PICKER_QUERY } from '@/graphql/queries/exercises.queries';
+import { fetchWholeLibrary } from '@/lib/graphql/wholeLibrary';
 import { documentImportService } from '@/services/documentImportService';
 import { useChatActions } from './ChatSessionContext';
 import type { AssistantReply } from './useChatThread';
@@ -35,11 +36,7 @@ export function useDocumentAnalysis() {
   // bridge made duplicates); the same cached picker query as the set card.
   const loadCatalog = useCallback(async (): Promise<SearchableExercise[]> => {
     try {
-      const { data } = await client.query<{ availableExercises?: SearchableExercise[] }>({
-        query: GET_AVAILABLE_EXERCISES_PICKER_QUERY,
-        variables: { organizationId },
-      });
-      return data?.availableExercises ?? [];
+      return await fetchWholeLibrary<SearchableExercise>(client, GET_AVAILABLE_EXERCISES_PICKER_QUERY, organizationId);
     } catch {
       return [];
     }

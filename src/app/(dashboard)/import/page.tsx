@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo, useCallback } from 'react';
-import { useQuery } from '@apollo/client/react';
 import {
   FileUp,
   Sparkles,
@@ -22,7 +21,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDocumentImport } from '@/hooks/useDocumentImport';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { GET_AVAILABLE_EXERCISE_NAMES_QUERY } from '@/graphql/queries/exercises.queries';
-import type { AvailableExercisesResponse } from '@/types/apollo';
+import type { Exercise } from '@/types/apollo';
+import { useWholeLibrary } from '@/hooks/useWholeLibrary';
 import {
   DocumentDropzone,
   TextImportPanel,
@@ -87,10 +87,10 @@ export default function ImportPage() {
     goToStep,
   } = useDocumentImport();
 
-  const { data: availableExercisesData } = useQuery<AvailableExercisesResponse>(GET_AVAILABLE_EXERCISE_NAMES_QUERY, {
-    variables: { organizationId },
-    skip: !organizationId,
-  });
+  const { items: availableExerciseNames } = useWholeLibrary<Exercise>(
+    GET_AVAILABLE_EXERCISE_NAMES_QUERY,
+    organizationId
+  );
 
   // Current step index
   const currentStepIndex = useMemo(() => {
@@ -102,12 +102,12 @@ export default function ImportPage() {
   const isUploadAnalyzeDisabled =
     isAnalyzing || (inputMode === 'file' ? !file : pastedText.trim().length < 30);
   const availableExercisesForFallback = useMemo(() => {
-    return (availableExercisesData?.availableExercises ?? []).map((exercise) => ({
+    return availableExerciseNames.map((exercise) => ({
       id: exercise.id,
       name: exercise.name,
       imageUrl: exercise.imageUrl || exercise.thumbnailUrl,
     }));
-  }, [availableExercisesData]);
+  }, [availableExerciseNames]);
 
   // Handler kliknięcia w krok (nawigacja wstecz)
   const handleStepClick = useCallback(
