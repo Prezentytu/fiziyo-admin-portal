@@ -114,6 +114,8 @@ export interface EffectiveExerciseParams {
   rangeOfMotion?: string;
   resistance?: string;
   equipment?: string;
+  /** Sam sprzęt nadpisany w przypisaniu albo pozycji zestawu, bez kolumny ćwiczenia: wygrywa z dokumentem rekordu 3.3. */
+  equipmentOverride?: string;
   difficultyLevel?: string;
   side?: string;
   mainTags?: string[];
@@ -249,7 +251,8 @@ export function resolveEffectiveExerciseParams(
   const notes = pickDefined(layered?.notes, mapping.notes) ?? '';
   const rangeOfMotion = unlessCleared('rangeOfMotion', pickDefined(layered?.rangeOfMotion, exercise?.rangeOfMotion));
   const resistance = pickDefined(layered?.resistance, exercise?.resistance);
-  const equipment = pickDefined(layered?.equipment, exercise?.equipment);
+  const equipmentOverride = pickDefined(layered?.equipment);
+  const equipment = pickDefined(equipmentOverride, exercise?.equipment);
   const side = resolveSide(layered, exercise);
   const difficultyLevel = unlessCleared(
     'difficultyLevel',
@@ -294,6 +297,7 @@ export function resolveEffectiveExerciseParams(
     rangeOfMotion,
     resistance,
     equipment,
+    equipmentOverride,
     difficultyLevel,
     side,
     mainTags: exercise?.mainTags,

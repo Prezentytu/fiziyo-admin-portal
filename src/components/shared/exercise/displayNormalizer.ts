@@ -14,6 +14,8 @@ interface ExerciseSourceLike {
   rangeOfMotion?: string | null;
   resistance?: string | null;
   equipment?: string | null;
+  /** Sprzęt nadpisany w przypisaniu albo pozycji zestawu; wygrywa z dokumentem i kolumną. */
+  equipmentOverride?: string | null;
   difficultyLevel?: string | null;
   patientDescription?: string | null;
   description?: string | null;
@@ -91,8 +93,13 @@ export function resolveLoadDisplayText(source: ExerciseSourceLike): string | und
   return formattedLoad || undefined;
 }
 
-/** Sprzęt z dokumentu treści (`equipment_items`); kolumna `equipment` tylko, gdy dokument milczy (czyta to `readExerciseContent`). */
-function resolveEquipmentText(source: ExerciseSourceLike): string | undefined {
+/**
+ * Nadpisanie fizjoterapeuty, potem dla rekordu 3.3 dokument (`equipment_items`) z kolumną jako zapasem
+ * (czyta to `readExerciseContent`). Rekord stary czyta kolumnę: to ją zapisuje edycja ćwiczenia.
+ */
+function resolveEquipmentText(source: ExerciseSourceLike, isV33: boolean): string | undefined {
+  const override = toOptionalString(source.equipmentOverride);
+  if (override || !isV33) return override ?? toOptionalString(source.equipment);
   const names = readExerciseContent(source as ExerciseContentSource).equipment.map((item) => describeEquipmentItem(item).name);
   return toOptionalString(names.join(', '));
 }
@@ -139,7 +146,7 @@ export function normalizeExerciseFieldValues(source: ExerciseDefaultSourceLike):
     side: normalizeExerciseSide(source.side ?? source.exerciseSide),
     rangeOfMotion: toOptionalString(source.rangeOfMotion),
     resistance: toOptionalString(source.resistance),
-    equipment: resolveEquipmentText(source),
+    equipment: resolveEquipmentText(source, isV33),
     difficultyLevel: toOptionalString(source.difficultyLevel),
     patientDescription: toOptionalString(source.patientDescription ?? source.description),
     clinicalDescription: toOptionalString(source.clinicalDescription),
