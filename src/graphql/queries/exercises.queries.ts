@@ -148,10 +148,11 @@ export const GET_AVAILABLE_EXERCISES_DEMO_PAGE_QUERY = gql`
   ${EXERCISE_FULL_FRAGMENT}
 `;
 
-// Same root field as GET_AVAILABLE_EXERCISES_PICKER_QUERY, so a cached picker list answers it without a network trip.
+// Same root field and pages as GET_AVAILABLE_EXERCISES_PICKER_QUERY, so cached picker pages answer it without a
+// network trip. Read through fetchWholeLibrary / useWholeLibrary: one call stops at 5000 exercises.
 export const GET_AVAILABLE_EXERCISE_NAMES_QUERY = gql`
-  query GetAvailableExerciseNames($organizationId: String!) {
-    availableExercises(organizationId: $organizationId) {
+  query GetAvailableExerciseNames($organizationId: String!, $skip: Int!, $take: Int!) {
+    availableExercises(organizationId: $organizationId, skip: $skip, take: $take) {
       id
       name
       imageUrl
@@ -259,10 +260,11 @@ export const EXERCISE_PICKER_FRAGMENT = gql`
   }
 `;
 
-// Full library for the chat (ai-view) only; set, assignment and patient pickers use GET_AVAILABLE_EXERCISES_PICKER_PAGE_QUERY.
+// Full library for the chat (ai-view) only, read page by page through fetchWholeLibrary (one call stops at 5000);
+// set, assignment and patient pickers use GET_AVAILABLE_EXERCISES_PICKER_PAGE_QUERY.
 export const GET_AVAILABLE_EXERCISES_PICKER_QUERY = gql`
-  query GetAvailableExercisesForPicker($organizationId: String!) {
-    availableExercises(organizationId: $organizationId) {
+  query GetAvailableExercisesForPicker($organizationId: String!, $skip: Int!, $take: Int!) {
+    availableExercises(organizationId: $organizationId, skip: $skip, take: $take) {
       ...ExercisePickerFragment
     }
   }
@@ -305,7 +307,8 @@ export const GET_AVAILABLE_EXERCISES_PICKER_PAGE_QUERY = gql`
 
 // Picker records by id through the library's visibility rule (availableExercises is the list the page shares
 // its rule with): an exercise the library hides is not returned, so it cannot show up as "Popularne".
-// The API cuts the list to 5000 by name before `where` applies, so two windows cover 10 000 visible exercises.
+// An API before fizjo-app#534 cut the list to 5000 by name before `where` applied; two windows cover 10 000 visible
+// exercises there. A newer API filters first, so the first window already holds every requested id.
 export const GET_VISIBLE_EXERCISE_PICKER_RECORDS_QUERY = gql`
   query GetVisibleExercisePickerRecords(
     $organizationId: String!

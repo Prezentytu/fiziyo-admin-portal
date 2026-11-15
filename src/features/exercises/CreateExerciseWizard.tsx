@@ -55,6 +55,7 @@ import type { ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo
 import type { CreateExerciseMutationResult, CreateExerciseVariables } from '@/graphql/types/exercise.types';
 
 import { useVoiceInput } from '@/hooks/useVoiceInput';
+import { useWholeLibrary } from '@/hooks/useWholeLibrary';
 import { aiService } from '@/services/aiService';
 import type { AiErrorMapping } from '@/utils/aiErrorMessages';
 import { AiSuggestionFailure } from './AiSuggestionFailure';
@@ -1041,19 +1042,13 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
   });
 
   // The wizard stays mounted on /exercises, so load names only while it is open; refresh on each open
-  // because exercises created since the last open must count as duplicates too.
-  const { data: exercisesData } = useQuery<{ availableExercises: ExistingExercise[] }>(
-    GET_AVAILABLE_EXERCISE_NAMES_QUERY,
-    {
-      variables: { organizationId },
-      skip: !organizationId || !open,
-      fetchPolicy: 'cache-and-network',
-    }
-  );
-  const existingExercises = useMemo(
-    () => prepareExerciseNames(exercisesData?.availableExercises ?? []),
-    [exercisesData]
-  );
+  // because exercises created since the last open must count as duplicates too. Whole library page by page:
+  // one call stops at 5000 names, and a duplicate from the end of the alphabet went unnoticed.
+  const { items: existingNames } = useWholeLibrary<ExistingExercise>(GET_AVAILABLE_EXERCISE_NAMES_QUERY, organizationId, {
+    skip: !open,
+    fetchPolicy: 'network-only',
+  });
+  const existingExercises = useMemo(() => prepareExerciseNames(existingNames), [existingNames]);
 
   // Inline Library Guard runs locally without AI credits; deferred so typing stays responsive in a large library.
   const deferredName = useDeferredValue(data.name);
