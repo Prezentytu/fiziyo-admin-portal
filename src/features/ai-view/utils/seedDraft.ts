@@ -15,6 +15,11 @@ interface SeedInput {
   setsReady: boolean;
   exercises: readonly SeedExercise[];
   exercisesReady: boolean;
+  /**
+   * Proponowane id, których nie ma w `exercises`, są już dociągnięte albo nie istnieją. Do tego czasu szkic czeka,
+   * bo zasiany za wcześnie zamarzłby bez ćwiczeń spoza pierwszej strony katalogu (P-4).
+   */
+  missingSettled?: boolean;
 }
 
 /**
@@ -24,6 +29,8 @@ interface SeedInput {
 export function seedDraftItems(input: SeedInput): { items: DraftItem[]; missingSet: boolean } | null {
   if (!input.exercisesReady) return null;
   if (!input.setId) {
+    const known = new Set(input.exercises.map((exercise) => exercise.id));
+    if (!input.missingSettled && input.exerciseIds.some((exerciseId) => !known.has(exerciseId))) return null;
     return {
       items: pickExercisesById(input.exercises, input.exerciseIds).map((exercise) =>
         applyDose(draftItemFromExercise(exercise), input.doses?.[exercise.id])

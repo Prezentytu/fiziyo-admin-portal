@@ -29,7 +29,7 @@ const template: ExerciseEnrichmentData = {
 
 describe('contentContract', () => {
   it('PERSONALIZABLE_ENRICHMENT_PATHS ma 11 ścieżek patient+safety', () => {
-    expect(PERSONALIZABLE_ENRICHMENT_PATHS).toHaveLength(11);
+    expect(PERSONALIZABLE_ENRICHMENT_PATHS).toHaveLength(12);
     expect(PERSONALIZABLE_ENRICHMENT_PATHS.every((path) => path.startsWith('patient.') || path.startsWith('safety.'))).toBe(
       true
     );

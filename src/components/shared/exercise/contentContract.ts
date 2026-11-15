@@ -10,6 +10,8 @@ export const PERSONALIZABLE_ENRICHMENT_PATHS = [
   'patient.summary',
   'patient.steps',
   'patient.cues',
+  // Faza wskazówki indeksem w `cues` (v3.3): ważna tylko z listą, do której wskazuje (enrichmentOverride.ts).
+  'patient.cue_phases',
   'patient.mistakes',
   'patient.should_feel',
   'patient.should_not_feel',
@@ -53,7 +55,7 @@ export const CONTENT_SECTIONS: readonly ContentSectionDefinition[] = [
   {
     id: 'audioCues',
     title: 'Wskazówki dźwiękowe',
-    paths: ['patient.cues'],
+    paths: ['patient.cues', 'patient.cue_phases'],
     surfaces: ['template', 'mapping', 'patientOverride', 'patientPlan'],
   },
   {
