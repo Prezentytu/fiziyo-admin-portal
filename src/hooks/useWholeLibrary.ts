@@ -6,6 +6,8 @@ import type { DocumentNode } from '@apollo/client';
 
 import { fetchWholeLibrary } from '@/lib/graphql/wholeLibrary';
 
+const NO_ITEMS: never[] = [];
+
 interface WholeLibraryState<T> {
   organizationId: string;
   items: T[];
@@ -32,7 +34,8 @@ export function useWholeLibrary<T extends { id: string }>(
         if (!cancelled) setState({ organizationId, items });
       })
       .catch(() => {
-        if (!cancelled) setState({ organizationId, items: [] });
+        // Błąd strony nie kasuje listy tego gabinetu wczytanej wcześniej.
+        if (!cancelled) setState((previous) => (previous?.organizationId === organizationId ? previous : { organizationId, items: [] }));
       });
     return () => {
       cancelled = true;
@@ -40,5 +43,5 @@ export function useWholeLibrary<T extends { id: string }>(
   }, [client, query, organizationId, skip, fetchPolicy]);
 
   const current = state?.organizationId === organizationId ? state : null;
-  return { items: current?.items ?? [], loading: !skip && !!organizationId && !current };
+  return { items: current?.items ?? (NO_ITEMS as T[]), loading: !skip && !!organizationId && !current };
 }

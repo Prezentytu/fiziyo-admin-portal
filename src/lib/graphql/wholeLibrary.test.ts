@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { gql } from '@apollo/client';
+import { ApolloClient, ApolloLink, gql, InMemoryCache, Observable } from '@apollo/client';
 
 import { fetchWholeLibrary } from './wholeLibrary';
 
@@ -25,7 +25,7 @@ describe('fetchWholeLibrary', () => {
     const items = library(7);
     const api = client(items);
 
-    const all = await fetchWholeLibrary(api, QUERY, 'org-1', 'cache-first', 3);
+    const all = await fetchWholeLibrary(api, QUERY, 'org-1', 'network-only', 3);
 
     expect(all.map((item) => item.id)).toEqual(items.map((item) => item.id));
     expect(api.query.mock.calls.map(([options]) => options.variables)).toEqual([
@@ -51,8 +51,30 @@ describe('fetchWholeLibrary', () => {
       .mockResolvedValueOnce({ data: { availableExercises: library(3) } })
       .mockResolvedValueOnce({ data: { availableExercises: [{ id: 'ex-2' }, { id: 'ex-3' }] } });
 
-    const all = await fetchWholeLibrary({ query } as never, QUERY, 'org-1', 'cache-first', 3);
+    const all = await fetchWholeLibrary({ query } as never, QUERY, 'org-1', 'network-only', 3);
 
     expect(all.map((item) => item.id)).toEqual(['ex-0', 'ex-1', 'ex-2', 'ex-3']);
+  });
+
+  it('a page shortened in the cache by a deleted exercise does not end the read', async () => {
+    let server = Array.from({ length: 7 }, (_, index) => ({ __typename: 'Exercise', id: `ex-${index}` }));
+    const link = new ApolloLink(
+      (operation) =>
+        new Observable((observer) => {
+          const { skip, take } = operation.variables as { skip: number; take: number };
+          observer.next({ data: { availableExercises: server.slice(skip, skip + take) } });
+          observer.complete();
+        })
+    );
+    const apollo = new ApolloClient({ link, cache: new InMemoryCache() });
+    await fetchWholeLibrary(apollo, QUERY, 'org-1', 'cache-first', 3);
+
+    // What `useRealtimeExercises` does on `onExerciseDeleted`: the cached first page now reads as 2 of 3.
+    server = server.filter((item) => item.id !== 'ex-1');
+    apollo.cache.evict({ id: apollo.cache.identify({ __typename: 'Exercise', id: 'ex-1' }) });
+    apollo.cache.gc();
+    const all = await fetchWholeLibrary<{ id: string }>(apollo, QUERY, 'org-1', 'cache-first', 3);
+
+    expect(all.map((item) => item.id)).toEqual(['ex-0', 'ex-2', 'ex-3', 'ex-4', 'ex-5', 'ex-6']);
   });
 });
