@@ -8,7 +8,7 @@ Moduł pacjentów: lista, profil, przypisania zestawów, status Premium.
 
 ### Lista pacjentów
 
-- DataTable z wyszukiwaniem
+- Lista z wyszukiwaniem
 - Status Premium (badge, usePatientPremium hook)
 - Kolumna "Przypisane zestawy" lub link do przypisań
 

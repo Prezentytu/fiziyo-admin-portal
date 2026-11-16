@@ -3,6 +3,7 @@ import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.
 import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
 import { normalizeExerciseType } from '@/utils/exerciseEnums';
 import { inferExerciseType } from './inferExerciseType';
+import { toNewExerciseV33 } from './newExerciseV33';
 
 export interface CreateExerciseDraft {
   name: string;
@@ -44,6 +45,11 @@ interface BuildCreateExerciseVariablesInput {
   draft: CreateExerciseDraft;
   scope?: ExerciseScope;
   isActive?: boolean;
+  /**
+   * `v33` (domyślnie): nowe ćwiczenie od razu w v3.3 (D-11), treść starych pól w dokumencie.
+   * `source`: kopia istniejącego rekordu zostaje w jego wersji (duplikacja).
+   */
+  schema?: 'v33' | 'source';
 }
 
 function asText(value: string | null | undefined): string | null {
@@ -78,10 +84,14 @@ function normalizeTags(tags: string[] | null | undefined): string[] | null {
  */
 export function buildCreateExerciseVariables({
   organizationId,
-  draft,
+  draft: input,
   scope = 'ORGANIZATION',
   isActive = true,
+  schema = 'v33',
 }: BuildCreateExerciseVariablesInput): CreateExerciseVariables {
+  const newRecord = schema === 'v33' ? toNewExerciseV33(input, input.enrichmentData) : null;
+  const draft = newRecord?.draft ?? input;
+  const enrichmentData = newRecord?.document ?? input.enrichmentData;
   const description = (draft.patientDescription ?? draft.description ?? '').trim();
   const side = draft.side ?? draft.exerciseSide;
   const loadKg = draft.loadKg != null && !Number.isNaN(draft.loadKg) && draft.loadKg > 0 ? draft.loadKg : null;
@@ -116,7 +126,7 @@ export function buildCreateExerciseVariables({
     rangeOfMotion: asText(draft.rangeOfMotion),
     resistance: asText(draft.resistance),
     equipment: asText(draft.equipment),
-    enrichmentDataJson: draft.enrichmentData ? JSON.stringify(draft.enrichmentData) : null,
+    enrichmentDataJson: enrichmentData ? JSON.stringify(enrichmentData) : null,
     ...buildExerciseLoadMutationVars(loadKg),
   };
 }

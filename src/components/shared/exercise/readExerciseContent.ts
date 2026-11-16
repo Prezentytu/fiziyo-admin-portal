@@ -13,7 +13,12 @@
  * - etapy weryfikacji (`src/features/verification/stages/`)
  */
 import { toV3 } from '@/features/verification/utils/enrichmentToV3';
-import type { EnrichmentCuePhaseV3, ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
+import type {
+  EnrichmentCuePhaseV3,
+  EnrichmentPrescriptionV33,
+  EnrichmentRelationV33,
+  ExerciseEnrichmentData,
+} from '@/graphql/types/exerciseEnrichment.types';
 
 export type ExerciseContentVersion = 'legacy' | '3.3';
 
@@ -135,6 +140,10 @@ export interface ExerciseContent {
   notes: string | null;
   /** Kolumna podpowiedzi głosowej. Tylko rekord stary: w v3.3 zastępują ją `patient.cues`. */
   audioCue: string | null;
+  /** Zakresy parametrów (`prescription`, min/max/domyślne). Tylko 3.3. */
+  prescription: EnrichmentPrescriptionV33 | null;
+  /** Powiązania z innymi ćwiczeniami (`relations[]`: progresja, regresja, wariant). Tylko 3.3. */
+  relations: EnrichmentRelationV33[];
 }
 
 const CUE_PHASES: readonly EnrichmentCuePhaseV3[] = ['preparation', 'work', 'rest'];
@@ -433,6 +442,12 @@ export function readExerciseContent(exercise: ExerciseContentSource | null | und
     clinicalDescription: isNew ? null : asText(source.clinicalDescription),
     notes: isNew ? null : asText(source.notes),
     audioCue: isNew ? null : asText(source.audioCue),
+    prescription: isNew ? ((asRecord(document.prescription) as EnrichmentPrescriptionV33 | null) ?? null) : null,
+    relations: isNew
+      ? (asList(document.relations).filter(
+          (relation) => typeof asRecord(relation)?.key === 'string'
+        ) as EnrichmentRelationV33[])
+      : [],
   };
 }
 

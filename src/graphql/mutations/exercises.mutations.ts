@@ -1034,3 +1034,17 @@ export const SUBMIT_FOR_ORGANIZATION_REVIEW_MUTATION = gql`
     }
   }
 `;
+
+/**
+ * „Rozpocznij plan od nowa” (FR-008): jedyna zmiana planu, która zeruje postęp pacjenta. Wołana tylko, gdy fizjo
+ * zaznaczy przełącznik, więc panel na backendzie bez wersji planu zapisuje zwykłe edycje jak dotąd.
+ */
+export const RESTART_ASSIGNMENT_PLAN_MUTATION = gql`
+  mutation RestartAssignmentPlan($assignmentId: String!) {
+    restartAssignmentPlan(assignmentId: $assignmentId) {
+      planVersion
+      startsAt
+      startsTomorrow
+    }
+  }
+`;

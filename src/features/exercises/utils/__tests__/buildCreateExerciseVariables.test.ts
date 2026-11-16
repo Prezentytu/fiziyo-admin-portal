@@ -21,9 +21,20 @@ describe('buildCreateExerciseVariables', () => {
       organizationId: 'org-1',
       draft: { name: 'Przysiad', enrichmentData: { patient: { steps: ['Stań prosto'] } } },
     });
-    expect(JSON.parse(result.enrichmentDataJson ?? 'null')).toEqual({ patient: { steps: ['Stań prosto'] } });
+    // D-11: nowe ćwiczenie od razu w v3.3, także szkic bez treści.
+    expect(JSON.parse(result.enrichmentDataJson ?? 'null')).toEqual({
+      $schema: 'fiziyo-exercise-v3',
+      schemaVersion: '3.3',
+      patient: { steps: ['Stań prosto'] },
+    });
     expect(
-      buildCreateExerciseVariables({ organizationId: 'org-1', draft: { name: 'Szkic' } }).enrichmentDataJson
+      JSON.parse(
+        buildCreateExerciseVariables({ organizationId: 'org-1', draft: { name: 'Szkic' } }).enrichmentDataJson ?? 'null'
+      )
+    ).toEqual({ $schema: 'fiziyo-exercise-v3', schemaVersion: '3.3' });
+    expect(
+      buildCreateExerciseVariables({ organizationId: 'org-1', draft: { name: 'Szkic' }, schema: 'source' })
+        .enrichmentDataJson
     ).toBeNull();
   });
 
@@ -55,6 +66,7 @@ describe('buildCreateExerciseVariables', () => {
   it('maps full draft to create payload including pro tuning and load dual-write', () => {
     const result = buildCreateExerciseVariables({
       organizationId: 'org-1',
+      schema: 'source',
       draft: {
         name: '  Przysiad  ',
         patientDescription: 'Opis dla pacjenta',
@@ -109,6 +121,29 @@ describe('buildCreateExerciseVariables', () => {
       loadValue: 12.5,
       loadUnit: 'kg',
       loadText: '12.5 kg',
+    });
+  });
+
+  it('nowe ćwiczenie (v3.3): opis, opis kliniczny i polecenie audio idą do dokumentu, kolumny zostają puste', () => {
+    const result = buildCreateExerciseVariables({
+      organizationId: 'org-1',
+      draft: {
+        name: 'Przysiad',
+        patientDescription: 'Opis dla pacjenta',
+        clinicalDescription: 'Opis kliniczny',
+        audioCue: 'Proste plecy',
+        equipment: 'hantel 2,5 kg',
+        enrichmentData: { patient: { summary: 'Już w dokumencie' } },
+      },
+    });
+
+    expect(result).toMatchObject({ description: '', clinicalDescription: null, audioCue: null, equipment: null });
+    expect(JSON.parse(result.enrichmentDataJson ?? 'null')).toEqual({
+      $schema: 'fiziyo-exercise-v3',
+      schemaVersion: '3.3',
+      patient: { summary: 'Już w dokumencie', cues: ['Proste plecy'] },
+      therapist: { clinical_notes: 'Opis kliniczny' },
+      equipment_items: [{ label: 'hantel 2,5 kg', qty: 1, required: true, substitutes: [] }],
     });
   });
 

@@ -108,3 +108,31 @@ describe('ExercisePreviewDrawer: instrukcja dla pacjenta, rekord 3.3', () => {
     expect(patientInstructionText()).toBeNull();
   });
 });
+
+describe('ExercisePreviewDrawer: sprzęt', () => {
+  const v33WithEquipment = {
+    id: 'ex',
+    name: 'X',
+    equipment: 'Piłka',
+    enrichmentData: { schemaVersion: '3.3', equipment_items: [{ label: 'Mata' }] },
+  } as ExerciseMapping['exercise'];
+  const dialogText = () => screen.getByTestId('exercise-preview-dialog').textContent ?? '';
+
+  it('rekord 3.3 bez nadpisania pokazuje sprzęt z dokumentu, nie z kolumny', () => {
+    renderDrawer(v33WithEquipment);
+    expect(dialogText()).toContain('Mata');
+    expect(dialogText()).not.toContain('Piłka');
+  });
+
+  it('sprzęt nadpisany w przypisaniu wygrywa z dokumentem', () => {
+    renderDrawer(v33WithEquipment, undefined, { exerciseMappingId: 'm-1', equipment: 'Krzesło' } as ExerciseOverride);
+    expect(dialogText()).toContain('Krzesło');
+    expect(dialogText()).not.toContain('Mata');
+  });
+
+  it('sprzęt nadpisany w pozycji zestawu wygrywa z dokumentem', () => {
+    renderDrawer(v33WithEquipment, { overridesJson: JSON.stringify({ equipment: 'Krzesło' }) });
+    expect(dialogText()).toContain('Krzesło');
+    expect(dialogText()).not.toContain('Mata');
+  });
+});

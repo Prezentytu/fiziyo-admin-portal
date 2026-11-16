@@ -2,6 +2,7 @@ import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.
 import type { CreateExerciseVariables } from '@/graphql/types/exercise.types';
 import { composeEnrichmentPayload, isEnrichmentPayloadEmpty } from '../useEnrichmentDraft';
 import { buildCreateExerciseVariables, type CreateExerciseDraft } from './buildCreateExerciseVariables';
+import { toNewExerciseV33 } from './newExerciseV33';
 
 export interface CreateExerciseSubmitDeps {
   organizationId: string;
@@ -50,7 +51,8 @@ export async function createExerciseSubmit({
     await updateExercise({
       variables: {
         exerciseId,
-        enrichmentDataJson: JSON.stringify(payload),
+        // Ten sam dokument v3.3 co przy tworzeniu, uzupełniony o treść z kreatora.
+        enrichmentDataJson: JSON.stringify(toNewExerciseV33(draft, payload).document),
       },
     });
     return { exerciseId, enrichmentSaved: true };

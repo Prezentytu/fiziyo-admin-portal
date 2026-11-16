@@ -16,6 +16,7 @@ export interface EnrichmentOverride {
     summary?: string;
     steps?: string[];
     cues?: string[];
+    cue_phases?: CuePhaseLink[];
     mistakes?: EnrichmentPatientMistakeV3[];
     should_feel?: string;
     should_not_feel?: string;
@@ -27,6 +28,24 @@ export interface EnrichmentOverride {
     intensity_guide?: string;
     requires_supervision?: boolean;
   };
+}
+
+export interface CuePhaseLink {
+  cue: number;
+  phase: string;
+}
+
+function isCuePhaseLinks(value: unknown): value is CuePhaseLink[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (item) =>
+        item !== null &&
+        typeof item === 'object' &&
+        Number.isInteger((item as { cue?: unknown }).cue) &&
+        typeof (item as { phase?: unknown }).phase === 'string'
+    )
+  );
 }
 
 function getAtPath(source: unknown, path: string): unknown {
@@ -78,6 +97,7 @@ function isAllowedLeafValue(path: PersonalizableEnrichmentPath, value: unknown):
   if (path === 'patient.steps' || path === 'patient.cues') {
     return Array.isArray(value) && value.every((item) => typeof item === 'string');
   }
+  if (path === 'patient.cue_phases') return isCuePhaseLinks(value);
   if (path === 'patient.mistakes') {
     return (
       Array.isArray(value) &&
@@ -146,7 +166,12 @@ export function buildEnrichmentOverrideDelta(
       // Store empty sentinel for clear: empty string / [] / false
       if (path === 'safety.requires_supervision') {
         setAtPath(delta as Record<string, unknown>, path, false);
-      } else if (path === 'patient.steps' || path === 'patient.cues' || path === 'patient.mistakes') {
+      } else if (
+        path === 'patient.steps' ||
+        path === 'patient.cues' ||
+        path === 'patient.cue_phases' ||
+        path === 'patient.mistakes'
+      ) {
         setAtPath(delta as Record<string, unknown>, path, []);
       } else {
         setAtPath(delta as Record<string, unknown>, path, '');
@@ -155,6 +180,18 @@ export function buildEnrichmentOverrideDelta(
       setAtPath(delta as Record<string, unknown>, path, desiredValue);
     }
     hasAny = true;
+  }
+
+  // Fazy wskazują wskazówki indeksem: nowa lista wskazówek idzie razem ze swoimi fazami, także gdy fazy wyglądają
+  // jak w szablonie, bo klient bez faz w nadpisaniu odrzuca fazy szablonu (wskazywałyby na cudze wskazówki).
+  const nextPhases = getAtPath(next, 'patient.cue_phases');
+  if (
+    getAtPath(delta, 'patient.cues') !== undefined &&
+    getAtPath(delta, 'patient.cue_phases') === undefined &&
+    isCuePhaseLinks(nextPhases) &&
+    nextPhases.length > 0
+  ) {
+    setAtPath(delta as Record<string, unknown>, 'patient.cue_phases', nextPhases);
   }
 
   return hasAny ? delta : undefined;
@@ -175,6 +212,14 @@ export function applyEnrichmentOverride(
     const value = getAtPath(override, path);
     if (value === undefined) continue;
     setAtPath(result as Record<string, unknown>, path, value);
+  }
+  // Ta sama reguła co w aplikacji (fizjo-app utils/enrichmentOverride.ts): podmieniona lista wskazówek bez własnych
+  // faz nie dziedziczy faz szablonu.
+  if (getAtPath(override, 'patient.cues') !== undefined && getAtPath(override, 'patient.cue_phases') === undefined) {
+    const patient = (result as Record<string, unknown>).patient;
+    if (patient && typeof patient === 'object' && !Array.isArray(patient)) {
+      delete (patient as Record<string, unknown>).cue_phases;
+    }
   }
   return result;
 }

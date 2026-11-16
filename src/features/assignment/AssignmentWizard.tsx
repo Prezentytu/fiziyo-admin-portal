@@ -51,6 +51,7 @@ import {
   seedBuilderParamsFromMapping,
 } from './utils/seedBuilderParamsFromMapping';
 import { mergeAssignmentOverridesOnEdit } from './utils/mergeAssignmentOverridesOnEdit';
+import { saveAssignmentOverridesOrRollback } from './utils/saveAssignmentOverridesOrRollback';
 import {
   buildAssignmentFrequencyPayload,
   normalizeFrequencySeed,
@@ -96,9 +97,11 @@ import {
   REMOVE_EXERCISE_FROM_SET_MUTATION,
   UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION,
   UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION,
+  RESTART_ASSIGNMENT_PLAN_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
 import { useExercisePickerLibrary } from '@/hooks/useExercisePickerLibrary';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
+import { planEditSummary, planEditToast } from './utils/planVersionNotice';
 import { GET_CURRENT_BILLING_STATUS_QUERY } from '@/graphql/queries/billing.queries';
 import type { OrganizationExerciseSetsResponse, OrganizationPatientsResponse } from '@/types/apollo';
 import type {
@@ -301,6 +304,8 @@ function AssignmentWizardContent({
   const [planName, setPlanName] = useState<string>('');
   // Opcjonalny zapis kopii do biblioteki organizacji
   const [saveAsOrganizationSet, setSaveAsOrganizationSet] = useState(false);
+  // Edycja planu: odnowienie zeruje postęp pacjenta (FR-008); domyślnie korekta, która postęp zachowuje.
+  const [restartPlan, setRestartPlan] = useState(false);
   const [organizationSetName, setOrganizationSetName] = useState<string>('');
   // Wykluczone ćwiczenia (legacy - pustý Set bo customize step został usunięty)
   const [excludedExercises] = useState<Set<string>>(new Set());
@@ -395,6 +400,7 @@ function AssignmentWizardContent({
     setPlanName(assignmentSet.name || 'Plan pacjenta');
     setOrganizationSetName(`${assignmentSet.name || 'Plan pacjenta'} (organizacja)`);
     setSaveAsOrganizationSet(false);
+    setRestartPlan(false);
     setFrequency(normalizeFrequencySeed(initialAssignment.frequency));
     setStartDate(new Date(initialAssignment.startDate));
     setEndDate(new Date(initialAssignment.endDate));
@@ -426,6 +432,7 @@ function AssignmentWizardContent({
     setPlanName(baseName);
     setOrganizationSetName(`${baseName} (organizacja)`);
     setSaveAsOrganizationSet(false);
+    setRestartPlan(false);
 
     // Smart Defaults: wypełnij frequency z szablonu jeśli dostępne
     if (set?.frequency) {
@@ -532,6 +539,9 @@ function AssignmentWizardContent({
   const [removeExerciseFromSet] = useMutation(REMOVE_EXERCISE_FROM_SET_MUTATION);
   const [updateAssignment] = useMutation(UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION);
   const [updatePatientExerciseOverrides] = useMutation(UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION);
+  const [restartAssignmentPlan] = useMutation<{
+    restartAssignmentPlan: { planVersion: number; startsAt: string; startsTomorrow: boolean };
+  }>(RESTART_ASSIGNMENT_PLAN_MUTATION);
 
   // State for unassign confirmation dialog
   const [unassignConfirm, setUnassignConfirm] = useState<{
@@ -726,6 +736,7 @@ function AssignmentWizardContent({
     setPlanName(setNamePattern);
     setOrganizationSetName(`${setNamePattern} (organizacja)`);
     setSaveAsOrganizationSet(false);
+    setRestartPlan(false);
 
     // Clear any previously selected set
     setSelectedSet(null);
@@ -874,6 +885,7 @@ function AssignmentWizardContent({
     setPlanName(set.name || 'Nowy Plan');
     setOrganizationSetName(`${set.name || 'Nowy Plan'} (organizacja)`);
     setSaveAsOrganizationSet(false);
+    setRestartPlan(false);
     if (set.frequency) {
       setFrequency(normalizeFrequencySeed(set.frequency));
     }
@@ -1334,7 +1346,20 @@ function AssignmentWizardContent({
         ],
       });
 
-      toast.success('Plan zaktualizowany');
+      // Odnowienie (FR-008) po zapisie zmian: ta sama edycja, więc backend łączy je w jedną wersję planu.
+      let restart: Parameters<typeof planEditToast>[0] = null;
+      if (restartPlan) {
+        try {
+          const { data } = await restartAssignmentPlan({ variables: { assignmentId: initialAssignment.id } });
+          restart = data?.restartAssignmentPlan ?? 'failed';
+        } catch (restartError) {
+          console.error('Błąd odnowienia planu:', restartError);
+          restart = 'failed';
+        }
+      }
+
+      const { kind, title, description } = planEditToast(restart);
+      toast[kind](title, description ? { description } : undefined);
       onSuccess?.();
       _onOpenChange(false);
     } catch (error) {
@@ -1520,19 +1545,20 @@ function AssignmentWizardContent({
 
         const assignmentId = responseData?.id;
         if (assignmentId && exerciseOverridesJson) {
-          try {
-            await updatePatientExerciseOverrides({
-              variables: {
-                assignmentId,
-                exerciseOverrides: exerciseOverridesJson,
-              },
-            });
-          } catch (overrideError) {
-            console.error('Błąd zapisu personalizacji ćwiczeń:', overrideError);
-            toast.warning(
-              `Przypisano plan dla ${patient.name}, ale nie udało się zapisać pełnej personalizacji parametrów`
-            );
-          }
+          await saveAssignmentOverridesOrRollback({
+            patientName: patient.name,
+            saveOverrides: () =>
+              updatePatientExerciseOverrides({
+                variables: {
+                  assignmentId,
+                  exerciseOverrides: exerciseOverridesJson,
+                },
+              }),
+            rollbackAssignment: () =>
+              removeAssignment({
+                variables: { exerciseSetId: exerciseSetIdToAssign, patientId: patient.id },
+              }),
+          });
         }
       }
 
@@ -1906,6 +1932,24 @@ function AssignmentWizardContent({
 
           {/* Right side - Navigation */}
           <div className="flex items-center gap-3">
+            {currentStep === 'schedule' && isEditMode && (
+              <div className="flex max-w-md flex-col gap-1.5" data-testid="assign-edit-restart">
+                <label
+                  className="flex items-center gap-2.5 rounded-lg border border-border/60 bg-surface-light/40 px-3 py-2"
+                  data-testid="assign-edit-restart-toggle"
+                >
+                  <Switch
+                    checked={restartPlan}
+                    onCheckedChange={setRestartPlan}
+                    data-testid="assign-edit-restart-switch"
+                  />
+                  <span className="text-xs font-medium text-foreground">Rozpocznij plan od nowa</span>
+                </label>
+                <p className="text-xs text-muted-foreground" data-testid="assign-edit-restart-summary">
+                  {planEditSummary(restartPlan)}
+                </p>
+              </div>
+            )}
             {currentStep === 'schedule' && !isEditMode && (
               <label
                 className="flex items-center gap-2.5 rounded-lg border border-border/60 bg-surface-light/40 px-3 py-2"

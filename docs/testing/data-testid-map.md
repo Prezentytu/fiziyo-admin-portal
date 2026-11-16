@@ -565,6 +565,9 @@ Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu r
 | `assign-schedule-save-template-toggle`  | Kontener: zapisz jako szablon             | `AssignmentWizard.tsx`        |
 | `assign-schedule-save-template-switch`  | Przełącznik: zapisz jako szablon          | `AssignmentWizard.tsx`        |
 | `assign-schedule-save-template-label`   | Etykieta: zapisz kopię jako szablon       | `AssignmentWizard.tsx`        |
+| `assign-edit-restart`                   | Kontener: rozpocznij plan od nowa         | `AssignmentWizard.tsx`        |
+| `assign-edit-restart-switch`            | Przełącznik: rozpocznij plan od nowa      | `AssignmentWizard.tsx`        |
+| `assign-edit-restart-summary`           | Opis skutku: korekta albo odnowienie      | `AssignmentWizard.tsx`        |
 | `assign-summary-save-template-toggle`   | Przełącznik: zapisz jako szablon          | `SummaryStep.tsx`             |
 | `assign-summary-save-template-label`    | Etykieta: zapisz kopię planu jako szablon | `SummaryStep.tsx`             |
 | `assign-summary`                        | Podsumowanie                              | `SummaryStep.tsx`             |
@@ -954,11 +957,6 @@ Tor organizacji (`/organization/verification/[id]`) i moderacja cross-org (`/ver
 | `common-search-clear-btn`           | Wyczyść wyszukiwanie   | `SearchInput.tsx`        |
 | `common-empty-state`                | Stan pusty             | `EmptyState.tsx`         |
 | `common-empty-state-action-btn`     | Akcja stanu pustego    | `EmptyState.tsx`         |
-| `common-table`                      | Tabela danych          | `DataTable.tsx`          |
-| `common-table-row-{id}`             | Wiersz tabeli          | `DataTable.tsx`          |
-| `common-table-pagination-prev`      | Poprzednia strona      | `DataTable.tsx`          |
-| `common-table-pagination-next`      | Następna strona        | `DataTable.tsx`          |
-| `common-table-page-size`            | Rozmiar strony         | `DataTable.tsx`          |
 | `common-file-upload`                | Upload pliku           | `FileUpload.tsx`         |
 | `common-file-upload-input`          | Input pliku            | `FileUpload.tsx`         |
 | `common-feedback-btn`               | Przycisk opinii        | `FeedbackButton.tsx`     |
