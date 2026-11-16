@@ -104,6 +104,18 @@ function resolveEquipmentText(source: ExerciseSourceLike, isV33: boolean): strin
   return toOptionalString(names.join(', '));
 }
 
+/**
+ * Sprzęt samego ćwiczenia (bez nadpisań): rekord 3.3 z `equipment_items`, rekord stary z kolumny.
+ * Ten sam tekst jest wartością pola „Sprzęt” w zestawie i punktem odniesienia przy zapisie nadpisania,
+ * więc nieruszone pole nie zapisuje kopii sprzętu z dokumentu (D-11).
+ */
+export function resolveExerciseEquipmentText(
+  source: Pick<ExerciseSourceLike, 'equipment' | 'enrichmentData' | 'schemaVersion'> | null | undefined
+): string | undefined {
+  if (!source) return undefined;
+  return resolveEquipmentText(source, isV33ExerciseRecord(source));
+}
+
 function readDocument(enrichmentData: unknown): Record<string, unknown> | null {
   let document = enrichmentData;
   if (typeof document === 'string') {

@@ -1,15 +1,13 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { fromBuilderExercise, fromExerciseMapping } from '../adapters';
 import { ExercisePreviewDialog } from '../ExercisePreviewDialog';
 import {
   emptyExercise,
-  LEGACY_DESCRIPTION,
-  LEGACY_STEPS_TEXT,
+  goldenV33Document,
   legacyStepsOnly,
   legacyWithDescription,
-  V33_STEPS_TEXT,
   v33WithStaleColumn,
 } from './fixtures/instructionRecords';
 
@@ -28,17 +26,21 @@ function renderPreview(exercise: Mapping['exercise'], mapping?: Partial<Mapping>
   render(<ExercisePreviewDialog open exercise={card} onOpenChange={() => {}} />);
 }
 
-/** Wartość pola „Opis dla pacjenta” w podglądzie. */
-function patientInstructionText(): string | null {
-  return (
-    screen.getByText('Opis dla pacjenta').closest('div')?.parentElement?.querySelector('p.mt-1')?.textContent ?? null
-  );
-}
+/** Cała sekcja „Instrukcja dla pacjenta” w podglądzie (pełna szerokość, sekcje jak w edycji). */
+const instruction = () => screen.getByTestId('exercise-preview-instruction');
+const stepTexts = () =>
+  within(instruction())
+    .queryAllByTestId(/^exercise-execution-step-\d+$/)
+    .map((step) => step.textContent?.replace(/^\d+/, ''));
+const overrideText = () => screen.queryByTestId('exercise-preview-instruction-override')?.querySelector('p.mt-1')?.textContent;
+const NO_STEPS = 'Brak kroków wykonania dla tego ćwiczenia.';
 
 describe('ExercisePreviewDialog: instrukcja dla pacjenta, rekord stary', () => {
   it('z opisem pokazuje opis z kolumny', () => {
     renderPreview(legacyWithDescription);
-    expect(patientInstructionText()).toBe(LEGACY_DESCRIPTION);
+    expect(instruction()).toHaveTextContent('Stań prosto.');
+    expect(instruction()).toHaveTextContent('Zrób przysiad.');
+    expect(overrideText()).toBeUndefined();
   });
 
   it('opis pozycji wygrywa z kolumną, a personalizacja przypisania z opisem pozycji', () => {
@@ -47,34 +49,41 @@ describe('ExercisePreviewDialog: instrukcja dla pacjenta, rekord stary', () => {
       { customDescription: 'Opis pozycji' },
       { patientDescription: 'Opis dla Jana' }
     );
-    expect(patientInstructionText()).toBe('Opis dla Jana');
+    expect(overrideText()).toBe('Opis dla Jana');
+    expect(instruction()).not.toHaveTextContent('Opis pozycji');
+    expect(instruction()).not.toHaveTextContent('Stań prosto.');
   });
 
-  it('bez opisu, ale z krokami pokazuje podsumowanie i kroki zamiast „Nie ustawiono”', () => {
+  it('bez opisu, ale z krokami pokazuje podsumowanie i każdy krok osobno', () => {
     renderPreview(legacyStepsOnly);
-    expect(patientInstructionText()).toBe(LEGACY_STEPS_TEXT);
+    expect(instruction()).toHaveTextContent('Przysiad do krzesła.');
+    expect(stepTexts()).toEqual(['Stań przed krzesłem.', 'Usiądź i wstań.']);
   });
 
-  it('bez żadnej treści mówi „Nie ustawiono”', () => {
+  it('bez żadnej treści mówi, że kroków brak', () => {
     renderPreview(emptyExercise);
-    expect(patientInstructionText()).toBe('Nie ustawiono');
+    expect(instruction()).toHaveTextContent(NO_STEPS);
   });
 });
 
 describe('ExercisePreviewDialog: instrukcja dla pacjenta, rekord 3.3', () => {
   it('pokazuje podsumowanie i kroki, a nie starą kolumnę opisu', () => {
     renderPreview(v33WithStaleColumn);
-    expect(patientInstructionText()).toBe(V33_STEPS_TEXT);
+    expect(stepTexts()).toEqual(goldenV33Document.patient?.steps);
+    expect(instruction()).toHaveTextContent(goldenV33Document.patient?.summary ?? '');
+    expect(screen.queryByText(/STARY OPIS Z KOLUMNY/)).toBeNull();
   });
 
-  it('nadpisanie opisu wygrywa z krokami', () => {
+  it('nadpisanie opisu stoi nad krokami', () => {
     renderPreview(v33WithStaleColumn, { customDescription: 'Opis pozycji' });
-    expect(patientInstructionText()).toBe('Opis pozycji');
+    expect(overrideText()).toBe('Opis pozycji');
+    expect(stepTexts()).toEqual(goldenV33Document.patient?.steps);
   });
 
-  it('bez kroków i podsumowania mówi „Nie ustawiono” mimo wypełnionej kolumny', () => {
+  it('bez kroków i podsumowania nie pokazuje wypełnionej kolumny', () => {
     renderPreview({ ...v33WithStaleColumn, enrichmentData: { $schema: 'fiziyo-exercise-v3', schemaVersion: '3.3' } });
-    expect(patientInstructionText()).toBe('Nie ustawiono');
+    expect(instruction()).toHaveTextContent(NO_STEPS);
+    expect(screen.queryByText(/STARY OPIS Z KOLUMNY/)).toBeNull();
   });
 
   it('kreator zestawu: opis zasiany z kolumny nie jest nadpisaniem, inny tekst jest', () => {

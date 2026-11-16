@@ -54,8 +54,11 @@ const renderDialog = () =>
     />
   );
 
+/** „jedna seria|całe ćwiczenie” z wiersza czasu wyliczanego (wartość to ostatni element wiersza). */
 const timesText = () =>
-  screen.getByTestId('add-exercise-to-patient-dialog').textContent?.match(/Czas serii[^C]*Czas ćwiczenia[^C]*/)?.[0];
+  ['series-time', 'total-time']
+    .map((row) => screen.getByTestId(`add-exercise-${row}`).lastElementChild?.textContent)
+    .join('|');
 
 describe('AddExerciseToPatientDialog: wersja rekordu wybranego ćwiczenia', () => {
   beforeEach(() => {
@@ -77,7 +80,7 @@ describe('AddExerciseToPatientDialog: wersja rekordu wybranego ćwiczenia', () =
     await waitFor(() => expect(screen.getByTestId('add-exercise-submit-btn')).not.toBeDisabled());
     expect(mockClientQuery).toHaveBeenCalledTimes(1);
     // 10 powtórzeń domyślnie, 3 s na powtórzenie (szacunek): 3.3 liczy 20 ruchów w serii, rekord bez wersji 10.
-    expect(timesText()).toBe('Czas serii (wyliczany)~1 minCzas ćwiczenia (wyliczany)~5 min');
+    expect(timesText()).toBe('~1 min|~5 min');
   });
 
   it('rekord bez wersji: treść dociągnięta, czas łącznie jak dotąd', async () => {
@@ -88,7 +91,7 @@ describe('AddExerciseToPatientDialog: wersja rekordu wybranego ćwiczenia', () =
     fireEvent.click(screen.getByTestId('add-exercise-item-ex-alt'));
 
     await waitFor(() => expect(screen.getByTestId('add-exercise-submit-btn')).not.toBeDisabled());
-    expect(timesText()).toBe('Czas serii (wyliczany)~30 sCzas ćwiczenia (wyliczany)~4 min');
+    expect(timesText()).toBe('~30 s|~4 min');
   });
 
   it('treść wczytuje się tylko dla wybranego ćwiczenia, nie dla całej listy', async () => {
@@ -108,7 +111,7 @@ describe('AddExerciseToPatientDialog: wersja rekordu wybranego ćwiczenia', () =
     renderDialog();
     fireEvent.click(screen.getByTestId('add-exercise-item-ex-alt'));
 
-    expect(timesText()).toBe('Czas serii (wyliczany)—Czas ćwiczenia (wyliczany)—');
+    expect(timesText()).toBe('—|—');
     expect(screen.getByTestId('add-exercise-submit-btn')).toBeDisabled();
   });
 
@@ -123,13 +126,13 @@ describe('AddExerciseToPatientDialog: wersja rekordu wybranego ćwiczenia', () =
 
     // Po błędzie czas dalej nie jest liczbą z innej wersji, a przycisk jest aktywny, żeby dało się ponowić.
     await waitFor(() => expect(screen.getByTestId('add-exercise-submit-btn')).not.toBeDisabled());
-    expect(timesText()).toBe('Czas serii (wyliczany)—Czas ćwiczenia (wyliczany)—');
+    expect(timesText()).toBe('—|—');
 
     fireEvent.click(screen.getByTestId('add-exercise-submit-btn'));
     expect(mockToastError).toHaveBeenCalledTimes(1);
     expect(mockMutate).not.toHaveBeenCalled();
 
-    await waitFor(() => expect(timesText()).toBe('Czas serii (wyliczany)~1 minCzas ćwiczenia (wyliczany)~5 min'));
+    await waitFor(() => expect(timesText()).toBe('~1 min|~5 min'));
     fireEvent.click(screen.getByTestId('add-exercise-submit-btn'));
     await waitFor(() => expect(mockMutate).toHaveBeenCalledTimes(1));
   });
@@ -140,7 +143,7 @@ describe('AddExerciseToPatientDialog: wersja rekordu wybranego ćwiczenia', () =
     });
     renderDialog();
     fireEvent.click(screen.getByTestId('add-exercise-item-ex-alt'));
-    await waitFor(() => expect(timesText()).toBe('Czas serii (wyliczany)~30 sCzas ćwiczenia (wyliczany)~4 min'));
+    await waitFor(() => expect(timesText()).toBe('~30 s|~4 min'));
     fireEvent.click(screen.getByTestId('add-exercise-submit-btn'));
     await waitFor(() => expect(mockMutate).toHaveBeenCalledTimes(1));
   });
