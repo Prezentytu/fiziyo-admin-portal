@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { EXERCISE_FIELD_METADATA, type ExerciseFieldKey } from '../displayRegistry';
+import {
+  CANONICAL_PARAMETER_ORDER,
+  EXERCISE_FIELD_METADATA,
+  type ExerciseFieldKey,
+} from '../displayRegistry';
 import {
   ALL_EXERCISE_FIELD_KEYS,
   DEPRECATED_FIELD_KEYS,
@@ -136,6 +140,14 @@ describe('fieldContract', () => {
     ]);
   });
 
+  it('edycja i kreator układają parametry dawki w kolejności kanonicznej (jak widok ćwiczenia)', () => {
+    const flattened = getParameterSections('template').flatMap((section) =>
+      section.fields.map((field) => field.key)
+    );
+    expect(flattened).toEqual([...CANONICAL_PARAMETER_ORDER]);
+    expect([...PARAMETER_EDITOR_FIELD_KEYS]).toEqual([...CANONICAL_PARAMETER_ORDER]);
+  });
+
   it('getParameterSections(template) zwraca basic + advanced bez content domyślnie', () => {
     const sections = getParameterSections('template');
     expect(sections.map((section) => section.id)).toEqual(['basic', 'timing', 'classification']);
@@ -146,10 +158,10 @@ describe('fieldContract', () => {
 
   it('getParameterSections(mapping) edytuje side/difficulty i content (bez inherited)', () => {
     const sections = getParameterSections('mapping', { includeContent: true });
-    const classification = sections.find((section) => section.id === 'classification');
-    expect(classification).toBeDefined();
-    expect(classification?.fields.map((field) => field.key)).toContain('side');
-    expect(classification?.fields.find((field) => field.key === 'side')?.role).toBe('editable');
+    const position = sections.find((section) => section.id === 'timing');
+    expect(position).toBeDefined();
+    expect(position?.fields.map((field) => field.key)).toContain('side');
+    expect(position?.fields.find((field) => field.key === 'side')?.role).toBe('editable');
     expect(sections.some((section) => section.id === 'content')).toBe(true);
 
     const timing = sections.find((section) => section.id === 'timing');

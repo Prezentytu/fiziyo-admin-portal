@@ -328,17 +328,34 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
   },
 };
 
-export const INLINE_EXERCISE_FIELD_ORDER: ExerciseFieldKey[] = [
+/** Kanoniczna kolejność parametrów dawki (te same pola i kolejność w widoku, edycji i kreatorze). */
+export const CANONICAL_PARAMETER_ORDER: readonly ExerciseFieldKey[] = [
+  'sets',
+  'reps',
   'executionTime',
   'tempo',
-  'side',
-  'rangeOfMotion',
-  'preparationTime',
   'restSets',
   'restReps',
+  'preparationTime',
   'load',
   'resistance',
   'equipment',
+  'side',
+  'rangeOfMotion',
+  'difficultyLevel',
+];
+
+export const INLINE_EXERCISE_FIELD_ORDER: ExerciseFieldKey[] = [
+  'executionTime',
+  'tempo',
+  'restSets',
+  'restReps',
+  'preparationTime',
+  'load',
+  'resistance',
+  'equipment',
+  'side',
+  'rangeOfMotion',
   'difficultyLevel',
   'clinicalDescription',
   'audioCue',
@@ -346,19 +363,7 @@ export const INLINE_EXERCISE_FIELD_ORDER: ExerciseFieldKey[] = [
 ];
 
 export const DIALOG_EXERCISE_FIELD_ORDER: ExerciseFieldKey[] = [
-  'sets',
-  'reps',
-  'executionTime',
-  'restSets',
-  'restReps',
-  'preparationTime',
-  'tempo',
-  'load',
-  'resistance',
-  'equipment',
-  'side',
-  'rangeOfMotion',
-  'difficultyLevel',
+  ...CANONICAL_PARAMETER_ORDER,
   'patientDescription',
   'clinicalDescription',
   'audioCue',
