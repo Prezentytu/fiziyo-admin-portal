@@ -28,6 +28,8 @@ import { AssignmentSuccessDialog } from './AssignmentSuccessDialog';
 import type { ExerciseInstance, ExerciseParams } from '@/components/shared/ExerciseSetBuilder';
 import {
   canProceedFromStep,
+  describeSubmitBlocker,
+  SUBMIT_WAITS_FOR_DETAILS,
   toAssignmentNotePayload,
   toAssignmentNoteUpdatePayload,
   wizardEnterAdvances,
@@ -355,10 +357,18 @@ function AssignmentWizardContent({
     onHasChanges(hasChanges);
   }, [hasChanges, onHasChanges]);
 
+  // Seed edit state once per opened assignment. The parent rebuilds `initialAssignment` and
+  // `preselectedPatient` on every Apollo cache update, so reseeding on identity would throw the
+  // therapist back to step 1 and drop choices such as "Rozpocznij plan od nowa".
+  const seededAssignmentIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (!open || !isEditMode || !initialAssignment || !preselectedPatient) {
       return;
     }
+    if (seededAssignmentIdRef.current === initialAssignment.id) {
+      return;
+    }
+    seededAssignmentIdRef.current = initialAssignment.id;
 
     const assignmentSet = initialAssignment.exerciseSet;
     const assignmentMappings = sortMappingsByOrder(assignmentSet.exerciseMappings);
@@ -1203,10 +1213,24 @@ function AssignmentWizardContent({
     [builderParams, normalizeMutationText]
   );
 
+  const announceSubmitBlocker = (): boolean => {
+    const blocker = describeSubmitBlocker({
+      isEditMode,
+      hasPlan: !!selectedSet,
+      exerciseCount: builderInstances.length,
+      patientCount: selectedPatients.length,
+      detailsPending,
+    });
+    if (blocker) {
+      toast.info(blocker);
+    }
+    return blocker !== null;
+  };
+
   const handleEditSubmit = async () => {
-    if (!isEditMode || !initialAssignment || !selectedSet) return;
-    if (builderInstances.length === 0 || isSubmitting) return;
-    if (!ensureDetailsReady()) return;
+    if (!isEditMode || !initialAssignment || isSubmitting) return;
+    if (announceSubmitBlocker()) return;
+    if (!selectedSet || !ensureDetailsReady()) return;
 
     setIsSubmitting(true);
     try {
@@ -1372,11 +1396,8 @@ function AssignmentWizardContent({
   };
 
   const handleSubmit = async () => {
-    if (isEditMode) return;
-    // Need either: creating new set with exercises, or customizing existing set
-    if (builderInstances.length === 0) return;
-    if (selectedPatients.length === 0) return;
-    if (isSubmitting) return;
+    if (isEditMode || isSubmitting) return;
+    if (announceSubmitBlocker()) return;
     if (!ensureDetailsReady()) return;
 
     // Refetched once after the assignment loop instead of once per patient (each pulls full org lists).
@@ -1977,6 +1998,11 @@ function AssignmentWizardContent({
               </Button>
             )}
 
+            {isLastStep && detailsPending && (
+              <p role="status" className="max-w-[220px] text-xs text-muted-foreground" data-testid="assign-wizard-submit-pending">
+                {SUBMIT_WAITS_FOR_DETAILS}
+              </p>
+            )}
             <Button
               onClick={isLastStep ? handleFinalSubmit : goNext}
               disabled={isLoading || !canProceed() || (isLastStep && detailsPending)}

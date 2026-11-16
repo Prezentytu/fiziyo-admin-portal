@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   canProceedFromStep,
+  describeSubmitBlocker,
+  SUBMIT_WAITS_FOR_DETAILS,
   toAssignmentNotePayload,
   toAssignmentNoteUpdatePayload,
   wizardEnterAdvances,
@@ -126,5 +128,30 @@ describe('toAssignmentNoteUpdatePayload (edycja planu, S-01 R3)', () => {
 
   it('wyczyszczenie wysyła pusty tekst, bo null w API znaczy „bez zmian”', () => {
     expect(toAssignmentNoteUpdatePayload('  ', 'Ćwicz rano.')).toBe('');
+  });
+});
+
+describe('describeSubmitBlocker', () => {
+  const ready = { isEditMode: true, hasPlan: true, exerciseCount: 2, patientCount: 1, detailsPending: false };
+
+  it('nic nie blokuje gotowego zapisu', () => {
+    expect(describeSubmitBlocker(ready)).toBeNull();
+  });
+
+  it('edycja czeka na plan pacjenta, zanim cokolwiek innego', () => {
+    expect(describeSubmitBlocker({ ...ready, hasPlan: false, detailsPending: true })).toMatch(/plan pacjenta/);
+  });
+
+  it('czeka na treść ćwiczeń z planu', () => {
+    expect(describeSubmitBlocker({ ...ready, detailsPending: true })).toBe(SUBMIT_WAITS_FOR_DETAILS);
+  });
+
+  it('pusty plan prosi o ćwiczenie', () => {
+    expect(describeSubmitBlocker({ ...ready, exerciseCount: 0 })).toMatch(/co najmniej jedno ćwiczenie/);
+  });
+
+  it('nowe przypisanie bez pacjenta prosi o pacjenta, edycja nie', () => {
+    expect(describeSubmitBlocker({ ...ready, isEditMode: false, patientCount: 0 })).toMatch(/pacjenta/);
+    expect(describeSubmitBlocker({ ...ready, patientCount: 0 })).toBeNull();
   });
 });

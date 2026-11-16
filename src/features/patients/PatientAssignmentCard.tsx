@@ -544,6 +544,7 @@ export function PatientAssignmentCard({
                       size="icon"
                       className="h-8 w-8"
                       onClick={(event) => event.stopPropagation()}
+                      aria-label={`Więcej: ${exerciseSet?.name || 'Nieznany zestaw'}`}
                       data-testid={`patient-assignment-${assignment.id}-menu-trigger`}
                     >
                       <MoreHorizontal className="h-4 w-4" />
@@ -763,6 +764,7 @@ export function PatientAssignmentCard({
                                       size="icon"
                                       className="h-8 w-8 text-muted-foreground hover:text-foreground"
                                       onClick={() => onPreviewExercise?.(mapping, override)}
+                                      aria-label={`Podgląd: ${exerciseName}`}
                                       data-testid={`patient-assignment-exercise-${mapping.id}-preview-btn`}
                                     >
                                       <Eye className="h-4 w-4" />
@@ -777,6 +779,7 @@ export function PatientAssignmentCard({
                                       size="icon"
                                       className="h-8 w-8 text-muted-foreground hover:text-foreground"
                                       onClick={() => onEditExercise?.(assignment, mapping, override)}
+                                      aria-label={`Edytuj parametry: ${exerciseName}`}
                                       data-testid={`patient-assignment-exercise-${mapping.id}-edit-btn`}
                                     >
                                       <Pencil className="h-4 w-4" />
@@ -791,6 +794,7 @@ export function PatientAssignmentCard({
                                       size="icon"
                                       className="h-8 w-8 text-muted-foreground hover:text-destructive"
                                       onClick={() => handleStartRemoveExercise(mapping.id, exerciseName)}
+                                      aria-label={`Usuń z zestawu: ${exerciseName}`}
                                       data-testid={`patient-assignment-exercise-${mapping.id}-remove-btn`}
                                     >
                                       <X className="h-4 w-4" />
