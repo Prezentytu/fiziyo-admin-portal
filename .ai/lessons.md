@@ -18,6 +18,14 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 
 ## Wpisy
 
+### 2026-11-16 - Kreator edycji planu wracał do kroku 1 po odświeżeniu cache
+
+- **Kategoria**: `React`
+- **Problem**: Fizjoterapeuta przechodził do „Harmonogram”, a po ~1 s kreator wracał do kroku 1 i gubił „Rozpocznij plan od nowa”.
+- **Przyczyna**: Efekt seedujący stan zależał od tożsamości propsów; rodzic buduje je w renderze, a zapytania kreatora przerenderowują rodzica przez cache Apollo.
+- **Rozwiązanie**: Seed raz na otwarte przypisanie (`seededAssignmentIdRef` po `initialAssignment.id`).
+- **Reguła**: Stan formularza z propsów seeduj raz po kluczu encji, nie po tożsamości obiektu. [egzekwowane: src/features/assignment/AssignmentWizard.editMode.test.tsx]
+
 ### 2026-11-07 - Brak kredytów AI udawał awarię
 
 - **Kategoria**: `UI/UX`
@@ -185,22 +193,6 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 - **Przyczyna**: `computeVerificationCompletion` liczy kompletność, a nie wiarygodność; żadna warstwa nie znała limitów ani typowych zakresów, ani czasu całego ćwiczenia.
 - **Rozwiązanie**: `utils/parameterRules.ts` ocenia każde pole (limit = blokada, poza typowym zakresem = „Sprawdź” z „Tak ma być”) i czas całego ćwiczenia (strona ciała ×2), a `verificationStages.ts` blokuje publikację, dopóki etap ma uwagi (SPEC-030).
 - **Reguła**: Jeśli UI ocenia dane domenowe kolorem „gotowe”, zawsze sprawdzaj wiarygodność wartości (limit, typowy zakres, wynik złożony jak czas sesji), a nie tylko obecność — i trzymaj te reguły w czystej funkcji z testem przypadku absurdalnego. [egzekwowane: src/features/verification/utils/__tests__/parameterRules.test.ts]
-
-### 2026-10-15 - Enter na ostatnim kroku kreatora nie zapisuje planu
-
-- **Kategoria**: `UI/UX`
-- **Problem**: Po złożeniu podsumowania w krok Harmonogram `isLastStep` jest true, więc globalny listener `Enter` wołał `handleSubmit` przy przycisku dnia albo +/− sesji.
-- **Przyczyna**: Listener ignorował tylko `input`/`textarea`; dni i `NumberControl` to `button type="button"`. `canProceedFromStep('schedule')` jest true przy elastycznej częstotliwości.
-- **Rozwiązanie**: Submit z klawiatury tylko `Cmd`/`Ctrl`+`Enter` (`wizardEnterSubmits`). Zwykły Enter na Harmonogramie zostaje lokalny.
-- **Reguła**: Jeśli krok z przyciskami dnia/+− staje się ostatni, globalny Enter nie może wołać submit.
-
-### 2026-10-15 - Jeden token koloru nie obsłuży tekstu i wypełnienia w dark
-
-- **Kategoria**: `UI/UX`
-- **Problem**: `@utility text-primary` miał nadpisać kolor tekstu osobno od `bg-primary`; Tailwind v4 pominął go, bo utility z `@theme` wygrywa.
-- **Przyczyna**: W dark zielony, który daje 4.5:1 z białym tekstem (`#307F65`), ma 3.4:1 jako tekst na karcie; nie istnieje jeden odcień spełniający oba warunki.
-- **Rozwiązanie**: `primary` = kolor tekstowy (`tint`), wypełnienia marki = `bg-tint-fill text-on-tint`; analogicznie `status-*` (tekst) i `status-*-fill` (tło pod białym tekstem).
-- **Reguła**: Pełne tło pod białym tekstem zawsze z tokenu `*-fill`, nigdy z tokenu tekstowego. Szczegóły: `docs/design-system.md`.
 
 ### 2026-10-09 - Dokumentacja agentów cytowała usunięte operacje GraphQL
 

@@ -4,6 +4,22 @@ Wpisy przeniesione z `.ai/lessons.md`: starsze niż 30 dni w chwili przeniesieni
 
 ## Wpisy
 
+### 2026-10-15 - Enter na ostatnim kroku kreatora nie zapisuje planu
+
+- **Kategoria**: `UI/UX`
+- **Problem**: Po złożeniu podsumowania w krok Harmonogram `isLastStep` jest true, więc globalny listener `Enter` wołał `handleSubmit` przy przycisku dnia albo +/− sesji.
+- **Przyczyna**: Listener ignorował tylko `input`/`textarea`; dni i `NumberControl` to `button type="button"`. `canProceedFromStep('schedule')` jest true przy elastycznej częstotliwości.
+- **Rozwiązanie**: Submit z klawiatury tylko `Cmd`/`Ctrl`+`Enter` (`wizardEnterSubmits`). Zwykły Enter na Harmonogramie zostaje lokalny.
+- **Reguła**: Jeśli krok z przyciskami dnia/+− staje się ostatni, globalny Enter nie może wołać submit.
+
+### 2026-10-15 - Jeden token koloru nie obsłuży tekstu i wypełnienia w dark
+
+- **Kategoria**: `UI/UX`
+- **Problem**: `@utility text-primary` miał nadpisać kolor tekstu osobno od `bg-primary`; Tailwind v4 pominął go, bo utility z `@theme` wygrywa.
+- **Przyczyna**: W dark zielony, który daje 4.5:1 z białym tekstem (`#307F65`), ma 3.4:1 jako tekst na karcie; nie istnieje jeden odcień spełniający oba warunki.
+- **Rozwiązanie**: `primary` = kolor tekstowy (`tint`), wypełnienia marki = `bg-tint-fill text-on-tint`; analogicznie `status-*` (tekst) i `status-*-fill` (tło pod białym tekstem).
+- **Reguła**: Pełne tło pod białym tekstem zawsze z tokenu `*-fill`, nigdy z tokenu tekstowego. Szczegóły: `docs/design-system.md`.
+
 ### 2026-10-01 - Cofnięcie Premium nie zapowiada doliczenia 15 PLN
 
 - **Kategoria**: `Billing`
