@@ -43,6 +43,12 @@ describe('LabeledStepper', () => {
     expect(input).toHaveValue('4');
   });
 
+  it('pole wartości ma nazwę z etykiety (czytnik ekranu i testy rozpoznają „Serie”)', () => {
+    render(<LabeledStepper value={2} onChange={() => {}} label="Serie" min={1} max={20} />);
+
+    expect(screen.getByRole('textbox', { name: 'Serie' })).toHaveValue('2');
+  });
+
   it('nie utrzymuje prefiksu 0 po wpisaniu nowej cyfry', async () => {
     const user = userEvent.setup();
 

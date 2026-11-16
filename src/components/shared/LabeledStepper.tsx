@@ -101,6 +101,7 @@ export function LabeledStepper({
               onBlur={handleBlur}
               onKeyDown={handleKeyDown}
               disabled={disabled}
+              aria-label={label}
               className={cn(
                 'h-full w-auto min-w-0 bg-transparent text-center font-bold text-sm text-foreground tabular-nums cursor-text',
                 'outline-none border-0 p-0 leading-none',
