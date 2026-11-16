@@ -52,6 +52,7 @@ import {
 import type { ExerciseExecutionCardData } from '@/components/shared/exercise';
 import { EditExerciseSetFullDialog } from '@/features/exercise-sets/EditExerciseSetFullDialog';
 import { EditExerciseInSetDialog } from '@/features/exercise-sets/EditExerciseInSetDialog';
+import { resolveExerciseEquipmentText } from '@/components/shared/exercise/displayNormalizer';
 import { GeneratePDFDialog } from '@/features/exercise-sets/GeneratePDFDialog';
 import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
 import type {
@@ -399,7 +400,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
             exerciseSide: template?.exerciseSide ?? template?.side,
             rangeOfMotion: template?.rangeOfMotion,
             resistance: template?.resistance ?? undefined,
-            equipment: template?.equipment ?? undefined,
+            equipment: resolveExerciseEquipmentText(template),
             difficultyLevel: template?.difficultyLevel,
             patientDescription: template?.patientDescription ?? template?.description,
             clinicalDescription: template?.clinicalDescription,
