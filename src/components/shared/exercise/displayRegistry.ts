@@ -98,25 +98,29 @@ const SIDE_LABELS: Record<string, string> = {
   none: 'Razem',
 };
 
-const asPositiveSeconds = (value?: number): string | null => {
-  if (value == null || value <= 0) return null;
-  return `${value}s`;
-};
+/**
+ * Liczby parametrów (KONTRAKT-v3.3: brak klucza albo `null` = brak wartości, `0` to wartość).
+ * Brak wartości pokazujemy jako placeholder („—”), zero jako zero: tak samo jak pole w edycji, które dla `null`
+ * jest puste, a dla `0` pokazuje „0”.
+ */
+const asSeconds = (value?: number | null): string | null => (value == null ? null : formatParameterSeconds(value));
 
 const asReadableDuration = (value?: number): string | null => {
   if (value == null || value <= 0) return null;
   return formatDurationPolish(value);
 };
 
-const asPositiveNumber = (value?: number): string | null => {
-  if (value == null || value <= 0) return null;
-  return String(value);
-};
+const asNumber = (value?: number | null): string | null => (value == null ? null : String(value));
 
 const asTrimmedText = (value?: string): string | null => {
   const normalized = value?.trim();
   return normalized ? normalized : null;
 };
+
+/** Sekundy parametru tak, jak w polu edycji (liczba i jednostka „s”): „30 s”, „0 s”. */
+export function formatParameterSeconds(value: number): string {
+  return `${value} s`;
+}
 
 export function formatSideLabel(side?: string, alternatingPerSide = false): string | null {
   if (!side) return null;
@@ -140,6 +144,30 @@ export function formatFieldValueWithPlaceholder(
   return metadata.formatValue(source) ?? emptyValue;
 }
 
+/** Wartości parametrów tak, jak trzyma je formularz edycji: `null` znaczy brak wartości, `0` jest wartością. */
+export type ExerciseParameterValueInput = {
+  [Key in Exclude<keyof ExerciseFieldValueSource, 'repsRange' | 'alternatingPerSide'>]?:
+    | ExerciseFieldValueSource[Key]
+    | null;
+} & { loadKg?: number | null };
+
+/**
+ * Jedno formatowanie parametru dla podglądu ćwiczenia i formularza edycji (wartości odziedziczone):
+ * ta sama etykieta strony, trudności, sekundy z jednostką, „—” tylko dla braku wartości.
+ */
+export function formatParameterValue(
+  key: ExerciseFieldKey,
+  values: ExerciseParameterValueInput,
+  { alternatingPerSide = false, emptyValue = EMPTY_NUMERIC_VALUE }: { alternatingPerSide?: boolean; emptyValue?: string } = {}
+): string {
+  const source: ExerciseFieldValueSource = { alternatingPerSide };
+  for (const [field, value] of Object.entries(values)) {
+    if (value != null && field !== 'loadKg') (source as Record<string, unknown>)[field] = value;
+  }
+  if (values.loadKg != null) source.loadDisplayText = `${values.loadKg} kg`;
+  return formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA[key], source, emptyValue);
+}
+
 export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMetadata> = {
   sets: {
     key: 'sets',
@@ -149,7 +177,7 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
     group: 'dosage',
     isInlineVisible: true,
     isDialogVisible: true,
-    formatValue: (viewModel) => asPositiveNumber(viewModel.sets),
+    formatValue: (viewModel) => asNumber(viewModel.sets),
   },
   reps: {
     key: 'reps',
@@ -160,7 +188,7 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
     isInlineVisible: true,
     isDialogVisible: true,
     formatValue: (viewModel) =>
-      viewModel.repsRange ? `${viewModel.repsRange.min}–${viewModel.repsRange.max}` : asPositiveNumber(viewModel.reps),
+      viewModel.repsRange ? `${viewModel.repsRange.min}–${viewModel.repsRange.max}` : asNumber(viewModel.reps),
   },
   duration: {
     key: 'duration',
@@ -182,7 +210,7 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
     group: 'execution',
     isInlineVisible: true,
     isDialogVisible: true,
-    formatValue: (viewModel) => asPositiveSeconds(viewModel.executionTime),
+    formatValue: (viewModel) => asSeconds(viewModel.executionTime),
   },
   restSets: {
     key: 'restSets',
@@ -192,7 +220,7 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
     group: 'execution',
     isInlineVisible: true,
     isDialogVisible: true,
-    formatValue: (viewModel) => asPositiveSeconds(viewModel.restSets),
+    formatValue: (viewModel) => asSeconds(viewModel.restSets),
   },
   restReps: {
     key: 'restReps',
@@ -202,7 +230,7 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
     group: 'execution',
     isInlineVisible: true,
     isDialogVisible: true,
-    formatValue: (viewModel) => asPositiveSeconds(viewModel.restReps),
+    formatValue: (viewModel) => asSeconds(viewModel.restReps),
   },
   preparationTime: {
     key: 'preparationTime',
@@ -212,7 +240,7 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
     group: 'execution',
     isInlineVisible: true,
     isDialogVisible: true,
-    formatValue: (viewModel) => asPositiveSeconds(viewModel.preparationTime),
+    formatValue: (viewModel) => asSeconds(viewModel.preparationTime),
   },
   tempo: {
     key: 'tempo',

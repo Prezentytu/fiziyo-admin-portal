@@ -11,13 +11,10 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Badge } from '@/components/ui/badge';
 import { DirtyDot } from '@/components/shared/enrichment/DirtyDot';
 import { cn } from '@/lib/utils';
-import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
 import type { ExerciseFieldKey } from './displayRegistry';
-import {
-  EXERCISE_FIELD_METADATA,
-  formatDifficultyLabel,
-  formatSideLabel,
-} from './displayRegistry';
+import { EXERCISE_FIELD_METADATA, formatParameterValue } from './displayRegistry';
+import { computeExerciseTimeLabels } from './computedExerciseTime';
+import { ExerciseComputedTime } from './ExerciseComputedTime';
 import {
   DIFFICULTY_OPTIONS,
   MAPPING_ONLY_FIELD_CONFIG,
@@ -151,23 +148,6 @@ function FieldLabel({
         </Badge>
       ) : null}
       <DirtyDot active={dirty} className="ml-0.5" />
-    </div>
-  );
-}
-
-function ComputedChip({
-  label,
-  value,
-  tooltip,
-  testId,
-}: Readonly<{ label: string; value: string; tooltip: string; testId: string }>) {
-  return (
-    <div className="rounded-xl bg-surface p-4 shadow-sm" data-testid={testId}>
-      <div className="mb-1.5 flex items-center gap-1">
-        <span className="text-xs font-medium text-muted-foreground">{label}</span>
-        <InfoTooltip label={tooltip} testId={`${testId}-info`} />
-      </div>
-      <p className="text-xl font-bold leading-tight tabular-nums text-foreground">{value}</p>
     </div>
   );
 }
@@ -508,18 +488,13 @@ function readText(values: ExerciseParameterValues, key: ExerciseFieldKey): strin
   return typeof value === 'string' ? value : '';
 }
 
+/** Wartość odziedziczona tym samym formatterem co podgląd ćwiczenia (`formatParameterValue`). */
 function formatInheritedDisplay(
   key: ExerciseFieldKey,
   values: ExerciseParameterValues,
   alternatingPerSide = false
 ): string {
-  if (key === 'side') return formatSideLabel(values.side ?? undefined, alternatingPerSide) || '—';
-  if (key === 'difficultyLevel') return formatDifficultyLabel(values.difficultyLevel ?? undefined) || '—';
-  if (key === 'load') return values.loadKg != null ? `${values.loadKg} kg` : '—';
-  const value = values[key as keyof ExerciseParameterValues];
-  if (typeof value === 'number') return String(value);
-  if (typeof value === 'string') return value.trim() || '—';
-  return '—';
+  return formatParameterValue(key, values, { alternatingPerSide });
 }
 
 function isInheritedMatch(
@@ -582,32 +557,10 @@ export function ExerciseParametersFields({
   const isTimeBased = (values.executionTime ?? 0) > 0;
   const timeUnknown = versionPending && values.side?.toLowerCase() === 'alternating';
 
-  const seriesSeconds = calculateExerciseTotalSeconds({
-    sets: 1,
-    reps: values.reps ?? undefined,
-    duration: values.duration ?? undefined,
-    executionTime: values.executionTime ?? undefined,
-    restReps: values.restReps ?? undefined,
-    restSets: 0,
-    preparationTime: 0,
-    tempo: values.tempo || undefined,
-    side: values.side || undefined,
+  const computedTimes = computeExerciseTimeLabels(values, {
     type: exerciseType === 'draft' ? undefined : exerciseType,
     alternatingPerSide,
-  });
-
-  const totalSeconds = calculateExerciseTotalSeconds({
-    sets: values.sets ?? 0,
-    reps: values.reps ?? undefined,
-    duration: values.duration ?? undefined,
-    executionTime: values.executionTime ?? undefined,
-    restSets: values.restSets ?? undefined,
-    restReps: values.restReps ?? undefined,
-    preparationTime: values.preparationTime ?? undefined,
-    tempo: values.tempo || undefined,
-    side: values.side || undefined,
-    type: exerciseType === 'draft' ? undefined : exerciseType,
-    alternatingPerSide,
+    timeUnknown,
   });
 
   const dirty = (key: ExerciseFieldKey) => Boolean(isDirtyField?.(key));
@@ -883,27 +836,8 @@ export function ExerciseParametersFields({
               {basicSection.fields.map((field) => renderEditableField(field))}
             </div>
 
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <ComputedChip
-                label="Czas serii (wyliczany)"
-                value={
-                  seriesSeconds.seconds > 0 && !timeUnknown
-                    ? formatExerciseDuration(seriesSeconds.seconds, seriesSeconds.isEstimate)
-                    : '—'
-                }
-                tooltip="Wartość wyliczana: powtórzenia × czas powtórzenia + mikroprzerwy. Nieedytowalna."
-                testId={structuralId('series-time')}
-              />
-              <ComputedChip
-                label="Czas ćwiczenia (wyliczany)"
-                value={
-                  totalSeconds.seconds > 0 && !timeUnknown
-                    ? formatExerciseDuration(totalSeconds.seconds, totalSeconds.isEstimate)
-                    : '—'
-                }
-                tooltip="Wartość wyliczana: wszystkie serie + przerwy + przygotowanie. Nieedytowalna."
-                testId={structuralId('total-time')}
-              />
+            <div className="mt-3">
+              <ExerciseComputedTime times={computedTimes} testIdPrefix={structuralTestIdPrefix} />
             </div>
 
             {(values.duration ?? 0) > 0 ? (

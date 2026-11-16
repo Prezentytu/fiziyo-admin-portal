@@ -68,7 +68,7 @@ GraphQL zwraca `type`/`side` wielkimi literami (REPS, LEFT), mutacje przyjmują 
 **SSOT kodu:** `src/components/shared/exercise/fieldContract.ts` (+ etykiety w `displayRegistry.ts`).
 Nie duplikuj etykiet/tierów lokalnie — derywuj z kontraktu.
 
-**TIER 1 - Zawsze widoczne:** Serie, Powtórzenia, Czas powtórzenia, Czas serii (wyliczany)
+**TIER 1 - Zawsze widoczne:** Serie, Powtórzenia, Czas powtórzenia, Czas ćwiczenia (wyliczany, główny) z „Jedna seria” pod nim (`ExerciseComputedTime`, ten sam w podglądzie i edycji). Brak wartości to „—”, `0` to wartość („0 s”)
 
 **TIER 2 - Często używane:** Przerwa między seriami, Obciążenie
 

@@ -38,11 +38,19 @@ graph TD
 
 ### Sekcje parametrów (kolejność kanoniczna)
 
-1. **Podstawowe parametry** — sets, reps, executionTime, load, restSets + badge timera + kafle „Czas serii (wyliczany)” / „Czas ćwiczenia (wyliczany)”
+1. **Podstawowe parametry** — sets, reps, executionTime, load, restSets + badge timera + blok czasu wyliczanego (`ExerciseComputedTime`): „Czas ćwiczenia (wyliczany)” jako wartość główna, „Jedna seria” jako linia pomocnicza
 2. **Zaawansowane** — Tempo/przerwy/ROM + Pozycja i klasyfikacja (lub inherited)
 3. **Treść dla pacjenta** (opt-in) — patientDescription, notes, clinicalDescription, audioCue
 
 `duration` żyje wyłącznie w sekcji zaawansowanej (legacy override czasu serii).
+
+### Podgląd ćwiczenia ↔ edycja parametrów
+
+- Jedna semantyka liczb (KONTRAKT-v3.3): brak klucza albo `null` to „—”, `0` to wartość („0 s”). Pole edycji dla `null` jest puste, dla `0` pokazuje „0”.
+- Jeden formatter: `formatValue` z `displayRegistry` (sekundy jako „30 s”); podgląd czyta go wprost, wartości odziedziczone w edycji przez `formatParameterValue`.
+- Czas wyliczany liczy `computeExerciseTimeLabels` i pokazuje `ExerciseComputedTime` w obu widokach.
+- Treść dla pacjenta w podglądzie to te same sekcje co w edycji (`ExercisePatientContentFields` z `readOnly`): kroki osobno i w całości, wskazówki z fazą, oddech, bezpieczeństwo. Nadpisanie opisu z planu stoi nad nimi.
+- Sprzęt rekordu 3.3 pochodzi z `equipment_items` (`resolveExerciseEquipmentText`); ta sama wartość jest punktem odniesienia przy zapisie nadpisania w zestawie, więc nieruszone pole nie zapisuje kopii.
 
 ### Parytet treści create ↔ edit
 
@@ -60,6 +68,10 @@ Bez zmian schematu GraphQL. Follow-up: dodać `enrichmentDataJson` do `CREATE_EX
 - E2E (fiziyo-tests): create / edit set params / patient override — wspólne etykiety i obecność advanced
 
 ## Changelog
+
+### 2026-11-16
+
+- Podgląd ćwiczenia w zestawie i „Edytuj parametry” czytają i formatują parametry tak samo; czas ćwiczenia główny, seria pomocnicza; kroki w podglądzie w całości; sprzęt v3.3 w zestawie (zgłoszenie właściciela 16.11, `przem-fx-7001`)
 
 ### 2026-09-15
 

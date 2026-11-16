@@ -17,6 +17,7 @@ import {
 import type { ExerciseExecutionCardData } from '@/components/shared/exercise';
 import { buildMappingOverridesJson } from '@/components/shared/exercise/mappingOverrides';
 import { buildEnrichmentOverrideDelta } from '@/components/shared/exercise/enrichmentOverride';
+import { resolveExerciseEquipmentText } from '@/components/shared/exercise/displayNormalizer';
 import type { ExerciseLoad, ExerciseMapping as AssignmentExerciseMapping } from '@/features/assignment/types';
 import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
 
@@ -209,7 +210,7 @@ function EditExerciseInSetDialogContent({
           exerciseSide: template?.exerciseSide ?? template?.side,
           rangeOfMotion: template?.rangeOfMotion,
           resistance: template?.resistance ?? undefined,
-          equipment: template?.equipment ?? undefined,
+          equipment: resolveExerciseEquipmentText(template),
           difficultyLevel: template?.difficultyLevel,
           patientDescription: template?.patientDescription ?? template?.description,
           clinicalDescription: template?.clinicalDescription,

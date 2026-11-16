@@ -34,8 +34,11 @@ const renderFields = (alternatingPerSide: boolean) => {
   return container;
 };
 
+/** [jedna seria, całe ćwiczenie]: wartość to ostatni element wiersza czasu wyliczanego. */
 const times = (container: HTMLElement) =>
-  container.textContent?.match(/Czas serii \(wyliczany\)(.*?)Czas ćwiczenia \(wyliczany\)(.*?)(?=[A-ZŁŚŻ])/)?.slice(1, 3);
+  ['series-time', 'total-time'].map(
+    (row) => container.querySelector(`[data-testid="exercise-param-${row}"]`)?.lastElementChild?.textContent
+  );
 
 const sideHelp = (container: HTMLElement) =>
   [...container.querySelectorAll('[aria-label^="Informacja:"]')]
