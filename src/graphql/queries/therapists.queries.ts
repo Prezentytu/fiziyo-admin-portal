@@ -162,6 +162,17 @@ export const GET_ORGANIZATION_PATIENTS_QUERY = gql`
       contextColor
       # Activity Tracking
       lastActivity
+      # Wymaga uwagi: jedna reguła serwera (SPEC-039)
+      attention {
+        tone
+        reasons
+        maxPainLevel
+        lastSignalAt
+        daysSinceTraining
+        expectedGapDays
+        reviewedAt
+        hasPatientSignal
+      }
     }
   }
 `;

@@ -4,7 +4,7 @@ import {
   daysUntilAssignmentEnd,
   resolveAssignmentDisplayStatus,
 } from '@/features/patients/utils/assignmentDisplayStatus';
-import { getPatientActivityStatus } from '@/features/patients/utils/patientActivityStatus';
+import { getPatientActivityStatus, type PatientAttention } from '@/features/patients/utils/patientActivityStatus';
 import { pluralize } from '@/utils/textUtils';
 
 interface AgendaPatient {
@@ -12,6 +12,7 @@ interface AgendaPatient {
   name: string;
   therapistId?: string;
   lastActivity?: string;
+  attention?: PatientAttention | null;
 }
 
 interface AgendaNote {
@@ -91,8 +92,12 @@ export function buildTodayAgenda(input: {
   }
 
   const inactive: AgendaIssue[] = ownPatients
-    .map((patient) => ({ patient, status: getPatientActivityStatus(patient.lastActivity, now) }))
-    .filter(({ status }) => status.daysSinceTraining !== null && status.daysSinceTraining >= INACTIVE_FROM_DAYS)
+    .map((patient) => ({ patient, status: getPatientActivityStatus(patient.lastActivity, now, patient.attention) }))
+    // Dzień wolny w planie to nie przerwa, także gdy pacjent jest czerwony z powodu bólu (SPEC-039, D-2).
+    .filter(
+      ({ status }) =>
+        status.isInactive && status.daysSinceTraining !== null && status.daysSinceTraining >= INACTIVE_FROM_DAYS
+    )
     .sort((left, right) => (right.status.daysSinceTraining ?? 0) - (left.status.daysSinceTraining ?? 0))
     .map(({ patient, status }) => ({
       kind: 'inactive',

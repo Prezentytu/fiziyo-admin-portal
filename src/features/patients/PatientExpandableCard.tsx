@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ActivityStatusLabel, InitialsAvatar } from '@/components/shared/page';
 import { cn } from '@/lib/utils';
-import { getPatientActivityStatus } from './utils/patientActivityStatus';
+import { getPatientActivityStatus, type PatientAttention } from './utils/patientActivityStatus';
 import { getPatientAccess } from './utils/patientList';
 
 /** Shared with the list header so columns line up (v4 design, table from 1180px). */
@@ -59,6 +59,7 @@ export interface Patient {
   premiumStatus?: 'FREE' | 'ACTIVE' | 'EXPIRED';
   // Activity Tracking
   lastActivity?: string;
+  attention?: PatientAttention | null;
 }
 
 interface PatientExpandableCardProps {
@@ -112,7 +113,7 @@ export function PatientExpandableCard({
     `${patient.personalData?.firstName || ''} ${patient.personalData?.lastName || ''}`.trim() ||
     'Nieznany pacjent';
 
-  const activity = getPatientActivityStatus(patient.lastActivity);
+  const activity = getPatientActivityStatus(patient.lastActivity, undefined, patient.attention);
   const access = getPatientAccess(patient);
   const goal =
     patient.contextLabel && patient.contextLabel !== 'Leczenie podstawowe' ? patient.contextLabel : 'Brak celu terapii';
