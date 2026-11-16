@@ -11,6 +11,7 @@ import {
   resolveMappingClearedKeys,
 } from './mappingOverrides';
 import { readExerciseTemplateParams } from './exerciseParamDefaults';
+import { resolveExerciseEquipmentText } from './displayNormalizer';
 
 export interface EffectiveTemplateSource {
   name?: string;
@@ -252,7 +253,7 @@ export function resolveEffectiveExerciseParams(
   const rangeOfMotion = unlessCleared('rangeOfMotion', pickDefined(layered?.rangeOfMotion, exercise?.rangeOfMotion));
   const resistance = pickDefined(layered?.resistance, exercise?.resistance);
   const equipmentOverride = pickDefined(layered?.equipment);
-  const equipment = pickDefined(equipmentOverride, exercise?.equipment);
+  const equipment = pickDefined(equipmentOverride, resolveExerciseEquipmentText(exercise));
   const side = resolveSide(layered, exercise);
   const difficultyLevel = unlessCleared(
     'difficultyLevel',
