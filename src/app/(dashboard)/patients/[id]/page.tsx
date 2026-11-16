@@ -115,6 +115,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
     data: userData,
     loading: userLoading,
     error: userError,
+    refetch: refetchUser,
   } = useQuery(GET_USER_BY_ID_QUERY, {
     variables: { id },
   });
@@ -257,12 +258,25 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
           <User className="h-6 w-6 text-label-secondary" />
         </div>
         <p className="text-[15px] text-foreground">
-          {userError ? 'Nie udało się pobrać pacjenta. Odśwież stronę.' : 'Nie znaleziono pacjenta'}
+          {userError ? 'Nie udało się pobrać pacjenta.' : 'Nie znaleziono pacjenta'}
         </p>
-        <Button variant="secondary" onClick={() => router.push('/patients')} data-testid="patient-detail-not-found-back-btn">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Wróć do listy
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" onClick={() => router.push('/patients')} data-testid="patient-detail-not-found-back-btn">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Wróć do listy
+          </Button>
+          {userError ? (
+            <Button
+              onClick={() => {
+                void refetchUser().catch(() => undefined);
+                void refetchAssignments().catch(() => undefined);
+              }}
+              data-testid="patient-detail-retry-btn"
+            >
+              Spróbuj ponownie
+            </Button>
+          ) : null}
+        </div>
       </div>
     );
   }

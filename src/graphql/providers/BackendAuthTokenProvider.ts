@@ -2,9 +2,15 @@ import { IAuthTokenProvider } from '../links/authLink';
 import { tokenExchangeService, type TokenExchangeError } from '@/services/tokenExchangeService';
 import { getBackendToken, saveBackendToken, clearBackendToken } from '@/lib/tokenCache';
 import { getUserRoleFromToken } from '@/lib/auth/jwtClaims';
+import { BackendTokenUnavailableError, isTransientTokenExchangeError, withTimeout } from './tokenExchangeRetry';
 
 const isDev = process.env.NODE_ENV === 'development';
 const PATIENT_ROLE = 'patient';
+
+const CLERK_TOKEN_TIMEOUT_MS = 10_000;
+const EXCHANGE_ATTEMPT_TIMEOUT_MS = 8_000;
+const EXCHANGE_ATTEMPTS = 3;
+const EXCHANGE_BACKOFF_MS = 500;
 
 /**
  * Pacjent nie ma dostępu do panelu webowego (physio-only). Token z rolą "patient"
@@ -31,8 +37,9 @@ function isPatientToken(token: string): boolean {
  *
  * Zabezpieczenia:
  * - User identity validation (porównanie ClerkId)
- * - Race condition protection (jedna wymiana na raz)
- * - Retry logic dla network errors
+ * - Race condition protection (jedna wymiana na raz; nieudana nie zostaje w pamięci)
+ * - Limit czasu na token Clerka i na każdą próbę wymiany: zawieszone żądanie nie blokuje GraphQL
+ * - Ponowienie przy błędzie sieci, przerwaniu i 5xx; po ostatniej próbie BackendTokenUnavailableError
  * - Clear cache przy 401 (token wygasł)
  */
 export class BackendAuthTokenProvider implements IAuthTokenProvider {
@@ -128,7 +135,7 @@ export class BackendAuthTokenProvider implements IAuthTokenProvider {
   async getToken(): Promise<string | null> {
     try {
       // KROK 0: Pobierz aktualny Clerk token (potrzebny do walidacji)
-      const clerkToken = await this.getClerkTokenFn();
+      const clerkToken = await this.getClerkTokenWithTimeout();
 
       if (!clerkToken) {
         // Wyczyść cache na wszelki wypadek
@@ -159,10 +166,13 @@ export class BackendAuthTokenProvider implements IAuthTokenProvider {
       }
 
       // KROK 2: Brak w cache lub wygasł/inny user - wymień Clerk token na backend token
-      const backendToken = await this.exchangeTokenWithProtection();
+      const backendToken = await this.exchangeTokenWithProtection(clerkToken);
 
       return backendToken;
     } catch (error) {
+      if (error instanceof BackendTokenUnavailableError) {
+        throw error;
+      }
       // Token exchange can legitimately fail while the account is still syncing
       // (404 USER_NOT_FOUND) or for access reasons (401/403). These are handled by
       // higher-level guards; log at warn level (dev-only) to avoid the dev overlay.
@@ -186,7 +196,7 @@ export class BackendAuthTokenProvider implements IAuthTokenProvider {
    * Wymiana tokenu z ochroną przed race conditions
    * Jeśli wymiana już trwa, czeka na jej zakończenie
    */
-  private async exchangeTokenWithProtection(): Promise<string | null> {
+  private async exchangeTokenWithProtection(clerkToken: string): Promise<string | null> {
     // Race condition protection - jeśli wymiana już trwa, czekaj na nią
     if (this.isExchanging && this.exchangePromise) {
       return this.exchangePromise;
@@ -194,7 +204,7 @@ export class BackendAuthTokenProvider implements IAuthTokenProvider {
 
     // Ustaw flagę i rozpocznij wymianę
     this.isExchanging = true;
-    this.exchangePromise = this.performTokenExchange();
+    this.exchangePromise = this.performTokenExchange(clerkToken);
 
     try {
       const token = await this.exchangePromise;
@@ -210,15 +220,8 @@ export class BackendAuthTokenProvider implements IAuthTokenProvider {
    * Wykonuje faktyczną wymianę tokenu
    * Obsługuje retry i cache
    */
-  private async performTokenExchange(): Promise<string | null> {
+  private async performTokenExchange(clerkToken: string): Promise<string | null> {
     try {
-      // Pobierz Clerk token
-      const clerkToken = await this.getClerkTokenFn();
-
-      if (!clerkToken) {
-        return null;
-      }
-
       // Wymień na backend token (z retry)
       const backendToken = await this.exchangeWithRetry(clerkToken);
 
@@ -251,41 +254,50 @@ export class BackendAuthTokenProvider implements IAuthTokenProvider {
   }
 
   /**
-   * Wymiana tokenu z retry logic
-   * Próbuje 2 razy (initial + 1 retry) przy network errors
+   * Pobiera token Clerka z limitem czasu. Clerk czeka na własne załadowanie bez końca,
+   * więc bez limitu każde zapytanie GraphQL wisiałoby razem z nim.
    */
-  private async exchangeWithRetry(clerkToken: string, retryCount: number = 0): Promise<string | null> {
-    const MAX_RETRIES = 1;
-
+  private async getClerkTokenWithTimeout(): Promise<string | null> {
     try {
-      const response = await tokenExchangeService.exchangeClerkToken(clerkToken);
-      return response.access_token;
-    } catch (error: unknown) {
-      const typedError = error as TokenExchangeError;
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      const statusCode = typeof typedError.status === 'number' ? typedError.status : null;
-      const errorCode = typeof typedError.code === 'string' ? typedError.code : null;
+      return await withTimeout('Clerk session token', CLERK_TOKEN_TIMEOUT_MS, () => this.getClerkTokenFn());
+    } catch (error) {
+      throw new BackendTokenUnavailableError({ cause: error });
+    }
+  }
 
-      // Sprawdź czy to network error i czy możemy retry
-      const isNetworkError = errorMessage.includes('fetch') || errorMessage.includes('network');
-      const canRetry = retryCount < MAX_RETRIES && isNetworkError;
+  /**
+   * Wymiana tokenu z ponowieniem. Każda próba ma limit czasu (przerwane żądanie zamiast wiszącego);
+   * ponawiamy tylko błędy przejściowe (sieć, przerwanie, 5xx). Odpowiedzi 401/403/404 to decyzja
+   * backendu obsługiwana przez guardy, więc idą dalej bez ponowienia.
+   */
+  private async exchangeWithRetry(clerkToken: string): Promise<string | null> {
+    let lastError: unknown;
 
-      if (canRetry) {
-        await this.sleep(1000); // 1 sekunda delay przed retry
-        return this.exchangeWithRetry(clerkToken, retryCount + 1);
+    for (let attempt = 1; attempt <= EXCHANGE_ATTEMPTS; attempt++) {
+      try {
+        const response = await withTimeout('Token exchange', EXCHANGE_ATTEMPT_TIMEOUT_MS, (signal) =>
+          tokenExchangeService.exchangeClerkToken(clerkToken, { signal })
+        );
+        return response.access_token;
+      } catch (error: unknown) {
+        if (!isTransientTokenExchangeError(error)) {
+          this.clearCacheForRejectedExchange(error as TokenExchangeError);
+          throw error;
+        }
+        lastError = error;
+        if (attempt < EXCHANGE_ATTEMPTS) {
+          await this.sleep(EXCHANGE_BACKOFF_MS * attempt);
+        }
       }
+    }
 
-      if (statusCode === 403 && errorCode === 'PATIENT_NOT_ALLOWED_ON_ADMIN') {
-        clearBackendToken();
-      }
+    throw new BackendTokenUnavailableError({ cause: lastError });
+  }
 
-      // 401 = token invalid/expired - wyczyść cache
-      if (errorMessage.includes('401') || statusCode === 401) {
-        clearBackendToken();
-      }
-
-      // Nie udało się - rzuć error dalej
-      throw error;
+  private clearCacheForRejectedExchange(error: TokenExchangeError): void {
+    // 401 = token invalid/expired; 403 PATIENT_NOT_ALLOWED_ON_ADMIN = pacjent poza panelem
+    if (error.status === 401 || (error.status === 403 && error.code === 'PATIENT_NOT_ALLOWED_ON_ADMIN')) {
+      clearBackendToken();
     }
   }
 
