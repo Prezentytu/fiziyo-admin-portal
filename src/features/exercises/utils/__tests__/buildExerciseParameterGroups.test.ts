@@ -37,8 +37,15 @@ describe('buildExerciseParameterGroups', () => {
     expect(setsItem.isEmpty).toBe(false);
 
     const execItem = dosage.items.find((i) => i.key === 'executionTime')!;
-    expect(execItem.value).toBe('5s');
+    expect(execItem.value).toBe('5 s');
     expect(execItem.isEmpty).toBe(false);
+  });
+
+  it('zero jest wartością (KONTRAKT-v3.3): przerwa między powtórzeniami 0 to „0 s”, nie pusta', () => {
+    const timing = buildExerciseParameterGroups(fullSource).find((group) => group.id === 'timing')!;
+    const restRepsItem = timing.items.find((item) => item.key === 'restReps')!;
+    expect(restRepsItem.value).toBe('0 s');
+    expect(restRepsItem.isEmpty).toBe(false);
   });
 
   it('executionTime always present even when undefined', () => {

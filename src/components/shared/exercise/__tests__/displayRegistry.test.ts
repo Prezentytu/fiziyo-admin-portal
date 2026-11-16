@@ -45,7 +45,7 @@ describe('displayRegistry', () => {
     expect(formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.sets, source)).toBe('3');
     expect(formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.reps, source)).toBe('10');
     expect(formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.duration, source)).toBe('5 minut');
-    expect(formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.executionTime, source)).toBe('12s');
+    expect(formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.executionTime, source)).toBe('12 s');
     expect(formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.side, source, 'Nie ustawiono')).toBe('Tylko lewa');
   });
 
