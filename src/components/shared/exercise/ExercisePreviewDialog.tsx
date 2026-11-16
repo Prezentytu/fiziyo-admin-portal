@@ -20,6 +20,10 @@ import {
   type ExerciseFieldMetadata,
 } from './displayRegistry';
 import { resolvePatientInstruction } from './patientInstruction';
+import { readExerciseSchemaVersion } from './readExerciseContent';
+import { computeExerciseTimeLabels } from './computedExerciseTime';
+import { ExerciseComputedTime } from './ExerciseComputedTime';
+import { ExercisePatientContentFields } from './ExercisePatientContentFields';
 import type { ExerciseExecutionCardData } from './types';
 
 interface ExercisePreviewDialogProps {
@@ -32,6 +36,17 @@ interface ExercisePreviewDialogProps {
 type ExerciseMediaItem =
   | { kind: 'image'; url: string }
   | { kind: 'video'; url: string };
+
+/** Kolumny treści wycofane w kontrakcie 3.3 (§2); rekord 3.3 ich nie pokazuje, tak jak edycja w zestawie. */
+const V33_RETIRED_CONTENT_FIELDS = new Set(['clinicalDescription', 'audioCue']);
+/**
+ * Pola treści pokazywane osobno, w pełnej szerokości: instrukcja dla pacjenta (sekcje jak w edycji)
+ * i polecenie audio (w sekcji „Wskazówki”).
+ */
+const CONTENT_FIELDS_SHOWN_IN_SECTIONS = new Set(['patientDescription', 'audioCue']);
+
+const noopSetPath = () => {};
+const neverDirty = () => false;
 
 const GROUP_TITLES: Record<ExerciseFieldGroup, string> = {
   dosage: 'Podstawowe parametry',
@@ -118,21 +133,28 @@ export function ExercisePreviewDialog({
   const hasMultipleMedia = mediaItems.length > 1;
   const currentMedia = mediaItems[currentMediaIndex] ?? null;
 
-  // „Opis dla pacjenta” to instrukcja, którą dostanie pacjent: nadpisanie, opis rekordu starego albo kroki.
-  const fieldSource = {
-    ...exercise,
-    patientDescription:
-      resolvePatientInstruction({
-        override: exercise.patientDescriptionOverride,
-        exercise: { patientDescription: exercise.patientDescription },
-        enrichment: exercise.enrichment,
-      }).text ?? undefined,
-  };
+  // Instrukcja, którą dostanie pacjent: nadpisanie z planu albo treść rekordu (opis rekordu starego, kroki).
+  const instruction = resolvePatientInstruction({
+    override: exercise.patientDescriptionOverride,
+    exercise: { patientDescription: exercise.patientDescription },
+    enrichment: exercise.enrichment,
+  });
+  const contentVersion = readExerciseSchemaVersion({
+    enrichmentData: exercise.templateEnrichment ?? exercise.enrichment,
+  })
+    ? '3.3'
+    : 'legacy';
+  const computedTimes = computeExerciseTimeLabels(exercise, {
+    type: exercise.isTimeBased ? 'time' : 'reps',
+    alternatingPerSide: exercise.alternatingPerSide,
+  });
 
   const dialogFields = DIALOG_EXERCISE_FIELD_ORDER.map((fieldKey) => {
     const field = EXERCISE_FIELD_METADATA[fieldKey];
     if (!field.isDialogVisible) return null;
-    const value = formatFieldValueWithPlaceholder(field, fieldSource, field.group === 'content' ? 'Nie ustawiono' : '—');
+    if (CONTENT_FIELDS_SHOWN_IN_SECTIONS.has(fieldKey)) return null;
+    if (contentVersion === '3.3' && V33_RETIRED_CONTENT_FIELDS.has(fieldKey)) return null;
+    const value = formatFieldValueWithPlaceholder(field, exercise, field.group === 'content' ? 'Nie ustawiono' : '—');
     return { field, value };
   }).filter((item): item is { field: ExerciseFieldMetadata; value: string } => item !== null);
 
@@ -271,10 +293,38 @@ export function ExercisePreviewDialog({
                           <FieldInfoItem key={field.key} field={field} value={value} testIdPrefix={testIdPrefix} />
                         ))}
                       </div>
+                      {groupKey === 'dosage' ? (
+                        <ExerciseComputedTime times={computedTimes} testIdPrefix={testIdPrefix} />
+                      ) : null}
                     </div>
                   );
                 })}
               </div>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-3" data-testid={`${testIdPrefix}-instruction`}>
+              {instruction.source === 'override' ? (
+                <div
+                  className="rounded-lg border border-border/60 bg-surface-light/20 p-3"
+                  data-testid={`${testIdPrefix}-instruction-override`}
+                >
+                  <p className="text-xs font-medium text-muted-foreground">Opis dla pacjenta w tym planie</p>
+                  <p className="mt-1 text-sm text-foreground whitespace-pre-wrap">{instruction.text}</p>
+                </div>
+              ) : null}
+              <ExercisePatientContentFields
+                readOnly
+                surface="mapping"
+                enrichment={exercise.enrichment ?? {}}
+                setPath={noopSetPath}
+                isPathDirty={neverDirty}
+                patientDescription={instruction.source === 'override' ? '' : (exercise.patientDescription ?? '')}
+                audioCue={exercise.audioCue ?? ''}
+                contentVersion={contentVersion}
+                testIdPrefix={`${testIdPrefix}-patient-content`}
+              />
             </div>
 
             {!HIDE_EXERCISE_TAGS && (exercise.mainTags?.length || exercise.additionalTags?.length) ? (

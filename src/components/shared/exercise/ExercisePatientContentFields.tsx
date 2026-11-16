@@ -44,6 +44,8 @@ export interface ExercisePatientContentFieldsProps {
   testIdPrefix?: string;
   /** Kontrakt treści rekordu; `3.3` pokazuje pola v3.3 i ukrywa wycofane (tylko edytor szablonu). */
   contentVersion?: ExerciseContentVersion;
+  /** Te same sekcje w trybie odczytu (podgląd ćwiczenia): puste sekcje znikają, bez edytorów i przywracania. */
+  readOnly?: boolean;
 }
 
 export function ExercisePatientContentFields({
@@ -64,11 +66,13 @@ export function ExercisePatientContentFields({
   className,
   testIdPrefix = 'exercise-patient-content',
   contentVersion = 'legacy',
+  readOnly = false,
 }: Readonly<ExercisePatientContentFieldsProps>) {
+  const editable = !readOnly;
   const sections = getContentSections(surface);
   const sectionIds = new Set<ContentSectionId>(sections.map((section) => section.id));
   const overriddenPaths = listOverriddenEnrichmentPaths(enrichmentOverride);
-  const showRestore = Boolean(onRestoreAll && overriddenPaths.length > 0);
+  const showRestore = editable && Boolean(onRestoreAll && overriddenPaths.length > 0);
 
   return (
     <div className={cn('space-y-4', className)} data-testid={testIdPrefix}>
@@ -99,7 +103,7 @@ export function ExercisePatientContentFields({
         <PatientLeadSection
           data={enrichment}
           patientDescription={patientDescription}
-          editable
+          editable={editable}
           disabled={disabled}
           patientDescriptionDirty={patientDescriptionDirty}
           isPathDirty={isPathDirty}
@@ -112,7 +116,7 @@ export function ExercisePatientContentFields({
       {sectionIds.has('executionSteps') ? (
         <ExerciseExecutionSteps
           enrichmentData={enrichment}
-          editable
+          editable={editable}
           disabled={disabled}
           setPath={setPath}
         />
@@ -122,7 +126,7 @@ export function ExercisePatientContentFields({
         <ExerciseAudioCues
           audioCue={audioCue}
           enrichmentData={enrichment}
-          editable
+          editable={editable}
           disabled={disabled}
           onAudioCueChange={onAudioCueChange}
           setPath={setPath}
@@ -133,7 +137,7 @@ export function ExercisePatientContentFields({
       {sectionIds.has('patientExtras') ? (
         <PatientExtrasSection
           data={enrichment}
-          editable
+          editable={editable}
           disabled={disabled}
           isPathDirty={isPathDirty}
           setPath={setPath}
@@ -144,7 +148,7 @@ export function ExercisePatientContentFields({
       {sectionIds.has('safety') ? (
         <SafetySection
           data={enrichment}
-          editable
+          editable={editable}
           disabled={disabled}
           isPathDirty={isPathDirty}
           setPath={setPath}
