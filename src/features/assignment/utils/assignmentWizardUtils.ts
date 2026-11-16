@@ -46,6 +46,33 @@ export function wizardEnterAdvances(input: Pick<WizardEnterKeyInput, 'isLastStep
   return !input.isLastStep && input.canProceed && !input.shiftKey;
 }
 
+export const SUBMIT_WAITS_FOR_DETAILS = 'Wczytujemy treść ćwiczeń z planu. Zapis będzie możliwy za chwilę.';
+
+export interface SubmitBlockerInput {
+  isEditMode: boolean;
+  hasPlan: boolean;
+  exerciseCount: number;
+  patientCount: number;
+  detailsPending: boolean;
+}
+
+/** What the final save still waits for, in words for the therapist; `null` = ready to save. */
+export function describeSubmitBlocker(input: SubmitBlockerInput): string | null {
+  if (input.isEditMode && !input.hasPlan) {
+    return 'Wczytujemy plan pacjenta. Zapis będzie możliwy za chwilę.';
+  }
+  if (input.exerciseCount === 0) {
+    return 'Dodaj co najmniej jedno ćwiczenie, żeby zapisać plan.';
+  }
+  if (!input.isEditMode && input.patientCount === 0) {
+    return 'Wybierz co najmniej jednego pacjenta.';
+  }
+  if (input.detailsPending) {
+    return SUBMIT_WAITS_FOR_DETAILS;
+  }
+  return null;
+}
+
 /** Limit notatki do zestawu; ten sam co w backendzie (`TherapistsMutation.AssignmentNoteMaxLength`). */
 export const ASSIGNMENT_NOTE_MAX_LENGTH = 1000;
 
