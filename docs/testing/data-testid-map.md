@@ -257,7 +257,11 @@ Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu r
 | `exercise-param-{field}-input`              | Pole parametru (sets, reps, …)        | `ExerciseParametersEditor.tsx`   |
 | `exercise-param-side-select`                | Strona ciała                          | `ExerciseParametersEditor.tsx`   |
 | `exercise-param-difficulty-select`          | Poziom trudności                      | `ExerciseParametersEditor.tsx`   |
-| `exercise-param-series-time`                | Computed czas serii                   | `ExerciseParametersEditor.tsx`   |
+| `exercise-param-computed-time`              | Czas wyliczany (blok)                 | `ExerciseComputedTime.tsx`       |
+| `exercise-param-total-time`                 | Czas ćwiczenia (wartość główna)       | `ExerciseComputedTime.tsx`       |
+| `exercise-param-series-time`                | Jedna seria (wartość pomocnicza)      | `ExerciseComputedTime.tsx`       |
+| `exercise-preview-instruction`              | Instrukcja dla pacjenta w podglądzie  | `ExercisePreviewDialog.tsx`      |
+| `exercise-preview-instruction-override`     | Opis pacjenta zmieniony w planie      | `ExercisePreviewDialog.tsx`      |
 | `exercise-param-advanced-toggle`            | Zaawansowane (create variant)         | `ExerciseParametersEditor.tsx`   |
 | `patient-exercise-override-load-kg-input`   | Obciążenie kg (override)              | `EditExerciseOverrideDialog.tsx` |
 | `patient-exercise-override-tempo-input`     | Tempo (override)                      | `EditExerciseOverrideDialog.tsx` |
