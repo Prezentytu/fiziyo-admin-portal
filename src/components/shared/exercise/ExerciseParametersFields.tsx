@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { ChevronDown, Info } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -433,6 +433,7 @@ function SelectField({
 }>) {
   const metadata = EXERCISE_FIELD_METADATA[config.key];
   const options = config.options ?? (config.key === 'side' ? SIDE_OPTIONS : DIFFICULTY_OPTIONS);
+  const triggerId = useId();
 
   return (
     <div className="space-y-1">
@@ -440,11 +441,13 @@ function SelectField({
         label={metadata.label}
         tooltip={tooltip ?? metadata.tooltip}
         dirty={dirty}
+        htmlFor={triggerId}
         infoTestId={infoTestId}
         inherited={inherited}
       />
       <Select value={value} onValueChange={onChange} disabled={disabled} data-testid={testId}>
         <SelectTrigger
+          id={triggerId}
           data-testid={testId}
           className={cn(
             'text-sm transition-colors',

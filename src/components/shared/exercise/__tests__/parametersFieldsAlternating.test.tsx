@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -55,5 +55,12 @@ describe('ExerciseParametersFields: dawka „naprzemiennie” według wersji rek
     expect(times(container)).toEqual(['48 s', '3 min 29 s']);
     expect(sideHelp(container)).toHaveLength(1);
     expect(sideHelp(container)[0]).toContain('podana liczba łącznie');
+  });
+});
+
+describe('ExerciseParametersFields: nazwy dostępne', () => {
+  it('pole wyboru strony ma etykietę „Strona ciała” (data-testid znika w buildzie produkcyjnym)', () => {
+    renderFields(true);
+    expect(screen.getByRole('combobox', { name: 'Strona ciała' })).toBeInTheDocument();
   });
 });
