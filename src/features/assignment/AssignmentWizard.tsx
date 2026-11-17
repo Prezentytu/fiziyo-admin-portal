@@ -52,6 +52,7 @@ import {
   buildBuilderStateFromMappings,
   seedBuilderParamsFromMapping,
 } from './utils/seedBuilderParamsFromMapping';
+import { fetchCurrentAssignmentOverrides } from '@/features/patients/utils/currentAssignmentOverrides';
 import { mergeAssignmentOverridesOnEdit } from './utils/mergeAssignmentOverridesOnEdit';
 import { saveAssignmentOverridesOrRollback } from './utils/saveAssignmentOverridesOrRollback';
 import {
@@ -1349,25 +1350,27 @@ function AssignmentWizardContent({
           .map((item) => instanceIdToMappingId.get(item.instance.instanceId))
           .filter((mappingId): mappingId is string => Boolean(mappingId)),
       ];
-      const exerciseOverridesJson = mergeAssignmentOverridesOnEdit({
-        existingJson: initialAssignment.exerciseOverrides,
-        clinicalByMappingId,
-        activeMappingIds,
-        mappingIdsWithWrittenDosage,
-      });
-      const existingOverridesJson = initialAssignment.exerciseOverrides?.trim() || '{}';
-      if (exerciseOverridesJson !== existingOverridesJson) {
-        try {
+      try {
+        // Baza scalenia to dokument czytany tuż przed zapisem, nie stan z otwarcia kreatora: zmiana innej pozycji
+        // zapisana w międzyczasie (ukrycie, uwaga, druga karta) zostaje (#244).
+        const currentOverridesJson = await fetchCurrentAssignmentOverrides(apolloClient, initialAssignment.id);
+        const exerciseOverridesJson = mergeAssignmentOverridesOnEdit({
+          existingJson: currentOverridesJson,
+          clinicalByMappingId,
+          activeMappingIds,
+          mappingIdsWithWrittenDosage,
+        });
+        if (exerciseOverridesJson !== (currentOverridesJson?.trim() || '{}')) {
           await updatePatientExerciseOverrides({
             variables: {
               assignmentId: initialAssignment.id,
               exerciseOverrides: exerciseOverridesJson,
             },
           });
-        } catch (overrideError) {
-          console.error('Błąd zapisu personalizacji przy edycji planu:', overrideError);
-          toast.warning('Plan zaktualizowany, ale nie udało się zapisać pełnej personalizacji parametrów');
         }
+      } catch (overrideError) {
+        console.error('Błąd zapisu personalizacji przy edycji planu:', overrideError);
+        toast.warning('Plan zaktualizowany, ale nie udało się zapisać pełnej personalizacji parametrów');
       }
 
       // Final refetch po petli - gwarantuje, ze admin UI widzi spojny stan

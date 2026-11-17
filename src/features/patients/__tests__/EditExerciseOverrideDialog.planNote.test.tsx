@@ -15,6 +15,20 @@ const calls: string[] = [];
 const updateExerciseInSet = vi.fn();
 const updateOverrides = vi.fn();
 const toastError = vi.fn();
+/** Dokument nadpisań w bazie w chwili zapisu; `undefined` = ten sam, co wczytany przy otwarciu okna. */
+let serverOverrides: string | null | undefined;
+let loadedOverrides: string | null = null;
+const queryOverrides = vi.fn(async () => {
+  calls.push('read');
+  return {
+    data: {
+      patientAssignmentById: {
+        id: 'a-1',
+        exerciseOverrides: serverOverrides === undefined ? loadedOverrides : serverOverrides,
+      },
+    },
+  };
+});
 
 vi.mock('@apollo/client/react', () => ({
   useMutation: (document: DocumentNode) => {
@@ -22,6 +36,7 @@ vi.mock('@apollo/client/react', () => ({
     if (document === UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION) return [updateOverrides, { loading: false }];
     throw new Error('Nieoczekiwana mutacja');
   },
+  useApolloClient: () => ({ query: queryOverrides }),
 }));
 
 vi.mock('@/features/exercises/useExerciseImageGeneration', () => ({
@@ -61,6 +76,7 @@ const parsedOverrides = (): Record<string, Record<string, unknown>> =>
   JSON.parse(updateOverrides.mock.calls[0][0].variables.exerciseOverrides as string);
 
 async function editNotesAndSave(assignment: PatientAssignment, override?: Record<string, unknown>) {
+  loadedOverrides = assignment.exerciseOverrides ?? null;
   const user = userEvent.setup();
   render(
     <EditExerciseOverrideDialog
@@ -81,6 +97,8 @@ async function editNotesAndSave(assignment: PatientAssignment, override?: Record
 describe('EditExerciseOverrideDialog: uwaga do ćwiczenia (S-01 R1)', () => {
   beforeEach(() => {
     calls.length = 0;
+    serverOverrides = undefined;
+    queryOverrides.mockClear();
     toastError.mockReset();
     updateExerciseInSet.mockReset().mockImplementation(async () => {
       calls.push('mapping');
@@ -98,7 +116,7 @@ describe('EditExerciseOverrideDialog: uwaga do ćwiczenia (S-01 R1)', () => {
       sets: 4,
     });
 
-    expect(calls).toEqual(['mapping', 'overrides']);
+    expect(calls).toEqual(['mapping', 'read', 'overrides']);
     expect(updateExerciseInSet.mock.calls[0][0].variables).toEqual({
       exerciseSetId: 'set-1',
       exerciseId: 'ex-1',
@@ -120,7 +138,20 @@ describe('EditExerciseOverrideDialog: uwaga do ćwiczenia (S-01 R1)', () => {
 
     await editNotesAndSave(buildAssignment('PATIENT_PLAN', null));
 
-    expect(calls).toEqual(['mapping']);
+    expect(calls).toEqual(['mapping', 'read']);
     expect(toastError).toHaveBeenCalledWith(expect.stringContaining('Uwaga została zapisana'));
+  });
+
+  it('zmiana innej pozycji i ukrycie zapisane po otwarciu okna zostają (#244)', async () => {
+    serverOverrides = '{"m-1":{"notes":"Stara z nadpisania","sets":4,"hidden":true},"m-2":{"reps":12}}';
+
+    await editNotesAndSave(buildAssignment('PATIENT_PLAN', '{"m-1":{"notes":"Stara z nadpisania","sets":4}}'), {
+      notes: 'Stara z nadpisania',
+      sets: 4,
+    });
+
+    expect(queryOverrides.mock.calls[0]).toMatchObject([{ variables: { id: 'a-1' }, fetchPolicy: 'no-cache' }]);
+    expect(parsedOverrides()['m-2']).toEqual({ reps: 12 });
+    expect(parsedOverrides()['m-1']).toMatchObject({ sets: 4, hidden: true });
   });
 });

@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useState } from 'react';
 import Image from 'next/image';
-import { useMutation } from '@apollo/client/react';
+import { useApolloClient, useMutation } from '@apollo/client/react';
 import {
   ChevronDown,
   ChevronRight,
@@ -45,6 +45,7 @@ import {
   ExerciseExecutionCard,
   fromExerciseMapping,
   listOverriddenFieldKeys,
+  mergeOverrideMap,
   resolveEffectiveExerciseParams,
   type ExerciseOverrideFields,
 } from '@/components/shared/exercise';
@@ -53,6 +54,7 @@ import { cn } from '@/lib/utils';
 import { toGqlStatus } from '@/utils/statusUtils';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { resolveAssignmentDisplayStatus } from '@/features/patients/utils/assignmentDisplayStatus';
+import { fetchCurrentAssignmentOverrides } from '@/features/patients/utils/currentAssignmentOverrides';
 
 import {
   UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION,
@@ -254,6 +256,7 @@ export function PatientAssignmentCard({
   // Mutations
   const [updateAssignment, { loading: updating }] = useMutation(UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION);
 
+  const apolloClient = useApolloClient();
   const [updateOverrides] = useMutation(UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION);
 
   const [removeAssignment, { loading: removing }] = useMutation(REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION);
@@ -300,49 +303,43 @@ export function PatientAssignmentCard({
     }
   };
 
-  const handleToggleExerciseVisibility = async (mappingId: string) => {
-    const currentOverride = exerciseOverrides[mappingId] || {};
-    const newOverrides = {
-      ...exerciseOverrides,
-      [mappingId]: {
-        ...currentOverride,
-        hidden: !currentOverride.hidden,
-      },
-    };
+  /** Jeden zapis dla wszystkich ukrytych: osobne zapisy całego dokumentu nadpisywałyby się nawzajem. */
+  const handleShowAllExercises = async () => {
+    const hiddenIds = exercises.filter((m) => exerciseOverrides[m.id]?.hidden).map((m) => m.id);
+    if (hiddenIds.length === 0) return;
 
     try {
+      const current = await fetchCurrentAssignmentOverrides(apolloClient, assignment.id);
       await updateOverrides({
         variables: {
           assignmentId: assignment.id,
-          exerciseOverrides: JSON.stringify(newOverrides),
+          exerciseOverrides: hiddenIds.reduce<string | null>(
+            (json, mappingId) => mergeOverrideMap(json, mappingId, { hidden: false }),
+            current
+          ),
         },
         refetchQueries: [{ query: GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY, variables: { userId: patientId } }],
       });
-      toast.success(currentOverride.hidden ? 'Ćwiczenie pokazane' : 'Ćwiczenie ukryte');
+      toast.success('Ćwiczenia pokazane');
       onRefresh?.();
     } catch (error) {
       console.error('Błąd zmiany widoczności:', error);
-      toast.error('Nie udało się zmienić widoczności ćwiczenia');
+      toast.error('Nie udało się zmienić widoczności ćwiczeń');
     }
   };
 
   const handleRemoveExercise = async () => {
     if (!removingExerciseId) return;
 
-    const currentOverride = exerciseOverrides[removingExerciseId] || {};
-    const newOverrides = {
-      ...exerciseOverrides,
-      [removingExerciseId]: {
-        ...currentOverride,
-        hidden: true,
-      },
-    };
-
     try {
       await updateOverrides({
         variables: {
           assignmentId: assignment.id,
-          exerciseOverrides: JSON.stringify(newOverrides),
+          exerciseOverrides: mergeOverrideMap(
+            await fetchCurrentAssignmentOverrides(apolloClient, assignment.id),
+            removingExerciseId,
+            { hidden: true }
+          ),
         },
         refetchQueries: [{ query: GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY, variables: { userId: patientId } }],
       });
@@ -818,14 +815,7 @@ export function PatientAssignmentCard({
                           size="sm"
                           className="h-auto p-0 text-xs text-primary"
                           data-testid={`patient-assignment-${assignment.id}-show-all-btn`}
-                          onClick={() => {
-                            // Show all hidden exercises
-                            exercises.forEach((m) => {
-                              if (exerciseOverrides[m.id]?.hidden) {
-                                handleToggleExerciseVisibility(m.id);
-                              }
-                            });
-                          }}
+                          onClick={() => void handleShowAllExercises()}
                         >
                           Pokaż wszystkie
                         </Button>

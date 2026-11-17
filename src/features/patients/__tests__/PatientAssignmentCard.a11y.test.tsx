@@ -7,6 +7,7 @@ import { PatientAssignmentCard, type PatientAssignment } from '../PatientAssignm
 vi.mock('@apollo/client/react', () => ({
   useMutation: () => [vi.fn(), { loading: false }],
   useQuery: () => ({ data: undefined, loading: false }),
+  useApolloClient: () => ({ query: vi.fn() }),
 }));
 vi.mock('next/image', () => ({
   default: ({ src, alt }: { src: string; alt?: string }) => <img src={src} alt={alt ?? ''} />,

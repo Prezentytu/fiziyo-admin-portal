@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useState, useCallback } from 'react';
 import Image from 'next/image';
-import { useMutation } from '@apollo/client/react';
+import { useApolloClient, useMutation } from '@apollo/client/react';
 import {
   Loader2,
   Dumbbell,
@@ -27,6 +27,7 @@ import {
   UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
+import { fetchCurrentAssignmentOverrides } from './utils/currentAssignmentOverrides';
 import { useExerciseImageGeneration } from '@/features/exercises/useExerciseImageGeneration';
 import { ImageStylePicker } from '@/features/exercises/ImageStylePicker';
 import {
@@ -34,6 +35,7 @@ import {
   ENABLE_FULL_PATIENT_PERSONALIZATION,
   ExerciseParametersFields,
   buildOverrideDelta,
+  parseOverrideMap,
   replaceOverrideMapEntry,
   type ExerciseFieldKey,
   type ExerciseParameterValues,
@@ -474,6 +476,7 @@ function EditExerciseOverrideDialogContent({
   }, [hasChanges, onHasChanges]);
 
   // Mutation
+  const apolloClient = useApolloClient();
   const [updateOverrides, { loading: savingOverrides }] = useMutation(
     UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION
   );
@@ -632,16 +635,20 @@ function EditExerciseOverrideDialogContent({
         }
       );
 
-      if (currentOverride?.hidden) {
+      // Okno przebudowuje parametry tej pozycji; resztę dokumentu i klucze, których nie przebudowuje (ukrycie,
+      // enrichment, metadane dodania przez pacjenta), bierze z odczytu tuż przed zapisem, nie z otwarcia okna (#244).
+      const currentOverridesJson = await fetchCurrentAssignmentOverrides(apolloClient, assignment.id);
+      const currentEntry = parseOverrideMap(currentOverridesJson)[mapping.id];
+
+      if (currentEntry?.hidden) {
         newOverride.hidden = true;
       }
 
-      // Preserve keys the dialog does not rebuild (enrichment, patient-added metadata).
-      if (currentOverride?.enrichment) {
-        newOverride.enrichment = currentOverride.enrichment;
+      if (currentEntry?.enrichment) {
+        newOverride.enrichment = currentEntry.enrichment;
       }
-      const previousEntry = currentOverride as
-        | (typeof currentOverride & { exerciseId?: string; isPatientAdded?: boolean })
+      const previousEntry = currentEntry as
+        | (typeof currentEntry & { exerciseId?: string; isPatientAdded?: boolean })
         | undefined;
       if (previousEntry?.exerciseId) {
         (newOverride as ExerciseOverride & { exerciseId?: string }).exerciseId =
@@ -652,7 +659,7 @@ function EditExerciseOverrideDialogContent({
       }
 
       const exerciseOverrides = replaceOverrideMapEntry(
-        assignment.exerciseOverrides,
+        currentOverridesJson,
         mapping.id,
         newOverride
       );

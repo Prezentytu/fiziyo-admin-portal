@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useState, useMemo, useCallback } from 'react';
 import Image from 'next/image';
-import { useMutation } from '@apollo/client/react';
+import { useApolloClient, useMutation } from '@apollo/client/react';
 import { Search, Loader2, Dumbbell, X } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -38,6 +38,7 @@ import {
   UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
+import { fetchCurrentAssignmentOverrides } from './utils/currentAssignmentOverrides';
 import type { PatientAssignment } from './PatientAssignmentCard';
 import { normalizeExerciseType } from '@/utils/exerciseEnums';
 
@@ -315,6 +316,7 @@ function AddExerciseToPatientDialogContent({
   const setSearchQuery = exercisePages.onSearchChange;
 
   const [addExerciseToSet, { loading: adding }] = useMutation(ADD_EXERCISE_TO_EXERCISE_SET_MUTATION);
+  const apolloClient = useApolloClient();
   const [updateOverrides, { loading: updatingOverrides }] = useMutation(
     UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION
   );
@@ -478,8 +480,9 @@ function AddExerciseToPatientDialogContent({
           }
         );
         if (Object.keys(clinicalDelta).length > 0) {
+          // Delta nakładana na dokument czytany tuż przed zapisem, nie na stan z otwarcia okna (#244).
           const exerciseOverrides = mergeOverrideMap(
-            assignment.exerciseOverrides,
+            await fetchCurrentAssignmentOverrides(apolloClient, assignment.id),
             mappingId,
             clinicalDelta
           );
