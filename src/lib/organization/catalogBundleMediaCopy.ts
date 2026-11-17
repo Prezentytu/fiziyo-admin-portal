@@ -92,7 +92,7 @@ function readItem(value: unknown): ExerciseBundleMediaCopyItem | null {
 }
 
 /**
- * Raport kopii mediów z odpowiedzi importu. Czyta tylko pola, które zna: brak raportu (API sprzed fizjo-app#432),
+ * Raport kopii mediów z odpowiedzi importu. Czyta tylko pola, które zna: brak raportu,
  * brak licznika albo listy, nieznany wynik i dodatkowe pola nie psują karty importu. Brakujący licznik liczy z listy.
  */
 export function readMediaCopy(value: unknown): ExerciseBundleMediaCopy | null {

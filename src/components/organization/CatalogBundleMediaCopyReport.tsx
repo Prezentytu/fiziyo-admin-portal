@@ -8,7 +8,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { mediaCopyOutcomeLabel, readMediaCopy, summarizeMediaCopy } from '@/lib/organization/catalogBundleMediaCopy';
 
 interface CatalogBundleMediaCopyReportProps {
-  /** `mediaCopy` prosto z odpowiedzi importu; API sprzed fizjo-app#432 go nie zwraca. */
+  /** `mediaCopy` prosto z odpowiedzi importu; kształt czyta `readMediaCopy`. */
   mediaCopy: unknown;
 }
 
