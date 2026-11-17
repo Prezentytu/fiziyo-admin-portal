@@ -1,17 +1,18 @@
 'use client';
 
 import { useChatActions, useChatBusy } from '../ChatSessionContext';
-import { resolveClarifyChoice } from '../utils/clarifyChoice';
+import { clarifyChoicePatientId, resolveClarifyChoice } from '../utils/clarifyChoice';
 import { describeSpec } from '../utils/replyText';
 import type { CardProps } from './cardProps';
 import { QuickReplies } from './QuickReplies';
 
 /**
  * The question itself is the message text; the card is its ready answers. An answer tied to a set
- * opens its draft right here (no model, no credit); any other answer is sent as the next message.
+ * opens its draft right here and an answer that is a patient picks that patient by id (no model, no
+ * credit); any other answer is sent as the next message.
  */
 export function ClarifyCard({ spec, testId, messageId, chosen }: CardProps<'Clarify'>) {
-  const { sendMessage, markChosen, appendExchange, patients } = useChatActions();
+  const { sendMessage, markChosen, appendExchange, choosePatient, patients } = useChatActions();
   const isBusy = useChatBusy();
   return (
     <div data-testid={testId}>
@@ -20,9 +21,14 @@ export function ClarifyCard({ spec, testId, messageId, chosen }: CardProps<'Clar
         chosen={chosen}
         disabled={isBusy}
         testId={testId}
-        onPick={(option) => {
+        onPick={(option, index) => {
           markChosen(messageId, option);
-          const draft = resolveClarifyChoice(spec, option);
+          const patientId = clarifyChoicePatientId(spec, option, index);
+          if (patientId) {
+            choosePatient(patientId, option);
+            return;
+          }
+          const draft = resolveClarifyChoice(spec, option, index);
           if (!draft) {
             sendMessage(option);
             return;

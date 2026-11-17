@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { routeIntent, type IntentContext } from '../intentRouter';
+import { routeForPatient, routeIntent, type IntentContext } from '../intentRouter';
 import { UNSUPPORTED_SPEC } from '../viewSpec';
 
 const CONTEXT: IntentContext = {
@@ -48,7 +48,7 @@ describe('routeIntent', () => {
       patientId: 'p-jan',
       setId: 's-back',
     });
-    expect(routeIntent('plan dla Jana na lędźwie', CONTEXT, 'zestaw dla Ewy na kolano')).toMatchObject({
+    expect(routeIntent('plan dla Jana Kowalskiego na lędźwie', CONTEXT, 'zestaw dla Ewy na kolano')).toMatchObject({
       component: 'SetDraft',
       patientId: 'p-jan',
       setId: 's-back',
@@ -65,6 +65,12 @@ describe('routeIntent', () => {
       component: 'Clarify',
       question: expect.any(String),
       options: ['Bez pacjenta', 'Jan Kowalski', 'Ewa Wiśniewska', 'Ewa Nowicka'],
+      choices: [
+        { label: 'Bez pacjenta' },
+        { label: 'Jan Kowalski', patientId: 'p-jan' },
+        { label: 'Ewa Wiśniewska', patientId: 'p-ewa-w' },
+        { label: 'Ewa Nowicka', patientId: 'p-ewa-n' },
+      ],
     });
   });
 
@@ -134,5 +140,72 @@ describe('routeIntent', () => {
       component: 'Navigate',
       route: 'patient-new',
     });
+  });
+
+  // Test asystenta 17.11 (K3): dwa identyczne chipy „Jan Kowalski”, każdy klik wracał to samo pytanie.
+  describe('namesakes', () => {
+    const namesakes: IntentContext = {
+      patients: [
+        { id: 'p-jan-1', name: 'Jan Kowalski', contextLabel: 'Ból kolana' },
+        { id: 'p-jan-2', name: 'Jan Kowalski', contextLabel: 'Rwa kulszowa' },
+      ],
+      sets: CONTEXT.sets,
+    };
+
+    it('asks with one distinguishable answer per patient, each carrying the patient id', () => {
+      const spec = routeIntent('zestaw dla Jana Kowalskiego na kolano', namesakes);
+      expect(spec).toMatchObject({
+        component: 'Clarify',
+        options: ['Jan Kowalski · Ból kolana', 'Jan Kowalski · Rwa kulszowa'],
+        choices: [
+          { label: 'Jan Kowalski · Ból kolana', patientId: 'p-jan-1' },
+          { label: 'Jan Kowalski · Rwa kulszowa', patientId: 'p-jan-2' },
+        ],
+      });
+    });
+
+    it('finishes the command for the patient picked by id, whatever the name says', () => {
+      expect(routeForPatient('zestaw dla Jana Kowalskiego na kolano', namesakes, 'p-jan-2')).toEqual({
+        component: 'SetDraft',
+        patientId: 'p-jan-2',
+        setId: 's-knee',
+        exerciseIds: [],
+      });
+      expect(routeForPatient(undefined, namesakes, 'p-jan-1')).toEqual({ component: 'PatientPeek', patientId: 'p-jan-1' });
+      expect(routeForPatient('co u Jana Kowalskiego?', namesakes, 'p-jan-1')).toEqual({
+        component: 'PatientPeek',
+        patientId: 'p-jan-1',
+      });
+    });
+  });
+
+  // Test asystenta 17.11 (K1): jedno słowo z dłuższej nazwy nie wiąże rozmowy z pacjentem bez pytania.
+  it('asks „Czy chodzi o…?” when only one word of a longer name was said', () => {
+    expect(routeIntent('zestaw dla Jana na kolano', CONTEXT)).toEqual({
+      component: 'Clarify',
+      question: 'Czy chodzi o pacjenta: Jan Kowalski?',
+      options: ['Jan Kowalski'],
+      choices: [{ label: 'Jan Kowalski', patientId: 'p-jan' }],
+    });
+    expect(routeForPatient('zestaw dla Jana na kolano', CONTEXT, 'p-jan')).toMatchObject({
+      component: 'SetDraft',
+      patientId: 'p-jan',
+      setId: 's-knee',
+    });
+  });
+
+  it('takes a bare first name as the answer to „O kogo chodzi?”', () => {
+    expect(routeIntent('Jan', CONTEXT, 'Utwórz zestaw na kolano')).toMatchObject({
+      component: 'SetDraft',
+      patientId: 'p-jan',
+      setId: 's-knee',
+    });
+  });
+
+  it('does not bind a message that starts with „Pacjent…” to a patient called „E2E Pacjent”', () => {
+    const context: IntentContext = { patients: [{ id: 'p-e2e', name: 'E2E Pacjent' }], sets: CONTEXT.sets };
+    const spec = routeIntent('Pacjent z rwą kulszową potrzebuje zestawu na kolano', context);
+    expect(spec).toMatchObject({ component: 'SetDraft', setId: 's-knee' });
+    expect(spec.component === 'SetDraft' && spec.patientId).toBeUndefined();
   });
 });

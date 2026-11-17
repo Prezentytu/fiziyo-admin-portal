@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { matchPatients } from '../patientMatch';
+import { matchPatients, patientChoiceLabels } from '../patientMatch';
 
 const PATIENTS = [
   { id: 'p-jan', name: 'Jan Kowalski' },
@@ -140,5 +140,70 @@ describe('matchPatients', () => {
 
   it('does not treat common words as names', () => {
     expect(matchPatients('jak ewentualnie ćwiczyć kolano', PATIENTS).kind).toBe('none');
+  });
+
+  // Test asystenta 17.11 (K1): „Pacjent z rwą kulszową pyta…” związało rozmowę z pacjentem „E2E Pacjent”.
+  it('never takes a role or command word alone for a patient name', () => {
+    const patients = [
+      { id: 'p-e2e', name: 'E2E Pacjent' },
+      { id: 'p-nowy', name: 'Jan Nowy' },
+      { id: 'p-plan', name: 'Zestaw Testowy' },
+    ];
+    for (const text of [
+      'Pacjent z rwą kulszową pyta, czy może brać ketonal',
+      'pacjentka po porodzie, co dla pacjenta z bólem?',
+      'nowy zestaw na kolano',
+      'dodaj nową pacjentkę',
+    ]) {
+      expect(matchPatients(text, patients).kind).toBe('none');
+    }
+    expect(matchPatients('zestaw dla E2E Pacjent', patients)).toMatchObject({ kind: 'one', patient: { id: 'p-e2e' } });
+    expect(matchPatients('plan dla Jana Nowego', patients)).toMatchObject({ kind: 'one', patient: { id: 'p-nowy' } });
+  });
+
+  it('marks a match by one word of a longer name as partial', () => {
+    expect(matchPatients('zestaw dla Jana', PATIENTS)).toMatchObject({ kind: 'one', partial: true });
+    expect(matchPatients('zestaw dla Jana Kowalskiego', PATIENTS)).toMatchObject({ kind: 'one', partial: false });
+    expect(matchPatients('zestaw dla Madonny', [{ id: 'p-m', name: 'Madonna' }])).toMatchObject({
+      kind: 'one',
+      partial: false,
+    });
+  });
+});
+
+// Test asystenta 17.11 (K3): dwóch „Jan Kowalski” dawało dwa identyczne chipy.
+describe('patientChoiceLabels', () => {
+  it('leaves unique names as they are', () => {
+    expect(patientChoiceLabels(PATIENTS)).toEqual(['Jan Kowalski', 'Ewa Wiśniewska', 'Ewa Nowicka', 'Marek Zieliński']);
+  });
+
+  it('tells namesakes apart by the reason for therapy, then the e-mail, then the account', () => {
+    expect(
+      patientChoiceLabels([
+        { id: 'a', name: 'Jan Kowalski', contextLabel: 'Ból kolana' },
+        { id: 'b', name: 'Jan Kowalski', contextLabel: 'Rwa kulszowa' },
+      ])
+    ).toEqual(['Jan Kowalski · Ból kolana', 'Jan Kowalski · Rwa kulszowa']);
+    expect(
+      patientChoiceLabels([
+        { id: 'a', name: 'Jan Kowalski', contextLabel: 'Ból kolana', email: 'jan.k@example.com' },
+        { id: 'b', name: 'Jan Kowalski', contextLabel: 'Ból kolana', email: 'kowalski@example.com' },
+      ])
+    ).toEqual(['Jan Kowalski · Ból kolana · jan.k@example.com', 'Jan Kowalski · Ból kolana · kowalski@example.com']);
+    expect(
+      patientChoiceLabels([
+        { id: 'a', name: 'Jan Kowalski', isShadowUser: true },
+        { id: 'b', name: 'Jan Kowalski', isShadowUser: false },
+      ])
+    ).toEqual(['Jan Kowalski · bez konta', 'Jan Kowalski · ma konto']);
+  });
+
+  it('numbers namesakes nothing else tells apart, so every label stays unique', () => {
+    const labels = patientChoiceLabels([
+      { id: 'a', name: 'Jan Kowalski' },
+      { id: 'b', name: 'Jan Kowalski' },
+      { id: 'c', name: 'Ewa Lis' },
+    ]);
+    expect(labels).toEqual(['Jan Kowalski (1)', 'Jan Kowalski (2)', 'Ewa Lis']);
   });
 });

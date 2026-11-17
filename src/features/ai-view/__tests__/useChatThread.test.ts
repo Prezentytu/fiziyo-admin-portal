@@ -77,6 +77,61 @@ describe('useChatThread', () => {
     });
   });
 
+  // Test asystenta 17.11 (K3): dwóch „Jan Kowalski”, klik chipa wysyłał samą nazwę i wracało to samo pytanie.
+  describe('namesakes', () => {
+    const context: IntentContext = {
+      patients: [
+        { id: 'p-jan-1', name: 'Jan Kowalski', contextLabel: 'Ból kolana' },
+        { id: 'p-jan-2', name: 'Jan Kowalski', contextLabel: 'Rwa kulszowa' },
+      ],
+      sets: [{ id: 's-knee', name: 'Kolano · faza 2', description: '' }],
+    };
+
+    it('a picked chip ends the question for that patient, without the model', async () => {
+      dispatchMock.mockResolvedValueOnce({
+        sessionId: 'session-a',
+        spec: {
+          component: 'Clarify',
+          question: 'Masz kilku pacjentów o tym imieniu. O kogo chodzi?',
+          options: ['Jan Kowalski', 'Jan Kowalski'],
+          choices: [
+            { label: 'Jan Kowalski', patientId: 'p-jan-1' },
+            { label: 'Jan Kowalski', patientId: 'p-jan-2' },
+          ],
+        },
+        creditsUsed: 0,
+      });
+      const { result } = renderHook(() => useChatThread({ useAi: true, context, ready: true, scopeKey: 'org-a' }));
+
+      await act(() => result.current.send('zestaw dla Jana Kowalskiego na kolano'));
+      expect(result.current.messages.at(-1)).toMatchObject({
+        spec: { options: ['Jan Kowalski · Ból kolana', 'Jan Kowalski · Rwa kulszowa'] },
+      });
+
+      act(() => result.current.choosePatient('p-jan-2', 'Jan Kowalski · Rwa kulszowa'));
+
+      expect(dispatchMock).toHaveBeenCalledTimes(1);
+      expect(result.current.messages.at(-2)).toMatchObject({ role: 'user', text: 'Jan Kowalski · Rwa kulszowa' });
+      expect(result.current.messages.at(-1)).toMatchObject({
+        source: 'local',
+        creditsUsed: 0,
+        spec: { component: 'SetDraft', patientId: 'p-jan-2', setId: 's-knee' },
+      });
+    });
+
+    it('works the same without AI and does not carry the old question into the next message', async () => {
+      const { result } = renderHook(() => useChatThread({ useAi: false, context, ready: true, scopeKey: 'org-a' }));
+
+      await act(() => result.current.send('co u Jana Kowalskiego'));
+      expect(result.current.messages.at(-1)).toMatchObject({ spec: { component: 'Clarify' } });
+      act(() => result.current.choosePatient('p-jan-1', 'Jan Kowalski · Ból kolana'));
+      expect(result.current.messages.at(-1)).toMatchObject({ spec: { component: 'PatientPeek', patientId: 'p-jan-1' } });
+
+      await act(() => result.current.send('kto nie ćwiczy'));
+      expect(result.current.messages.at(-1)).toMatchObject({ spec: { component: 'PatientPeek', filter: 'inactive' } });
+    });
+  });
+
   it('sends one message when the composer fires twice before the busy state renders', async () => {
     const { result } = renderHook(() =>
       useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org-a' })
