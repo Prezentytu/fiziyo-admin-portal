@@ -38,6 +38,8 @@ export const SAVE_COLLISION_FIELD_LABELS: Readonly<Record<string, string>> = {
   'therapist.checkpoints': 'Punkty kontrolne',
   equipment_items: 'Sprzęt',
   'ai.keywords': 'Słowa kluczowe',
+  side: 'Strona: tryb i strona startowa',
+  prescription: 'Cel, zakresy dawki, progresja i regresja',
 };
 
 /** Every plain value of a row, nested lists and objects included, so a difference deep in the row stays visible. */

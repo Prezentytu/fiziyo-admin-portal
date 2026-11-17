@@ -150,12 +150,20 @@ interface EquipmentItemsEditorProps {
   disabled?: boolean;
   dirty?: boolean;
   onChange: (items: EnrichmentEquipmentItemV33[]) => void;
+  /** Prefiks `data-testid`; weryfikacja ma własny, żeby lokatory się nie powielały. */
+  testIdPrefix?: string;
 }
 
 const NEW_EQUIPMENT_ITEM: EnrichmentEquipmentItemV33 = { label: '', qty: 1, required: true, substitutes: [] };
 
-export function EquipmentItemsEditor({ items, disabled = false, dirty = false, onChange }: Readonly<EquipmentItemsEditorProps>) {
-  const prefix = 'exercise-detail-equipment-items';
+export function EquipmentItemsEditor({
+  items,
+  disabled = false,
+  dirty = false,
+  onChange,
+  testIdPrefix = 'exercise-detail-equipment-items',
+}: Readonly<EquipmentItemsEditorProps>) {
+  const prefix = testIdPrefix;
   const patchItem = (index: number, patch: Partial<EnrichmentEquipmentItemV33>) =>
     onChange(items.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)));
 

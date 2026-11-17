@@ -95,6 +95,14 @@ const PRECAUTIONS_PATH = 'safety.precautions';
 const CHECKPOINTS_PATH = 'therapist.checkpoints';
 const EQUIPMENT_ITEMS_PATH = 'equipment_items';
 const KEYWORDS_PATH = 'ai.keywords';
+/**
+ * Sekcje zapisywane w całości: weryfikacja edytuje tryb i stronę startową (`side`) oraz cel, zakresy dawki,
+ * progresję i regresję (`prescription`). Macierz FR-007 oznacza je w weryfikacji jako edytowalne.
+ * Dawkę ćwiczenia (serie, powtórzenia, czasy) nadal niosą kolumny; `prescription.params.*.default` to wartość
+ * z paczki i portal jej nie przepisuje z kolumn.
+ */
+const SIDE_PATH = 'side';
+const PRESCRIPTION_PATH = 'prescription';
 
 /** Jedyne ścieżki dokumentu 3.3, które zapis z portalu (formularz, weryfikacja) może zmienić. */
 export const V33_EDITABLE_PATHS: readonly string[] = [
@@ -110,6 +118,8 @@ export const V33_EDITABLE_PATHS: readonly string[] = [
   CHECKPOINTS_PATH,
   EQUIPMENT_ITEMS_PATH,
   KEYWORDS_PATH,
+  SIDE_PATH,
+  PRESCRIPTION_PATH,
 ];
 
 /** Ścieżka szkicu, której zmiana trafi do zapisu: wpis z listy albo jego wnętrze (`patient.steps.2`). */
@@ -416,6 +426,12 @@ export function collectV33Edits(loaded: ExerciseEnrichmentData, draft: ExerciseE
   ] as const) {
     const edited = editedRows(getAtPath(loaded, path), getAtPath(draft, path), cleanRow);
     if (edited) edits[path] = edited.rows.length > 0 ? edited.rows : undefined;
+  }
+
+  for (const path of [SIDE_PATH, PRESCRIPTION_PATH]) {
+    const draftSection = asRecord(getAtPath(draft, path));
+    if (sameJson(draftSection, asRecord(getAtPath(loaded, path)))) continue;
+    edits[path] = draftSection && Object.keys(draftSection).length > 0 ? draftSection : undefined;
   }
 
   return edits;

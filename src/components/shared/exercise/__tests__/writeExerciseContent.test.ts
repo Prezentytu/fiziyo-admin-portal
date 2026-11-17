@@ -428,7 +428,8 @@ describe('klucze, których fizjoterapeuta nie ruszył', () => {
 
   it('sekcje zespołu przetrwają, nawet gdy szkic je zgubił albo zmienił', () => {
     const draft = draftOf();
-    for (const key of ['provenance', 'lifecycle', 'classification', 'relations', 'media', 'prescription', 'side']) {
+    // `side` i `prescription` edytuje weryfikacja (całą sekcją), więc nie są tu sekcjami zespołu.
+    for (const key of ['provenance', 'lifecycle', 'classification', 'relations', 'media']) {
       delete draft[key];
     }
     draft.schemaVersion = '2.0';
@@ -588,6 +589,8 @@ describe('lista ścieżek edytowalnych (zapadka)', () => {
     'therapist.checkpoints': [{ text: 'Zmieniony punkt.' }],
     equipment_items: [{ label: 'zmieniony sprzęt' }],
     'ai.keywords': ['zmienione'],
+    side: { mode: 'alternating', per_side_dose: true, start: 'right', shown_in_media: 'right' },
+    prescription: { goal: 'strength', params: { sets: { default: 3, min: 2, max: 4 } } },
   };
 
   it('każda ścieżka edytowalna wynikająca ze złotego rekordu ma przypadek w tym teście', () => {
@@ -624,9 +627,7 @@ describe('lista ścieżek edytowalnych (zapadka)', () => {
   });
 
   it('każde pole tekstowe i lista, które dostaje pacjent, da się poprawić w portalu', () => {
-    const readOnlyForPortal = ['side.mode', 'side.per_side_dose', 'side.start', 'side.shown_in_media'];
-
-    expect(V33_PATIENT_VISIBLE_PATHS.filter((path) => !isV33EditablePath(path))).toEqual(readOnlyForPortal);
+    expect(V33_PATIENT_VISIBLE_PATHS.filter((path) => !isV33EditablePath(path))).toEqual([]);
   });
 });
 
@@ -999,15 +1000,15 @@ describe('zapadka kontraktu: każdy liść złotego rekordu 3.3 jest sklasyfikow
     section(section(next, 'provenance'), 'patient').nowe_pole = 'x';
     (next.media as unknown as Doc[])[1].nowe_pole = 'x';
     (section(next, 'safety').flags as Doc[])[0].nowe_pole = 'x';
-    section(section(next, 'prescription'), 'params').nowy_parametr = { default: 1 };
+    section(section(next, 'classification'), 'movement').nowe_pole = 'x';
 
     expect(
       leafPaths(next)
         .filter((path) => classesOfV33Leaf(path).length === 0)
         .sort()
     ).toEqual([
+      'classification.movement.nowe_pole',
       'media.1.nowe_pole',
-      'prescription.params.nowy_parametr.default',
       'provenance.nowe_pole',
       'provenance.patient.nowe_pole',
       'safety.flags.0.nowe_pole',
@@ -1053,5 +1054,23 @@ describe('zapadka kontraktu: każdy liść złotego rekordu 3.3 jest sklasyfikow
 
     expect(collectV33Edits(loaded, draft as ExerciseEnrichmentData)).toEqual({});
     expect(save(draft)).toEqual(loaded);
+  });
+});
+
+describe('side i prescription zapisywane całą sekcją', () => {
+  it('zmiana jednej granicy zakresu zapisuje sekcję, reszta dokumentu bez zmian', () => {
+    const draft = draftOf();
+    const params = section(section(draft, 'prescription'), 'params');
+    params.reps = { ...(params.reps as Doc), max: 20 };
+
+    const edits = collectV33Edits(loaded, draft as ExerciseEnrichmentData);
+    expect(Object.keys(edits)).toEqual(['prescription']);
+    const saved = save(draft);
+    expect((saved.prescription as Doc).goal).toBe((loaded.prescription as Doc).goal);
+    expectOnlyChanged(saved, ['prescription']);
+  });
+
+  it('nieruszona sekcja nie jest zmianą', () => {
+    expect(collectV33Edits(loaded, draftOf() as ExerciseEnrichmentData)).toEqual({});
   });
 });

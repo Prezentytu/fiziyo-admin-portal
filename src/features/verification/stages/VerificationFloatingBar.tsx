@@ -6,6 +6,8 @@ import { cn } from '@/lib/utils';
 interface VerificationFloatingBarProps {
   hint: string;
   isBlocked: boolean;
+  /** Blocked only by suggestions: soft hint and a one-click accept next to the primary action. */
+  acceptSuggestions?: { onClick: () => void };
   primaryLabel: string;
   onPrimary: () => void;
   isBusy?: boolean;
@@ -20,6 +22,7 @@ interface VerificationFloatingBarProps {
 export function VerificationFloatingBar({
   hint,
   isBlocked,
+  acceptSuggestions,
   primaryLabel,
   onPrimary,
   isBusy = false,
@@ -34,13 +37,28 @@ export function VerificationFloatingBar({
         <p
           className={cn(
             'min-w-0 flex-1 text-[14px] leading-5',
-            isBlocked ? 'font-semibold text-status-warning' : 'text-label-secondary'
+            !isBlocked
+              ? 'text-label-secondary'
+              : acceptSuggestions
+                ? 'font-medium text-status-suggestion'
+                : 'font-semibold text-status-warning'
           )}
           role="status"
           aria-live="polite"
         >
           {hint}
         </p>
+        {acceptSuggestions && (
+          <Button
+            type="button"
+            variant="tinted"
+            onClick={acceptSuggestions.onClick}
+            disabled={isBusy}
+            data-testid="verification-bar-accept-suggestions-btn"
+          >
+            Akceptuj sugestie
+          </Button>
+        )}
         {secondary && (
           <Button
             type="button"

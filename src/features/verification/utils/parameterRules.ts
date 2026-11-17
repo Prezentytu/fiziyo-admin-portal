@@ -105,10 +105,36 @@ export interface ParameterValues {
   rest: number | null;
 }
 
+/** Zakres, w którym wartość nie jest sugestią; z dokumentu ćwiczenia 3.3 albo ogólny z `PARAMETER_RULES`. */
+export interface TypicalRange {
+  min: number;
+  max: number;
+  /** Wartość przycisku „Ustaw …”. */
+  suggested: number;
+}
+
+/** Zakresy z `prescription.params` rekordu 3.3, przeliczone na pola kafla. */
+export type ExerciseRanges = Partial<Record<ParameterKey, TypicalRange>>;
+
 export interface ParameterFieldState {
   key: ParameterKey;
   value: number | null;
   level: ParameterLevel;
+  /** Ustawione, gdy zakres pochodzi z dokumentu ćwiczenia, nie z ogólnych reguł. */
+  exerciseRange?: TypicalRange;
+}
+
+/** Zakres dla pola: najpierw własny zakres ćwiczenia, potem ogólna reguła. */
+export function typicalRangeOf(key: ParameterKey, exerciseRange?: TypicalRange): TypicalRange {
+  if (exerciseRange) return exerciseRange;
+  const rule = PARAMETER_RULES[key];
+  return { min: rule.typicalMin, max: rule.typicalMax, suggested: rule.suggested };
+}
+
+function rangeText(key: ParameterKey, exerciseRange?: TypicalRange): string {
+  const range = typicalRangeOf(key, exerciseRange);
+  const text = `${range.min}–${formatWithUnit(range.max, PARAMETER_RULES[key].unit)}`;
+  return exerciseRange ? `zakres ćwiczenia ${text}` : `zwykle ${text}`;
 }
 
 interface ParameterFinding {
@@ -264,6 +290,19 @@ export function acknowledgeFinding(
   return { ...review, acknowledged: new Set([...review.acknowledged, key]) };
 }
 
+/**
+ * „Akceptuj wszystkie sugestie”: confirms every finding the therapist may leave as is (values outside the typical
+ * range, a long exercise). Errors (empty, over the limit) stay open.
+ */
+export function acknowledgeAllSuggestions(
+  review: ParameterReviewState,
+  evaluation: Pick<ParameterEvaluation, 'findings' | 'sessionSeconds'>
+): ParameterReviewState {
+  return evaluation.findings
+    .filter((finding) => finding.canAcknowledge)
+    .reduce((next, finding) => acknowledgeFinding(next, finding.key, evaluation.sessionSeconds), review);
+}
+
 /** Fields outside the parameter tile that still drive the patient timer. */
 interface SessionTiming {
   tempo?: string | null;
@@ -368,10 +407,13 @@ function evaluateField(
   key: ParameterKey,
   values: ParameterValues,
   acknowledged: ReadonlySet<ParameterKey>,
-  mode: ExecutionMode
+  mode: ExecutionMode,
+  exerciseRange?: TypicalRange
 ): { field: ParameterFieldState; finding: ParameterFinding | null } {
   const rule = PARAMETER_RULES[key];
   const value = values[key];
+  const typical = typicalRangeOf(key, exerciseRange);
+  const withRange = exerciseRange ? { exerciseRange } : {};
 
   // A hold is stored as one repetition; that single repetition is the shape, not an unusual count.
   if (mode === 'hold' && key === 'reps') return { field: { key, value, level: 'ok' }, finding: null };
@@ -418,24 +460,23 @@ function evaluateField(
     };
   }
 
-  if (numeric < rule.typicalMin || numeric > rule.typicalMax) {
+  if (numeric < typical.min || numeric > typical.max) {
     if (acknowledged.has(key)) {
-      return { field: { key, value: numeric, level: 'acknowledged' }, finding: null };
+      return { field: { key, value: numeric, level: 'acknowledged', ...withRange }, finding: null };
     }
-    const range = `${rule.typicalMin}–${formatWithUnit(rule.typicalMax, rule.unit)}`;
     return {
-      field: { key, value: numeric, level: 'warning' },
+      field: { key, value: numeric, level: 'warning', ...withRange },
       finding: {
         key,
         level: 'warning',
-        text: `${rule.label}: ${formatWithUnit(numeric, rule.unit)}, zwykle ${range}.`,
-        suggested: rule.suggested,
+        text: `${rule.label}: ${formatWithUnit(numeric, rule.unit)}, ${rangeText(key, exerciseRange)}.`,
+        suggested: typical.suggested,
         canAcknowledge: true,
       },
     };
   }
 
-  return { field: { key, value: numeric, level: 'ok' }, finding: null };
+  return { field: { key, value: numeric, level: 'ok', ...withRange }, finding: null };
 }
 
 interface EvaluateParametersInput {
@@ -448,6 +489,8 @@ interface EvaluateParametersInput {
   timing?: SessionTiming;
   /** Rekord 3.3: „naprzemiennie” to dawka na stronę. Rekord bez wersji liczy jak dotąd. */
   isV33?: boolean;
+  /** Rekord 3.3: zakresy z `prescription.params` zastępują ogólne „zwykle”. */
+  exerciseRanges?: ExerciseRanges;
 }
 
 export function evaluateParameters({
@@ -458,12 +501,13 @@ export function evaluateParameters({
   acknowledgedSessionSeconds = null,
   timing,
   isV33 = false,
+  exerciseRanges = {},
 }: EvaluateParametersInput): ParameterEvaluation {
   const fields: ParameterFieldState[] = [];
   const findings: ParameterFinding[] = [];
 
   for (const key of MODE_PARAMETERS[mode]) {
-    const { field, finding } = evaluateField(key, values, acknowledged, mode);
+    const { field, finding } = evaluateField(key, values, acknowledged, mode, exerciseRanges[key]);
     fields.push(field);
     if (finding) findings.push(finding);
   }
@@ -498,7 +542,8 @@ export function evaluateParameters({
 /** Short note under a parameter field: the reason in a few words, the action sits in the buttons next to it. */
 export function describeFieldNote(field: ParameterFieldState): string {
   const rule = PARAMETER_RULES[field.key];
-  const range = `${rule.typicalMin}–${formatWithUnit(rule.typicalMax, rule.unit)}`;
+  const typical = typicalRangeOf(field.key, field.exerciseRange);
+  const range = rangeText(field.key, field.exerciseRange);
   switch (field.level) {
     case 'empty':
       return 'Puste';
@@ -506,9 +551,9 @@ export function describeFieldNote(field: ParameterFieldState): string {
       if (rule.integer && field.value != null && !Number.isInteger(field.value)) return 'Liczba całkowita';
       return `Maks. ${formatWithUnit(rule.hardMax, rule.unit)}`;
     case 'warning':
-      return `${(field.value ?? 0) < rule.typicalMin ? 'Mało' : 'Dużo'}, zwykle ${range}`;
+      return `${(field.value ?? 0) < typical.min ? 'Mało' : 'Dużo'}, ${range}`;
     case 'acknowledged':
-      return `Zostawione poza zakresem ${range}`;
+      return `Zostawione poza zakresem: ${range}`;
     default:
       return '';
   }

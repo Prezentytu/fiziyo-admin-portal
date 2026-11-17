@@ -40,7 +40,7 @@ function materialSub({ stages, hasPendingPhoto, hasVideo, photoLabel }: StageCop
 function parametersSub({ stages, parameters, sessionLine }: StageCopyInput): string {
   if (stages.issues.parameters.length === 0) return sessionLine;
   if (parameters.blockingCount > 0) return `Do poprawy: ${parameters.blockingCount}`;
-  return `Sprawdź: ${stages.issues.parameters.length}`;
+  return `Sugestie: ${stages.issues.parameters.length}`;
 }
 
 function instructionSub({ stages, hasPendingProposal, isV33 }: StageCopyInput): string {
@@ -56,9 +56,19 @@ function safetySub({ stages, stopIfCount }: StageCopyInput): string {
   return stopIfCount === 0 ? 'Brak objawów przerwania' : `Do poprawy: ${stages.issues.safety.length}`;
 }
 
+function stagesToFix(stages: VerificationStagesResult): VerificationStageKey[] {
+  return stages.openStages.filter((key) => !stages.suggestionOnlyStages.includes(key));
+}
+
+function stageList(keys: VerificationStageKey[]): string {
+  return keys.map((key) => STAGE_TITLES[key]).join(', ');
+}
+
 function decisionSub({ stages, canDecide, organization }: StageCopyInput): string {
   if (!canDecide) return organization ? organization.statusLabel : 'Już w bazie';
-  return stages.canPublish ? 'Zatwierdź' : `Do poprawy: ${formatStageCount(stages.openStages.length)}`;
+  if (stages.canPublish) return 'Zatwierdź';
+  const toFix = stagesToFix(stages);
+  return toFix.length > 0 ? `Do poprawy: ${formatStageCount(toFix.length)}` : 'Sugestie do akceptacji';
 }
 
 function materialHint({ stages, hasPendingPhoto, hasVideo }: StageCopyInput): string {
@@ -73,7 +83,7 @@ function parametersHint({ stages, parameters, hasVideo }: StageCopyInput): strin
   ).length;
   if (blockingFieldCount > 0) return `Popraw zaznaczone parametry: ${blockingFieldCount}.`;
   if (parameters.sessionLevel === 'limit') return 'Za długie ćwiczenie: zmniejsz serie, powtórzenia albo przerwę.';
-  if (stages.issues.parameters.length > 0) return 'Popraw albo potwierdź „OK”.';
+  if (stages.issues.parameters.length > 0) return 'Sugestie: zaakceptuj albo zmień wartość.';
   return hasVideo ? 'Porównaj parametry z nagraniem.' : 'Porównaj parametry ze zdjęciami.';
 }
 
@@ -96,7 +106,11 @@ function decisionHint({ stages, canDecide, signerName, organization }: StageCopy
       ? `Trafi do ćwiczeń gabinetu z podpisem: ${signerName}.`
       : `Trafi do bazy z podpisem: ${signerName}.`;
   }
-  return `Najpierw popraw: ${stages.openStages.map((key) => STAGE_TITLES[key]).join(', ')}.`;
+  const toFix = stagesToFix(stages);
+  if (toFix.length === 0) return `Zaakceptuj sugestie: ${stageList(stages.suggestionOnlyStages)}.`;
+  const suggestions =
+    stages.suggestionOnlyStages.length > 0 ? ` Sugestie: ${stageList(stages.suggestionOnlyStages)}.` : '';
+  return `Najpierw popraw: ${stageList(toFix)}.${suggestions}`;
 }
 
 export function buildStageCopy(input: StageCopyInput): StageCopy {

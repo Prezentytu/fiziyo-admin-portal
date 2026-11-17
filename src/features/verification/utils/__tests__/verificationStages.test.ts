@@ -7,6 +7,7 @@ import {
   computeVerificationStages,
   formatStageCount,
   countStopIfSymptoms,
+  hasOnlySuggestions,
   listContentGaps,
   type VerificationStagesInput,
 } from '../verificationStages';
@@ -199,5 +200,43 @@ describe('bramki rekordu v3.3', () => {
     });
 
     expect(result.openStages).toEqual(['instruction']);
+  });
+});
+
+describe('sugestie a błędy', () => {
+  const unusual = evaluateParameters({
+    values: { sets: 1, reps: 3, repTime: 29, hold: null, rest: 30 },
+    mode: 'reps',
+    side: 'none',
+  });
+
+  it('wartości poza typowym zakresem to sugestie, nie błędy', () => {
+    const result = computeVerificationStages({ ...readyInput, parameters: unusual });
+    expect(result.issues.parameters.length).toBeGreaterThan(0);
+    expect(result.issues.parameters.every((issue) => issue.severity === 'suggestion')).toBe(true);
+    expect(result.suggestionOnlyStages).toEqual(['parameters']);
+    expect(hasOnlySuggestions(result.issues.parameters)).toBe(true);
+  });
+
+  it('brak wartości albo przekroczony limit zostaje błędem', () => {
+    const result = computeVerificationStages({
+      ...readyInput,
+      parameters: evaluateParameters({
+        values: { sets: 100, reps: 3, repTime: 3, hold: null, rest: 60 },
+        mode: 'reps',
+        side: 'none',
+      }),
+    });
+    expect(hasOnlySuggestions(result.issues.parameters)).toBe(false);
+    expect(result.suggestionOnlyStages).toEqual([]);
+  });
+
+  it('liczby w opisie pacjenta to sugestia', () => {
+    const result = computeVerificationStages({ ...readyInput, descriptionNumberCount: 2 });
+    expect(result.suggestionOnlyStages).toEqual(['parameters']);
+  });
+
+  it('pusty etap nie jest „tylko sugestie”', () => {
+    expect(hasOnlySuggestions([])).toBe(false);
   });
 });

@@ -6,6 +6,7 @@ import type { StageIssue, VerificationStagesResult } from '../verificationStages
 const cleanStages: VerificationStagesResult = {
   issues: { material: [], parameters: [], instruction: [], safety: [], decision: [] },
   openStages: [],
+  suggestionOnlyStages: [],
   canPublish: true,
 };
 
@@ -90,6 +91,7 @@ describe('buildStageCopy', () => {
     const stages = {
       issues: { ...cleanStages.issues, safety: [issue] },
       openStages: ['safety' as const],
+      suggestionOnlyStages: [],
       canPublish: false,
     };
     const { subs, hints } = buildStageCopy(input({ stages, stopIfCount: 0 }));
@@ -102,5 +104,40 @@ describe('buildStageCopy', () => {
     const { subs, hints } = buildStageCopy(input({ canDecide: false }));
     expect(subs.decision).toBe('Już w bazie');
     expect(hints.decision).toBe('Ćwiczenie jest już w bazie. Poprawki zapisują się od razu.');
+  });
+
+  it('same sugestie nie są „do poprawy”', () => {
+    const suggestion: StageIssue = { stage: 'parameters', text: 'x', severity: 'suggestion' };
+    const stages: VerificationStagesResult = {
+      issues: { ...cleanStages.issues, parameters: [suggestion, suggestion, suggestion] },
+      openStages: ['parameters'],
+      suggestionOnlyStages: ['parameters'],
+      canPublish: false,
+    };
+    const { subs, hints } = buildStageCopy(
+      input({
+        stages,
+        parameters: {
+          findings: [{ key: 'reps', level: 'warning', text: 'x', canAcknowledge: true }],
+          blockingCount: 0,
+          sessionLevel: 'ok',
+        },
+      })
+    );
+    expect(subs.parameters).toBe('Sugestie: 3');
+    expect(subs.decision).toBe('Sugestie do akceptacji');
+    expect(hints.decision).toBe('Zaakceptuj sugestie: Parametry.');
+
+    const withSafety = buildStageCopy(
+      input({
+        stages: {
+          ...stages,
+          issues: { ...stages.issues, safety: [{ stage: 'safety', text: 'Dodaj objaw przerwania.' }] },
+          openStages: ['parameters', 'safety'],
+        },
+      })
+    );
+    expect(withSafety.subs.decision).toBe('Do poprawy: 1 etap');
+    expect(withSafety.hints.decision).toBe('Najpierw popraw: Bezpieczeństwo. Sugestie: Parametry.');
   });
 });

@@ -22,6 +22,16 @@ export const MIN_THERAPIST_DESCRIPTION_LENGTH = 20;
 export interface StageIssue {
   stage: VerificationStageKey;
   text: string;
+  /**
+   * `suggestion`: an advisory note the reviewer may accept as is (one click), shown in a soft tone, never as an error.
+   * Omitted: something to fix.
+   */
+  severity?: 'suggestion';
+}
+
+/** A stage whose open issues are all suggestions: accept them, nothing is broken. */
+export function hasOnlySuggestions(issues: readonly StageIssue[]): boolean {
+  return issues.length > 0 && issues.every((issue) => issue.severity === 'suggestion');
 }
 
 export interface VerificationStagesInput {
@@ -46,6 +56,8 @@ export interface VerificationStagesInput {
 export interface VerificationStagesResult {
   issues: Record<VerificationStageKey, StageIssue[]>;
   openStages: VerificationStageKey[];
+  /** Open stages that hold only suggestions. */
+  suggestionOnlyStages: VerificationStageKey[];
   canPublish: boolean;
 }
 
@@ -112,9 +124,14 @@ function parameterIssues(input: VerificationStagesInput): StageIssue[] {
   const issues: StageIssue[] = input.parameters.findings.map((finding) => ({
     stage: 'parameters',
     text: finding.text,
+    ...(finding.canAcknowledge ? { severity: 'suggestion' as const } : {}),
   }));
   if (input.descriptionNumberCount > 0) {
-    issues.push({ stage: 'parameters', text: 'Opis dla pacjenta zawiera liczbę powtórzeń lub serii.' });
+    issues.push({
+      stage: 'parameters',
+      text: 'Opis dla pacjenta zawiera liczbę powtórzeń lub serii.',
+      severity: 'suggestion',
+    });
   }
   return issues;
 }
@@ -145,7 +162,9 @@ export function computeVerificationStages(input: VerificationStagesInput): Verif
 
   const openStages = VERIFICATION_STAGES.filter((stage) => stage !== 'decision' && issues[stage].length > 0);
 
-  return { issues, openStages, canPublish: openStages.length === 0 };
+  const suggestionOnlyStages = openStages.filter((stage) => hasOnlySuggestions(issues[stage]));
+
+  return { issues, openStages, suggestionOnlyStages, canPublish: openStages.length === 0 };
 }
 
 /**

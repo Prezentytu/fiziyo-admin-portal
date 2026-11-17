@@ -148,8 +148,6 @@ describe('VerificationWorkspace – rekord v3.3, zmiana zapisana przez kogoś in
     server.state.document = { ...golden, patient: { ...golden.patient, why: OTHER_WHY } };
 
     await editStopIf(user);
-    await user.click(screen.getByTestId('verification-stage-parameters-btn'));
-    await user.click(screen.getByTestId('verification-param-repTime-ack-btn'));
     await user.click(screen.getByTestId('verification-stage-decision-btn'));
     await user.click(screen.getByTestId('verification-bar-primary-btn'));
 
