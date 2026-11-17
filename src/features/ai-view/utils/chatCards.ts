@@ -111,3 +111,22 @@ export function latestCardPatientId(messages: readonly ThreadMessageLike[]): str
   }
   return undefined;
 }
+
+/** A patient the therapist opened in the context panel, and how long the thread was at that moment. */
+export interface PinnedPatient {
+  patientId: string;
+  messageCount: number;
+}
+
+/**
+ * Whom the conversation is about: the patient opened in the context panel, until a later card is
+ * about someone else. A pin that outlived such a card kept the old patient as the one model cards
+ * were checked against (test 17.11, K1b).
+ */
+export function conversationPatientId(
+  messages: readonly ThreadMessageLike[],
+  pin: PinnedPatient | undefined
+): string | undefined {
+  if (!pin) return latestCardPatientId(messages);
+  return latestCardPatientId(messages.slice(pin.messageCount)) ?? pin.patientId;
+}

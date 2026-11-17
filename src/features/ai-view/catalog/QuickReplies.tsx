@@ -17,7 +17,7 @@ export function QuickReplies({ options, chosen, onPick, testId, disabled = false
     <div className="flex flex-wrap gap-2" role="group" aria-label="Szybkie odpowiedzi">
       {options.map((option, index) => (
         <ChoiceChip
-          key={option}
+          key={`${option}-${index}`}
           variant={chosen === option ? 'chosen' : index === 0 && chosen === undefined ? 'primary' : 'default'}
           disabled={disabled || chosen !== undefined}
           aria-pressed={chosen === option}

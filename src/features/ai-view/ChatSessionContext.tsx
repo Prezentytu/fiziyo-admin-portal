@@ -14,7 +14,7 @@ import type { UserByClerkIdResponse } from '@/types/apollo';
 import { useChatData, type ChatPatient } from './useChatData';
 import { useChatMode } from './useChatMode';
 import { newChatId, useChatThread, type AssistantReply, type ChatThreadMessage } from './useChatThread';
-import { latestCardPatientId } from './utils/chatCards';
+import { conversationPatientId, type PinnedPatient } from './utils/chatCards';
 import {
   conversationStorageKey,
   parseConversations,
@@ -62,6 +62,8 @@ export interface ChatSession {
   stopReply: () => void;
   appendAssistant: (reply: AssistantReply) => void;
   appendExchange: (userText: string, reply: AssistantReply, attachmentName?: string) => void;
+  /** A patient picked from a choice by id; finishes the question without the model. */
+  choosePatient: (patientId: string, label: string) => void;
   markChosen: (messageId: string, chosen: string) => void;
   runTask: (
     userText: string,
@@ -105,6 +107,7 @@ export type ChatActions = Pick<
   | 'sendMessage'
   | 'appendAssistant'
   | 'appendExchange'
+  | 'choosePatient'
   | 'markChosen'
   | 'runTask'
   | 'refetchCredits'
@@ -251,10 +254,9 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
   }, [activeConversationId, isBusy, messages, storageKey]);
 
   const [isContextOpen, setContextOpen] = useState(false);
-  const [pinnedPatientId, setPinnedPatientId] = useState<string | undefined>(undefined);
+  const [pinnedPatient, setPinnedPatient] = useState<PinnedPatient | undefined>(undefined);
 
-  const latestPatientId = useMemo(() => latestCardPatientId(messages), [messages]);
-  const contextPatientId = pinnedPatientId ?? latestPatientId;
+  const contextPatientId = useMemo(() => conversationPatientId(messages, pinnedPatient), [messages, pinnedPatient]);
   useEffect(() => {
     contextPatientIdRef.current = contextPatientId;
   }, [contextPatientId]);
@@ -267,7 +269,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
   const startConversation = useCallback(() => {
     reset();
     setActiveConversationId(newChatId());
-    setPinnedPatientId(undefined);
+    setPinnedPatient(undefined);
     setContextOpen(false);
     goHome();
   }, [goHome, reset]);
@@ -279,7 +281,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       lastSavedRef.current = conversation.messages;
       reset(conversation.messages);
       setActiveConversationId(id);
-      setPinnedPatientId(undefined);
+      setPinnedPatient(undefined);
       goHome();
     },
     [conversations, goHome, reset]
@@ -325,8 +327,12 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
 
   const [createSetRequest, setCreateSetRequest] = useState<CreateSetRequest | null>(null);
 
+  const messageCountRef = useRef(0);
+  useEffect(() => {
+    messageCountRef.current = messages.length;
+  }, [messages]);
   const showPatient = useCallback((patientId: string) => {
-    setPinnedPatientId(patientId);
+    setPinnedPatient({ patientId, messageCount: messageCountRef.current });
     setContextOpen(true);
   }, []);
 
@@ -335,7 +341,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
     [patients, therapistId]
   );
   const title = conversations.find((conversation) => conversation.id === activeConversationId)?.title ?? 'Nowa rozmowa';
-  const { send, stop: stopReply, appendAssistant, appendExchange, runTask, markChosen } = thread;
+  const { send, stop: stopReply, appendAssistant, appendExchange, choosePatient, runTask, markChosen } = thread;
   const sendMessage = useCallback((text: string) => void send(text), [send]);
   const openCreateSet = useCallback(
     (exerciseIds: string[], patient?: Patient) => setCreateSetRequest({ exerciseIds, patient }),
@@ -354,6 +360,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       sendMessage,
       appendAssistant,
       appendExchange,
+      choosePatient,
       markChosen,
       runTask,
       refetchCredits,
@@ -371,6 +378,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       sendMessage,
       appendAssistant,
       appendExchange,
+      choosePatient,
       markChosen,
       runTask,
       refetchCredits,
@@ -402,6 +410,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       stopReply,
       appendAssistant,
       appendExchange,
+      choosePatient,
       markChosen,
       runTask,
       conversations,
@@ -440,6 +449,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       stopReply,
       appendAssistant,
       appendExchange,
+      choosePatient,
       markChosen,
       runTask,
       conversations,

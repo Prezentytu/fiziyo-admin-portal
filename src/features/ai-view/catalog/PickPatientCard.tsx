@@ -146,8 +146,10 @@ export function PickPatientCard({ spec, testId, messageId, chosen }: CardProps<'
                   />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[15px] font-medium text-foreground">{patient.name}</span>
-                    {patient.contextLabel && (
-                      <span className="block truncate text-[13px] text-label-secondary">{patient.contextLabel}</span>
+                    {(patient.contextLabel || patient.email) && (
+                      <span className="block truncate text-[13px] text-label-secondary">
+                        {patient.contextLabel || patient.email}
+                      </span>
                     )}
                   </span>
                 </button>

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { SegmentedControl } from '@/components/ui/segmented-control';
 import { formatExerciseCount } from '@/utils/polishPlural';
 import { useChatActions } from '../ChatSessionContext';
+import { patientChoiceLabels } from '../utils/patientMatch';
 import {
   describePlan,
   FLOW_CANCEL_LABEL,
@@ -32,6 +33,9 @@ export function SendSummaryCard({ spec, testId, messageId, chosen }: CardProps<'
   const [plan, setPlan] = useState<SchedulePlan>(spec.plan);
   const { send, sending } = useSendPlan();
   const patient = patients.find((candidate) => candidate.id === spec.draft.patientId);
+  // Imiennicy: przed wysyłką widać, który to pacjent (powód, e-mail albo stan konta), nie samą nazwę.
+  const namesakes = patient ? patients.filter((candidate) => candidate.name === patient.name) : [];
+  const patientLabel = patient ? patientChoiceLabels(namesakes)[namesakes.indexOf(patient)] : undefined;
   const { endDate } = resolvePlanDates(plan);
   const isSent = chosen === 'sent';
   const isCancelled = chosen === 'cancelled';
@@ -86,7 +90,7 @@ export function SendSummaryCard({ spec, testId, messageId, chosen }: CardProps<'
     >
       <dl className="grid grid-cols-[auto_1fr] gap-x-5 gap-y-2 text-[15px]">
         <dt className="text-label-secondary">Pacjent</dt>
-        <dd className="font-medium text-foreground">{patient?.name ?? 'pacjent niedostępny'}</dd>
+        <dd className="font-medium text-foreground">{patientLabel ?? 'pacjent niedostępny'}</dd>
         <dt className="text-label-secondary">Zestaw</dt>
         <dd className="font-medium text-foreground">
           {formatExerciseCount(spec.draft.items.length)} · ok. {draftMinutes(spec.draft.items)} min dziennie

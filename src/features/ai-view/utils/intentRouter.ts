@@ -1,5 +1,5 @@
 import { normalizeSearchText } from '@/features/exercises/utils/exerciseSearch';
-import { matchPatients, type MatchablePatient } from './patientMatch';
+import { matchPatients, patientChoiceLabels, type MatchablePatient } from './patientMatch';
 import { tokenizeWords, wordMatches } from './textMatch';
 import { MAX_CLARIFY_OPTIONS, UNSUPPORTED_SPEC, type ChatViewSpec, type NavigateRoute } from './viewSpec';
 
@@ -115,13 +115,15 @@ export function findBestSet(sets: readonly MatchableSet[], topic: readonly strin
   return best;
 }
 
+/**
+ * Every answer carries the patient id, so a click picks that patient and not a name: two „Jan Kowalski”
+ * used to give two identical chips that asked the same question again (test 17.11, K3).
+ */
 function askWhichPatient(patients: readonly MatchablePatient[], question: string, firstOption?: string): ChatViewSpec {
-  const names = patients.map((patient) => patient.name);
-  return {
-    component: 'Clarify',
-    question,
-    options: (firstOption ? [firstOption, ...names] : names).slice(0, MAX_CLARIFY_OPTIONS),
-  };
+  const offered = patients.slice(0, MAX_CLARIFY_OPTIONS - (firstOption ? 1 : 0));
+  const choices = patientChoiceLabels(offered).map((label, index) => ({ label, patientId: offered[index].id }));
+  const all = firstOption ? [{ label: firstOption }, ...choices] : choices;
+  return { component: 'Clarify', question, options: all.map((choice) => choice.label), choices: all };
 }
 
 function navigateTarget(normalized: string): [RegExp, NavigateRoute] | null {
@@ -135,18 +137,32 @@ function navigateTarget(normalized: string): [RegExp, NavigateRoute] | null {
  * message a question ("O kogo chodzi?") was about: a reply that only names one patient finishes that command.
  */
 export function routeIntent(text: string, context: IntentContext, pendingCommand?: string): ChatViewSpec {
-  const own = routeCommand(text, context);
   // Only a bare answer ("Ewa Nowicka", "Jan na lędźwie") finishes the pending command; a new request wins.
-  if (pendingCommand && own.component === 'PatientPeek' && own.patientId) {
-    const answer = matchPatients(text, context.patients);
-    if (answer.kind === 'one') {
-      return routeCommand(`${pendingCommand} ${text}`, context, { id: answer.patient.id, words: answer.consumedWords });
+  // As an answer to "O kogo chodzi?" a first name alone is enough.
+  if (pendingCommand) {
+    const answer = routeCommand(text, context, { acceptPartial: true });
+    if (answer.component === 'PatientPeek' && answer.patientId) {
+      return routeForPatient(`${pendingCommand} ${text}`, context, answer.patientId);
     }
   }
-  return own;
+  return routeCommand(text, context);
 }
 
-function routeCommand(text: string, context: IntentContext, chosen?: { id: string; words: string[] }): ChatViewSpec {
+/**
+ * The command finished for the patient the therapist picked from a choice (by id, never by name).
+ * Without a command the pick opens that patient's plan.
+ */
+export function routeForPatient(command: string | undefined, context: IntentContext, patientId: string): ChatViewSpec {
+  const spec = command?.trim() ? routeCommand(command, context, { patientId }) : UNSUPPORTED_SPEC;
+  const keepsPatient = 'patientId' in spec && spec.patientId === patientId;
+  return keepsPatient ? spec : { component: 'PatientPeek', patientId };
+}
+
+function routeCommand(
+  text: string,
+  context: IntentContext,
+  options: { patientId?: string; acceptPartial?: boolean } = {}
+): ChatViewSpec {
   const normalized = normalizeSearchText(text).trim();
   if (!normalized) return UNSUPPORTED_SPEC;
 
@@ -161,11 +177,17 @@ function routeCommand(text: string, context: IntentContext, chosen?: { id: strin
   if (target && !SET_PATTERN.test(normalized)) return { component: 'Navigate', route: target[1] };
 
   const patientMatch = matchPatients(text, context.patients);
-  if (patientMatch.kind === 'many' && !chosen) {
-    return askWhichPatient(patientMatch.patients, 'Masz kilku pacjentów o tym imieniu. O kogo chodzi?');
+  if (!options.patientId) {
+    if (patientMatch.kind === 'many') {
+      return askWhichPatient(patientMatch.patients, 'Masz kilku pacjentów o tym imieniu. O kogo chodzi?');
+    }
+    // One word of a longer name ("dla Jana") is a guess: the plan is bound only after a confirmation.
+    if (patientMatch.kind === 'one' && patientMatch.partial && !options.acceptPartial) {
+      return askWhichPatient([patientMatch.patient], `Czy chodzi o pacjenta: ${patientMatch.patient.name}?`);
+    }
   }
-  const patientId = chosen?.id ?? (patientMatch.kind === 'one' ? patientMatch.patient.id : undefined);
-  const topic = topicWords(text, [...patientMatch.consumedWords, ...(chosen?.words ?? [])]);
+  const patientId = options.patientId ?? (patientMatch.kind === 'one' ? patientMatch.patient.id : undefined);
+  const topic = topicWords(text, patientMatch.consumedWords);
 
   // "przejdź do zestawów" names only the screen; anything more ("pokaż zestaw na kolano") is a request.
   if (target && !patientId && topic.every((word) => target[0].test(word) || NAVIGATE_VERB_PATTERN.test(word))) {

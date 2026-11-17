@@ -5,8 +5,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { dispatchChatMessage } from './chatDispatchClient';
 import { latestCardPatientId, type ChatCardSpec } from './utils/chatCards';
 import type { ChatThreadMessage } from './utils/conversationStore';
-import type { IntentContext } from './utils/intentRouter';
-import { resolveReply } from './utils/resolveReply';
+import { routeForPatient, type IntentContext } from './utils/intentRouter';
+import { replyText, resolveReply } from './utils/resolveReply';
 import { countQuestion, localReplyTo, withExerciseIdeas } from './utils/threadLocalReply';
 import { UNSUPPORTED_SPEC } from './utils/viewSpec';
 
@@ -195,6 +195,21 @@ export function useChatThread({ useAi, context, ready, scopeKey, getContextPatie
     [context, getContextPatientId, pushUser, ready, scopeKey, useAi]
   );
 
+  /**
+   * The therapist picked a patient from a choice ("O kogo chodzi?"). The pick is an id, so namesakes
+   * end the question too; the command behind it is finished by rules, without a model call.
+   */
+  const choosePatient = useCallback(
+    (patientId: string, label: string) => {
+      if (inFlightRef.current) return;
+      const spec = routeForPatient(pendingCommandRef.current, context, patientId);
+      pendingCommandRef.current = undefined;
+      pushUser(label);
+      appendAssistant({ text: replyText(undefined, spec, context), spec });
+    },
+    [appendAssistant, context, pushUser]
+  );
+
   /** What the therapist chose (a shortcut, a quick reply) and the thread's answer to it, both local. */
   const appendExchange = useCallback(
     (userText: string, reply: AssistantReply, attachmentName?: string) => {
@@ -271,5 +286,16 @@ export function useChatThread({ useAi, context, ready, scopeKey, getContextPatie
     [startOver]
   );
 
-  return { messages, isBusy, send, stop, appendAssistant, appendExchange, runTask, markChosen, reset };
+  return {
+    messages,
+    isBusy,
+    send,
+    stop,
+    appendAssistant,
+    appendExchange,
+    choosePatient,
+    runTask,
+    markChosen,
+    reset,
+  };
 }
