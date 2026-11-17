@@ -29,11 +29,13 @@ export function ExerciseOfferCard({ offer, disabled, onDecide }: ExerciseOfferCa
       <div className="flex items-start gap-3">
         <ExerciseThumbnail src={getMediaUrl(offer.imageUrl)} sizeClass="h-16 w-16 shrink-0 rounded-lg" sizes="64px" />
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <h3 className="truncate text-sm font-semibold text-foreground">{offer.exerciseName}</h3>
+          <h3 className="line-clamp-2 text-sm font-semibold text-foreground" title={offer.exerciseName}>
+            {offer.exerciseName}
+          </h3>
           <div className="flex flex-wrap items-center gap-1.5">
-            <Badge variant={isAdopt ? 'info' : 'secondary'}>{isAdopt ? 'Do gabinetu' : 'Do recenzji'}</Badge>
+            <Badge variant={isAdopt ? 'info' : 'secondary'} className="whitespace-nowrap">{isAdopt ? 'Do gabinetu' : 'Do recenzji'}</Badge>
             {offer.hasVideo ? (
-              <Badge variant="outline" className="gap-1">
+              <Badge variant="outline" className="gap-1 whitespace-nowrap">
                 <PlayCircle className="h-3 w-3" />
                 Film
               </Badge>
