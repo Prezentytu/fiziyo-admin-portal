@@ -55,6 +55,8 @@ interface CreateSetWizardProps {
   patientId?: string;
   patientName?: string;
   initialExerciseIds?: string[];
+  /** Nazwa, z którą kreator się otwiera (np. nazwa propozycji z czatu); bez niej nazwa domyślna. */
+  initialName?: string;
 }
 
 interface PatientContext {
@@ -72,6 +74,7 @@ export function CreateSetWizard({
   patientId,
   patientName,
   initialExerciseIds,
+  initialName,
 }: CreateSetWizardProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -105,7 +108,7 @@ export function CreateSetWizard({
 
   useEffect(() => {
     if (open) {
-      setName(defaultSetName({ forPatient: Boolean(patientName) }));
+      setName(initialName?.trim() || defaultSetName({ forPatient: Boolean(patientName) }));
       setDescription('');
       setShowDescription(false);
       setSelectedInstances([]);
@@ -117,7 +120,7 @@ export function CreateSetWizard({
       initializedFromInitialRef.current = false;
       setAwaitingInitialExercises(true);
     }
-  }, [open, patientName]);
+  }, [open, patientName, initialName]);
 
   const apolloClient = useApolloClient();
   const detailExerciseIds = useMemo(

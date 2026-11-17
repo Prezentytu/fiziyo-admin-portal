@@ -345,7 +345,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen }: CardProps<'Set
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => openCreateSet(draftIds, toWizardPatient(patient))}
+                onClick={() => openCreateSet(draftIds, toWizardPatient(patient), name)}
                 disabled={items.length === 0}
                 data-testid={`${testId}-full-editor-btn`}
               >
