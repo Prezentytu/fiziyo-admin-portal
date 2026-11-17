@@ -1,8 +1,8 @@
 import { EXERCISE_PARAM_DEFAULTS } from '@/components/shared/exercise/exerciseParamDefaults';
-import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
+import type { EnrichmentPatientMistakeV3, ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import type { ExerciseSuggestionResponse } from '@/types/ai.types';
 import { aiSuggestionExecutionTime, positiveAiNumber } from '@/features/exercises/utils/aiSuggestionParams';
-import { ENRICHMENT_SCHEMA_V3 } from '@/features/verification/utils/enrichmentToV3';
+import { ENRICHMENT_SCHEMA_V3, toV3 } from '@/features/verification/utils/enrichmentToV3';
 
 /** Parameters of a new exercise in the chat card. Times in seconds; 0 = not set. */
 export interface ChatExerciseParams {
@@ -58,6 +58,27 @@ export function paramsFromSuggestion(
   };
 }
 
+const SIDE_SUMMARY: Record<ChatExerciseSide, string> = {
+  none: '',
+  left: 'tylko lewa',
+  right: 'tylko prawa',
+  both: 'na każdą stronę',
+  alternating: 'naprzemiennie',
+};
+
+/** The card's parameters in one line, as the set draft shows them: „3 × 30 s · przerwa 30 s · …”. */
+export function formatChatParams(params: Omit<ChatExerciseParams, 'type'>, type: ChatExerciseParams['type']): string {
+  const held = type === 'time' && params.executionTime > 0;
+  const parts = [
+    held ? `${params.sets} × ${params.executionTime} s` : `${params.sets} × ${params.reps}`,
+    !held && params.executionTime > 0 ? `${params.executionTime} s powtórzenie` : '',
+    params.restSets > 0 ? `przerwa ${params.restSets} s` : '',
+    params.preparationTime > 0 ? `przygotowanie ${params.preparationTime} s` : '',
+    SIDE_SUMMARY[params.side] ?? '',
+  ];
+  return parts.filter(Boolean).join(' · ');
+}
+
 /** One item per line, as the therapist edits steps and cues in the card. */
 export function linesToItems(text: string): string[] {
   return text
@@ -80,17 +101,63 @@ export function resolveChatExerciseType(proposedType: 'reps' | 'time', execution
   return proposedType === 'time' && executionTime > 0 ? 'time' : 'reps';
 }
 
+/** One mistake per line, written as „błąd → poprawka” in the card. */
+export function mistakesToLines(mistakes: readonly EnrichmentPatientMistakeV3[] | null | undefined): string {
+  return (mistakes ?? [])
+    .map((item) => [item.mistake?.trim(), item.fix?.trim()].filter(Boolean).join(' → '))
+    .filter(Boolean)
+    .join('\n');
+}
+
+export function linesToMistakes(text: string): EnrichmentPatientMistakeV3[] {
+  return linesToItems(text).map((line) => {
+    const [mistake, ...fix] = line.split(/\s*(?:→|->)\s*/);
+    const fixText = fix.join(' ').trim();
+    return fixText ? { mistake: mistake.trim(), fix: fixText } : { mistake: mistake.trim() };
+  });
+}
+
+/** What the AI enrichment gives each section of the card; empty strings where it gave nothing. */
+export interface ChatExerciseTexts {
+  description: string;
+  steps: string;
+  cues: string;
+  mistakes: string;
+  stopIf: string;
+}
+
+export function textsFromEnrichment(enrichment: ExerciseEnrichmentData | null | undefined): ChatExerciseTexts {
+  const v3 = toV3(enrichment);
+  return {
+    description: v3.patient?.summary?.trim() ?? '',
+    steps: itemsToLines(v3.patient?.steps),
+    cues: itemsToLines(v3.patient?.cues),
+    mistakes: mistakesToLines(v3.patient?.mistakes),
+    stopIf: v3.safety?.stop_if?.trim() ?? '',
+  };
+}
+
 /**
- * Enrichment saved with the exercise: only the steps and cues the therapist saw and edited in the
- * card. Other AI sections (safety, mistakes, feelings) reach the patient, so they are not saved
- * unseen. Null when there is nothing to save.
+ * Enrichment saved with the exercise: only what the therapist saw and could edit in the card
+ * (steps, cues, mistakes, when to stop). Other AI sections reach the patient, so they are not
+ * saved unseen. Null when there is nothing to save.
  */
-export function buildChatExerciseEnrichment(stepsText: string, cuesText: string): ExerciseEnrichmentData | null {
-  const steps = linesToItems(stepsText);
-  const cues = linesToItems(cuesText);
-  if (steps.length === 0 && cues.length === 0) return null;
+export function buildChatExerciseEnrichment(
+  texts: Pick<ChatExerciseTexts, 'steps' | 'cues'> & Partial<Pick<ChatExerciseTexts, 'mistakes' | 'stopIf'>>
+): ExerciseEnrichmentData | null {
+  const steps = linesToItems(texts.steps);
+  const cues = linesToItems(texts.cues);
+  const mistakes = linesToMistakes(texts.mistakes ?? '');
+  const stopIf = texts.stopIf?.trim() ?? '';
+  const patient = {
+    ...(steps.length > 0 ? { steps } : {}),
+    ...(cues.length > 0 ? { cues } : {}),
+    ...(mistakes.length > 0 ? { mistakes } : {}),
+  };
+  if (Object.keys(patient).length === 0 && !stopIf) return null;
   return {
     $schema: ENRICHMENT_SCHEMA_V3,
-    patient: { ...(steps.length > 0 ? { steps } : {}), ...(cues.length > 0 ? { cues } : {}) },
+    ...(Object.keys(patient).length > 0 ? { patient } : {}),
+    ...(stopIf ? { safety: { stop_if: stopIf } } : {}),
   };
 }

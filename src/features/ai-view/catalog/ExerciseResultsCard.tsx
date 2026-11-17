@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Check, Plus } from 'lucide-react';
+import { Check, Lightbulb, Plus } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -13,8 +13,11 @@ import { useAvailableExercises } from '../useAvailableExercises';
 import { pickExercisesById, searchExercises } from '../utils/exerciseLookup';
 import type { CardProps } from './cardProps';
 import { ChatCard, ChatCardEmpty } from './ChatCard';
+import { ClarifyChips } from './ClarifyChips';
+import { ExerciseIdeasList } from './ExerciseIdeas';
+import { EXERCISE_CLARIFY_QUESTIONS } from '../utils/setDraft';
 
-/** Search tiles: pick what fits and compose a set from it, or ask for a new exercise. */
+/** Search tiles: pick what fits and compose a set from it; when nothing fits, ideas for new exercises. */
 export function ExerciseResultsCard({ spec, testId, messageId, chosen }: CardProps<'ExerciseResults'>) {
   const { organizationId, patients, appendExchange, markChosen } = useChatActions();
   // Model proponuje ćwiczenia z całego katalogu; te spoza pierwszej strony dociągają się po id (P-4).
@@ -24,19 +27,31 @@ export function ExerciseResultsCard({ spec, testId, messageId, chosen }: CardPro
 
   const results = useMemo(
     () =>
-      spec.exerciseIds.length > 0 ? pickExercisesById(exercises, spec.exerciseIds) : searchExercises(exercises, spec.query),
+      spec.exerciseIds.length > 0
+        ? pickExercisesById(exercises, spec.exerciseIds)
+        : searchExercises(exercises, spec.query),
     [exercises, spec.exerciseIds, spec.query]
   );
   const selected = selectedIds ?? results.map((exercise) => exercise.id);
   const locked = chosen !== undefined;
 
   const toggle = (exerciseId: string) =>
-    setSelectedIds(selected.includes(exerciseId) ? selected.filter((id) => id !== exerciseId) : [...selected, exerciseId]);
+    setSelectedIds(
+      selected.includes(exerciseId) ? selected.filter((id) => id !== exerciseId) : [...selected, exerciseId]
+    );
+
+  const catalogNames = useMemo(() => exercises.map((exercise) => exercise.name), [exercises]);
 
   const askForNew = () =>
     appendExchange(`Utwórz ćwiczenie: ${spec.query}`, {
       text: 'Opisz ćwiczenie i ustaw podstawowe parametry, a dodam je do katalogu gabinetu.',
       spec: { component: 'CreateExercise', name: spec.query || undefined },
+    });
+
+  const askForIdeas = () =>
+    appendExchange(`Pomysły na nowe ćwiczenia: ${spec.query}`, {
+      text: 'Tych ćwiczeń nie ma w katalogu. Wybierz pomysł, a przygotuję ćwiczenie do sprawdzenia.',
+      spec: { component: 'ExerciseIdeas', query: spec.query, patientId: spec.patientId },
     });
 
   if (loading) {
@@ -58,7 +73,7 @@ export function ExerciseResultsCard({ spec, testId, messageId, chosen }: CardPro
         title={spec.query ? `Brak ćwiczeń: ${spec.query}` : 'Brak ćwiczeń'}
         footer={
           <>
-            <span className="text-[13px] text-label-secondary">Spróbuj innego słowa albo dodaj własne ćwiczenie</span>
+            <span className="text-[13px] text-label-secondary">Albo dodaj ćwiczenie pod własną nazwą</span>
             <Button variant="outline" onClick={askForNew} data-testid={`${testId}-create-btn`}>
               <Plus aria-hidden="true" />
               Utwórz ćwiczenie
@@ -67,6 +82,13 @@ export function ExerciseResultsCard({ spec, testId, messageId, chosen }: CardPro
         }
       >
         <ChatCardEmpty testId={`${testId}-empty`}>W katalogu nie ma pasujących ćwiczeń.</ChatCardEmpty>
+        <ExerciseIdeasList
+          query={spec.query}
+          messageId={messageId}
+          testId={`${testId}-ideas`}
+          catalogNames={catalogNames}
+          offerOwn={false}
+        />
       </ChatCard>
     );
   }
@@ -81,19 +103,31 @@ export function ExerciseResultsCard({ spec, testId, messageId, chosen }: CardPro
           <span className="text-[13px] text-label-secondary">Wybrane ćwiczenia są w zestawie poniżej</span>
         ) : (
           <>
-            <Button variant="ghost" size="sm" onClick={askForNew} data-testid={`${testId}-create-btn`}>
-              Nie ma tego, czego szukam
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={askForIdeas}
+              disabled={!spec.query}
+              data-testid={`${testId}-ideas-btn`}
+            >
+              <Lightbulb aria-hidden="true" />
+              Pomysły na nowe ćwiczenia
             </Button>
             <Button
+              data-testid={`${testId}-primary-btn`}
               disabled={selected.length === 0}
               onClick={() => {
                 markChosen(messageId, 'compose');
                 appendExchange(`Ułóż zestaw z ${selected.length}`, {
                   text: 'Zestaw z wybranych ćwiczeń. Zmień parametry, zamień albo dodaj, co trzeba.',
-                  spec: { component: 'SetDraft', patientId: patient?.id, exerciseIds: selected },
+                  spec: {
+                    component: 'SetDraft',
+                    patientId: patient?.id,
+                    exerciseIds: selected,
+                    note: spec.query || undefined,
+                  },
                 });
               }}
-              data-testid={`${testId}-primary-btn`}
             >
               Ułóż zestaw ({selected.length})
             </Button>
@@ -122,7 +156,9 @@ export function ExerciseResultsCard({ spec, testId, messageId, chosen }: CardPro
                   sizeClass="h-10 w-10"
                   className="rounded-[10px]"
                 />
-                <span className="line-clamp-2 text-[15px] font-medium leading-[21px] text-foreground">{exercise.name}</span>
+                <span className="line-clamp-2 text-[15px] font-medium leading-[21px] text-foreground">
+                  {exercise.name}
+                </span>
                 {isSelected && (
                   <span className="absolute right-2.5 top-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-tint-fill text-on-tint">
                     <Check className="h-3 w-3" aria-hidden="true" />
@@ -133,6 +169,13 @@ export function ExerciseResultsCard({ spec, testId, messageId, chosen }: CardPro
           );
         })}
       </ul>
+      {!locked && (
+        <ClarifyChips
+          lead="Doprecyzuj, a dobiorę trafniej. Z wybranych ułożysz zestaw przyciskiem poniżej:"
+          questions={EXERCISE_CLARIFY_QUESTIONS}
+          testId={`${testId}-clarify`}
+        />
+      )}
     </ChatCard>
   );
 }

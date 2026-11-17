@@ -1401,6 +1401,96 @@ input[type="number"] {
   animation: chat-word-in 0.32s ease-out both;
 }
 
+/* Asystent pracuje: logo FiziYo unosi się łagodnie, poświata oddycha, cień pod spodem maleje przy wzniesieniu. */
+@keyframes chat-float {
+  0%,
+  100% {
+    transform: translateY(1.5px) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(-2.5px) rotate(2deg);
+  }
+}
+
+@keyframes chat-float-glow {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes chat-float-shadow {
+  0%,
+  100% {
+    opacity: 0.32;
+    transform: scaleX(1);
+  }
+  50% {
+    opacity: 0.14;
+    transform: scaleX(0.6);
+  }
+}
+
+.chat-float-mark {
+  position: relative;
+  display: inline-flex;
+  width: 24px;
+  height: 26px;
+  flex-shrink: 0;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.chat-float-mark__glow {
+  position: absolute;
+  inset: -4px -4px 2px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, color-mix(in oklab, var(--tint) 45%, transparent) 0%, transparent 70%);
+  filter: blur(3px);
+  animation: chat-float-glow 2.8s ease-in-out infinite;
+}
+
+.chat-float-mark__icon {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  animation: chat-float 2.8s ease-in-out infinite;
+}
+
+.chat-float-mark__shadow {
+  position: absolute;
+  bottom: 0;
+  left: 6px;
+  width: 12px;
+  height: 2.5px;
+  border-radius: 9999px;
+  background: var(--label-tertiary);
+  filter: blur(1px);
+  animation: chat-float-shadow 2.8s ease-in-out infinite;
+}
+
+/* Pole, które AI właśnie wypełnia. */
+.chat-field-filling {
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--tint) 30%, transparent);
+  background-color: color-mix(in oklab, var(--tint) 6%, var(--fill-quaternary));
+  transition:
+    box-shadow 0.4s ease,
+    background-color 0.4s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-float-mark__glow,
+  .chat-float-mark__icon,
+  .chat-float-mark__shadow {
+    animation: none;
+  }
+}
+
 .text-chat-shimmer {
   background: linear-gradient(90deg, var(--label-secondary) 0%, var(--label-tertiary) 40%, var(--label-secondary) 80%);
   background-size: 200% 100%;

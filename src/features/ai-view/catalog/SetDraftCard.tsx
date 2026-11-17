@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Plus, Repeat2, SlidersHorizontal, Trash2 } from 'lucide-react';
+import { Plus, Repeat2, SlidersHorizontal, Sparkles, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -33,17 +33,28 @@ import {
   formatDraftParams,
   itemMinutes,
   proposeDraftName,
+  itemsToDoses,
+  DRAFT_CLARIFY_QUESTIONS,
+  proposeDraftDescription,
   type DraftItem,
   type SetDraftPayload,
 } from '../utils/setDraft';
 import type { CardProps } from './cardProps';
-import { ChatCard, ChatCardEmpty, ChatCardNote } from './ChatCard';
+import { ChatCard, ChatCardEmpty } from './ChatCard';
+import { ClarifyChips } from './ClarifyChips';
 import { useSaveTemplateSet } from './useChatWrites';
 
 // A chat draft becomes a plan's mappings: fields a mapping does not keep are not offered.
 const isAlternating = (item: DraftItem) => item.side?.toLowerCase() === 'alternating';
 
-const UNSAVED_FIELDS = ['side', 'rangeOfMotion', 'resistance', 'equipment', 'difficultyLevel', 'restAfterExercise'] as const;
+const UNSAVED_FIELDS = [
+  'side',
+  'rangeOfMotion',
+  'resistance',
+  'equipment',
+  'difficultyLevel',
+  'restAfterExercise',
+] as const;
 
 interface RowProps {
   readonly item: DraftItem;
@@ -58,7 +69,17 @@ interface RowProps {
   readonly onChange: (patch: Partial<ExerciseParameterValues>) => void;
 }
 
-function DraftRow({ item, exercise, alternatives, locked, versionPending, testId, onRemove, onSwap, onChange }: RowProps) {
+function DraftRow({
+  item,
+  exercise,
+  alternatives,
+  locked,
+  versionPending,
+  testId,
+  onRemove,
+  onSwap,
+  onChange,
+}: RowProps) {
   const [panel, setPanel] = useState<'none' | 'swap' | 'edit'>('none');
   const name = exercise?.name ?? 'Ćwiczenie';
   const timeUnknown = versionPending && isAlternating(item);
@@ -245,13 +266,22 @@ export function SetDraftCard({ spec, testId, messageId, chosen }: CardProps<'Set
   const updateItem = (index: number, patch: Partial<DraftItem>) =>
     setItems(items.map((item, position) => (position === index ? { ...item, ...patch } : item)));
 
-  const name = proposeDraftName({ setName: set?.name });
+  const patientNames = patients.map((candidate) => candidate.name);
+  const name = proposeDraftName({ setName: set?.name, topic: spec.note, avoid: patientNames });
   // Wersja rekordu wchodzi do szkicu tutaj, nie do stanu: kolejne kroki (harmonogram, podsumowanie) czytają ją ze szkicu.
   const draftItems = items.map((item) =>
     isV33ExerciseRecord(byId.get(item.exerciseId)) ? { ...item, alternatingPerSide: true } : item
   );
   const draft: SetDraftPayload = { name, patientId: patient?.id, sourceSetId: set?.id, items: draftItems };
   const minutes = draftMinutes(draftItems);
+  const description = proposeDraftDescription({
+    topic: spec.note,
+    exerciseNames: items
+      .map((item) => byId.get(item.exerciseId)?.name)
+      .filter((value): value is string => Boolean(value)),
+    minutes,
+    avoid: patientNames,
+  });
   const versionPending = !detailsReady;
   const minutesUnknown = versionPending && draftItems.some(isAlternating);
 
@@ -274,24 +304,25 @@ export function SetDraftCard({ spec, testId, messageId, chosen }: CardProps<'Set
 
   const handleSaveTemplate = async () => {
     if (!ensureDetailsReady()) return;
-    const saved = await saveTemplateSet(organizationId, name, items);
+    const saved = await saveTemplateSet(organizationId, name, items, description);
     if (!saved) return;
     markChosen(messageId, 'saved');
     appendExchange('Zapisz w katalogu', {
       text: savedInCatalogText(saved.name),
-      spec: { component: 'SetSaved', setId: saved.id, name: saved.name },
+      spec: { component: 'SetSaved', setId: saved.id, name: saved.name, draft: { ...draft, sourceSetId: saved.id } },
     });
   };
 
   return (
     <ChatCard
       testId={testId}
-      title={set?.name ?? 'Propozycja zestawu'}
+      title={name}
+      info={draftNote({ fromCatalog: Boolean(set), hasPatient: Boolean(patient) })}
       meta={
         <>
           <span>{formatExerciseCount(items.length)}</span>
           {patient && <span>dla: {patient.name}</span>}
-          {spec.note && <span>{spec.note}</span>}
+          {!set && <span>Propozycja zestawu</span>}
         </>
       }
       footer={
@@ -321,7 +352,11 @@ export function SetDraftCard({ spec, testId, messageId, chosen }: CardProps<'Set
                 Pełny edytor
               </Button>
             </div>
-            <Button onClick={handleNext} disabled={items.length === 0 || detailsPending} data-testid={`${testId}-primary-btn`}>
+            <Button
+              onClick={handleNext}
+              disabled={items.length === 0 || detailsPending}
+              data-testid={`${testId}-primary-btn`}
+            >
               {patient ? 'Dalej: harmonogram' : 'Wybierz pacjenta'}
             </Button>
           </>
@@ -410,18 +445,55 @@ export function SetDraftCard({ spec, testId, messageId, chosen }: CardProps<'Set
                 ))}
               </ul>
             )}
+            {/* Brak w katalogu albo nie to: nowe ćwiczenie z AI, które wróci do tej propozycji. */}
+            {search.trim().length >= 3 && (
+              <button
+                type="button"
+                data-testid={`${testId}-add-create-btn`}
+                onClick={() => {
+                  markChosen(messageId, 'create-exercise');
+                  appendExchange(`Utwórz ćwiczenie: ${search.trim()}`, {
+                    text: 'Sprawdź nazwę i kliknij „Generuj”. Gotowe ćwiczenie wróci do tej propozycji zestawu.',
+                    spec: {
+                      component: 'CreateExercise',
+                      name: search.trim(),
+                      addToSet: {
+                        exerciseIds: items.map((item) => item.exerciseId),
+                        patientId: patient?.id,
+                        note: spec.note,
+                        doses: itemsToDoses(items),
+                      },
+                    },
+                  });
+                }}
+                className="flex w-full items-center gap-3 rounded-[10px] px-2 py-1.5 text-left text-[14px] text-tint hover:bg-fill-quaternary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-fill-quaternary">
+                  <Sparkles className="h-4 w-4" aria-hidden="true" />
+                </span>
+                <span className="min-w-0 flex-1 truncate">Utwórz „{search.trim()}” z AI</span>
+              </button>
+            )}
           </div>
         ))}
 
+      {/* Zestaw z opisu (bez zestawu z katalogu): pytania, które pomagają dobrać ćwiczenia trafniej. */}
+      {!set && !locked && spec.note && (
+        <ClarifyChips
+          lead="Doprecyzuj, żeby lepiej dobrać ćwiczenia. Pytanie trafi do pola wiadomości, dopisz odpowiedź:"
+          questions={DRAFT_CLARIFY_QUESTIONS}
+          testId={`${testId}-clarify`}
+        />
+      )}
       {items.length > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-3 border-t-[0.5px] border-hairline pt-3 text-[14px] tabular-nums text-label-secondary">
           <span>{formatExerciseCount(items.length)}</span>
           <span>
-            dziennie ok. <b className="text-[16px] font-semibold text-foreground">{minutesUnknown ? '—' : `${minutes} min`}</b>
+            dziennie ok.{' '}
+            <b className="text-[16px] font-semibold text-foreground">{minutesUnknown ? '—' : `${minutes} min`}</b>
           </span>
         </div>
       )}
-      <ChatCardNote>{draftNote({ fromCatalog: Boolean(set), hasPatient: Boolean(patient) })}</ChatCardNote>
     </ChatCard>
   );
 }

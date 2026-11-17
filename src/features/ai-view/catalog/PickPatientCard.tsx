@@ -9,6 +9,8 @@ import { InitialsAvatar } from '@/components/shared/page';
 import { normalizeSearchText } from '@/features/exercises/utils/exerciseSearch';
 import { useChatActions } from '../ChatSessionContext';
 import { NO_PATIENT_OPTION } from '../utils/intentRouter';
+import { nominativeName } from '../utils/pickPatientAnswer';
+import { PICK_PATIENT_ANSWERED } from '../utils/threadLocalReply';
 import { savedInCatalogText, scheduleQuestion, type SetDraftPayload } from '../utils/setDraft';
 import type { CardProps } from './cardProps';
 import { ChatCard } from './ChatCard';
@@ -24,7 +26,8 @@ const MAX_PATIENTS = 6;
 export function PickPatientCard({ spec, testId, messageId, chosen }: CardProps<'PickPatient'>) {
   const { organizationId, patients, therapistId, contextPatient, appendExchange, markChosen } = useChatActions();
   const [query, setQuery] = useState('');
-  const [isAdding, setIsAdding] = useState(false);
+  const [isAdding, setIsAdding] = useState(Boolean(spec.newPatient));
+  const [newPatient, setNewPatient] = useState(spec.newPatient);
   const { create, creating } = useCreatePatient();
   const { saveTemplateSet, saving } = useSaveTemplateSet();
 
@@ -40,11 +43,13 @@ export function PickPatientCard({ spec, testId, messageId, chosen }: CardProps<'
         .map((patient) => ({ patient, searchName: normalizeSearchText(patient.name) })),
     [contextPatient?.id, patients, therapistId]
   );
+  const candidateIds = spec.patientIds;
   const matches = useMemo(() => {
     const needle = normalizeSearchText(query).trim();
-    const found = needle ? ordered.filter((entry) => entry.searchName.includes(needle)) : ordered;
+    const candidates = candidateIds ? ordered.filter((entry) => candidateIds.includes(entry.patient.id)) : ordered;
+    const found = needle ? candidates.filter((entry) => entry.searchName.includes(needle)) : candidates;
     return found.slice(0, MAX_PATIENTS).map((entry) => entry.patient);
-  }, [ordered, query]);
+  }, [candidateIds, ordered, query]);
 
   const continueWith = (patientId: string, name: string) => {
     markChosen(messageId, name);
@@ -61,14 +66,19 @@ export function PickPatientCard({ spec, testId, messageId, chosen }: CardProps<'
     markChosen(messageId, NO_PATIENT_OPTION);
     appendExchange(NO_PATIENT_OPTION, {
       text: savedInCatalogText(saved.name),
-      spec: { component: 'SetSaved', setId: saved.id, name: saved.name },
+      spec: {
+        component: 'SetSaved',
+        setId: saved.id,
+        name: saved.name,
+        draft: { ...spec.draft, sourceSetId: saved.id },
+      },
     });
   };
 
   if (chosen !== undefined) {
     return (
       <p data-testid={testId} className="text-[14px] text-label-secondary">
-        Wybrano: {chosen}
+        {chosen === PICK_PATIENT_ANSWERED ? 'Odpowiedź poniżej' : `Wybrano: ${chosen}`}
       </p>
     );
   }
@@ -78,9 +88,14 @@ export function PickPatientCard({ spec, testId, messageId, chosen }: CardProps<'
       {isAdding ? (
         <NewPatientForm
           testId={`${testId}-new`}
+          defaultName={newPatient?.name}
+          defaults={newPatient}
           submitLabel="Dodaj i przejdź dalej"
           busy={creating}
-          onCancel={() => setIsAdding(false)}
+          onCancel={() => {
+            setIsAdding(false);
+            setNewPatient(undefined);
+          }}
           onSubmit={async (values) => {
             const patient = await create(organizationId, values, therapistId);
             if (patient) continueWith(patient.id, patient.name);
@@ -139,7 +154,23 @@ export function PickPatientCard({ spec, testId, messageId, chosen }: CardProps<'
               </li>
             ))}
             {matches.length === 0 && (
-              <li className="px-2 py-2 text-[14px] text-label-secondary">Brak pacjenta o tej nazwie.</li>
+              <li className="flex flex-wrap items-center justify-between gap-2 px-2 py-2 text-[14px] text-label-secondary">
+                <span>Brak pacjenta o tej nazwie.</span>
+                {query.trim() && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setNewPatient({ name: nominativeName(query) });
+                      setIsAdding(true);
+                    }}
+                    data-testid={`${testId}-add-typed-btn`}
+                  >
+                    <UserPlus aria-hidden="true" />
+                    Dodaj „{nominativeName(query)}”
+                  </Button>
+                )}
+              </li>
             )}
           </ul>
           <Button

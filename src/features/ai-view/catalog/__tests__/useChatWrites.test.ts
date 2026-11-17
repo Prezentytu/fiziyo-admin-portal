@@ -69,7 +69,7 @@ describe('useCreatePatient', () => {
         })
     );
     const { result } = renderHook(() => useCreatePatient());
-    const input = { firstName: 'Anna', lastName: 'Nowak', phone: '600100200', sendActivationSms: false };
+    const input = { firstName: 'Anna', lastName: 'Nowak', phone: '600100200' };
 
     let first: Promise<unknown> = Promise.resolve();
     let second: Promise<unknown> = Promise.resolve();
@@ -100,7 +100,6 @@ describe('useCreatePatient', () => {
       created = await result.current.create('org-1', {
         firstName: 'Anna',
         lastName: 'Nowak',
-        sendActivationSms: false,
       });
     });
 

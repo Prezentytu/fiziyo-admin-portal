@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { nextRevealMarker, revealSegments, thinkingLabel } from '../replyMotion';
+import { nextRevealMarker, revealSegments, thinkingLabel, thinkingTopic } from '../replyMotion';
 
 describe('revealSegments', () => {
   it('keeps the whole text, word by word, with growing delays', () => {
@@ -22,17 +22,39 @@ describe('revealSegments', () => {
   });
 });
 
+describe('thinkingTopic', () => {
+  it('reads the topic of the question, so an exercise question does not check patients', () => {
+    expect(thinkingTopic('Znajdź ćwiczenia na rozciąganie barku')).toBe('exercises');
+    expect(thinkingTopic('Pokaż ćwiczenia wzmacniające kolano')).toBe('exercises');
+    expect(thinkingTopic('Kto nie ćwiczy?')).toBe('patients');
+    expect(thinkingTopic('Dodaj nowego pacjenta')).toBe('patients');
+    expect(thinkingTopic('Zrób zestaw ćwiczeń na kręgosłup')).toBe('set');
+    expect(thinkingTopic('Przypisz plan pacjentce Annie')).toBe('set');
+    expect(thinkingTopic('Co potrafisz?')).toBe('general');
+    expect(thinkingTopic(undefined)).toBe('general');
+  });
+
+  it('treats an attached file as a document, whatever the text says', () => {
+    expect(thinkingTopic('Kto nie ćwiczy?', true)).toBe('document');
+  });
+});
+
 describe('thinkingLabel', () => {
-  it('moves the status on as the wait grows', () => {
-    expect(thinkingLabel(0)).toBe('Czytam, o co chodzi…');
-    expect(thinkingLabel(1500)).toBe('Sprawdzam pacjentów i katalog…');
-    expect(thinkingLabel(5000)).toBe('Układam odpowiedź…');
-    expect(thinkingLabel(20000)).toBe('Jeszcze chwila, to dłuższe zadanie…');
+  it('moves the status on as the wait grows, in the words of the topic', () => {
+    expect(thinkingLabel(0, 'exercises')).toBe('Czytam pytanie…');
+    expect(thinkingLabel(1500, 'exercises')).toBe('Przeglądam katalog ćwiczeń…');
+    expect(thinkingLabel(5000, 'exercises')).toBe('Dobieram ćwiczenia…');
+    expect(thinkingLabel(1500, 'patients')).toBe('Sprawdzam pacjentów…');
+    expect(thinkingLabel(20000, 'set')).toBe('Jeszcze chwila, to dłuższe zadanie…');
+  });
+
+  it('never mentions patients for a general question', () => {
+    for (const ms of [0, 1500, 5000, 20000]) expect(thinkingLabel(ms)).not.toMatch(/pacjent/);
   });
 
   it('speaks about the document while one is read', () => {
-    expect(thinkingLabel(0, true)).toBe('Czytam dokument…');
-    expect(thinkingLabel(3000, true)).toBe('Wyłuskuję zalecenia…');
+    expect(thinkingLabel(0, 'document')).toBe('Czytam dokument…');
+    expect(thinkingLabel(3000, 'document')).toBe('Wyłuskuję zalecenia…');
   });
 });
 

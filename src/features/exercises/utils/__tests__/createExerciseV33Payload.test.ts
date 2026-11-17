@@ -84,12 +84,19 @@ describe('nowe ćwiczenie z portalu od razu w 3.3 (P-5)', () => {
       draft: {
         name: 'Wspięcia z czatu',
         patientDescription: 'Wspięcia na palce przy ścianie.',
-        enrichmentData: buildChatExerciseEnrichment('Stań przy ścianie.\nWspnij się na palce.', 'Powoli w dół.'),
+        enrichmentData: buildChatExerciseEnrichment({
+          steps: 'Stań przy ścianie.\nWspnij się na palce.',
+          cues: 'Powoli w dół.',
+          mistakes: 'Odrywanie pięt za szybko → schodź powoli',
+          stopIf: 'Ból łydki',
+        }),
       },
     });
     const document = JSON.parse(variables.enrichmentDataJson ?? 'null') as Doc | null;
     expect(document?.schemaVersion).toBe('3.3');
     expect(document?.patient?.steps).toEqual(['Stań przy ścianie.', 'Wspnij się na palce.']);
+    expect(JSON.stringify(document)).toContain('Odrywanie pięt za szybko');
+    expect(JSON.stringify(document)).toContain('Ból łydki');
     expect(variables.description ?? '').toBe('');
   });
 });

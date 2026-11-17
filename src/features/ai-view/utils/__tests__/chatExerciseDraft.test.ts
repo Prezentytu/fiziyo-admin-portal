@@ -4,7 +4,10 @@ import {
   buildChatExerciseEnrichment,
   CHAT_EXERCISE_DEFAULTS,
   itemsToLines,
+  formatChatParams,
   linesToItems,
+  linesToMistakes,
+  textsFromEnrichment,
   paramsFromSuggestion,
   resolveChatExerciseType,
 } from '../chatExerciseDraft';
@@ -80,14 +83,72 @@ describe('resolveChatExerciseType', () => {
 });
 
 describe('buildChatExerciseEnrichment', () => {
-  it('saves only the steps and cues shown in the card', () => {
-    expect(buildChatExerciseEnrichment('1. Stań prosto\nUgnij kolana', 'Kolano nad stopą')).toEqual({
+  it('saves only what the card shows: steps, cues, mistakes and when to stop', () => {
+    expect(
+      buildChatExerciseEnrichment({
+        steps: '1. Stań prosto\nUgnij kolana',
+        cues: 'Kolano nad stopą',
+        mistakes: 'Kolano ucieka do środka → prowadź je nad stopą\nWstrzymany oddech',
+        stopIf: 'Ostry ból kolana',
+      })
+    ).toEqual({
       $schema: 'fiziyo-exercise-v3',
-      patient: { steps: ['Stań prosto', 'Ugnij kolana'], cues: ['Kolano nad stopą'] },
+      patient: {
+        steps: ['Stań prosto', 'Ugnij kolana'],
+        cues: ['Kolano nad stopą'],
+        mistakes: [
+          { mistake: 'Kolano ucieka do środka', fix: 'prowadź je nad stopą' },
+          { mistake: 'Wstrzymany oddech' },
+        ],
+      },
+      safety: { stop_if: 'Ostry ból kolana' },
     });
   });
 
   it('saves nothing when the fields are empty', () => {
-    expect(buildChatExerciseEnrichment(' \n', '')).toBeNull();
+    expect(buildChatExerciseEnrichment({ steps: ' \n', cues: '', mistakes: '', stopIf: ' ' })).toBeNull();
+  });
+});
+
+describe('textsFromEnrichment', () => {
+  it('reads each card section from a v3 document and round-trips mistakes', () => {
+    const texts = textsFromEnrichment({
+      $schema: 'fiziyo-exercise-v3',
+      patient: {
+        summary: 'Trzymasz sztangę nad głową.',
+        steps: ['Stań', 'Wypchnij sztangę'],
+        cues: ['Żebra w dół'],
+        mistakes: [{ mistake: 'Wyginanie lędźwi', fix: 'napnij brzuch' }],
+      },
+      safety: { stop_if: 'Ból barku' },
+    });
+    expect(texts).toEqual({
+      description: 'Trzymasz sztangę nad głową.',
+      steps: 'Stań\nWypchnij sztangę',
+      cues: 'Żebra w dół',
+      mistakes: 'Wyginanie lędźwi → napnij brzuch',
+      stopIf: 'Ból barku',
+    });
+    expect(linesToMistakes(texts.mistakes)).toEqual([{ mistake: 'Wyginanie lędźwi', fix: 'napnij brzuch' }]);
+  });
+
+  it('gives empty texts without a document', () => {
+    expect(textsFromEnrichment(null)).toEqual({ description: '', steps: '', cues: '', mistakes: '', stopIf: '' });
+  });
+});
+
+describe('formatChatParams', () => {
+  const base = { side: 'none' as const, sets: 3, reps: 10, executionTime: 0, restSets: 60, restReps: 0, preparationTime: 5 };
+
+  it('shows a hold as sets × seconds', () => {
+    expect(formatChatParams({ ...base, reps: 1, executionTime: 30, restSets: 30 }, 'time')).toBe(
+      '3 × 30 s · przerwa 30 s · przygotowanie 5 s'
+    );
+  });
+
+  it('shows reps with the repetition time and the side', () => {
+    expect(formatChatParams({ ...base, executionTime: 3, side: 'both' }, 'reps')).toBe(
+      '3 × 10 · 3 s powtórzenie · przerwa 60 s · przygotowanie 5 s · na każdą stronę'
+    );
   });
 });

@@ -1,3 +1,4 @@
+import type { SetDraftReturn } from './setDraft';
 import { z } from 'zod';
 
 import type { DraftDose } from './setDraft';
@@ -46,7 +47,13 @@ export type ChatViewSpec =
       email?: string;
       contextLabel?: string;
     }
-  | { component: 'CreateExercise'; name?: string; description?: string };
+  | {
+      component: 'CreateExercise';
+      name?: string;
+      description?: string;
+      /** Only from the thread itself: the set draft the new exercise goes back to. */
+      addToSet?: SetDraftReturn;
+    };
 
 export interface ClarifyChoice {
   label: string;

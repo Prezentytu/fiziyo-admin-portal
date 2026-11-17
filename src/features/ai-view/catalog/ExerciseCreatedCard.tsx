@@ -27,9 +27,19 @@ export function ExerciseCreatedCard({ spec, testId, messageId, chosen }: CardPro
         onPick={(option) => {
           markChosen(messageId, option);
           if (option === 'Dodaj do zestawu') {
+            // Ćwiczenie utworzone z propozycji zestawu wraca do tej propozycji, z jej parametrami.
+            const back = spec.addToSet;
             appendExchange(option, {
-              text: 'Zestaw z nowym ćwiczeniem. Dodaj kolejne z katalogu albo przejdź dalej.',
-              spec: { component: 'SetDraft', patientId: spec.patientId, exerciseIds: [spec.exerciseId] },
+              text: back
+                ? 'Nowe ćwiczenie jest w zestawie. Sprawdź całość i przejdź dalej.'
+                : 'Zestaw z nowym ćwiczeniem. Dodaj kolejne z katalogu albo przejdź dalej.',
+              spec: {
+                component: 'SetDraft',
+                patientId: back?.patientId ?? spec.patientId,
+                exerciseIds: [...(back?.exerciseIds ?? []), spec.exerciseId],
+                note: back?.note,
+                doses: back?.doses,
+              },
             });
           } else {
             appendExchange(option, { text: 'Dobrze. Ćwiczenie znajdziesz w katalogu.' });

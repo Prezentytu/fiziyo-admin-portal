@@ -10,6 +10,7 @@ import {
   ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION,
   CREATE_EXERCISE_MUTATION,
   CREATE_EXERCISE_SET_MUTATION,
+  UPLOAD_EXERCISE_IMAGE_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
 import { formatPatientPhone, patientCreateRefetchQueries } from '@/features/patients/utils/shadowPatient';
 import { CREATE_SHADOW_PATIENT_MUTATION } from '@/graphql/mutations/users.mutations';
@@ -40,6 +41,15 @@ interface AssignedSet {
   assignExerciseSetToPatient?: { id?: string };
 }
 
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(',')[1] ?? '');
+    reader.onerror = () => reject(reader.error ?? new Error('Nie udało się odczytać grafiki'));
+    reader.readAsDataURL(file);
+  });
+}
+
 function errorText(error: unknown, fallback: string): string {
   return error instanceof Error && error.message ? error.message : fallback;
 }
@@ -51,14 +61,14 @@ export function useSaveTemplateSet() {
   const apolloClient = useApolloClient();
 
   const { run: saveTemplateSet, pending: saving } = useSingleFlight(
-    async (organizationId: string, name: string, items: readonly DraftItem[]) => {
+    async (organizationId: string, name: string, items: readonly DraftItem[], description?: string) => {
       try {
         const setId = await submitCreateTemplateSet(
           {
             createSet: (options) => createSet(options),
             addExercise: (options: { variables: AddExerciseToSetVariables }) => addExercise(options),
           },
-          { organizationId, name },
+          { organizationId, name, description },
           items.map(toMappingInput)
         );
         void apolloClient.refetchQueries({ include: [GET_ORGANIZATION_EXERCISE_SETS_QUERY] }).catch(() => undefined);
@@ -132,7 +142,6 @@ export interface NewPatientInput {
   phone?: string;
   email?: string;
   contextLabel?: string;
-  sendActivationSms: boolean;
 }
 
 /** Shadow patient (user + organization + therapist in one step), as in the patient dialog. */
@@ -156,7 +165,8 @@ export function useCreatePatient() {
             email: input.email?.trim() || null,
             organizationId,
             contextLabel: input.contextLabel?.trim() || null,
-            sendActivationSms: input.sendActivationSms && Boolean(phone),
+            // SMS-y nie są obsługiwane (17.11): zaproszenie idzie e-mailem albo kodem QR.
+            sendActivationSms: false,
           },
         });
         const patient = result.data?.createShadowPatient;
@@ -183,17 +193,31 @@ export function useCreatePatient() {
 /** Organization exercise through the single create write path (`buildCreateExerciseVariables`). */
 export function useCreateExercise() {
   const [createExercise] = useMutation<CreateExerciseMutationResult, CreateExerciseVariables>(CREATE_EXERCISE_MUTATION);
+  const [uploadImage] = useMutation(UPLOAD_EXERCISE_IMAGE_MUTATION);
   const apolloClient = useApolloClient();
 
   const { run: create, pending: creating } = useSingleFlight(
-    async (organizationId: string, draft: CreateExerciseDraft) => {
+    async (organizationId: string, draft: CreateExerciseDraft, image?: File | null) => {
       try {
         const result = await createExercise({ variables: buildCreateExerciseVariables({ organizationId, draft }) });
         const exercise = result.data?.createExercise;
         if (!exercise?.id) throw new Error('Nie udało się utworzyć ćwiczenia');
-        await fetchWholeLibrary(apolloClient, GET_AVAILABLE_EXERCISES_PICKER_QUERY, organizationId, 'network-only').catch(
-          () => undefined
-        );
+        // Grafika idzie po utworzeniu rekordu, jak w kreatorze; jej błąd nie cofa zapisanego ćwiczenia.
+        if (image) {
+          try {
+            await uploadImage({
+              variables: { exerciseId: exercise.id, base64Image: await fileToBase64(image), contentType: image.type },
+            });
+          } catch {
+            toast.error('Ćwiczenie zapisane, ale grafiki nie udało się dodać. Dodasz ją na karcie ćwiczenia.');
+          }
+        }
+        await fetchWholeLibrary(
+          apolloClient,
+          GET_AVAILABLE_EXERCISES_PICKER_QUERY,
+          organizationId,
+          'network-only'
+        ).catch(() => undefined);
         return { id: exercise.id, name: exercise.name };
       } catch (error) {
         toast.error(errorText(error, 'Nie udało się utworzyć ćwiczenia'));

@@ -73,6 +73,9 @@ export const CONVERSATION_KEY_PREFIX = 'fiziyo-chat-conversations:';
 /** AI exercise proposals cached per chat card (`<prefix><messageId>`); the message belongs to one user's history. */
 export const EXERCISE_PROPOSAL_KEY_PREFIX = 'fiziyo-chat-exercise-proposal:';
 
+/** AI ideas for new exercises cached per chat card, so reopening a conversation does not spend credits again. */
+export const EXERCISE_IDEAS_KEY_PREFIX = 'fiziyo-chat-exercise-ideas:';
+
 /** Sign-out wipes every stored chat history and card proposal in this browser; patient names live in them. */
 export function clearStoredConversations(storage?: Pick<Storage, 'length' | 'key' | 'removeItem'>): void {
   try {
@@ -80,7 +83,12 @@ export function clearStoredConversations(storage?: Pick<Storage, 'length' | 'key
     const keys: string[] = [];
     for (let index = 0; index < target.length; index += 1) {
       const key = target.key(index);
-      if (key?.startsWith(CONVERSATION_KEY_PREFIX) || key?.startsWith(EXERCISE_PROPOSAL_KEY_PREFIX)) keys.push(key);
+      if (
+        key?.startsWith(CONVERSATION_KEY_PREFIX) ||
+        key?.startsWith(EXERCISE_PROPOSAL_KEY_PREFIX) ||
+        key?.startsWith(EXERCISE_IDEAS_KEY_PREFIX)
+      )
+        keys.push(key);
     }
     keys.forEach((key) => target.removeItem(key));
   } catch {
