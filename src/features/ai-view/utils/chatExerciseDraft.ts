@@ -161,3 +161,20 @@ export function buildChatExerciseEnrichment(
     ...(stopIf ? { safety: { stop_if: stopIf } } : {}),
   };
 }
+
+/** YouTube search for the exercise, to find a film to link; opened by the therapist, nothing is fetched. */
+export function youtubeSearchUrl(exerciseName: string): string {
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(exerciseName.trim())}`;
+}
+
+/** A pasted film link, only http(s); anything else is not a link and is not saved. */
+export function filmLink(text: string): string | null {
+  const trimmed = text.trim();
+  if (!trimmed) return null;
+  try {
+    const url = new URL(trimmed);
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}

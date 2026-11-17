@@ -24,9 +24,11 @@ import { useChatMode } from '../useChatMode';
 import {
   buildChatExerciseEnrichment,
   CHAT_EXERCISE_DEFAULTS,
+  filmLink,
   formatChatParams,
   linesToItems,
   resolveChatExerciseType,
+  youtubeSearchUrl,
 } from '../utils/chatExerciseDraft';
 import type { CardProps } from './cardProps';
 import { ChatCard } from './ChatCard';
@@ -49,6 +51,10 @@ export const NEW_EXERCISE_SCHEMA = z.object({
   cues: z.string().max(2000),
   mistakes: z.string().max(2000),
   stopIf: z.string().max(500),
+  film: z
+    .string()
+    .max(500)
+    .refine((value) => value.trim() === '' || filmLink(value) !== null, 'Wklej link zaczynający się od https://'),
 });
 
 export type NewExerciseValues = z.infer<typeof NEW_EXERCISE_SCHEMA>;
@@ -119,6 +125,7 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
       cues: '',
       mistakes: '',
       stopIf: '',
+      film: '',
     },
   });
   const { errors } = form.formState;
@@ -193,6 +200,7 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
         restReps: values.restReps,
         preparationTime: values.preparationTime,
         enrichmentData: buildChatExerciseEnrichment(values),
+        videoUrl: filmLink(values.film),
       },
       image
     );
@@ -527,6 +535,39 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
               testId={`${testId}-image`}
             />
           </DraftSectionShell>
+        )}
+
+        {/* Film na końcu: wyszukanie po nazwie i link, który fizjoterapeuta sam wkleja (nic nie pobieramy). */}
+        {(sections.image !== 'hidden' || !useAi) && (
+          <section
+            className="flex animate-chat-rise flex-col gap-2.5 border-t-[0.5px] border-separator pt-3.5"
+            data-testid={`${testId}-section-film`}
+          >
+            <header className="flex min-h-7 items-center justify-between gap-2">
+              <h4 className="text-[14px] font-semibold text-foreground">Film (opcjonalnie)</h4>
+              {nameReady && (
+                <a
+                  href={youtubeSearchUrl(nameText)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[13px] font-medium text-tint underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  data-testid={`${testId}-film-search-link`}
+                >
+                  Szukaj na YouTube ↗
+                </a>
+              )}
+            </header>
+            <Input
+              type="url"
+              inputMode="url"
+              placeholder="Wklej link do filmu z ćwiczeniem"
+              aria-label="Link do filmu z ćwiczeniem"
+              aria-invalid={errors.film ? true : undefined}
+              data-testid={`${testId}-film-input`}
+              {...form.register('film')}
+            />
+            {errors.film && <span className="text-[12px] text-status-danger">{errors.film.message}</span>}
+          </section>
         )}
       </form>
     </ChatCard>

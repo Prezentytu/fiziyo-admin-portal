@@ -4,10 +4,12 @@ import {
   buildChatExerciseEnrichment,
   CHAT_EXERCISE_DEFAULTS,
   itemsToLines,
+  filmLink,
   formatChatParams,
   linesToItems,
   linesToMistakes,
   textsFromEnrichment,
+  youtubeSearchUrl,
   paramsFromSuggestion,
   resolveChatExerciseType,
 } from '../chatExerciseDraft';
@@ -138,7 +140,15 @@ describe('textsFromEnrichment', () => {
 });
 
 describe('formatChatParams', () => {
-  const base = { side: 'none' as const, sets: 3, reps: 10, executionTime: 0, restSets: 60, restReps: 0, preparationTime: 5 };
+  const base = {
+    side: 'none' as const,
+    sets: 3,
+    reps: 10,
+    executionTime: 0,
+    restSets: 60,
+    restReps: 0,
+    preparationTime: 5,
+  };
 
   it('shows a hold as sets × seconds', () => {
     expect(formatChatParams({ ...base, reps: 1, executionTime: 30, restSets: 30 }, 'time')).toBe(
@@ -150,5 +160,20 @@ describe('formatChatParams', () => {
     expect(formatChatParams({ ...base, executionTime: 3, side: 'both' }, 'reps')).toBe(
       '3 × 10 · 3 s powtórzenie · przerwa 60 s · przygotowanie 5 s · na każdą stronę'
     );
+  });
+});
+
+describe('film link', () => {
+  it('searches YouTube for the exercise name', () => {
+    expect(youtubeSearchUrl(' Mostek z hantlem ')).toBe(
+      'https://www.youtube.com/results?search_query=Mostek%20z%20hantlem'
+    );
+  });
+
+  it('keeps only http(s) links', () => {
+    expect(filmLink(' https://youtu.be/abc ')).toBe('https://youtu.be/abc');
+    expect(filmLink('youtube mostek')).toBeNull();
+    expect(filmLink('javascript:alert(1)')).toBeNull();
+    expect(filmLink('')).toBeNull();
   });
 });
