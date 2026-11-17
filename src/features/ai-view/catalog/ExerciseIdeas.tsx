@@ -10,6 +10,7 @@ import { useChatActions } from '../ChatSessionContext';
 import { useAvailableExercises } from '../useAvailableExercises';
 import { useChatMode } from '../useChatMode';
 import { freshIdeas } from '../utils/exerciseIdeas';
+import { isExerciseTopic } from '../utils/threadLocalReply';
 import type { CardProps } from './cardProps';
 import { ChatCard, ChatCardNote } from './ChatCard';
 import { useExerciseIdeas } from './useExerciseIdeas';
@@ -63,7 +64,7 @@ export function ExerciseIdeasList({
 
   if (ideas.length === 0) {
     // Bez AI albo bez pomysłów zostaje to, o co pytano: jedno ćwiczenie pod tą nazwą.
-    return query && offerOwn && !disabled ? (
+    return offerOwn && !disabled && isExerciseTopic(query) ? (
       <Button variant="outline" className="self-start" onClick={() => create(query)} data-testid={`${testId}-own-btn`}>
         <Plus aria-hidden="true" />
         Utwórz ćwiczenie: {query}

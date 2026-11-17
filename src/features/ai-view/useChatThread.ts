@@ -7,7 +7,7 @@ import { latestCardPatientId, type ChatCardSpec } from './utils/chatCards';
 import type { ChatThreadMessage } from './utils/conversationStore';
 import { routeForPatient, type IntentContext } from './utils/intentRouter';
 import { replyText, resolveReply } from './utils/resolveReply';
-import { countQuestion, localReplyTo, withExerciseIdeas } from './utils/threadLocalReply';
+import { accountQuestionReply, countQuestion, localReplyTo, withExerciseIdeas } from './utils/threadLocalReply';
 import { UNSUPPORTED_SPEC } from './utils/viewSpec';
 
 export type { ChatThreadMessage } from './utils/conversationStore';
@@ -143,6 +143,13 @@ export function useChatThread({ useAi, context, ready, scopeKey, getContextPatie
         ]);
         return;
       }
+      // „Czy Halina odebrała zestaw?”: stan konta jest w panelu, model go nie zna.
+      const account = accountQuestionReply(trimmed, context.patients);
+      if (account) {
+        pushUser(trimmed);
+        appendAssistant(account);
+        return;
+      }
       inFlightRef.current = true;
       pushUser(trimmed);
       setIsBusy(true);
@@ -192,7 +199,7 @@ export function useChatThread({ useAi, context, ready, scopeKey, getContextPatie
         }
       }
     },
-    [context, getContextPatientId, pushUser, ready, scopeKey, useAi]
+    [appendAssistant, context, getContextPatientId, pushUser, ready, scopeKey, useAi]
   );
 
   /**

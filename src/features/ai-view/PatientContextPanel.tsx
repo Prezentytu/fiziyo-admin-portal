@@ -10,20 +10,26 @@ import { ActivityStatusLabel, InitialsAvatar } from '@/components/shared/page';
 import { getPatientActivityStatus } from '@/features/patients/utils/patientActivityStatus';
 import { PATIENT_FEEDBACK_SCALE_MAX } from '@/features/patients/utils/patientFeedbackScale';
 import { GET_PATIENT_LAST_VISIT_QUERY } from '@/graphql/queries/clinicalNotes.queries';
+import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import { GET_PATIENT_ACTIVITY_REPORT_QUERY } from '@/graphql/queries/therapists.queries';
 import { GET_PATIENT_WEEKLY_ADHERENCE_QUERY } from '@/graphql/queries/workoutSessions.queries';
 import { useChatSession } from './ChatSessionContext';
 import type { ChatPatient } from './useChatData';
+import { contextPlanFacts, type PlanAdherenceSource, type PlanAssignmentSource } from './utils/patientPlan';
 import { formatPlanDate } from './utils/schedulePlan';
 
 interface AdherenceResponse {
-  patientWeeklyAdherence?: Array<{ targetSessions: number; completedSessions: number }>;
+  patientWeeklyAdherence?: PlanAdherenceSource[];
 }
 
 interface ActivityReportResponse {
   patientActivityReport?: {
     exerciseSets?: Array<{ exerciseSetId: string; name: string; avgPainLevel?: number | null }>;
   };
+}
+
+interface AssignmentsResponse {
+  patientAssignments?: PlanAssignmentSource[];
 }
 
 interface LastVisitResponse {
@@ -51,6 +57,11 @@ function PatientFacts({ patient }: { readonly patient: ChatPatient }) {
       errorPolicy: 'all',
     }
   );
+  // Te same przypisania co karta planu w rozmowie: „Zestaw” i „Ten tydzień” mówią o aktualnych planach.
+  const { data: assignments, loading: assignmentsLoading } = useQuery<AssignmentsResponse>(
+    GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY,
+    { variables: { userId: patient.id }, errorPolicy: 'all' }
+  );
   const { data: report } = useQuery<ActivityReportResponse>(GET_PATIENT_ACTIVITY_REPORT_QUERY, {
     variables: { patientId: patient.id },
     errorPolicy: 'all',
@@ -61,9 +72,7 @@ function PatientFacts({ patient }: { readonly patient: ChatPatient }) {
     errorPolicy: 'all',
   });
 
-  const weeks = adherence?.patientWeeklyAdherence ?? [];
-  const target = weeks.reduce((sum, week) => sum + week.targetSessions, 0);
-  const completed = weeks.reduce((sum, week) => sum + week.completedSessions, 0);
+  const planFacts = contextPlanFacts(assignments?.patientAssignments ?? [], adherence?.patientWeeklyAdherence ?? []);
   const sets = report?.patientActivityReport?.exerciseSets ?? [];
   const pains = sets
     .map((set) => set.avgPainLevel)
@@ -90,14 +99,10 @@ function PatientFacts({ patient }: { readonly patient: ChatPatient }) {
       </div>
       <div className="flex flex-col">
         <Fact label="Powód" value={patient.contextLabel || 'nie podano'} testId="common-chat-context-reason" />
-        {adherenceLoading ? (
+        {adherenceLoading || assignmentsLoading ? (
           <Skeleton className="my-2 h-5 w-full" />
         ) : (
-          <Fact
-            label="Ten tydzień"
-            value={target > 0 ? `${completed} z ${target} treningów` : 'brak planu'}
-            testId="common-chat-context-week"
-          />
+          <Fact label="Ten tydzień" value={planFacts.week} testId="common-chat-context-week" />
         )}
         <Fact
           label="Ból"
@@ -110,7 +115,11 @@ function PatientFacts({ patient }: { readonly patient: ChatPatient }) {
           }
           testId="common-chat-context-pain"
         />
-        <Fact label="Zestaw" value={sets[0]?.name ?? 'brak aktywnego'} testId="common-chat-context-set" />
+        <Fact
+          label="Zestaw"
+          value={assignmentsLoading ? '…' : planFacts.set}
+          testId="common-chat-context-set"
+        />
         <Fact
           label="Ostatnia wizyta"
           value={visit ? formatPlanDate(new Date(visit.visitDate)) : 'brak notatki'}

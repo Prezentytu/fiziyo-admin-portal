@@ -1,7 +1,7 @@
 'use client';
 
 import { useChatActions } from '../ChatSessionContext';
-import { describePlan, FLOW_CANCEL_LABEL, FLOW_CANCELLED_TEXT, SCHEDULE_REPLIES } from '../utils/schedulePlan';
+import { FLOW_CANCEL_LABEL, FLOW_CANCELLED_TEXT, SCHEDULE_REPLIES, sendSummaryText } from '../utils/schedulePlan';
 import type { CardProps } from './cardProps';
 import { QuickReplies } from './QuickReplies';
 
@@ -22,7 +22,7 @@ export function ScheduleCard({ spec, testId, messageId, chosen }: CardProps<'Sch
           }
           const plan = SCHEDULE_REPLIES[index].plan;
           appendExchange(option, {
-            text: `Gotowe do wysłania: ${describePlan(plan)}. Sprawdź i wyślij.`,
+            text: sendSummaryText(plan),
             spec: { component: 'SendSummary', draft: spec.draft, plan },
           });
         }}

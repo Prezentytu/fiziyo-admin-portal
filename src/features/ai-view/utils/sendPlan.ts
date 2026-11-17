@@ -65,3 +65,16 @@ export async function sendPlan(
   });
   return { setId, assignmentId };
 }
+
+/**
+ * What the therapist reads after "Wyślij pacjentowi". The plan is saved either way, but only a
+ * patient with an account sees it in the app; without one the next step is the QR code, the link
+ * or the printed card (test 17.11, K5: "zobaczy plan w aplikacji" for a patient without an account).
+ */
+export function sentText(patient: { name: string; isShadowUser?: boolean | null }, planLabel: string): string {
+  if (patient.isShadowUser === false) return `Wysłane. ${patient.name} zobaczy plan w aplikacji: ${planLabel}.`;
+  if (patient.isShadowUser) {
+    return `Plan zapisany: ${planLabel}. ${patient.name} nie ma jeszcze konta w aplikacji, więc planu tam nie widzi. Daj kod QR albo link do aplikacji, albo wydruk karty z planem.`;
+  }
+  return `Plan zapisany dla: ${patient.name} (${planLabel}).`;
+}

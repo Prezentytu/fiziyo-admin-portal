@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { summarizePatientPlans, type PlanAssignmentSource } from '../patientPlan';
+import { contextPlanFacts, summarizePatientPlans, type PlanAssignmentSource } from '../patientPlan';
 
 const knee: PlanAssignmentSource = {
   id: 'pa-knee',
@@ -67,5 +67,39 @@ describe('summarizePatientPlans', () => {
 
     expect(plan({ enrichmentData: { schemaVersion: '3.3' } })).toEqual(['3 × 10 na każdą stronę', '3 × 10']);
     expect(plan({ enrichmentData: {} })).toEqual(['3 × 10', '3 × 10']);
+  });
+});
+
+// Test asystenta 17.11 (P52): „Ten tydzień: brak planu” przy planie od jutra, „Zestaw” = starszy z dwóch planów.
+describe('contextPlanFacts', () => {
+  const NOW = new Date(2026, 10, 17, 12, 0);
+  const older = { ...knee, id: 'pa-old', assignedAt: '2026-11-17T08:00:00Z', startDate: '2026-11-17T00:00:00' };
+  const newer = {
+    ...knee,
+    id: 'pa-new',
+    assignedAt: '2026-11-17T11:00:00Z',
+    startDate: '2026-11-18T00:00:00',
+    exerciseSet: { ...knee.exerciseSet!, id: 'set-new', name: 'Ból lędźwi po poprawie' },
+  };
+
+  it('names the newest current plan as the set', () => {
+    expect(contextPlanFacts([older, newer], [], NOW).set).toBe('Ból lędźwi po poprawie');
+    expect(contextPlanFacts([{ ...knee, status: 'completed' }], [], NOW).set).toBe('brak aktywnego');
+  });
+
+  it('counts this week from every current plan', () => {
+    const adherence = [
+      { assignmentId: 'pa-old', targetSessions: 3, completedSessions: 1 },
+      { assignmentId: 'pa-new', targetSessions: 4, completedSessions: 0 },
+    ];
+    expect(contextPlanFacts([older, newer], adherence, NOW).week).toBe('1 z 7 treningów');
+  });
+
+  it('does not say „brak planu” when a current plan has no sessions counted this week yet', () => {
+    expect(contextPlanFacts([newer], [], NOW).week).toBe('plan od 18 listopada');
+    expect(contextPlanFacts([older], [{ assignmentId: 'pa-old', targetSessions: 0, completedSessions: 0 }], NOW).week).toBe(
+      'plan aktywny, brak treningów w tym tygodniu'
+    );
+    expect(contextPlanFacts([], [], NOW).week).toBe('brak planu');
   });
 });
