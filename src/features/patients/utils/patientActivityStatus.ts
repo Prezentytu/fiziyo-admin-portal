@@ -38,9 +38,16 @@ function trainingLabel(days: number | null): string {
   return `Trening ${days} dni temu`;
 }
 
+/** Nowa aplikacja zapisuje ból w skali 0–10 (`maxPainNrs`), starsze buildy w 1–5 (`maxPainLevel`). */
+function painLabel(attention: PatientAttention): string {
+  if (attention.maxPainNrs) return `Ból ${attention.maxPainNrs}/10`;
+  if (attention.maxPainLevel) return `Ból ${attention.maxPainLevel}/5`;
+  return 'Zgłoszony ból';
+}
+
 function attentionLabel(attention: PatientAttention, days: number | null): string {
   const top = attention.reasons[0];
-  if (top === 'PAIN') return attention.maxPainLevel ? `Ból ${attention.maxPainLevel}/5` : 'Zgłoszony ból';
+  if (top === 'PAIN') return painLabel(attention);
   if (top === 'DIFFICULTY') return 'Za trudne';
   if (top === 'NOTE') return 'Nowa notatka';
   if (top === 'INACTIVE' && days !== null) return `Bez treningu od ${days} dni`;

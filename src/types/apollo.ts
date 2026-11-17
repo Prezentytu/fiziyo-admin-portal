@@ -457,6 +457,8 @@ export interface PatientAttention {
   tone: string;
   reasons: string[];
   maxPainLevel?: number | null;
+  /** Najwyższy ból w skali 0–10 z nowej aplikacji (fizjo-app#558). */
+  maxPainNrs?: number | null;
   lastSignalAt?: string | null;
   daysSinceTraining?: number | null;
   expectedGapDays?: number | null;

@@ -82,6 +82,16 @@ describe('server attention (SPEC-039)', () => {
     ]);
   });
 
+  it('shows pain on the 0–10 scale from the new app instead of a bare „Zgłoszony ból”', () => {
+    const nrs = { ...painToday, maxPainLevel: null, maxPainNrs: 8 };
+    const both = { ...painToday, maxPainLevel: 4, maxPainNrs: 7 };
+    const none = { ...painToday, maxPainLevel: null, maxPainNrs: null };
+
+    expect(getPatientActivityStatus(daysAgo(0), NOW, nrs).label).toBe('Ból 8/10');
+    expect(getPatientActivityStatus(daysAgo(0), NOW, both).label).toBe('Ból 7/10');
+    expect(getPatientActivityStatus(daysAgo(0), NOW, none).label).toBe('Zgłoszony ból');
+  });
+
   it('keeps a 3×/week patient green on a planned rest day', () => {
     const restDay = { tone: 'success', reasons: [], daysSinceTraining: 2, expectedGapDays: 3, hasPatientSignal: false };
 

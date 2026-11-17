@@ -167,6 +167,7 @@ export const GET_ORGANIZATION_PATIENTS_QUERY = gql`
         tone
         reasons
         maxPainLevel
+        maxPainNrs
         lastSignalAt
         daysSinceTraining
         expectedGapDays
