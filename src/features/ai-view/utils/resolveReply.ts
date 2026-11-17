@@ -1,3 +1,5 @@
+import { normalizeSearchText } from '@/features/exercises/utils/exerciseSearch';
+import { labelPatientChoices } from './clarifyChoice';
 import { routeIntent, type IntentContext } from './intentRouter';
 import { matchPatients } from './patientMatch';
 import { withNewPatientDetails } from './newPatientDetails';
@@ -59,14 +61,15 @@ export async function resolveReply(
   if (options.useAi) {
     try {
       const result = await options.dispatch(text, options.sessionId, options.signal);
-      const spec = guardCardPatient(
+      const guarded = guardCardPatient(
         withNewPatientDetails(result.spec, text),
         text,
         options.context,
         options.contextPatientId
       );
       // A card the guard changed keeps no model sentence: it may name the patient just taken off.
-      const modelText = spec === result.spec ? result.text : undefined;
+      const modelText = guarded === result.spec ? result.text : undefined;
+      const spec = guarded?.component === 'Clarify' ? labelPatientChoices(guarded, options.context.patients) : guarded;
       return {
         text: replyText(modelText, spec, options.context),
         spec,
@@ -111,10 +114,16 @@ export function replyText(
   return text;
 }
 
+// „Nowa pacjentka Oksana…”, „mam nowego pacjenta”: the message is about someone not on the list yet.
+const NEW_PERSON_PATTERN = /now(?:y|a|ego|ej|ym)\w* pacjent/;
+
 /**
- * A model card for another patient than the conversation is about, while the message names no one,
- * is a guess: after "Dodano: Jan" and "clamshell, bird dog" the model once put the set on another
- * patient's card (report 01.11, P0-1). The card then asks "Dla kogo?" instead of guessing.
+ * A model card names a patient only when the therapist did: the message names that patient, or it
+ * names nobody and the card stays with the patient the conversation is already about. Anything else
+ * is a guess. After "Dodano: Jan" and "clamshell, bird dog" the model once put the set on another
+ * patient's card (report 01.11, P0-1); "Pacjent z rwą…" opened a set for "E2E Pacjent" and a copy of
+ * Halina's set for a new patient landed on a third person's card (test 17.11, K1). A guessed set
+ * loses the patient and asks "Dla kogo?"; a guessed patient plan asks "Czy chodzi o…?".
  */
 export function guardCardPatient(
   spec: ChatViewSpec | undefined,
@@ -122,11 +131,32 @@ export function guardCardPatient(
   context: IntentContext,
   contextPatientId: string | undefined
 ): ChatViewSpec | undefined {
-  if (spec?.component !== 'SetDraft' && spec?.component !== 'AssignSummary') return spec;
-  if (!contextPatientId || spec.patientId === contextPatientId) return spec;
+  if (
+    spec?.component !== 'SetDraft' &&
+    spec?.component !== 'AssignSummary' &&
+    spec?.component !== 'ExerciseResults' &&
+    spec?.component !== 'PatientPeek'
+  ) {
+    return spec;
+  }
+  const { patientId } = spec;
+  if (!patientId) return spec;
   const named = matchPatients(message, context.patients);
-  if (named.kind === 'one' && named.patient.id === spec.patientId) return spec;
-  if (named.kind === 'many' && named.patients.some((patient) => patient.id === spec.patientId)) return spec;
+  if (named.kind === 'one' && named.patient.id === patientId) return spec;
+  if (named.kind === 'many' && named.patients.some((patient) => patient.id === patientId)) return spec;
+  const namesSomeoneElse = named.kind !== 'none' || NEW_PERSON_PATTERN.test(normalizeSearchText(message));
+  if (!namesSomeoneElse && patientId === contextPatientId) return spec;
+
   if (spec.component === 'AssignSummary') return { component: 'SetDraft', setId: spec.setId, exerciseIds: [] };
+  if (spec.component === 'PatientPeek') {
+    const patient = context.patients.find((candidate) => candidate.id === patientId);
+    if (!patient) return spec;
+    return {
+      component: 'Clarify',
+      question: `Czy chodzi o pacjenta: ${patient.name}?`,
+      options: [patient.name],
+      choices: [{ label: patient.name, patientId }],
+    };
+  }
   return { ...spec, patientId: undefined };
 }

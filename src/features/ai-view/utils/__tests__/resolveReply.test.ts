@@ -116,10 +116,63 @@ describe('guardCardPatient', () => {
     ).toEqual({ component: 'SetDraft', setId: 's1', exerciseIds: [] });
   });
 
-  it('keeps the patient the message names, the conversation patient and cards without a context', () => {
+  it('keeps the patient the message names and the conversation patient', () => {
     expect(guardCardPatient(draftForE2e, 'zestaw dla E2E Pacjent', context, 'p-jan')).toBe(draftForE2e);
     expect(guardCardPatient(draftForE2e, 'clamshell', context, 'p-e2e')).toBe(draftForE2e);
-    expect(guardCardPatient(draftForE2e, 'clamshell', context, undefined)).toBe(draftForE2e);
+    expect(guardCardPatient(draftForE2e, 'dodaj mu jeszcze mostek', context, 'p-e2e')).toBe(draftForE2e);
+  });
+
+  // Test asystenta 17.11 (K1): nowa rozmowa, „Pacjent z rwą kulszową pyta…” → karta „dla: E2E Pacjent”.
+  it('drops a patient nobody named in a conversation that is about no one yet', () => {
+    const message = 'Pacjent z rwą kulszową pyta, czy może brać ketonal. Daj mu ślizgi nerwu kulszowego.';
+    expect(guardCardPatient(draftForE2e, message, context, undefined)).toEqual({
+      component: 'SetDraft',
+      patientId: undefined,
+      exerciseIds: ['e1'],
+    });
+    expect(
+      guardCardPatient(
+        { component: 'ExerciseResults', query: 'ślizgi', exerciseIds: ['e1'], patientId: 'p-e2e' },
+        message,
+        context,
+        undefined
+      )
+    ).toEqual({ component: 'ExerciseResults', query: 'ślizgi', exerciseIds: ['e1'], patientId: undefined });
+  });
+
+  // Test asystenta 17.11 (K1b): „Nowa pacjentka Oksana… skopiuj jej zestaw Haliny Kowalczyk” → „dla: Tomas Nowi”.
+  it('drops the conversation patient when the message names someone else or a new person', () => {
+    const people = {
+      patients: [
+        { id: 'p-tomas', name: 'Tomas Nowi' },
+        { id: 'p-halina', name: 'Halina Kowalczyk' },
+      ],
+      sets: [],
+    };
+    const draftForTomas = { component: 'SetDraft' as const, patientId: 'p-tomas', setId: 's1', exerciseIds: [] };
+    const stripped = { component: 'SetDraft', patientId: undefined, setId: 's1', exerciseIds: [] };
+    const copy = 'Nowa pacjentka Oksana Shevchenko, po endoprotezie. Skopiuj jej zestaw Haliny Kowalczyk.';
+    expect(guardCardPatient(draftForTomas, copy, people, 'p-tomas')).toEqual(stripped);
+    expect(guardCardPatient(draftForTomas, copy, people, undefined)).toEqual(stripped);
+    expect(guardCardPatient(draftForTomas, 'to samo dla Haliny Kowalczyk', people, 'p-tomas')).toEqual(stripped);
+    expect(guardCardPatient(draftForTomas, 'mam nową pacjentkę, daj jej to samo', people, 'p-tomas')).toEqual(
+      stripped
+    );
+  });
+
+  it('asks before showing the plan of a patient nobody named', () => {
+    expect(
+      guardCardPatient({ component: 'PatientPeek', patientId: 'p-e2e' }, 'Pacjent pyta o ketonal', context, undefined)
+    ).toEqual({
+      component: 'Clarify',
+      question: 'Czy chodzi o pacjenta: E2E Pacjent?',
+      options: ['E2E Pacjent'],
+      choices: [{ label: 'E2E Pacjent', patientId: 'p-e2e' }],
+    });
+    const peek = { component: 'PatientPeek' as const, patientId: 'p-e2e' };
+    expect(guardCardPatient(peek, 'co u E2E Pacjent?', context, undefined)).toBe(peek);
+    const inactive = { component: 'PatientPeek' as const, filter: 'inactive' as const };
+    expect(guardCardPatient(inactive, 'kto nie ćwiczy', context, undefined)).toBe(inactive);
   });
 
   it('applies to AI replies and drops the model sentence about the removed patient', async () => {
