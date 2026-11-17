@@ -67,6 +67,7 @@ export function seedBuilderParamsFromMapping(
       patientDescription: effective.patientDescription ?? undefined,
       clinicalDescription: effective.clinicalDescription ?? undefined,
       audioCue: effective.audioCue ?? undefined,
+      restAfterExercise: effective.restAfterExercise,
       customImages: effective.customImages,
       ...(contentSeed ?? { enrichment: effective.effectiveEnrichment }),
     };
@@ -98,6 +99,7 @@ export function seedBuilderParamsFromMapping(
     patientDescription: seedClearable(mappingOverrides.patientDescription, exercise?.patientDescription),
     clinicalDescription: seedClearable(mappingOverrides.clinicalDescription, exercise?.clinicalDescription),
     audioCue: seedClearable(mappingOverrides.audioCue, exercise?.audioCue),
+    restAfterExercise: mappingOverrides.restAfterExercise ?? undefined,
     ...(contentSeed ?? { enrichment: applyEnrichmentOverride(exercise?.enrichmentData, mappingOverrides.enrichment) }),
   };
 }

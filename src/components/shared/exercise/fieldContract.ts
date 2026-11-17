@@ -45,6 +45,10 @@ export interface ExerciseFieldEditConfig {
   min?: number;
   max?: number;
   step?: number;
+  /** Liczba całkowita (np. sekundy, które backend przyjmuje tylko w całości). */
+  integer?: boolean;
+  /** Podpowiedź pustego pola, gdy pustka ma znaczenie (np. „Auto”). */
+  placeholder?: string;
   options?: readonly ExerciseFieldOption[];
   /**
    * Text editor presets rendered as one-click chips under the input.
@@ -266,6 +270,26 @@ export const EXERCISE_FIELD_EDIT_CONFIG: Record<ExerciseFieldKey, ExerciseFieldE
     rule: optionalNullableNumber(0, 300),
     testIdSuffix: 'preparationTime-input',
   },
+  restAfterExercise: {
+    key: 'restAfterExercise',
+    editor: 'number',
+    tier: 3,
+    /**
+     * Tylko pozycja zestawu (overridesJson) i plan pacjenta (exerciseOverrides), bez katalogu.
+     * Brak klucza = auto, 0 = bez odpoczynku, 1–600 = stały czas (backend odrzuca resztę).
+     */
+    surfaces: ['mapping', 'patientOverride', 'patientPlan'],
+    mappingMode: 'edit',
+    persistence: 'assignmentOverride',
+    suffix: 's',
+    min: 0,
+    max: 600,
+    step: 1,
+    integer: true,
+    placeholder: 'Auto',
+    rule: z.number().int().min(0).max(600).optional().nullable(),
+    testIdSuffix: 'restAfterExercise-input',
+  },
   tempo: {
     key: 'tempo',
     editor: 'text',
@@ -422,6 +446,7 @@ export function getMappingEditableCardFields(): Array<
   | 'restSets'
   | 'restReps'
   | 'preparationTime'
+  | 'restAfterExercise'
   | 'tempo'
   | 'loadKg'
   | 'resistance'
@@ -451,6 +476,7 @@ export function getMappingEditableCardFields(): Array<
     | 'restSets'
     | 'restReps'
     | 'preparationTime'
+    | 'restAfterExercise'
     | 'tempo'
     | 'loadKg'
     | 'resistance'
@@ -557,7 +583,7 @@ export const PARAMETER_EDITOR_FIELD_KEYS: readonly ExerciseFieldKey[] = [
   'difficultyLevel',
 ] as const;
 
-export type ParameterSectionId = 'basic' | 'timing' | 'classification' | 'content';
+export type ParameterSectionId = 'basic' | 'timing' | 'classification' | 'rest' | 'content';
 
 export interface ParameterSectionDefinition {
   id: ParameterSectionId;
@@ -603,6 +629,12 @@ export const PARAMETER_SECTIONS: readonly ParameterSectionDefinition[] = [
     id: 'classification',
     title: 'Klasyfikacja',
     keys: ['difficultyLevel'],
+    advanced: true,
+  },
+  {
+    id: 'rest',
+    title: 'Odpoczynek',
+    keys: ['restAfterExercise'],
     advanced: true,
   },
   {

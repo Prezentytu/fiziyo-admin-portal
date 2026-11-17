@@ -15,6 +15,12 @@ export interface ExerciseOverrideFields {
   restSets?: number;
   restReps?: number;
   preparationTime?: number;
+  /**
+   * Odpoczynek po ćwiczeniu (s), zanim pacjent przejdzie do następnego. Brak klucza (albo null) = auto
+   * w aplikacji (przerwa między seriami, potem między powtórzeniami); 0 = bez odpoczynku; 1–600 = stały czas.
+   * W przypisaniu brak/null dziedziczy z pozycji zestawu.
+   */
+  restAfterExercise?: number | null;
   tempo?: string;
   /** kg-only load (SPEC-003 / SPEC-012). */
   loadWeightKg?: number;
@@ -69,6 +75,7 @@ export const EXERCISE_OVERRIDE_CONTENT_KEYS = [
   'restSets',
   'restReps',
   'preparationTime',
+  'restAfterExercise',
   'tempo',
   'loadWeightKg',
   'rangeOfMotion',
@@ -93,6 +100,8 @@ export function hasExerciseOverrideContent(override?: ExerciseOverrideFields | n
   for (const key of EXERCISE_OVERRIDE_CONTENT_KEYS) {
     const value = override[key];
     if (value === undefined) continue;
+    // Odpoczynek null = dziedziczy z pozycji, nie jest personalizacją.
+    if (key === 'restAfterExercise' && value === null) continue;
     if (key === 'customImages' && Array.isArray(value) && value.length === 0) continue;
     if (key === 'hidden' && value === false) continue;
     if (key === 'enrichment') {
@@ -109,6 +118,7 @@ export function listOverriddenFieldKeys(override?: ExerciseOverrideFields | null
   return EXERCISE_OVERRIDE_CONTENT_KEYS.filter((key) => {
     const value = override[key];
     if (value === undefined) return false;
+    if (key === 'restAfterExercise' && value === null) return false;
     if (key === 'customImages' && Array.isArray(value) && value.length === 0) return false;
     if (key === 'hidden' && value === false) return false;
     if (key === 'enrichment') return hasEnrichmentOverrideContent(value as EnrichmentOverride);

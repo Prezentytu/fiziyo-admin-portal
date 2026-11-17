@@ -136,8 +136,25 @@ describe('fieldContract', () => {
       'basic',
       'timing',
       'classification',
+      'rest',
       'content',
     ]);
+  });
+
+  it('odpoczynek po ćwiczeniu jest tylko w pozycji zestawu i planie pacjenta (nie w katalogu), w sekcji zaawansowanej', () => {
+    expect(getFieldsForSurface('template').map((config) => config.key)).not.toContain('restAfterExercise');
+    expect(getFieldsForSurface('mapping').map((config) => config.key)).toContain('restAfterExercise');
+    expect(getFieldsForSurface('patientPlan').map((config) => config.key)).toContain('restAfterExercise');
+    expect(getFieldsForSurface('patientOverride').map((config) => config.key)).toContain('restAfterExercise');
+    const rest = getParameterSections('mapping').find((section) => section.id === 'rest');
+    expect(rest?.advanced).toBe(true);
+    expect(rest?.fields.map((field) => field.key)).toEqual(['restAfterExercise']);
+    const rule = EXERCISE_FIELD_EDIT_CONFIG.restAfterExercise.rule;
+    expect(rule.safeParse(0).success).toBe(true);
+    expect(rule.safeParse(600).success).toBe(true);
+    expect(rule.safeParse(null).success).toBe(true);
+    expect(rule.safeParse(601).success).toBe(false);
+    expect(rule.safeParse(2.5).success).toBe(false);
   });
 
   it('edycja i kreator układają parametry dawki w kolejności kanonicznej (jak widok ćwiczenia)', () => {

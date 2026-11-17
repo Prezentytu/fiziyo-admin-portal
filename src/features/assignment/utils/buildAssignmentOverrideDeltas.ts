@@ -115,6 +115,10 @@ export function buildAssignmentOverrideDeltasFromBuilder(
     if (params.customImages !== undefined) {
       clinicalDesired.customImages = params.customImages;
     }
+    // Odpoczynek po ćwiczeniu planu pacjenta żyje w nadpisaniu; null (auto) nie zostawia klucza.
+    if (params.restAfterExercise !== undefined) {
+      clinicalDesired.restAfterExercise = params.restAfterExercise;
+    }
 
     const delta = buildOverrideDelta(inherited, clinicalDesired);
     const enrichmentDelta = resolveParamsEnrichmentDelta(exercise?.enrichmentData, params);

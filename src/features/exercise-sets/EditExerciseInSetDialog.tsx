@@ -174,6 +174,7 @@ function EditExerciseInSetDialogContent({
       (draft.restSets ?? 0) !== (initialData.restSets ?? 0) ||
       (draft.restReps ?? 0) !== (initialData.restReps ?? 0) ||
       (draft.preparationTime ?? 0) !== (initialData.preparationTime ?? 0) ||
+      (draft.restAfterExercise ?? null) !== (initialData.restAfterExercise ?? null) ||
       (draft.notes ?? '') !== (initialData.notes ?? '') ||
       (draft.customName ?? '') !== (initialData.customName ?? '') ||
       (draft.customDescription ?? '') !== (initialData.customDescription ?? '') ||
@@ -225,6 +226,8 @@ function EditExerciseInSetDialogContent({
           patientDescription: draft.patientDescription,
           clinicalDescription: draft.clinicalDescription,
           audioCue: draft.audioCue,
+          // Puste pole (null) = auto: klucz znika z overridesJson; 0 zapisuje „bez odpoczynku”.
+          restAfterExercise: draft.restAfterExercise ?? null,
         },
         enrichmentDelta
       );

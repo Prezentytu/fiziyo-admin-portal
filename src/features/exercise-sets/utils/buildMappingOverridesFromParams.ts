@@ -48,6 +48,8 @@ export function buildMappingOverridesFromParams(
       ...(params.patientDescription !== undefined ? { patientDescription: params.patientDescription } : {}),
       ...(params.clinicalDescription !== undefined ? { clinicalDescription: params.clinicalDescription } : {}),
       ...(params.audioCue !== undefined ? { audioCue: params.audioCue } : {}),
+      // Szablon ćwiczenia nie ma odpoczynku: liczba trafia do JSON-a, null (auto) nie zostawia klucza.
+      ...(params.restAfterExercise !== undefined ? { restAfterExercise: params.restAfterExercise } : {}),
     },
     enrichmentDelta
   );

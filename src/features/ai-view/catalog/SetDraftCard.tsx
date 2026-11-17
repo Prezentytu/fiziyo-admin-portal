@@ -43,7 +43,7 @@ import { useSaveTemplateSet } from './useChatWrites';
 // A chat draft becomes a plan's mappings: fields a mapping does not keep are not offered.
 const isAlternating = (item: DraftItem) => item.side?.toLowerCase() === 'alternating';
 
-const UNSAVED_FIELDS = ['side', 'rangeOfMotion', 'resistance', 'equipment', 'difficultyLevel'] as const;
+const UNSAVED_FIELDS = ['side', 'rangeOfMotion', 'resistance', 'equipment', 'difficultyLevel', 'restAfterExercise'] as const;
 
 interface RowProps {
   readonly item: DraftItem;

@@ -138,6 +138,11 @@ export interface ExerciseParams {
   patientDescription?: string;
   clinicalDescription?: string;
   audioCue?: string;
+  /**
+   * Odpoczynek po ćwiczeniu (s), zapisywany w overridesJson pozycji. `null` = wyczyszczone (auto, bez klucza),
+   * `undefined` = nie ruszone, `0` = bez odpoczynku.
+   */
+  restAfterExercise?: number | null;
   customImages?: string[];
   /**
    * Effective enrichment draft for personalization (SPEC-024).
@@ -397,6 +402,7 @@ function applyCardPatchToParams(
     onUpdateParams('clinicalDescription', patch.clinicalDescription);
   }
   if ('audioCue' in patch) onUpdateParams('audioCue', patch.audioCue);
+  if ('restAfterExercise' in patch) onUpdateParams('restAfterExercise', patch.restAfterExercise ?? null);
   if ('enrichment' in patch) onUpdateParams('enrichment', patch.enrichment);
   if ('loadKg' in patch) {
     const loadFields = buildExerciseLoadParamFields(patch.loadKg);

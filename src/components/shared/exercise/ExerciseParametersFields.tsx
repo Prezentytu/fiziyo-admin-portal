@@ -40,6 +40,8 @@ export interface ExerciseParameterValues {
   restSets?: number | null;
   restReps?: number | null;
   preparationTime?: number | null;
+  /** Odpoczynek po ćwiczeniu (s); `null` = auto (pole puste), `0` = bez odpoczynku. */
+  restAfterExercise?: number | null;
   duration?: number | null;
   loadKg?: number | null;
   tempo?: string | null;
@@ -215,6 +217,7 @@ function NumberField({
           min={config.min}
           max={config.max}
           step={config.step}
+          placeholder={config.placeholder}
           value={raw}
           aria-invalid={error ? true : undefined}
           onFocus={(event) => event.currentTarget.select()}

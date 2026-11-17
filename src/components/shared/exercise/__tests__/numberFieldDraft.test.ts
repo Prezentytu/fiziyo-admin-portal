@@ -25,4 +25,13 @@ describe('parseNumberFieldDraft', () => {
   it('accepts a decimal comma', () => {
     expect(parseNumberFieldDraft('2,5', { min: 0, max: 500, suffix: 'kg' })).toEqual({ kind: 'value', value: 2.5 });
   });
+
+  it('odpoczynek po ćwiczeniu: puste = auto (null), 0 jest wartością, ułamek i >600 odrzucone', () => {
+    const rest = EXERCISE_FIELD_EDIT_CONFIG.restAfterExercise;
+    expect(parseNumberFieldDraft('', rest)).toEqual({ kind: 'value', value: null });
+    expect(parseNumberFieldDraft('0', rest)).toEqual({ kind: 'value', value: 0 });
+    expect(parseNumberFieldDraft('600', rest)).toEqual({ kind: 'value', value: 600 });
+    expect(parseNumberFieldDraft('601', rest)).toEqual({ kind: 'error', message: 'Najwięcej 600 s' });
+    expect(parseNumberFieldDraft('2,5', rest)).toEqual({ kind: 'error', message: 'Wpisz liczbę całkowitą' });
+  });
 });

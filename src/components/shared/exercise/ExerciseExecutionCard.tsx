@@ -56,6 +56,7 @@ const CARD_FIELD_TESTID_MAP: Record<
   restSets: { input: 'rest-sets-input', info: 'help-restSets' },
   restReps: { input: 'rest-reps-input', info: 'help-restReps' },
   preparationTime: { input: 'preparation-time-input', info: 'help-preparationTime' },
+  restAfterExercise: { input: 'rest-after-exercise-input', info: 'help-restAfterExercise' },
   duration: { input: 'duration-input', info: 'help-duration' },
   load: { input: 'load-input', info: 'help-load' },
   resistance: { input: 'resistance-input', info: 'help-resistance' },
@@ -85,6 +86,7 @@ function exerciseToParameterValues(
     restSets: exercise.restSets ?? null,
     restReps: exercise.restReps ?? null,
     preparationTime: exercise.preparationTime ?? null,
+    restAfterExercise: exercise.restAfterExercise ?? null,
     duration: exercise.duration ?? null,
     loadKg: exercise.loadKg ?? null,
     tempo: exercise.tempo ?? '',
@@ -111,6 +113,8 @@ function toCardPatch(patch: Partial<ExerciseParameterValues>): Partial<ExerciseE
   if ('restSets' in patch) next.restSets = patch.restSets ?? undefined;
   if ('restReps' in patch) next.restReps = patch.restReps ?? undefined;
   if ('preparationTime' in patch) next.preparationTime = patch.preparationTime ?? undefined;
+  // null zostaje null: wyczyszczone pole = auto, zapis usuwa klucz z JSON-a nadpisań.
+  if ('restAfterExercise' in patch) next.restAfterExercise = patch.restAfterExercise ?? null;
   if ('duration' in patch) next.duration = patch.duration ?? undefined;
   if ('loadKg' in patch) {
     next.loadKg = patch.loadKg ?? undefined;

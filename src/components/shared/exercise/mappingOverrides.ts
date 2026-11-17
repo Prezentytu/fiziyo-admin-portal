@@ -26,6 +26,8 @@ export const MAPPING_OVERRIDES_JSON_KEYS = [
   'patientDescription',
   'clinicalDescription',
   'audioCue',
+  /** Odpoczynek po ćwiczeniu (s): brak klucza = auto, 0 = bez odpoczynku. */
+  'restAfterExercise',
   'enrichment',
 ] as const satisfies ReadonlyArray<keyof ExerciseOverrideFields>;
 
@@ -88,6 +90,11 @@ function pickMappingOverrideKeys(source: Record<string, unknown>): MappingOverri
       if (enrichment) result.enrichment = enrichment;
       continue;
     }
+    if (key === 'restAfterExercise') {
+      // Tylko liczba jest wartością; cokolwiek innego (backend i tak odrzuca) czytamy jak auto.
+      if (typeof value === 'number' && Number.isFinite(value)) result.restAfterExercise = value;
+      continue;
+    }
     if (isMappingPlaceholder(key, value)) continue;
     if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
       (result as Record<string, unknown>)[key] = value;
@@ -144,7 +151,11 @@ export function mergeOverrideLayers(
     assignmentOverride?.enrichment
   );
   const { enrichment: _mappingEnrichment, ...mappingFields } = mappingOverrides ?? {};
-  const { enrichment: _assignmentEnrichment, ...assignmentScalars } = assignmentOverride ?? {};
+  const { enrichment: _assignmentEnrichment, ...assignmentFields } = assignmentOverride ?? {};
+  // Odpoczynek null w przypisaniu dziedziczy z pozycji, więc nie przykrywa jej wartości.
+  const assignmentScalars = Object.fromEntries(
+    Object.entries(assignmentFields).filter(([key, value]) => !(key === 'restAfterExercise' && value === null))
+  ) as ExerciseOverrideFields;
   // null (wyczyszczone w pozycji) nie jest wartością warstwy; resolver czyta go z resolveMappingClearedKeys.
   const mappingScalars = Object.fromEntries(
     Object.entries(mappingFields).filter(([, value]) => value !== null)

@@ -49,6 +49,10 @@ const ADD_FIELD_TESTID_MAP: Record<
   reps: { input: 'add-exercise-reps-input', info: 'add-exercise-reps-info' },
   executionTime: { input: 'add-exercise-execution-time-input', info: 'add-exercise-execution-time-info' },
   restSets: { input: 'add-exercise-rest-sets-input', info: 'add-exercise-rest-sets-info' },
+  restAfterExercise: {
+    input: 'add-exercise-rest-after-exercise-input',
+    info: 'add-exercise-rest-after-exercise-info',
+  },
   restReps: { input: 'add-exercise-rest-reps-input', info: 'add-exercise-rest-reps-info' },
   preparationTime: { input: 'add-exercise-prep-time-input', info: 'add-exercise-prep-time-info' },
   duration: { input: 'add-exercise-duration-input', info: 'add-exercise-duration-info' },
@@ -195,6 +199,7 @@ function AddExerciseToPatientDialogContent({
   const [restSets, setRestSets] = useState<number | undefined>(60);
   const [restReps, setRestReps] = useState<number | undefined>(undefined);
   const [preparationTime, setPreparationTime] = useState<number | undefined>(undefined);
+  const [restAfterExercise, setRestAfterExercise] = useState<number | null>(null);
   const [tempo, setTempo] = useState('');
   const [loadWeightKg, setLoadWeightKg] = useState<number | undefined>(undefined);
   const [notes, setNotes] = useState('');
@@ -218,6 +223,7 @@ function AddExerciseToPatientDialogContent({
       restSets: restSets ?? null,
       restReps: restReps ?? null,
       preparationTime: preparationTime ?? null,
+      restAfterExercise,
       loadKg: loadWeightKg ?? null,
       tempo,
       rangeOfMotion,
@@ -240,6 +246,7 @@ function AddExerciseToPatientDialogContent({
       restSets,
       restReps,
       preparationTime,
+      restAfterExercise,
       loadWeightKg,
       tempo,
       rangeOfMotion,
@@ -264,6 +271,7 @@ function AddExerciseToPatientDialogContent({
     if ('restSets' in patch) setRestSets(patch.restSets ?? undefined);
     if ('restReps' in patch) setRestReps(patch.restReps ?? undefined);
     if ('preparationTime' in patch) setPreparationTime(patch.preparationTime ?? undefined);
+    if ('restAfterExercise' in patch) setRestAfterExercise(patch.restAfterExercise ?? null);
     if ('loadKg' in patch) setLoadWeightKg(patch.loadKg ?? undefined);
     if ('tempo' in patch) setTempo(patch.tempo ?? '');
     if ('rangeOfMotion' in patch) setRangeOfMotion(patch.rangeOfMotion ?? '');
@@ -355,6 +363,7 @@ function AddExerciseToPatientDialogContent({
     setRestSets(60);
     setRestReps(undefined);
     setPreparationTime(undefined);
+    setRestAfterExercise(null);
     setTempo('');
     setLoadWeightKg(undefined);
     setNotes('');
@@ -464,6 +473,8 @@ function AddExerciseToPatientDialogContent({
             patientDescription,
             clinicalDescription,
             audioCue,
+            // Odpoczynek planu pacjenta żyje w nadpisaniu przypisania (jak w kreatorze); puste = auto, bez klucza.
+            restAfterExercise,
           }
         );
         if (Object.keys(clinicalDelta).length > 0) {

@@ -1161,10 +1161,18 @@ function AssignmentWizardContent({
   }, []);
 
   const buildAddExerciseVariables = useCallback(
-    (instance: ExerciseInstance, exerciseSetId: string, order: number) => {
+    (
+      instance: ExerciseInstance,
+      exerciseSetId: string,
+      order: number,
+      { patientPlan }: { patientPlan: boolean }
+    ) => {
       const params = builderParams.get(instance.instanceId);
       const exercise = availableExercises.find((item) => item.id === instance.exerciseId);
-      const overridesJson = buildMappingOverridesFromParams(exercise, params ?? {});
+      // W planie pacjenta odpoczynek po ćwiczeniu żyje w exerciseOverrides (delta kreatora), nie w pozycji:
+      // inaczej wyczyszczenie w edycji planu wracałoby z pozycji. Zestaw organizacji trzyma go w pozycji.
+      const mappingParams = patientPlan ? { ...params, restAfterExercise: undefined } : (params ?? {});
+      const overridesJson = buildMappingOverridesFromParams(exercise, mappingParams);
 
       return {
         exerciseId: instance.exerciseId,
@@ -1270,7 +1278,9 @@ function AssignmentWizardContent({
 
       for (const addedItem of diff.added) {
         const addResult = await addExerciseToSet({
-          variables: buildAddExerciseVariables(addedItem.instance, selectedSet.id, addedItem.order),
+          variables: buildAddExerciseVariables(addedItem.instance, selectedSet.id, addedItem.order, {
+            patientPlan: true,
+          }),
           awaitRefetchQueries: true,
         });
         const mappingId = addResult.data?.addExerciseToExerciseSet?.id;
@@ -1465,7 +1475,7 @@ function AssignmentWizardContent({
 
           try {
             const addResult = await addExerciseToSet({
-              variables: buildAddExerciseVariables(instance, newSet.id, i + 1),
+              variables: buildAddExerciseVariables(instance, newSet.id, i + 1, { patientPlan: true }),
             });
             const mappingId = addResult.data?.addExerciseToExerciseSet?.id;
             if (mappingId) {
@@ -1526,7 +1536,7 @@ function AssignmentWizardContent({
 
               try {
                 await addExerciseToSet({
-                  variables: buildAddExerciseVariables(instance, organizationSet.id, i + 1),
+                  variables: buildAddExerciseVariables(instance, organizationSet.id, i + 1, { patientPlan: false }),
                 });
               } catch (error) {
                 const exerciseName = exercise?.name || 'Nieznane cwiczenie';
