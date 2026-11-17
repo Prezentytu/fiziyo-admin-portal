@@ -22,6 +22,8 @@ export interface PersonalizationPatch {
   restSets?: number | null;
   restReps?: number | null;
   preparationTime?: number | null;
+  /** null = auto (mapping) / dziedziczy z pozycji (plan pacjenta); 0 = bez odpoczynku. */
+  restAfterExercise?: number | null;
   tempo?: string | null;
   loadKg?: number | null;
   loadWeightKg?: number | null;
@@ -72,6 +74,7 @@ export type InheritedBaseline = Partial<{
   restSets: number;
   restReps: number;
   preparationTime: number;
+  restAfterExercise: number | null;
   tempo: string;
   loadWeightKg: number;
   loadKg: number;
@@ -242,6 +245,11 @@ export function splitPersonalization(patch: PersonalizationPatch): SplitPersonal
       overrideDelta.audioCue = cue;
     }
   }
+  if ('restAfterExercise' in patch && getPersistence('restAfterExercise') === 'assignmentOverride') {
+    if (patch.restAfterExercise != null) {
+      overrideDelta.restAfterExercise = patch.restAfterExercise;
+    }
+  }
   if ('customImages' in patch && patch.customImages !== undefined) {
     overrideDelta.customImages = patch.customImages ?? [];
   }
@@ -339,6 +347,14 @@ export function buildOverrideDelta(
   compareText('notes');
   compareText('customName');
   compareText('customDescription');
+
+  // Odpoczynek po ćwiczeniu: brak/null = dziedziczy (bez klucza), 0 to wartość („bez odpoczynku”).
+  if ('restAfterExercise' in desired) {
+    const desiredRest = desired.restAfterExercise;
+    if (desiredRest != null && !valuesEqual(desiredRest, inherited.restAfterExercise ?? null)) {
+      delta.restAfterExercise = desiredRest;
+    }
+  }
 
   if ('loadKg' in desired || 'loadWeightKg' in desired) {
     const inheritedLoad = inherited.loadWeightKg ?? inherited.loadKg ?? null;

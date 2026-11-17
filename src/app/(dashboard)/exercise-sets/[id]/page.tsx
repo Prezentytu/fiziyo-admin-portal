@@ -354,7 +354,19 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
             };
     }
 
-    if (Object.keys(mappingPatch).length === 0) return;
+    const touchesMappingOverrides =
+      'side' in patch ||
+      'rangeOfMotion' in patch ||
+      'resistance' in patch ||
+      'equipment' in patch ||
+      'difficultyLevel' in patch ||
+      'patientDescription' in patch ||
+      'clinicalDescription' in patch ||
+      'audioCue' in patch ||
+      'restAfterExercise' in patch ||
+      'enrichment' in patch;
+
+    if (Object.keys(mappingPatch).length === 0 && !touchesMappingOverrides) return;
     const previousPatch = localExercisePatches[mapping.id];
     const mergedMapping: ExerciseMapping = {
       ...mapping,
@@ -370,17 +382,6 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
         ...mappingPatch,
       },
     }));
-
-    const touchesMappingOverrides =
-      'side' in patch ||
-      'rangeOfMotion' in patch ||
-      'resistance' in patch ||
-      'equipment' in patch ||
-      'difficultyLevel' in patch ||
-      'patientDescription' in patch ||
-      'clinicalDescription' in patch ||
-      'audioCue' in patch ||
-      'enrichment' in patch;
 
     let overridesJson: string | undefined;
     if (touchesMappingOverrides) {
@@ -415,9 +416,17 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
             patientDescription: patch.patientDescription ?? card.patientDescription,
             clinicalDescription: patch.clinicalDescription ?? card.clinicalDescription,
             audioCue: patch.audioCue ?? card.audioCue,
+            // null z patcha = wyczyszczone (auto, bez klucza); bez patcha zostaje wartość pozycji.
+            restAfterExercise:
+              'restAfterExercise' in patch ? (patch.restAfterExercise ?? null) : (card.restAfterExercise ?? null),
           },
           enrichmentDelta
         ) ?? '';
+      const optimisticOverridesJson = overridesJson;
+      setLocalExercisePatches((prev) => ({
+        ...prev,
+        [mapping.id]: { ...prev[mapping.id], overridesJson: optimisticOverridesJson },
+      }));
     }
 
     try {

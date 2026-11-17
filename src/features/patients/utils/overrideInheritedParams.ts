@@ -11,6 +11,8 @@ export interface OverrideInheritedParams {
   restSets: number;
   restReps: number;
   preparationTime: number;
+  /** Odpoczynek po ćwiczeniu z pozycji (overridesJson); null = auto. */
+  restAfterExercise: number | null;
   exerciseSide: string;
   /** Opór z overridesJson mappingu albo z ćwiczenia; '' = brak. */
   resistance: string;
@@ -33,6 +35,7 @@ export function resolveOverrideInheritedParams(mapping: EffectiveMappingSource):
     restSets: effective.restSets,
     restReps: effective.restReps,
     preparationTime: effective.preparationTime,
+    restAfterExercise: effective.restAfterExercise ?? null,
     exerciseSide: effective.side ?? 'none',
     resistance: effective.resistance ?? '',
     equipment: effective.equipment ?? '',

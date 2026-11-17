@@ -99,3 +99,19 @@ describe('buildAssignmentOverrideDeltasFromBuilder content not loaded', () => {
   });
 });
 
+describe('buildAssignmentOverrideDeltasFromBuilder: odpoczynek po ćwiczeniu', () => {
+  const exercises = [{ id: 'e1', name: 'Przysiad', side: 'both' }];
+  const build = (restAfterExercise: number | null | undefined) =>
+    buildAssignmentOverrideDeltasFromBuilder(
+      [{ instanceId: 'i1', exerciseId: 'e1' }],
+      new Map([['i1', { exerciseSide: 'both', restAfterExercise }]]),
+      exercises
+    );
+
+  it('liczba i 0 trafiają do delty planu pacjenta, puste (auto) nie', () => {
+    expect(build(45)).toEqual({ i1: { restAfterExercise: 45 } });
+    expect(build(0)).toEqual({ i1: { restAfterExercise: 0 } });
+    expect(build(null)).toEqual({});
+    expect(build(undefined)).toEqual({});
+  });
+});

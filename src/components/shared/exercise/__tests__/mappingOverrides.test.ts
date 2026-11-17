@@ -167,3 +167,42 @@ describe('mappingOverrides', () => {
     });
   });
 });
+
+describe('mappingOverrides: odpoczynek po ćwiczeniu (restAfterExercise)', () => {
+  const template = { exerciseSide: 'both', resistance: 'Lekki' };
+
+  it('zapisuje liczbę i 0, a wyczyszczone pole (null) nie zostawia klucza', () => {
+    expect(JSON.parse(buildMappingOverridesJson(template, { restAfterExercise: 45 }) ?? '{}')).toEqual({
+      restAfterExercise: 45,
+    });
+    expect(JSON.parse(buildMappingOverridesJson(template, { restAfterExercise: 0 }) ?? '{}')).toEqual({
+      restAfterExercise: 0,
+    });
+    expect(buildMappingOverridesJson(template, { restAfterExercise: null })).toBeNull();
+  });
+
+  it('wyczyszczenie odpoczynku zostawia pozostałe nadpisania pozycji', () => {
+    const json = buildMappingOverridesJson(template, {
+      side: 'left',
+      resistance: 'Mocny',
+      restAfterExercise: null,
+    });
+    expect(JSON.parse(json ?? '{}')).toEqual({ exerciseSide: 'left', resistance: 'Mocny' });
+    const withRest = buildMappingOverridesJson(template, { side: 'left', resistance: 'Mocny', restAfterExercise: 30 });
+    expect(JSON.parse(withRest ?? '{}')).toEqual({ exerciseSide: 'left', resistance: 'Mocny', restAfterExercise: 30 });
+  });
+
+  it('parseMappingOverridesJson czyta tylko liczbę (null i tekst = auto)', () => {
+    expect(parseMappingOverridesJson(JSON.stringify({ restAfterExercise: 0, rangeOfMotion: '90' }))).toEqual({
+      restAfterExercise: 0,
+      rangeOfMotion: '90',
+    });
+    expect(parseMappingOverridesJson(JSON.stringify({ restAfterExercise: null }))).toEqual({});
+    expect(parseMappingOverridesJson(JSON.stringify({ restAfterExercise: '30' }))).toEqual({});
+  });
+
+  it('null w przypisaniu dziedziczy odpoczynek z pozycji', () => {
+    expect(mergeOverrideLayers({ restAfterExercise: 30 }, { restAfterExercise: null })?.restAfterExercise).toBe(30);
+    expect(mergeOverrideLayers({ restAfterExercise: 30 }, { restAfterExercise: 0 })?.restAfterExercise).toBe(0);
+  });
+});

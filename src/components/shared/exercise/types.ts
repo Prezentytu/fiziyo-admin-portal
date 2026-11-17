@@ -34,6 +34,11 @@ export interface ExerciseExecutionCardData {
   restReps?: number;
   /** Preparation time in seconds before exercise. */
   preparationTime?: number;
+  /**
+   * Odpoczynek po ćwiczeniu (s). `undefined`/`null` = auto; `null` w patchu znaczy „wyczyszczone”
+   * (zapis usuwa klucz z JSON-a nadpisań), `0` = bez odpoczynku.
+   */
+  restAfterExercise?: number | null;
   tempo?: string;
   /** Load value in kg (FiziYo uses kg only in UI). */
   loadKg?: number;
@@ -76,6 +81,7 @@ export type EditableField =
   | 'restSets'
   | 'restReps'
   | 'preparationTime'
+  | 'restAfterExercise'
   | 'tempo'
   | 'loadKg'
   | 'resistance'

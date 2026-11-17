@@ -98,6 +98,11 @@ export interface EffectiveExerciseParams {
   restSets: number;
   restReps: number;
   preparationTime: number;
+  /**
+   * Odpoczynek po ćwiczeniu (s): przypisanie > pozycja zestawu (overridesJson); brak = auto w aplikacji
+   * (przerwa między seriami, potem między powtórzeniami). 0 = bez odpoczynku.
+   */
+  restAfterExercise?: number;
   tempo?: string;
   loadKg?: number;
   loadDisplayText?: string;
@@ -230,6 +235,7 @@ export function resolveEffectiveExerciseParams(
   const restReps = pickDefined(layered?.restReps, mapping.restReps) ?? template.restReps;
   const preparationTime =
     pickDefined(layered?.preparationTime, mapping.preparationTime) ?? template.preparationTime;
+  const restAfterExercise = pickDefined(layered?.restAfterExercise);
   const tempo = pickDefined(layered?.tempo, mapping.tempo, exercise?.tempo);
   const loadKg = pickDefined(
     resolveOverrideLoadKg(layered),
@@ -285,6 +291,7 @@ export function resolveEffectiveExerciseParams(
     restSets,
     restReps,
     preparationTime,
+    restAfterExercise,
     tempo,
     loadKg,
     loadDisplayText,

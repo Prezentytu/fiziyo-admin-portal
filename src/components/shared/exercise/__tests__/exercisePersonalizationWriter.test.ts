@@ -57,6 +57,7 @@ describe('fieldContract persistence routing', () => {
         'resistance',
         'equipment',
         'side',
+        'restAfterExercise',
       ].sort()
     );
   });
@@ -177,5 +178,39 @@ describe('replaceOverrideMapEntry', () => {
     const existing = JSON.stringify({ m1: { sets: 4, exerciseSide: 'left' } });
     const replaced = replaceOverrideMapEntry(existing, 'm1', { difficultyLevel: 'HARD' });
     expect(parseOverrideMap(replaced).m1).toEqual({ difficultyLevel: 'HARD' });
+  });
+});
+
+describe('odpoczynek po ćwiczeniu w planie pacjenta (restAfterExercise)', () => {
+  it('delta zapisuje liczbę i 0 różne od pozycji; puste (null) albo równe pozycji nie zostawia klucza', () => {
+    expect(buildOverrideDelta({ restAfterExercise: null }, { restAfterExercise: 45 })).toEqual({ restAfterExercise: 45 });
+    expect(buildOverrideDelta({ restAfterExercise: 30 }, { restAfterExercise: 0 })).toEqual({ restAfterExercise: 0 });
+    expect(buildOverrideDelta({ restAfterExercise: 30 }, { restAfterExercise: 30 })).toEqual({});
+    expect(buildOverrideDelta({ restAfterExercise: 30 }, { restAfterExercise: null })).toEqual({});
+    expect(buildOverrideDelta({}, { restAfterExercise: null })).toEqual({});
+  });
+
+  it('zapis delty do exerciseOverrides zostawia pozostałe nadpisania i inne pozycje', async () => {
+    const { replaceOverrideMapEntry } = await import('../exercisePersonalizationWriter');
+    const existing = JSON.stringify({ m1: { restAfterExercise: 20, sets: 4 }, m2: { hidden: true } });
+    const delta = buildOverrideDelta({ restAfterExercise: null, sets: 3 }, { restAfterExercise: 60, sets: 4 });
+    expect(parseOverrideMap(replaceOverrideMapEntry(existing, 'm1', delta))).toEqual({
+      m1: { restAfterExercise: 60, sets: 4 },
+      m2: { hidden: true },
+    });
+    const cleared = buildOverrideDelta({ restAfterExercise: null, sets: 3 }, { restAfterExercise: null, sets: 4 });
+    expect(parseOverrideMap(replaceOverrideMapEntry(existing, 'm1', cleared))).toEqual({
+      m1: { sets: 4 },
+      m2: { hidden: true },
+    });
+    expect(parseOverrideMap(mergeOverrideMap(existing, 'm2', { restAfterExercise: 0 }))).toEqual({
+      m1: { restAfterExercise: 20, sets: 4 },
+      m2: { hidden: true, restAfterExercise: 0 },
+    });
+  });
+
+  it('splitPersonalization kieruje odpoczynek do nadpisania, null pomija', () => {
+    expect(splitPersonalization({ restAfterExercise: 0 }).overrideDelta).toEqual({ restAfterExercise: 0 });
+    expect(splitPersonalization({ restAfterExercise: null }).overrideDelta).toEqual({});
   });
 });

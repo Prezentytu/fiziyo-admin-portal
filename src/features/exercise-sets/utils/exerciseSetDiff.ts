@@ -116,6 +116,8 @@ function paramsEqual(a: ExerciseParams, b: ExerciseParams): boolean {
     const va = a[key];
     const vb = b[key];
     if (va === vb) continue;
+    // null (wyczyszczone, np. odpoczynek = auto) i undefined (brak) to ten sam brak wartości.
+    if (va == null && vb == null) continue;
     if (va == null || vb == null) return false;
     if (typeof va === 'object' || typeof vb === 'object') return false;
     if (String(va) !== String(vb)) return false;
@@ -155,7 +157,7 @@ export function pickMappingOverrideScalars(
 ): Partial<Pick<ExerciseParams, MappingOverrideScalarKey>> {
   const picked: Partial<Pick<ExerciseParams, MappingOverrideScalarKey>> = {};
   for (const key of MAPPING_OVERRIDE_SCALAR_KEYS) {
-    if (source[key] !== undefined) picked[key] = source[key];
+    if (source[key] !== undefined) (picked as Record<string, unknown>)[key] = source[key];
   }
   return picked;
 }

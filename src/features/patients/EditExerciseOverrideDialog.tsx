@@ -68,6 +68,10 @@ const OVERRIDE_FIELD_TESTID_MAP: Record<
     input: 'patient-exercise-override-prep-time-input',
     info: 'patient-exercise-override-prep-time-info',
   },
+  restAfterExercise: {
+    input: 'patient-exercise-override-rest-after-exercise-input',
+    info: 'patient-exercise-override-rest-after-exercise-info',
+  },
   duration: {
     input: 'patient-exercise-override-duration-input',
     info: 'patient-exercise-override-duration-info',
@@ -234,6 +238,7 @@ function EditExerciseOverrideDialogContent({
   const inheritedRestSets = inherited.restSets;
   const inheritedRestReps = inherited.restReps;
   const inheritedPreparationTime = inherited.preparationTime;
+  const inheritedRestAfterExercise = inherited.restAfterExercise;
   const inheritedTempo = mapping.tempo ?? '';
   const inheritedLoadKg =
     mapping.loadUnit === 'kg' && mapping.loadValue != null ? mapping.loadValue : null;
@@ -254,6 +259,8 @@ function EditExerciseOverrideDialogContent({
   const initialRestSets = currentOverride?.restSets ?? inheritedRestSets;
   const initialRestReps = currentOverride?.restReps ?? inheritedRestReps;
   const initialPreparationTime = currentOverride?.preparationTime ?? inheritedPreparationTime;
+  // null w nadpisaniu = dziedziczy z pozycji, jak brak klucza.
+  const initialRestAfterExercise = currentOverride?.restAfterExercise ?? inheritedRestAfterExercise;
   const initialTempo = currentOverride?.tempo ?? inheritedTempo;
   const initialLoadKg = currentOverride?.loadWeightKg ?? inheritedLoadKg;
   const initialRangeOfMotion = currentOverride?.rangeOfMotion ?? inheritedRom;
@@ -283,6 +290,7 @@ function EditExerciseOverrideDialogContent({
   const [restSets, setRestSets] = useState<number>(initialRestSets);
   const [restReps, setRestReps] = useState<number>(initialRestReps);
   const [preparationTime, setPreparationTime] = useState<number>(initialPreparationTime);
+  const [restAfterExercise, setRestAfterExercise] = useState<number | null>(initialRestAfterExercise);
   const [tempo, setTempo] = useState(initialTempo);
   const [loadKg, setLoadKg] = useState<number | null>(initialLoadKg);
   const [rangeOfMotion, setRangeOfMotion] = useState(initialRangeOfMotion);
@@ -318,6 +326,7 @@ function EditExerciseOverrideDialogContent({
       restSets,
       restReps,
       preparationTime,
+      restAfterExercise,
       loadKg,
       tempo,
       rangeOfMotion,
@@ -340,6 +349,7 @@ function EditExerciseOverrideDialogContent({
       restSets,
       restReps,
       preparationTime,
+      restAfterExercise,
       loadKg,
       tempo,
       rangeOfMotion,
@@ -365,6 +375,7 @@ function EditExerciseOverrideDialogContent({
       restSets: inheritedRestSets,
       restReps: inheritedRestReps,
       preparationTime: inheritedPreparationTime,
+      restAfterExercise: inheritedRestAfterExercise,
       loadKg: inheritedLoadKg,
       tempo: inheritedTempo,
       rangeOfMotion: inheritedRom,
@@ -384,6 +395,7 @@ function EditExerciseOverrideDialogContent({
       inheritedRestSets,
       inheritedRestReps,
       inheritedPreparationTime,
+      inheritedRestAfterExercise,
       inheritedLoadKg,
       inheritedTempo,
       inheritedRom,
@@ -405,6 +417,7 @@ function EditExerciseOverrideDialogContent({
     if ('restSets' in patch) setRestSets(patch.restSets ?? 0);
     if ('restReps' in patch) setRestReps(patch.restReps ?? 0);
     if ('preparationTime' in patch) setPreparationTime(patch.preparationTime ?? 0);
+    if ('restAfterExercise' in patch) setRestAfterExercise(patch.restAfterExercise ?? null);
     if ('loadKg' in patch) setLoadKg(patch.loadKg ?? null);
     if ('tempo' in patch) setTempo(patch.tempo ?? '');
     if ('rangeOfMotion' in patch) setRangeOfMotion(patch.rangeOfMotion ?? '');
@@ -439,6 +452,7 @@ function EditExerciseOverrideDialogContent({
     restSets !== initialRestSets ||
     restReps !== initialRestReps ||
     preparationTime !== initialPreparationTime ||
+    restAfterExercise !== initialRestAfterExercise ||
     tempo !== initialTempo ||
     loadKg !== initialLoadKg ||
     rangeOfMotion !== initialRangeOfMotion ||
@@ -558,6 +572,7 @@ function EditExerciseOverrideDialogContent({
           restSets: inheritedRestSets,
           restReps: inheritedRestReps,
           preparationTime: inheritedPreparationTime,
+          restAfterExercise: inheritedRestAfterExercise,
           tempo: inheritedTempo,
           loadKg: inheritedLoadKg ?? undefined,
           loadWeightKg: inheritedLoadKg ?? undefined,
@@ -587,6 +602,8 @@ function EditExerciseOverrideDialogContent({
           executionTime,
           restSets,
           restReps,
+          // Puste pole albo wartość pozycji = bez klucza (dziedziczy z pozycji); 0 to „bez odpoczynku”.
+          restAfterExercise,
           ...(ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS
             ? {
                 preparationTime,
@@ -674,6 +691,7 @@ function EditExerciseOverrideDialogContent({
     setRestSets(inheritedRestSets);
     setRestReps(inheritedRestReps);
     setPreparationTime(inheritedPreparationTime);
+    setRestAfterExercise(inheritedRestAfterExercise);
     setTempo(inheritedTempo);
     setLoadKg(inheritedLoadKg);
     setRangeOfMotion(inheritedRom);

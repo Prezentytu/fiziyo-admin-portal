@@ -182,6 +182,7 @@ export function fromExerciseMapping(
     restSets: effective.restSets,
     restReps: effective.restReps,
     preparationTime: effective.preparationTime,
+    restAfterExercise: effective.restAfterExercise,
     tempo: effective.tempo,
     loadKg: effective.loadKg,
     loadDisplayText: effective.loadDisplayText,
@@ -247,6 +248,7 @@ export function fromBuilderExercise(
     restSets?: number;
     restReps?: number;
     preparationTime?: number;
+    restAfterExercise?: number | null;
     tempo?: string;
     customName?: string;
     customDescription?: string;
@@ -308,6 +310,7 @@ export function fromBuilderExercise(
     restSets: params.restSets ?? template.restSets,
     restReps: params.restReps ?? template.restReps,
     preparationTime: params.preparationTime ?? template.preparationTime,
+    restAfterExercise: params.restAfterExercise ?? undefined,
     tempo: params.tempo,
     loadKg,
     loadDisplayText: loadDisplayText ?? (loadKg == null ? undefined : `${loadKg} kg`),

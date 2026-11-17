@@ -6,6 +6,19 @@ import { buildMappingOverridesFromParams } from './buildMappingOverridesFromPara
 const repoRoot = resolve(__dirname, '../../../..');
 
 describe('buildMappingOverridesFromParams', () => {
+  it('odpoczynek po ćwiczeniu: liczba i 0 do overridesJson, null (auto) bez klucza, strona zostaje', () => {
+    const template = { side: 'both', exerciseSide: 'both' };
+    expect(JSON.parse(buildMappingOverridesFromParams(template, { restAfterExercise: 30 }) ?? '{}')).toEqual({
+      restAfterExercise: 30,
+    });
+    expect(JSON.parse(buildMappingOverridesFromParams(template, { restAfterExercise: 0 }) ?? '{}')).toEqual({
+      restAfterExercise: 0,
+    });
+    expect(
+      JSON.parse(buildMappingOverridesFromParams(template, { exerciseSide: 'left', restAfterExercise: null }) ?? '{}')
+    ).toEqual({ exerciseSide: 'left' });
+  });
+
   it('writes Razem (none) into overridesJson when catalog side is Both', () => {
     const json = buildMappingOverridesFromParams(
       { side: 'both', exerciseSide: 'both' },

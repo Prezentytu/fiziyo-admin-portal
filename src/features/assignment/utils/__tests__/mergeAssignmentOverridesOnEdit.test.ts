@@ -49,3 +49,27 @@ describe('mergeAssignmentOverridesOnEdit', () => {
     expect(result).toBe('{}');
   });
 });
+
+describe('mergeAssignmentOverridesOnEdit: odpoczynek po ćwiczeniu', () => {
+  const existingJson = JSON.stringify({ 'm-1': { restAfterExercise: 30, hidden: true } });
+
+  it('wyczyszczony w kreatorze odpoczynek znika z nadpisania, reszta zostaje', () => {
+    const result = mergeAssignmentOverridesOnEdit({
+      existingJson,
+      clinicalByMappingId: {},
+      activeMappingIds: ['m-1'],
+      mappingIdsWithWrittenDosage: ['m-1'],
+    });
+    expect(JSON.parse(result)).toEqual({ 'm-1': { hidden: true } });
+  });
+
+  it('nowa wartość z kreatora zastępuje poprzednią', () => {
+    const result = mergeAssignmentOverridesOnEdit({
+      existingJson,
+      clinicalByMappingId: { 'm-1': { restAfterExercise: 0 } },
+      activeMappingIds: ['m-1'],
+      mappingIdsWithWrittenDosage: [],
+    });
+    expect(JSON.parse(result)).toEqual({ 'm-1': { restAfterExercise: 0, hidden: true } });
+  });
+});

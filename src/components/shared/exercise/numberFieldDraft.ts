@@ -5,7 +5,7 @@ export type NumberFieldDraftResult = { kind: 'value'; value: number | null } | {
 /** Typed text of a parameter field → value to save, or why it cannot be saved (out of the field's range). */
 export function parseNumberFieldDraft(
   raw: string,
-  config: Pick<ExerciseFieldEditConfig, 'min' | 'max' | 'suffix'>
+  config: Pick<ExerciseFieldEditConfig, 'min' | 'max' | 'suffix' | 'integer'>
 ): NumberFieldDraftResult {
   const trimmed = raw.trim();
   if (trimmed === '') return { kind: 'value', value: null };
@@ -13,6 +13,7 @@ export function parseNumberFieldDraft(
   const parsed = Number(trimmed.replace(',', '.'));
   const unit = config.suffix ? ` ${config.suffix}` : '';
   if (!Number.isFinite(parsed)) return { kind: 'error', message: 'Wpisz liczbę' };
+  if (config.integer && !Number.isInteger(parsed)) return { kind: 'error', message: 'Wpisz liczbę całkowitą' };
   if (config.min !== undefined && parsed < config.min) {
     return { kind: 'error', message: `Najmniej ${config.min}${unit}` };
   }

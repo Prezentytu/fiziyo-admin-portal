@@ -362,3 +362,23 @@ describe('resolveEffectiveExerciseParams: uwaga fizjoterapeuty', () => {
     expect(resolveEffectiveExerciseParams(withNotes('Z pozycji'), { notes: 'Od pacjenta' }).notes).toBe('Od pacjenta');
   });
 });
+
+describe('resolveEffectiveExerciseParams: odpoczynek po ćwiczeniu', () => {
+  it('pacjent > pozycja > auto (undefined)', () => {
+    expect(resolveEffectiveExerciseParams(baseMapping).restAfterExercise).toBeUndefined();
+
+    const withMappingRest = { ...baseMapping, overridesJson: JSON.stringify({ restAfterExercise: 40 }) };
+    expect(resolveEffectiveExerciseParams(withMappingRest).restAfterExercise).toBe(40);
+    expect(resolveEffectiveExerciseParams(withMappingRest, { restAfterExercise: 0 }).restAfterExercise).toBe(0);
+    expect(resolveEffectiveExerciseParams(withMappingRest, { restAfterExercise: 90 }).restAfterExercise).toBe(90);
+    // null albo brak w planie pacjenta dziedziczy z pozycji
+    expect(resolveEffectiveExerciseParams(withMappingRest, { restAfterExercise: null }).restAfterExercise).toBe(40);
+    expect(resolveEffectiveExerciseParams(withMappingRest, { sets: 4 }).restAfterExercise).toBe(40);
+    expect(resolveEffectiveExerciseParams(baseMapping, { restAfterExercise: 15 }).restAfterExercise).toBe(15);
+  });
+
+  it('null odpoczynku w nadpisaniu nie liczy się jako personalizacja', () => {
+    expect(hasExerciseOverrideContent({ restAfterExercise: null })).toBe(false);
+    expect(hasExerciseOverrideContent({ restAfterExercise: 0 })).toBe(true);
+  });
+});

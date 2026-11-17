@@ -28,6 +28,7 @@ export type ExerciseFieldKey =
   | 'restSets'
   | 'restReps'
   | 'preparationTime'
+  | 'restAfterExercise'
   | 'tempo'
   | 'load'
   | 'resistance'
@@ -63,6 +64,8 @@ export interface ExerciseFieldValueSource {
   restSets?: number;
   restReps?: number;
   preparationTime?: number;
+  /** Odpoczynek po ćwiczeniu (s); brak = auto (przerwa między seriami, potem między powtórzeniami). */
+  restAfterExercise?: number | null;
   tempo?: string;
   loadDisplayText?: string;
   resistance?: string;
@@ -241,6 +244,18 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
     isInlineVisible: true,
     isDialogVisible: true,
     formatValue: (viewModel) => asSeconds(viewModel.preparationTime),
+  },
+  restAfterExercise: {
+    key: 'restAfterExercise',
+    label: 'Odpoczynek po ćwiczeniu',
+    tooltip:
+      'Czas przed następnym ćwiczeniem. Puste = jak przerwa między seriami (a gdy jej nie ma – między powtórzeniami). 0 = bez odpoczynku.',
+    iconKey: 'pause',
+    group: 'execution',
+    /** Tylko pozycja zestawu i plan pacjenta (nie katalog); edycja w „Zaawansowanych parametrach”. */
+    isInlineVisible: false,
+    isDialogVisible: false,
+    formatValue: (viewModel) => asSeconds(viewModel.restAfterExercise),
   },
   tempo: {
     key: 'tempo',

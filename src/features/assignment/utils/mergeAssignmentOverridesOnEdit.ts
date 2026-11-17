@@ -26,6 +26,14 @@ export const MAPPING_OWNED_OVERRIDE_KEYS = [
   'customDescription',
 ] as const satisfies ReadonlyArray<keyof ExerciseOverrideFields>;
 
+/**
+ * Keys the wizard always rewrites from its (override-seeded) params: the clinical delta carries the
+ * current value, so a missing key means the therapist cleared it and the old entry must not survive.
+ */
+export const WIZARD_OWNED_OVERRIDE_KEYS = ['restAfterExercise'] as const satisfies ReadonlyArray<
+  keyof ExerciseOverrideFields
+>;
+
 export interface MergeAssignmentOverridesOnEditInput {
   existingJson: string | null | undefined;
   /** Clinical/enrichment deltas keyed by mapping.id from the builder. */
@@ -53,6 +61,9 @@ function mergeEntry(
   stripDosage: boolean
 ): ExerciseOverrideFields | undefined {
   const base = stripDosage && previous ? stripMappingOwnedKeys(previous) : { ...(previous ?? {}) };
+  for (const key of WIZARD_OWNED_OVERRIDE_KEYS) {
+    delete base[key];
+  }
   if (!clinical || Object.keys(clinical).length === 0) {
     return Object.keys(base).length > 0 ? base : undefined;
   }
