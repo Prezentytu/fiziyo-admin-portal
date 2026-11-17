@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { useChatActions } from '../ChatSessionContext';
 import { useAvailableExercises } from '../useAvailableExercises';
 import { pickExercisesById, searchExercises } from '../utils/exerciseLookup';
+import { isExerciseTopic } from '../utils/threadLocalReply';
 import type { CardProps } from './cardProps';
 import { ChatCard, ChatCardEmpty } from './ChatCard';
 import { ClarifyChips } from './ClarifyChips';
@@ -42,10 +43,12 @@ export function ExerciseResultsCard({ spec, testId, messageId, chosen }: CardPro
 
   const catalogNames = useMemo(() => exercises.map((exercise) => exercise.name), [exercises]);
 
+  // Zapytanie, które jest zdaniem albo pytaniem, nie staje się nazwą ćwiczenia.
+  const ownName = isExerciseTopic(spec.query) ? spec.query : undefined;
   const askForNew = () =>
-    appendExchange(`Utwórz ćwiczenie: ${spec.query}`, {
+    appendExchange(ownName ? `Utwórz ćwiczenie: ${ownName}` : 'Utwórz ćwiczenie', {
       text: 'Opisz ćwiczenie i ustaw podstawowe parametry, a dodam je do katalogu gabinetu.',
-      spec: { component: 'CreateExercise', name: spec.query || undefined },
+      spec: { component: 'CreateExercise', name: ownName },
     });
 
   const askForIdeas = () =>
