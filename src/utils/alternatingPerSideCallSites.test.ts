@@ -32,8 +32,6 @@ const CALL_TARGETS = [
 const EXEMPT: Record<string, string> = {
   'features/exercises/CreateExerciseWizard.tsx#calculateExerciseTotalSeconds':
     'Nowe ćwiczenie, jeszcze bez rekordu: portal nie zapisuje schemaVersion, więc liczy łącznie jak rekord bez wersji.',
-  'features/verification/utils/parameterRules.ts#calculateExerciseTotalSeconds':
-    'Weryfikacja treści (stos #223): reguła wersji i dawka na stronę żyją tam (resolveSideDose); ten PR jej nie dotyka.',
   'features/verification/utils/changeSummary.ts#formatExerciseSideLabel':
     'Zestawienie zmian w centrum weryfikacji (stos #223): porównuje stronę przed i po, nie opisuje dawki rekordu.',
   'utils/exerciseTime.ts#formatExerciseSideLabel':
