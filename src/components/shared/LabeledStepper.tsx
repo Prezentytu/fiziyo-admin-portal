@@ -65,7 +65,7 @@ export function LabeledStepper({
 
   return (
     <div
-      className={cn('flex w-[76px] flex-col items-center group', className)}
+      className={cn('flex w-[96px] flex-col items-center group', className)}
       data-testid="labeled-stepper"
     >
       <div className="inline-flex h-8 w-full items-stretch">
