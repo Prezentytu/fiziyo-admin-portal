@@ -40,6 +40,7 @@ function draftChangingEverything(loaded: Doc): Doc {
     if (typeof value === 'string') parent[key] = `${value} (zmiana)`;
     else if (typeof value === 'boolean') parent[key] = !value;
     else if (Array.isArray(value) && value.length > 1) parent[key] = value.slice(0, -1);
+    else if (value !== null && typeof value === 'object') parent[key] = { ...value, zmiana: 1 };
     else throw new Error(`Brak wartości do zmiany w ${path}`);
   }
   return draft;

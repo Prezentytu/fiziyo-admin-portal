@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  acknowledgeAllSuggestions,
   acknowledgeFinding,
   buildPatientParameterLine,
   createParameterReview,
@@ -459,5 +460,35 @@ describe('formatSessionDuration', () => {
       side: 'none',
     });
     expect(evaluation.sessionIsEstimate).toBe(true);
+  });
+});
+
+describe('acknowledgeAllSuggestions', () => {
+  it('jednym kliknięciem przyjmuje wszystkie sugestie, a błędów nie rusza', () => {
+    const values = { sets: 2, reps: 3, repTime: 29, hold: null, rest: null };
+    const before = evaluateParameters({ values, mode: 'reps', side: 'none' });
+    expect(before.findings.filter((finding) => finding.canAcknowledge).length).toBe(2);
+
+    const review = acknowledgeAllSuggestions(createParameterReview(), before);
+    const after = evaluateParameters({
+      values,
+      mode: 'reps',
+      side: 'none',
+      acknowledged: review.acknowledged,
+      acknowledgedSessionSeconds: review.acknowledgedSessionSeconds,
+    });
+    expect(after.findings.filter((finding) => finding.canAcknowledge)).toEqual([]);
+    expect(after.findings.map((finding) => finding.key)).toEqual(['rest']);
+  });
+
+  it('przyjmuje też długie ćwiczenie', () => {
+    const before = evaluateParameters({
+      values: { sets: 5, reps: 20, repTime: 6, hold: null, rest: 120 },
+      mode: 'reps',
+      side: 'none',
+    });
+    expect(before.sessionLevel).toBe('warning');
+    const review = acknowledgeAllSuggestions(createParameterReview(), before);
+    expect(review.acknowledgedSessionSeconds).toBe(before.sessionSeconds);
   });
 });

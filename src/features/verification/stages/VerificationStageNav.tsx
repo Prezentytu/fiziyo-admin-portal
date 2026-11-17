@@ -12,6 +12,8 @@ export interface StageNavItem {
   state: StageNavState;
   /** Warning sub-line also for the current stage when it has open issues. */
   hasIssues: boolean;
+  /** Open issues are only suggestions: soft tone, not a problem to fix. */
+  onlySuggestions?: boolean;
 }
 
 interface VerificationStageNavProps {
@@ -19,7 +21,11 @@ interface VerificationStageNavProps {
   onSelect: (key: VerificationStageKey) => void;
 }
 
-function StageDot({ index, state }: Readonly<{ index: number; state: StageNavState }>) {
+function StageDot({
+  index,
+  state,
+  onlySuggestions = false,
+}: Readonly<{ index: number; state: StageNavState; onlySuggestions?: boolean }>) {
   if (state === 'done') {
     return (
       <span className="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-full bg-tint-fill text-on-tint">
@@ -32,7 +38,10 @@ function StageDot({ index, state }: Readonly<{ index: number; state: StageNavSta
       className={cn(
         'grid h-[26px] w-[26px] shrink-0 place-items-center rounded-full text-[12px] font-bold',
         state === 'current' && 'bg-foreground text-card',
-        state === 'problem' && 'bg-status-warning-muted text-status-warning',
+        state === 'problem' &&
+          (onlySuggestions
+            ? 'bg-status-suggestion-muted text-status-suggestion'
+            : 'bg-status-warning-muted text-status-warning'),
         state === 'todo' && 'bg-fill-tertiary text-label-secondary'
       )}
     >
@@ -66,14 +75,16 @@ export function VerificationStageNav({ items, onSelect }: VerificationStageNavPr
               )}
               data-testid={`verification-stage-${item.key}-btn`}
             >
-              <StageDot index={index} state={item.state} />
+              <StageDot index={index} state={item.state} onlySuggestions={item.onlySuggestions} />
               <span className="flex min-w-0 flex-col">
                 <span className="truncate text-[14px] font-semibold leading-[18px] text-foreground">{item.title}</span>
                 <span
                   className={cn(
                     'truncate text-[12px] leading-4',
                     item.hasIssues && item.state !== 'todo'
-                      ? 'font-semibold text-status-warning'
+                      ? item.onlySuggestions
+                        ? 'font-medium text-status-suggestion'
+                        : 'font-semibold text-status-warning'
                       : 'text-label-secondary'
                   )}
                 >

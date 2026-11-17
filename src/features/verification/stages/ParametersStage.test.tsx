@@ -19,6 +19,7 @@ function renderStage(onValueChange = vi.fn(), onCoreFieldChange = vi.fn(), saved
       descriptionNumbers={[]}
       onValueChange={onValueChange}
       onAcknowledge={vi.fn()}
+      onAcknowledgeAll={vi.fn()}
       onFixDescription={vi.fn()}
       onAcknowledgeDescription={vi.fn()}
       onCoreFieldChange={onCoreFieldChange}
@@ -74,6 +75,7 @@ describe('ParametersStage', () => {
         descriptionNumbers={[]}
         onValueChange={vi.fn()}
         onAcknowledge={vi.fn()}
+        onAcknowledgeAll={vi.fn()}
         onFixDescription={vi.fn()}
         onAcknowledgeDescription={vi.fn()}
         onCoreFieldChange={onCoreFieldChange}
@@ -103,6 +105,7 @@ describe('ParametersStage', () => {
             setCurrent((previous) => ({ ...previous, [key]: value }));
           }}
           onAcknowledge={vi.fn()}
+          onAcknowledgeAll={vi.fn()}
           onFixDescription={vi.fn()}
           onAcknowledgeDescription={vi.fn()}
           onCoreFieldChange={(field, value) => {
@@ -142,6 +145,7 @@ describe('ParametersStage', () => {
           descriptionNumbers={[]}
           onValueChange={(key, value) => setCurrent((previous) => ({ ...previous, [key]: value }))}
           onAcknowledge={vi.fn()}
+          onAcknowledgeAll={vi.fn()}
           onFixDescription={vi.fn()}
           onAcknowledgeDescription={vi.fn()}
           onCoreFieldChange={vi.fn()}
@@ -167,6 +171,7 @@ describe('ParametersStage', () => {
         descriptionNumbers={[]}
         onValueChange={vi.fn()}
         onAcknowledge={vi.fn()}
+        onAcknowledgeAll={vi.fn()}
         onFixDescription={vi.fn()}
         onAcknowledgeDescription={vi.fn()}
         onCoreFieldChange={onCoreFieldChange}
@@ -208,6 +213,7 @@ describe('ParametersStage', () => {
             setCurrent((previous) => ({ ...previous, [key]: value }));
           }}
           onAcknowledge={vi.fn()}
+          onAcknowledgeAll={vi.fn()}
           onFixDescription={vi.fn()}
           onAcknowledgeDescription={vi.fn()}
           onCoreFieldChange={vi.fn()}
@@ -241,10 +247,15 @@ describe('ParametersStage: uwagi o stronie (odbiór 12.11, F1)', () => {
         descriptionNumbers={[]}
         onValueChange={vi.fn()}
         onAcknowledge={vi.fn()}
+        onAcknowledgeAll={vi.fn()}
         onFixDescription={vi.fn()}
         onAcknowledgeDescription={vi.fn()}
         onCoreFieldChange={vi.fn()}
-        v33={isV33 ? { sideDiffersFromDocument: false, facts: [] } : undefined}
+        v33={
+          isV33
+            ? { sideDiffersFromDocument: false, enrichment: {}, onEnrichmentPathChange: vi.fn(), onSyncSide: vi.fn() }
+            : undefined
+        }
       />
     );
     return screen.getByTestId('verification-stage-parameters');
@@ -275,5 +286,60 @@ describe('ParametersStage: uwagi o stronie (odbiór 12.11, F1)', () => {
     );
     expect(stage).toHaveTextContent('Czas liczony podwójnie');
     expect(stage).toHaveTextContent('6 min 2 s');
+  });
+
+  it('akceptuje wszystkie sugestie jednym przyciskiem, a bez sugestii go nie pokazuje', () => {
+    const unusual: ParameterValues = { sets: 1, reps: 3, repTime: 29, hold: null, rest: 30 };
+    const onAcknowledgeAll = vi.fn();
+    const { unmount } = render(
+      <ParametersStage
+        core={core}
+        mode="reps"
+        values={unusual}
+        evaluation={evaluateParameters({ values: unusual, mode: 'reps', side: 'none' })}
+        descriptionNumbers={[]}
+        onValueChange={vi.fn()}
+        onAcknowledge={vi.fn()}
+        onAcknowledgeAll={onAcknowledgeAll}
+        onFixDescription={vi.fn()}
+        onAcknowledgeDescription={vi.fn()}
+        onCoreFieldChange={vi.fn()}
+      />
+    );
+    expect(screen.getByTestId('verification-param-suggestions-bar')).toHaveTextContent('Sugestie: 3.');
+    fireEvent.click(screen.getByTestId('verification-param-accept-all-btn'));
+    expect(onAcknowledgeAll).toHaveBeenCalledTimes(1);
+    unmount();
+
+    renderStage();
+    expect(screen.queryByTestId('verification-param-accept-all-btn')).toBeNull();
+  });
+
+  it('rekord 3.3 pokazuje zakres ćwiczenia pod suwakiem i proponuje jego wartość', () => {
+    const exerciseRange = { min: 1, max: 2, suggested: 1 };
+    const sets: ParameterValues = { sets: 4, reps: 3, repTime: null, hold: null, rest: 30 };
+    render(
+      <ParametersStage
+        core={core}
+        mode="reps"
+        values={sets}
+        evaluation={evaluateParameters({
+          values: sets,
+          mode: 'reps',
+          side: 'none',
+          exerciseRanges: { sets: exerciseRange, reps: { min: 2, max: 5, suggested: 3 } },
+        })}
+        descriptionNumbers={[]}
+        onValueChange={vi.fn()}
+        onAcknowledge={vi.fn()}
+        onAcknowledgeAll={vi.fn()}
+        onFixDescription={vi.fn()}
+        onAcknowledgeDescription={vi.fn()}
+        onCoreFieldChange={vi.fn()}
+      />
+    );
+    expect(screen.getByTestId('verification-param-sets-note')).toHaveTextContent('Dużo, zakres ćwiczenia 1–2');
+    expect(screen.getByTestId('verification-param-sets-fix-btn')).toHaveTextContent('Ustaw 1');
+    expect(screen.getByTestId('verification-stage-parameters')).toHaveTextContent('zakres ćwiczenia 2–5');
   });
 });

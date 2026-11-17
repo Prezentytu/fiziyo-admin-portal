@@ -34,18 +34,26 @@ Kontrakt i macierz są poza repo: `fiziyo-research/feature-requests/FR-007-schem
 - `patient.step_images` zostaje edytowalne (wymiana zdjęć w weryfikacji), choć kontrakt opisuje media w `media[]`.
 - Kolumny `notes` i `audioCue` są wycofane (§2), więc dla 3.3 nie mają pól.
 
+## Strona, sprzęt, cel i zakresy (decyzja 17.11)
+
+Macierz FR-007 oznacza te pola w weryfikacji jako edytowalne; etap Parametry je edytuje (`V33ParameterContent`).
+
+- `side` i `prescription` zapisują się całą sekcją (`V33_EDITABLE_PATHS`); `equipment_items` przez `EquipmentItemsEditor` z formularza.
+- Wybór „Strona ciała” zmienia kolumnę `side` i `side.mode` naraz (`sideForColumn`), z `per_side_dose` według trybu: odtwarzacz czyta kolumnę, dokument nie może mówić czegoś innego. Rekord z importu z rozjazdem dostaje przycisk „Ustaw w treści tak samo”.
+- Zakresy edytujemy jako od–do. `prescription.params.*.default` zostaje z paczki: dawkę ćwiczenia niosą kolumny (kontrakt §76: „wygrywa kolumna”). Tempo i zakres ruchu mają pola kolumn; wartość z paczki jest tylko podpowiedzią.
+- Sugestie parametrów liczą się od pełnego zakresu ćwiczenia (`exerciseRangesOf`), a „Ustaw …” proponuje `default` z paczki; bez zakresu działa ogólna reguła „zwykle”.
+- Wartość poza typowym zakresem to sugestia (ton `status-suggestion`), nie błąd; „Akceptuj wszystkie sugestie” w Parametrach, w Decyzji i na pasku.
+
 ## Poza zakresem
 
-- Edycja w weryfikacji: `patient.easier`, `harder`, `breathing`, `safety.pain_rule`, `flags`, `therapist.checkpoints`, `therapist.note`, `classification.*`, `equipment_items`, `side.*`, `prescription.*`, `media[]`, `relations`, `lifecycle`, `provenance`, aliasy, trudność, typ.
+- Edycja w weryfikacji: `patient.easier`, `harder`, `breathing`, `safety.pain_rule`, `flags`, `therapist.checkpoints`, `therapist.note`, `classification.*`, `media[]`, `relations`, `lifecycle`, `provenance`, aliasy, trudność, typ.
 - `media[]` nie zmienia się, gdy weryfikator wymienia zdjęcie albo film (fakt zapisany dwa razy, kontrakt §4 pkt 1).
-- Zmiana strony w etapie Parametry pisze tylko kolumnę; `side.mode` zostaje.
 - Czas ćwiczenia „naprzemiennie” poprawia osobny PR od `main` (`fix/naprzemiennie-na-strone`, wzór wspólny z kartą ćwiczenia i odtwarzaczem); do jego scalenia ta gałąź liczy go jak dawkę łączną.
-- Uwaga „zwykle 2–6 s” przy czasie powtórzenia 7 s zatrzymuje wszystkie rekordy p001 do kliknięcia „OK”; zakresy nie czytają jeszcze `prescription.params`.
 - Karta ćwiczenia (`exercises/[id]`) liczy braki treści po staremu.
 
 ## Data-testid
 
-`verification-fact-{id}` (fakt tylko do odczytu), `verification-instruction-facts`, `verification-safety-facts`, `verification-safety-therapist-facts`, `verification-param-facts`, `verification-param-per-side-note`, `verification-param-side-mismatch-note`, `verification-material-facts`, `verification-contract-facts`. Dla 3.3 pola `verification-extra-{summary|should-feel|should-not-feel|why|when-to-do}-input` są w etapie Instrukcja. Mapa: `docs/testing/data-testid-map.md`.
+`verification-fact-{id}` (fakt tylko do odczytu), `verification-instruction-facts`, `verification-safety-facts`, `verification-safety-therapist-facts`, `verification-param-content`, `verification-param-{side-start|goal}-select`, `verification-param-equipment-items-*`, `verification-param-range-{klucz}-{min|max}-input`, `verification-param-{progression|regression}-criterion-input`, `verification-param-{progression|regression}-next-*`, `verification-param-side-sync-btn`, `verification-param-suggestions-bar`, `verification-param-accept-all-btn`, `verification-decision-{etap}-accept-btn`, `verification-bar-accept-suggestions-btn`, `verification-param-per-side-note`, `verification-param-side-mismatch-note`, `verification-material-facts`, `verification-contract-facts`. Dla 3.3 pola `verification-extra-{summary|should-feel|should-not-feel|why|when-to-do}-input` są w etapie Instrukcja. Mapa: `docs/testing/data-testid-map.md`.
 
 ## Verification plan
 

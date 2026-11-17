@@ -10,7 +10,6 @@ export interface VerificationFact {
 /** Read-only contract facts grouped by the stage the matrix assigns them to. */
 export interface VerificationFacts {
   material: VerificationFact[];
-  parameters: VerificationFact[];
   instruction: VerificationFact[];
   safety: VerificationFact[];
   therapist: VerificationFact[];
@@ -22,29 +21,9 @@ export interface VerificationFacts {
 
 type UnknownRecord = Record<string, unknown>;
 
-const SIDE_MODE_LABELS: Record<string, string> = {
-  none: 'Razem',
-  each_side: 'Na każdą stronę',
-  alternating: 'Naprzemiennie',
-  left: 'Tylko lewa',
-  right: 'Tylko prawa',
-};
-
 const SIDE_NAME_LABELS: Record<string, string> = { left: 'lewa', right: 'prawa', both: 'obie' };
 
 const MEDIA_TYPE_LABELS: Record<string, string> = { image: 'zdjęcie', video: 'film' };
-
-const RANGE_LABELS: Array<[key: string, label: string, unit: string]> = [
-  ['sets', 'serie', ''],
-  ['reps', 'powtórzenia', ''],
-  ['rep_s', 'czas powtórzenia', ' s'],
-  ['hold_s', 'przytrzymanie', ' s'],
-  ['rest_sets_s', 'przerwa między seriami', ' s'],
-  ['rest_reps_s', 'przerwa między powtórzeniami', ' s'],
-  ['prep_s', 'przygotowanie', ' s'],
-  ['tempo', 'tempo', ''],
-  ['rom', 'zakres ruchu', ''],
-];
 
 function asRecord(value: unknown): UnknownRecord | null {
   return value != null && typeof value === 'object' && !Array.isArray(value) ? (value as UnknownRecord) : null;
@@ -87,24 +66,6 @@ function sideName(value: string | null): string | null {
   return value ? (SIDE_NAME_LABELS[value] ?? value) : null;
 }
 
-function rangeLine(label: string, unit: string, range: UnknownRecord | null): string | null {
-  if (!range) return null;
-  const min = asText(range.min);
-  const max = asText(range.max);
-  const preset = asText(range.default);
-  const span = min && max ? `${min}–${max}${unit}` : null;
-  const presetText = preset ? `domyślnie ${preset}${unit}` : null;
-  if (!span && !presetText) return null;
-  return `${label}: ${joined([span, presetText], ', ')}`;
-}
-
-function prescriptionStep(step: UnknownRecord | null): string[] {
-  const next = asTexts(step?.next);
-  return [asText(step?.criterion), next.length > 0 ? `Dalej: ${next.join('; ')}` : null].filter(
-    (line): line is string => line !== null
-  );
-}
-
 /**
  * Every fact of contract v3.3 that the verification center shows read-only, with dictionary codes
  * as stored: the portal has no labels for them yet.
@@ -112,15 +73,11 @@ function prescriptionStep(step: UnknownRecord | null): string[] {
 export function buildVerificationFactsV33(exercise: ExerciseContentSource): VerificationFacts {
   const content = readExerciseContent(exercise);
   const document = parseDocument(exercise.enrichmentData);
-  const side = asRecord(document.side);
-  const prescription = asRecord(document.prescription);
-  const params = asRecord(prescription?.params);
   const classification = asRecord(document.classification);
   const muscles = asRecord(classification?.muscles);
   const movement = asRecord(classification?.movement);
   const lifecycle = asRecord(document.lifecycle);
   const media = asRecords(document.media);
-  const sideMode = asText(side?.mode);
 
   return {
     material: [
@@ -140,43 +97,6 @@ export function buildVerificationFactsV33(exercise: ExerciseContentSource): Veri
           ]);
         })
       ),
-    ],
-    parameters: [
-      fact('side-mode', 'Tryb strony', sideMode ? (SIDE_MODE_LABELS[sideMode] ?? sideMode) : null),
-      fact(
-        'side-per-side-dose',
-        'Parametry a strona',
-        // Decyzja 12.11 (KONTRAKT-v3.3 §6.7): przy stronach liczba jest zawsze na stronę; `per_side_dose: false`
-        // w treści to błąd danych, nie inny sposób liczenia.
-        side && /^(each_side|both|alternating)$/i.test(sideMode ?? '')
-          ? content.side.perSideDose
-            ? 'Liczone na każdą stronę osobno'
-            : 'Treść mówi „łącznie”, a liczymy na każdą stronę: popraw per_side_dose w treści ćwiczenia'
-          : null
-      ),
-      fact('side-start', 'Strona startowa', sideName(content.side.start)),
-      fact(
-        'equipment',
-        'Sprzęt',
-        content.equipment.map((item) =>
-          joined(
-            [
-              item.qty != null && item.qty !== 1 ? `${item.label} × ${item.qty}` : item.label,
-              item.required === true ? 'wymagany' : item.required === false ? 'opcjonalny' : null,
-              item.substitutes.length > 0 ? `zamienniki: ${item.substitutes.join(', ')}` : null,
-            ],
-            ', '
-          )
-        )
-      ),
-      fact('prescription-goal', 'Cel', asText(prescription?.goal)),
-      fact(
-        'prescription-ranges',
-        'Zakresy parametrów',
-        RANGE_LABELS.map(([key, label, unit]) => rangeLine(label, unit, asRecord(params?.[key])))
-      ),
-      fact('prescription-progression', 'Progresja', prescriptionStep(asRecord(prescription?.progression))),
-      fact('prescription-regression', 'Regresja', prescriptionStep(asRecord(prescription?.regression))),
     ],
     // Easier, harder and the breathing sentence are edited in the stage; only the dictionary code stays a fact.
     instruction: content.breathing?.pattern

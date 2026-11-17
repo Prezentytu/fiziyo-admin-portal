@@ -30,17 +30,8 @@ describe('buildVerificationFactsV33', () => {
     expect(lines(facts.therapist, 'indications')).toEqual(['osteoarthritis', 'patellofemoral_syndrome']);
   });
 
-  it('etap Parametry: strona, sprzęt, zakresy, progresja', () => {
-    expect(lines(facts.parameters, 'side-mode')).toEqual(['Na każdą stronę']);
-    expect(lines(facts.parameters, 'side-per-side-dose')).toEqual(['Liczone na każdą stronę osobno']);
-    expect(lines(facts.parameters, 'side-start')).toEqual(['lewa']);
-    expect(lines(facts.parameters, 'equipment')).toEqual([
-      'mata albo łóżko, wymagany',
-      'mały zrolowany ręcznik, wymagany',
-    ]);
-    expect(lines(facts.parameters, 'prescription-ranges')).toContain('serie: 1–3, domyślnie 2');
-    expect(lines(facts.parameters, 'prescription-ranges')).toContain('czas powtórzenia: 5–12 s, domyślnie 7 s');
-    expect(lines(facts.parameters, 'prescription-progression')[1]).toMatch(/^Dalej: /);
+  it('etap Parametry nie ma faktów tylko do odczytu: stronę, sprzęt, cel i zakresy edytuje etap', () => {
+    expect('parameters' in facts).toBe(false);
   });
 
   it('etap Materiał: strona w mediach i media bez zakresu użycia', () => {

@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { MediaGallery, buildMediaItems } from '@/components/shared';
 import { readExerciseContent } from '@/components/shared/exercise/readExerciseContent';
 import { PageSheet } from '@/components/shared/page';
-import { useExerciseEditorForm } from '@/features/exercises/useExerciseEditorForm';
+import { useExerciseEditorForm, type ExerciseCoreDraft } from '@/features/exercises/useExerciseEditorForm';
 import { useExerciseImageGeneration } from '@/features/exercises/useExerciseImageGeneration';
 import { toV3 } from '@/features/verification/utils/enrichmentToV3';
 
@@ -62,12 +62,14 @@ import { countFilledMistakes, countFilledTexts, summarizeChanges, toChangeSnapsh
 import { readContraindicationTextsV33 } from './utils/contentV33';
 import { EXTRA_CONTENT_GROUPS_V33 } from './utils/extraContent';
 import { buildVerificationFactsV33, sideColumnDiffersFromMode } from './utils/verificationFacts';
+import { exerciseRangesOf, sideForColumn } from './utils/v33Prescription';
 import {
   applyInstructionProposal,
   buildInstructionProposal,
   type InstructionProposal,
 } from './utils/instructionProposal';
 import {
+  acknowledgeAllSuggestions,
   acknowledgeFinding,
   buildPatientParameterLine,
   createParameterReview,
@@ -103,6 +105,7 @@ import {
   VERIFICATION_STAGES,
   canDecideOnExercise,
   computeVerificationStages,
+  hasOnlySuggestions,
   countStopIfSymptoms,
   hasPatientVideo,
   pluralizePl,
@@ -428,6 +431,11 @@ export function VerificationWorkspace({
   };
 
   const mode = deriveExecutionMode(core);
+  /** Rekord 3.3: sugestie liczone od zakresów z treści ćwiczenia, nie od ogólnych. */
+  const exerciseRanges = useMemo(
+    () => (isV33 ? exerciseRangesOf(enrichment.prescription) : undefined),
+    [isV33, enrichment.prescription]
+  );
   const parameterValues = useMemo(() => reviewValues(core), [core]);
   const evaluation = useMemo(
     () =>
@@ -444,8 +452,10 @@ export function VerificationWorkspace({
           preparationTime: core.preparationTime,
         },
         isV33,
+        exerciseRanges,
       }),
     [
+      exerciseRanges,
       parameterValues,
       mode,
       core.side,
@@ -562,12 +572,27 @@ export function VerificationWorkspace({
     [applyCoreUpdates, core]
   );
 
+  /** Rekord 3.3: strona ciała to kolumna i `side.mode` naraz, żeby nie było dwóch prawd o stronie. */
+  const handleParameterCoreFieldChange = useCallback(
+    <K extends keyof ExerciseCoreDraft>(field: K, value: ExerciseCoreDraft[K]) => {
+      setCoreField(field, value);
+      if (field === 'side' && isV33) setEnrichmentPath('side', sideForColumn(enrichment.side, String(value)));
+    },
+    [setCoreField, setEnrichmentPath, isV33, enrichment.side]
+  );
+
   const handleAcknowledge = useCallback(
     (key: AcknowledgeKey) => {
       setParameterReview((previous) => acknowledgeFinding(previous, key, evaluation.sessionSeconds));
     },
     [evaluation.sessionSeconds]
   );
+
+  /** Suggestions are advice, not errors: the reviewer who knows the values are right accepts them in one click. */
+  const handleAcknowledgeAll = useCallback(() => {
+    setParameterReview((previous) => acknowledgeAllSuggestions(previous, evaluation));
+    if (descriptionNumbers.length > 0) setDescriptionAcknowledged(true);
+  }, [evaluation, descriptionNumbers.length]);
 
   // ============================================
   // HANDLERS: photos
@@ -886,6 +911,10 @@ export function VerificationWorkspace({
   const stageHasIssues = (key: VerificationStageKey) =>
     key === 'decision' ? canDecide && !stages.canPublish : stages.issues[key].length > 0;
   const isPrimaryBlocked = stageHasIssues(stage);
+  const stageHasOnlySuggestions = (key: VerificationStageKey) =>
+    key === 'decision'
+      ? stages.openStages.length > 0 && stages.openStages.every((open) => stages.suggestionOnlyStages.includes(open))
+      : hasOnlySuggestions(stages.issues[key]);
 
   const handlePrimary = useCallback(() => {
     if (isPrimaryBlocked || isLeaving) return;
@@ -942,7 +971,14 @@ export function VerificationWorkspace({
     let state: StageNavState = 'todo';
     if (key === stage) state = 'current';
     else if (visited.has(key)) state = hasIssues ? 'problem' : 'done';
-    return { key, title: STAGE_TITLES[key], sub: subs[key], state, hasIssues };
+    return {
+      key,
+      title: STAGE_TITLES[key],
+      sub: subs[key],
+      state,
+      hasIssues,
+      onlySuggestions: hasIssues && stageHasOnlySuggestions(key),
+    };
   });
 
   const decisionRows: DecisionRow[] = [
@@ -1202,17 +1238,20 @@ export function VerificationWorkspace({
               descriptionNumbers={descriptionNumbers}
               onValueChange={handleParameterChange}
               onAcknowledge={handleAcknowledge}
+              onAcknowledgeAll={handleAcknowledgeAll}
               onFixDescription={() => {
                 if (!isV33) setCoreField('patientDescription', replaceHardcodedNumbers(core.patientDescription));
               }}
               onAcknowledgeDescription={() => setDescriptionAcknowledged(true)}
-              onCoreFieldChange={setCoreField}
+              onCoreFieldChange={handleParameterCoreFieldChange}
               savedLoadLabel={form.savedLoadLabel}
               v33={
-                contractFacts
+                isV33
                   ? {
                       sideDiffersFromDocument: sideColumnDiffersFromMode(core.side, enrichment.side?.mode ?? null),
-                      facts: contractFacts.parameters,
+                      enrichment,
+                      onEnrichmentPathChange: setEnrichmentPath,
+                      onSyncSide: () => setEnrichmentPath('side', sideForColumn(enrichment.side, core.side)),
                     }
                   : undefined
               }
@@ -1261,7 +1300,7 @@ export function VerificationWorkspace({
 
           {stage === 'decision' && (
             <>
-              <DecisionStage rows={decisionRows} onGoToStage={goToStage} />
+              <DecisionStage rows={decisionRows} onGoToStage={goToStage} onAcceptSuggestions={handleAcknowledgeAll} />
               {(!isV33 || showTeamFields) && (
                 <ExtraContentSection
                   enrichment={enrichment}
@@ -1295,6 +1334,9 @@ export function VerificationWorkspace({
       <VerificationFloatingBar
         hint={hints[stage]}
         isBlocked={isPrimaryBlocked}
+        acceptSuggestions={
+          isPrimaryBlocked && stageHasOnlySuggestions(stage) ? { onClick: handleAcknowledgeAll } : undefined
+        }
         primaryLabel={primaryLabel}
         onPrimary={handlePrimary}
         isBusy={isBusy}

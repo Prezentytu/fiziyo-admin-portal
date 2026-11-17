@@ -560,6 +560,8 @@ describe('zapadka: pola formularza 3.3 a lista ścieżek zapisu', () => {
       'patient.step_images': 'zdjęcia przypina do kroków centrum weryfikacji',
       'patient.cue_phases': 'fazy wskazówek ustawia centrum weryfikacji',
       'ai.keywords': 'słowa kluczowe edytuje centrum weryfikacji (tor katalogu)',
+      side: 'tryb i stronę startową edytuje centrum weryfikacji razem z kolumną strony',
+      prescription: 'cel, zakresy dawki, progresję i regresję edytuje centrum weryfikacji',
     };
     expect(Object.keys(notEditedHere).filter((path) => !V33_PATHS_EVERY_EDITOR_COVERS.includes(path))).toEqual([]);
     expect([...seen].sort()).toEqual(V33_PATHS_EVERY_EDITOR_COVERS.filter((path) => !(path in notEditedHere)).sort());

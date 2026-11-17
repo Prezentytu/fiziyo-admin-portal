@@ -186,10 +186,12 @@ describe('VerificationWorkspace – rekord v3.3', () => {
       'Serie i powtórzenia podane na jedną stronę'
     );
     expect(screen.queryByTestId('verification-param-side-mismatch-note')).not.toBeInTheDocument();
-    expect(fact('side-mode')).toHaveTextContent('Na każdą stronę');
-    expect(fact('side-start')).toHaveTextContent('lewa');
-    expect(fact('equipment')).toHaveTextContent('mały zrolowany ręcznik, wymagany');
-    expect(fact('prescription-ranges')).toHaveTextContent('serie: 1–3, domyślnie 2');
+    expect(screen.getByTestId('verification-param-side-select')).toHaveTextContent('Na każdą stronę');
+    expect(screen.getByTestId('verification-param-side-start-select')).toHaveTextContent('Lewa');
+    expect(screen.getByTestId('verification-param-equipment-items-label-1')).toHaveValue('mały zrolowany ręcznik');
+    expect(screen.getByTestId('verification-param-range-sets-min-input')).toHaveValue('1');
+    expect(screen.getByTestId('verification-param-range-sets-max-input')).toHaveValue('3');
+    expect(screen.getByTestId('verification-param-goal-select')).toHaveTextContent('Kontrola ruchu');
   });
 
   it('przechodzi wszystkie bramki i nie zgłasza braków z wycofanych pól', async () => {
@@ -197,16 +199,10 @@ describe('VerificationWorkspace – rekord v3.3', () => {
     const user = userEvent.setup();
     await user.click(screen.getByTestId('verification-stage-decision-btn'));
 
-    // The only open point is the generic „zwykle 2–6 s” note of the parameters stage, confirmed with „OK”.
-    expect(screen.getByTestId('verification-decision-material-row')).not.toHaveTextContent('Popraw');
-    expect(screen.getByTestId('verification-decision-instruction-row')).not.toHaveTextContent('Popraw');
-    expect(screen.getByTestId('verification-decision-safety-row')).not.toHaveTextContent('Popraw');
-    expect(screen.getByTestId('verification-decision-parameters-row')).toHaveTextContent(
-      'Czas jednego powtórzenia: 7 s, zwykle 2–6 s.'
-    );
-    await user.click(screen.getByTestId('verification-stage-parameters-btn'));
-    await user.click(screen.getByTestId('verification-param-repTime-ack-btn'));
-    await user.click(screen.getByTestId('verification-stage-decision-btn'));
+    // 7 s na powtórzenie leży w zakresie ćwiczenia (rep_s 5–12), więc ogólne „zwykle 2–6 s” nie zgłasza sugestii.
+    for (const row of ['material', 'parameters', 'instruction', 'safety']) {
+      expect(screen.getByTestId(`verification-decision-${row}-row`)).not.toHaveTextContent('Popraw');
+    }
 
     expect(screen.getByTestId('verification-bar-primary-btn')).toBeEnabled();
     const decision = screen.getByTestId('verification-stage-decision');
@@ -369,11 +365,11 @@ describe('VerificationWorkspace – rekord v3.3', () => {
       'patient.easier': { stage: 'instruction', testId: 'verification-extra-easier-input' },
       'patient.harder': { stage: 'instruction', testId: 'verification-extra-harder-input' },
       'breathing.text': { stage: 'instruction', testId: 'verification-extra-breathing-input' },
-      'side.mode': { stage: 'parameters', testId: 'verification-fact-side-mode' },
-      'side.per_side_dose': { stage: 'parameters', testId: 'verification-fact-side-per-side-dose' },
-      'side.start': { stage: 'parameters', testId: 'verification-fact-side-start' },
+      'side.mode': { stage: 'parameters', testId: 'verification-param-side-select' },
+      'side.per_side_dose': { stage: 'parameters', testId: 'verification-param-per-side-note' },
+      'side.start': { stage: 'parameters', testId: 'verification-param-side-start-select' },
       'side.shown_in_media': { stage: 'material', testId: 'verification-fact-side-shown-in-media' },
-      equipment_items: { stage: 'parameters', testId: 'verification-fact-equipment' },
+      equipment_items: { stage: 'parameters', testId: 'verification-param-equipment-items-row-0' },
       'safety.stop_if': { stage: 'safety', testId: 'verification-safety-stop-if-input' },
       'safety.precautions': { stage: 'safety', testId: 'verification-safety-precautions-item-0' },
       'safety.requires_supervision': { stage: 'safety', testId: 'verification-safety-supervision-checkbox' },
@@ -453,10 +449,25 @@ describe('VerificationWorkspace – rekord v3.3', () => {
       'therapist.checkpoints': { stage: 'safety', act: typeInto('verification-safety-checkpoints-item-0') },
       'therapist.note': { stage: 'safety', act: typeInto('exercise-detail-therapist-note-input') },
       'ai.keywords': { stage: 'decision', act: addChip('verification-extra-keywords') },
+      equipment_items: { stage: 'parameters', act: typeInto('verification-param-equipment-items-label-0') },
+      prescription: {
+        stage: 'parameters',
+        act: async (user) => {
+          const max = screen.getByTestId('verification-param-range-reps-max-input');
+          await user.clear(max);
+          await user.type(max, '20');
+        },
+      },
+      side: {
+        stage: 'parameters',
+        act: async (user) => {
+          await user.click(screen.getByTestId('verification-param-side-start-select'));
+          await user.click(await screen.findByRole('option', { name: 'Prawa' }));
+        },
+      },
     };
-    /** Zapisywalne, ale nie z tego ekranu: sprzęt edytuje formularz ćwiczenia, a zdjęcia kroków operacje na zdjęciach. */
+    /** Zapisywalne, ale nie z tego ekranu: zdjęcia kroków zmieniają operacje na zdjęciach. */
     const NOT_EDITED_HERE: Record<string, string> = {
-      equipment_items: 'sprzęt edytuje formularz ćwiczenia',
       'patient.step_images': 'zdjęcia kroków zmieniają operacje na zdjęciach, nie pole tekstowe',
     };
     // Źródłem listy jest złoty rekord 3.3 (plus ścieżki edytowalne, których w nim nie ma), nie lista pisana tutaj.
@@ -467,7 +478,7 @@ describe('VerificationWorkspace – rekord v3.3', () => {
 
     renderWorkspace(buildGoldenExercise());
     const user = userEvent.setup();
-    for (const stage of ['instruction', 'safety', 'decision']) {
+    for (const stage of ['parameters', 'instruction', 'safety', 'decision']) {
       await user.click(screen.getByTestId(`verification-stage-${stage}-btn`));
       for (const edit of Object.values(EDITS)) if (edit.stage === stage) await edit.act(user);
     }
@@ -483,12 +494,23 @@ describe('VerificationWorkspace – rekord v3.3', () => {
     const restored = structuredClone(saved);
     for (const path of Object.keys(EDITS)) {
       const [section, key] = path.split('.');
+      if (key === undefined) {
+        // Sekcja zapisywana w całości (`side`, `prescription`, `equipment_items`).
+        expect(saved[section], `${path} zapisane`).not.toEqual(original[section]);
+        restored[section] = original[section];
+        continue;
+      }
       expect(saved[section][key], `${path} zapisane`).not.toEqual(original[section]?.[key]);
       if (original[section] && key in original[section]) restored[section][key] = original[section][key];
       else delete restored[section][key];
     }
     expect(restored).toEqual(golden);
     expect(saved.safety.precautions).toEqual([{ group: NEW_PRECAUTION_GROUP, text: 'X' }]);
+    expect(saved.side).toEqual({ ...golden.side, start: 'right' });
+    expect((saved.prescription.params as Record<string, unknown>).reps).toEqual({
+      ...(golden.prescription?.params as Record<string, object>).reps,
+      max: 20,
+    });
     expect((saved.therapist.checkpoints as unknown[])[0]).toEqual({
       ...golden.therapist?.checkpoints?.[0],
       text: `${golden.therapist?.checkpoints?.[0]?.text} X`,

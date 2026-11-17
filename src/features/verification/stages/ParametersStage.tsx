@@ -1,6 +1,6 @@
 'use client';
 
-import { Info, Timer } from 'lucide-react';
+import { CheckCheck, Info, Timer } from 'lucide-react';
 import { useState, type ComponentProps } from 'react';
 
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +23,7 @@ import {
   resolveSideDose,
   sliderPercent,
   toSliderValue,
+  typicalRangeOf,
   type AcknowledgeKey,
   type ExecutionMode,
   type ParameterEvaluation,
@@ -30,9 +31,9 @@ import {
   type ParameterKey,
   type ParameterValues,
 } from '../utils/parameterRules';
-import type { VerificationFact } from '../utils/verificationFacts';
-import { ContractFacts } from './ContractFacts';
+import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import { StageSection } from './StageSection';
+import { V33ParameterContent } from './V33ParameterContent';
 
 interface ParametersStageProps {
   core: ExerciseCoreDraft;
@@ -42,13 +43,23 @@ interface ParametersStageProps {
   descriptionNumbers: string[];
   onValueChange: (key: ParameterKey, value: number | null) => void;
   onAcknowledge: (key: AcknowledgeKey) => void;
+  /** Accepts every suggestion on this stage at once (fields, long exercise, numbers in the description). */
+  onAcknowledgeAll: () => void;
   onFixDescription: () => void;
   onAcknowledgeDescription: () => void;
   onCoreFieldChange: <K extends keyof ExerciseCoreDraft>(field: K, value: ExerciseCoreDraft[K]) => void;
   /** Saved load the kilogram field cannot show (band, RPE, text). */
   savedLoadLabel?: string | null;
-  /** Set for a record in contract v3.3: side facts of the document and the remaining parameter facts, read-only. */
-  v33?: { sideDiffersFromDocument: boolean; facts: VerificationFact[] };
+  /**
+   * Set for a record in contract v3.3: side, equipment, goal, ranges and progression of the document, edited here.
+   * `onSyncSide` writes the side chosen above into `side.mode` when the imported document says otherwise.
+   */
+  v33?: {
+    sideDiffersFromDocument: boolean;
+    enrichment: ExerciseEnrichmentData;
+    onEnrichmentPathChange: (path: string, value: unknown) => void;
+    onSyncSide: () => void;
+  };
 }
 
 const FIELD_INFO: Partial<Record<ParameterKey, string>> = {
@@ -185,12 +196,12 @@ function FieldNote({
       className={cn(
         'flex flex-wrap items-center gap-2.5 rounded-[12px] py-1.5 pl-3 pr-1.5',
         tone === 'error' && 'bg-status-danger-muted',
-        tone === 'suggestion' && 'bg-status-warning-muted',
+        tone === 'suggestion' && 'bg-status-suggestion-muted',
         tone === 'done' && 'bg-card'
       )}
       data-testid={testId}
     >
-      <Badge variant={tone === 'error' ? 'destructive' : tone === 'suggestion' ? 'warning' : 'secondary'}>
+      <Badge variant={tone === 'error' ? 'destructive' : tone === 'suggestion' ? 'suggestion' : 'secondary'}>
         {tone === 'error' ? 'Błąd' : tone === 'suggestion' ? 'Sugestia' : 'OK'}
       </Badge>
       <p className="min-w-0 flex-1 text-[14px] text-foreground">{text}</p>
@@ -212,8 +223,9 @@ function ParameterRow({
   const inputId = `verification-param-${field.key}`;
   const sliderValue = toSliderValue(field.key, field.value);
   const position = sliderPercent(field.key, sliderValue);
-  const bandLeft = sliderPercent(field.key, rule.typicalMin);
-  const bandWidth = sliderPercent(field.key, rule.typicalMax) - bandLeft;
+  const typical = typicalRangeOf(field.key, field.exerciseRange);
+  const bandLeft = sliderPercent(field.key, typical.min);
+  const bandWidth = sliderPercent(field.key, typical.max) - bandLeft;
   const isEmpty = field.value == null;
   const isError = field.level === 'limit' || field.level === 'empty';
   const isWarning = field.level === 'warning';
@@ -243,7 +255,7 @@ function ParameterRow({
             onValueChange={onChange}
             className={cn(
               'pr-8 tabular-nums',
-              isWarning && 'ring-2 ring-status-warning/50',
+              isWarning && 'ring-2 ring-status-suggestion/35',
               isError && 'ring-2 ring-status-danger'
             )}
           />
@@ -283,14 +295,14 @@ function ParameterRow({
                   : isError
                     ? 'bg-status-danger'
                     : isWarning
-                      ? 'bg-status-warning'
+                      ? 'bg-status-suggestion'
                       : 'bg-foreground'
               )}
               style={{ left: `${position}%` }}
             />
           </div>
           <span className="text-[12px] text-label-secondary" aria-hidden="true">
-            zwykle {rule.typicalMin}–{formatWithUnit(rule.typicalMax, rule.unit)}
+            {field.exerciseRange ? 'zakres ćwiczenia' : 'zwykle'} {typical.min}–{formatWithUnit(typical.max, rule.unit)}
           </span>
         </div>
       </div>
@@ -307,10 +319,10 @@ function ParameterRow({
                 size="sm"
                 variant="tinted"
                 className="bg-card"
-                onClick={() => onChange(rule.suggested)}
+                onClick={() => onChange(isError ? rule.suggested : typical.suggested)}
                 data-testid={`verification-param-${field.key}-fix-btn`}
               >
-                Ustaw {formatWithUnit(rule.suggested, rule.unit)}
+                Ustaw {formatWithUnit(isError ? rule.suggested : typical.suggested, rule.unit)}
               </Button>
             )}
             {isWarning && (
@@ -339,6 +351,7 @@ export function ParametersStage({
   descriptionNumbers,
   onValueChange,
   onAcknowledge,
+  onAcknowledgeAll,
   onFixDescription,
   onAcknowledgeDescription,
   onCoreFieldChange,
@@ -348,9 +361,34 @@ export function ParametersStage({
   const sessionFinding = evaluation.findings.find((finding) => finding.key === 'session');
   const sessionText = formatSessionDuration(evaluation.sessionSeconds, evaluation.sessionIsEstimate);
   const sideDose = resolveSideDose(core.side, v33 !== undefined);
+  const suggestionCount =
+    evaluation.findings.filter((finding) => finding.canAcknowledge).length + (descriptionNumbers.length > 0 ? 1 : 0);
 
   return (
     <div className="flex flex-col gap-4" data-testid="verification-stage-parameters">
+      {suggestionCount > 0 && (
+        <div
+          role="status"
+          className="flex flex-wrap items-center gap-3 rounded-card bg-status-suggestion-muted py-2 pl-4 pr-2"
+          data-testid="verification-param-suggestions-bar"
+        >
+          <p className="min-w-0 flex-1 text-[14px] text-foreground">
+            <span className="font-semibold text-status-suggestion">Sugestie: {suggestionCount}.</span> To tylko
+            podpowiedzi, nie błędy. Jeśli wartości są celowe, zaakceptuj je naraz.
+          </p>
+          <Button
+            type="button"
+            size="sm"
+            variant="tinted"
+            className="bg-card"
+            onClick={onAcknowledgeAll}
+            data-testid="verification-param-accept-all-btn"
+          >
+            <CheckCheck />
+            Akceptuj wszystkie sugestie
+          </Button>
+        </div>
+      )}
       <StageSection
         title="Podstawowe parametry"
         data-testid="verification-param-section"
@@ -362,7 +400,7 @@ export function ParametersStage({
               evaluation.sessionLevel === 'limit'
                 ? 'bg-status-danger-muted text-status-danger'
                 : evaluation.sessionLevel === 'warning'
-                  ? 'bg-status-warning-muted text-status-warning'
+                  ? 'bg-status-suggestion-muted text-status-suggestion'
                   : 'bg-card text-foreground'
             )}
             data-testid="verification-param-timer"
@@ -444,9 +482,20 @@ export function ParametersStage({
                 </span>
               )}
               {v33?.sideDiffersFromDocument && (
-                <span className="text-[13px] text-status-warning" data-testid="verification-param-side-mismatch-note">
-                  Tryb strony w treści ćwiczenia jest inny. Przychodzi z importu paczki treści; w formularzu go nie
-                  zmienisz.
+                <span
+                  className="flex flex-wrap items-center gap-2 text-[13px] text-status-suggestion"
+                  data-testid="verification-param-side-mismatch-note"
+                >
+                  Treść ćwiczenia z importu ma inny tryb strony.
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="tinted"
+                    onClick={v33.onSyncSide}
+                    data-testid="verification-param-side-sync-btn"
+                  >
+                    Ustaw w treści tak samo
+                  </Button>
                 </span>
               )}
             </div>
@@ -561,14 +610,7 @@ export function ParametersStage({
         </div>
       </StageSection>
 
-      {v33 && (
-        <ContractFacts
-          title="Strona, sprzęt i zakresy"
-          facts={v33.facts}
-          hint="Tylko do odczytu. Sprzęt zmienisz w formularzu ćwiczenia; strona, cel i zakresy przychodzą z importu paczki treści."
-          data-testid="verification-param-facts"
-        />
-      )}
+      {v33 && <V33ParameterContent enrichment={v33.enrichment} onEnrichmentPathChange={v33.onEnrichmentPathChange} />}
     </div>
   );
 }
