@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useMutation } from '@apollo/client/react';
-import { Mail, Phone, User, Loader2, Copy, Check, Link2, Ticket, QrCode, Send } from 'lucide-react';
+import { Mail, User, Loader2, Copy, Check, Link2, Ticket, QrCode, Send } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -32,22 +32,10 @@ interface PatientInviteDialogProps {
 // Helper Components
 // ========================================
 
-function SendButtonLabel({ sendMode }: { readonly sendMode: 'email' | 'sms' | null }) {
+// SMS-y nie są obsługiwane (17.11): zaproszenie idzie tylko e-mailem, link i kod QR zostają.
+function SendButtonLabel({ sendMode }: { readonly sendMode: 'email' | null }) {
   if (sendMode === 'email') return <>Wyślij email</>;
-  if (sendMode === 'sms') return <>Wyślij SMS</>;
-  return <>Wpisz dane kontaktowe</>;
-}
-
-function resolveSendMode(hasValidEmail: boolean, hasValidPhone: boolean): 'email' | 'sms' | null {
-  if (hasValidEmail) {
-    return 'email';
-  }
-
-  if (hasValidPhone) {
-    return 'sms';
-  }
-
-  return null;
+  return <>Wpisz adres e-mail</>;
 }
 
 // ========================================
@@ -61,7 +49,6 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
   const [copied, setCopied] = useState(false);
   const [patientName, setPatientName] = useState('');
   const [patientEmail, setPatientEmail] = useState('');
-  const [patientPhone, setPatientPhone] = useState('');
   const [sendSuccess, setSendSuccess] = useState(false);
   const [sentTo, setSentTo] = useState('');
 
@@ -74,11 +61,8 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
   const canRenderQr = isHttpsUrl(personalizedLink);
 
   const normalizedEmail = patientEmail.trim();
-  const normalizedPhone = patientPhone.trim();
   const hasValidEmail = normalizedEmail.length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail);
-  const phoneDigits = normalizedPhone.replaceAll(/\D/g, '');
-  const hasValidPhone = phoneDigits.length >= 9;
-  const sendMode = resolveSendMode(hasValidEmail, hasValidPhone);
+  const sendMode = hasValidEmail ? 'email' : null;
 
   // Create invite mutation
   const [createInvite, { loading }] = useMutation<CreatePatientInviteLinkResponse>(
@@ -147,13 +131,13 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
           organizationId,
           patientName: patientName || null,
           patientEmail: sendMode === 'email' ? normalizedEmail : null,
-          patientPhone: sendMode === 'sms' ? normalizedPhone : null,
+          patientPhone: null,
           linkType: sendMode,
           expirationDays: 7,
         },
       });
 
-      setSentTo(sendMode === 'email' ? normalizedEmail : normalizedPhone);
+      setSentTo(normalizedEmail);
       setSendSuccess(true);
 
       // Auto-close after 1.5s
@@ -172,7 +156,6 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
     setCopied(false);
     setPatientName('');
     setPatientEmail('');
-    setPatientPhone('');
     setSendSuccess(false);
     setSentTo('');
     onOpenChange(false);
@@ -371,33 +354,17 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
                   </div>
 
                   <div className="space-y-3">
-                    <div className={`relative transition-opacity duration-200 ${normalizedPhone ? 'opacity-50' : 'opacity-100'}`}>
+                    <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         type="email"
                         value={patientEmail}
                         onChange={(e) => {
                           setPatientEmail(e.target.value);
-                          if (e.target.value) setPatientPhone('');
                         }}
                         placeholder="Adres email pacjenta"
                         className="pl-10 h-11"
                         data-testid="invite-email-input"
-                      />
-                    </div>
-
-                    <div className={`relative transition-opacity duration-200 ${normalizedEmail ? 'opacity-50' : 'opacity-100'}`}>
-                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        type="tel"
-                        value={patientPhone}
-                        onChange={(e) => {
-                          setPatientPhone(e.target.value);
-                          if (e.target.value) setPatientEmail('');
-                        }}
-                        placeholder="Numer telefonu (np. 500 600 700)"
-                        className="pl-10 h-11"
-                        data-testid="invite-phone-input"
                       />
                     </div>
                   </div>
