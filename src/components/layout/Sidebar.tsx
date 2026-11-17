@@ -16,6 +16,9 @@ import { useOrganizationVerificationRealtime } from '@/hooks/useOrganizationVeri
 import { useVerificationQueuesRealtime } from '@/hooks/useVerificationQueuesRealtime';
 import { NavCountBadge } from '@/components/layout/NavCountBadge';
 
+// Ten sam tekst co „Wersja:” w zgłoszeniach (next.config.ts → buildAppVersionLabel): 0.1.0 (sha-abc1234).
+const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION;
+
 interface SidebarProps {
   readonly isCollapsed: boolean;
   readonly onToggleCollapse: () => void;
@@ -77,6 +80,16 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
           )}
         >
           <Logo variant={isCollapsed ? 'icon' : 'default'} size="sm" asLink href="/" />
+
+          {!isCollapsed && APP_VERSION && (
+            <span
+              data-testid="nav-app-version"
+              title={`Wdrożona wersja: ${APP_VERSION}`}
+              className="ml-2 min-w-0 truncate text-[11px] tabular-nums text-label-tertiary select-all"
+            >
+              {APP_VERSION}
+            </span>
+          )}
 
           {!isCollapsed && (
             <button
