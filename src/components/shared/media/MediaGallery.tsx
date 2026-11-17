@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight, ExternalLink, Film, Maximize2, Play } from 'lucide-react';
 
@@ -71,6 +71,19 @@ export function MediaGallery({
   }, [safeIndex, selectedIndex, setSelectedIndex]);
 
   const hasMultiple = items.length > 1;
+
+  // Arrows, keyboard and the lightbox change the selection too: keep its thumbnail centred in the strip.
+  // Scrolls only the strip, never the page around it.
+  const thumbStripRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const strip = thumbStripRef.current;
+    const thumb = strip?.querySelector<HTMLElement>(`[data-thumb-index="${safeIndex}"]`);
+    if (!strip || !thumb || typeof strip.scrollTo !== 'function') return;
+    const stripRect = strip.getBoundingClientRect();
+    const thumbRect = thumb.getBoundingClientRect();
+    const left = strip.scrollLeft + thumbRect.left - stripRect.left - (stripRect.width - thumbRect.width) / 2;
+    strip.scrollTo({ left: Math.max(0, left), behavior: 'smooth' });
+  }, [safeIndex, items.length]);
   const hasPrev = safeIndex > 0;
   const hasNext = safeIndex < items.length - 1;
 
@@ -233,12 +246,13 @@ export function MediaGallery({
 
       {hasMultiple && (
         <div className="flex shrink-0 items-center gap-3 border-t border-border/40 px-3 py-2">
-          <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto p-0.5">
+          <div ref={thumbStripRef} className="flex min-w-0 flex-1 gap-2 overflow-x-auto p-0.5">
             {items.map((item, index) => (
               <button
                 data-testid={`${testIdPrefix}-thumb-${index}`}
                 type="button"
                 key={`${item.kind}-${item.src}-${index}`}
+                data-thumb-index={index}
                 onClick={() => setSelectedIndex(index)}
                 aria-label={itemLabels[index]}
                 aria-pressed={index === safeIndex}
