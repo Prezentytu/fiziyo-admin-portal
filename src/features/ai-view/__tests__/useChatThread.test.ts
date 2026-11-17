@@ -132,6 +132,41 @@ describe('useChatThread', () => {
     });
   });
 
+  // Test asystenta 17.11 (K7, K5): odpowiedzi, które wątek zna sam, nie idą do modelu i nie kosztują kredytu.
+  describe('answers without the model', () => {
+    const draft = { name: 'Kolano · 17.11', patientId: 'p1', items: [] };
+
+    it('a schedule typed after „Od kiedy i jak często?” goes to the send summary with the same patient', async () => {
+      const { result } = renderHook(() =>
+        useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org-a' })
+      );
+      act(() => result.current.appendAssistant({ text: 'Od kiedy i jak często?', spec: { component: 'Schedule', draft } }));
+
+      await act(() => result.current.send('od dziś, 3 razy w tygodniu, 4 tygodnie'));
+
+      expect(dispatchMock).not.toHaveBeenCalled();
+      expect(result.current.messages.at(-1)).toMatchObject({
+        source: 'local',
+        creditsUsed: 0,
+        spec: { component: 'SendSummary', draft, plan: { start: 'today', weeks: 4, rhythm: 'three' } },
+      });
+    });
+
+    it('„czy odebrał zestaw?” is answered from the account state', async () => {
+      const context: IntentContext = {
+        patients: [{ id: 'p-halina', name: 'Halina Kowalczyk', isShadowUser: true }],
+        sets: [],
+      };
+      const { result } = renderHook(() => useChatThread({ useAi: true, context, ready: true, scopeKey: 'org-a' }));
+
+      await act(() => result.current.send('Czy Halina odebrała zestaw?'));
+
+      expect(dispatchMock).not.toHaveBeenCalled();
+      expect(result.current.messages.at(-1)).toMatchObject({ source: 'local', creditsUsed: 0 });
+      expect(result.current.messages.at(-1)?.text).toContain('nie ma jeszcze konta');
+    });
+  });
+
   it('sends one message when the composer fires twice before the busy state renders', async () => {
     const { result } = renderHook(() =>
       useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org-a' })

@@ -7,6 +7,7 @@ const mockClientQuery = vi.hoisted(() => vi.fn());
 const appendExchange = vi.hoisted(() => vi.fn());
 const mockToastError = vi.hoisted(() => vi.fn());
 const mockSaveTemplateSet = vi.hoisted(() => vi.fn());
+const openCreateSet = vi.hoisted(() => vi.fn());
 let listItems: Array<Record<string, unknown>> = [];
 
 const apolloClient = { query: mockClientQuery };
@@ -45,7 +46,7 @@ vi.mock('../../ChatSessionContext', () => ({
     setsReady: true,
     appendExchange,
     markChosen: vi.fn(),
-    openCreateSet: vi.fn(),
+    openCreateSet,
   }),
   toWizardPatient: () => undefined,
 }));
@@ -179,5 +180,23 @@ describe('SetDraftCard: wersja rekordu ćwiczeń szkicu', () => {
     await waitFor(() => expect(dailyMinutes()).toBe('6'));
     screen.getByTestId('draft-save-template-btn').click();
     await waitFor(() => expect(mockSaveTemplateSet).toHaveBeenCalledTimes(1));
+  });
+
+  // Test asystenta 17.11 (W20, P88): „Pełny edytor” otwierał się z pustą nazwą, choć karta ją miała.
+  it('„Pełny edytor” dostaje nazwę z karty', async () => {
+    mockClientQuery.mockResolvedValue({
+      data: { exerciseById: { id: 'ex-alt', updatedAt: 't1', enrichmentData: {} } },
+    });
+    openCreateSet.mockReset();
+    render(
+      <SetDraftCard
+        spec={{ component: 'SetDraft', exerciseIds: ['ex-alt'], note: 'po rekonstrukcji ACL' } as never}
+        testId="draft"
+        messageId="m1"
+      />
+    );
+    await screen.findByTestId('draft-item-ex-alt');
+    screen.getByTestId('draft-full-editor-btn').click();
+    expect(openCreateSet).toHaveBeenCalledWith(['ex-alt'], undefined, expect.stringMatching(/^Po rekonstrukcji ACL · \d\d\.\d\d$/));
   });
 });

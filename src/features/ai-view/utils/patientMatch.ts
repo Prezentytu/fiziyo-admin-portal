@@ -7,6 +7,8 @@ export interface MatchablePatient {
   contextLabel?: string;
   email?: string;
   isShadowUser?: boolean;
+  /** Last activity in the patient app; answers "czy odebrał zestaw?" without the model. */
+  lastActivity?: string;
 }
 
 export type PatientMatch =
