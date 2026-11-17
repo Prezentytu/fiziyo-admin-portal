@@ -77,6 +77,56 @@ describe('createSetSubmit', () => {
     });
   });
 
+  describe('jawne 0 w dawce pozycji (ES09, #218)', () => {
+    const zeros = { duration: 0, restSets: 0, restReps: 0, preparationTime: 0, executionTime: 0 };
+    const pick = (vars: ReturnType<typeof buildAddExerciseToSetVariables>) => ({
+      duration: vars.duration,
+      restSets: vars.restSets,
+      restReps: vars.restReps,
+      preparationTime: vars.preparationTime,
+      executionTime: vars.executionTime,
+    });
+
+    it('wpisane 0 przy wartości w katalogu zapisuje 0, nie „jak w katalogu”', () => {
+      const vars = buildAddExerciseToSetVariables('set-1', 0, {
+        exerciseId: 'ex-1',
+        ...zeros,
+        catalog: { duration: 30, restSets: 45, restReps: 2, preparationTime: 10, executionTime: 4 },
+      });
+      expect(pick(vars)).toEqual(zeros);
+    });
+
+    it('nieruszone pole bez wartości w katalogu zapisuje null, a przerwa między seriami 0 (kanon to 60 s)', () => {
+      const vars = buildAddExerciseToSetVariables('set-1', 0, {
+        exerciseId: 'ex-1',
+        ...zeros,
+        catalog: { duration: null, restSets: null, restReps: null, preparationTime: null, executionTime: null },
+      });
+      expect(pick(vars)).toEqual({
+        ...zeros,
+        duration: null,
+        restReps: null,
+        preparationTime: null,
+        executionTime: null,
+      });
+    });
+
+    it('0 równe zeru w katalogu zostaje dziedziczeniem', () => {
+      const vars = buildAddExerciseToSetVariables('set-1', 0, {
+        exerciseId: 'ex-1',
+        ...zeros,
+        catalog: { duration: 0, restSets: 0, restReps: 0, preparationTime: 0, executionTime: 0 },
+      });
+      expect(pick(vars)).toEqual({
+        duration: null,
+        restSets: null,
+        restReps: null,
+        preparationTime: null,
+        executionTime: null,
+      });
+    });
+  });
+
   it('forwards mapping overridesJson so Razem is not dropped', () => {
     const vars = buildAddExerciseToSetVariables('set-1', 0, {
       exerciseId: 'ex-1',

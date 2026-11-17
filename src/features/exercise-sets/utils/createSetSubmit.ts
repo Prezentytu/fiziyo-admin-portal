@@ -1,4 +1,5 @@
 import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
+import type { CatalogZeroableDose } from './exerciseDefaults';
 
 export const DEFAULT_TEMPLATE_SET_FREQUENCY = {
   timesPerDay: '1',
@@ -47,6 +48,8 @@ export interface ExerciseMappingSubmitInput {
   loadValue?: number | null;
   /** Template-set overridesJson (SPEC-023); "" clears, null omits (leave unchanged on update). */
   overridesJson?: string | null;
+  /** Wartości katalogu ćwiczenia (`getCatalogZeroableDose`); bez nich wpisane 0 zapisuje się jak dotąd. */
+  catalog?: CatalogZeroableDose;
 }
 
 export interface AddExerciseToSetVariables {
@@ -92,6 +95,25 @@ function toNullableNumber(value: number | null | undefined): number | null {
   return value || null;
 }
 
+type ZeroableField = keyof CatalogZeroableDose;
+
+/**
+ * Wpisane 0 zostaje zerem, gdy `null` („jak w katalogu”, łańcuch `pick` w aplikacji pacjenta) dałby pacjentowi
+ * inną wartość: katalog ma tu liczbę > 0 albo, przy przerwie między seriami bez wartości w katalogu, kanon 60 s.
+ * Przy braku wartości w katalogu kreator i tak startuje od 0 dla czasu i przygotowania, więc takie 0 zostaje
+ * `null`, żeby nieruszony nowy zestaw nie odciął dziedziczenia (#218).
+ */
+function toMappingDose(
+  field: ZeroableField,
+  value: number | null | undefined,
+  catalog?: CatalogZeroableDose
+): number | null {
+  if (value !== 0) return toNullableNumber(value);
+  const catalogValue = catalog?.[field];
+  if (catalogValue == null) return field === 'restSets' && catalog ? 0 : null;
+  return catalogValue > 0 ? 0 : null;
+}
+
 function toNullableString(value: string | null | undefined): string | null {
   return value || null;
 }
@@ -119,11 +141,11 @@ export function buildAddExerciseToSetVariables(
     order,
     sets: toNullableNumber(mapping.sets),
     reps: toNullableNumber(mapping.reps),
-    duration: toNullableNumber(mapping.duration),
-    restSets: toNullableNumber(mapping.restSets),
-    restReps: toNullableNumber(mapping.restReps),
-    preparationTime: toNullableNumber(mapping.preparationTime),
-    executionTime: toNullableNumber(mapping.executionTime),
+    duration: toMappingDose('duration', mapping.duration, mapping.catalog),
+    restSets: toMappingDose('restSets', mapping.restSets, mapping.catalog),
+    restReps: toMappingDose('restReps', mapping.restReps, mapping.catalog),
+    preparationTime: toMappingDose('preparationTime', mapping.preparationTime, mapping.catalog),
+    executionTime: toMappingDose('executionTime', mapping.executionTime, mapping.catalog),
     notes: toNullableString(mapping.notes),
     customName: toNullableString(mapping.customName),
     customDescription: toNullableString(mapping.customDescription),

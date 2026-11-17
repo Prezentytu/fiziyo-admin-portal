@@ -92,6 +92,30 @@ export const EMPTY_EXERCISE_PARAMS: ExerciseParams = {
 };
 
 /**
+ * Wartości katalogu dla pól mappingu, w których 0 jest poprawną dawką (przerwa, przygotowanie, czas).
+ * `buildAddExerciseToSetVariables` porównuje z nimi wpisane 0: inaczej zapis `null` („jak w katalogu”)
+ * oddałby pacjentowi wartość z katalogu zamiast 0 (ES09, #218).
+ */
+export interface CatalogZeroableDose {
+  duration?: number | null;
+  restSets?: number | null;
+  restReps?: number | null;
+  preparationTime?: number | null;
+  executionTime?: number | null;
+}
+
+/** Ten sam łańcuch pól co `getExerciseDefaultParams`, bez wartości zastępczych. */
+export function getCatalogZeroableDose(exercise: ExerciseLikeForDefaults): CatalogZeroableDose {
+  return {
+    duration: exercise.defaultDuration ?? exercise.duration ?? null,
+    restSets: exercise.defaultRestBetweenSets ?? exercise.restSets ?? null,
+    restReps: exercise.defaultRestBetweenReps ?? exercise.restReps ?? null,
+    preparationTime: exercise.preparationTime ?? null,
+    executionTime: exercise.defaultExecutionTime ?? null,
+  };
+}
+
+/**
  * Parametry startowe nowego mappingu w kreatorze zestawu. Wynik trafia do mutacji
  * dodania ćwiczenia, więc legacy `sets`/`restSets` z lokalnych obiektów buildera zostają
  * jako fallback, a `preparationTime` i strona zachowują dotychczasowe wartości zapisu.
