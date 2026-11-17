@@ -13,6 +13,7 @@ const badgeVariants = cva(
         outline: 'border-separator text-label-secondary',
         success: 'bg-status-success-muted text-status-success',
         warning: 'bg-status-warning-muted text-status-warning',
+        suggestion: 'bg-status-suggestion-muted text-status-suggestion',
         info: 'bg-status-info-muted text-status-info',
         solid: 'bg-tint-fill text-on-tint',
         'overlay-info': 'border-status-info/40 bg-card/95 text-status-info shadow-lg backdrop-blur-md',

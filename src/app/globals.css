@@ -267,6 +267,9 @@
   --status-danger-muted: rgba(255, 69, 58, 0.16);
   --status-danger-fill: #d93636;
   --status-warning-fill: #b45309;
+  /* Suggestion: an advisory note (e.g. a value outside the typical range). Softer than warning, never red. */
+  --status-suggestion: #ffc56b;
+  --status-suggestion-muted: rgba(255, 179, 64, 0.12);
   --status-info-fill: #0062cc;
   --status-info: #4da3ff;
   --status-info-muted: rgba(10, 132, 255, 0.16);
@@ -404,6 +407,8 @@
   --color-status-danger-muted: var(--status-danger-muted);
   --color-status-danger-fill: var(--status-danger-fill);
   --color-status-warning-fill: var(--status-warning-fill);
+  --color-status-suggestion: var(--status-suggestion);
+  --color-status-suggestion-muted: var(--status-suggestion-muted);
   --color-status-info-fill: var(--status-info-fill);
   --color-status-info: var(--status-info);
   --color-status-info-muted: var(--status-info-muted);
@@ -1232,6 +1237,8 @@ input[type="number"] {
   --status-success-muted: rgba(61, 153, 123, 0.14);
   --status-warning: #b53a00;
   --status-warning-muted: rgba(255, 149, 0, 0.14);
+  --status-suggestion: #a35a00;
+  --status-suggestion-muted: rgba(255, 170, 51, 0.12);
   --status-danger: #d70015;
   --status-danger-muted: rgba(255, 59, 48, 0.12);
   --status-danger-fill: #d70015;
@@ -1278,6 +1285,7 @@ input[type="number"] {
   --tint-muted: rgba(0, 255, 127, 0.2);
   --status-success: #00ff7f;
   --status-warning: #ffd60a;
+  --status-suggestion: #ffd60a;
   --status-danger: #ff6b6b;
   --status-info: #66b3ff;
 
