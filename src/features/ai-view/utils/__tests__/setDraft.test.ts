@@ -11,6 +11,9 @@ import {
   scheduleQuestion,
   toMappingInput,
   proposeDraftName,
+  itemsToDoses,
+  applyDose,
+  proposeDraftDescription,
   type DraftItem,
 } from '../setDraft';
 
@@ -63,12 +66,51 @@ describe('formatDraftParams', () => {
 describe('proposeDraftName', () => {
   it('uses the set name or topic, never the patient', () => {
     expect(proposeDraftName({ setName: 'Kolano · faza 2' })).toBe('Kolano · faza 2');
-    expect(proposeDraftName({ topic: 'bark po urazie' })).toBe('Bark po urazie');
-    expect(proposeDraftName({ today: new Date(2026, 10, 4) })).toBe('Nowy zestaw · 04.11');
+    const today = new Date(2026, 10, 4);
+    expect(proposeDraftName({ topic: 'bark po urazie', today })).toBe('Bark po urazie · 04.11');
+    expect(proposeDraftName({ topic: 'Zestaw na ból karku', today })).toBe('Ból karku · 04.11');
+    expect(proposeDraftName({ today })).toBe('Nowy zestaw · 04.11');
+  });
+
+  it('never carries the person a model note is about, only what the set is for', () => {
+    const today = new Date(2026, 10, 17);
+    expect(proposeDraftName({ topic: 'Szkic dla Lab pacjent przy utykaniu na nogę', today })).toBe(
+      'Przy utykaniu na nogę · 17.11'
+    );
+    expect(proposeDraftName({ topic: 'Zestaw dla Jarka', today })).toBe('Nowy zestaw · 17.11');
+    expect(proposeDraftName({ topic: 'Pacjent z utykaniem, bez rozpoznania; zestaw ogólny do korekty', today })).toBe(
+      'Z utykaniem · 17.11'
+    );
+  });
+
+  it('drops a topic that names a person from the thread', () => {
+    const today = new Date(2026, 10, 4);
+    expect(proposeDraftName({ topic: 'Zestaw dla Anny Kowalskiej', avoid: ['Anna Kowalska'], today })).toBe(
+      'Nowy zestaw · 04.11'
+    );
   });
 
   it('keeps the name within 80 characters', () => {
     expect(proposeDraftName({ topic: 'x'.repeat(100) })).toHaveLength(80);
+  });
+});
+
+describe('proposeDraftDescription', () => {
+  it('says what the set is for, what is in it and when it was made', () => {
+    expect(
+      proposeDraftDescription({
+        topic: 'Zestaw na ból karku',
+        exerciseNames: ['Cofanie brody', 'Rotacja szyi'],
+        minutes: 8,
+        today: new Date(2026, 10, 17),
+      })
+    ).toBe('Ból karku. Ćwiczenia: Cofanie brody, Rotacja szyi. Ok. 8 min dziennie. Ułożony w czacie 17.11.2026.');
+  });
+
+  it('shortens a long list and works without a topic', () => {
+    const names = Array.from({ length: 8 }, (_, index) => `Ćw ${index + 1}`);
+    const text = proposeDraftDescription({ exerciseNames: names, minutes: 0, today: new Date(2026, 10, 17) });
+    expect(text).toBe('Ćwiczenia: Ćw 1, Ćw 2, Ćw 3, Ćw 4, Ćw 5, Ćw 6 i 2 więcej. Ułożony w czacie 17.11.2026.');
   });
 });
 
@@ -140,5 +182,18 @@ describe('itemSeconds: wersja rekordu', () => {
     expect(itemSeconds({ ...alternating, side: 'both', alternatingPerSide: true })).toBe(
       itemSeconds({ ...alternating, side: 'both' })
     );
+  });
+});
+
+describe('itemsToDoses', () => {
+  it('keeps sets and reps, and a hold as its time, so the rebuilt draft matches', () => {
+    const held = { ...ITEM, exerciseId: 'e2', sets: 2, reps: 1, executionTime: 30 };
+    const doses = itemsToDoses([ITEM, held]);
+    expect(doses).toEqual({ e1: { sets: 3, reps: 10 }, e2: { sets: 2, duration: 30 } });
+    expect(applyDose({ ...held, sets: 5, executionTime: 0 }, doses.e2)).toMatchObject({
+      sets: 2,
+      reps: 1,
+      executionTime: 30,
+    });
   });
 });

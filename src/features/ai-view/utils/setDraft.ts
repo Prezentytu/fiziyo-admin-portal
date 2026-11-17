@@ -60,6 +60,14 @@ export interface SetDraftPayload {
 
 const NUMERIC_KEYS = ['sets', 'reps', 'duration', 'executionTime', 'restSets', 'restReps', 'preparationTime'] as const;
 
+/** Under exercise results: what narrows the choice before a set is made from them. */
+export const EXERCISE_CLARIFY_QUESTIONS = [
+  'Cel: siła, wytrzymałość czy mobilność?',
+  'Jaki sprzęt jest pod ręką?',
+  'Jaki poziom zaawansowania?',
+  'Ból albo ograniczenia?',
+] as const;
+
 /** What the shared parameter editor (`ExerciseParametersFields`) shows for a draft row. */
 export function draftParameterValues(item: DraftItem): ExerciseParameterValues {
   return {
@@ -198,18 +206,18 @@ export function toMappingInput(item: DraftItem): ExerciseMappingSubmitInput {
   };
 }
 
-const SEND_GUARD = 'do pacjenta nic nie trafi przed kliknięciem „Wyślij”.';
+const SEND_GUARD = 'Pacjent nic nie dostanie, dopóki nie klikniesz „Wyślij”.';
 
-/** Under the draft: a set composed in the thread is not a catalog set, so it is never called one. */
+/** Behind the ⓘ next to the draft's title, in plain words: what this set is and that nothing goes out by itself. */
 export function draftNote(options: { fromCatalog: boolean; hasPatient: boolean }): string {
   if (options.fromCatalog) {
     return options.hasPatient
-      ? `Zestaw z katalogu, a nie zalecenie dla tej osoby. Decyzja należy do Ciebie: ${SEND_GUARD}`
-      : `Zestaw z katalogu gabinetu. Decyzja należy do Ciebie: ${SEND_GUARD}`;
+      ? `Zestaw z katalogu, nie ułożony pod tę osobę. Sprawdź, czy pasuje. ${SEND_GUARD}`
+      : `Zestaw z katalogu gabinetu. ${SEND_GUARD}`;
   }
   return options.hasPatient
-    ? `Zestaw tylko dla tego pacjenta, poza katalogiem gabinetu. Decyzja należy do Ciebie: ${SEND_GUARD}`
-    : `Nowy zestaw poza katalogiem. Wybierz pacjenta albo zapisz zestaw w katalogu gabinetu; ${SEND_GUARD}`;
+    ? `Ten zestaw jest tylko dla tego pacjenta i nie trafi do katalogu. ${SEND_GUARD}`
+    : `To na razie szkic. Możesz go zapisać w katalogu albo od razu wybrać pacjenta. ${SEND_GUARD}`;
 }
 
 /** Under the summary: a catalog set is copied into the plan, a composed one exists only there. */
@@ -227,15 +235,102 @@ const MAX_NAME_LENGTH = 80;
 
 // The name travels to the patient's app, the catalogue and the PDF, so it never carries
 // the patient's personal data; the assignment already says whose plan it is.
-export function proposeDraftName(options: { setName?: string; topic?: string; today?: Date }): string {
-  const name =
-    options.setName?.trim() ||
-    capitalize(options.topic?.trim()) ||
-    `Nowy zestaw · ${format(options.today ?? new Date(), 'dd.MM')}`;
+export function proposeDraftName(options: {
+  setName?: string;
+  topic?: string;
+  today?: Date;
+  /** Names of people in the thread: a topic that mentions one is not used. */
+  avoid?: readonly string[];
+}): string {
+  const date = format(options.today ?? new Date(), 'dd.MM');
+  const topic = draftTopic(options.topic, options.avoid);
+  const name = options.setName?.trim() || (topic ? `${capitalize(topic)} · ${date}` : `Nowy zestaw · ${date}`);
   return name.slice(0, MAX_NAME_LENGTH);
+}
+
+/** „Zestaw na ból karku” → „ból karku”; nothing when the topic names a person from the thread. */
+export function draftTopic(topic: string | undefined, avoid: readonly string[] = []): string {
+  const cleaned = (topic ?? '')
+    .trim()
+    // Pierwsze zdanie albo człon: „Pacjent z utykaniem, bez rozpoznania; zestaw ogólny…” → „Pacjent z utykaniem”.
+    .split(/[;,.]/)[0]
+    .replace(
+      /^(?:(?:szkic|propozycja|ogólny|ogolny)\s+)*(?:(?:zestaw|plan|program)(?:u|y)?\s+)?(?:(?:ćwiczeń|cwiczen)\s+)?/i,
+      ''
+    )
+    // „dla <osoba> przy …” mówi o kim, nie o czym; nazwa nigdy nie niesie osoby.
+    .replace(/^(?:dla|do)\s+(?:\S+\s+){0,3}?(?=(?:przy|na|po|z|ze|w|od)\s)/i, '')
+    .replace(/^(?:dla|do)\s+.*$/i, '')
+    .replace(/^(?:pacjent\p{L}*)\s+/iu, '')
+    .replace(/^na\s+/i, '')
+    .replace(/[!?]+$/, '')
+    .trim();
+  if (!cleaned) return '';
+  // Imiona się odmieniają („Anna” → „Anny”), więc porównujemy rdzeń: słowo tematu zaczyna się jak część imienia.
+  const words = cleaned.toLocaleLowerCase('pl-PL').split(/[\s,.;:]+/);
+  const mentionsPerson = avoid.some((name) =>
+    name
+      .toLocaleLowerCase('pl-PL')
+      .split(/\s+/)
+      .filter((part) => part.length > 2)
+      .some((part) => {
+        const stem = part.slice(0, Math.max(3, part.length - 2));
+        return words.some((word) => word.startsWith(stem));
+      })
+  );
+  return mentionsPerson ? '' : cleaned;
+}
+
+/** Catalog description of a set composed in the chat: topic, size and daily time, no personal data. */
+export function proposeDraftDescription(options: {
+  topic?: string;
+  exerciseNames: readonly string[];
+  minutes: number;
+  today?: Date;
+  avoid?: readonly string[];
+}): string {
+  const topic = draftTopic(options.topic, options.avoid);
+  const head = topic ? `${capitalize(topic)}.` : '';
+  const list = options.exerciseNames.slice(0, 6).join(', ');
+  const more = options.exerciseNames.length > 6 ? ` i ${options.exerciseNames.length - 6} więcej` : '';
+  const time = options.minutes > 0 ? ` Ok. ${options.minutes} min dziennie.` : '';
+  const when = ` Ułożony w czacie ${format(options.today ?? new Date(), 'dd.MM.yyyy')}.`;
+  return `${head} Ćwiczenia: ${list}${more}.${time}${when}`.trim();
 }
 
 function capitalize(value: string | undefined): string {
   if (!value) return '';
   return value.charAt(0).toLocaleUpperCase('pl-PL') + value.slice(1);
+}
+
+/**
+ * Questions that make an AI set fit the person better; the therapist answers in the message field
+ * and the assistant corrects the set in the same conversation.
+ */
+export const DRAFT_CLARIFY_QUESTIONS = [
+  'Która strona i od kiedy?',
+  'Po urazie, operacji czy bez przyczyny?',
+  'Ból, sztywność czy osłabienie?',
+  'Wiek i poziom aktywności?',
+] as const;
+
+/** The set draft a new exercise returns to: its exercises and their sets, reps and hold times. */
+export interface SetDraftReturn {
+  exerciseIds: string[];
+  patientId?: string;
+  note?: string;
+  doses?: Record<string, DraftDose>;
+}
+
+/** Sets, reps and hold time of each draft item, so a rebuilt draft keeps what the therapist set. */
+export function itemsToDoses(items: readonly DraftItem[]): Record<string, DraftDose> {
+  return Object.fromEntries(
+    items.map((item) => {
+      const held = item.reps <= 1 && item.executionTime > 0;
+      return [
+        item.exerciseId,
+        held ? { sets: item.sets, duration: item.executionTime } : { sets: item.sets, reps: item.reps },
+      ];
+    })
+  );
 }

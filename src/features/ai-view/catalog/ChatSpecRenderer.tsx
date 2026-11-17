@@ -5,6 +5,8 @@ import { AddPatientCard } from './AddPatientCard';
 import { ClarifyCard } from './ClarifyCard';
 import { CreateExerciseCard } from './CreateExerciseCard';
 import { DocumentResultCard } from './DocumentResultCard';
+import { CatalogCountsCard } from './CatalogCountsCard';
+import { ExerciseIdeasCard } from './ExerciseIdeas';
 import { ExerciseResultsCard } from './ExerciseResultsCard';
 import { NavigateCard } from './NavigateCard';
 import { PatientPeekCard } from './PatientPeekCard';
@@ -73,5 +75,9 @@ export function ChatSpecRenderer({ spec, testId, messageId, chosen }: ChatSpecRe
       return <ScanVisitCard spec={spec} testId={`${testId}-scan-visit`} {...common} />;
     case 'DocumentResult':
       return <DocumentResultCard spec={spec} testId={`${testId}-document`} {...common} />;
+    case 'ExerciseIdeas':
+      return <ExerciseIdeasCard spec={spec} testId={`${testId}-exercise-ideas`} {...common} />;
+    case 'CatalogCounts':
+      return <CatalogCountsCard spec={spec} testId={`${testId}-catalog-counts`} {...common} />;
   }
 }

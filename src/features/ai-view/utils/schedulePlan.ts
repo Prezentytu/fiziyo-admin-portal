@@ -99,3 +99,7 @@ export function describePlan(plan: SchedulePlan, now: Date = new Date()): string
   const startLabel = plan.start === 'today' ? 'od dziś' : plan.start === 'tomorrow' ? 'od jutra' : 'od poniedziałku';
   return `${startLabel}, ${formatPlanDate(startDate)} · ${planWeeksLabel(plan.weeks)} · ${planRhythmLabel(plan.rhythm).toLowerCase()}`;
 }
+
+/** The therapist stopped the flow before sending: nothing went to the patient. */
+export const FLOW_CANCEL_LABEL = 'Anuluj';
+export const FLOW_CANCELLED_TEXT = 'Anulowane. Nic nie zostało wysłane, propozycja zestawu zostaje wyżej.';

@@ -9,6 +9,8 @@ import { formatExerciseCount } from '@/utils/polishPlural';
 import { useChatActions } from '../ChatSessionContext';
 import {
   describePlan,
+  FLOW_CANCEL_LABEL,
+  FLOW_CANCELLED_TEXT,
   formatPlanDate,
   PLAN_RHYTHMS,
   PLAN_STARTS,
@@ -26,12 +28,13 @@ const WEEK_OPTIONS = PLAN_WEEKS.map((weeks) => ({ value: weeks, label: planWeeks
 
 /** "Gotowe do wysłania": the last look before the patient gets the plan; only "Wyślij" writes. */
 export function SendSummaryCard({ spec, testId, messageId, chosen }: CardProps<'SendSummary'>) {
-  const { organizationId, patients, appendAssistant, markChosen, refetchCredits } = useChatActions();
+  const { organizationId, patients, appendAssistant, appendExchange, markChosen, refetchCredits } = useChatActions();
   const [plan, setPlan] = useState<SchedulePlan>(spec.plan);
   const { send, sending } = useSendPlan();
   const patient = patients.find((candidate) => candidate.id === spec.draft.patientId);
   const { endDate } = resolvePlanDates(plan);
   const isSent = chosen === 'sent';
+  const isCancelled = chosen === 'cancelled';
 
   const handleSend = async () => {
     if (!patient) return;
@@ -50,13 +53,25 @@ export function SendSummaryCard({ spec, testId, messageId, chosen }: CardProps<'
   return (
     <ChatCard
       testId={testId}
-      title={isSent ? 'Wysłane' : 'Gotowe do wysłania'}
+      title={isSent ? 'Wysłane' : isCancelled ? 'Anulowane' : 'Gotowe do wysłania'}
       footer={
-        isSent ? (
-          <span className="text-[13px] text-label-secondary">Plan jest już u pacjenta</span>
+        isSent || isCancelled ? (
+          <span className="text-[13px] text-label-secondary">
+            {isSent ? 'Plan jest już u pacjenta' : 'Nic nie zostało wysłane'}
+          </span>
         ) : (
           <>
-            <span className="text-[13px] text-label-secondary">Pacjent dostanie powiadomienie w aplikacji</span>
+            <Button
+              variant="ghost"
+              disabled={sending}
+              onClick={() => {
+                markChosen(messageId, 'cancelled');
+                appendExchange(FLOW_CANCEL_LABEL, { text: FLOW_CANCELLED_TEXT });
+              }}
+              data-testid={`${testId}-cancel-btn`}
+            >
+              {FLOW_CANCEL_LABEL}
+            </Button>
             <Button
               onClick={() => void handleSend()}
               disabled={!patient || sending}

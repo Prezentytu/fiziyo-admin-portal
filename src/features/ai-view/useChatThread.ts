@@ -7,6 +7,7 @@ import { latestCardPatientId, type ChatCardSpec } from './utils/chatCards';
 import type { ChatThreadMessage } from './utils/conversationStore';
 import type { IntentContext } from './utils/intentRouter';
 import { resolveReply } from './utils/resolveReply';
+import { countQuestion, localReplyTo, withExerciseIdeas } from './utils/threadLocalReply';
 import { UNSUPPORTED_SPEC } from './utils/viewSpec';
 
 export type { ChatThreadMessage } from './utils/conversationStore';
@@ -101,6 +102,47 @@ export function useChatThread({ useAi, context, ready, scopeKey, getContextPatie
     async (text: string) => {
       const trimmed = text.trim();
       if (!trimmed || inFlightRef.current || !ready) return;
+      // „Ilu mam pacjentów?”: liczby są w panelu, odpowiedź bez AI i bez kredytu.
+      const countFocus = countQuestion(trimmed);
+      if (countFocus) {
+        pushUser(trimmed);
+        setMessages((previous) => [
+          ...previous,
+          {
+            id: newChatId(),
+            role: 'assistant',
+            spec: { component: 'CatalogCounts', focus: countFocus },
+            source: 'local',
+            creditsUsed: 0,
+            createdAt: Date.now(),
+          },
+        ]);
+        return;
+      }
+      // Odpowiedź na otwarte pytanie wątku („Komu przypisać?”) to jego następny krok, bez AI.
+      const local = localReplyTo(trimmed, messagesRef.current, context.patients);
+      if (local) {
+        setMessages((previous) =>
+          previous.map((message) =>
+            message.id === local.answeredMessageId && message.role === 'assistant'
+              ? { ...message, chosen: local.chosen }
+              : message
+          )
+        );
+        pushUser(trimmed);
+        setMessages((previous) => [
+          ...previous,
+          {
+            id: newChatId(),
+            role: 'assistant',
+            ...local.reply,
+            source: 'local',
+            creditsUsed: 0,
+            createdAt: Date.now(),
+          },
+        ]);
+        return;
+      }
       inFlightRef.current = true;
       pushUser(trimmed);
       setIsBusy(true);
@@ -108,7 +150,7 @@ export function useChatThread({ useAi, context, ready, scopeKey, getContextPatie
       const controller = new AbortController();
       abortRef.current = controller;
       try {
-        const reply = await resolveReply(trimmed, {
+        const resolved = await resolveReply(trimmed, {
           signal: controller.signal,
           useAi,
           sessionId: sessionRef.current?.scopeKey === scopeKey ? sessionRef.current.id : undefined,
@@ -117,6 +159,8 @@ export function useChatThread({ useAi, context, ready, scopeKey, getContextPatie
           pendingCommand: pendingCommandRef.current,
           contextPatientId: getContextPatientId?.() ?? latestCardPatientId(messagesRef.current),
         });
+        // Pytanie o ćwiczenia bez karty w odpowiedzi (nic nie pasuje): pomysły na nowe dla tej potrzeby.
+        const reply = withExerciseIdeas(trimmed, resolved);
         if (threadEpochRef.current !== epoch) return;
         // AI questions count too: if the next dispatch fails, rules finish the command.
         const isUnsupported = reply.spec === UNSUPPORTED_SPEC;

@@ -1,11 +1,10 @@
 'use client';
 
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import type { NewPatientInput } from './useChatWrites';
 
@@ -22,7 +21,6 @@ export const NEW_PATIENT_SCHEMA = z
       .trim()
       .refine((value) => value === '' || z.string().email().safeParse(value).success, 'Niepoprawny e-mail'),
     contextLabel: z.string().trim().max(80),
-    sendActivationSms: z.boolean(),
   })
   .refine((values) => values.phone !== '' || values.email !== '', {
     message: 'Podaj telefon albo e-mail, żeby pacjent mógł się zalogować',
@@ -64,11 +62,9 @@ export function NewPatientForm({
       phone: defaults?.phone ?? '',
       email: defaults?.email ?? '',
       contextLabel: defaults?.contextLabel ?? '',
-      sendActivationSms: false,
     },
   });
   const { errors } = form.formState;
-  const sendSms = useWatch({ control: form.control, name: 'sendActivationSms' });
 
   const fields: ReadonlyArray<{
     name: 'firstName' | 'lastName' | 'phone' | 'email' | 'contextLabel';
@@ -116,14 +112,6 @@ export function NewPatientForm({
           </label>
         ))}
       </div>
-      <label className="flex items-center gap-2.5 text-[14px] text-foreground">
-        <Checkbox
-          checked={sendSms}
-          onCheckedChange={(checked) => form.setValue('sendActivationSms', checked === true)}
-          data-testid={`${testId}-sms-checkbox`}
-        />
-        Wyślij SMS z linkiem do aplikacji
-      </label>
       <div className="flex items-center justify-between gap-3">
         {onCancel ? (
           <Button type="button" variant="ghost" size="sm" onClick={onCancel} data-testid={`${testId}-cancel-btn`}>

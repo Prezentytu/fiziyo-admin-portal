@@ -120,6 +120,7 @@ describe('clearStoredConversations', () => {
       [conversationStorageKey('u1', 'org-a'), '[]'],
       [conversationStorageKey('u2', 'org-b'), '[]'],
       ['fiziyo-chat-exercise-proposal:m1', '{}'],
+      ['fiziyo-chat-exercise-ideas:m2', '[]'],
       ['fiziyo-chat-mode', '{"enabled":true}'],
     ]);
     const storage = {
@@ -135,6 +136,7 @@ describe('clearStoredConversations', () => {
     expect(entries.has(conversationStorageKey('u1', 'org-a'))).toBe(false);
     expect(entries.has(conversationStorageKey('u2', 'org-b'))).toBe(false);
     expect(entries.has('fiziyo-chat-exercise-proposal:m1')).toBe(false);
+    expect(entries.has('fiziyo-chat-exercise-ideas:m2')).toBe(false);
     expect(entries.get('fiziyo-chat-mode')).toBe('{"enabled":true}');
   });
 });

@@ -26,6 +26,8 @@ import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { polishPlural } from '@/utils/polishPlural';
 import { ChatComposer, type ChatComposerHandle } from './ChatComposer';
+import { ComposerDraftContext } from './ComposerDraftContext';
+import { FloatingMark } from './FloatingMark';
 import { useChatSession } from './ChatSessionContext';
 import { useChatShellControls } from './ChatShellControls';
 import { ChatSpecRenderer } from './catalog/ChatSpecRenderer';
@@ -36,7 +38,14 @@ import { useDocumentAnalysis } from './useDocumentAnalysis';
 import { useStickToBottom } from './useStickToBottom';
 import { useTodayAgenda } from './useTodayAgenda';
 import type { ChatThreadMessage } from './utils/conversationStore';
-import { nextRevealMarker, revealSegments, thinkingLabel, type RevealMarker } from './utils/replyMotion';
+import {
+  nextRevealMarker,
+  revealSegments,
+  thinkingLabel,
+  thinkingTopic,
+  type RevealMarker,
+  type ThinkingTopic,
+} from './utils/replyMotion';
 import { shouldTypeIntoComposer } from './utils/typeToComposer';
 import { describeIssue, type AgendaIssue } from './utils/todayAgenda';
 import type { DispatchFailure } from './utils/resolveReply';
@@ -195,22 +204,22 @@ function UserMessage({
   );
 }
 
-/** The busy line: a turning spark and a status that moves on while the wait grows. */
-function ThinkingLine({ isDocument }: { readonly isDocument: boolean }) {
+/** The busy line: the FiziYo mark floats while a status about the asked topic moves on with the wait. */
+function ThinkingLine({ topic }: { readonly topic: ThinkingTopic }) {
   const [elapsedMs, setElapsedMs] = useState(0);
   useEffect(() => {
     const startedAt = Date.now();
     const interval = window.setInterval(() => setElapsedMs(Date.now() - startedAt), 400);
     return () => window.clearInterval(interval);
   }, []);
-  const label = thinkingLabel(elapsedMs, isDocument);
+  const label = thinkingLabel(elapsedMs, topic);
   return (
     <li
       className="flex animate-chat-rise items-center gap-2.5 text-[15px]"
       data-testid="common-chat-thinking"
       role="status"
     >
-      <Sparkles className="h-[18px] w-[18px] animate-spin text-tint [animation-duration:2.4s]" aria-hidden="true" />
+      <FloatingMark />
       <span key={label} className="text-chat-shimmer animate-chat-rise">
         {label}
       </span>
@@ -478,6 +487,7 @@ export function ChatView() {
   const { analyzeFile } = useDocumentAnalysis();
   const scrollRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<ChatComposerHandle>(null);
+  const draftInComposer = useCallback((text: string) => composerRef.current?.setDraft(text), []);
   const dragDepthRef = useRef(0);
   const [isDragging, setIsDragging] = useState(false);
   // Replies that arrive in the open conversation read in; one opened from the sidebar shows at once.
@@ -551,20 +561,30 @@ export function ChatView() {
             {isEmpty ? (
               <ChatHome composerRef={composerRef} onSend={sendMessage} onAttach={attach} />
             ) : (
-              <ol className="flex flex-col gap-7" aria-live="polite" data-testid="common-chat-thread">
-                {messages.map((message) =>
-                  message.role === 'user' ? (
-                    <li key={message.id} className="flex animate-chat-rise justify-end">
-                      <UserMessage message={message} onEdit={(text) => composerRef.current?.setDraft(text)} />
-                    </li>
-                  ) : (
-                    <li key={message.id} className="flex animate-chat-rise">
-                      <AssistantMessage message={message} animate={message.createdAt > revealSince} />
-                    </li>
-                  )
-                )}
-                {isBusy && <ThinkingLine isDocument={Boolean(lastUser?.role === 'user' && lastUser.attachmentName)} />}
-              </ol>
+              <ComposerDraftContext.Provider value={draftInComposer}>
+                <ol className="flex flex-col gap-7" aria-live="polite" data-testid="common-chat-thread">
+                  {messages.map((message) =>
+                    message.role === 'user' ? (
+                      <li key={message.id} className="flex animate-chat-rise justify-end">
+                        <UserMessage message={message} onEdit={(text) => composerRef.current?.setDraft(text)} />
+                      </li>
+                    ) : (
+                      <li key={message.id} className="flex animate-chat-rise">
+                        <AssistantMessage message={message} animate={message.createdAt > revealSince} />
+                      </li>
+                    )
+                  )}
+                  {isBusy && (
+                    <ThinkingLine
+                      topic={
+                        lastUser?.role === 'user'
+                          ? thinkingTopic(lastUser.text, Boolean(lastUser.attachmentName))
+                          : 'general'
+                      }
+                    />
+                  )}
+                </ol>
+              </ComposerDraftContext.Provider>
             )}
           </div>
         </div>

@@ -1,5 +1,7 @@
 import type { SchedulePlan } from './schedulePlan';
-import type { SetDraftPayload } from './setDraft';
+import type { NewPatientDetails } from './newPatientDetails';
+import type { SetDraftPayload, SetDraftReturn } from './setDraft';
+import type { CountFocus } from './threadLocalReply';
 import type { ChatViewSpec } from './viewSpec';
 
 interface ThreadMessageLike {
@@ -26,14 +28,24 @@ export interface DocumentItem {
  * therapist's decisions (exercise list, schedule) and never come from the model.
  */
 export type LocalCardSpec =
-  | { component: 'PickPatient'; draft: SetDraftPayload }
+  | {
+      component: 'PickPatient';
+      draft: SetDraftPayload;
+      /** A typed answer fitting several patients: only these are offered. */
+      patientIds?: string[];
+      /** A typed answer naming no known patient: the new patient form opens with it. */
+      newPatient?: NewPatientDetails;
+    }
   | { component: 'Schedule'; draft: SetDraftPayload }
   | { component: 'SendSummary'; draft: SetDraftPayload; plan: SchedulePlan }
   | { component: 'Sent'; patientId: string; setName: string; planLabel: string }
-  | { component: 'SetSaved'; setId: string; name: string }
+  /** `draft` (from 18.11) lets the card assign the saved set to a patient; older history has none. */
+  | { component: 'SetSaved'; setId: string; name: string; draft?: SetDraftPayload }
   | { component: 'PatientAdded'; patientId: string; name: string }
-  | { component: 'ExerciseCreated'; exerciseId: string; name: string; patientId?: string }
+  | { component: 'ExerciseCreated'; exerciseId: string; name: string; patientId?: string; addToSet?: SetDraftReturn }
   | { component: 'ScanVisit'; patientId?: string }
+  | { component: 'ExerciseIdeas'; query: string; patientId?: string }
+  | { component: 'CatalogCounts'; focus: CountFocus }
   | { component: 'DocumentResult'; fileName: string; items: DocumentItem[]; patientId?: string };
 
 export type ChatCardSpec = ChatViewSpec | LocalCardSpec;
@@ -57,6 +69,8 @@ const CARD_COMPONENTS = {
   ExerciseCreated: true,
   ScanVisit: true,
   DocumentResult: true,
+  ExerciseIdeas: true,
+  CatalogCounts: true,
 } satisfies Record<ChatCardSpec['component'], true>;
 
 export function isCardComponent(component: string): boolean {
@@ -76,6 +90,7 @@ export function cardPatientId(spec: ChatCardSpec | undefined): string | undefine
     case 'ExerciseCreated':
     case 'ScanVisit':
     case 'DocumentResult':
+    case 'ExerciseIdeas':
       return spec.patientId;
     case 'PickPatient':
     case 'Schedule':
