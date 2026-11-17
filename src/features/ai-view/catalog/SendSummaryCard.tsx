@@ -23,6 +23,7 @@ import {
 import { draftMinutes, planNote } from '../utils/setDraft';
 import type { CardProps } from './cardProps';
 import { ChatCard, ChatCardNote } from './ChatCard';
+import { sentText } from '../utils/sendPlan';
 import { useSendPlan } from './useChatWrites';
 
 const WEEK_OPTIONS = PLAN_WEEKS.map((weeks) => ({ value: weeks, label: planWeeksLabel(weeks) }));
@@ -47,7 +48,7 @@ export function SendSummaryCard({ spec, testId, messageId, chosen }: CardProps<'
     markChosen(messageId, 'sent');
     refetchCredits();
     appendAssistant({
-      text: `Wysłane. ${patient.name} zobaczy plan w aplikacji: ${describePlan(plan)}.`,
+      text: sentText(patient, describePlan(plan)),
       spec: { component: 'Sent', patientId: patient.id, setName: spec.draft.name, planLabel: describePlan(plan) },
     });
   };
@@ -61,7 +62,11 @@ export function SendSummaryCard({ spec, testId, messageId, chosen }: CardProps<'
       footer={
         isSent || isCancelled ? (
           <span className="text-[13px] text-label-secondary">
-            {isSent ? 'Plan jest już u pacjenta' : 'Nic nie zostało wysłane'}
+            {isSent
+              ? patient?.isShadowUser
+                ? 'Plan zapisany, pacjent nie ma jeszcze konta w aplikacji'
+                : 'Plan jest już u pacjenta'
+              : 'Nic nie zostało wysłane'}
           </span>
         ) : (
           <>
