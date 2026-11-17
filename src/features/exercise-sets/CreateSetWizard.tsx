@@ -41,7 +41,7 @@ import { createTagsMap, mapExercisesWithTags, type ExerciseWithTags } from '@/ut
 import { useExercisePickerLibrary } from '@/hooks/useExercisePickerLibrary';
 import type { ExerciseTagsResponse, TagCategoriesResponse, OrganizationExerciseSetsResponse } from '@/types/apollo';
 import type { PatientClinicalNotesQueryData } from '@/graphql/types/operation-responses';
-import { getExerciseDefaultParams } from '@/features/exercise-sets/utils/exerciseDefaults';
+import { getCatalogZeroableDose, getExerciseDefaultParams } from '@/features/exercise-sets/utils/exerciseDefaults';
 import { submitCreateTemplateSet } from '@/features/exercise-sets/utils/createSetSubmit';
 import { defaultSetName } from '@/features/exercise-sets/utils/defaultSetName';
 import { countExerciseUsage } from '@/features/exercise-sets/utils/builderExercises';
@@ -336,6 +336,7 @@ export function CreateSetWizard({
             loadWeightKg: params.loadWeightKg,
             loadValue: params.loadValue,
             overridesJson: overridesJson ?? '',
+            catalog: getCatalogZeroableDose(exercise),
           };
         })
         .filter((mapping): mapping is NonNullable<typeof mapping> => mapping !== null);

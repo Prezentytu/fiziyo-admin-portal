@@ -281,9 +281,8 @@ function computeSession(
   isV33 = false
 ): { seconds: number; isEstimate: boolean } {
   const sets = positive(values.sets) ?? 0;
-  // Rekord 3.3 „naprzemiennie”: 2·reps powtórzeń z rzędu, czyli wzór wspólny z podwojoną liczbą (§6.7).
-  const alternatesPerSide = resolveSideDose(side, isV33).alternatesPerSide;
-  const repsPerSet = (reps: number) => (alternatesPerSide ? reps * 2 : reps);
+  // Rekord 3.3 „naprzemiennie”: liczba na stronę, podwaja ją wzór wspólny z katalogiem i playerem (§6.7).
+  const alternatingPerSide = resolveSideDose(side, isV33).alternatesPerSide;
   const shared = {
     sets,
     restSets: values.rest ?? undefined,
@@ -293,16 +292,18 @@ function computeSession(
   if (mode === 'hold') {
     return calculateExerciseTotalSeconds({
       ...shared,
-      reps: repsPerSet(1),
+      alternatingPerSide,
+      // Utrzymanie to jedno powtórzenie; przerwa między powtórzeniami liczy się tylko wtedy, gdy wzór podwoi je
+      // dla rekordu 3.3 „naprzemiennie” (dwa utrzymania z rzędu, strona po stronie, §6.7).
+      reps: 1,
       executionTime: positive(values.hold) ?? 0,
-      // Utrzymanie to jedno powtórzenie, więc przerwy między powtórzeniami nie ma. Wyjątek: rekord 3.3
-      // „naprzemiennie” robi dwa utrzymania z rzędu (strona po stronie) i przerwa wypada między nimi (§6.7).
-      restReps: alternatesPerSide ? (timing.restReps ?? undefined) : undefined,
+      restReps: timing.restReps ?? undefined,
     });
   }
   return calculateExerciseTotalSeconds({
     ...shared,
-    reps: repsPerSet(positive(values.reps) ?? 0),
+    alternatingPerSide,
+    reps: positive(values.reps) ?? 0,
     executionTime: positive(values.repTime) ?? undefined,
     duration: timing.duration ?? undefined,
     tempo: timing.tempo ?? undefined,

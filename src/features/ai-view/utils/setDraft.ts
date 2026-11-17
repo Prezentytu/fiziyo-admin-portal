@@ -1,5 +1,7 @@
 import {
+  getCatalogZeroableDose,
   getExerciseDefaultParams,
+  type CatalogZeroableDose,
   type ExerciseLikeForDefaults,
 } from '@/features/exercise-sets/utils/exerciseDefaults';
 import { format } from 'date-fns';
@@ -25,6 +27,8 @@ export interface DraftItem {
   notes?: string;
   /** Rekord ćwiczenia w 3.3: „naprzemiennie” liczy się na stronę. Ustawiane przy karcie, z treści ćwiczenia. */
   alternatingPerSide?: boolean;
+  /** Wartości katalogu, z którymi zapis porównuje wpisane 0 (#218). Brak w starszych szkicach rozmowy. */
+  catalog?: CatalogZeroableDose;
 }
 
 /** Numbers a source wrote for an exercise (a visit note's "3×15"); they win over the catalog defaults. */
@@ -96,6 +100,7 @@ export function draftItemFromExercise(exercise: ExerciseLikeForDefaults & { id: 
     restReps: params.restReps,
     preparationTime: params.preparationTime,
     side: params.exerciseSide,
+    catalog: getCatalogZeroableDose(exercise),
   };
 }
 
@@ -118,7 +123,10 @@ export function draftItemFromMapping(
   mapping: MappingLike,
   exercise?: ExerciseLikeForDefaults & { id: string }
 ): DraftItem {
-  const base = exercise ? draftItemFromExercise(exercise) : draftItemFromExercise({ id: mapping.exerciseId });
+  const base = exercise
+    ? draftItemFromExercise(exercise)
+    : // Bez rekordu katalogu jego wartości są nieznane, a nie puste: zapis zachowuje się jak przed #218.
+      { ...draftItemFromExercise({ id: mapping.exerciseId }), catalog: undefined };
   return {
     ...base,
     sets: mapping.sets ?? base.sets,
@@ -186,6 +194,7 @@ export function toMappingInput(item: DraftItem): ExerciseMappingSubmitInput {
     tempo: item.tempo ?? null,
     loadWeightKg: item.loadKg ?? null,
     notes: item.notes ?? null,
+    catalog: item.catalog,
   };
 }
 

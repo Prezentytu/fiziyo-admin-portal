@@ -1,6 +1,7 @@
 import { buildMappingOverridesJson } from '@/components/shared/exercise/mappingOverrides';
 import type { BuilderExercise } from '@/contexts/ExerciseBuilderContext';
 import type { ExerciseMappingSubmitInput } from '@/features/exercise-sets/utils/createSetSubmit';
+import { getCatalogZeroableDose } from '@/features/exercise-sets/utils/exerciseDefaults';
 
 /**
  * Sidebar → create-set adapter. Dosage stays on mapping columns;
@@ -31,5 +32,6 @@ export function buildBuilderExerciseMapping(exercise: BuilderExercise): Exercise
     loadWeightKg: exercise.loadWeightKg,
     loadValue: exercise.loadValue,
     overridesJson: overridesJson ?? '',
+    catalog: getCatalogZeroableDose(exercise),
   };
 }
