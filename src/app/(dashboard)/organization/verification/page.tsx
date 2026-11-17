@@ -25,6 +25,7 @@ import { VerificationArchiveDialog } from '@/features/verification/VerificationA
 import { VerificationPageHeader } from '@/features/verification/VerificationPageHeader';
 import { VerificationQueueHero } from '@/features/verification/VerificationQueueHero';
 import { useVerificationSelection } from '@/features/verification/utils/verificationSelection';
+import { ExerciseOffersPanel } from '@/features/verification/offers/ExerciseOffersPanel';
 import {
   buildOrganizationVerificationDetailHref,
   buildOrganizationVerificationSearchParams,
@@ -193,6 +194,8 @@ export default function OrganizationVerificationPage() {
   return (
     <PageSheet contentClassName="gap-6">
       <VerificationPageHeader />
+
+      <ExerciseOffersPanel />
 
       <VerificationQueueHero
         pendingCount={statsData?.organizationVerificationStats.pendingOrgReview ?? null}
