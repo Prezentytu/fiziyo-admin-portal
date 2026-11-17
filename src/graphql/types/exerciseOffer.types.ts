@@ -1,6 +1,6 @@
-export type ExerciseOfferMode = 'adopt' | 'review';
+export type ExerciseOfferMode = 'ADOPT' | 'REVIEW';
 
-export type ExerciseOfferStatus = 'pending' | 'accepted' | 'changes_requested' | 'rejected';
+export type ExerciseOfferStatus = 'PENDING' | 'ACCEPTED' | 'CHANGES_REQUESTED' | 'REJECTED' | 'WITHDRAWN';
 
 export type ExerciseOfferDecision = 'ACCEPT' | 'REQUEST_CHANGES' | 'REJECT';
 

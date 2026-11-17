@@ -29,7 +29,7 @@ export function useExerciseOffers() {
   const { data, loading, refetch } = useQuery<GetExerciseOffersResponse, GetExerciseOffersVariables>(
     GET_EXERCISE_OFFERS_QUERY,
     {
-      variables: { organizationId, status: 'pending' },
+      variables: { organizationId, status: 'PENDING' },
       skip: !organizationId || !canManageOrganization,
       fetchPolicy: 'cache-and-network',
       errorPolicy: 'all',

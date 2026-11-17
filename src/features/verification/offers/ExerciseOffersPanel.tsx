@@ -30,7 +30,7 @@ export function ExerciseOffersPanel() {
       setPending(null);
       toast.success(
         decision === 'ACCEPT'
-          ? offer.mode === 'adopt'
+          ? offer.mode === 'ADOPT'
             ? `„${offer.exerciseName}” jest w bibliotece gabinetu.`
             : 'Zapisano ocenę bez uwag.'
           : decision === 'REQUEST_CHANGES'
@@ -54,7 +54,7 @@ export function ExerciseOffersPanel() {
   };
 
   const handleAcceptAll = async () => {
-    const ids = offers.filter((offer) => offer.mode === 'adopt').map((offer) => offer.id);
+    const ids = offers.filter((offer) => offer.mode === 'ADOPT').map((offer) => offer.id);
     setSubmitting(true);
     try {
       const result = await runBatchAccept(ids, (offerId) => respond(offerId, 'ACCEPT', null));

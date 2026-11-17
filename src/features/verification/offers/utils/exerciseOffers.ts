@@ -19,10 +19,10 @@ export interface OfferView {
 /** Open offers only, newest first; unknown mode falls back to review so nothing lands in the library by accident. */
 export function toPendingOfferViews(offers: ReadonlyArray<ExerciseOffer> | null | undefined): OfferView[] {
   return (offers ?? [])
-    .filter((offer) => offer.status === 'pending')
+    .filter((offer) => offer.status === 'PENDING')
     .map((offer) => ({
       id: offer.id,
-      mode: offer.mode === 'adopt' ? ('adopt' as const) : ('review' as const),
+      mode: offer.mode === 'ADOPT' ? ('ADOPT' as const) : ('REVIEW' as const),
       exerciseId: offer.exercise?.id ?? null,
       exerciseName: offer.exercise?.name?.trim() || 'Ćwiczenie bez nazwy',
       description: offer.exercise?.patientDescription?.trim() || offer.exercise?.clinicalDescription?.trim() || null,
@@ -35,7 +35,7 @@ export function toPendingOfferViews(offers: ReadonlyArray<ExerciseOffer> | null 
 }
 
 export function countAdoptable(offers: ReadonlyArray<OfferView>): number {
-  return offers.filter((offer) => offer.mode === 'adopt').length;
+  return offers.filter((offer) => offer.mode === 'ADOPT').length;
 }
 
 export interface DecisionCopy {
@@ -56,7 +56,7 @@ export function decisionCopy(decision: ExerciseOfferDecision, mode: ExerciseOffe
       };
     case 'REJECT':
       return {
-        title: mode === 'adopt' ? 'Odrzuć propozycję' : 'Odrzuć ćwiczenie',
+        title: mode === 'ADOPT' ? 'Odrzuć propozycję' : 'Odrzuć ćwiczenie',
         confirmLabel: 'Odrzuć',
         noteLabel: 'Powód',
         noteRequired: false,
@@ -64,8 +64,8 @@ export function decisionCopy(decision: ExerciseOfferDecision, mode: ExerciseOffe
     case 'ACCEPT':
     default:
       return {
-        title: mode === 'adopt' ? 'Dodaj do gabinetu' : 'Zatwierdź bez uwag',
-        confirmLabel: mode === 'adopt' ? 'Dodaj' : 'Zatwierdź',
+        title: mode === 'ADOPT' ? 'Dodaj do gabinetu' : 'Zatwierdź bez uwag',
+        confirmLabel: mode === 'ADOPT' ? 'Dodaj' : 'Zatwierdź',
         noteLabel: 'Uwaga',
         noteRequired: false,
       };

@@ -26,7 +26,7 @@ export const EXERCISE_OFFER_FIELDS_FRAGMENT = gql`
 
 /** Propozycje ćwiczeń od zespołu FiziYo; backend zwraca je tylko ownerowi i adminowi organizacji z tokenu. */
 export const GET_EXERCISE_OFFERS_QUERY = gql`
-  query GetExerciseOffers($organizationId: String!, $status: String) {
+  query GetExerciseOffers($organizationId: String!, $status: ExerciseOfferStatus) {
     exerciseOffers(organizationId: $organizationId, status: $status) {
       ...ExerciseOfferFields
     }

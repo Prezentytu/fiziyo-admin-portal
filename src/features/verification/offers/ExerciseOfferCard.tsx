@@ -19,7 +19,7 @@ interface ExerciseOfferCardProps {
 
 export function ExerciseOfferCard({ offer, disabled, onDecide }: ExerciseOfferCardProps) {
   const [expanded, setExpanded] = useState(false);
-  const isAdopt = offer.mode === 'adopt';
+  const isAdopt = offer.mode === 'ADOPT';
 
   return (
     <article

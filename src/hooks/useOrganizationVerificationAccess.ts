@@ -29,7 +29,7 @@ export function useOrganizationVerificationAccess() {
   const { data: offersData } = useQuery<GetExerciseOffersResponse, GetExerciseOffersVariables>(
     GET_EXERCISE_OFFERS_QUERY,
     {
-      variables: { organizationId: organizationId ?? '', status: 'pending' },
+      variables: { organizationId: organizationId ?? '', status: 'PENDING' },
       skip: !organizationId || !canManageOrganization,
       fetchPolicy: 'cache-and-network',
       errorPolicy: 'all',
@@ -37,7 +37,7 @@ export function useOrganizationVerificationAccess() {
   );
 
   const pendingReview = data?.organizationVerificationStats.pendingOrgReview ?? 0;
-  const pendingOffers = offersData?.exerciseOffers?.filter((offer) => offer.status === 'pending').length ?? 0;
+  const pendingOffers = offersData?.exerciseOffers?.filter((offer) => offer.status === 'PENDING').length ?? 0;
 
   return useMemo(
     () => ({

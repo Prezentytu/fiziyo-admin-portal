@@ -14,8 +14,8 @@ import {
 function offer(overrides: Partial<ExerciseOffer>): ExerciseOffer {
   return {
     id: 'offer-1',
-    mode: 'adopt',
-    status: 'pending',
+    mode: 'ADOPT',
+    status: 'PENDING',
     offeredAt: '2026-11-17T10:00:00Z',
     exercise: { id: 'fx-1', name: 'Rotacja barku', images: ['', 'https://cdn/a.jpg'] },
     ...overrides,
@@ -26,7 +26,7 @@ describe('toPendingOfferViews', () => {
   it('keeps only pending offers, newest first', () => {
     const views = toPendingOfferViews([
       offer({ id: 'old', offeredAt: '2026-11-16T10:00:00Z' }),
-      offer({ id: 'answered', status: 'accepted' }),
+      offer({ id: 'answered', status: 'ACCEPTED' }),
       offer({ id: 'new', offeredAt: '2026-11-17T12:00:00Z' }),
     ]);
 
@@ -36,7 +36,7 @@ describe('toPendingOfferViews', () => {
   it('treats an unknown mode as review so nothing is added to the library', () => {
     const [view] = toPendingOfferViews([offer({ mode: 'something-new' })]);
 
-    expect(view.mode).toBe('review');
+    expect(view.mode).toBe('REVIEW');
     expect(countAdoptable([view])).toBe(0);
   });
 
@@ -71,9 +71,9 @@ describe('validateDecisionNote', () => {
 
 describe('decisionCopy', () => {
   it('names the result of accepting by mode', () => {
-    expect(decisionCopy('ACCEPT', 'adopt').confirmLabel).toBe('Dodaj');
-    expect(decisionCopy('ACCEPT', 'review').confirmLabel).toBe('Zatwierdź');
-    expect(decisionCopy('REQUEST_CHANGES', 'adopt').noteRequired).toBe(true);
+    expect(decisionCopy('ACCEPT', 'ADOPT').confirmLabel).toBe('Dodaj');
+    expect(decisionCopy('ACCEPT', 'REVIEW').confirmLabel).toBe('Zatwierdź');
+    expect(decisionCopy('REQUEST_CHANGES', 'ADOPT').noteRequired).toBe(true);
   });
 });
 

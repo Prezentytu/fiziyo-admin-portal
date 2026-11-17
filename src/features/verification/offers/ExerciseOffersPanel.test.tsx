@@ -28,11 +28,11 @@ vi.mock('@/components/shared/exercise/ExerciseThumbnail', () => ({ ExerciseThumb
 
 import { ExerciseOffersPanel } from './ExerciseOffersPanel';
 
-function offer(id: string, mode: 'adopt' | 'review'): ExerciseOffer {
+function offer(id: string, mode: 'ADOPT' | 'REVIEW'): ExerciseOffer {
   return {
     id,
     mode,
-    status: 'pending',
+    status: 'PENDING',
     offeredAt: '2026-11-17T10:00:00Z',
     exercise: { id: `fx-${id}`, name: `Ćwiczenie ${id}`, images: [] },
   };
@@ -45,10 +45,10 @@ function lastVariables() {
 describe('ExerciseOffersPanel', () => {
   beforeEach(() => {
     respondMock.mockReset();
-    respondMock.mockResolvedValue({ data: { respondToExerciseOffer: { id: 'x', status: 'accepted' } } });
+    respondMock.mockResolvedValue({ data: { respondToExerciseOffer: { id: 'x', status: 'ACCEPTED' } } });
     refetch.mockReset();
     canManageOrganization = true;
-    offers = [offer('a', 'adopt'), offer('b', 'adopt'), offer('r', 'review')];
+    offers = [offer('a', 'ADOPT'), offer('b', 'ADOPT'), offer('r', 'REVIEW')];
   });
 
   it('renders nothing for other roles or without offers', () => {
