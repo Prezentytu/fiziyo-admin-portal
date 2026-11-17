@@ -27,9 +27,10 @@ export class TokenExchangeService {
   /**
    * Wymienia token Clerk na JWT backendu
    * @param clerkToken - Token JWT z Clerk
+   * @param options.signal - przerywa żądanie (limit czasu próby)
    * @returns Backend JWT token
    */
-  async exchangeClerkToken(clerkToken: string): Promise<TokenExchangeResponse> {
+  async exchangeClerkToken(clerkToken: string, options?: { signal?: AbortSignal }): Promise<TokenExchangeResponse> {
     const url = `${this.baseUrl}/api/token-exchange/clerk`;
 
     try {
@@ -44,6 +45,7 @@ export class TokenExchangeService {
           [CLIENT_TYPE_HEADER_KEY]: ADMIN_PORTAL_CLIENT_TYPE,
         },
         body: JSON.stringify(request),
+        signal: options?.signal,
       });
 
       if (!response.ok) {

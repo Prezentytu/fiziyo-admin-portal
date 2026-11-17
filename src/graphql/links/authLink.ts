@@ -33,9 +33,14 @@ export class AuthLinkFactory {
             });
           } catch (error) {
             if (isDev) {
-              console.error('[AuthLink] Token fetch failed:', error);
+              console.warn('[AuthLink] Token fetch failed:', error);
             }
-            // Kontynuuj bez autoryzacji
+            // Bez tokenu backendu zapytanie i tak nie przejdzie: zakończ operację błędem,
+            // żeby widok pokazał „Spróbuj ponownie” (refetch zacznie wymianę od nowa).
+            if (!closed) {
+              observer.error(error);
+            }
+            return;
           }
 
           // Operacja anulowana w trakcie pobierania tokenu - nie wysyłaj requestu
