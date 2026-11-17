@@ -187,3 +187,16 @@ export const GET_PATIENT_THERAPIST_NOTE_STAMPS_QUERY = gql`
     }
   }
 `;
+
+/**
+ * Sam dokument nadpisań przypisania, czytany tuż przed zapisem (#244). Ekrany, które zapisują cały
+ * `exerciseOverrides`, nakładają swoją zmianę na ten odczyt, nie na stan z otwarcia ekranu.
+ */
+export const GET_ASSIGNMENT_EXERCISE_OVERRIDES_QUERY = gql`
+  query GetAssignmentExerciseOverrides($id: String!) {
+    patientAssignmentById(id: $id) {
+      id
+      exerciseOverrides
+    }
+  }
+`;
