@@ -124,6 +124,7 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `auth-register-error-fix`              | Zmień hasło / Zmień adres e-mail | `register/page.tsx` |
 | `auth-register-email-banner-2`         | Konto dla: adres (krok 2)        | `register/page.tsx` |
 | `auth-register-email-banner-2-change`  | zmień (krok 2)                   | `register/page.tsx` |
+| `auth-register-restored`               | Powrót z /verify: wpisz hasło    | `register/page.tsx` |
 | `auth-register-email-banner-3`         | Konto dla: adres (krok 3)        | `register/page.tsx` |
 | `auth-register-email-banner-3-change`  | zmień (krok 3)                   | `register/page.tsx` |
 | `auth-verify-code-input`               | Kod weryfikacyjny                | `verify/page.tsx`   |

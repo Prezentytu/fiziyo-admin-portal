@@ -7,12 +7,17 @@ const mocks = vi.hoisted(() => ({
   create: vi.fn(),
   prepare: vi.fn(),
   push: vi.fn(),
+  pending: {
+    status: null as string | null,
+    emailAddress: null as string | null,
+    unsafeMetadata: {} as Record<string, unknown>,
+  },
 }));
 
 vi.mock('@clerk/nextjs/legacy', () => ({
   useSignUp: () => ({
     isLoaded: true,
-    signUp: { create: mocks.create, prepareEmailAddressVerification: mocks.prepare },
+    signUp: { create: mocks.create, prepareEmailAddressVerification: mocks.prepare, ...mocks.pending },
   }),
 }));
 
@@ -70,5 +75,51 @@ describe('register page: błędy z Clerk', () => {
     expect(screen.getByTestId('auth-register-error-fix')).toHaveTextContent('Zmień adres e-mail');
     fireEvent.click(screen.getByTestId('auth-register-error-fix'));
     expect(screen.getByTestId('auth-register-email-input')).toHaveValue('gabinet@poczta.pl');
+  });
+});
+
+describe('register page: „Powrót” z /verify', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.pending.status = 'missing_requirements';
+    mocks.pending.emailAddress = 'gabinet@poczta.pl';
+    mocks.pending.unsafeMetadata = {
+      firstName: 'Jan',
+      lastName: 'Nowak',
+      phone: '+48600100200',
+      companyName: 'Gabinet Ruch',
+    };
+  });
+
+  afterEach(() => {
+    cleanup();
+    window.history.replaceState(null, '', '/');
+    mocks.pending.status = null;
+    mocks.pending.emailAddress = null;
+    mocks.pending.unsafeMetadata = {};
+  });
+
+  it('wypełnia formularz z trwającej rejestracji i prosi tylko o hasło', () => {
+    window.history.replaceState(null, '', '/register?powrot=1');
+    render(<RegisterPage />);
+
+    expect(screen.getByTestId('auth-register-email-banner-2')).toHaveTextContent('gabinet@poczta.pl');
+    expect(screen.getByTestId('auth-register-restored')).toHaveTextContent('Wpisz hasło jeszcze raz.');
+    expect(screen.getByTestId('auth-register-password-input')).toHaveValue('');
+
+    fireEvent.change(screen.getByTestId('auth-register-password-input'), { target: { value: 'haslo1234' } });
+    fireEvent.change(screen.getByTestId('auth-register-password-confirm-input'), { target: { value: 'haslo1234' } });
+    fireEvent.click(screen.getByTestId('auth-register-next-btn'));
+
+    expect(screen.getByTestId('auth-register-firstname-input')).toHaveValue('Jan');
+    expect(screen.getByTestId('auth-register-lastname-input')).toHaveValue('Nowak');
+    expect(screen.getByText('Gabinet Ruch')).toBeInTheDocument();
+  });
+
+  it('bez parametru powrotu zaczyna od pustego kroku 1', () => {
+    render(<RegisterPage />);
+
+    expect(screen.getByTestId('auth-register-email-input')).toHaveValue('');
+    expect(screen.queryByTestId('auth-register-restored')).not.toBeInTheDocument();
   });
 });

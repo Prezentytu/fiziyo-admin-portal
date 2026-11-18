@@ -11,6 +11,7 @@ import { PhoneInput } from '@/components/ui/phone-input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { parseRegistrationError, type RegistrationErrorView } from '@/lib/auth/registrationErrors';
+import { readPendingRegistration, REGISTER_BACK_PARAM } from '@/lib/auth/pendingRegistration';
 
 interface FormData {
   email: string;
@@ -114,6 +115,24 @@ export default function RegisterPage() {
   // Link tylko przy komunikacie, do którego należy; walidacja kroku ustawia własny tekst bez linku.
   const errorFix = clerkError && clerkError.message === error ? clerkError.fix : undefined;
   const [showNameEditor, setShowNameEditor] = useState(false);
+  /** Powrót z /verify: dane wróciły z trwającej rejestracji, trzeba tylko wpisać hasło jeszcze raz. */
+  const [restored, setRestored] = useState(false);
+
+  // „Powrót” z /verify: wypełnij formularz z trwającej rejestracji Clerk (hasła Clerk nie oddaje).
+  useEffect(() => {
+    if (!isLoaded || restored) return;
+    if (!new URLSearchParams(window.location.search).has(REGISTER_BACK_PARAM)) return;
+    const pending = readPendingRegistration(signUp);
+    if (!pending) return;
+    setFormData((prev) => ({
+      ...prev,
+      ...pending,
+      companyNameEdited:
+        pending.companyName !== '' && pending.companyName !== generatePracticeName(pending.firstName, pending.lastName),
+    }));
+    setCurrentStep(2);
+    setRestored(true);
+  }, [isLoaded, signUp, restored]);
 
   const generatedName = useMemo(
     () => generatePracticeName(formData.firstName, formData.lastName),
@@ -326,6 +345,11 @@ export default function RegisterPage() {
                 zmień
               </button>
             </div>
+            {restored && !formData.password && (
+              <p data-testid="auth-register-restored" className="text-sm text-muted-foreground">
+                Twoje dane zostały. Wpisz hasło jeszcze raz.
+              </p>
+            )}
             <div className="space-y-2">
               <Label htmlFor="password">Hasło</Label>
               <div className="relative">

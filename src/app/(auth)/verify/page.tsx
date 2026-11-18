@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useSignUp } from '@clerk/nextjs/legacy';
+import { REGISTER_BACK_HREF } from '@/lib/auth/pendingRegistration';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Mail, Loader2, RefreshCw, ArrowLeft, HelpCircle } from 'lucide-react';
@@ -172,7 +173,7 @@ export default function VerifyEmailPage() {
     <div className="space-y-6">
       {/* Back link */}
       <Link
-        href="/register"
+        href={REGISTER_BACK_HREF}
         className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="mr-2 h-4 w-4" />
