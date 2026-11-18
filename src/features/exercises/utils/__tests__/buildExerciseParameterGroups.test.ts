@@ -25,9 +25,9 @@ describe('buildExerciseParameterGroups', () => {
     expect(groups.map((g) => g.id)).toEqual(['dosage', 'timing', 'position', 'classification']);
   });
 
-  it('dosage group has sets, reps, executionTime (duration deprecated from UI)', () => {
+  it('dosage group has sets, reps, executionTime, side (strona w podstawowych; duration deprecated from UI)', () => {
     const [dosage] = buildExerciseParameterGroups(fullSource);
-    expect(dosage.items.map((i) => i.key)).toEqual(['sets', 'reps', 'executionTime']);
+    expect(dosage.items.map((i) => i.key)).toEqual(['sets', 'reps', 'executionTime', 'side']);
   });
 
   it('renders correct values when fields are set', () => {
@@ -61,8 +61,8 @@ describe('buildExerciseParameterGroups', () => {
   it('text-type fields use EMPTY_TEXT_VALUE when missing', () => {
     const emptySource: ExerciseFieldValueSource = {};
     const groups = buildExerciseParameterGroups(emptySource);
-    const positionGroup = groups.find((g) => g.id === 'position')!;
-    const sideItem = positionGroup.items.find((i) => i.key === 'side')!;
+    const dosageGroup = groups.find((g) => g.id === 'dosage')!;
+    const sideItem = dosageGroup.items.find((i) => i.key === 'side')!;
     expect(sideItem.isEmpty).toBe(true);
     expect(sideItem.value).toBe(EMPTY_TEXT_VALUE);
   });
