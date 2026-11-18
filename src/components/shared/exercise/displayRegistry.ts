@@ -1,5 +1,6 @@
 import { formatDurationPolish } from '@/utils/durationPolish';
-import { EXERCISE_SIDE_HELP } from '@/utils/exerciseSideLabels';
+import { getExerciseSideHelp } from '@/utils/exerciseSideLabels';
+import { fieldHelpToText, type FieldHelp } from '@/utils/fieldHelp';
 import { EXERCISE_CONTENT_LABELS, EXERCISE_NOTES_HINT } from '@/components/shared/enrichment/enrichmentFieldLabels';
 
 export type ExerciseFieldGroup = 'dosage' | 'execution' | 'content' | 'classification';
@@ -44,6 +45,9 @@ export type ExerciseFieldKey =
 export interface ExerciseFieldMetadata {
   key: ExerciseFieldKey;
   label: string;
+  /** Structured help behind the "i" icon. */
+  help: FieldHelp;
+  /** Plain-text form of `help` (for `title` attributes). */
   tooltip: string;
   iconKey?: ExerciseFieldIconKey;
   group: ExerciseFieldGroup;
@@ -171,11 +175,11 @@ export function formatParameterValue(
   return formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA[key], source, emptyValue);
 }
 
-export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMetadata> = {
+const FIELD_METADATA_WITHOUT_TOOLTIP: Record<ExerciseFieldKey, Omit<ExerciseFieldMetadata, 'tooltip'>> = {
   sets: {
     key: 'sets',
     label: 'Serie',
-    tooltip: 'Ile pełnych serii pacjent ma wykonać w jednej sesji tego ćwiczenia.',
+    help: { summary: 'Ile serii pacjent wykonuje w jednej sesji.', example: '3 serie po 10 powtórzeń.' },
     iconKey: 'sets',
     group: 'dosage',
     isInlineVisible: true,
@@ -185,7 +189,11 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
   reps: {
     key: 'reps',
     label: 'Powtórzenia',
-    tooltip: 'Ile powtórzeń pacjent wykonuje w każdej serii.',
+    help: {
+      summary: 'Ile powtórzeń pacjent robi w jednej serii.',
+      points: [{ term: 'Obie strony', text: 'jak liczyć powtórzenia, mówi pole „Strona ciała”.' }],
+      example: '10 powtórzeń, potem przerwa między seriami.',
+    },
     iconKey: 'reps',
     group: 'dosage',
     isInlineVisible: true,
@@ -196,8 +204,10 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
   duration: {
     key: 'duration',
     label: 'Czas serii',
-    tooltip:
-      'Legacy: ręczny override czasu jednej serii. Preferuj „Czas powtórzenia” — czas serii jest wyliczany.',
+    help: {
+      summary: 'Starsze dane: ręcznie ustawiony czas jednej serii.',
+      points: [{ term: 'Zamiast tego', text: 'ustaw „Czas powtórzenia”, a czas serii policzy się sam.' }],
+    },
     iconKey: 'time',
     group: 'dosage',
     /** Hidden from inline tiles — computed series time is shown instead (SPEC-023). */
@@ -208,7 +218,14 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
   executionTime: {
     key: 'executionTime',
     label: 'Czas powtórzenia',
-    tooltip: 'Czas pojedynczego powtórzenia. To główny parametr timera; wartość > 0 uruchamia timer w aplikacji pacjenta.',
+    help: {
+      summary: 'Ile sekund trwa jedno powtórzenie.',
+      points: [
+        { term: 'Wpisane sekundy', text: 'aplikacja pacjenta odlicza czas każdego powtórzenia.' },
+        { term: 'Puste pole', text: 'pacjent ćwiczy we własnym tempie, bez odliczania.' },
+      ],
+      example: 'utrzymanie pozycji przez 30 s – wpisz 30.',
+    },
     iconKey: 'time',
     group: 'execution',
     isInlineVisible: true,
@@ -218,7 +235,7 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
   restSets: {
     key: 'restSets',
     label: 'Przerwa między seriami',
-    tooltip: 'Przerwa po zakończeniu serii, zanim pacjent rozpocznie następną serię.',
+    help: { summary: 'Odpoczynek po skończonej serii, przed następną.', example: '60 s między seriami.' },
     iconKey: 'pause',
     group: 'execution',
     isInlineVisible: true,
@@ -228,7 +245,7 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
   restReps: {
     key: 'restReps',
     label: 'Przerwa między powt.',
-    tooltip: 'Krótka mikro-przerwa między pojedynczymi powtórzeniami.',
+    help: { summary: 'Krótka przerwa między powtórzeniami w jednej serii.', example: '2 s na powrót do pozycji wyjściowej.' },
     iconKey: 'pause',
     group: 'execution',
     isInlineVisible: true,
@@ -238,7 +255,10 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
   preparationTime: {
     key: 'preparationTime',
     label: 'Czas przygotowania',
-    tooltip: 'Czas na ustawienie pozycji i przygotowanie pacjenta przed startem ruchu.',
+    help: {
+      summary: 'Czas na zajęcie pozycji wyjściowej, zanim zacznie się ruch.',
+      example: '10 s na położenie się na macie.',
+    },
     iconKey: 'time',
     group: 'execution',
     isInlineVisible: true,
@@ -248,8 +268,13 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
   restAfterExercise: {
     key: 'restAfterExercise',
     label: 'Odpoczynek po ćwiczeniu',
-    tooltip:
-      'Czas przed następnym ćwiczeniem. Puste = jak przerwa między seriami (a gdy jej nie ma – między powtórzeniami). 0 = bez odpoczynku.',
+    help: {
+      summary: 'Odpoczynek przed następnym ćwiczeniem w zestawie.',
+      points: [
+        { term: 'Puste pole', text: 'tyle co przerwa między seriami, a gdy jej nie ma – między powtórzeniami.' },
+        { term: '0', text: 'bez odpoczynku, od razu następne ćwiczenie.' },
+      ],
+    },
     iconKey: 'pause',
     group: 'execution',
     /** Tylko pozycja zestawu i plan pacjenta (nie katalog); edycja w „Zaawansowanych parametrach”. */
@@ -260,7 +285,10 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
   tempo: {
     key: 'tempo',
     label: 'Tempo',
-    tooltip: 'Tempo ruchu, np. 3-1-2-0. Pomaga utrzymać właściwą kontrolę i jakość wykonania.',
+    help: {
+      summary: 'Rytm jednego powtórzenia: sekundy w kolejnych fazach ruchu.',
+      example: '3-1-2-0 – 3 s opuszczanie, 1 s zatrzymanie, 2 s unoszenie, bez pauzy.',
+    },
     iconKey: 'tempo',
     group: 'execution',
     isInlineVisible: true,
@@ -270,7 +298,7 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
   load: {
     key: 'load',
     label: 'Obciążenie',
-    tooltip: 'Docelowe obciążenie lub opór, z jakim pacjent ma wykonać ćwiczenie.',
+    help: { summary: 'Ciężar, z jakim pacjent wykonuje ćwiczenie.', example: 'hantel 2 kg.' },
     iconKey: 'load',
     group: 'execution',
     isInlineVisible: true,
@@ -280,8 +308,11 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
   resistance: {
     key: 'resistance',
     label: 'Opór',
-    tooltip:
-      'Opór, z jakim pacjent wykonuje ćwiczenie, np. siła gumy (lekki, średni, mocny) albo jej kolor. Pacjent widzi go w aplikacji obok obciążenia.',
+    help: {
+      summary: 'Opór gumy lub urządzenia: siła albo kolor gumy.',
+      points: [{ term: 'U pacjenta', text: 'widoczny w aplikacji obok obciążenia.' }],
+      example: 'średni (czerwona guma).',
+    },
     iconKey: 'resistance',
     group: 'execution',
     isInlineVisible: true,
@@ -291,8 +322,11 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
   equipment: {
     key: 'equipment',
     label: 'Sprzęt',
-    tooltip:
-      'Sprzęt potrzebny do ćwiczenia, np. guma, hantel, piłka, step albo krzesło. Pacjent widzi go w aplikacji i może przygotować przed startem.',
+    help: {
+      summary: 'Sprzęt potrzebny do ćwiczenia.',
+      points: [{ term: 'U pacjenta', text: 'widoczny przed startem, żeby zdążył go przygotować.' }],
+      example: 'guma, krzesło, piłka.',
+    },
     iconKey: 'equipment',
     group: 'execution',
     isInlineVisible: true,
@@ -302,7 +336,7 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
   side: {
     key: 'side',
     label: 'Strona ciała',
-    tooltip: EXERCISE_SIDE_HELP,
+    help: getExerciseSideHelp(),
     iconKey: 'side',
     group: 'execution',
     isInlineVisible: true,
@@ -312,7 +346,7 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
   rangeOfMotion: {
     key: 'rangeOfMotion',
     label: 'Zakres ruchu (ROM)',
-    tooltip: 'Docelowy zakres ruchu (ROM), który pacjent powinien osiągnąć.',
+    help: { summary: 'Docelowy zakres ruchu (ROM), do którego pacjent ma dojść.', example: '0–90° zgięcia w kolanie.' },
     iconKey: 'range',
     group: 'execution',
     isInlineVisible: true,
@@ -322,7 +356,10 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
   difficultyLevel: {
     key: 'difficultyLevel',
     label: 'Poziom trudności',
-    tooltip: 'Poziom trudności pomocny przy doborze progresji i regresji ćwiczenia.',
+    help: {
+      summary: 'Poziom trudności ćwiczenia.',
+      points: [{ term: 'Do czego', text: 'pomaga dobrać progresję i regresję.' }],
+    },
     iconKey: 'difficulty',
     group: 'classification',
     isInlineVisible: true,
@@ -332,7 +369,10 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
   patientDescription: {
     key: 'patientDescription',
     label: 'Opis dla pacjenta',
-    tooltip: 'Instrukcja dla pacjenta prostym językiem: co ma zrobić krok po kroku.',
+    help: {
+      summary: 'Instrukcja dla pacjenta: co ma zrobić, krok po kroku.',
+      points: [{ term: 'Język', text: 'prosty, bez terminów fachowych.' }],
+    },
     iconKey: 'description',
     group: 'content',
     isInlineVisible: false,
@@ -342,7 +382,10 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
   clinicalDescription: {
     key: 'clinicalDescription',
     label: EXERCISE_CONTENT_LABELS.clinicalDescription,
-    tooltip: 'Opis dla fizjoterapeuty: cel, biomechanika, uwagi terapeutyczne. Pacjent go nie widzi.',
+    help: {
+      summary: 'Opis dla fizjoterapeuty: cel, biomechanika, uwagi.',
+      points: [{ term: 'Widoczność', text: 'pacjent go nie widzi.' }],
+    },
     iconKey: 'description',
     group: 'content',
     isInlineVisible: true,
@@ -352,7 +395,7 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
   audioCue: {
     key: 'audioCue',
     label: 'Polecenia audio',
-    tooltip: 'Krótka komenda głosowa, którą pacjent słyszy podczas wykonywania ćwiczenia.',
+    help: { summary: 'Krótka komenda głosowa, którą pacjent słyszy w trakcie ćwiczenia.', example: 'wdech przy wznosie.' },
     iconKey: 'audio',
     group: 'content',
     isInlineVisible: true,
@@ -362,7 +405,10 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
   notes: {
     key: 'notes',
     label: EXERCISE_CONTENT_LABELS.notes,
-    tooltip: `Na co szczególnie zwrócić uwagę przy wykonaniu. ${EXERCISE_NOTES_HINT}`,
+    help: {
+      summary: 'Na co szczególnie zwrócić uwagę przy wykonaniu.',
+      points: [{ term: 'Widoczność', text: EXERCISE_NOTES_HINT }],
+    },
     iconKey: 'notes',
     group: 'content',
     isInlineVisible: true,
@@ -370,6 +416,13 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
     formatValue: (viewModel) => asTrimmedText(viewModel.notes),
   },
 };
+
+export const EXERCISE_FIELD_METADATA = Object.fromEntries(
+  Object.entries(FIELD_METADATA_WITHOUT_TOOLTIP).map(([key, metadata]) => [
+    key,
+    { ...metadata, tooltip: fieldHelpToText(metadata.help) },
+  ])
+) as Record<ExerciseFieldKey, ExerciseFieldMetadata>;
 
 /** Kanoniczna kolejność parametrów dawki (te same pola i kolejność w widoku, edycji i kreatorze). */
 export const CANONICAL_PARAMETER_ORDER: readonly ExerciseFieldKey[] = [

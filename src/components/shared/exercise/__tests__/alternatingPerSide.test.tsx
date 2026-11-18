@@ -5,6 +5,7 @@ import { toPdfExercise } from '@/components/pdf/pdfExerciseUtils';
 import { translateExerciseSidePolish } from '@/components/pdf/polishUtils';
 import { formatExerciseDuration } from '@/utils/exerciseTime';
 import { getExerciseSideHelp } from '@/utils/exerciseSideLabels';
+import { fieldHelpToText } from '@/utils/fieldHelp';
 import { ExerciseExecutionCard } from '../ExerciseExecutionCard';
 import { calculateCardTotalSeconds, fromBuilderExercise, fromExerciseMapping } from '../adapters';
 import { normalizeExerciseFieldValues } from '../displayNormalizer';
@@ -88,7 +89,7 @@ describe.each([
     expect(formatSideLabel('alternating', fields.alternatingPerSide)).toBe(
       perSide ? 'Naprzemiennie, na każdą stronę' : 'Naprzemiennie'
     );
-    expect(getExerciseSideHelp(fields.alternatingPerSide)).toContain(
+    expect(fieldHelpToText(getExerciseSideHelp(fields.alternatingPerSide))).toContain(
       perSide ? 'podana liczba na każdą stronę' : 'podana liczba łącznie'
     );
   });

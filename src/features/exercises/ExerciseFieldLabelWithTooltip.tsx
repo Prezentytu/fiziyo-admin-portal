@@ -1,14 +1,15 @@
 'use client';
 
-import { Info } from 'lucide-react';
 import type { ReactNode } from 'react';
 
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { FieldHelpTooltip } from '@/components/shared/FieldHelpTooltip';
+import type { FieldHelpInput } from '@/utils/fieldHelp';
 import { cn } from '@/lib/utils';
 
 interface ExerciseFieldLabelWithTooltipProps {
   label: string;
-  tooltip: string;
+  tooltip: FieldHelpInput;
   icon?: ReactNode;
   htmlFor?: string;
   className?: string;
@@ -40,21 +41,7 @@ export function ExerciseFieldLabelWithTooltip({
         <span className={labelClassName}>{label}</span>
       )}
       <TooltipProvider delayDuration={150}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-              className="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-              aria-label={`Informacja o polu: ${label}`}
-              data-testid={testId}
-            >
-              <Info className="h-3 w-3" />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="top" className="max-w-xs text-xs">
-            {tooltip}
-          </TooltipContent>
-        </Tooltip>
+        <FieldHelpTooltip label={label} help={tooltip} testId={testId} />
       </TooltipProvider>
     </div>
   );

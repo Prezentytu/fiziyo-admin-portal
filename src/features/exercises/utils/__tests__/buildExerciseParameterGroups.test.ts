@@ -72,7 +72,7 @@ describe('buildExerciseParameterGroups', () => {
     const timing = groups.find((g) => g.id === 'timing')!;
     const tempoItem = timing.items.find((i) => i.key === 'tempo')!;
     expect(tempoItem.label).toBeTruthy();
-    expect(tempoItem.tooltip).toBeTruthy();
+    expect(tempoItem.help.summary).toBeTruthy();
   });
 
   it('classificationGroup contains difficultyLevel', () => {

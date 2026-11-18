@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useId, useMemo, useState } from 'react';
-import { ChevronDown, Info } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,6 +10,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { DirtyDot } from '@/components/shared/enrichment/DirtyDot';
+import { FieldHelpContent, FieldHelpTooltip } from '@/components/shared/FieldHelpTooltip';
 import { cn } from '@/lib/utils';
 import type { ExerciseFieldKey } from './displayRegistry';
 import { EXERCISE_FIELD_METADATA, formatParameterValue } from './displayRegistry';
@@ -26,11 +27,11 @@ import {
   type MappingOnlyFieldKey,
   type ResolvedParameterField,
 } from './fieldContract';
-import { getExecutionTimeFieldHint } from './executionTimeFieldHint';
 import { parseNumberFieldDraft } from './numberFieldDraft';
 import { applyTextSuggestion, isTextSuggestionActive, suggestionTestIdSlug } from './textSuggestions';
 import { getTimerModeDescription, getTimerModeLabel } from './timerModeCopy';
 import { getExerciseSideHelp } from '@/utils/exerciseSideLabels';
+import { fieldHelpToText, type FieldHelpInput } from '@/utils/fieldHelp';
 
 /** Normalized values for the shared parameter presentation layer. */
 export interface ExerciseParameterValues {
@@ -103,26 +104,6 @@ export interface ExerciseParametersFieldsProps {
 
 const SIDE_HELP_PENDING = 'Wczytuję treść ćwiczenia: dopiero z nią wiadomo, czy liczba powtórzeń jest na każdą stronę.';
 
-function InfoTooltip({ label, testId }: Readonly<{ label: string; testId: string }>) {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button
-          type="button"
-          className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-muted-foreground/50 transition-colors hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
-          aria-label={`Informacja: ${label}`}
-          data-testid={testId}
-        >
-          <Info className="h-3 w-3" />
-        </button>
-      </TooltipTrigger>
-      <TooltipContent side="top" className="max-w-xs text-xs">
-        {label}
-      </TooltipContent>
-    </Tooltip>
-  );
-}
-
 function FieldLabel({
   label,
   tooltip,
@@ -132,18 +113,18 @@ function FieldLabel({
   inherited,
 }: Readonly<{
   label: string;
-  tooltip: string;
+  tooltip: FieldHelpInput;
   dirty: boolean;
   htmlFor?: string;
   infoTestId: string;
   inherited?: boolean;
 }>) {
   return (
-    <div className="flex flex-wrap items-center gap-1">
-      <Label className="text-xs text-muted-foreground" htmlFor={htmlFor}>
+    <div className="flex min-h-4 items-center gap-1">
+      <Label className="min-w-0 text-xs text-muted-foreground" htmlFor={htmlFor}>
         {label}
       </Label>
-      <InfoTooltip label={tooltip} testId={infoTestId} />
+      <FieldHelpTooltip label={label} help={tooltip} testId={infoTestId} />
       {inherited ? (
         <Badge variant="outline" className="ml-0.5 text-[10px] font-normal normal-case">
           odziedziczone
@@ -163,8 +144,6 @@ function NumberField({
   inherited,
   testId,
   infoTestId,
-  hint,
-  hintTestId,
   onCommit,
 }: Readonly<{
   config: ExerciseFieldEditConfig;
@@ -175,8 +154,6 @@ function NumberField({
   inherited?: boolean;
   testId: string;
   infoTestId: string;
-  hint?: string;
-  hintTestId?: string;
   onCommit: (value: number | null) => void;
 }>) {
   const [raw, setRaw] = useState(value != null ? String(value) : '');
@@ -202,7 +179,7 @@ function NumberField({
     <div className="space-y-1">
       <FieldLabel
         label={metadata.label}
-        tooltip={metadata.tooltip}
+        tooltip={metadata.help}
         dirty={dirty}
         htmlFor={testId}
         infoTestId={infoTestId}
@@ -248,11 +225,6 @@ function NumberField({
           {error}
         </p>
       ) : null}
-      {hint ? (
-        <p className="text-[11px] leading-snug text-muted-foreground" data-testid={hintTestId}>
-          {hint}
-        </p>
-      ) : null}
     </div>
   );
 }
@@ -287,7 +259,7 @@ function TextField({
     <div className="space-y-1">
       <FieldLabel
         label={metadata.label}
-        tooltip={metadata.tooltip}
+        tooltip={metadata.help}
         dirty={dirty}
         htmlFor={testId}
         infoTestId={infoTestId}
@@ -368,7 +340,7 @@ function TextAreaField({
     <div className="space-y-1 @[460px]:col-span-2">
       <FieldLabel
         label={metadata.label}
-        tooltip={metadata.tooltip}
+        tooltip={metadata.help}
         dirty={dirty}
         htmlFor={testId}
         infoTestId={infoTestId}
@@ -411,7 +383,7 @@ function SelectField({
   testId: string;
   infoTestId: string;
   /** Zastępuje domyślną podpowiedź pola (strona różni się zależnie od wersji rekordu). */
-  tooltip?: string;
+  tooltip?: FieldHelpInput;
   onChange: (value: string) => void;
 }>) {
   const metadata = EXERCISE_FIELD_METADATA[config.key];
@@ -422,7 +394,7 @@ function SelectField({
     <div className="space-y-1">
       <FieldLabel
         label={metadata.label}
-        tooltip={tooltip ?? metadata.tooltip}
+        tooltip={tooltip ?? metadata.help}
         dirty={dirty}
         htmlFor={triggerId}
         infoTestId={infoTestId}
@@ -609,8 +581,6 @@ export function ExerciseParametersFields({
           inherited={showInheritedBadge}
           testId={inputTestId}
           infoTestId={infoTestId}
-          hint={key === 'executionTime' ? getExecutionTimeFieldHint(isTimeBased) : undefined}
-          hintTestId={key === 'executionTime' ? structuralId('execution-time-hint') : undefined}
           onCommit={(next) => commitNumber(key, next)}
         />
       );
@@ -825,13 +795,13 @@ export function ExerciseParametersFields({
                       isTimeBased ? 'bg-primary/15 text-primary' : 'bg-surface-light/60 text-muted-foreground'
                     )}
                     data-testid={structuralId('mode-indicator')}
-                    aria-label={getTimerModeDescription(isTimeBased)}
+                    aria-label={fieldHelpToText(getTimerModeDescription(isTimeBased))}
                   >
                     {getTimerModeLabel(isTimeBased)}
                   </span>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-xs text-xs">
-                  {getTimerModeDescription(isTimeBased)}
+                <TooltipContent side="top" align="end" className="max-w-[18rem] px-3 py-2">
+                  <FieldHelpContent help={getTimerModeDescription(isTimeBased)} />
                 </TooltipContent>
               </Tooltip>
             </div>

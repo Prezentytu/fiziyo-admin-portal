@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
-import { Clock, Settings2, ChevronUp, ChevronDown, X, Eye, Info, ListOrdered } from 'lucide-react';
+import { Clock, Settings2, ChevronUp, ChevronDown, X, Eye, ListOrdered } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { FieldHelpTooltip } from '@/components/shared/FieldHelpTooltip';
 import { LabeledStepper } from '@/components/shared/LabeledStepper';
 import { ExerciseThumbnail } from './ExerciseThumbnail';
 import { getMediaUrl } from '@/utils/mediaUrl';
@@ -383,21 +384,7 @@ export function ExerciseExecutionCard({
               <div className="flex items-center gap-1.5">
                 <p className="text-[11px] text-muted-foreground">{field.label}</p>
                 <TooltipProvider delayDuration={150}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        className="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
-                        aria-label={`Informacja o polu: ${field.label}`}
-                        data-testid={`${testId}-source-help-${field.key}`}
-                      >
-                        <Info className="h-3 w-3" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-xs text-xs">
-                      {field.tooltip}
-                    </TooltipContent>
-                  </Tooltip>
+                  <FieldHelpTooltip label={field.label} help={field.help} testId={`${testId}-source-help-${field.key}`} />
                 </TooltipProvider>
               </div>
               <p className="mt-1 text-xs text-foreground whitespace-pre-wrap">{value}</p>
@@ -489,7 +476,7 @@ export function ExerciseExecutionCard({
                     value={exercise.sets}
                     onChange={(value) => handleChange({ sets: value })}
                     label={setsField.label}
-                    infoTooltip={setsField.tooltip}
+                    infoTooltip={setsField.help}
                     infoTestId={`${testId}-help-sets`}
                     inputTestId={`${testId}-sets-input`}
                     min={1}
@@ -500,7 +487,7 @@ export function ExerciseExecutionCard({
                     value={exercise.reps}
                     onChange={(value) => handleChange({ reps: value })}
                     label={repsField.label}
-                    infoTooltip={repsField.tooltip}
+                    infoTooltip={repsField.help}
                     infoTestId={`${testId}-help-reps`}
                     inputTestId={`${testId}-reps-input`}
                     min={1}

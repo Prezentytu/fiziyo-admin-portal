@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -40,24 +41,23 @@ const times = (container: HTMLElement) =>
     (row) => container.querySelector(`[data-testid="exercise-param-${row}"]`)?.lastElementChild?.textContent
   );
 
-const sideHelp = (container: HTMLElement) =>
-  [...container.querySelectorAll('[aria-label^="Informacja:"]')]
-    .map((element) => element.getAttribute('aria-label') ?? '')
-    .filter((label) => /podana liczba/.test(label));
+/** Treść podpowiedzi przy polu „Strona ciała”, odczytana po najechaniu na ikonę „i”. */
+const sideHelp = async () => {
+  await userEvent.setup().hover(screen.getByRole('button', { name: 'Informacja: Strona ciała' }));
+  return (await screen.findByRole('tooltip')).textContent ?? '';
+};
 
 describe('ExerciseParametersFields: dawka „naprzemiennie” według wersji rekordu', () => {
-  it('rekord 3.3: czas serii 1 min 38 s, całość 6 min, opis „na każdą stronę”', () => {
+  it('rekord 3.3: czas serii 1 min 38 s, całość 6 min, opis „na każdą stronę”', async () => {
     const container = renderFields(true);
     expect(times(container)).toEqual(['1 min 38 s', '5 min 59 s']);
-    expect(sideHelp(container)).toHaveLength(1);
-    expect(sideHelp(container)[0]).toContain('podana liczba na każdą stronę');
+    expect(await sideHelp()).toContain('podana liczba na każdą stronę');
   });
 
-  it('rekord bez wersji: czas serii 48 s, całość 3 min 29 s, opis „łącznie” jak na main', () => {
+  it('rekord bez wersji: czas serii 48 s, całość 3 min 29 s, opis „łącznie” jak na main', async () => {
     const container = renderFields(false);
     expect(times(container)).toEqual(['48 s', '3 min 29 s']);
-    expect(sideHelp(container)).toHaveLength(1);
-    expect(sideHelp(container)[0]).toContain('podana liczba łącznie');
+    expect(await sideHelp()).toContain('podana liczba łącznie');
   });
 });
 

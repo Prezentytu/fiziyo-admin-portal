@@ -1,8 +1,10 @@
 'use client';
 
-import { Info, Minus, Plus } from 'lucide-react';
+import { Minus, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { FieldHelpTooltip } from '@/components/shared/FieldHelpTooltip';
+import type { FieldHelpInput } from '@/utils/fieldHelp';
 import { useNumericDraft } from '@/hooks/useNumericDraft';
 
 interface LabeledStepperProps {
@@ -15,7 +17,7 @@ interface LabeledStepperProps {
   readonly step?: number;
   readonly disabled?: boolean;
   readonly className?: string;
-  readonly infoTooltip?: string;
+  readonly infoTooltip?: FieldHelpInput;
   readonly infoTestId?: string;
   /** Additive field-specific test id for the value input (legacy `stepper-input` stays). */
   readonly inputTestId?: string;
@@ -143,21 +145,12 @@ export function LabeledStepper({
         </span>
         {infoTooltip ? (
           <TooltipProvider delayDuration={150}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  className="col-start-3 ml-1 inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center justify-self-start rounded-full text-muted-foreground/50 transition-colors hover:text-foreground"
-                  aria-label={`Informacja o polu: ${label}`}
-                  data-testid={infoTestId}
-                >
-                  <Info className="h-3 w-3" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-xs text-xs">
-                {infoTooltip}
-              </TooltipContent>
-            </Tooltip>
+            <FieldHelpTooltip
+              label={label}
+              help={infoTooltip}
+              testId={infoTestId ?? ''}
+              className="col-start-3 ml-1 justify-self-start"
+            />
           </TooltipProvider>
         ) : null}
       </div>

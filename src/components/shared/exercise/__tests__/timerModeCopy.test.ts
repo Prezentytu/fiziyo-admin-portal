@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { fieldHelpToText } from '@/utils/fieldHelp';
+
 import { getTimerModeDescription, getTimerModeLabel } from '../timerModeCopy';
 
 describe('timerModeCopy', () => {
@@ -10,7 +12,7 @@ describe('timerModeCopy', () => {
   });
 
   it('wyjaśnia związek z czasem powtórzenia', () => {
-    expect(getTimerModeDescription(false)).toContain('Czas powtórzenia jest pusty');
-    expect(getTimerModeDescription(true)).toContain('odlicza sekundy');
+    expect(fieldHelpToText(getTimerModeDescription(false))).toContain('Czas powtórzenia jest pusty');
+    expect(fieldHelpToText(getTimerModeDescription(true))).toContain('odlicza sekundy');
   });
 });
