@@ -32,7 +32,12 @@ import {
 import type { Exercise } from './ExerciseCard';
 import { verificationCopy } from '@/features/verification/verificationCopy';
 import { getNextExerciseCopyName } from './utils/getNextExerciseCopyName';
-import { buildExerciseMediaChangeSet, getExerciseMediaGalleryUrls } from './utils/exerciseMedia';
+import {
+  MAX_EXERCISE_IMAGES,
+  buildExerciseMediaChangeSet,
+  getExerciseMediaGalleryUrls,
+  imageLimitHint,
+} from './utils/exerciseMedia';
 import {
   buildEnrichmentUpdateVariables,
   fetchCurrentEnrichmentData,
@@ -84,6 +89,7 @@ export function ExerciseDialog({
   const [isResubmitting, setIsResubmitting] = useState(false);
   const [existingMediaUrls, setExistingMediaUrls] = useState<string[]>([]);
   const [newMediaFiles, setNewMediaFiles] = useState<File[]>([]);
+  const mediaLimitHint = imageLimitHint(existingMediaUrls.length + newMediaFiles.length);
   const [isMediaLightboxOpen, setIsMediaLightboxOpen] = useState(false);
   const [activeMediaPreviewIndex, setActiveMediaPreviewIndex] = useState(0);
   const {
@@ -325,8 +331,8 @@ export function ExerciseDialog({
     }
 
     const currentCount = existingMediaUrls.length + newMediaFiles.length;
-    if (currentCount >= 5) {
-      toast.error('Maksymalna liczba zdjęć to 5');
+    if (currentCount >= MAX_EXERCISE_IMAGES) {
+      toast.error(`Maksymalna liczba zdjęć to ${MAX_EXERCISE_IMAGES}`);
       return;
     }
 
@@ -618,7 +624,7 @@ export function ExerciseDialog({
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium">Zdjęcia ćwiczenia</p>
               <span className="text-xs text-muted-foreground">
-                {existingMediaUrls.length + newMediaFiles.length}/5
+                {existingMediaUrls.length + newMediaFiles.length}/{MAX_EXERCISE_IMAGES}
               </span>
             </div>
             {(existingMediaUrls.length > 0 || newMediaPreviewUrls.length > 0 || isGeneratingMedia) && (
@@ -738,7 +744,7 @@ export function ExerciseDialog({
                   type="button"
                   variant="outline"
                   onClick={() => mediaFileInputRef.current?.click()}
-                  disabled={isGeneratingMedia || existingMediaUrls.length + newMediaFiles.length >= 5}
+                  disabled={isGeneratingMedia || existingMediaUrls.length + newMediaFiles.length >= MAX_EXERCISE_IMAGES}
                   data-testid="exercise-form-media-upload-btn"
                 >
                   <Upload className="mr-2 h-4 w-4" />
@@ -755,7 +761,7 @@ export function ExerciseDialog({
                 type="button"
                 variant="outline"
                 onClick={handleGenerateMediaWithAI}
-                disabled={isGeneratingMedia || existingMediaUrls.length + newMediaFiles.length >= 5}
+                disabled={isGeneratingMedia || existingMediaUrls.length + newMediaFiles.length >= MAX_EXERCISE_IMAGES}
                 aria-busy={isGeneratingMedia}
                 data-testid="exercise-form-media-ai-generate-btn"
               >
@@ -778,6 +784,11 @@ export function ExerciseDialog({
                 }}
               />
             </div>
+            {mediaLimitHint && (
+              <p className="mt-2 text-xs text-muted-foreground" data-testid="exercise-form-media-limit-hint">
+                {mediaLimitHint}
+              </p>
+            )}
             <ImageLightbox
               src={allMediaPreviewUrls[activeMediaPreviewIndex] ?? ''}
               alt={exercise?.name || 'Podgląd zdjęcia ćwiczenia'}

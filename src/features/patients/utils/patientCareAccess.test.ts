@@ -77,13 +77,17 @@ describe('isRestrictedToOwnPatients', () => {
 });
 
 describe('evictPatientLists', () => {
-  it('drops every cached list that depends on patient visibility', () => {
+  it('drops every cached read that depends on patient visibility, the patient card included', () => {
     const cache = { evict: vi.fn(), gc: vi.fn() };
     evictPatientLists(cache);
+    // userById and patientAssignments: /patients/[id] reads them cache-first, so a card opened before the
+    // owner turned the setting off would otherwise render from cache instead of the refusal.
     expect(cache.evict.mock.calls.map(([options]) => options)).toEqual([
       { id: 'ROOT_QUERY', fieldName: 'organizationPatients' },
       { id: 'ROOT_QUERY', fieldName: 'therapistPatients' },
       { id: 'ROOT_QUERY', fieldName: 'organizationMembers' },
+      { id: 'ROOT_QUERY', fieldName: 'userById' },
+      { id: 'ROOT_QUERY', fieldName: 'patientAssignments' },
     ]);
     expect(cache.gc).toHaveBeenCalledTimes(1);
   });

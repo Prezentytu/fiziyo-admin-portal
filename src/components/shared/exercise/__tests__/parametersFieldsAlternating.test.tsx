@@ -67,3 +67,42 @@ describe('ExerciseParametersFields: nazwy dostępne', () => {
     expect(screen.getByRole('combobox', { name: 'Strona ciała' })).toBeInTheDocument();
   });
 });
+
+describe('ExerciseParametersFields: suma powtórzeń, gdy liczba jest na stronę', () => {
+  const renderWith = (side: string, alternatingPerSide: boolean, versionPending = false) =>
+    render(
+      <TooltipProvider>
+        <ExerciseParametersFields
+          surface="patientOverride"
+          exerciseType="reps"
+          values={{ ...(values as object), reps: 4, side } as never}
+          onChange={() => {}}
+          alternatingPerSide={alternatingPerSide}
+          versionPending={versionPending}
+        />
+      </TooltipProvider>
+    ).container;
+  const total = (container: HTMLElement) =>
+    container.querySelector('[data-testid$="-per-side-total"]')?.textContent ?? null;
+
+  it('naprzemiennie w rekordzie 3.3: 4 na stronę = 8 w serii', () => {
+    expect(total(renderWith('alternating', true))).toBe('8 w serii (4 lewa i 4 prawa naprzemiennie)');
+  });
+
+  it('na każdą stronę: 8 w serii, najpierw lewa, potem prawa', () => {
+    expect(total(renderWith('both', false))).toBe('8 w serii (najpierw 4 lewa, potem 4 prawa)');
+  });
+
+  it('bez stron, jedna strona, stary rekord naprzemienny i nieznana wersja: bez linijki', () => {
+    expect(total(renderWith('none', true))).toBeNull();
+    expect(total(renderWith('left', true))).toBeNull();
+    expect(total(renderWith('alternating', false))).toBeNull();
+    expect(total(renderWith('alternating', true, true))).toBeNull();
+  });
+
+  it('podpowiedź „i” przy powtórzeniach na stronę jest krótka i z przykładem', async () => {
+    renderWith('alternating', true);
+    await userEvent.setup().hover(screen.getByRole('button', { name: 'Informacja: Powtórzenia' }));
+    expect((await screen.findByRole('tooltip')).textContent).toContain('4 na stronę = 4 lewa i 4 prawa, razem 8 w serii.');
+  });
+});

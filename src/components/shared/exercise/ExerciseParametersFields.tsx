@@ -30,7 +30,13 @@ import {
 import { parseNumberFieldDraft } from './numberFieldDraft';
 import { applyTextSuggestion, isTextSuggestionActive, suggestionTestIdSlug } from './textSuggestions';
 import { getTimerModeDescription, getTimerModeLabel } from './timerModeCopy';
-import { getExerciseSideHelp } from '@/utils/exerciseSideLabels';
+import {
+  describeSideOption,
+  getExerciseSideHelp,
+  REPS_PER_SIDE_HELP,
+  summarizeRepsPerSide,
+  type RepsPerSideSummary,
+} from '@/utils/exerciseSideLabels';
 import { fieldHelpToText, type FieldHelpInput } from '@/utils/fieldHelp';
 
 /** Normalized values for the shared parameter presentation layer. */
@@ -144,6 +150,7 @@ function NumberField({
   inherited,
   testId,
   infoTestId,
+  perSide,
   onCommit,
 }: Readonly<{
   config: ExerciseFieldEditConfig;
@@ -154,11 +161,14 @@ function NumberField({
   inherited?: boolean;
   testId: string;
   infoTestId: string;
+  /** Pole „Powtórzenia” przy stronach: liczba jest na stronę, pod polem widać sumę w serii. */
+  perSide?: RepsPerSideSummary | null;
   onCommit: (value: number | null) => void;
 }>) {
   const [raw, setRaw] = useState(value != null ? String(value) : '');
   const [error, setError] = useState<string | null>(null);
   const metadata = EXERCISE_FIELD_METADATA[config.key];
+  const suffix = perSide ? 'na stronę' : config.suffix;
 
   useEffect(() => {
     setRaw(value != null ? String(value) : '');
@@ -179,7 +189,7 @@ function NumberField({
     <div className="space-y-1">
       <FieldLabel
         label={metadata.label}
-        tooltip={metadata.help}
+        tooltip={perSide ? REPS_PER_SIDE_HELP : metadata.help}
         dirty={dirty}
         htmlFor={testId}
         infoTestId={infoTestId}
@@ -210,16 +220,21 @@ function NumberField({
           className={cn(
             'text-sm tabular-nums transition-colors',
             density === 'comfortable' ? 'h-11' : 'h-9',
-            config.suffix && 'pr-10',
+            suffix && (perSide ? 'pr-20' : 'pr-10'),
             dirty && 'border-status-warning/70 bg-status-warning-muted dark:border-status-warning/40'
           )}
         />
-        {config.suffix ? (
+        {suffix ? (
           <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-            {config.suffix}
+            {suffix}
           </span>
         ) : null}
       </div>
+      {perSide ? (
+        <p className="text-xs leading-snug text-primary" data-testid={`${testId}-per-side-total`}>
+          <strong className="font-bold">{perSide.total} w serii</strong> ({perSide.order})
+        </p>
+      ) : null}
       {error ? (
         <p className="text-[11px] leading-snug text-destructive" data-testid={`${testId}-error`}>
           {error}
@@ -372,6 +387,7 @@ function SelectField({
   testId,
   infoTestId,
   tooltip,
+  describeOption,
   onChange,
 }: Readonly<{
   config: ExerciseFieldEditConfig;
@@ -384,10 +400,13 @@ function SelectField({
   infoTestId: string;
   /** Zastępuje domyślną podpowiedź pola (strona różni się zależnie od wersji rekordu). */
   tooltip?: FieldHelpInput;
+  /** Druga linijka opcji na liście (strona: co wpisana liczba powtórzeń znaczy przy tej opcji). */
+  describeOption?: (value: string) => string | null;
   onChange: (value: string) => void;
 }>) {
   const metadata = EXERCISE_FIELD_METADATA[config.key];
   const options = config.options ?? (config.key === 'side' ? SIDE_OPTIONS : DIFFICULTY_OPTIONS);
+  const selectedLabel = options.find((option) => option.value === value)?.label;
   const triggerId = useId();
 
   return (
@@ -410,14 +429,24 @@ function SelectField({
             dirty && 'border-status-warning/70 bg-status-warning-muted dark:border-status-warning/40'
           )}
         >
-          <SelectValue />
+          {describeOption && selectedLabel ? <SelectValue>{selectedLabel}</SelectValue> : <SelectValue />}
         </SelectTrigger>
         <SelectContent>
-          {options.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
+          {options.map((option) => {
+            const description = describeOption?.(option.value);
+            return (
+              <SelectItem key={option.value} value={option.value}>
+                {description ? (
+                  <span className="flex flex-col py-0.5">
+                    <span>{option.label}</span>
+                    <span className="text-xs text-muted-foreground">{description}</span>
+                  </span>
+                ) : (
+                  option.label
+                )}
+              </SelectItem>
+            );
+          })}
         </SelectContent>
       </Select>
     </div>
@@ -538,6 +567,8 @@ export function ExerciseParametersFields({
     timeUnknown,
   });
 
+  const repsPerSide = timeUnknown ? null : summarizeRepsPerSide(values.reps, values.side, alternatingPerSide);
+
   const dirty = (key: ExerciseFieldKey) => Boolean(isDirtyField?.(key));
 
   const commitNumber = (key: ExerciseFieldKey, value: number | null) => {
@@ -581,6 +612,7 @@ export function ExerciseParametersFields({
           inherited={showInheritedBadge}
           testId={inputTestId}
           infoTestId={infoTestId}
+          perSide={key === 'reps' ? repsPerSide : undefined}
           onCommit={(next) => commitNumber(key, next)}
         />
       );
@@ -603,6 +635,11 @@ export function ExerciseParametersFields({
           testId={inputTestId}
           infoTestId={infoTestId}
           tooltip={key === 'side' ? (timeUnknown ? SIDE_HELP_PENDING : getExerciseSideHelp(alternatingPerSide)) : undefined}
+          describeOption={
+            key === 'side' && !versionPending
+              ? (option) => describeSideOption(option, values.reps, alternatingPerSide)
+              : undefined
+          }
           onChange={(next) => commitText(key, next)}
         />
       );

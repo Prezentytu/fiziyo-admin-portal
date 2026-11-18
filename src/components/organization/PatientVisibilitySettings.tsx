@@ -8,7 +8,6 @@ import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { evictPatientLists } from '@/features/patients/utils/patientCareAccess';
 import { SET_THERAPISTS_SEE_ALL_PATIENTS_MUTATION } from '@/graphql/mutations/organizations.mutations';
 import { GET_ORGANIZATION_PATIENT_VISIBILITY_QUERY } from '@/graphql/queries/organizations.queries';
 import type {
@@ -41,11 +40,7 @@ export function PatientVisibilitySettings({ organizationId, canEdit = false }: P
   const [setVisibility, { loading }] = useMutation<
     SetTherapistsSeeAllPatientsMutationData,
     SetTherapistsSeeAllPatientsVariables
-  >(SET_THERAPISTS_SEE_ALL_PATIENTS_MUTATION, {
-    update: (cache, { data }) => {
-      if (data?.setTherapistsSeeAllPatients) evictPatientLists(cache);
-    },
-  });
+  >(SET_THERAPISTS_SEE_ALL_PATIENTS_MUTATION);
 
   const handleChange = async (next: boolean) => {
     if (!canEdit || loading || typeof therapistsSeeAllPatients !== 'boolean') return;
