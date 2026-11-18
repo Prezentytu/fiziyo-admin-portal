@@ -115,6 +115,12 @@ Błędy: `400 invalid_message`, `400 insufficient_credits`, `403 forbidden`, `50
 
 ## Changelog
 
+### 2026-11-18
+
+- Płynność po demo u fizjoterapeuty: „dodaj pacjenta …” (także „stwórz/utwórz/załóż”, sam e-mail albo telefon) otwiera formularz lokalnie, bez modelu, z danymi z wiadomości i z wcześniejszych wiadomości tej wymiany; osoba już obecna na liście pokazuje się zamiast formularza (`utils/newPatientDetails.ts`).
+- Status czekania zmienia się także po 20 s i pokazuje czas (`utils/replyMotion.ts`); pytania doprecyzowujące pod zestawem i wynikami powstają z prośby (`utils/clarifyQuestions.ts`).
+- Otwarta propozycja zestawu przyjmuje ćwiczenie z czatu („dodaj ćwiczenie X”) i z dwóch przycisków karty; karta zgłasza wątkowi swój bieżący stan w pamięci, poza historią (`utils/addToDraft.ts`, `reportLiveDraft`).
+
 ### 2026-11-12
 
 - `Clarify` czyta addytywne `choices` (`label`, `setId?`, `patientId?`) z backendu; wybór z `setId` otwiera `SetDraft` lokalnie, bez kredytu (`utils/clarifyChoice.ts`, raport 01.11 P0-3).
