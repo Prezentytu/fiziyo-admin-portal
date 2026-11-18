@@ -1,0 +1,8 @@
+# Release i pamięć agentów: GitHub prosi Adama o review. @Prezentytu to organizacja bez zespołu („Unknown owner”, fizjo-app de1cc9d6).
+.github/workflows/ @jasinskiadam
+docs/funkcje/ @jasinskiadam
+.ai/lessons.md @jasinskiadam
+.ai/DOMAIN_MODEL.md @jasinskiadam
+.ai/GLOSSARY.md @jasinskiadam
+src/proxy.ts @jasinskiadam
+src/graphql/providers/BackendAuthTokenProvider.ts @jasinskiadam

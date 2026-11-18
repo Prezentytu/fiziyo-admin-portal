@@ -20,6 +20,7 @@ export const SHARED_DOCS = [
   { remote: ".ai/VISION.md", local: ".ai/VISION.md" },
   { remote: ".ai/ECOSYSTEM.md", local: ".ai/ECOSYSTEM.md", held: true },
   { remote: ".ai/DOMAIN_MODEL.md", local: ".ai/DOMAIN_MODEL.md", held: true },
+  { remote: ".ai/GLOSSARY.md", local: ".ai/GLOSSARY.md" },
 ];
 
 const HEADER_RE = /^<!-- kopia z ([\w.-]+\/[\w.-]+)@([0-9a-f]{40}):(\S+); nie edytuj, odśwież: npm run docs:sync -->\n/;
