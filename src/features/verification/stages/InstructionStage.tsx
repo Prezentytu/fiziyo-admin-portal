@@ -7,10 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  DescriptionPlayerHintCounter,
-  PlayerHintLengthCounter,
-} from '@/components/shared/enrichment/PlayerHintLengthCounter';
+import { PlayerHintLengthCounter } from '@/components/shared/enrichment/PlayerHintLengthCounter';
+import { CueFromStepMenu } from '@/components/shared/enrichment/CueFromStepMenu';
 import type { ExerciseCoreDraft } from '@/features/exercises/useExerciseEditorForm';
 import type {
   EnrichmentPatientMistakeV3,
@@ -21,6 +19,7 @@ import { INSTRUCTION_CONTENT_GROUP_V33, SUMMARY_FIELD_V33, VARIANTS_CONTENT_GROU
 import type { VerificationFact } from '../utils/verificationFacts';
 import type { InstructionProposal } from '../utils/instructionProposal';
 import {
+  appendCueFromStep,
   CUE_PHASE_OPTIONS,
   focusAfterRemovingStep,
   getCuePhase,
@@ -29,7 +28,6 @@ import {
   setCuePhase,
 } from '../utils/stepMedia';
 import { MIN_NAME_LENGTH, MIN_PATIENT_DESCRIPTION_LENGTH } from '../utils/verificationStages';
-import { isShownInPlayer } from '@/features/exercises/utils/playerHintLength';
 import { ContractFacts } from './ContractFacts';
 import { ExtraContentField, ExtraContentGroupSection } from './ExtraContentSection';
 import { LengthHint } from './LengthHint';
@@ -222,19 +220,13 @@ export function InstructionStage({
               className="field-sizing-content"
               onChange={(event) => onCoreFieldChange('patientDescription', event.target.value)}
               onFocus={() => onFocusStep(null)}
-              aria-describedby="verification-instruction-description-count verification-instruction-description-player-length"
+              aria-describedby="verification-instruction-description-count"
               data-testid="verification-instruction-description-input"
             />
             <LengthHint
               id="verification-instruction-description-count"
               length={descriptionLength}
               min={MIN_PATIENT_DESCRIPTION_LENGTH}
-            />
-            <DescriptionPlayerHintCounter
-              id="verification-instruction-description-player-length"
-              description={patientDescription}
-              steps={steps}
-              testId="verification-instruction-description-player-length"
             />
           </div>
         )}
@@ -257,9 +249,7 @@ export function InstructionStage({
                 onBlur={() => {
                   if (!step.trim()) removeStep(index);
                 }}
-                aria-describedby={
-                  isShownInPlayer(steps, index, 'step') ? `verification-step-${index + 1}-player-length` : undefined
-                }
+                aria-describedby={`verification-step-${index + 1}-player-length`}
                 className="flex-1"
               />
               <Button
@@ -272,14 +262,13 @@ export function InstructionStage({
               >
                 <X />
               </Button>
-              {isShownInPlayer(steps, index, 'step') ? (
-                <PlayerHintLengthCounter
-                  id={`verification-step-${index + 1}-player-length`}
-                  text={step}
-                  testId={`verification-step-${index + 1}-player-length`}
-                  className="basis-full pl-7"
-                />
-              ) : null}
+              <PlayerHintLengthCounter
+                id={`verification-step-${index + 1}-player-length`}
+                kind="step"
+                text={step}
+                testId={`verification-step-${index + 1}-player-length`}
+                className="basis-full pl-7"
+              />
             </li>
           ))}
         </ol>
@@ -312,9 +301,7 @@ export function InstructionStage({
                   onBlur={() => {
                     if (!cue.trim()) removeCue(index);
                   }}
-                  aria-describedby={
-                    isShownInPlayer(cues, index, 'cue') ? `verification-cue-${index + 1}-player-length` : undefined
-                  }
+                  aria-describedby={`verification-cue-${index + 1}-player-length`}
                   className="h-10 min-w-[200px] flex-1"
                   data-testid={`verification-cue-${index + 1}-input`}
                 />
@@ -337,31 +324,38 @@ export function InstructionStage({
                 >
                   <X />
                 </Button>
-                {isShownInPlayer(cues, index, 'cue') ? (
-                  <PlayerHintLengthCounter
-                    id={`verification-cue-${index + 1}-player-length`}
-                    text={cue}
-                    testId={`verification-cue-${index + 1}-player-length`}
-                    className="basis-full px-2 pb-0.5"
-                  />
-                ) : null}
+                <PlayerHintLengthCounter
+                  id={`verification-cue-${index + 1}-player-length`}
+                  text={cue}
+                  testId={`verification-cue-${index + 1}-player-length`}
+                  className="basis-full px-2 pb-0.5"
+                />
               </li>
             );
           })}
         </ul>
-        <Button
-          type="button"
-          variant="plain"
-          size="sm"
-          className="self-start"
-          onClick={() => {
-            setAddedRow(`cue-${cues.length}`);
-            updatePatient({ cues: [...cues, ''] });
-          }}
-          data-testid="verification-cue-add-btn"
-        >
-          + Dodaj wskazówkę
-        </Button>
+        <div className="flex flex-wrap items-center gap-1">
+          <Button
+            type="button"
+            variant="plain"
+            size="sm"
+            onClick={() => {
+              setAddedRow(`cue-${cues.length}`);
+              updatePatient({ cues: [...cues, ''] });
+            }}
+            data-testid="verification-cue-add-btn"
+          >
+            + Dodaj wskazówkę
+          </Button>
+          <CueFromStepMenu
+            steps={steps}
+            testIdPrefix="verification-cue-from-step"
+            onPick={(stepText) => {
+              setAddedRow(`cue-${cues.length}`);
+              updatePatient(appendCueFromStep(cues, patient.cue_phases, stepText));
+            }}
+          />
+        </div>
       </StageSection>
 
       <StageSection title="Typowe błędy i korekty" data-testid="verification-instruction-mistakes">

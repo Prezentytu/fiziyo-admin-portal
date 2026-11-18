@@ -102,6 +102,20 @@ export function removeCuePhaseAt(
     .map((link) => (link.cue > cueIndex ? { ...link, cue: link.cue - 1 } : link));
 }
 
+/**
+ * Świadome uzupełnienie wskazówek z kroku (T-0064): kopia tekstu kroku trafia na koniec listy jako wskazówka
+ * przygotowania, żeby fizjoterapeuta skrócił ją do hasła. Player sam kroków już nie pokazuje.
+ */
+export function appendCueFromStep(
+  cues: readonly string[] | undefined,
+  links: EnrichmentCuePhaseLinkV3[] | undefined,
+  stepText: string,
+  phase: EnrichmentCuePhaseV3 = 'preparation'
+): { cues: string[]; cue_phases: EnrichmentCuePhaseLinkV3[] } {
+  const nextCues = [...(cues ?? []), stepText.trim()];
+  return { cues: nextCues, cue_phases: setCuePhase(links, nextCues.length - 1, phase) };
+}
+
 function blankIndexesDescending(values: string[] | undefined): number[] {
   return (values ?? [])
     .map((value, index) => (value.trim().length === 0 ? index : -1))

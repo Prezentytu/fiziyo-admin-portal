@@ -12,11 +12,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SIDE_OPTIONS } from '@/components/shared/exercise/fieldContract';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  DescriptionPlayerHintCounter,
-  PlayerHintLengthCounter,
-} from '@/components/shared/enrichment/PlayerHintLengthCounter';
-import { getLongestPlayerHint, getPlayerHints } from '@/features/exercises/utils/playerHintLength';
+import { PlayerHintLengthCounter } from '@/components/shared/enrichment/PlayerHintLengthCounter';
+import { getLongestText } from '@/features/exercises/utils/playerHintLength';
 import { cn } from '@/lib/utils';
 import { FloatingMark } from '../FloatingMark';
 import { useChatActions, useChatBusy } from '../ChatSessionContext';
@@ -133,9 +130,9 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
     },
   });
   const { errors } = form.formState;
-  const [nameText, descriptionText, stepsText, cuesText] = useWatch({
+  const [nameText, stepsText, cuesText] = useWatch({
     control: form.control,
-    name: ['name', 'description', 'steps', 'cues'],
+    name: ['name', 'steps', 'cues'],
   });
   const paramValues = useWatch({
     control: form.control,
@@ -144,8 +141,8 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
   const [paramsOpen, setParamsOpen] = useState(false);
   // Błąd w parametrach musi być widoczny, więc rozwija pola sam.
   const paramsExpanded = paramsOpen || PARAM_FIELDS.some((field) => errors[field.name]);
-  const playerSteps = getPlayerHints(linesToItems(stepsText), 'step');
-  const playerCues = getPlayerHints(linesToItems(cuesText), 'cue');
+  const stepItems = linesToItems(stepsText);
+  const cueItems = linesToItems(cuesText);
 
   const applyFill = (fill: DraftFill) => {
     const set = (field: keyof NewExerciseValues, value: string | number) =>
@@ -470,18 +467,11 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
             rows={2}
             aria-label={SECTION_COPY.description.title}
             aria-invalid={errors.description ? true : undefined}
-            aria-describedby={`${testId}-description-player-length`}
             className={fieldClass('description')}
             data-testid={`${testId}-description-input`}
             {...form.register('description')}
           />
           {errors.description && <span className="text-[12px] text-status-danger">{errors.description.message}</span>}
-          <DescriptionPlayerHintCounter
-            id={`${testId}-description-player-length`}
-            description={descriptionText}
-            steps={playerSteps}
-            testId={`${testId}-description-player-length`}
-          />
         </DraftSectionShell>
 
         <DraftSectionShell section="steps" state={sections.steps} onRegenerate={regenerateFor('steps')} testId={testId}>
@@ -495,8 +485,8 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
           />
           <PlayerHintLengthCounter
             id={`${testId}-steps-player-length`}
-            text={getLongestPlayerHint(playerSteps)}
-            lead="Najdłuższy z 2 kroków w playerze:"
+            kind="step"
+            text={getLongestText(stepItems)}
             testId={`${testId}-steps-player-length`}
           />
         </DraftSectionShell>
@@ -512,8 +502,7 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
           />
           <PlayerHintLengthCounter
             id={`${testId}-cues-player-length`}
-            text={getLongestPlayerHint(playerCues)}
-            lead="Najdłuższa z 4 wskazówek w playerze:"
+            text={getLongestText(cueItems)}
             testId={`${testId}-cues-player-length`}
           />
         </DraftSectionShell>
