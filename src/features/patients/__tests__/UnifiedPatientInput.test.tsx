@@ -191,6 +191,31 @@ describe('UnifiedPatientInput: patient led by another therapist', () => {
     expect(screen.queryByTestId('patient-unified-other-therapist-notice')).not.toBeInTheDocument();
   });
 
+  // Fokus na imię szedł po 100 ms z setTimeout i przerywał pisanie nazwiska („Annaowak” / „N”).
+  it('focuses the first name as the form appears and does not take the focus back while typing', async () => {
+    const user = userEvent.setup({ delay: 40 });
+    mockLookup(({ skip }) => (skip ? { data: undefined, loading: false } : { data: { userByEmail: null }, loading: false }));
+    render(
+      <UnifiedPatientInput
+        organizationId="org-1"
+        therapistId="ther-1"
+        onSuccess={vi.fn()}
+        onCreateNewPatient={vi.fn()}
+        onCancel={vi.fn()}
+      />
+    );
+
+    await user.type(screen.getByTestId('patient-unified-input'), 'a@b.pl');
+    await user.click(screen.getByTestId('patient-unified-next-btn'));
+    const firstName = await screen.findByTestId('patient-unified-firstname-input');
+    expect(firstName).toHaveFocus();
+
+    await user.type(screen.getByTestId('patient-unified-lastname-input'), 'Nowak');
+
+    expect(screen.getByTestId('patient-unified-lastname-input')).toHaveValue('Nowak');
+    expect(firstName).toHaveValue('');
+  });
+
   it('returns from the form to the notice when creating the patient is refused', async () => {
     const user = userEvent.setup();
     mockLookup(({ skip }) => (skip ? { data: undefined, loading: false } : { data: { userByEmail: null }, loading: false }));
