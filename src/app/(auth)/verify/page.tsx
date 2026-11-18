@@ -79,10 +79,14 @@ export default function VerifyEmailPage() {
 
         switch (errorCode) {
           case 'form_code_incorrect':
+          case 'verification_failed':
             setError('Nieprawidłowy kod weryfikacyjny');
+            // Pierwszy zły kod: nie czekamy, od razu podpowiedź (sprawdź adres, Spam, kontakt).
+            setShowCodeHelp(true);
             break;
           case 'verification_expired':
             setError('Kod weryfikacyjny wygasł. Wyślij nowy kod.');
+            setShowCodeHelp(true);
             break;
           default:
             setError('Wystąpił błąd podczas weryfikacji. Spróbuj ponownie.');

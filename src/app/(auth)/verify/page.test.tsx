@@ -158,3 +158,25 @@ describe('verify page: adres i jego poprawka', () => {
     );
   });
 });
+
+describe('verify page: zły kod', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  });
+
+  afterEach(cleanup);
+
+  it('pierwszy zły kod od razu pokazuje podpowiedź, bez czekania', async () => {
+    mocks.attempt.mockRejectedValue({ errors: [{ code: 'form_code_incorrect', message: 'Incorrect code' }] });
+    render(<VerifyEmailPage />);
+
+    fireEvent.change(screen.getByTestId('auth-verify-code-input'), { target: { value: '000000' } });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('auth-verify-submit-btn'));
+    });
+
+    expect(screen.getByText('Nieprawidłowy kod weryfikacyjny')).toBeInTheDocument();
+    expect(screen.getByTestId('auth-verify-code-help')).toBeInTheDocument();
+  });
+});
