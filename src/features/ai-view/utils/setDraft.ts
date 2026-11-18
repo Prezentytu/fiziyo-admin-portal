@@ -308,7 +308,7 @@ function capitalize(value: string | undefined): string {
  * and the assistant corrects the set in the same conversation.
  */
 export const DRAFT_CLARIFY_QUESTIONS = [
-  'Która strona i od kiedy?',
+  'Lewa czy prawa strona? Od jak dawna?',
   'Po urazie, operacji czy bez przyczyny?',
   'Ból, sztywność czy osłabienie?',
   'Wiek i poziom aktywności?',
