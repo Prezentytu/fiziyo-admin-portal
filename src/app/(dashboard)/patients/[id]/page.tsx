@@ -36,6 +36,8 @@ import { ActivityReport } from '@/features/patients/ActivityReport';
 import { PatientAssignmentCard } from '@/features/patients/PatientAssignmentCard';
 import { PatientDetailSkeleton } from '@/features/patients/PatientDetailSkeleton';
 import { getPatientAccess } from '@/features/patients/utils/patientList';
+import { patientUnderOtherTherapistMessage } from '@/features/patients/utils/patientCareAccess';
+import { PatientOtherTherapistNotice } from '@/features/patients/PatientOtherTherapistNotice';
 import { ActivatePremiumDialog } from '@/features/patients/ActivatePremiumDialog';
 import { ClinicalNotesList } from '@/components/clinical/ClinicalNotesList';
 import { PatientJournalNotes } from '@/features/patients/PatientJournalNotes';
@@ -249,6 +251,24 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
 
   if (userLoading) {
     return <PatientDetailSkeleton />;
+  }
+
+  const otherTherapistRefusal = patientUnderOtherTherapistMessage(userError);
+  if (otherTherapistRefusal) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center py-16">
+        <PatientOtherTherapistNotice
+          message={otherTherapistRefusal}
+          testId="patient-detail-other-therapist"
+          className="max-w-lg"
+        >
+          <Button variant="secondary" onClick={() => router.push('/patients')} data-testid="patient-detail-other-therapist-back-btn">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Wróć do moich pacjentów
+          </Button>
+        </PatientOtherTherapistNotice>
+      </div>
+    );
   }
 
   if (userError || !patient) {

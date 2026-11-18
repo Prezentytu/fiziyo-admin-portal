@@ -14,6 +14,7 @@ import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
 import { CREATE_SHADOW_PATIENT_MUTATION } from '@/graphql/mutations/users.mutations';
 import { formatPatientPhone, patientCreateRefetchQueries } from './utils/shadowPatient';
 import { PATIENT_INVITE_REQUIRED, getGraphQLErrorCode, getGraphQLErrorMessage } from './utils/patientConsent';
+import { patientUnderOtherTherapistMessage } from './utils/patientCareAccess';
 import { cn } from '@/lib/utils';
 import { getAvatarGradient, getInitials } from '@/utils/textUtils';
 import type { Patient } from '@/features/assignment/types';
@@ -165,6 +166,10 @@ export function PatientDialog({
     } catch (error) {
       if (getGraphQLErrorCode(error) === PATIENT_INVITE_REQUIRED) {
         return { status: 'invite-required', message: getGraphQLErrorMessage(error, '') };
+      }
+      const refusal = patientUnderOtherTherapistMessage(error);
+      if (refusal) {
+        return { status: 'other-therapist', message: refusal };
       }
       console.error('Błąd podczas dodawania pacjenta:', error);
       toast.error(getGraphQLErrorMessage(error, 'Nie udało się dodać pacjenta'));

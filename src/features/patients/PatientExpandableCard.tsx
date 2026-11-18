@@ -72,6 +72,8 @@ interface PatientExpandableCardProps {
   /** Usunięcie pacjenta z organizacji - tylko Admin/Owner */
   readonly onRemoveFromOrganization: (patient: Patient) => void;
   readonly onTakeOver?: (patient: Patient) => void;
+  /** Why this user cannot take the patient over (clinic policy); the action stays visible but disabled. */
+  readonly takeOverBlockedReason?: string;
   readonly organizationId: string;
   readonly therapistId: string;
   /** Show the assigned therapist next to the therapy goal (Collaborative Care mode) */
@@ -87,6 +89,7 @@ export function PatientExpandableCard({
   onUnassign,
   onRemoveFromOrganization,
   onTakeOver,
+  takeOverBlockedReason,
   organizationId,
   therapistId,
   showTherapistBadge = false,
@@ -207,14 +210,23 @@ export function PatientExpandableCard({
 
         <span className="ml-auto flex items-center justify-end gap-1">
           {!isMyPatient && onTakeOver && (
-            <Button
-              variant="tinted"
-              size="sm"
-              onClick={(e) => handleAction(e, () => onTakeOver(patient))}
-              data-testid="patient-takeover-btn"
-            >
-              {isUnassigned ? 'Przypisz do mnie' : 'Przejmij opiekę'}
-            </Button>
+            <span title={takeOverBlockedReason}>
+              <Button
+                variant="tinted"
+                size="sm"
+                disabled={!!takeOverBlockedReason}
+                aria-describedby={takeOverBlockedReason ? `patient-takeover-hint-${patient.id}` : undefined}
+                onClick={(e) => handleAction(e, () => onTakeOver(patient))}
+                data-testid="patient-takeover-btn"
+              >
+                {isUnassigned ? 'Przypisz do mnie' : 'Przejmij opiekę'}
+              </Button>
+              {takeOverBlockedReason && (
+                <span id={`patient-takeover-hint-${patient.id}`} className="sr-only">
+                  {takeOverBlockedReason}
+                </span>
+              )}
+            </span>
           )}
           {isMyPatient && (
             <Button
@@ -254,7 +266,11 @@ export function PatientExpandableCard({
               {/* Take Over option */}
               {!isMyPatient && onTakeOver && (
                 <>
-                  <DropdownMenuItem onClick={() => onTakeOver(patient)}>
+                  <DropdownMenuItem
+                    disabled={!!takeOverBlockedReason}
+                    title={takeOverBlockedReason}
+                    onClick={() => onTakeOver(patient)}
+                  >
                     <UserPlus className="mr-2 h-4 w-4" />
                     {isUnassigned ? 'Przypisz do mnie' : 'Przejmij opiekę'}
                   </DropdownMenuItem>
