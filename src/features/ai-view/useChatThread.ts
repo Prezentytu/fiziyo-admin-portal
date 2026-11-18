@@ -280,7 +280,8 @@ export function useChatThread({
           newPatientContext: threadNewPatientDetails(messagesRef.current),
         });
         // Pytanie o ćwiczenia bez karty w odpowiedzi (nic nie pasuje): pomysły na nowe dla tej potrzeby.
-        let reply = withExerciseIdeas(trimmed, resolved);
+        // A refusal about a patient gets no card, so no exercise ideas either.
+        let reply = resolved.notice ? resolved : withExerciseIdeas(trimmed, resolved);
         if (threadEpochRef.current !== epoch) return;
         // Nowe ćwiczenie, o które poproszono przy otwartej propozycji zestawu, wraca do tej propozycji.
         if (openDraft && liveDraft && reply.spec?.component === 'CreateExercise' && draftRequest(trimmed)) {
@@ -309,6 +310,7 @@ export function useChatThread({
             source: reply.source,
             creditsUsed: reply.creditsUsed,
             fallbackReason: showFallback ? reply.fallbackReason : undefined,
+            ...(reply.notice ? { notice: reply.notice } : {}),
             createdAt: Date.now(),
           },
         ]);

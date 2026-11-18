@@ -33,6 +33,7 @@ import { useChatShellControls } from './ChatShellControls';
 import { ChatSpecRenderer } from './catalog/ChatSpecRenderer';
 import { AiCreditsRequestControl } from '@/features/ai-credits/AiCreditsRequestControl';
 import { PatientContextPanel } from './PatientContextPanel';
+import { PatientOtherTherapistNotice } from '@/features/patients/PatientOtherTherapistNotice';
 import { useChatShortcuts } from './useChatShortcuts';
 import { useDocumentAnalysis } from './useDocumentAnalysis';
 import { useStickToBottom } from './useStickToBottom';
@@ -111,7 +112,10 @@ const AssistantMessage = memo(function AssistantMessage({
   const creditsExhausted = !credits || credits.remaining <= 0;
   return (
     <div className="group/message flex min-w-0 flex-1 flex-col gap-3.5">
-      {message.text && (
+      {message.text && message.notice && (
+        <PatientOtherTherapistNotice message={message.text} testId={`common-chat-reply-${message.id}-notice`} />
+      )}
+      {message.text && !message.notice && (
         <p className="whitespace-pre-wrap break-words text-[16px] leading-[26px] text-foreground">
           <RevealText text={message.text} animate={animate} />
         </p>

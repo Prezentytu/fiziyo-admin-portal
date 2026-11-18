@@ -43,6 +43,17 @@ export const GET_ORGANIZATION_DEMO_POOL_QUERY = gql`
   }
 `;
 
+// Patient visibility setting (fizjo-app#623). Kept out of OrganizationFullFragment on purpose: a backend
+// without the field rejects the whole document, and the fragment also feeds PDF, QR and billing screens.
+export const GET_ORGANIZATION_PATIENT_VISIBILITY_QUERY = gql`
+  query GetOrganizationPatientVisibility($id: String!) {
+    organizationById(id: $id) {
+      id
+      therapistsSeeAllPatients
+    }
+  }
+`;
+
 // Query do pobierania członków organizacji
 export const GET_ORGANIZATION_MEMBERS_QUERY = gql`
   query GetOrganizationMembers($organizationId: String!) {

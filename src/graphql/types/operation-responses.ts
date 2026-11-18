@@ -19,6 +19,19 @@ export interface AssignExerciseSetToPatientMutationData {
   } | null;
 }
 
+export interface OrganizationPatientVisibilityQueryData {
+  organizationById: { id: string; therapistsSeeAllPatients: boolean } | null;
+}
+
+export interface SetTherapistsSeeAllPatientsMutationData {
+  setTherapistsSeeAllPatients: { id: string; therapistsSeeAllPatients: boolean } | null;
+}
+
+export interface SetTherapistsSeeAllPatientsVariables {
+  organizationId: string;
+  enabled: boolean;
+}
+
 export interface DuplicateExerciseSetMutationData {
   duplicateExerciseSet: CreatedEntity | null;
 }

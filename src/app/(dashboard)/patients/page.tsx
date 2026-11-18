@@ -20,7 +20,16 @@ import { PatientQRCodeDialog } from '@/features/patients/PatientQRCodeDialog';
 import { TakeOverDialog } from '@/features/patients/TakeOverDialog';
 import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
 import { getPatientActivityStatus, needsAttention } from '@/features/patients/utils/patientActivityStatus';
-import { settledSearchResultsCount, sortPatients, type PatientSort } from '@/features/patients/utils/patientList';
+import {
+  patientListEmptyState,
+  patientListSubtitle,
+  settledSearchResultsCount,
+  sortPatients,
+  type PatientListFilter,
+  type PatientSort,
+} from '@/features/patients/utils/patientList';
+import { OWN_PATIENTS_ONLY_NOTE, TAKE_OVER_BLOCKED_HINT } from '@/features/patients/utils/patientCareAccess';
+import { usePatientVisibility } from '@/features/patients/hooks/usePatientVisibility';
 import type { Patient as AssignmentPatient } from '@/features/assignment/types';
 import { cn } from '@/lib/utils';
 
@@ -37,7 +46,7 @@ import type { UserByClerkIdResponse, OrganizationPatientsResponse, OrganizationP
 import { useRealtimePatients } from '@/hooks/useRealtimePatients';
 import { useSearchTelemetry } from '@/lib/telemetry/useSearchTelemetry';
 
-type TherapyFilterType = 'my' | 'all' | 'needs_attention' | 'subscription';
+type TherapyFilterType = PatientListFilter;
 
 const patientNeedsAttention = (patient: Patient): boolean =>
   needsAttention(getPatientActivityStatus(patient.lastActivity, undefined, patient.attention));
@@ -59,6 +68,7 @@ const FILTER_TABS: ReadonlyArray<{ id: TherapyFilterType; label: string; testId:
 export default function PatientsPage() {
   const { user } = useUser();
   const { currentOrganization, isLoading: orgContextLoading } = useOrganization();
+  const { isRestricted } = usePatientVisibility();
   const [searchQuery, setSearchQuery] = useState('');
   const [patientFilter, setPatientFilter] = useState<TherapyFilterType>('my');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -260,32 +270,7 @@ export default function PatientsPage() {
       }
     : undefined;
 
-  // Helper functions for empty state messages
-  const getEmptyStateTitle = (filter: TherapyFilterType) => {
-    switch (filter) {
-      case 'my':
-        return 'Nie masz jeszcze pacjentów';
-      case 'needs_attention':
-        return 'Wszyscy Twoi pacjenci ćwiczą';
-      case 'subscription':
-        return 'Wszyscy mają aktywne Premium';
-      default:
-        return 'Brak pacjentów w organizacji';
-    }
-  };
-
-  const getEmptyStateDescription = (filter: TherapyFilterType) => {
-    switch (filter) {
-      case 'my':
-        return 'Dodaj pierwszą osobę albo przejmij opiekę w zakładce „Wszyscy”.';
-      case 'needs_attention':
-        return 'Nikt nie ma przerwy dłuższej niż 1 dzień.';
-      case 'subscription':
-        return 'Nikomu z Twoich pacjentów nie kończy się dostęp w tym tygodniu.';
-      default:
-        return 'Dodaj pierwszego pacjenta do organizacji';
-    }
-  };
+  const emptyState = patientListEmptyState({ filter: patientFilter, isRestricted });
 
   if (orgContextLoading && !organizationId) {
     return <DashboardRouteLoading />;
@@ -304,7 +289,7 @@ export default function PatientsPage() {
       <PageHeader
         title="Pacjenci"
         titleTestId="patient-page-title"
-        subtitle={countsReady ? `${myCount} pod Twoją opieką · ${totalCount} w organizacji` : 'Wczytuję pacjentów…'}
+        subtitle={countsReady ? patientListSubtitle({ myCount, totalCount, isRestricted }) : 'Wczytuję pacjentów…'}
         actions={
           <>
             <label className="relative w-full sm:w-[300px]">
@@ -372,6 +357,12 @@ export default function PatientsPage() {
         </div>
       </div>
 
+      {isRestricted && (
+        <p className="text-[13px] text-label-secondary" data-testid="patient-list-own-only-note">
+          {OWN_PATIENTS_ONLY_NOTE}
+        </p>
+      )}
+
       {searchQuery && countsReady && (
         <div className="flex items-center gap-2 text-[13px] text-label-secondary">
           <span aria-live="polite">
@@ -414,9 +405,9 @@ export default function PatientsPage() {
           <div className="border-t-[0.5px] border-separator">
             <EmptyState
               icon={Users}
-              title={searchQuery ? `Brak wyników dla „${searchQuery}”` : getEmptyStateTitle(patientFilter)}
+              title={searchQuery ? `Brak wyników dla „${searchQuery}”` : emptyState.title}
               description={
-                searchQuery ? 'Sprawdź pisownię albo szukaj po e-mailu lub telefonie.' : getEmptyStateDescription(patientFilter)
+                searchQuery ? 'Sprawdź pisownię albo szukaj po e-mailu lub telefonie.' : emptyState.description
               }
               actionLabel={!searchQuery && patientFilter === 'my' ? 'Dodaj pacjenta' : undefined}
               onAction={!searchQuery && patientFilter === 'my' ? () => setIsDialogOpen(true) : undefined}
@@ -433,6 +424,7 @@ export default function PatientsPage() {
                 onUnassign={(p) => setUnassigningPatient(p)}
                 onRemoveFromOrganization={(p) => setRemovingFromOrgPatient(p)}
                 onTakeOver={handleTakeOver}
+                takeOverBlockedReason={isRestricted ? TAKE_OVER_BLOCKED_HINT : undefined}
                 organizationId={organizationId || ''}
                 therapistId={therapistId || ''}
                 showTherapistBadge={patientFilter !== 'my'}

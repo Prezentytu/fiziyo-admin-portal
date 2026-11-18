@@ -22,6 +22,35 @@ describe('useChatThread', () => {
     });
   });
 
+  it('sends a full name that is not on the visible list to the server and shows its notice without a card', async () => {
+    const text = 'Ten pacjent jest już w gabinecie i prowadzi go inny fizjoterapeuta.';
+    dispatchMock.mockResolvedValueOnce({ sessionId: 'session-a', text, creditsUsed: 0, notice: 'patient_other_therapist' });
+    const { result } = renderHook(() => useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org-a' }));
+
+    await act(() => result.current.send('pokaż ćwiczenia na kolano dla Marii Zielińskiej'));
+
+    expect(dispatchMock).toHaveBeenCalledTimes(1);
+    expect(dispatchMock.mock.calls[0][0]).toBe('pokaż ćwiczenia na kolano dla Marii Zielińskiej');
+    const reply = result.current.messages.at(-1);
+    expect(reply).toMatchObject({ role: 'assistant', text, source: 'ai', notice: 'patient_other_therapist' });
+    expect(reply).not.toHaveProperty('spec', expect.anything());
+  });
+
+  it('asks the server about an account question for a patient who is not on the visible list', async () => {
+    dispatchMock.mockResolvedValueOnce({
+      sessionId: 'session-a',
+      text: 'Ten pacjent jest już w gabinecie i prowadzi go inny fizjoterapeuta.',
+      creditsUsed: 0,
+      notice: 'patient_other_therapist',
+    });
+    const { result } = renderHook(() => useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org-a' }));
+
+    await act(() => result.current.send('Czy Maria Zielińska odebrała zestaw?'));
+
+    expect(dispatchMock).toHaveBeenCalledTimes(1);
+    expect(result.current.messages.at(-1)).toMatchObject({ notice: 'patient_other_therapist' });
+  });
+
   it('does not answer while chat data is loading', async () => {
     const { result } = renderHook(() =>
       useChatThread({ useAi: false, context: { patients: [], sets: [] }, ready: false, scopeKey: 'org-a' })
