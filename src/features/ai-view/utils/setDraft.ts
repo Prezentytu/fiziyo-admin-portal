@@ -60,14 +60,6 @@ export interface SetDraftPayload {
 
 const NUMERIC_KEYS = ['sets', 'reps', 'duration', 'executionTime', 'restSets', 'restReps', 'preparationTime'] as const;
 
-/** Under exercise results: what narrows the choice before a set is made from them. */
-export const EXERCISE_CLARIFY_QUESTIONS = [
-  'Cel: siła, wytrzymałość czy mobilność?',
-  'Jaki sprzęt jest pod ręką?',
-  'Jaki poziom zaawansowania?',
-  'Ból albo ograniczenia?',
-] as const;
-
 /** What the shared parameter editor (`ExerciseParametersFields`) shows for a draft row. */
 export function draftParameterValues(item: DraftItem): ExerciseParameterValues {
   return {
@@ -302,17 +294,6 @@ function capitalize(value: string | undefined): string {
   if (!value) return '';
   return value.charAt(0).toLocaleUpperCase('pl-PL') + value.slice(1);
 }
-
-/**
- * Questions that make an AI set fit the person better; the therapist answers in the message field
- * and the assistant corrects the set in the same conversation.
- */
-export const DRAFT_CLARIFY_QUESTIONS = [
-  'Która strona i od kiedy?',
-  'Po urazie, operacji czy bez przyczyny?',
-  'Ból, sztywność czy osłabienie?',
-  'Wiek i poziom aktywności?',
-] as const;
 
 /** The set draft a new exercise returns to: its exercises and their sets, reps and hold times. */
 export interface SetDraftReturn {

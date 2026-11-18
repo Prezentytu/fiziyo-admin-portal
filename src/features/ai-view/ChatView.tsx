@@ -37,6 +37,7 @@ import { useChatShortcuts } from './useChatShortcuts';
 import { useDocumentAnalysis } from './useDocumentAnalysis';
 import { useStickToBottom } from './useStickToBottom';
 import { useTodayAgenda } from './useTodayAgenda';
+import { requestBefore } from './utils/clarifyQuestions';
 import type { ChatThreadMessage } from './utils/conversationStore';
 import {
   nextRevealMarker,
@@ -98,9 +99,12 @@ function RevealText({ text, animate }: { readonly text: string; readonly animate
 const AssistantMessage = memo(function AssistantMessage({
   message,
   animate,
+  request,
 }: {
   readonly message: Extract<ChatThreadMessage, { role: 'assistant' }>;
   readonly animate: boolean;
+  /** What the therapist wrote before this reply: follow-up questions under a card start from it. */
+  readonly request?: string;
 }) {
   const [copied, copy] = useCopy();
   const { credits } = useChatSession();
@@ -119,6 +123,7 @@ const AssistantMessage = memo(function AssistantMessage({
             testId={`common-chat-reply-${message.id}`}
             messageId={message.id}
             chosen={message.chosen}
+            request={request}
           />
         </div>
       )}
@@ -574,14 +579,18 @@ export function ChatView() {
             ) : (
               <ComposerDraftContext.Provider value={draftInComposer}>
                 <ol className="flex flex-col gap-7" aria-live="polite" data-testid="common-chat-thread">
-                  {messages.map((message) =>
+                  {messages.map((message, index) =>
                     message.role === 'user' ? (
                       <li key={message.id} className="flex animate-chat-rise justify-end">
                         <UserMessage message={message} onEdit={(text) => composerRef.current?.setDraft(text)} />
                       </li>
                     ) : (
                       <li key={message.id} className="flex animate-chat-rise">
-                        <AssistantMessage message={message} animate={message.createdAt > revealSince} />
+                        <AssistantMessage
+                          message={message}
+                          animate={message.createdAt > revealSince}
+                          request={requestBefore(messages, index)}
+                        />
                       </li>
                     )
                   )}

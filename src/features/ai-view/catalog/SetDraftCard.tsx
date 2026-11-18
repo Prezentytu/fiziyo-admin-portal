@@ -20,6 +20,7 @@ import { formatExerciseCount } from '@/utils/polishPlural';
 import { toWizardPatient, useChatActions } from '../ChatSessionContext';
 import { useAvailableExercises, type ChatCatalogExercise } from '../useAvailableExercises';
 import { findAlternatives } from '../utils/exerciseAlternatives';
+import { draftClarifyQuestions } from '../utils/clarifyQuestions';
 import { searchExercises } from '../utils/exerciseLookup';
 import { seedDraftItems } from '../utils/seedDraft';
 import {
@@ -34,7 +35,6 @@ import {
   itemMinutes,
   proposeDraftName,
   itemsToDoses,
-  DRAFT_CLARIFY_QUESTIONS,
   proposeDraftDescription,
   type DraftItem,
   type SetDraftPayload,
@@ -189,7 +189,7 @@ function DraftRow({
  * Set composed in the thread (design "Czat v2"): swap, remove with undo, tune parameters, add from
  * the catalog. Nothing is saved here; the next step asks for the schedule and the summary sends.
  */
-export function SetDraftCard({ spec, testId, messageId, chosen }: CardProps<'SetDraft'>) {
+export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardProps<'SetDraft'>) {
   const { organizationId, patients, organizationSets, setsReady, appendExchange, markChosen, openCreateSet } =
     useChatActions();
   const [items, setItems] = useState<DraftItem[] | null>(null);
@@ -480,8 +480,8 @@ export function SetDraftCard({ spec, testId, messageId, chosen }: CardProps<'Set
       {/* Zestaw z opisu (bez zestawu z katalogu): pytania, które pomagają dobrać ćwiczenia trafniej. */}
       {!set && !locked && spec.note && (
         <ClarifyChips
-          lead="Doprecyzuj, żeby lepiej dobrać ćwiczenia. Pytanie trafi do pola wiadomości, dopisz odpowiedź:"
-          questions={DRAFT_CLARIFY_QUESTIONS}
+          lead="Doprecyzuj, a lepiej dobiorę ćwiczenia. Pytanie trafi do pola wiadomości, dopisz odpowiedź:"
+          questions={draftClarifyQuestions({ request, note: spec.note })}
           testId={`${testId}-clarify`}
         />
       )}

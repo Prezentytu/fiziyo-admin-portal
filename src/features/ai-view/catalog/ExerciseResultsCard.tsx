@@ -16,10 +16,10 @@ import type { CardProps } from './cardProps';
 import { ChatCard, ChatCardEmpty } from './ChatCard';
 import { ClarifyChips } from './ClarifyChips';
 import { ExerciseIdeasList } from './ExerciseIdeas';
-import { EXERCISE_CLARIFY_QUESTIONS } from '../utils/setDraft';
+import { exerciseClarifyQuestions } from '../utils/clarifyQuestions';
 
 /** Search tiles: pick what fits and compose a set from it; when nothing fits, ideas for new exercises. */
-export function ExerciseResultsCard({ spec, testId, messageId, chosen }: CardProps<'ExerciseResults'>) {
+export function ExerciseResultsCard({ spec, testId, messageId, chosen, request }: CardProps<'ExerciseResults'>) {
   const { organizationId, patients, appendExchange, markChosen } = useChatActions();
   // Model proponuje ćwiczenia z całego katalogu; te spoza pierwszej strony dociągają się po id (P-4).
   const { exercises, loading } = useAvailableExercises(organizationId, true, spec.exerciseIds);
@@ -175,7 +175,7 @@ export function ExerciseResultsCard({ spec, testId, messageId, chosen }: CardPro
       {!locked && (
         <ClarifyChips
           lead="Doprecyzuj, a dobiorę trafniej. Z wybranych ułożysz zestaw przyciskiem poniżej:"
-          questions={EXERCISE_CLARIFY_QUESTIONS}
+          questions={exerciseClarifyQuestions(spec.query, request)}
           testId={`${testId}-clarify`}
         />
       )}

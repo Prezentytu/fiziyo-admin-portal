@@ -8,4 +8,6 @@ export interface CardProps<C extends ChatCardSpec['component']> {
   /** Message the card belongs to; a flow step marks it chosen so its actions are spent. */
   readonly messageId: string;
   readonly chosen?: string;
+  /** What the therapist wrote before this card (`requestBefore`); cards that ask follow-up questions read it. */
+  readonly request?: string;
 }

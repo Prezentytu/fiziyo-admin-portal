@@ -17,6 +17,7 @@ export function ClarifyChips({
   readonly testId: string;
 }) {
   const draftInComposer = useComposerDraft();
+  if (questions.length === 0) return null;
   return (
     <div className="flex flex-col gap-2" data-testid={testId}>
       <span className="text-[13px] text-label-secondary">{lead}</span>
