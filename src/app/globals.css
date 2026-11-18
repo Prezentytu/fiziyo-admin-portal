@@ -1523,3 +1523,95 @@ input[type="number"] {
 html {
   font-size: var(--base-font-size, 16px);
 }
+/* ============================================
+   Telefon pacjenta w podglądzie „Jak u pacjenta” (ExercisePreviewDialog).
+   Kolory playera z fizjo-app (constants/Colors, player/phaseColors), niezależne od motywu panelu:
+   fizjoterapeuta przełącza motyw telefonu pacjenta osobno (data-phone-theme).
+   ============================================ */
+.patient-phone {
+  --pp-bg: #f2f2f7;
+  --pp-gradient: linear-gradient(180deg, #e3e7ea 0%, #f2f2f7 60%);
+  --pp-surface: #ffffff;
+  --pp-surface-2: #ececf0;
+  --pp-text: #1c1c1e;
+  --pp-muted: #6e6e73;
+  --pp-divider: rgba(0, 0, 0, 0.08);
+  --pp-media: #c7c7cc;
+  --pp-media-text: #48484a;
+  --pp-dot-off: #c7c7cc;
+  --pp-tile-empty: #e5e5ea;
+  --pp-cta: #266b54;
+  --pp-cta-text: #ffffff;
+  --pp-on-fill: #1c1c1e;
+  --pp-frame: #0b0b0c;
+  --pp-prepare-accent: #ae7b14;
+  --pp-prepare-fill: #e3aa49;
+  --pp-prepare-track: #feeacc;
+  --pp-work-accent: #3d997b;
+  --pp-work-fill: #6bcba9;
+  --pp-work-track: #d7f5e8;
+  --pp-rest-accent: #558abf;
+  --pp-rest-fill: #81baf6;
+  --pp-rest-track: #dbefff;
+  --pp-paused-accent: #86868b;
+  --pp-paused-fill: #6bcba9;
+  --pp-paused-track: #e5e5ea;
+  --pp-accent: var(--pp-work-accent);
+  --pp-fill: var(--pp-work-fill);
+  --pp-track: var(--pp-work-track);
+}
+
+.patient-phone[data-phone-theme='dark'] {
+  --pp-bg: #000000;
+  --pp-gradient: linear-gradient(180deg, #1c1c1e 0%, #000000 60%);
+  --pp-surface: #1c1c1e;
+  --pp-surface-2: #2c2c2e;
+  --pp-text: #f2f2f7;
+  --pp-muted: #98989f;
+  --pp-divider: rgba(255, 255, 255, 0.1);
+  --pp-media: #38383a;
+  --pp-media-text: #c7c7cc;
+  --pp-dot-off: #48484a;
+  --pp-tile-empty: #2c2c2e;
+  --pp-cta: #4bb894;
+  --pp-cta-text: #0e3629;
+  --pp-prepare-accent: #e3aa49;
+  --pp-prepare-fill: #d19419;
+  --pp-prepare-track: rgba(209, 148, 25, 0.16);
+  --pp-work-accent: #6bcba9;
+  --pp-work-fill: #4bb894;
+  --pp-work-track: rgba(75, 184, 148, 0.16);
+  --pp-rest-accent: #81baf6;
+  --pp-rest-fill: #68a6e6;
+  --pp-rest-track: rgba(104, 166, 230, 0.16);
+  --pp-paused-accent: #98989f;
+  --pp-paused-fill: #4bb894;
+  --pp-paused-track: rgba(120, 120, 128, 0.24);
+}
+
+.patient-phone[data-phase='prepare'] {
+  --pp-accent: var(--pp-prepare-accent);
+  --pp-fill: var(--pp-prepare-fill);
+  --pp-track: var(--pp-prepare-track);
+}
+.patient-phone[data-phase='rest'] {
+  --pp-accent: var(--pp-rest-accent);
+  --pp-fill: var(--pp-rest-fill);
+  --pp-track: var(--pp-rest-track);
+}
+.patient-phone[data-phase='paused'] {
+  --pp-accent: var(--pp-paused-accent);
+  --pp-fill: var(--pp-paused-fill);
+  --pp-track: var(--pp-paused-track);
+}
+
+/* Oś przebiegu w panelu: kolory faz jak w jasnym telefonie, kreski = czas szacunkowy albo poza czasem z listy. */
+.patient-timeline {
+  --pt-prepare: #e3aa49;
+  --pt-work: #6bcba9;
+  --pt-rest: #81baf6;
+  --pt-switch: #98989f;
+}
+.patient-timeline-hatched {
+  background-image: repeating-linear-gradient(135deg, transparent 0 5px, rgba(255, 255, 255, 0.55) 5px 8px);
+}
