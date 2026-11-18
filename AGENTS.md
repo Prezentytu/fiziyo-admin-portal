@@ -19,6 +19,8 @@ Najmniejsza zmiana, która usuwa przyczynę, a nie objaw, bez tymczasowych obej�
 
 ## Słownik
 
+Pełny słownik domeny (pozycja, nadpisanie, strona, szablon publiczny, plan gabinetu) to kopia kanonu: `.ai/GLOSSARY.md`.
+
 - **ty** to agent czytający ten plik. **Adam** decyduje o kierunku, edytuje `VISION.md` i merguje. **Przemek** to wspólnik, przez niego wpadają zgłoszenia fizjoterapeutów.
 - **fizjoterapeuta** to użytkownik panelu; gabinet płaci. **Pacjent** dopłaca w gabinecie za plan ćwiczeń między wizytami, a gabinet aktywuje mu plan w panelu.
 - **organizacja** to tenant i granica danych; prawie każda operacja potrzebuje `organizationId`. **Gabinet** (`Clinic`) to lokalizacja w organizacji. Role: owner, admin, therapist, staff; backoffice `ContentManager` i `SiteSuperAdmin`.
