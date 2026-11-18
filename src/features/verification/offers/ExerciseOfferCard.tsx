@@ -9,7 +9,7 @@ import { ExerciseThumbnail } from '@/components/shared/exercise/ExerciseThumbnai
 import type { ExerciseOfferDecision } from '@/graphql/types/exerciseOffer.types';
 import { getMediaUrl } from '@/utils/mediaUrl';
 
-import type { OfferView } from './utils/exerciseOffers';
+import { landsInLibrary, type OfferView } from './utils/exerciseOffers';
 
 interface ExerciseOfferCardProps {
   offer: OfferView;
@@ -19,7 +19,7 @@ interface ExerciseOfferCardProps {
 
 export function ExerciseOfferCard({ offer, disabled, onDecide }: ExerciseOfferCardProps) {
   const [expanded, setExpanded] = useState(false);
-  const isAdopt = offer.mode === 'ADOPT';
+  const isAdopt = landsInLibrary(offer.mode);
 
   return (
     <article

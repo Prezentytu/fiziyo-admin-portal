@@ -10,7 +10,7 @@ import type { ExerciseOfferDecision } from '@/graphql/types/exerciseOffer.types'
 import { ExerciseOfferCard } from './ExerciseOfferCard';
 import { ExerciseOfferNoteDialog, type PendingDecision } from './ExerciseOfferNoteDialog';
 import { useExerciseOffers } from './useExerciseOffers';
-import { countAdoptable, exercisesLabel, runBatchAccept, type OfferView } from './utils/exerciseOffers';
+import { countAdoptable, exercisesLabel, landsInLibrary, runBatchAccept, type OfferView } from './utils/exerciseOffers';
 
 /**
  * Offers from the FiziYo team waiting for the owner or admin. Nothing reaches the library or the therapists until
@@ -30,7 +30,7 @@ export function ExerciseOffersPanel() {
       setPending(null);
       toast.success(
         decision === 'ACCEPT'
-          ? offer.mode === 'ADOPT'
+          ? landsInLibrary(offer.mode)
             ? `„${offer.exerciseName}” jest w bibliotece gabinetu.`
             : 'Zapisano ocenę bez uwag.'
           : decision === 'REQUEST_CHANGES'
@@ -54,7 +54,7 @@ export function ExerciseOffersPanel() {
   };
 
   const handleAcceptAll = async () => {
-    const ids = offers.filter((offer) => offer.mode === 'ADOPT').map((offer) => offer.id);
+    const ids = offers.filter((offer) => landsInLibrary(offer.mode)).map((offer) => offer.id);
     setSubmitting(true);
     try {
       const result = await runBatchAccept(ids, (offerId) => respond(offerId, 'ACCEPT', null));

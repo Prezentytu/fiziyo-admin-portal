@@ -1,4 +1,4 @@
-export type ExerciseOfferMode = 'ADOPT' | 'REVIEW';
+export type ExerciseOfferMode = 'ADOPT' | 'REVIEW' | 'TRANSFER';
 
 export type ExerciseOfferStatus = 'PENDING' | 'ACCEPTED' | 'CHANGES_REQUESTED' | 'REJECTED' | 'WITHDRAWN';
 

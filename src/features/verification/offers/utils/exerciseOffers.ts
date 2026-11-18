@@ -16,13 +16,25 @@ export interface OfferView {
   offeredAt: string;
 }
 
+/**
+ * Whether accepting puts the exercise into the clinic library: ADOPT makes a copy, TRANSFER moves the same record
+ * (owner changes; Demo flag, media and relations stay). For the clinic both read as „Dodaj do gabinetu”.
+ */
+export function landsInLibrary(mode: ExerciseOfferMode): boolean {
+  return mode === 'ADOPT' || mode === 'TRANSFER';
+}
+
+function toMode(mode: string): ExerciseOfferMode {
+  return mode === 'ADOPT' || mode === 'TRANSFER' ? mode : 'REVIEW';
+}
+
 /** Open offers only, newest first; unknown mode falls back to review so nothing lands in the library by accident. */
 export function toPendingOfferViews(offers: ReadonlyArray<ExerciseOffer> | null | undefined): OfferView[] {
   return (offers ?? [])
     .filter((offer) => offer.status === 'PENDING')
     .map((offer) => ({
       id: offer.id,
-      mode: offer.mode === 'ADOPT' ? ('ADOPT' as const) : ('REVIEW' as const),
+      mode: toMode(offer.mode),
       exerciseId: offer.exercise?.id ?? null,
       exerciseName: offer.exercise?.name?.trim() || 'Ćwiczenie bez nazwy',
       description: offer.exercise?.patientDescription?.trim() || offer.exercise?.clinicalDescription?.trim() || null,
@@ -35,7 +47,7 @@ export function toPendingOfferViews(offers: ReadonlyArray<ExerciseOffer> | null 
 }
 
 export function countAdoptable(offers: ReadonlyArray<OfferView>): number {
-  return offers.filter((offer) => offer.mode === 'ADOPT').length;
+  return offers.filter((offer) => landsInLibrary(offer.mode)).length;
 }
 
 export interface DecisionCopy {
@@ -56,7 +68,7 @@ export function decisionCopy(decision: ExerciseOfferDecision, mode: ExerciseOffe
       };
     case 'REJECT':
       return {
-        title: mode === 'ADOPT' ? 'Odrzuć propozycję' : 'Odrzuć ćwiczenie',
+        title: landsInLibrary(mode) ? 'Odrzuć propozycję' : 'Odrzuć ćwiczenie',
         confirmLabel: 'Odrzuć',
         noteLabel: 'Powód',
         noteRequired: false,
@@ -64,8 +76,8 @@ export function decisionCopy(decision: ExerciseOfferDecision, mode: ExerciseOffe
     case 'ACCEPT':
     default:
       return {
-        title: mode === 'ADOPT' ? 'Dodaj do gabinetu' : 'Zatwierdź bez uwag',
-        confirmLabel: mode === 'ADOPT' ? 'Dodaj' : 'Zatwierdź',
+        title: landsInLibrary(mode) ? 'Dodaj do gabinetu' : 'Zatwierdź bez uwag',
+        confirmLabel: landsInLibrary(mode) ? 'Dodaj' : 'Zatwierdź',
         noteLabel: 'Uwaga',
         noteRequired: false,
       };
