@@ -24,8 +24,15 @@ describe('useChatThread', () => {
 
   it('sends a full name that is not on the visible list to the server and shows its notice without a card', async () => {
     const text = 'Ten pacjent jest już w gabinecie i prowadzi go inny fizjoterapeuta.';
-    dispatchMock.mockResolvedValueOnce({ sessionId: 'session-a', text, creditsUsed: 0, notice: 'patient_other_therapist' });
-    const { result } = renderHook(() => useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org-a' }));
+    dispatchMock.mockResolvedValueOnce({
+      sessionId: 'session-a',
+      text,
+      creditsUsed: 0,
+      notice: 'patient_other_therapist',
+    });
+    const { result } = renderHook(() =>
+      useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org-a' })
+    );
 
     await act(() => result.current.send('pokaż ćwiczenia na kolano dla Marii Zielińskiej'));
 
@@ -43,7 +50,9 @@ describe('useChatThread', () => {
       creditsUsed: 0,
       notice: 'patient_other_therapist',
     });
-    const { result } = renderHook(() => useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org-a' }));
+    const { result } = renderHook(() =>
+      useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org-a' })
+    );
 
     await act(() => result.current.send('Czy Maria Zielińska odebrała zestaw?'));
 
@@ -103,6 +112,149 @@ describe('useChatThread', () => {
     expect(result.current.messages.at(-1)).toMatchObject({
       source: 'rules',
       spec: { component: 'SetDraft', patientId: 'p-ewa-n', setId: 's-knee' },
+    });
+  });
+
+  // Demo 18.11: e-mail z pierwszej wiadomości ginął, gdy formularz przychodził dopiero po dopytaniu o imię.
+  it('keeps the e-mail of the first message when the add-patient form comes after a question', async () => {
+    dispatchMock.mockResolvedValueOnce({ sessionId: 'session-a', text: 'Na jaki problem?', creditsUsed: 1 });
+    dispatchMock.mockResolvedValueOnce({
+      sessionId: 'session-a',
+      spec: { component: 'AddPatient', name: 'Ala Nowak' },
+      creditsUsed: 1,
+    });
+    const { result } = renderHook(() =>
+      useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org-a' })
+    );
+
+    await act(() => result.current.send('nowa osoba ala@example.com, zestaw na kolano'));
+    await act(() => result.current.send('Ala Nowak'));
+
+    expect(result.current.messages.at(-1)).toMatchObject({
+      spec: { component: 'AddPatient', name: 'Ala Nowak', email: 'ala@example.com' },
+    });
+  });
+
+  it('opens the add-patient form at once, without the model', async () => {
+    const { result } = renderHook(() =>
+      useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org-a' })
+    );
+
+    await act(() => result.current.send('dodaj pacjenta ala@example.com'));
+
+    expect(dispatchMock).not.toHaveBeenCalled();
+    expect(result.current.messages.at(-1)).toMatchObject({
+      spec: { component: 'AddPatient', email: 'ala@example.com' },
+    });
+  });
+
+  // Decyzja właściciela 18.11: aktywna jest jedna, najnowsza propozycja zestawu; do wcześniejszej da się wrócić.
+  it('locks the earlier proposal when the model sends a newer one, and brings it back on request', async () => {
+    const first = { component: 'SetDraft', exerciseIds: ['e1', 'e2'], note: 'biodro' };
+    const second = { component: 'SetDraft', exerciseIds: ['e1', 'e3'], note: 'biodro' };
+    dispatchMock.mockResolvedValueOnce({ sessionId: 'session-a', spec: first, creditsUsed: 1 });
+    dispatchMock.mockResolvedValueOnce({ sessionId: 'session-a', spec: second, creditsUsed: 1 });
+    const { result } = renderHook(() =>
+      useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org-a' })
+    );
+
+    await act(() => result.current.send('zestaw na biodro'));
+    await act(() => result.current.send('zamień drugie ćwiczenie na coś lżejszego'));
+
+    const cards = () => result.current.messages.filter((message) => message.role === 'assistant');
+    expect(cards().map((message) => message.chosen)).toEqual(['superseded', undefined]);
+
+    act(() => result.current.restoreDraft(first as never));
+
+    expect(cards().map((message) => message.chosen)).toEqual(['superseded', 'superseded', undefined]);
+    expect(cards().at(-1)).toMatchObject({ source: 'local', spec: first });
+  });
+
+  // Decyzja właściciela 18.11: po dodaniu pacjenta z prośby łączonej asystent sam przechodzi do reszty.
+  it('goes on with the rest of a combined request for the patient just added', async () => {
+    dispatchMock.mockResolvedValueOnce({
+      sessionId: 'session-a',
+      text: 'Proponuję zestaw na biodro.',
+      spec: { component: 'SetDraft', exerciseIds: ['e1', 'e2'] },
+      creditsUsed: 1,
+    });
+    const { result } = renderHook(() =>
+      useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org-a' })
+    );
+
+    await act(() => result.current.send('dodaj pacjenta Adam Lis adam@example.com i ułóż mu zestaw na biodro'));
+    expect(dispatchMock).not.toHaveBeenCalled();
+    expect(result.current.messages.at(-1)).toMatchObject({
+      spec: { component: 'AddPatient', name: 'Adam Lis', then: 'ułóż mu zestaw na biodro' },
+    });
+
+    await act(() => result.current.continueForPatient('p-new', 'Adam Lis', 'ułóż mu zestaw na biodro'));
+
+    expect(dispatchMock).toHaveBeenCalledWith('ułóż mu zestaw na biodro', undefined, expect.anything());
+    expect(result.current.messages.at(-1)).toMatchObject({
+      text: 'Dodano: Adam Lis. Proponuję zestaw na biodro.',
+      spec: { component: 'SetDraft', patientId: 'p-new', exerciseIds: ['e1', 'e2'] },
+    });
+    expect(result.current.isBusy).toBe(false);
+  });
+
+  // Demo 18.11: przy otwartej propozycji zestawu „dodaj ćwiczenie” z czatu nie trafiało do tej propozycji.
+  describe('an open set proposal', () => {
+    const draft = { exerciseIds: ['e-clam'], note: 'biodro', doses: { 'e-clam': { sets: 4, reps: 12 } } };
+    const getLiveDraft = () => ({ draft, catalog: [{ id: 'e-bridge', name: 'Mostek' }] });
+    const modelDraft = {
+      sessionId: 'session-a',
+      spec: { component: 'SetDraft', exerciseIds: ['e-clam'], note: 'biodro' },
+      creditsUsed: 1,
+    };
+
+    it('takes an exercise from the catalog with the parameters the card has now, without the model', async () => {
+      dispatchMock.mockResolvedValueOnce(modelDraft);
+      const { result } = renderHook(() =>
+        useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org-a', getLiveDraft })
+      );
+
+      await act(() => result.current.send('zestaw na biodro'));
+      await act(() => result.current.send('dodaj ćwiczenie mostek'));
+
+      expect(dispatchMock).toHaveBeenCalledTimes(1);
+      expect(result.current.messages.at(-1)).toMatchObject({
+        source: 'local',
+        spec: { component: 'SetDraft', exerciseIds: ['e-clam', 'e-bridge'], doses: draft.doses, note: 'biodro' },
+      });
+      expect(result.current.messages.at(-3)).toMatchObject({ chosen: 'superseded' });
+    });
+
+    it('sends a new exercise the model proposes back to the proposal', async () => {
+      dispatchMock.mockResolvedValueOnce(modelDraft);
+      dispatchMock.mockResolvedValueOnce({
+        sessionId: 'session-a',
+        spec: { component: 'CreateExercise', name: 'Wykrok z rotacją' },
+        creditsUsed: 1,
+      });
+      const { result } = renderHook(() =>
+        useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org-a', getLiveDraft })
+      );
+
+      await act(() => result.current.send('zestaw na biodro'));
+      await act(() => result.current.send('dodaj wykrok z rotacją'));
+
+      expect(result.current.messages.at(-1)).toMatchObject({
+        spec: { component: 'CreateExercise', name: 'Wykrok z rotacją', addToSet: draft },
+      });
+    });
+
+    it('works the same without AI', async () => {
+      const { result } = renderHook(() =>
+        useChatThread({ useAi: false, context: CONTEXT, ready: true, scopeKey: 'org-a', getLiveDraft })
+      );
+
+      act(() => result.current.appendAssistant({ spec: { component: 'SetDraft', exerciseIds: ['e-clam'] } }));
+      await act(() => result.current.send('dodaj do zestawu wykrok z rotacją'));
+
+      expect(result.current.messages.at(-1)).toMatchObject({
+        spec: { component: 'CreateExercise', name: 'wykrok z rotacją', addToSet: draft },
+      });
     });
   });
 

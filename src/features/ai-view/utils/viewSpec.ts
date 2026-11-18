@@ -1,7 +1,7 @@
 import type { SetDraftReturn } from './setDraft';
 import { z } from 'zod';
 
-import type { DraftDose } from './setDraft';
+import type { DraftDose, DraftItem } from './setDraft';
 import {
   PATIENT_OTHER_THERAPIST_NOTICE,
   PATIENT_UNDER_OTHER_THERAPIST_MESSAGE,
@@ -33,6 +33,10 @@ export type ChatViewSpec =
       note?: string;
       /** Only from the thread itself (a scanned note), never from the model. */
       doses?: Record<string, DraftDose>;
+      /** Only from the thread itself: rows of the proposal this card continues (`SetDraftReturn.items`). */
+      items?: DraftItem[];
+      /** Only from the thread itself: the exercise added in this step, shown with the „nowe” mark. */
+      addedExerciseId?: string;
     }
   | { component: 'AssignSummary'; patientId: string; setId: string }
   | { component: 'ExerciseResults'; query: string; exerciseIds: string[]; patientId?: string }
@@ -52,6 +56,8 @@ export type ChatViewSpec =
       phone?: string;
       email?: string;
       contextLabel?: string;
+      /** Only from the thread itself: the rest of a combined request, carried out for the patient once added. */
+      then?: string;
     }
   | {
       component: 'CreateExercise';

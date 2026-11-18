@@ -61,9 +61,9 @@ describe('parseDispatchReply', () => {
       text: 'Dodaję.',
       spec: { component: 'AddPatient', name: 'Anna Nowak' },
     });
-    expect(
-      parseDispatchReply({ component: 'CreateExercise', query: 'Mostek', note: 'Na jednej nodze' }, null)
-    ).toEqual({ text: undefined, spec: { component: 'CreateExercise', name: 'Mostek', description: 'Na jednej nodze' } });
+    expect(parseDispatchReply({ component: 'CreateExercise', query: 'Mostek', note: 'Na jednej nodze' }, null)).toEqual(
+      { text: undefined, spec: { component: 'CreateExercise', name: 'Mostek', description: 'Na jednej nodze' } }
+    );
   });
 
   // BW-FZ-113: asystent przyjął pozycję wyjściową, a inne pozycje są szybkimi odpowiedziami karty.
@@ -96,7 +96,9 @@ describe('parseDispatchReply', () => {
   });
 
   it('answers a message with text only, and with the fallback card when text is missing', () => {
-    expect(parseDispatchReply({ component: 'Message' }, ' Umiem ułożyć zestaw. ')).toEqual({ text: 'Umiem ułożyć zestaw.' });
+    expect(parseDispatchReply({ component: 'Message' }, ' Umiem ułożyć zestaw. ')).toEqual({
+      text: 'Umiem ułożyć zestaw.',
+    });
     expect(parseDispatchReply({ component: 'Message' }, '')).toEqual({ spec: UNSUPPORTED_SPEC });
   });
 

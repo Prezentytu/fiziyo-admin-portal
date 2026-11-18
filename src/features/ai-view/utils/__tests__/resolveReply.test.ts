@@ -1,6 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { ChatDispatchError, guardCardPatient, replyText, resolveReply, type Dispatcher } from '../resolveReply';
+import {
+  ChatDispatchError,
+  guardCardPatient,
+  replyText,
+  resolveForPatient,
+  resolveReply,
+  type Dispatcher,
+} from '../resolveReply';
 
 const CONTEXT = { patients: [{ id: 'p-jan', name: 'Jan Kowalski' }], sets: [] };
 
@@ -59,6 +66,175 @@ describe('resolveReply', () => {
     });
     const reply = await resolveReply('kto nie ćwiczy', { useAi: true, context: CONTEXT, dispatch });
     expect(reply.text).toBe('Trzech pacjentów nie ćwiczy od tygodnia.');
+  });
+});
+
+// Demo 18.11: prośba o dodanie pacjenta z samym e-mailem skończyła się pytaniem modelu o imię i formularzem bez e-maila.
+describe('resolveReply: adding a patient', () => {
+  it('opens the filled form at once, without the model and without a credit', async () => {
+    const dispatch = vi.fn<Dispatcher>();
+    const reply = await resolveReply('stwórz mi pacjenta dla takiego maila: ala@example.com', {
+      useAi: true,
+      context: CONTEXT,
+      dispatch,
+    });
+    expect(dispatch).not.toHaveBeenCalled();
+    expect(reply).toEqual({
+      text: 'Uzupełnij brakujące dane w formularzu, a dodam pacjenta.',
+      spec: { component: 'AddPatient', email: 'ala@example.com' },
+      source: 'rules',
+      creditsUsed: 0,
+    });
+  });
+
+  it('shows the patient who is already on the list instead of the form', async () => {
+    const dispatch = vi.fn<Dispatcher>();
+    const reply = await resolveReply('dodaj pacjenta Jan Kowalski', { useAi: true, context: CONTEXT, dispatch });
+    expect(dispatch).not.toHaveBeenCalled();
+    expect(reply.spec).toEqual({ component: 'PatientPeek', patientId: 'p-jan' });
+  });
+
+  it('keeps the e-mail from the earlier message when the model card comes a turn later', async () => {
+    const dispatch: Dispatcher = async () => ({
+      sessionId: 's-3',
+      text: 'Dodaję pacjenta.',
+      spec: { component: 'AddPatient' as const, name: 'Ala Nowak' },
+      creditsUsed: 1,
+    });
+    const reply = await resolveReply('Ala Nowak', {
+      useAi: true,
+      context: CONTEXT,
+      dispatch,
+      newPatientContext: { email: 'ala@example.com' },
+    });
+    expect(reply.spec).toEqual({ component: 'AddPatient', name: 'Ala Nowak', email: 'ala@example.com' });
+  });
+
+  it('gives the form from rules for the other verbs too', async () => {
+    const dispatch = vi.fn<Dispatcher>();
+    const reply = await resolveReply('utwórz pacjenta Adam Lis, 601 202 303', {
+      useAi: false,
+      context: CONTEXT,
+      dispatch,
+    });
+    expect(reply.spec).toEqual({ component: 'AddPatient', name: 'Adam Lis', phone: '601 202 303' });
+  });
+});
+
+// Decyzja właściciela 18.11: „dodaj pacjenta … i ułóż mu zestaw” też daje formularz od razu; reszta idzie dalej po dodaniu.
+describe('resolveReply: adding a patient together with something else', () => {
+  const context = {
+    patients: [
+      { id: 'p-jan', name: 'Jan Kowalski', email: 'jan@example.com' },
+      { id: 'p-ewa-1', name: 'Ewa Lis' },
+      { id: 'p-ewa-2', name: 'Ewa Lis' },
+    ],
+    sets: [{ id: 's-hip', name: 'Biodro · wzmacnianie', description: '' }],
+  };
+
+  it('opens the filled form at once and keeps the rest of the request for after the add', async () => {
+    const dispatch = vi.fn<Dispatcher>();
+    const reply = await resolveReply('dodaj pacjenta Adam Lis adam@example.com i ułóż mu zestaw na biodro', {
+      useAi: true,
+      context,
+      dispatch,
+    });
+
+    expect(dispatch).not.toHaveBeenCalled();
+    expect(reply.spec).toEqual({
+      component: 'AddPatient',
+      name: 'Adam Lis',
+      email: 'adam@example.com',
+      then: 'ułóż mu zestaw na biodro',
+    });
+    expect(reply.text).toBe(
+      'Uzupełnij brakujące dane w formularzu. Po dodaniu pacjenta przejdę do reszty prośby: „ułóż mu zestaw na biodro”.'
+    );
+  });
+
+  it('goes on with the rest for a patient who is already on the list, by id', async () => {
+    const dispatch = vi.fn<Dispatcher>(async () => ({
+      sessionId: 's-9',
+      text: 'Proponuję zestaw na biodro.',
+      spec: { component: 'SetDraft' as const, exerciseIds: ['e1', 'e2'], note: 'biodro' },
+      creditsUsed: 1,
+    }));
+    const reply = await resolveReply('dodaj pacjenta jan@example.com i ułóż mu zestaw na biodro', {
+      useAi: true,
+      context,
+      dispatch,
+    });
+
+    expect(dispatch).toHaveBeenCalledWith('ułóż mu zestaw na biodro', undefined, undefined);
+    expect(reply.spec).toEqual({
+      component: 'SetDraft',
+      patientId: 'p-jan',
+      exerciseIds: ['e1', 'e2'],
+      note: 'biodro',
+    });
+    expect(reply.text).toBe('Jan Kowalski jest już na liście pacjentów. Proponuję zestaw na biodro.');
+  });
+
+  it('asks which namesake and which patient a single word means, keeping only the rest as the command', async () => {
+    const dispatch = vi.fn<Dispatcher>();
+    const namesakes = await resolveReply('dodaj pacjentkę Ewa Lis i ułóż jej zestaw na biodro', {
+      useAi: true,
+      context,
+      dispatch,
+    });
+    expect(namesakes.spec).toMatchObject({
+      component: 'Clarify',
+      choices: [{ patientId: 'p-ewa-1' }, { patientId: 'p-ewa-2' }],
+    });
+    expect(namesakes.pendingCommand).toBe('ułóż jej zestaw na biodro');
+
+    const oneWord = await resolveReply('dodaj pacjenta Kowalski i ułóż mu zestaw na biodro', {
+      useAi: true,
+      context,
+      dispatch,
+    });
+    expect(oneWord.spec).toMatchObject({ component: 'Clarify', choices: [{ patientId: 'p-jan' }, {}] });
+    expect(oneWord.pendingCommand).toBe('ułóż mu zestaw na biodro');
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+});
+
+describe('resolveForPatient', () => {
+  const context = { patients: [], sets: [{ id: 's-hip', name: 'Biodro · wzmacnianie', description: '' }] };
+
+  it('binds the model card to the patient by id, whoever the model put on it', async () => {
+    const dispatch: Dispatcher = async () => ({
+      sessionId: 's-1',
+      text: 'Zestaw na biodro.',
+      spec: { component: 'SetDraft' as const, patientId: 'p-other', exerciseIds: ['e1'] },
+      creditsUsed: 1,
+    });
+    const reply = await resolveForPatient('ułóż mu zestaw na biodro', 'p-new', { useAi: true, context, dispatch });
+
+    expect(reply.spec).toEqual({ component: 'SetDraft', patientId: 'p-new', exerciseIds: ['e1'] });
+    expect(reply.sessionId).toBe('s-1');
+  });
+
+  it('finishes from rules when the model asks instead of answering, when it fails and without AI', async () => {
+    const expected = { component: 'SetDraft', patientId: 'p-new', setId: 's-hip', exerciseIds: [] };
+    const asking: Dispatcher = async () => ({
+      sessionId: 's-1',
+      spec: { component: 'Clarify' as const, question: 'Dla kogo?', options: [] },
+      creditsUsed: 1,
+    });
+    const failing: Dispatcher = async () => {
+      throw new ChatDispatchError('unavailable', 'down');
+    };
+    const command = 'ułóż mu zestaw na biodro';
+
+    expect((await resolveForPatient(command, 'p-new', { useAi: true, context, dispatch: asking })).spec).toEqual(
+      expected
+    );
+    const failed = await resolveForPatient(command, 'p-new', { useAi: true, context, dispatch: failing });
+    expect(failed).toMatchObject({ spec: expected, source: 'rules', fallbackReason: 'unavailable' });
+    expect((await resolveForPatient(command, 'p-new', { useAi: false, context, dispatch: failing })).spec).toEqual(
+      expected
+    );
   });
 });
 

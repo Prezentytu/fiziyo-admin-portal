@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { nextRevealMarker, revealSegments, thinkingLabel, thinkingTopic } from '../replyMotion';
+import { nextRevealMarker, revealSegments, thinkingElapsed, thinkingLabel, thinkingTopic } from '../replyMotion';
 
 describe('revealSegments', () => {
   it('keeps the whole text, word by word, with growing delays', () => {
@@ -45,16 +45,43 @@ describe('thinkingLabel', () => {
     expect(thinkingLabel(1500, 'exercises')).toBe('Przeglądam katalog ćwiczeń…');
     expect(thinkingLabel(5000, 'exercises')).toBe('Dobieram ćwiczenia…');
     expect(thinkingLabel(1500, 'patients')).toBe('Sprawdzam pacjentów…');
-    expect(thinkingLabel(20000, 'set')).toBe('Jeszcze chwila, to dłuższe zadanie…');
+    expect(thinkingLabel(5000, 'set')).toBe('Dobieram ćwiczenia z katalogu…');
+    expect(thinkingLabel(10000, 'set')).toBe('Układam zestaw…');
+    expect(thinkingLabel(15000, 'set')).toBe('Sprawdzam propozycję…');
+  });
+
+  // Demo 18.11: po 9 s status stawał na „Jeszcze chwila, to dłuższe zadanie…” i nie ruszał się do końca.
+  it.each(['document', 'set', 'patients', 'exercises', 'general'] as const)(
+    'keeps moving through a long wait for %s',
+    (topic) => {
+      const labels = [20000, 26000, 32000, 38000, 44000, 50000, 90000, 96000].map((ms) => thinkingLabel(ms, topic));
+      for (let index = 1; index < labels.length; index += 1) expect(labels[index]).not.toBe(labels[index - 1]);
+      expect(new Set(labels).size).toBeGreaterThanOrEqual(3);
+    }
+  );
+
+  it('says in a long wait what it is still doing for the topic', () => {
+    expect(thinkingLabel(20000, 'set')).toBe('To dłuższe zadanie, nadal układam zestaw…');
+    expect(thinkingLabel(20000, 'exercises')).toMatch(/katalog/);
+    expect(thinkingLabel(20000, 'document')).toMatch(/dokument/i);
   });
 
   it('never mentions patients for a general question', () => {
-    for (const ms of [0, 1500, 5000, 20000]) expect(thinkingLabel(ms)).not.toMatch(/pacjent/);
+    for (const ms of [0, 1500, 5000, 20000, 26000, 32000, 60000]) expect(thinkingLabel(ms)).not.toMatch(/pacjent/);
   });
 
   it('speaks about the document while one is read', () => {
     expect(thinkingLabel(0, 'document')).toBe('Czytam dokument…');
     expect(thinkingLabel(3000, 'document')).toBe('Wyłuskuję zalecenia…');
+  });
+});
+
+describe('thinkingElapsed', () => {
+  it('shows how long the wait is only once it is long, in steps of five seconds', () => {
+    expect(thinkingElapsed(9000)).toBeUndefined();
+    expect(thinkingElapsed(15000)).toBe('15 s');
+    expect(thinkingElapsed(23900)).toBe('20 s');
+    expect(thinkingElapsed(61000)).toBe('60 s');
   });
 });
 

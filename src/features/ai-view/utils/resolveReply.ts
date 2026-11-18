@@ -1,8 +1,14 @@
 import { normalizeSearchText } from '@/features/exercises/utils/exerciseSearch';
 import { confirmPatientSpec, labelPatientChoices, patientConfirmation } from './clarifyChoice';
-import { routeIntent, type IntentContext } from './intentRouter';
+import { askWhichPatient, routeForPatient, routeIntent, type IntentContext } from './intentRouter';
 import { matchPatients } from './patientMatch';
-import { withNewPatientDetails } from './newPatientDetails';
+import {
+  addPatientReply,
+  addPatientRest,
+  existingPatient,
+  withNewPatientDetails,
+  type NewPatientDetails,
+} from './newPatientDetails';
 import { describeSpec } from './replyText';
 import type { ChatNotice, ChatViewSpec } from './viewSpec';
 
@@ -42,6 +48,8 @@ export interface ResolvedReply {
   fallbackReason?: DispatchFailure;
   /** The model's answer waiting for „Czy chodzi o…?”: shown after the „Tak”, without asking the model again. */
   held?: HeldReply;
+  /** The command a question of this reply is about, when it is not the whole message (a combined request). */
+  pendingCommand?: string;
 }
 
 export interface HeldReply {
@@ -74,15 +82,28 @@ export async function resolveReply(
     contextPatientId?: string;
     /** Patients earlier cards of the conversation are about: one word of their name needs no confirmation. */
     knownPatientIds?: ReadonlySet<string>;
+    /** What earlier messages of the open exchange said about a new patient (`threadNewPatientDetails`). */
+    newPatientContext?: NewPatientDetails;
   }
 ): Promise<ResolvedReply> {
+  // „Dodaj pacjenta …” needs no model: the form opens at once with what was given, so nothing is asked in the chat.
+  const added = addPatientReply(text, options.context.patients, options.newPatientContext);
+  if (added) return { text: added.text, spec: added.spec, source: 'rules', creditsUsed: 0 };
+  // Not awaited when there is nothing to do: the dispatcher call below must start in the same tick.
+  const combined = addPatientThenRest(text, options);
+  if (combined) return combined;
   const known = new Set(options.knownPatientIds);
   if (options.contextPatientId) known.add(options.contextPatientId);
-  const routed = () => withNewPatientDetails(routeIntent(text, options.context, options.pendingCommand, known), text);
+  const routed = () =>
+    withNewPatientDetails(
+      routeIntent(text, options.context, options.pendingCommand, known),
+      text,
+      options.newPatientContext
+    );
   if (options.useAi) {
     try {
       const result = await options.dispatch(text, options.sessionId, options.signal);
-      const original = withNewPatientDetails(result.spec, text);
+      const original = withNewPatientDetails(result.spec, text, options.newPatientContext);
       const guarded = guardCardPatient(original, text, options.context, options.contextPatientId, known);
       // A card the guard changed keeps no model sentence: it may name the patient just taken off.
       const modelText = guarded === result.spec ? result.text : undefined;
@@ -119,6 +140,107 @@ export async function resolveReply(
   }
   const spec = routed();
   return { text: replyText(undefined, spec, options.context), spec, source: 'rules', creditsUsed: 0 };
+}
+
+interface ForPatientOptions {
+  useAi: boolean;
+  sessionId?: string;
+  context: IntentContext;
+  dispatch: Dispatcher;
+  signal?: AbortSignal;
+}
+
+/**
+ * „Dodaj pacjenta … i ułóż mu zestaw”: the form opens at once with what was given and keeps the rest
+ * (`then`) for after the save. A patient already on the list gets the rest right away; a single word
+ * of a name or namesakes are asked about first, as everywhere else, with the rest as the pending command.
+ */
+function addPatientThenRest(
+  text: string,
+  options: ForPatientOptions & { newPatientContext?: NewPatientDetails }
+): Promise<ResolvedReply> | null {
+  const rest = addPatientRest(text);
+  if (!rest) return null;
+  const { patients } = options.context;
+  const form = withNewPatientDetails({ component: 'AddPatient' }, text, options.newPatientContext);
+  if (form?.component !== 'AddPatient') return null;
+
+  const existing = existingPatient(form, patients);
+  if (existing) {
+    return resolveForPatient(rest, existing.id, options).then((reply) => ({
+      ...reply,
+      text: `${existing.name} jest już na liście pacjentów. ${reply.text}`.trim(),
+    }));
+  }
+  const hasContact = Boolean(form.email || form.phone);
+  const named = form.name && !hasContact ? matchPatients(form.name, patients) : undefined;
+  const question =
+    named?.kind === 'many'
+      ? askWhichPatient(named.patients, 'Masz kilku pacjentów o tym imieniu i nazwisku. O kogo chodzi?')
+      : named?.kind === 'one' && !/\s/.test(form.name ?? '')
+        ? confirmPatientSpec(named.patient, patients)
+        : undefined;
+  if (question?.component === 'Clarify') {
+    return Promise.resolve({
+      text: question.question,
+      spec: question,
+      source: 'rules',
+      creditsUsed: 0,
+      pendingCommand: rest,
+    });
+  }
+  return Promise.resolve({
+    text: `Uzupełnij brakujące dane w formularzu. Po dodaniu pacjenta przejdę do reszty prośby: „${rest}”.`,
+    spec: { ...form, then: rest },
+    source: 'rules',
+    creditsUsed: 0,
+  });
+}
+
+/** A model card put on `patientId`; undefined for a reply that is no answer (a question, nothing, a form). */
+function bindPatient(spec: ChatViewSpec | undefined, patientId: string): ChatViewSpec | undefined {
+  switch (spec?.component) {
+    case 'SetDraft':
+    case 'ExerciseResults':
+    case 'AssignSummary':
+      return { ...spec, patientId };
+    case 'PatientPeek':
+      return { component: 'PatientPeek', patientId };
+    case 'CreateExercise':
+    case 'Navigate':
+      return spec;
+    default:
+      return undefined;
+  }
+}
+
+/**
+ * A command carried out for one patient known by id (just added, or found by e-mail): the model
+ * composes when allowed and its card is bound to that patient whatever it put there; a reply that
+ * only asks, a failure and the no-AI mode end with the rules card for that patient.
+ */
+export async function resolveForPatient(
+  command: string,
+  patientId: string,
+  options: ForPatientOptions
+): Promise<ResolvedReply> {
+  const rules = (): ResolvedReply => {
+    const spec = routeForPatient(command, options.context, patientId);
+    return { text: replyText(undefined, spec, options.context), spec, source: 'rules', creditsUsed: 0 };
+  };
+  if (!options.useAi) return rules();
+  try {
+    const result = await options.dispatch(command, options.sessionId, options.signal);
+    const spec = bindPatient(result.spec, patientId);
+    const session = { sessionId: result.sessionId, creditsUsed: result.creditsUsed };
+    if (!spec) return { ...rules(), source: 'ai', ...session };
+    // A sentence written for another patient may name them: the card's own sentence stands in.
+    const modelPatientId = result.spec && 'patientId' in result.spec ? result.spec.patientId : undefined;
+    const modelText = !modelPatientId || modelPatientId === patientId ? result.text : undefined;
+    return { text: replyText(modelText, spec, options.context), spec, source: 'ai', ...session };
+  } catch (error) {
+    return { ...rules(), fallbackReason: error instanceof ChatDispatchError ? error.reason : 'unavailable' };
+  }
 }
 
 /**

@@ -37,7 +37,14 @@ describe('conversationStorageKey', () => {
 
 describe('parseConversations', () => {
   it('keeps the other-therapist notice of a stored reply and drops an unknown one without losing the message', () => {
-    const reply = { id: 'a2', role: 'assistant', text: 'Prowadzi go inny fizjoterapeuta.', source: 'ai', creditsUsed: 0, createdAt: 3 };
+    const reply = {
+      id: 'a2',
+      role: 'assistant',
+      text: 'Prowadzi go inny fizjoterapeuta.',
+      source: 'ai',
+      creditsUsed: 0,
+      createdAt: 3,
+    };
     const raw = JSON.stringify([
       {
         id: 'c1',

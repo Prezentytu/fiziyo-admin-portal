@@ -60,14 +60,6 @@ export interface SetDraftPayload {
 
 const NUMERIC_KEYS = ['sets', 'reps', 'duration', 'executionTime', 'restSets', 'restReps', 'preparationTime'] as const;
 
-/** Under exercise results: what narrows the choice before a set is made from them. */
-export const EXERCISE_CLARIFY_TOPICS = [
-  'Cel ćwiczeń',
-  'Dostępny sprzęt',
-  'Poziom zaawansowania',
-  'Ból i ograniczenia',
-] as const;
-
 /** What the shared parameter editor (`ExerciseParametersFields`) shows for a draft row. */
 export function draftParameterValues(item: DraftItem): ExerciseParameterValues {
   return {
@@ -303,24 +295,17 @@ function capitalize(value: string | undefined): string {
   return value.charAt(0).toLocaleUpperCase('pl-PL') + value.slice(1);
 }
 
-/**
- * What makes an AI set fit the person better. Each topic is one fact: a tap starts the message
- * with „Temat: ”, the therapist adds the answer, and the assistant corrects the set in the same conversation.
- */
-export const DRAFT_CLARIFY_TOPICS = [
-  'Strona ciała',
-  'Czas trwania',
-  'Przyczyna',
-  'Główny objaw',
-  'Wiek i aktywność',
-] as const;
-
 /** The set draft a new exercise returns to: its exercises and their sets, reps and hold times. */
 export interface SetDraftReturn {
   exerciseIds: string[];
   patientId?: string;
   note?: string;
   doses?: Record<string, DraftDose>;
+  /**
+   * The whole rows (rests, tempo, load, notes, side, preparation), from 18.11. Drafts stored earlier
+   * carry only `doses`, which stay for them.
+   */
+  items?: DraftItem[];
 }
 
 /** Sets, reps and hold time of each draft item, so a rebuilt draft keeps what the therapist set. */
@@ -334,4 +319,18 @@ export function itemsToDoses(items: readonly DraftItem[]): Record<string, DraftD
       ];
     })
   );
+}
+
+/** What an open proposal holds now, as a new card rebuilds it (a new exercise returns to it this way). */
+export function draftReturnOf(
+  items: readonly DraftItem[],
+  options: { patientId?: string; note?: string }
+): SetDraftReturn {
+  return {
+    exerciseIds: items.map((item) => item.exerciseId),
+    patientId: options.patientId,
+    note: options.note,
+    doses: itemsToDoses(items),
+    items: [...items],
+  };
 }

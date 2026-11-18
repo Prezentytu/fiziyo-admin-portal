@@ -8,6 +8,8 @@ const appendExchange = vi.hoisted(() => vi.fn());
 const mockToastError = vi.hoisted(() => vi.fn());
 const mockSaveTemplateSet = vi.hoisted(() => vi.fn());
 const openCreateSet = vi.hoisted(() => vi.fn());
+const reportLiveDraft = vi.hoisted(() => vi.fn());
+const restoreDraft = vi.hoisted(() => vi.fn());
 let listItems: Array<Record<string, unknown>> = [];
 
 const apolloClient = { query: mockClientQuery };
@@ -47,6 +49,8 @@ vi.mock('../../ChatSessionContext', () => ({
     appendExchange,
     markChosen: vi.fn(),
     openCreateSet,
+    reportLiveDraft,
+    restoreDraft,
   }),
   toWizardPatient: () => undefined,
 }));
@@ -71,7 +75,9 @@ const alternating = {
 };
 
 const renderCard = () =>
-  render(<SetDraftCard spec={{ component: 'SetDraft', exerciseIds: ['ex-alt'] } as never} testId="draft" messageId="m1" />);
+  render(
+    <SetDraftCard spec={{ component: 'SetDraft', exerciseIds: ['ex-alt'] } as never} testId="draft" messageId="m1" />
+  );
 
 const dailyMinutes = () => screen.getByTestId('draft').textContent?.match(/dziennie ok\. (\d+) min/)?.[1];
 
@@ -137,11 +143,9 @@ describe('SetDraftCard: wersja rekordu ćwiczeń szkicu', () => {
   });
 
   it('po błędzie wczytania: „Dalej” ponawia z komunikatem i nie przechodzi, po ponowieniu pyta o harmonogram z 6 min', async () => {
-    mockClientQuery
-      .mockRejectedValueOnce(new Error('network'))
-      .mockResolvedValue({
-        data: { exerciseById: { id: 'ex-alt', updatedAt: 't1', enrichmentData: { schemaVersion: '3.3' } } },
-      });
+    mockClientQuery.mockRejectedValueOnce(new Error('network')).mockResolvedValue({
+      data: { exerciseById: { id: 'ex-alt', updatedAt: 't1', enrichmentData: { schemaVersion: '3.3' } } },
+    });
     render(
       <SetDraftCard
         spec={{ component: 'SetDraft', exerciseIds: ['ex-alt'], patientId: 'p1' } as never}
@@ -197,6 +201,93 @@ describe('SetDraftCard: wersja rekordu ćwiczeń szkicu', () => {
     );
     await screen.findByTestId('draft-item-ex-alt');
     screen.getByTestId('draft-full-editor-btn').click();
-    expect(openCreateSet).toHaveBeenCalledWith(['ex-alt'], undefined, expect.stringMatching(/^Po rekonstrukcji ACL · \d\d\.\d\d$/));
+    expect(openCreateSet).toHaveBeenCalledWith(
+      ['ex-alt'],
+      undefined,
+      expect.stringMatching(/^Po rekonstrukcji ACL · \d\d\.\d\d$/)
+    );
+  });
+
+  // Demo 18.11: droga do nowego ćwiczenia była schowana za wyszukiwarką (dopiero po 3 znakach).
+  it('„Utwórz nowe ćwiczenie” jest od razu na karcie, a nowe ćwiczenie wraca do tej propozycji', async () => {
+    mockClientQuery.mockResolvedValue({
+      data: { exerciseById: { id: 'ex-alt', updatedAt: 't1', enrichmentData: {} } },
+    });
+    appendExchange.mockReset();
+    reportLiveDraft.mockReset();
+    render(
+      <SetDraftCard
+        spec={{ component: 'SetDraft', exerciseIds: ['ex-alt'], note: 'biodro' } as never}
+        testId="draft"
+        messageId="m1"
+      />
+    );
+    await screen.findByTestId('draft-item-ex-alt');
+    // Karta zgłasza wątkowi swój stan: „dodaj ćwiczenie X” z czatu dopisuje do tej propozycji.
+    expect(reportLiveDraft).toHaveBeenLastCalledWith(
+      'm1',
+      expect.objectContaining({ draft: expect.objectContaining({ exerciseIds: ['ex-alt'], note: 'biodro' }) })
+    );
+    expect(screen.getByTestId('draft-add-btn')).toBeTruthy();
+    screen.getByTestId('draft-create-btn').click();
+    expect(appendExchange).toHaveBeenCalledWith(
+      'Utwórz nowe ćwiczenie',
+      expect.objectContaining({
+        spec: expect.objectContaining({
+          component: 'CreateExercise',
+          addToSet: expect.objectContaining({ exerciseIds: ['ex-alt'], note: 'biodro' }),
+        }),
+      })
+    );
+  });
+
+  // Decyzja właściciela 18.11: po powrocie zestawu z dopisanym ćwiczeniem widać, która pozycja doszła.
+  it('dopisana pozycja ma plakietkę „nowe”, a karta bez tej informacji jej nie pokazuje', async () => {
+    mockClientQuery.mockResolvedValue({
+      data: { exerciseById: { id: 'ex-alt', updatedAt: 't1', enrichmentData: {} } },
+    });
+    const { unmount } = render(
+      <SetDraftCard
+        spec={{ component: 'SetDraft', exerciseIds: ['ex-alt'], addedExerciseId: 'ex-alt' } as never}
+        testId="draft"
+        messageId="m1"
+      />
+    );
+    await screen.findByTestId('draft-item-ex-alt');
+    expect(screen.getByTestId('draft-new-ex-alt').textContent).toBe('nowe');
+    unmount();
+
+    render(
+      <SetDraftCard spec={{ component: 'SetDraft', exerciseIds: ['ex-alt'] } as never} testId="draft" messageId="m2" />
+    );
+    await screen.findByTestId('draft-item-ex-alt');
+    expect(screen.queryByTestId('draft-new-ex-alt')).toBeNull();
+  });
+
+  // Decyzja właściciela 18.11: zablokowana wersja zestawu daje się przywrócić, wysłana albo zapisana nie.
+  it('zablokowana przez nowszą wersję karta ma „Wróć do tej wersji” i oddaje swoje pozycje w całości', async () => {
+    mockClientQuery.mockResolvedValue({
+      data: { exerciseById: { id: 'ex-alt', updatedAt: 't1', enrichmentData: {} } },
+    });
+    restoreDraft.mockReset();
+    const spec = { component: 'SetDraft', exerciseIds: ['ex-alt'], note: 'biodro' };
+    const { unmount } = render(<SetDraftCard spec={spec as never} testId="draft" messageId="m1" chosen="superseded" />);
+    await screen.findByTestId('draft-item-ex-alt');
+    expect(screen.queryByTestId('draft-primary-btn')).toBeNull();
+    expect(screen.queryByTestId('draft-add-btn')).toBeNull();
+    screen.getByTestId('draft-restore-btn').click();
+    expect(restoreDraft).toHaveBeenCalledWith(
+      expect.objectContaining({
+        component: 'SetDraft',
+        exerciseIds: ['ex-alt'],
+        note: 'biodro',
+        items: [expect.objectContaining({ exerciseId: 'ex-alt' })],
+      })
+    );
+    unmount();
+
+    render(<SetDraftCard spec={spec as never} testId="draft" messageId="m2" chosen="next" />);
+    await screen.findByTestId('draft-item-ex-alt');
+    expect(screen.queryByTestId('draft-restore-btn')).toBeNull();
   });
 });

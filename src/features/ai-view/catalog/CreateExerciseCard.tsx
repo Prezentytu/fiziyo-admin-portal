@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils';
 import { FloatingMark } from '../FloatingMark';
 import { useChatActions, useChatBusy } from '../ChatSessionContext';
 import { useChatMode } from '../useChatMode';
+import { exerciseCreatedReply } from '../utils/addToDraft';
 import {
   buildChatExerciseEnrichment,
   CHAT_EXERCISE_DEFAULTS,
@@ -207,15 +208,8 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
     );
     if (!exercise) return;
     markChosen(messageId, 'created');
-    appendAssistant({
-      spec: {
-        component: 'ExerciseCreated',
-        exerciseId: exercise.id,
-        name: exercise.name,
-        patientId: spec.addToSet?.patientId ?? contextPatient?.id,
-        addToSet: spec.addToSet,
-      },
-    });
+    // Ćwiczenie utworzone dla propozycji zestawu: zestaw wraca od razu, z nowym ćwiczeniem.
+    appendAssistant(exerciseCreatedReply(exercise, { patientId: contextPatient?.id, addToSet: spec.addToSet }));
   });
 
   if (chosen !== undefined) {

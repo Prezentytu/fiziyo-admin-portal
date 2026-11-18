@@ -86,9 +86,17 @@ describe('useExerciseDraftAi', () => {
 
     expect(order).toEqual(['params', 'description', 'steps', 'cues', 'more', 'image']);
     expect(fills).toContainEqual({ section: 'description', text: 'Trzymasz sztangę nad głową.' });
-    expect(fills).toContainEqual({ section: 'more', mistakes: 'Wyginanie lędźwi → napnij brzuch', stopIf: 'Ból barku' });
-    expect(fills.find((fill) => fill.section === 'params')).toMatchObject({ params: { type: 'time', executionTime: 30 } });
-    expect(hook.result.current.sections).toEqual(Object.fromEntries(DRAFT_SECTIONS.map((section) => [section, 'done'])));
+    expect(fills).toContainEqual({
+      section: 'more',
+      mistakes: 'Wyginanie lędźwi → napnij brzuch',
+      stopIf: 'Ból barku',
+    });
+    expect(fills.find((fill) => fill.section === 'params')).toMatchObject({
+      params: { type: 'time', executionTime: 30 },
+    });
+    expect(hook.result.current.sections).toEqual(
+      Object.fromEntries(DRAFT_SECTIONS.map((section) => [section, 'done']))
+    );
     expect(hook.result.current.generatedFor).toBe('Core sztanga nad głową');
     expect(ai.generateExerciseImage).toHaveBeenCalledWith('Core sztanga nad głową', 'Opis', 'time');
   });

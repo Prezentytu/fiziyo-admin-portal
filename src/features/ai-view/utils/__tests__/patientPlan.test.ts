@@ -58,8 +58,20 @@ describe('summarizePatientPlans', () => {
             id: 'set-alt',
             name: 'Biodro',
             exerciseMappings: [
-              { id: 'm1', order: 1, sets: 3, reps: 10, exercise: { name: 'Wykrok', type: 'reps', side: 'alternating', ...record } },
-              { id: 'm2', order: 2, sets: 3, reps: 10, exercise: { name: 'Unik', type: 'reps', side: 'both', ...record } },
+              {
+                id: 'm1',
+                order: 1,
+                sets: 3,
+                reps: 10,
+                exercise: { name: 'Wykrok', type: 'reps', side: 'alternating', ...record },
+              },
+              {
+                id: 'm2',
+                order: 2,
+                sets: 3,
+                reps: 10,
+                exercise: { name: 'Unik', type: 'reps', side: 'both', ...record },
+              },
             ],
           },
         },
@@ -97,9 +109,9 @@ describe('contextPlanFacts', () => {
 
   it('does not say „brak planu” when a current plan has no sessions counted this week yet', () => {
     expect(contextPlanFacts([newer], [], NOW).week).toBe('plan od 18 listopada');
-    expect(contextPlanFacts([older], [{ assignmentId: 'pa-old', targetSessions: 0, completedSessions: 0 }], NOW).week).toBe(
-      'plan aktywny, brak treningów w tym tygodniu'
-    );
+    expect(
+      contextPlanFacts([older], [{ assignmentId: 'pa-old', targetSessions: 0, completedSessions: 0 }], NOW).week
+    ).toBe('plan aktywny, brak treningów w tym tygodniu');
     expect(contextPlanFacts([], [], NOW).week).toBe('brak planu');
   });
 });

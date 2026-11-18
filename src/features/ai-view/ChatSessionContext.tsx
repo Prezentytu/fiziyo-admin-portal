@@ -14,7 +14,8 @@ import type { UserByClerkIdResponse } from '@/types/apollo';
 import { useChatData, type ChatPatient } from './useChatData';
 import { useChatMode } from './useChatMode';
 import { newChatId, useChatThread, type AssistantReply, type ChatThreadMessage } from './useChatThread';
-import { conversationPatientId, type PinnedPatient } from './utils/chatCards';
+import type { LiveDraft } from './utils/addToDraft';
+import { conversationPatientId, type ChatCardSpec, type PinnedPatient } from './utils/chatCards';
 import {
   conversationStorageKey,
   parseConversations,
@@ -65,7 +66,11 @@ export interface ChatSession {
   appendExchange: (userText: string, reply: AssistantReply, attachmentName?: string) => void;
   /** A patient picked from a choice by id; finishes the question without the model. */
   choosePatient: (patientId: string, label: string) => void;
+  /** The rest of a combined request, carried out for the patient the form just added (by id). */
+  continueForPatient: (patientId: string, name: string, command: string) => void;
   markChosen: (messageId: string, chosen: string) => void;
+  /** A locked set proposal comes back as the newest card; the one active until now locks. */
+  restoreDraft: (spec: Extract<ChatCardSpec, { component: 'SetDraft' }>) => void;
   runTask: (
     userText: string,
     task: (signal: AbortSignal) => Promise<AssistantReply>,
@@ -90,6 +95,11 @@ export interface ChatSession {
   showPatient: (patientId: string) => void;
   /** Escape hatch to the full set editor with what chat already knows. */
   openCreateSet: (exerciseIds: string[], patient?: Patient, name?: string) => void;
+  /**
+   * An open set proposal tells the thread what it holds now (null when it closes), so „dodaj ćwiczenie X”
+   * typed in the chat adds to it. Kept in memory only, never in the stored history.
+   */
+  reportLiveDraft: (messageId: string, live: LiveDraft | null) => void;
 }
 
 /**
@@ -109,11 +119,14 @@ export type ChatActions = Pick<
   | 'appendAssistant'
   | 'appendExchange'
   | 'choosePatient'
+  | 'continueForPatient'
   | 'markChosen'
+  | 'restoreDraft'
   | 'runTask'
   | 'refetchCredits'
   | 'showPatient'
   | 'openCreateSet'
+  | 'reportLiveDraft'
 >;
 
 const ChatSessionContext = createContext<ChatSession | null>(null);
@@ -220,12 +233,19 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
   // The chip's patient (set below) is what a model card is checked against when a message is sent.
   const contextPatientIdRef = useRef<string | undefined>(undefined);
   const getContextPatientId = useCallback(() => contextPatientIdRef.current, []);
+  const liveDraftsRef = useRef(new Map<string, LiveDraft>());
+  const getLiveDraft = useCallback((messageId: string) => liveDraftsRef.current.get(messageId), []);
+  const reportLiveDraft = useCallback((messageId: string, live: LiveDraft | null) => {
+    if (live) liveDraftsRef.current.set(messageId, live);
+    else liveDraftsRef.current.delete(messageId);
+  }, []);
   const thread = useChatThread({
     useAi: preference.useAi,
     context: intentContext,
     ready: isReady,
     scopeKey: organizationId,
     getContextPatientId,
+    getLiveDraft,
   });
   const { messages, reset, isBusy } = thread;
 
@@ -343,6 +363,11 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
   );
   const title = conversations.find((conversation) => conversation.id === activeConversationId)?.title ?? 'Nowa rozmowa';
   const { send, stop: stopReply, appendAssistant, appendExchange, choosePatient, runTask, markChosen } = thread;
+  const { continueForPatient: continueThread, restoreDraft } = thread;
+  const continueForPatient = useCallback(
+    (patientId: string, name: string, command: string) => void continueThread(patientId, name, command),
+    [continueThread]
+  );
   const sendMessage = useCallback((text: string) => void send(text), [send]);
   const openCreateSet = useCallback(
     (exerciseIds: string[], patient?: Patient, name?: string) => setCreateSetRequest({ exerciseIds, patient, name }),
@@ -362,11 +387,14 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       appendAssistant,
       appendExchange,
       choosePatient,
+      continueForPatient,
       markChosen,
+      restoreDraft,
       runTask,
       refetchCredits,
       showPatient,
       openCreateSet,
+      reportLiveDraft,
     }),
     [
       organizationId,
@@ -380,11 +408,14 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       appendAssistant,
       appendExchange,
       choosePatient,
+      continueForPatient,
       markChosen,
+      restoreDraft,
       runTask,
       refetchCredits,
       showPatient,
       openCreateSet,
+      reportLiveDraft,
     ]
   );
   const setUseAi = useCallback((useAi: boolean) => update({ useAi }), [update]);
@@ -412,7 +443,9 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       appendAssistant,
       appendExchange,
       choosePatient,
+      continueForPatient,
       markChosen,
+      restoreDraft,
       runTask,
       conversations,
       conversationsReady: storageKey !== undefined || (!isOrganizationLoading && !organizationId),
@@ -428,6 +461,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       setContextOpen,
       showPatient,
       openCreateSet,
+      reportLiveDraft,
     }),
     [
       organizationId,
@@ -451,7 +485,9 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       appendAssistant,
       appendExchange,
       choosePatient,
+      continueForPatient,
       markChosen,
+      restoreDraft,
       runTask,
       conversations,
       storageKey,
@@ -467,6 +503,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       isContextOpen,
       showPatient,
       openCreateSet,
+      reportLiveDraft,
     ]
   );
 

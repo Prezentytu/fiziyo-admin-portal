@@ -102,6 +102,7 @@ describe('wyjścia z kroków czatu', () => {
           exerciseIds: ['e1', 'e-new'],
           note: 'ból karku',
           doses: { e1: { sets: 2, reps: 10 } },
+          addedExerciseId: 'e-new',
         },
       })
     );

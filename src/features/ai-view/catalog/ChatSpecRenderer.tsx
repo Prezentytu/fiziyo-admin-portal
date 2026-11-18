@@ -25,14 +25,15 @@ interface ChatSpecRendererProps {
   readonly testId: string;
   readonly messageId: string;
   readonly chosen?: string;
+  readonly request?: string;
 }
 
 /** The only place that maps a card spec (dispatcher, AI or rules, or a flow step) to UI. */
-export function ChatSpecRenderer({ spec, testId, messageId, chosen }: ChatSpecRendererProps) {
+export function ChatSpecRenderer({ spec, testId, messageId, chosen, request }: ChatSpecRendererProps) {
   const common = { messageId, chosen };
   switch (spec.component) {
     case 'SetDraft':
-      return <SetDraftCard spec={spec} testId={`${testId}-set-draft`} {...common} />;
+      return <SetDraftCard spec={spec} testId={`${testId}-set-draft`} request={request} {...common} />;
     case 'AssignSummary':
       // A known set for a known patient is the same flow: check the exercises, then the schedule.
       return (
@@ -43,7 +44,7 @@ export function ChatSpecRenderer({ spec, testId, messageId, chosen }: ChatSpecRe
         />
       );
     case 'ExerciseResults':
-      return <ExerciseResultsCard spec={spec} testId={`${testId}-exercise-results`} {...common} />;
+      return <ExerciseResultsCard spec={spec} testId={`${testId}-exercise-results`} request={request} {...common} />;
     case 'PatientPeek':
       return <PatientPeekCard spec={spec} testId={`${testId}-patient-peek`} {...common} />;
     case 'Navigate':

@@ -1,5 +1,6 @@
 import { normalizeSearchText } from '@/features/exercises/utils/exerciseSearch';
 import { confirmPatientSpec } from './clarifyChoice';
+import { parseNewPatientDetails } from './newPatientDetails';
 import { matchPatients, patientChoiceLabels, type MatchablePatient } from './patientMatch';
 import { tokenizeWords, wordMatches } from './textMatch';
 import { MAX_CLARIFY_OPTIONS, UNSUPPORTED_SPEC, type ChatViewSpec, type NavigateRoute } from './viewSpec';
@@ -16,7 +17,7 @@ export interface IntentContext {
 }
 
 const INACTIVE_PATTERN = /nie cwicz|nieaktywn|kto nie|bez trening|zaniedbuj/;
-const ADD_PATIENT_PATTERN = /(dodaj|nowy|nowa|nowego|nowej|zaloz)\w* pacjent/;
+const ADD_PATIENT_PATTERN = /(dodaj|dopisz|stworz|utworz|zarejestruj|nowy|nowa|nowego|nowej|zaloz)\w* (?:mi )?pacjent/;
 const CREATE_EXERCISE_PATTERN = /(utworz|stworz|dodaj|nowe|nowego)\w* (wlasne )?cwiczeni/;
 const SET_PATTERN = /zestaw|plan|przypisz|program/;
 const SEARCH_PATTERN = /znajdz|wyszukaj|szukaj|cwiczeni|cwiczen/;
@@ -56,6 +57,8 @@ const STOP_WORDS = new Set([
   'przygotuj',
   'utworz',
   'stworz',
+  'uloz',
+  'razu',
   'przypisz',
   'daj',
   'dobierz',
@@ -120,7 +123,11 @@ export function findBestSet(sets: readonly MatchableSet[], topic: readonly strin
  * Every answer carries the patient id, so a click picks that patient and not a name: two „Jan Kowalski”
  * used to give two identical chips that asked the same question again (test 17.11, K3).
  */
-function askWhichPatient(patients: readonly MatchablePatient[], question: string, firstOption?: string): ChatViewSpec {
+export function askWhichPatient(
+  patients: readonly MatchablePatient[],
+  question: string,
+  firstOption?: string
+): ChatViewSpec {
   const offered = patients.slice(0, MAX_CLARIFY_OPTIONS - (firstOption ? 1 : 0));
   const choices = patientChoiceLabels(offered).map((label, index) => ({ label, patientId: offered[index].id }));
   const all = firstOption ? [{ label: firstOption }, ...choices] : choices;
@@ -175,7 +182,7 @@ function routeCommand(
 
   if (NO_PATIENT_PATTERN.test(normalized)) return { component: 'SetDraft', exerciseIds: [] };
   if (INACTIVE_PATTERN.test(normalized)) return { component: 'PatientPeek', filter: 'inactive' };
-  if (ADD_PATIENT_PATTERN.test(normalized)) return { component: 'AddPatient', name: textAfter(text, /^pacjent/i) };
+  if (ADD_PATIENT_PATTERN.test(normalized)) return { component: 'AddPatient', name: parseNewPatientDetails(text).name };
   if (CREATE_EXERCISE_PATTERN.test(normalized)) {
     return { component: 'CreateExercise', name: textAfter(text, /^ćwiczeni/i) };
   }

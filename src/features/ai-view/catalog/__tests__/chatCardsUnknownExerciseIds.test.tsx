@@ -78,13 +78,15 @@ vi.mock('../../ChatSessionContext', () => ({
     appendExchange,
     markChosen: vi.fn(),
     openCreateSet: vi.fn(),
+    reportLiveDraft: vi.fn(),
+    restoreDraft: vi.fn(),
   }),
   toWizardPatient: () => undefined,
 }));
 
 function requestedIds(): string[] {
   return mockClientQuery.mock.calls
-    .map((call) => (call[0]?.variables as { id?: string; ids?: string[] } | undefined))
+    .map((call) => call[0]?.variables as { id?: string; ids?: string[] } | undefined)
     .flatMap((variables) => [variables?.id, ...(variables?.ids ?? [])])
     .filter((id): id is string => typeof id === 'string');
 }

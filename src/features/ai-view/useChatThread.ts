@@ -3,11 +3,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { dispatchChatMessage } from './chatDispatchClient';
+import { addToDraftReply, draftRequest, openSetDraft, type LiveDraft } from './utils/addToDraft';
+import { lockSupersededDrafts, RESTORE_DRAFT_LABEL, RESTORED_DRAFT_TEXT } from './utils/draftVersions';
 import { cardPatientIds, latestCardPatientId, type ChatCardSpec } from './utils/chatCards';
 import { confirmAnswer, OTHER_PATIENT_OPTION, patientConfirmation } from './utils/clarifyChoice';
 import type { ChatThreadMessage } from './utils/conversationStore';
 import { routeForPatient, type IntentContext } from './utils/intentRouter';
-import { replyText, resolveReply, type HeldReply } from './utils/resolveReply';
+import { threadNewPatientDetails } from './utils/newPatientDetails';
+import { replyText, resolveForPatient, resolveReply, type HeldReply } from './utils/resolveReply';
 import { scheduleQuestion, type SetDraftPayload } from './utils/setDraft';
 import { accountQuestionReply, countQuestion, localReplyTo, withExerciseIdeas } from './utils/threadLocalReply';
 import { UNSUPPORTED_SPEC } from './utils/viewSpec';
@@ -32,6 +35,8 @@ interface ChatThreadOptions {
   ready: boolean;
   /** Active organization; a new one starts a new conversation and a new AI session. */
   scopeKey: string;
+  /** The open set proposal as its card has it now (the therapist's changes included), by message id. */
+  getLiveDraft?: (messageId: string) => LiveDraft | undefined;
 }
 
 export const STOPPED_TEXT = 'Zatrzymane. Napisz, co zrobić inaczej.';
@@ -41,8 +46,23 @@ export const PICK_OTHER_PATIENT_TEXT = 'Wybierz pacjenta z listy albo napisz imi
  * One conversation: what the therapist wrote and what came back (a sentence and a card from the
  * dispatcher, AI or rules, or the next step of a flow the thread runs itself).
  */
-export function useChatThread({ useAi, context, ready, scopeKey, getContextPatientId }: ChatThreadOptions) {
-  const [messages, setMessages] = useState<ChatThreadMessage[]>([]);
+export function useChatThread({
+  useAi,
+  context,
+  ready,
+  scopeKey,
+  getContextPatientId,
+  getLiveDraft,
+}: ChatThreadOptions) {
+  const [messages, setRawMessages] = useState<ChatThreadMessage[]>([]);
+  // Every change of the thread passes here: a newer set proposal locks the earlier one (with its rows kept).
+  const setMessages = useCallback(
+    (update: ChatThreadMessage[] | ((previous: ChatThreadMessage[]) => ChatThreadMessage[])) =>
+      setRawMessages((previous) =>
+        lockSupersededDrafts(typeof update === 'function' ? update(previous) : update, getLiveDraft)
+      ),
+    [getLiveDraft]
+  );
   const [isBusy, setIsBusy] = useState(false);
   const [threadScope, setThreadScope] = useState(scopeKey);
   const sessionRef = useRef<{ scopeKey: string; id: string } | undefined>(undefined);
@@ -85,35 +105,44 @@ export function useChatThread({ useAi, context, ready, scopeKey, getContextPatie
   useEffect(startOver, [scopeKey, startOver]);
 
   /** A step of a flow (schedule, summary, sent) without a model call. */
-  const appendAssistant = useCallback((reply: AssistantReply) => {
-    setMessages((previous) => [
-      ...previous,
-      {
-        id: newChatId(),
-        role: 'assistant',
-        text: reply.text,
-        spec: reply.spec,
-        source: 'local',
-        creditsUsed: 0,
-        createdAt: Date.now(),
-      },
-    ]);
-  }, []);
+  const appendAssistant = useCallback(
+    (reply: AssistantReply) => {
+      setMessages((previous) => [
+        ...previous,
+        {
+          id: newChatId(),
+          role: 'assistant',
+          text: reply.text,
+          spec: reply.spec,
+          source: 'local',
+          creditsUsed: 0,
+          createdAt: Date.now(),
+        },
+      ]);
+    },
+    [setMessages]
+  );
 
-  const pushUser = useCallback((text: string, attachmentName?: string) => {
-    setMessages((previous) => [
-      ...previous,
-      { id: newChatId(), role: 'user', text, attachmentName, createdAt: Date.now() },
-    ]);
-  }, []);
+  const pushUser = useCallback(
+    (text: string, attachmentName?: string) => {
+      setMessages((previous) => [
+        ...previous,
+        { id: newChatId(), role: 'user', text, attachmentName, createdAt: Date.now() },
+      ]);
+    },
+    [setMessages]
+  );
 
-  const markChosen = useCallback((messageId: string, chosen: string) => {
-    setMessages((previous) =>
-      previous.map((message) =>
-        message.id === messageId && message.role === 'assistant' ? { ...message, chosen } : message
-      )
-    );
-  }, []);
+  const markChosen = useCallback(
+    (messageId: string, chosen: string) => {
+      setMessages((previous) =>
+        previous.map((message) =>
+          message.id === messageId && message.role === 'assistant' ? { ...message, chosen } : message
+        )
+      );
+    },
+    [setMessages]
+  );
 
   /**
    * The therapist picked a patient from a choice ("O kogo chodzi?") or confirmed one („Czy chodzi o…?”).
@@ -238,6 +267,21 @@ export function useChatThread({ useAi, context, ready, scopeKey, getContextPatie
         appendAssistant(account);
         return;
       }
+      // „Dodaj ćwiczenie X” przy otwartej propozycji zestawu: ćwiczenie trafia do niej, bez AI i bez kredytu.
+      const openDraft = openSetDraft(messagesRef.current);
+      const liveDraft = openDraft ? getLiveDraft?.(openDraft.messageId) : undefined;
+      const addition =
+        openDraft && liveDraft ? addToDraftReply(trimmed, liveDraft.draft, liveDraft.catalog, context.patients) : null;
+      if (openDraft && addition) {
+        // Nowa karta zestawu sama blokuje poprzednią; karta nowego ćwiczenia zamyka ją tutaj.
+        if (addition.closesDraft && addition.reply.spec?.component !== 'SetDraft') {
+          markChosen(openDraft.messageId, 'create-exercise');
+        }
+        pendingCommandRef.current = undefined;
+        pushUser(trimmed);
+        appendAssistant(addition.reply);
+        return;
+      }
       inFlightRef.current = true;
       pushUser(trimmed);
       setIsBusy(true);
@@ -254,18 +298,25 @@ export function useChatThread({ useAi, context, ready, scopeKey, getContextPatie
           pendingCommand: pendingCommandRef.current,
           contextPatientId,
           knownPatientIds,
+          newPatientContext: threadNewPatientDetails(messagesRef.current),
         });
         // Pytanie o ćwiczenia bez karty w odpowiedzi (nic nie pasuje): pomysły na nowe dla tej potrzeby.
         // A refusal about a patient gets no card, so no exercise ideas either.
-        const reply = resolved.notice ? resolved : withExerciseIdeas(trimmed, resolved);
+        let reply = resolved.notice ? resolved : withExerciseIdeas(trimmed, resolved);
         if (threadEpochRef.current !== epoch) return;
+        // Nowe ćwiczenie, o które poproszono przy otwartej propozycji zestawu, wraca do tej propozycji.
+        if (openDraft && liveDraft && reply.spec?.component === 'CreateExercise' && draftRequest(trimmed)) {
+          reply = { ...reply, spec: { ...reply.spec, addToSet: liveDraft.draft } };
+          markChosen(openDraft.messageId, 'create-exercise');
+        }
         // AI questions count too: if the next dispatch fails, rules finish the command.
         const isUnsupported = reply.spec === UNSUPPORTED_SPEC;
         const asksForPatient = reply.spec?.component === 'Clarify' && !isUnsupported;
         const previousCommand = pendingCommandRef.current;
         // "Tego jeszcze nie umiem" after a typo keeps the question open, so its options still finish it.
-        if (asksForPatient) pendingCommandRef.current = [previousCommand, trimmed].filter(Boolean).join(' ');
-        else if (!isUnsupported) pendingCommandRef.current = undefined;
+        if (asksForPatient) {
+          pendingCommandRef.current = reply.pendingCommand ?? [previousCommand, trimmed].filter(Boolean).join(' ');
+        } else if (!isUnsupported) pendingCommandRef.current = undefined;
         heldRef.current = reply.held;
         if (reply.sessionId) sessionRef.current = { scopeKey, id: reply.sessionId };
         const showFallback = reply.fallbackReason !== undefined && !hasNotifiedFallbackRef.current;
@@ -291,7 +342,70 @@ export function useChatThread({ useAi, context, ready, scopeKey, getContextPatie
         }
       }
     },
-    [appendAssistant, choosePatient, context, getContextPatientId, markChosen, pushUser, ready, scopeKey, useAi]
+    [
+      appendAssistant,
+      choosePatient,
+      context,
+      getContextPatientId,
+      getLiveDraft,
+      markChosen,
+      pushUser,
+      ready,
+      scopeKey,
+      setMessages,
+      useAi,
+    ]
+  );
+
+  /**
+   * The rest of a combined request („… i ułóż mu zestaw”) carried out for the patient the form just
+   * added, by id: the model composes when allowed, rules otherwise. Nothing new is typed by the therapist.
+   */
+  const continueForPatient = useCallback(
+    async (patientId: string, name: string, command: string) => {
+      const added = `Dodano: ${name}.`;
+      if (inFlightRef.current) {
+        appendAssistant({ text: `${added} Napisz jeszcze raz resztę prośby: „${command}”.` });
+        return;
+      }
+      inFlightRef.current = true;
+      setIsBusy(true);
+      const epoch = threadEpochRef.current;
+      const controller = new AbortController();
+      abortRef.current = controller;
+      try {
+        const reply = await resolveForPatient(command, patientId, {
+          signal: controller.signal,
+          useAi,
+          sessionId: sessionRef.current?.scopeKey === scopeKey ? sessionRef.current.id : undefined,
+          context,
+          dispatch: dispatchChatMessage,
+        });
+        if (threadEpochRef.current !== epoch) return;
+        if (reply.sessionId) sessionRef.current = { scopeKey, id: reply.sessionId };
+        const showFallback = reply.fallbackReason !== undefined && !hasNotifiedFallbackRef.current;
+        if (showFallback) hasNotifiedFallbackRef.current = true;
+        setMessages((previous) => [
+          ...previous,
+          {
+            id: newChatId(),
+            role: 'assistant',
+            text: `${added} ${reply.text}`.trim(),
+            spec: reply.spec,
+            source: reply.source,
+            creditsUsed: reply.creditsUsed,
+            fallbackReason: showFallback ? reply.fallbackReason : undefined,
+            createdAt: Date.now(),
+          },
+        ]);
+      } finally {
+        if (threadEpochRef.current === epoch) {
+          inFlightRef.current = false;
+          setIsBusy(false);
+        }
+      }
+    },
+    [appendAssistant, context, scopeKey, setMessages, useAi]
   );
 
   /** What the therapist chose (a shortcut, a quick reply) and the thread's answer to it, both local. */
@@ -301,6 +415,13 @@ export function useChatThread({ useAi, context, ready, scopeKey, getContextPatie
       appendAssistant(reply);
     },
     [appendAssistant, pushUser]
+  );
+
+  /** „Wróć do tej wersji” on a locked set proposal: it becomes the newest card; the active one locks. */
+  const restoreDraft = useCallback(
+    (spec: Extract<ChatCardSpec, { component: 'SetDraft' }>) =>
+      appendExchange(RESTORE_DRAFT_LABEL, { text: RESTORED_DRAFT_TEXT, spec }),
+    [appendExchange]
   );
 
   /**
@@ -361,7 +482,7 @@ export function useChatThread({ useAi, context, ready, scopeKey, getContextPatie
       setMessages(nextMessages);
       setIsBusy(false);
     },
-    [startOver]
+    [setMessages, startOver]
   );
 
   return {
@@ -372,6 +493,8 @@ export function useChatThread({ useAi, context, ready, scopeKey, getContextPatie
     appendAssistant,
     appendExchange,
     choosePatient,
+    continueForPatient,
+    restoreDraft,
     runTask,
     markChosen,
     reset,
