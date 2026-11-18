@@ -293,8 +293,6 @@ export function UnifiedPatientInput({
       // Not found - auto morph to form
       setFoundUser(null);
       setViewState('form');
-      // Focus on first name after transition
-      setTimeout(() => firstNameInputRef.current?.focus(), 100);
     }
   }, [emailData, emailLoading, submittedContact]);
 
@@ -320,10 +318,13 @@ export function UnifiedPatientInput({
       // Not found - auto morph to form
       setFoundUser(null);
       setViewState('form');
-      // Focus on first name after transition
-      setTimeout(() => firstNameInputRef.current?.focus(), 100);
     }
   }, [phoneData, phoneLoading, submittedContact]);
+
+  // First name gets the focus once, as the form renders: a delayed focus took it back from the last name while typing.
+  useEffect(() => {
+    if (viewState === 'form') firstNameInputRef.current?.focus();
+  }, [viewState]);
 
   // Lookup refused: the contact is a clinic patient under another therapist. Stay on search, no new-patient form.
   useEffect(() => {
