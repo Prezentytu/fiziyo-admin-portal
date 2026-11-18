@@ -3,7 +3,6 @@
 import { use, useState, useCallback, useRef } from 'react';
 import { useQuery, useMutation, useApolloClient } from '@apollo/client/react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import {
   ArrowLeft,
   Trash2,
@@ -20,7 +19,6 @@ import {
   RefreshCw,
   Copy,
   Flag,
-  Upload,
   Loader2,
   Pencil,
   Check,
@@ -91,7 +89,8 @@ import {
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import { createTagsMap, mapExerciseTagsToObjects } from '@/utils/tagUtils';
 import { useExerciseImageGeneration } from '@/features/exercises/useExerciseImageGeneration';
-import { ImageStylePicker } from '@/features/exercises/ImageStylePicker';
+import { MAX_EXERCISE_IMAGES } from '@/features/exercises/utils/exerciseMedia';
+import { ExerciseDetailMediaEditor } from '@/features/exercises/ExerciseDetailMediaEditor';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import type { ExerciseByIdResponse, ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
 import {
@@ -361,8 +360,8 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
       if (!file) return;
 
       const currentCount = exercise?.images?.length ?? 0;
-      if (currentCount >= 5) {
-        toast.error('Maksymalna liczba zdjęć to 5');
+      if (currentCount >= MAX_EXERCISE_IMAGES) {
+        toast.error(`Maksymalna liczba zdjęć to ${MAX_EXERCISE_IMAGES}`);
         return;
       }
 
@@ -409,8 +408,8 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
     }
 
     const currentCount = exercise.images?.length ?? 0;
-    if (currentCount >= 5) {
-      toast.error('Maksymalna liczba zdjęć to 5');
+    if (currentCount >= MAX_EXERCISE_IMAGES) {
+      toast.error(`Maksymalna liczba zdjęć to ${MAX_EXERCISE_IMAGES}`);
       return;
     }
 
@@ -820,92 +819,18 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
           />
 
           {canEditMedia && (
-            <div
-              className="rounded-2xl border border-border/40 bg-surface/50 p-4 space-y-3"
-              data-testid="exercise-detail-media-edit-section"
-            >
-              <p className="text-sm font-semibold text-foreground">Zarządzaj zdjęciami</p>
-
-              {(exercise.images?.length ?? 0) > 0 && (
-                <div className="grid grid-cols-4 gap-2">
-                  {exercise.images?.map((imageUrl) => (
-                    <div
-                      key={imageUrl}
-                      className="relative group aspect-square rounded-lg overflow-hidden border border-border/40"
-                    >
-                      <Image src={imageUrl} alt="" fill className="object-cover" sizes="80px" />
-                      <button
-                        data-testid="exercise-detail-delete-image-btn"
-                        type="button"
-                        onClick={() => handleDeleteImage(imageUrl)}
-                        disabled={uploadingImage}
-                        className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/50 transition-colors"
-                        aria-label="Usuń zdjęcie"
-                      >
-                        <Trash2 className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {isGeneratingAiImage && (
-                <div
-                  className="mb-3 aspect-video w-full max-w-[220px] animate-pulse rounded-xl border border-dashed border-border bg-muted/40"
-                  aria-hidden
-                  data-testid="exercise-detail-ai-image-skeleton"
-                />
-              )}
-
-              <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  data-testid="exercise-detail-upload-image-btn"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploadingImage || isGeneratingAiImage || (exercise.images?.length ?? 0) >= 5}
-                >
-                  {uploadingImage ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Upload className="mr-2 h-4 w-4" />
-                  )}
-                  Dodaj zdjęcie
-                </Button>
-                <ImageStylePicker
-                  value={imageStyle}
-                  onChange={setImageStyle}
-                  disabled={isGeneratingAiImage || uploadingImage}
-                  testIdPrefix="exercise-detail-ai-style"
-                />
-                <Button
-                  data-testid="exercise-detail-ai-image-btn"
-                  size="sm"
-                  variant="outline"
-                  onClick={handleAIGenerateImage}
-                  disabled={
-                    uploadingImage || isGeneratingAiImage || !exercise.name || (exercise.images?.length ?? 0) >= 5
-                  }
-                  aria-busy={isGeneratingAiImage}
-                >
-                  {isGeneratingAiImage ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="mr-2 h-4 w-4" />
-                  )}
-                  {isGeneratingAiImage ? 'Generowanie…' : 'Generuj AI'}
-                </Button>
-              </div>
-
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleImageFileChange}
-                data-testid="exercise-detail-image-file-input"
-              />
-            </div>
+            <ExerciseDetailMediaEditor
+              images={exercise.images ?? []}
+              uploading={uploadingImage}
+              generating={isGeneratingAiImage}
+              canGenerate={Boolean(exercise.name)}
+              imageStyle={imageStyle}
+              onImageStyleChange={setImageStyle}
+              fileInputRef={fileInputRef}
+              onFileChange={handleImageFileChange}
+              onDelete={handleDeleteImage}
+              onGenerate={handleAIGenerateImage}
+            />
           )}
 
           {isLocked && (
@@ -980,7 +905,12 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
               />
 
               {/* 3. Bezpieczeństwo */}
-              <SafetySection data={readEnrichment} editable={false} isPathDirty={isPathDirty} setPath={setEnrichmentPath} />
+              <SafetySection
+                data={readEnrichment}
+                editable={false}
+                isPathDirty={isPathDirty}
+                setPath={setEnrichmentPath}
+              />
 
               {/* 4. Dla terapeuty */}
               <TherapistSection
