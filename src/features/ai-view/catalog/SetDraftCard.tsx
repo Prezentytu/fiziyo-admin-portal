@@ -534,7 +534,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
       {/* Zestaw z opisu (bez zestawu z katalogu): pytania, które pomagają dobrać ćwiczenia trafniej. */}
       {!set && !locked && spec.note && (
         <ClarifyChips
-          lead="Doprecyzuj, a lepiej dobiorę ćwiczenia. Pytanie trafi do pola wiadomości, dopisz odpowiedź:"
+          lead="Doprecyzuj, a lepiej dobiorę ćwiczenia. Wybierz pytanie i dopisz odpowiedź w wiadomości:"
           questions={draftClarifyQuestions({ request, note: spec.note })}
           testId={`${testId}-clarify`}
         />

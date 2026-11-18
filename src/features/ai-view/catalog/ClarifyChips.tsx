@@ -2,10 +2,12 @@
 
 import { ChoiceChip } from '@/components/ui/choice-chip';
 import { useComposerDraft } from '../ComposerDraftContext';
+import type { ClarifyQuestion } from '../utils/clarifyQuestions';
 
 /**
- * Questions that let the assistant pick better: a tap puts the question in the message field,
- * the therapist adds the answer, and the next reply narrows the proposal. „Inne…” starts free text.
+ * Questions that let the assistant pick better. The chip shows the question; a tap starts the message
+ * with its short topic („Strona ciała: ”), the therapist adds the answer, and the next reply narrows
+ * the proposal. „Inne…” starts free text.
  */
 export function ClarifyChips({
   lead,
@@ -13,7 +15,7 @@ export function ClarifyChips({
   testId,
 }: {
   readonly lead: string;
-  readonly questions: readonly string[];
+  readonly questions: readonly ClarifyQuestion[];
   readonly testId: string;
 }) {
   const draftInComposer = useComposerDraft();
@@ -24,11 +26,11 @@ export function ClarifyChips({
       <div className="flex flex-wrap gap-2">
         {questions.map((question, index) => (
           <ChoiceChip
-            key={question}
-            onClick={() => draftInComposer(`${question} `)}
+            key={question.topic}
+            onClick={() => draftInComposer(`${question.topic}: `)}
             data-testid={`${testId}-${index}-btn`}
           >
-            {question}
+            {question.label}
           </ChoiceChip>
         ))}
         <ChoiceChip onClick={() => draftInComposer('Doprecyzowanie: ')} data-testid={`${testId}-other-btn`}>
