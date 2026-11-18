@@ -64,6 +64,32 @@ describe('localReplyTo', () => {
     });
   });
 
+  // Decyzja właściciela 18.11: samo imię po „Komu przypisać?” szło prosto do harmonogramu.
+  it('a patient named by one word is confirmed first, and the draft waits behind the question', () => {
+    const local = localReplyTo('do Anny', [PICK], PATIENTS);
+    expect(local).toMatchObject({
+      answeredMessageId: 'm1',
+      chosen: PICK_PATIENT_ANSWERED,
+      reply: {
+        text: 'Czy chodzi o Anna Kowalska?',
+        spec: { component: 'Clarify', options: ['Tak, Anna', 'Inny pacjent'] },
+      },
+      awaitingDraft: DRAFT,
+    });
+    const question: ChatThreadMessage = { ...PICK, id: 'm2', text: local?.reply.text, spec: local?.reply.spec };
+    const thread = [{ ...PICK, chosen: PICK_PATIENT_ANSWERED }, question];
+    // Inne nazwisko wpisane zamiast „Tak” nadal odpowiada na „Komu przypisać?”.
+    expect(localReplyTo('Jan Nowak', thread, PATIENTS, undefined, DRAFT)).toMatchObject({
+      answeredMessageId: 'm2',
+      reply: { spec: { component: 'Schedule', draft: { patientId: 'p2' } } },
+    });
+    expect(localReplyTo('Jan Nowak', thread, PATIENTS)).toBeNull();
+    expect(localReplyTo('do Anny', [PICK], PATIENTS, new Set(['p1']))).toMatchObject({
+      chosen: 'Anna Kowalska',
+      reply: { spec: { component: 'Schedule', draft: { patientId: 'p1' } } },
+    });
+  });
+
   it('several matches: a choice limited to them', () => {
     expect(localReplyTo('dla Jana', [PICK], PATIENTS)?.reply.spec).toEqual({
       component: 'PickPatient',
@@ -180,16 +206,35 @@ describe('accountQuestionReply', () => {
   ];
 
   it('says the patient has no account, so nothing was received', () => {
-    const reply = accountQuestionReply('Czy Halina odebrała zestaw? Widziała go?', patients);
+    const reply = accountQuestionReply('Czy Halina Kowalczyk odebrała zestaw? Widziała go?', patients);
     expect(reply?.text).toContain('Halina Kowalczyk nie ma jeszcze konta w aplikacji');
     expect(reply?.spec).toEqual({ component: 'PatientPeek', patientId: 'p-halina' });
-    expect(accountQuestionReply('czy Halina Kowalczyk dostała zaproszenie', patients)?.text).toContain('nie ma jeszcze konta');
+    expect(accountQuestionReply('czy Halina Kowalczyk dostała zaproszenie', patients)?.text).toContain(
+      'nie ma jeszcze konta'
+    );
   });
 
   it('says the patient has an account and whether they were active', () => {
-    expect(accountQuestionReply('Czy Kacper dostał zaproszenie?', patients)?.text).toContain('ma konto w aplikacji');
-    expect(accountQuestionReply('Czy Kacper odebrał plan?', patients)?.text).toContain('17 listopada');
-    expect(accountQuestionReply('czy Karolina Mazur ma już konto?', patients)?.text).toContain('nie ma jeszcze aktywności');
+    const known = new Set(['p-kacper']);
+    expect(accountQuestionReply('Czy Kacper Zielinski dostał zaproszenie?', patients)?.text).toContain(
+      'ma konto w aplikacji'
+    );
+    expect(accountQuestionReply('Czy Kacper odebrał plan?', patients, known)?.text).toContain('17 listopada');
+    expect(accountQuestionReply('czy Karolina Mazur ma już konto?', patients)?.text).toContain(
+      'nie ma jeszcze aktywności'
+    );
+  });
+
+  it('confirms a patient named by one word before answering', () => {
+    expect(accountQuestionReply('Czy Halina odebrała zestaw?', patients)).toEqual({
+      text: 'Czy chodzi o Halina Kowalczyk (bez konta)?',
+      spec: {
+        component: 'Clarify',
+        question: 'Czy chodzi o Halina Kowalczyk (bez konta)?',
+        options: ['Tak, Halina', 'Inny pacjent'],
+        choices: [{ label: 'Tak, Halina', patientId: 'p-halina' }, { label: 'Inny pacjent' }],
+      },
+    });
   });
 
   it('leaves everything else to the assistant', () => {

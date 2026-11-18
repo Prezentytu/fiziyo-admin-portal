@@ -3,10 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { dispatchChatMessage } from './chatDispatchClient';
-import { latestCardPatientId, type ChatCardSpec } from './utils/chatCards';
+import { cardPatientIds, latestCardPatientId, type ChatCardSpec } from './utils/chatCards';
+import { confirmAnswer, OTHER_PATIENT_OPTION, patientConfirmation } from './utils/clarifyChoice';
 import type { ChatThreadMessage } from './utils/conversationStore';
 import { routeForPatient, type IntentContext } from './utils/intentRouter';
-import { replyText, resolveReply } from './utils/resolveReply';
+import { replyText, resolveReply, type HeldReply } from './utils/resolveReply';
+import { scheduleQuestion, type SetDraftPayload } from './utils/setDraft';
 import { accountQuestionReply, countQuestion, localReplyTo, withExerciseIdeas } from './utils/threadLocalReply';
 import { UNSUPPORTED_SPEC } from './utils/viewSpec';
 
@@ -33,6 +35,7 @@ interface ChatThreadOptions {
 }
 
 export const STOPPED_TEXT = 'Zatrzymane. Napisz, co zrobić inaczej.';
+export const PICK_OTHER_PATIENT_TEXT = 'Wybierz pacjenta z listy albo napisz imię i nazwisko.';
 
 /**
  * One conversation: what the therapist wrote and what came back (a sentence and a card from the
@@ -46,6 +49,10 @@ export function useChatThread({ useAi, context, ready, scopeKey, getContextPatie
   const hasNotifiedFallbackRef = useRef(false);
   // The command behind the last question ("O kogo chodzi?"), so a rules answer finishes it.
   const pendingCommandRef = useRef<string | undefined>(undefined);
+  // The model's card behind „Czy chodzi o…?”: the „Tak” shows it, without a second model call.
+  const heldRef = useRef<HeldReply | undefined>(undefined);
+  // The set draft behind „Czy chodzi o…?” asked after „Komu przypisać?”: the „Tak” goes on to its schedule.
+  const awaitingDraftRef = useRef<SetDraftPayload | undefined>(undefined);
   // Bumped by a new conversation or organization: a reply still in flight belongs to the old one.
   const threadEpochRef = useRef(0);
   // isBusy only blocks after a render; a double click lands before it.
@@ -71,6 +78,8 @@ export function useChatThread({ useAi, context, ready, scopeKey, getContextPatie
     sessionRef.current = undefined;
     hasNotifiedFallbackRef.current = false;
     pendingCommandRef.current = undefined;
+    heldRef.current = undefined;
+    awaitingDraftRef.current = undefined;
   }, []);
 
   useEffect(startOver, [scopeKey, startOver]);
@@ -98,6 +107,56 @@ export function useChatThread({ useAi, context, ready, scopeKey, getContextPatie
     ]);
   }, []);
 
+  const markChosen = useCallback((messageId: string, chosen: string) => {
+    setMessages((previous) =>
+      previous.map((message) =>
+        message.id === messageId && message.role === 'assistant' ? { ...message, chosen } : message
+      )
+    );
+  }, []);
+
+  /**
+   * The therapist picked a patient from a choice ("O kogo chodzi?") or confirmed one („Czy chodzi o…?”).
+   * The pick is an id, so namesakes end the question too; what was asked for goes on without a model
+   * call: the model's card that waited for the confirmation, the set draft that waited for a patient,
+   * or the command finished by rules.
+   */
+  const choosePatient = useCallback(
+    (patientId: string, label: string) => {
+      if (inFlightRef.current) return;
+      const held = heldRef.current;
+      const command = pendingCommandRef.current;
+      const draft = awaitingDraftRef.current;
+      heldRef.current = undefined;
+      pendingCommandRef.current = undefined;
+      awaitingDraftRef.current = undefined;
+      pushUser(label);
+      if (draft) {
+        appendAssistant({
+          text: scheduleQuestion(draft.items),
+          spec: { component: 'Schedule', draft: { ...draft, patientId } },
+        });
+        return;
+      }
+      if (held) {
+        // Picked someone else: the same card for that patient, with a sentence that names nobody else.
+        const spec = { ...held.spec, patientId };
+        const text = held.patientId === patientId ? held.text : replyText(undefined, spec, context);
+        appendAssistant({ text, spec });
+        return;
+      }
+      const patient = context.patients.find((candidate) => candidate.id === patientId);
+      const account = command && patient ? accountQuestionReply(command, [patient], new Set([patientId])) : null;
+      if (account) {
+        appendAssistant(account);
+        return;
+      }
+      const spec = routeForPatient(command, context, patientId);
+      appendAssistant({ text: replyText(undefined, spec, context), spec });
+    },
+    [appendAssistant, context, pushUser]
+  );
+
   const send = useCallback(
     async (text: string) => {
       const trimmed = text.trim();
@@ -119,9 +178,36 @@ export function useChatThread({ useAi, context, ready, scopeKey, getContextPatie
         ]);
         return;
       }
+      const contextPatientId = getContextPatientId?.() ?? latestCardPatientId(messagesRef.current);
+      const knownPatientIds = cardPatientIds(messagesRef.current);
+      if (contextPatientId) knownPatientIds.add(contextPatientId);
+      // „Czy chodzi o…?”: „tak” (albo to samo imię) idzie dalej z tym pacjentem, „inny pacjent” otwiera wybór.
+      const asked = messagesRef.current.findLast((message) => message.role === 'assistant');
+      const isOpen = asked?.role === 'assistant' && (asked.chosen === undefined || asked.chosen === trimmed);
+      const confirmation = isOpen ? patientConfirmation(asked.spec) : null;
+      const answer = confirmation ? confirmAnswer(trimmed, confirmation.patientId, context.patients) : null;
+      if (asked && confirmation && answer === 'yes') {
+        markChosen(asked.id, confirmation.yesOption);
+        choosePatient(confirmation.patientId, trimmed);
+        return;
+      }
+      if (asked && confirmation && answer === 'other') {
+        markChosen(asked.id, OTHER_PATIENT_OPTION);
+        pushUser(trimmed);
+        appendAssistant({
+          text: PICK_OTHER_PATIENT_TEXT,
+          spec: { component: 'PickPatient', draft: awaitingDraftRef.current },
+        });
+        awaitingDraftRef.current = undefined;
+        return;
+      }
+      const awaitingDraft = awaitingDraftRef.current;
+      heldRef.current = undefined;
+      awaitingDraftRef.current = undefined;
       // Odpowiedź na otwarte pytanie wątku („Komu przypisać?”) to jego następny krok, bez AI.
-      const local = localReplyTo(trimmed, messagesRef.current, context.patients);
+      const local = localReplyTo(trimmed, messagesRef.current, context.patients, knownPatientIds, awaitingDraft);
       if (local) {
+        awaitingDraftRef.current = local.awaitingDraft;
         setMessages((previous) =>
           previous.map((message) =>
             message.id === local.answeredMessageId && message.role === 'assistant'
@@ -144,8 +230,10 @@ export function useChatThread({ useAi, context, ready, scopeKey, getContextPatie
         return;
       }
       // „Czy Halina odebrała zestaw?”: stan konta jest w panelu, model go nie zna.
-      const account = accountQuestionReply(trimmed, context.patients);
+      const account = accountQuestionReply(trimmed, context.patients, knownPatientIds);
       if (account) {
+        // Asked „Czy chodzi o…?” first: the „Tak” answers this question.
+        if (patientConfirmation(account.spec)) pendingCommandRef.current = trimmed;
         pushUser(trimmed);
         appendAssistant(account);
         return;
@@ -164,7 +252,8 @@ export function useChatThread({ useAi, context, ready, scopeKey, getContextPatie
           context,
           dispatch: dispatchChatMessage,
           pendingCommand: pendingCommandRef.current,
-          contextPatientId: getContextPatientId?.() ?? latestCardPatientId(messagesRef.current),
+          contextPatientId,
+          knownPatientIds,
         });
         // Pytanie o ćwiczenia bez karty w odpowiedzi (nic nie pasuje): pomysły na nowe dla tej potrzeby.
         const reply = withExerciseIdeas(trimmed, resolved);
@@ -176,6 +265,7 @@ export function useChatThread({ useAi, context, ready, scopeKey, getContextPatie
         // "Tego jeszcze nie umiem" after a typo keeps the question open, so its options still finish it.
         if (asksForPatient) pendingCommandRef.current = [previousCommand, trimmed].filter(Boolean).join(' ');
         else if (!isUnsupported) pendingCommandRef.current = undefined;
+        heldRef.current = reply.held;
         if (reply.sessionId) sessionRef.current = { scopeKey, id: reply.sessionId };
         const showFallback = reply.fallbackReason !== undefined && !hasNotifiedFallbackRef.current;
         if (showFallback) hasNotifiedFallbackRef.current = true;
@@ -199,22 +289,7 @@ export function useChatThread({ useAi, context, ready, scopeKey, getContextPatie
         }
       }
     },
-    [appendAssistant, context, getContextPatientId, pushUser, ready, scopeKey, useAi]
-  );
-
-  /**
-   * The therapist picked a patient from a choice ("O kogo chodzi?"). The pick is an id, so namesakes
-   * end the question too; the command behind it is finished by rules, without a model call.
-   */
-  const choosePatient = useCallback(
-    (patientId: string, label: string) => {
-      if (inFlightRef.current) return;
-      const spec = routeForPatient(pendingCommandRef.current, context, patientId);
-      pendingCommandRef.current = undefined;
-      pushUser(label);
-      appendAssistant({ text: replyText(undefined, spec, context), spec });
-    },
-    [appendAssistant, context, pushUser]
+    [appendAssistant, choosePatient, context, getContextPatientId, markChosen, pushUser, ready, scopeKey, useAi]
   );
 
   /** What the therapist chose (a shortcut, a quick reply) and the thread's answer to it, both local. */
@@ -263,14 +338,6 @@ export function useChatThread({ useAi, context, ready, scopeKey, getContextPatie
     [appendAssistant, pushUser]
   );
 
-  const markChosen = useCallback((messageId: string, chosen: string) => {
-    setMessages((previous) =>
-      previous.map((message) =>
-        message.id === messageId && message.role === 'assistant' ? { ...message, chosen } : message
-      )
-    );
-  }, []);
-
   /** The therapist stopped the reply: the request is aborted, the question stays, a late answer is dropped. */
   // The model never saw its own answer, so the next turn starts a new AI session.
   const stop = useCallback(() => {
@@ -280,6 +347,8 @@ export function useChatThread({ useAi, context, ready, scopeKey, getContextPatie
     inFlightRef.current = false;
     sessionRef.current = undefined;
     pendingCommandRef.current = undefined;
+    heldRef.current = undefined;
+    awaitingDraftRef.current = undefined;
     setIsBusy(false);
     appendAssistant({ text: STOPPED_TEXT });
   }, [appendAssistant]);

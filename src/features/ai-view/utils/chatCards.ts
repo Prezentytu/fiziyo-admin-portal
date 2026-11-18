@@ -30,7 +30,8 @@ export interface DocumentItem {
 export type LocalCardSpec =
   | {
       component: 'PickPatient';
-      draft: SetDraftPayload;
+      /** Absent after „Inny pacjent”: the pick then finishes the command behind the question. */
+      draft?: SetDraftPayload;
       /** A typed answer fitting several patients: only these are offered. */
       patientIds?: string[];
       /** A typed answer naming no known patient: the new patient form opens with it. */
@@ -93,6 +94,7 @@ export function cardPatientId(spec: ChatCardSpec | undefined): string | undefine
     case 'ExerciseIdeas':
       return spec.patientId;
     case 'PickPatient':
+      return spec.draft?.patientId;
     case 'Schedule':
     case 'SendSummary':
       return spec.draft.patientId;
@@ -110,6 +112,12 @@ export function latestCardPatientId(messages: readonly ThreadMessageLike[]): str
     if (patientId) return patientId;
   }
   return undefined;
+}
+
+/** Every patient a card of the conversation is about: named once, one word of the name is enough later. */
+export function cardPatientIds(messages: readonly ThreadMessageLike[]): Set<string> {
+  const ids = messages.flatMap((message) => (message.role === 'assistant' ? (cardPatientId(message.spec) ?? []) : []));
+  return new Set(ids);
 }
 
 /** A patient the therapist opened in the context panel, and how long the thread was at that moment. */

@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { clarifyChoicePatientId, labelPatientChoices, resolveClarifyChoice } from '../clarifyChoice';
+import {
+  clarifyChoicePatientId,
+  confirmAnswer,
+  confirmPatientSpec,
+  labelPatientChoices,
+  patientConfirmation,
+  resolveClarifyChoice,
+} from '../clarifyChoice';
 import { toChatViewSpec } from '../viewSpec';
 
 function clarify(input: Record<string, unknown>) {
@@ -88,6 +95,72 @@ describe('patient choices', () => {
       ],
     });
     expect(labelPatientChoices(distinct, patients)).toBe(distinct);
+  });
+});
+
+// Decyzja właściciela 18.11: pacjent nazwany jednym słowem → „Czy chodzi o…?” z „Tak, {Imię}” i „Inny pacjent”.
+describe('patient confirmation', () => {
+  const patients = [
+    { id: 'p-tomasz', name: 'Tomasz Nowak', contextLabel: 'Ból kolana' },
+    { id: 'p-ewa', name: 'Ewa Lis' },
+  ];
+  const spec = confirmPatientSpec(patients[0], patients);
+
+  it('asks about one patient with what identifies them and two answers', () => {
+    expect(spec).toEqual({
+      component: 'Clarify',
+      question: 'Czy chodzi o Tomasz Nowak (Ból kolana)?',
+      options: ['Tak, Tomasz', 'Inny pacjent'],
+      choices: [{ label: 'Tak, Tomasz', patientId: 'p-tomasz' }, { label: 'Inny pacjent' }],
+    });
+    expect(clarifyChoicePatientId(spec, 'Tak, Tomasz', 0)).toBe('p-tomasz');
+    expect(clarifyChoicePatientId(spec, 'Inny pacjent', 1)).toBeUndefined();
+    expect(labelPatientChoices(spec, patients)).toBe(spec);
+  });
+
+  it('is recognized among other questions', () => {
+    expect(patientConfirmation(spec)).toEqual({ patientId: 'p-tomasz', yesOption: 'Tak, Tomasz' });
+    const which = clarify({ options: ['Ewa Lis'], choices: [{ label: 'Ewa Lis', patientId: 'p-ewa' }] });
+    expect(patientConfirmation(which)).toBeNull();
+    expect(patientConfirmation({ component: 'PatientPeek' })).toBeNull();
+    expect(patientConfirmation(undefined)).toBeNull();
+  });
+
+  it.each([
+    ['tak', 'yes'],
+    ['Tak, Tomasz', 'yes'],
+    ['Tomasz', 'yes'],
+    ['tak, Tomasz Nowak', 'yes'],
+    ['ok, zgadza się', 'yes'],
+    ['nie', 'other'],
+    ['Inny pacjent', 'other'],
+    ['nie, inna pacjentka', 'other'],
+    ['ktoś inny', 'other'],
+    ['tak, ale dodaj jeszcze mostek', null],
+    ['Tomasz Kowalski', null],
+    ['Ewa Lis', null],
+    ['pokaż ćwiczenia na kolano', null],
+  ])('reads the typed answer „%s” as %s', (text, expected) => {
+    expect(confirmAnswer(text, 'p-tomasz', patients)).toBe(expected);
+  });
+});
+
+describe('labelPatientChoices for look-alike names', () => {
+  it('tells „Zieliński” and „Zielinski” apart by what differs', () => {
+    const spec = clarify({
+      question: 'O kogo chodzi?',
+      options: ['Marek Zieliński', 'Marek Zielinski'],
+      choices: [
+        { label: 'Marek Zieliński', patientId: 'p-1' },
+        { label: 'Marek Zielinski', patientId: 'p-2' },
+      ],
+    });
+    const labelled = labelPatientChoices(spec, [
+      { id: 'p-1', name: 'Marek Zieliński', contextLabel: 'Leczenie podstawowe', isShadowUser: true },
+      { id: 'p-2', name: 'Marek Zielinski', contextLabel: 'Leczenie podstawowe', isShadowUser: false },
+    ]);
+    expect(labelled.options).toEqual(['Marek Zieliński · bez konta', 'Marek Zielinski · ma konto']);
+    expect(labelled.choices?.map((choice) => choice.patientId)).toEqual(['p-1', 'p-2']);
   });
 });
 

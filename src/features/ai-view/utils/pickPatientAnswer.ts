@@ -3,7 +3,7 @@ import { matchPatients, type MatchablePatient } from './patientMatch';
 
 /** What a typed answer to „Komu przypisać?” means: a known patient, a choice, or someone new. */
 export type PickPatientAnswer =
-  | { kind: 'one'; patient: MatchablePatient }
+  | { kind: 'one'; patient: MatchablePatient; /** Named by one word of a longer name. */ partial: boolean }
   | { kind: 'many'; patientIds: string[] }
   | { kind: 'none'; details: NewPatientDetails };
 
@@ -13,7 +13,7 @@ const CONTACT = /[^\s,;:]+@[^\s,;:]+\.[a-z]{2,}|(?:\+48[\s-]?)?(?:\d[\s-]?){8}\d
 
 export function pickPatientAnswer(text: string, patients: readonly MatchablePatient[]): PickPatientAnswer {
   const match = matchPatients(text, patients);
-  if (match.kind === 'one') return { kind: 'one', patient: match.patient };
+  if (match.kind === 'one') return { kind: 'one', patient: match.patient, partial: match.partial };
   if (match.kind === 'many') return { kind: 'many', patientIds: match.patients.map((patient) => patient.id) };
   const name = nominativeName(text);
   const contact = parseNewPatientDetails(text);

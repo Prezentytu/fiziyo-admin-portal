@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { SegmentedControl } from '@/components/ui/segmented-control';
 import { formatExerciseCount } from '@/utils/polishPlural';
 import { useChatActions } from '../ChatSessionContext';
-import { patientChoiceLabels } from '../utils/patientMatch';
+import { patientLabel as labelAmongNamesakes } from '../utils/patientMatch';
 import {
   describePlan,
   FLOW_CANCEL_LABEL,
@@ -35,8 +35,7 @@ export function SendSummaryCard({ spec, testId, messageId, chosen }: CardProps<'
   const { send, sending } = useSendPlan();
   const patient = patients.find((candidate) => candidate.id === spec.draft.patientId);
   // Imiennicy: przed wysyłką widać, który to pacjent (powód, e-mail albo stan konta), nie samą nazwę.
-  const namesakes = patient ? patients.filter((candidate) => candidate.name === patient.name) : [];
-  const patientLabel = patient ? patientChoiceLabels(namesakes)[namesakes.indexOf(patient)] : undefined;
+  const patientLabel = patient ? labelAmongNamesakes(patient, patients) : undefined;
   const { endDate } = resolvePlanDates(plan);
   const isSent = chosen === 'sent';
   const isCancelled = chosen === 'cancelled';

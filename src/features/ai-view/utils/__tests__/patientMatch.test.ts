@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { matchPatients, patientChoiceLabels } from '../patientMatch';
+import { matchPatients, patientChoiceLabels, patientConfirmLabel, patientLabel } from '../patientMatch';
 
 const PATIENTS = [
   { id: 'p-jan', name: 'Jan Kowalski' },
@@ -177,7 +177,7 @@ describe('patientChoiceLabels', () => {
     expect(patientChoiceLabels(PATIENTS)).toEqual(['Jan Kowalski', 'Ewa Wiśniewska', 'Ewa Nowicka', 'Marek Zieliński']);
   });
 
-  it('tells namesakes apart by the reason for therapy, then the e-mail, then the account', () => {
+  it('tells namesakes apart by the reason for therapy, the account or the e-mail', () => {
     expect(
       patientChoiceLabels([
         { id: 'a', name: 'Jan Kowalski', contextLabel: 'Ból kolana' },
@@ -189,7 +189,7 @@ describe('patientChoiceLabels', () => {
         { id: 'a', name: 'Jan Kowalski', contextLabel: 'Ból kolana', email: 'jan.k@example.com' },
         { id: 'b', name: 'Jan Kowalski', contextLabel: 'Ból kolana', email: 'kowalski@example.com' },
       ])
-    ).toEqual(['Jan Kowalski · Ból kolana · jan.k@example.com', 'Jan Kowalski · Ból kolana · kowalski@example.com']);
+    ).toEqual(['Jan Kowalski · jan.k@example.com', 'Jan Kowalski · kowalski@example.com']);
     expect(
       patientChoiceLabels([
         { id: 'a', name: 'Jan Kowalski', isShadowUser: true },
@@ -205,5 +205,94 @@ describe('patientChoiceLabels', () => {
       { id: 'c', name: 'Ewa Lis' },
     ]);
     expect(labels).toEqual(['Jan Kowalski (1)', 'Jan Kowalski (2)', 'Ewa Lis']);
+  });
+});
+
+// Decyzja właściciela 18.11: przy bardzo podobnych pacjentach widać dane, które ich faktycznie różnią.
+describe('patientChoiceLabels for look-alike patients', () => {
+  const common = { name: 'Jan Kowalski', contextLabel: 'Leczenie podstawowe' };
+
+  it('leaves out what all of them share and shows what differs', () => {
+    expect(
+      patientChoiceLabels([
+        { id: 'a', ...common, isShadowUser: true },
+        { id: 'b', ...common, isShadowUser: false },
+      ])
+    ).toEqual(['Jan Kowalski · bez konta', 'Jan Kowalski · ma konto']);
+    const labels = patientChoiceLabels([
+      { id: 'a', name: 'Jan Kowalski', contextLabel: 'Ból kolana', isShadowUser: true },
+      { id: 'b', name: 'Jan Kowalski', contextLabel: 'Rwa kulszowa', isShadowUser: true },
+    ]);
+    expect(labels).toEqual(['Jan Kowalski · Ból kolana', 'Jan Kowalski · Rwa kulszowa']);
+    expect(labels.join(' ')).not.toContain('bez konta');
+  });
+
+  it('tells patients without an e-mail apart by the phone ending, the last activity or the day added', () => {
+    expect(
+      patientChoiceLabels([
+        { id: 'a', ...common, isShadowUser: true, phone: '+48 600 100 123' },
+        { id: 'b', ...common, isShadowUser: true, phone: '600100987' },
+      ])
+    ).toEqual(['Jan Kowalski · tel. …123', 'Jan Kowalski · tel. …987']);
+    expect(
+      patientChoiceLabels([
+        { id: 'a', ...common, lastActivity: '2026-11-17T10:00:00' },
+        { id: 'b', ...common },
+      ])
+    ).toEqual(['Jan Kowalski · aktywność 17.11.2026', 'Jan Kowalski']);
+    expect(
+      patientChoiceLabels([
+        { id: 'a', ...common, isShadowUser: true, addedAt: '2026-10-03T09:00:00' },
+        { id: 'b', ...common, isShadowUser: true, addedAt: '2026-11-12T09:00:00' },
+      ])
+    ).toEqual(['Jan Kowalski · dodano 3.10.2026', 'Jan Kowalski · dodano 12.11.2026']);
+  });
+
+  it('treats „Zieliński” and „Zielinski” as the same name', () => {
+    expect(
+      patientChoiceLabels([
+        { id: 'a', name: 'Marek Zieliński', contextLabel: 'Bark' },
+        { id: 'b', name: 'Marek Zielinski', contextLabel: 'Kolano' },
+        { id: 'c', name: 'Ewa Lis', contextLabel: 'Bark' },
+      ])
+    ).toEqual(['Marek Zieliński · Bark', 'Marek Zielinski · Kolano', 'Ewa Lis']);
+    expect(
+      patientChoiceLabels([
+        { id: 'a', name: 'Marek Zieliński' },
+        { id: 'b', name: 'Marek Zielinski' },
+      ])
+    ).toEqual(['Marek Zieliński (1)', 'Marek Zielinski (2)']);
+  });
+
+  it('keeps a label to the name and two details, with the day added as the last resort', () => {
+    const three = patientChoiceLabels([
+      { id: 'a', name: 'Jan Kowalski', contextLabel: 'Ból kolana', isShadowUser: true, addedAt: '2026-10-03T09:00:00' },
+      { id: 'b', name: 'Jan Kowalski', contextLabel: 'Ból kolana', isShadowUser: true, addedAt: '2026-11-12T09:00:00' },
+      { id: 'c', name: 'Jan Kowalski', contextLabel: 'Rwa kulszowa', isShadowUser: false },
+    ]);
+    expect(three).toEqual([
+      'Jan Kowalski · Ból kolana · dodano 3.10.2026',
+      'Jan Kowalski · Ból kolana · dodano 12.11.2026',
+      'Jan Kowalski · Rwa kulszowa',
+    ]);
+    const long = patientChoiceLabels([
+      { id: 'a', name: 'Jan Kowalski', contextLabel: 'Stan po rekonstrukcji więzadła krzyżowego przedniego' },
+      { id: 'b', name: 'Jan Kowalski', contextLabel: 'Rwa kulszowa' },
+    ]);
+    expect(long[0]).toBe('Jan Kowalski · Stan po rekonstrukcji więza…');
+  });
+
+  it('labels one patient among the namesakes and for a confirmation', () => {
+    const patients = [
+      { id: 'a', ...common, isShadowUser: true },
+      { id: 'b', ...common, isShadowUser: false },
+      { id: 'c', name: 'Tomasz Nowak', contextLabel: 'Ból kolana', isShadowUser: true },
+      { id: 'd', name: 'Ewa Lis' },
+    ];
+    expect(patientLabel(patients[1], patients)).toBe('Jan Kowalski · ma konto');
+    expect(patientLabel(patients[2], patients)).toBe('Tomasz Nowak');
+    expect(patientConfirmLabel(patients[0], patients)).toBe('Jan Kowalski (bez konta)');
+    expect(patientConfirmLabel(patients[2], patients)).toBe('Tomasz Nowak (Ból kolana · bez konta)');
+    expect(patientConfirmLabel(patients[3], patients)).toBe('Ewa Lis');
   });
 });

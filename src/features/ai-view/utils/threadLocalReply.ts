@@ -1,11 +1,12 @@
 import type { ChatCardSpec } from './chatCards';
 import type { ChatThreadMessage } from './conversationStore';
 import { normalizeSearchText } from '@/features/exercises/utils/exerciseSearch';
+import { confirmPatientSpec, patientConfirmation } from './clarifyChoice';
 import { matchPatients, type MatchablePatient } from './patientMatch';
 import { pickPatientAnswer } from './pickPatientAnswer';
 import { thinkingTopic } from './replyMotion';
 import { formatPlanDate, parseSchedulePlan, sendSummaryText } from './schedulePlan';
-import { scheduleQuestion } from './setDraft';
+import { scheduleQuestion, type SetDraftPayload } from './setDraft';
 
 /** Marks the open „Komu przypisać?” card answered by a typed message (see PickPatientCard). */
 export const PICK_PATIENT_ANSWERED = '__answered__';
@@ -15,6 +16,8 @@ export interface LocalReply {
   answeredMessageId: string;
   chosen: string;
   reply: { text?: string; spec?: ChatCardSpec };
+  /** Set when the reply is „Czy chodzi o…?”: the set draft its „Tak” takes on to the schedule. */
+  awaitingDraft?: SetDraftPayload;
 }
 
 /**
@@ -22,12 +25,16 @@ export interface LocalReply {
  * command for the dispatcher: „do jarka adamowskiego” after „Komu przypisać?” picks or adds
  * that patient, „od dziś, 3 razy w tygodniu” after „Od kiedy i jak często?” sets the schedule
  * (sent to the model it composed the set again and lost the patient: test 17.11, K7).
- * Null when no such question is open.
+ * Null when no such question is open. A patient named by one word is confirmed first („Czy chodzi o…?”),
+ * unless the conversation already has that patient (`knownPatientIds`); `awaitingDraft` is the draft
+ * behind such an open question, so another name typed instead of „Tak” still answers „Komu przypisać?”.
  */
 export function localReplyTo(
   text: string,
   messages: readonly ChatThreadMessage[],
-  patients: readonly MatchablePatient[]
+  patients: readonly MatchablePatient[],
+  knownPatientIds?: ReadonlySet<string>,
+  awaitingDraft?: SetDraftPayload
 ): LocalReply | null {
   const last = messages.findLast((message) => message.role === 'assistant');
   if (last?.role !== 'assistant' || last.chosen !== undefined) return null;
@@ -44,11 +51,25 @@ export function localReplyTo(
       },
     };
   }
-  if (last.spec?.component !== 'PickPatient') return null;
+  const draft =
+    last.spec?.component === 'PickPatient'
+      ? last.spec.draft
+      : patientConfirmation(last.spec)
+        ? awaitingDraft
+        : undefined;
+  if (!draft) return null;
   if (!looksLikePatientAnswer(text, patients)) return null;
-  const { draft } = last.spec;
   const answer = pickPatientAnswer(text, patients);
 
+  if (answer.kind === 'one' && answer.partial && !knownPatientIds?.has(answer.patient.id)) {
+    const spec = confirmPatientSpec(answer.patient, patients);
+    return {
+      answeredMessageId: last.id,
+      chosen: PICK_PATIENT_ANSWERED,
+      reply: { text: spec.question, spec },
+      awaitingDraft: draft,
+    };
+  }
   if (answer.kind === 'one') {
     return {
       answeredMessageId: last.id,
@@ -83,8 +104,7 @@ export function localReplyTo(
 }
 
 // A question or a change to the set next to a schedule („dodaj mostek, 3 razy w tygodniu”) is for the assistant.
-const NOT_A_SCHEDULE =
-  /\?|(?:^|\s)(?:dodaj|usun|zamien|zmien|wyrzuc|uloz|pokaz|znajdz|utworz|czy|dlaczego)(?:\s|$)/;
+const NOT_A_SCHEDULE = /\?|(?:^|\s)(?:dodaj|usun|zamien|zmien|wyrzuc|uloz|pokaz|znajdz|utworz|czy|dlaczego)(?:\s|$)/;
 
 const QUESTION_OR_COMMAND =
   /\?|(?:^|\s)(?:ile|ilu|pokaż|pokaz|znajdź|znajdz|utwórz|utworz|zrób|zrob|dodaj|ułóż|uloz|jak|czy|co|kiedy|gdzie|dlaczego)(?:\s|$)/i;
@@ -141,7 +161,9 @@ const MAX_TOPIC_LENGTH = 80;
 export function isExerciseTopic(text: string): boolean {
   const trimmed = text.trim();
   if (trimmed.length < 3 || trimmed.length > MAX_TOPIC_LENGTH || trimmed.includes('?')) return false;
-  const words = normalizeSearchText(trimmed).split(/[^a-z0-9]+/).filter(Boolean);
+  const words = normalizeSearchText(trimmed)
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean);
   return words.length <= MAX_TOPIC_WORDS && !words.some((word) => NOT_A_TOPIC_WORDS.has(word));
 }
 
@@ -181,11 +203,13 @@ const MAX_ACCOUNT_QUESTION_WORDS = 14;
 /**
  * „Czy Halina odebrała zestaw?”, „czy Kacper dostał zaproszenie?”: the panel knows whether the
  * patient has an account, the model does not (test 17.11, K5). Answered from the patient list,
- * without a credit. Null for anything else and when the name fits nobody or several patients.
+ * without a credit. Null for anything else and when the name fits nobody or several patients. A patient
+ * named by one word, new to the conversation, is confirmed first; the „Tak” then gets this answer.
  */
 export function accountQuestionReply(
   text: string,
-  patients: readonly MatchablePatient[]
+  patients: readonly MatchablePatient[],
+  knownPatientIds?: ReadonlySet<string>
 ): { text: string; spec: ChatCardSpec } | null {
   const normalized = normalizeSearchText(text).trim();
   const isQuestion = /^czy\s/.test(normalized) || text.includes('?');
@@ -194,6 +218,10 @@ export function accountQuestionReply(
   const match = matchPatients(text, patients);
   if (match.kind !== 'one' || match.patient.isShadowUser === undefined) return null;
   const { patient } = match;
+  if (match.partial && !knownPatientIds?.has(patient.id)) {
+    const question = confirmPatientSpec(patient, patients);
+    return { text: question.question, spec: question };
+  }
   const spec: ChatCardSpec = { component: 'PatientPeek', patientId: patient.id };
   if (patient.isShadowUser) {
     return {
