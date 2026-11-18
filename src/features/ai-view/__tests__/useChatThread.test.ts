@@ -148,6 +148,28 @@ describe('useChatThread', () => {
     });
   });
 
+  // Decyzja właściciela 18.11: aktywna jest jedna, najnowsza propozycja zestawu; do wcześniejszej da się wrócić.
+  it('locks the earlier proposal when the model sends a newer one, and brings it back on request', async () => {
+    const first = { component: 'SetDraft', exerciseIds: ['e1', 'e2'], note: 'biodro' };
+    const second = { component: 'SetDraft', exerciseIds: ['e1', 'e3'], note: 'biodro' };
+    dispatchMock.mockResolvedValueOnce({ sessionId: 'session-a', spec: first, creditsUsed: 1 });
+    dispatchMock.mockResolvedValueOnce({ sessionId: 'session-a', spec: second, creditsUsed: 1 });
+    const { result } = renderHook(() =>
+      useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org-a' })
+    );
+
+    await act(() => result.current.send('zestaw na biodro'));
+    await act(() => result.current.send('zamień drugie ćwiczenie na coś lżejszego'));
+
+    const cards = () => result.current.messages.filter((message) => message.role === 'assistant');
+    expect(cards().map((message) => message.chosen)).toEqual(['superseded', undefined]);
+
+    act(() => result.current.restoreDraft(first as never));
+
+    expect(cards().map((message) => message.chosen)).toEqual(['superseded', 'superseded', undefined]);
+    expect(cards().at(-1)).toMatchObject({ source: 'local', spec: first });
+  });
+
   // Decyzja właściciela 18.11: po dodaniu pacjenta z prośby łączonej asystent sam przechodzi do reszty.
   it('goes on with the rest of a combined request for the patient just added', async () => {
     dispatchMock.mockResolvedValueOnce({
@@ -200,7 +222,7 @@ describe('useChatThread', () => {
         source: 'local',
         spec: { component: 'SetDraft', exerciseIds: ['e-clam', 'e-bridge'], doses: draft.doses, note: 'biodro' },
       });
-      expect(result.current.messages.at(-3)).toMatchObject({ chosen: 'added' });
+      expect(result.current.messages.at(-3)).toMatchObject({ chosen: 'superseded' });
     });
 
     it('sends a new exercise the model proposes back to the proposal', async () => {

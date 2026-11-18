@@ -9,6 +9,7 @@ const mockToastError = vi.hoisted(() => vi.fn());
 const mockSaveTemplateSet = vi.hoisted(() => vi.fn());
 const openCreateSet = vi.hoisted(() => vi.fn());
 const reportLiveDraft = vi.hoisted(() => vi.fn());
+const restoreDraft = vi.hoisted(() => vi.fn());
 let listItems: Array<Record<string, unknown>> = [];
 
 const apolloClient = { query: mockClientQuery };
@@ -49,6 +50,7 @@ vi.mock('../../ChatSessionContext', () => ({
     markChosen: vi.fn(),
     openCreateSet,
     reportLiveDraft,
+    restoreDraft,
   }),
   toWizardPatient: () => undefined,
 }));
@@ -260,5 +262,32 @@ describe('SetDraftCard: wersja rekordu ćwiczeń szkicu', () => {
     );
     await screen.findByTestId('draft-item-ex-alt');
     expect(screen.queryByTestId('draft-new-ex-alt')).toBeNull();
+  });
+
+  // Decyzja właściciela 18.11: zablokowana wersja zestawu daje się przywrócić, wysłana albo zapisana nie.
+  it('zablokowana przez nowszą wersję karta ma „Wróć do tej wersji” i oddaje swoje pozycje w całości', async () => {
+    mockClientQuery.mockResolvedValue({
+      data: { exerciseById: { id: 'ex-alt', updatedAt: 't1', enrichmentData: {} } },
+    });
+    restoreDraft.mockReset();
+    const spec = { component: 'SetDraft', exerciseIds: ['ex-alt'], note: 'biodro' };
+    const { unmount } = render(<SetDraftCard spec={spec as never} testId="draft" messageId="m1" chosen="superseded" />);
+    await screen.findByTestId('draft-item-ex-alt');
+    expect(screen.queryByTestId('draft-primary-btn')).toBeNull();
+    expect(screen.queryByTestId('draft-add-btn')).toBeNull();
+    screen.getByTestId('draft-restore-btn').click();
+    expect(restoreDraft).toHaveBeenCalledWith(
+      expect.objectContaining({
+        component: 'SetDraft',
+        exerciseIds: ['ex-alt'],
+        note: 'biodro',
+        items: [expect.objectContaining({ exerciseId: 'ex-alt' })],
+      })
+    );
+    unmount();
+
+    render(<SetDraftCard spec={spec as never} testId="draft" messageId="m2" chosen="next" />);
+    await screen.findByTestId('draft-item-ex-alt');
+    expect(screen.queryByTestId('draft-restore-btn')).toBeNull();
   });
 });

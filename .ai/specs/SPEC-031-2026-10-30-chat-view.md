@@ -119,6 +119,7 @@ Błędy: `400 invalid_message`, `400 insufficient_credits`, `403 forbidden`, `50
 
 - Płynność po demo u fizjoterapeuty: „dodaj pacjenta …” (także „stwórz/utwórz/załóż”, sam e-mail albo telefon) otwiera formularz lokalnie, bez modelu, z danymi z wiadomości i z wcześniejszych wiadomości tej wymiany; osoba już obecna na liście pokazuje się zamiast formularza (`utils/newPatientDetails.ts`).
 - Prośba łączona („dodaj pacjenta … i ułóż mu zestaw”) też daje formularz od razu; resztę (`AddPatient.then`, tylko z wątku) asystent wykonuje po zapisie dla nowego pacjenta po id (`resolveForPatient`), a dla osoby już obecnej na liście od razu.
+- Aktywna jest jedna, najnowsza propozycja zestawu: nowsza karta `SetDraft` tej samej pracy blokuje wcześniejszą otwartą (`chosen: superseded`, pozycje zapisane w spec karty), a „Wróć do tej wersji” odtwarza ją jako najnowszą (`utils/draftVersions.ts`).
 - Status czekania zmienia się także po 20 s i pokazuje czas (`utils/replyMotion.ts`); pytania doprecyzowujące pod zestawem i wynikami powstają z prośby (`utils/clarifyQuestions.ts`).
 - Otwarta propozycja zestawu przyjmuje ćwiczenie z czatu („dodaj ćwiczenie X”) i z dwóch przycisków karty; karta zgłasza wątkowi swój bieżący stan w pamięci, poza historią (`utils/addToDraft.ts`, `reportLiveDraft`).
 

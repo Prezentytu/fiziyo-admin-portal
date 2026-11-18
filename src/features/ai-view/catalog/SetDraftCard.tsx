@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, Repeat2, SlidersHorizontal, Sparkles, Trash2 } from 'lucide-react';
+import { Plus, Repeat2, SlidersHorizontal, Sparkles, Trash2, Undo2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +22,7 @@ import { toWizardPatient, useChatActions } from '../ChatSessionContext';
 import { useAvailableExercises, type ChatCatalogExercise } from '../useAvailableExercises';
 import { findAlternatives } from '../utils/exerciseAlternatives';
 import { draftClarifyQuestions } from '../utils/clarifyQuestions';
+import { canRestoreDraft, RESTORE_DRAFT_LABEL, restoredDraftSpec, SUPERSEDED } from '../utils/draftVersions';
 import { searchExercises } from '../utils/exerciseLookup';
 import { seedDraftItems } from '../utils/seedDraft';
 import {
@@ -196,6 +197,12 @@ function DraftRow({
   );
 }
 
+function lockedNote(chosen: string | undefined): string {
+  if (chosen === 'saved') return 'Zapisane w katalogu';
+  if (chosen === SUPERSEDED || chosen === 'added') return 'Nowsza wersja tego zestawu jest poniżej';
+  return 'Ten zestaw jest już w kolejnym kroku poniżej';
+}
+
 /**
  * Set composed in the thread (design "Czat v2"): swap, remove with undo, tune parameters, add from
  * the catalog. Nothing is saved here; the next step asks for the schedule and the summary sends.
@@ -210,6 +217,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
     markChosen,
     openCreateSet,
     reportLiveDraft,
+    restoreDraft,
   } = useChatActions();
   const [items, setItems] = useState<DraftItem[] | null>(null);
   // Treść ćwiczeń szkicu (wersja rekordu) dociąga się osobno: lista z czatu jej nie niesie, a od wersji zależy,
@@ -370,9 +378,20 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
       }
       footer={
         locked ? (
-          <span className="text-[13px] text-label-secondary">
-            {chosen === 'saved' ? 'Zapisane w katalogu' : 'Ten zestaw jest już w kolejnym kroku poniżej'}
-          </span>
+          <>
+            <span className="text-[13px] text-label-secondary">{lockedNote(chosen)}</span>
+            {canRestoreDraft(chosen) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => restoreDraft(restoredDraftSpec(spec, items))}
+                data-testid={`${testId}-restore-btn`}
+              >
+                <Undo2 aria-hidden="true" />
+                {RESTORE_DRAFT_LABEL}
+              </Button>
+            )}
+          </>
         ) : (
           <>
             <div className="flex flex-wrap gap-1">

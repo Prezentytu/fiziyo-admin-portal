@@ -42,6 +42,8 @@ export function seedDraftItems(input: SeedInput): { items: DraftItem[]; missingS
     };
   }
   if (!input.setsReady) return null;
+  // A version the therapist returns to: its rows as they were left, not the set's mapping again.
+  if (input.items) return { items: [...input.items], missingSet: false };
   const set = input.sets.find((candidate) => candidate.id === input.setId);
   if (!set) return { items: [], missingSet: true };
   const byId = new Map(input.exercises.map((exercise) => [exercise.id, exercise]));

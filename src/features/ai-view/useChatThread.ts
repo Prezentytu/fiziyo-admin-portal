@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { dispatchChatMessage } from './chatDispatchClient';
 import { addToDraftReply, draftRequest, openSetDraft, type LiveDraft } from './utils/addToDraft';
+import { lockSupersededDrafts, RESTORE_DRAFT_LABEL, RESTORED_DRAFT_TEXT } from './utils/draftVersions';
 import { cardPatientIds, latestCardPatientId, type ChatCardSpec } from './utils/chatCards';
 import { confirmAnswer, OTHER_PATIENT_OPTION, patientConfirmation } from './utils/clarifyChoice';
 import type { ChatThreadMessage } from './utils/conversationStore';
@@ -53,7 +54,15 @@ export function useChatThread({
   getContextPatientId,
   getLiveDraft,
 }: ChatThreadOptions) {
-  const [messages, setMessages] = useState<ChatThreadMessage[]>([]);
+  const [messages, setRawMessages] = useState<ChatThreadMessage[]>([]);
+  // Every change of the thread passes here: a newer set proposal locks the earlier one (with its rows kept).
+  const setMessages = useCallback(
+    (update: ChatThreadMessage[] | ((previous: ChatThreadMessage[]) => ChatThreadMessage[])) =>
+      setRawMessages((previous) =>
+        lockSupersededDrafts(typeof update === 'function' ? update(previous) : update, getLiveDraft)
+      ),
+    [getLiveDraft]
+  );
   const [isBusy, setIsBusy] = useState(false);
   const [threadScope, setThreadScope] = useState(scopeKey);
   const sessionRef = useRef<{ scopeKey: string; id: string } | undefined>(undefined);
@@ -96,35 +105,44 @@ export function useChatThread({
   useEffect(startOver, [scopeKey, startOver]);
 
   /** A step of a flow (schedule, summary, sent) without a model call. */
-  const appendAssistant = useCallback((reply: AssistantReply) => {
-    setMessages((previous) => [
-      ...previous,
-      {
-        id: newChatId(),
-        role: 'assistant',
-        text: reply.text,
-        spec: reply.spec,
-        source: 'local',
-        creditsUsed: 0,
-        createdAt: Date.now(),
-      },
-    ]);
-  }, []);
+  const appendAssistant = useCallback(
+    (reply: AssistantReply) => {
+      setMessages((previous) => [
+        ...previous,
+        {
+          id: newChatId(),
+          role: 'assistant',
+          text: reply.text,
+          spec: reply.spec,
+          source: 'local',
+          creditsUsed: 0,
+          createdAt: Date.now(),
+        },
+      ]);
+    },
+    [setMessages]
+  );
 
-  const pushUser = useCallback((text: string, attachmentName?: string) => {
-    setMessages((previous) => [
-      ...previous,
-      { id: newChatId(), role: 'user', text, attachmentName, createdAt: Date.now() },
-    ]);
-  }, []);
+  const pushUser = useCallback(
+    (text: string, attachmentName?: string) => {
+      setMessages((previous) => [
+        ...previous,
+        { id: newChatId(), role: 'user', text, attachmentName, createdAt: Date.now() },
+      ]);
+    },
+    [setMessages]
+  );
 
-  const markChosen = useCallback((messageId: string, chosen: string) => {
-    setMessages((previous) =>
-      previous.map((message) =>
-        message.id === messageId && message.role === 'assistant' ? { ...message, chosen } : message
-      )
-    );
-  }, []);
+  const markChosen = useCallback(
+    (messageId: string, chosen: string) => {
+      setMessages((previous) =>
+        previous.map((message) =>
+          message.id === messageId && message.role === 'assistant' ? { ...message, chosen } : message
+        )
+      );
+    },
+    [setMessages]
+  );
 
   /**
    * The therapist picked a patient from a choice ("O kogo chodzi?") or confirmed one („Czy chodzi o…?”).
@@ -255,7 +273,10 @@ export function useChatThread({
       const addition =
         openDraft && liveDraft ? addToDraftReply(trimmed, liveDraft.draft, liveDraft.catalog, context.patients) : null;
       if (openDraft && addition) {
-        if (addition.closesDraft) markChosen(openDraft.messageId, 'added');
+        // Nowa karta zestawu sama blokuje poprzednią; karta nowego ćwiczenia zamyka ją tutaj.
+        if (addition.closesDraft && addition.reply.spec?.component !== 'SetDraft') {
+          markChosen(openDraft.messageId, 'create-exercise');
+        }
         pendingCommandRef.current = undefined;
         pushUser(trimmed);
         appendAssistant(addition.reply);
@@ -286,7 +307,7 @@ export function useChatThread({
         // Nowe ćwiczenie, o które poproszono przy otwartej propozycji zestawu, wraca do tej propozycji.
         if (openDraft && liveDraft && reply.spec?.component === 'CreateExercise' && draftRequest(trimmed)) {
           reply = { ...reply, spec: { ...reply.spec, addToSet: liveDraft.draft } };
-          markChosen(openDraft.messageId, 'added');
+          markChosen(openDraft.messageId, 'create-exercise');
         }
         // AI questions count too: if the next dispatch fails, rules finish the command.
         const isUnsupported = reply.spec === UNSUPPORTED_SPEC;
@@ -331,6 +352,7 @@ export function useChatThread({
       pushUser,
       ready,
       scopeKey,
+      setMessages,
       useAi,
     ]
   );
@@ -383,7 +405,7 @@ export function useChatThread({
         }
       }
     },
-    [appendAssistant, context, scopeKey, useAi]
+    [appendAssistant, context, scopeKey, setMessages, useAi]
   );
 
   /** What the therapist chose (a shortcut, a quick reply) and the thread's answer to it, both local. */
@@ -393,6 +415,13 @@ export function useChatThread({
       appendAssistant(reply);
     },
     [appendAssistant, pushUser]
+  );
+
+  /** „Wróć do tej wersji” on a locked set proposal: it becomes the newest card; the active one locks. */
+  const restoreDraft = useCallback(
+    (spec: Extract<ChatCardSpec, { component: 'SetDraft' }>) =>
+      appendExchange(RESTORE_DRAFT_LABEL, { text: RESTORED_DRAFT_TEXT, spec }),
+    [appendExchange]
   );
 
   /**
@@ -453,7 +482,7 @@ export function useChatThread({
       setMessages(nextMessages);
       setIsBusy(false);
     },
-    [startOver]
+    [setMessages, startOver]
   );
 
   return {
@@ -465,6 +494,7 @@ export function useChatThread({
     appendExchange,
     choosePatient,
     continueForPatient,
+    restoreDraft,
     runTask,
     markChosen,
     reset,

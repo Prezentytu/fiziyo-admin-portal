@@ -15,7 +15,7 @@ import { useChatData, type ChatPatient } from './useChatData';
 import { useChatMode } from './useChatMode';
 import { newChatId, useChatThread, type AssistantReply, type ChatThreadMessage } from './useChatThread';
 import type { LiveDraft } from './utils/addToDraft';
-import { conversationPatientId, type PinnedPatient } from './utils/chatCards';
+import { conversationPatientId, type ChatCardSpec, type PinnedPatient } from './utils/chatCards';
 import {
   conversationStorageKey,
   parseConversations,
@@ -69,6 +69,8 @@ export interface ChatSession {
   /** The rest of a combined request, carried out for the patient the form just added (by id). */
   continueForPatient: (patientId: string, name: string, command: string) => void;
   markChosen: (messageId: string, chosen: string) => void;
+  /** A locked set proposal comes back as the newest card; the one active until now locks. */
+  restoreDraft: (spec: Extract<ChatCardSpec, { component: 'SetDraft' }>) => void;
   runTask: (
     userText: string,
     task: (signal: AbortSignal) => Promise<AssistantReply>,
@@ -119,6 +121,7 @@ export type ChatActions = Pick<
   | 'choosePatient'
   | 'continueForPatient'
   | 'markChosen'
+  | 'restoreDraft'
   | 'runTask'
   | 'refetchCredits'
   | 'showPatient'
@@ -360,7 +363,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
   );
   const title = conversations.find((conversation) => conversation.id === activeConversationId)?.title ?? 'Nowa rozmowa';
   const { send, stop: stopReply, appendAssistant, appendExchange, choosePatient, runTask, markChosen } = thread;
-  const { continueForPatient: continueThread } = thread;
+  const { continueForPatient: continueThread, restoreDraft } = thread;
   const continueForPatient = useCallback(
     (patientId: string, name: string, command: string) => void continueThread(patientId, name, command),
     [continueThread]
@@ -386,6 +389,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       choosePatient,
       continueForPatient,
       markChosen,
+      restoreDraft,
       runTask,
       refetchCredits,
       showPatient,
@@ -406,6 +410,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       choosePatient,
       continueForPatient,
       markChosen,
+      restoreDraft,
       runTask,
       refetchCredits,
       showPatient,
@@ -440,6 +445,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       choosePatient,
       continueForPatient,
       markChosen,
+      restoreDraft,
       runTask,
       conversations,
       conversationsReady: storageKey !== undefined || (!isOrganizationLoading && !organizationId),
@@ -481,6 +487,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       choosePatient,
       continueForPatient,
       markChosen,
+      restoreDraft,
       runTask,
       conversations,
       storageKey,

@@ -127,4 +127,29 @@ describe('seedDraftItems', () => {
       })
     ).toMatchObject({ items: [{ exerciseId: 'e1', sets: 4, reps: 6 }] });
   });
+
+  // Wersja zestawu z katalogu, do której fizjo wraca: pozycje tak, jak je zostawił, nie z mappingu zestawu.
+  it('prefers the kept rows over the catalog set mapping', () => {
+    const kept = {
+      exerciseId: 'e1',
+      sets: 9,
+      reps: 9,
+      duration: 0,
+      executionTime: 0,
+      restSets: 7,
+      restReps: 0,
+      preparationTime: 0,
+    };
+    expect(
+      seedDraftItems({
+        setId: 's1',
+        exerciseIds: ['e1'],
+        items: [kept],
+        sets: [SET],
+        setsReady: true,
+        exercises: EXERCISES,
+        exercisesReady: true,
+      })
+    ).toEqual({ items: [kept], missingSet: false });
+  });
 });

@@ -79,6 +79,7 @@ vi.mock('../../ChatSessionContext', () => ({
     markChosen: vi.fn(),
     openCreateSet: vi.fn(),
     reportLiveDraft: vi.fn(),
+    restoreDraft: vi.fn(),
   }),
   toWizardPatient: () => undefined,
 }));
