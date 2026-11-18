@@ -191,7 +191,6 @@ const FIELD_METADATA_WITHOUT_TOOLTIP: Record<ExerciseFieldKey, Omit<ExerciseFiel
     label: 'Powtórzenia',
     help: {
       summary: 'Ile powtórzeń pacjent robi w jednej serii.',
-      points: [{ term: 'Obie strony', text: 'jak liczyć powtórzenia, mówi pole „Strona ciała”.' }],
       example: '10 powtórzeń, potem przerwa między seriami.',
     },
     iconKey: 'reps',
