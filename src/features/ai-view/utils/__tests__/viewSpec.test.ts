@@ -66,6 +66,35 @@ describe('parseDispatchReply', () => {
     ).toEqual({ text: undefined, spec: { component: 'CreateExercise', name: 'Mostek', description: 'Na jednej nodze' } });
   });
 
+  // BW-FZ-113: asystent przyjął pozycję wyjściową, a inne pozycje są szybkimi odpowiedziami karty.
+  it('keeps other starting positions of a new exercise as quick answers, at most three', () => {
+    expect(
+      parseDispatchReply(
+        {
+          component: 'CreateExercise',
+          query: 'Odwodzenie nogi do tyłu w leżeniu przodem',
+          note: 'Unieś prostą nogę.',
+          options: [' W staniu ', '', 'W klęku podpartym', 'W leżeniu bokiem', 'W siadzie'],
+        },
+        'Przyjęta pozycja wyjściowa: leżenie przodem. Inna pozycja?'
+      )
+    ).toEqual({
+      text: 'Przyjęta pozycja wyjściowa: leżenie przodem. Inna pozycja?',
+      spec: {
+        component: 'CreateExercise',
+        name: 'Odwodzenie nogi do tyłu w leżeniu przodem',
+        description: 'Unieś prostą nogę.',
+        positionOptions: ['W staniu', 'W klęku podpartym', 'W leżeniu bokiem'],
+      },
+    });
+  });
+
+  it('adds no quick answers to a new exercise when the dispatcher sent none', () => {
+    const reply = parseDispatchReply({ component: 'CreateExercise', query: 'Mostek', options: [] }, null);
+    expect(reply.spec).toEqual({ component: 'CreateExercise', name: 'Mostek', description: undefined });
+    expect(reply.spec).not.toHaveProperty('positionOptions');
+  });
+
   it('answers a message with text only, and with the fallback card when text is missing', () => {
     expect(parseDispatchReply({ component: 'Message' }, ' Umiem ułożyć zestaw. ')).toEqual({ text: 'Umiem ułożyć zestaw.' });
     expect(parseDispatchReply({ component: 'Message' }, '')).toEqual({ spec: UNSUPPORTED_SPEC });
