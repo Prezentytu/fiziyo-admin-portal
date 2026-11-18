@@ -66,6 +66,8 @@ export interface ChatSession {
   appendExchange: (userText: string, reply: AssistantReply, attachmentName?: string) => void;
   /** A patient picked from a choice by id; finishes the question without the model. */
   choosePatient: (patientId: string, label: string) => void;
+  /** The rest of a combined request, carried out for the patient the form just added (by id). */
+  continueForPatient: (patientId: string, name: string, command: string) => void;
   markChosen: (messageId: string, chosen: string) => void;
   runTask: (
     userText: string,
@@ -115,6 +117,7 @@ export type ChatActions = Pick<
   | 'appendAssistant'
   | 'appendExchange'
   | 'choosePatient'
+  | 'continueForPatient'
   | 'markChosen'
   | 'runTask'
   | 'refetchCredits'
@@ -357,6 +360,11 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
   );
   const title = conversations.find((conversation) => conversation.id === activeConversationId)?.title ?? 'Nowa rozmowa';
   const { send, stop: stopReply, appendAssistant, appendExchange, choosePatient, runTask, markChosen } = thread;
+  const { continueForPatient: continueThread } = thread;
+  const continueForPatient = useCallback(
+    (patientId: string, name: string, command: string) => void continueThread(patientId, name, command),
+    [continueThread]
+  );
   const sendMessage = useCallback((text: string) => void send(text), [send]);
   const openCreateSet = useCallback(
     (exerciseIds: string[], patient?: Patient, name?: string) => setCreateSetRequest({ exerciseIds, patient, name }),
@@ -376,6 +384,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       appendAssistant,
       appendExchange,
       choosePatient,
+      continueForPatient,
       markChosen,
       runTask,
       refetchCredits,
@@ -395,6 +404,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       appendAssistant,
       appendExchange,
       choosePatient,
+      continueForPatient,
       markChosen,
       runTask,
       refetchCredits,
@@ -428,6 +438,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       appendAssistant,
       appendExchange,
       choosePatient,
+      continueForPatient,
       markChosen,
       runTask,
       conversations,
@@ -468,6 +479,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       appendAssistant,
       appendExchange,
       choosePatient,
+      continueForPatient,
       markChosen,
       runTask,
       conversations,

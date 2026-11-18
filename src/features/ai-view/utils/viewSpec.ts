@@ -50,6 +50,8 @@ export type ChatViewSpec =
       phone?: string;
       email?: string;
       contextLabel?: string;
+      /** Only from the thread itself: the rest of a combined request, carried out for the patient once added. */
+      then?: string;
     }
   | {
       component: 'CreateExercise';

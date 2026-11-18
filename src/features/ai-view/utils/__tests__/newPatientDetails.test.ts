@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   addPatientReply,
+  addPatientRest,
   isAddPatientRequest,
   parseNewPatientDetails,
   threadNewPatientDetails,
@@ -200,5 +201,31 @@ describe('withNewPatientDetails: second turn', () => {
         phone: '600 100 200',
       })
     ).toEqual({ component: 'AddPatient', name: 'Jan Kowalski', email: 'jan@example.com', phone: '600 100 200' });
+  });
+});
+
+// Decyzja właściciela 18.11: prośba łączona też daje formularz od razu, a reszta polecenia idzie dalej po dodaniu.
+describe('addPatientRest', () => {
+  it.each([
+    ['dodaj pacjenta Jan Kowalski jan@example.com i ułóż mu zestaw na biodro', 'ułóż mu zestaw na biodro'],
+    [
+      'dodaj pacjentkę Anna Nowak, ból lędźwi od pół roku i od razu ułóż jej zestaw',
+      'ból lędźwi od pół roku i od razu ułóż jej zestaw',
+    ],
+    ['Nowa pacjentka Oksana Lis, ból kolana, ułóż zestaw', 'ból kolana, ułóż zestaw'],
+    ['dodaj pacjenta jan kowalski, zestaw na kolano, tel. 600 100 200', 'zestaw na kolano'],
+    ['stwórz pacjenta ala@example.com oraz plan na bark', 'plan na bark'],
+  ])('splits „%s” into the patient and „%s”', (text, rest) => {
+    expect(addPatientRest(text)).toBe(rest);
+  });
+
+  it.each([
+    'dodaj pacjenta Jan Kowalski jan@example.com',
+    'dodaj pacjentowi Janowi ćwiczenie mostek',
+    'zestaw dla nowego pacjenta na kolano',
+    'ułóż zestaw na biodro',
+    'jak dodać pacjenta i ułożyć mu zestaw?',
+  ])('finds no second part in „%s”', (text) => {
+    expect(addPatientRest(text)).toBeNull();
   });
 });

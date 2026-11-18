@@ -34,7 +34,7 @@ const HOW_TO_QUESTION = /^(?:jak|gdzie|kiedy|dlaczego|czemu|czy da sie)\s/;
 
 // „z mailem”, „na adres”, „o numerze”: they announce a contact, they are not a name.
 const CONTACT_LABEL =
-  /(?:^|\s)(?:(?:z|na|pod|o)\s+)?(?:adres\p{L}*|e-?mail\p{L}*|mail\p{L}*|tel\p{L}*|numer\p{L}*|nr)(?=\s|$)/giu;
+  /(?:^|\s)(?:(?:z|na|pod|o)\s+)?(?:adres\p{L}*|e-?mail\p{L}*|mail\p{L}*|tel\p{L}*|numer\p{L}*|nr)(?=[\s.:]|$)/giu;
 const FILLER_WORDS = new Set([
   'dla',
   'mi',
@@ -159,11 +159,45 @@ function capitalizeName(word: string): string {
 export function isAddPatientRequest(text: string): boolean {
   const withoutContact = text.replace(CONTACT, ' ');
   if (PLAN_TALK.test(withoutContact)) return false;
+  if (namesAddingPatient(text)) return true;
   const normalized = normalizeSearchText(withoutContact).replace(/\s+/g, ' ').trim();
-  if (HOW_TO_QUESTION.test(normalized)) return false;
-  if (ADDS_PATIENT.test(normalized) || STARTS_WITH_NEW_PATIENT.test(normalized)) return true;
   const hasContact = EMAIL.test(text) || PHONE.test(text);
   return hasContact && !/pacjent/.test(normalized) && STARTS_WITH_ADD.test(`${normalized} `);
+}
+
+/** „dodaj/stwórz/załóż pacjenta …” or „nowy pacjent …” at the start; a how-to question is not a request. */
+function namesAddingPatient(text: string): boolean {
+  const normalized = normalizeSearchText(text.replace(CONTACT, ' ')).replace(/\s+/g, ' ').trim();
+  if (HOW_TO_QUESTION.test(normalized)) return false;
+  return ADDS_PATIENT.test(normalized) || STARTS_WITH_NEW_PATIENT.test(normalized);
+}
+
+const REST_LEAD = /^(?:[\s,;:.\-–]+|(?:i|oraz|a|potem|następnie|nastepnie|od razu)(?=\s))+/iu;
+
+/**
+ * The second part of a combined request („dodaj pacjenta Jan Kowalski jan@… i ułóż mu zestaw na biodro” →
+ * „ułóż mu zestaw na biodro”): what follows the patient's name, without the contact data, when it talks
+ * about a set, a plan or exercises. The thread carries it out for the patient once the form is saved.
+ * Null when the message only adds a patient or does not add one.
+ */
+export function addPatientRest(text: string): string | null {
+  if (!namesAddingPatient(text)) return null;
+  const keyword = /pacjent\p{L}*/iu.exec(text);
+  if (!keyword) return null;
+  let start = keyword.index + keyword[0].length;
+  const name = parseNewPatientDetails(text).name;
+  const nameAt = name ? text.toLocaleLowerCase('pl-PL').indexOf(name.toLocaleLowerCase('pl-PL'), start) : -1;
+  if (name && nameAt >= 0) start = nameAt + name.length;
+  const rest = text
+    .slice(start)
+    .replace(CONTACT, ' ')
+    .replace(CONTACT_LABEL, ' ')
+    .replace(/\s+([,;.:])/g, '$1')
+    .replace(/([,;.:])[,;.:\s]*(?=[,;.:])/g, '')
+    .replace(/\s+/g, ' ')
+    .replace(REST_LEAD, '')
+    .replace(/[\s,;:.]+$/, '');
+  return PLAN_TALK.test(rest) ? rest : null;
 }
 
 function phoneDigits(phone: string | undefined): string {
@@ -175,7 +209,7 @@ function phoneDigits(phone: string | undefined): string {
  * The patient already on the list the details point at: the same e-mail or phone, or the same full
  * name when the message gives no contact. A namesake with another contact is a new person.
  */
-function existingPatient(
+export function existingPatient(
   details: NewPatientDetails,
   patients: readonly MatchablePatient[]
 ): MatchablePatient | undefined {

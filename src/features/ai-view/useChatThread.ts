@@ -9,7 +9,7 @@ import { confirmAnswer, OTHER_PATIENT_OPTION, patientConfirmation } from './util
 import type { ChatThreadMessage } from './utils/conversationStore';
 import { routeForPatient, type IntentContext } from './utils/intentRouter';
 import { threadNewPatientDetails } from './utils/newPatientDetails';
-import { replyText, resolveReply, type HeldReply } from './utils/resolveReply';
+import { replyText, resolveForPatient, resolveReply, type HeldReply } from './utils/resolveReply';
 import { scheduleQuestion, type SetDraftPayload } from './utils/setDraft';
 import { accountQuestionReply, countQuestion, localReplyTo, withExerciseIdeas } from './utils/threadLocalReply';
 import { UNSUPPORTED_SPEC } from './utils/viewSpec';
@@ -292,8 +292,9 @@ export function useChatThread({
         const asksForPatient = reply.spec?.component === 'Clarify' && !isUnsupported;
         const previousCommand = pendingCommandRef.current;
         // "Tego jeszcze nie umiem" after a typo keeps the question open, so its options still finish it.
-        if (asksForPatient) pendingCommandRef.current = [previousCommand, trimmed].filter(Boolean).join(' ');
-        else if (!isUnsupported) pendingCommandRef.current = undefined;
+        if (asksForPatient) {
+          pendingCommandRef.current = reply.pendingCommand ?? [previousCommand, trimmed].filter(Boolean).join(' ');
+        } else if (!isUnsupported) pendingCommandRef.current = undefined;
         heldRef.current = reply.held;
         if (reply.sessionId) sessionRef.current = { scopeKey, id: reply.sessionId };
         const showFallback = reply.fallbackReason !== undefined && !hasNotifiedFallbackRef.current;
@@ -330,6 +331,57 @@ export function useChatThread({
       scopeKey,
       useAi,
     ]
+  );
+
+  /**
+   * The rest of a combined request („… i ułóż mu zestaw”) carried out for the patient the form just
+   * added, by id: the model composes when allowed, rules otherwise. Nothing new is typed by the therapist.
+   */
+  const continueForPatient = useCallback(
+    async (patientId: string, name: string, command: string) => {
+      const added = `Dodano: ${name}.`;
+      if (inFlightRef.current) {
+        appendAssistant({ text: `${added} Napisz jeszcze raz resztę prośby: „${command}”.` });
+        return;
+      }
+      inFlightRef.current = true;
+      setIsBusy(true);
+      const epoch = threadEpochRef.current;
+      const controller = new AbortController();
+      abortRef.current = controller;
+      try {
+        const reply = await resolveForPatient(command, patientId, {
+          signal: controller.signal,
+          useAi,
+          sessionId: sessionRef.current?.scopeKey === scopeKey ? sessionRef.current.id : undefined,
+          context,
+          dispatch: dispatchChatMessage,
+        });
+        if (threadEpochRef.current !== epoch) return;
+        if (reply.sessionId) sessionRef.current = { scopeKey, id: reply.sessionId };
+        const showFallback = reply.fallbackReason !== undefined && !hasNotifiedFallbackRef.current;
+        if (showFallback) hasNotifiedFallbackRef.current = true;
+        setMessages((previous) => [
+          ...previous,
+          {
+            id: newChatId(),
+            role: 'assistant',
+            text: `${added} ${reply.text}`.trim(),
+            spec: reply.spec,
+            source: reply.source,
+            creditsUsed: reply.creditsUsed,
+            fallbackReason: showFallback ? reply.fallbackReason : undefined,
+            createdAt: Date.now(),
+          },
+        ]);
+      } finally {
+        if (threadEpochRef.current === epoch) {
+          inFlightRef.current = false;
+          setIsBusy(false);
+        }
+      }
+    },
+    [appendAssistant, context, scopeKey, useAi]
   );
 
   /** What the therapist chose (a shortcut, a quick reply) and the thread's answer to it, both local. */
@@ -410,6 +462,7 @@ export function useChatThread({
     appendAssistant,
     appendExchange,
     choosePatient,
+    continueForPatient,
     runTask,
     markChosen,
     reset,

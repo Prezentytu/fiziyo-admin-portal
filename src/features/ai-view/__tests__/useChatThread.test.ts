@@ -110,6 +110,34 @@ describe('useChatThread', () => {
     });
   });
 
+  // Decyzja właściciela 18.11: po dodaniu pacjenta z prośby łączonej asystent sam przechodzi do reszty.
+  it('goes on with the rest of a combined request for the patient just added', async () => {
+    dispatchMock.mockResolvedValueOnce({
+      sessionId: 'session-a',
+      text: 'Proponuję zestaw na biodro.',
+      spec: { component: 'SetDraft', exerciseIds: ['e1', 'e2'] },
+      creditsUsed: 1,
+    });
+    const { result } = renderHook(() =>
+      useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org-a' })
+    );
+
+    await act(() => result.current.send('dodaj pacjenta Adam Lis adam@example.com i ułóż mu zestaw na biodro'));
+    expect(dispatchMock).not.toHaveBeenCalled();
+    expect(result.current.messages.at(-1)).toMatchObject({
+      spec: { component: 'AddPatient', name: 'Adam Lis', then: 'ułóż mu zestaw na biodro' },
+    });
+
+    await act(() => result.current.continueForPatient('p-new', 'Adam Lis', 'ułóż mu zestaw na biodro'));
+
+    expect(dispatchMock).toHaveBeenCalledWith('ułóż mu zestaw na biodro', undefined, expect.anything());
+    expect(result.current.messages.at(-1)).toMatchObject({
+      text: 'Dodano: Adam Lis. Proponuję zestaw na biodro.',
+      spec: { component: 'SetDraft', patientId: 'p-new', exerciseIds: ['e1', 'e2'] },
+    });
+    expect(result.current.isBusy).toBe(false);
+  });
+
   // Demo 18.11: przy otwartej propozycji zestawu „dodaj ćwiczenie” z czatu nie trafiało do tej propozycji.
   describe('an open set proposal', () => {
     const draft = { exerciseIds: ['e-clam'], note: 'biodro', doses: { 'e-clam': { sets: 4, reps: 12 } } };

@@ -57,6 +57,8 @@ const STOP_WORDS = new Set([
   'przygotuj',
   'utworz',
   'stworz',
+  'uloz',
+  'razu',
   'przypisz',
   'daj',
   'dobierz',
@@ -121,7 +123,11 @@ export function findBestSet(sets: readonly MatchableSet[], topic: readonly strin
  * Every answer carries the patient id, so a click picks that patient and not a name: two „Jan Kowalski”
  * used to give two identical chips that asked the same question again (test 17.11, K3).
  */
-function askWhichPatient(patients: readonly MatchablePatient[], question: string, firstOption?: string): ChatViewSpec {
+export function askWhichPatient(
+  patients: readonly MatchablePatient[],
+  question: string,
+  firstOption?: string
+): ChatViewSpec {
   const offered = patients.slice(0, MAX_CLARIFY_OPTIONS - (firstOption ? 1 : 0));
   const choices = patientChoiceLabels(offered).map((label, index) => ({ label, patientId: offered[index].id }));
   const all = firstOption ? [{ label: firstOption }, ...choices] : choices;
