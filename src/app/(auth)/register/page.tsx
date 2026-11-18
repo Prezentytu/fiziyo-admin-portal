@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { parseRegistrationError, type RegistrationErrorView } from '@/lib/auth/registrationErrors';
 
 interface FormData {
   email: string;
@@ -108,6 +109,10 @@ export default function RegisterPage() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  /** Błąd z Clerk z linkiem „Zmień hasło” / „Zmień adres e-mail”; dane formularza zostają. */
+  const [clerkError, setClerkError] = useState<RegistrationErrorView>();
+  // Link tylko przy komunikacie, do którego należy; walidacja kroku ustawia własny tekst bez linku.
+  const errorFix = clerkError && clerkError.message === error ? clerkError.fix : undefined;
   const [showNameEditor, setShowNameEditor] = useState(false);
 
   const generatedName = useMemo(
@@ -123,6 +128,11 @@ export default function RegisterPage() {
 
   const handleInputChange = useCallback((field: keyof FormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    setError('');
+  }, []);
+
+  const goToStepToFix = useCallback((step: number) => {
+    setCurrentStep(step);
     setError('');
   }, []);
 
@@ -222,12 +232,9 @@ export default function RegisterPage() {
       router.push('/verify');
     } catch (err) {
       console.error('Registration error:', err);
-      const error = err as {
-        errors?: Array<{ message?: string }>;
-        message?: string;
-      };
-      const errorMessage = error?.errors?.[0]?.message || error?.message || 'Nieznany błąd';
-      setError(`Błąd rejestracji: ${errorMessage}`);
+      const view = parseRegistrationError(err);
+      setClerkError(view);
+      setError(view.message);
     } finally {
       setLoading(false);
     }
@@ -303,6 +310,22 @@ export default function RegisterPage() {
         {/* Step 2: Password */}
         {currentStep === 2 && (
           <div className="space-y-4">
+            <div
+              data-testid="auth-register-email-banner-2"
+              className="flex items-center justify-between gap-2 rounded-lg bg-primary/10 px-3 py-2 text-sm text-muted-foreground"
+            >
+              <span className="min-w-0 break-all">
+                Konto dla: <span className="font-semibold text-foreground">{formData.email.trim()}</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => goToStepToFix(1)}
+                data-testid="auth-register-email-banner-2-change"
+                className="shrink-0 font-medium text-primary hover:underline"
+              >
+                zmień
+              </button>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="password">Hasło</Label>
               <div className="relative">
@@ -343,6 +366,22 @@ export default function RegisterPage() {
         {/* Step 3: Personal data */}
         {currentStep === 3 && (
           <div className="space-y-4">
+            <div
+              data-testid="auth-register-email-banner-3"
+              className="flex items-center justify-between gap-2 rounded-lg bg-primary/10 px-3 py-2 text-sm text-muted-foreground"
+            >
+              <span className="min-w-0 break-all">
+                Konto dla: <span className="font-semibold text-foreground">{formData.email.trim()}</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => goToStepToFix(1)}
+                data-testid="auth-register-email-banner-3-change"
+                className="shrink-0 font-medium text-primary hover:underline"
+              >
+                zmień
+              </button>
+            </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="firstName">Imię</Label>
@@ -417,7 +456,6 @@ export default function RegisterPage() {
                 onEdit={() => setShowNameEditor(true)}
               />
             )}
-
           </div>
         )}
 
@@ -427,7 +465,17 @@ export default function RegisterPage() {
         {/* Error message */}
         {error && (
           <div data-testid="auth-register-error" className="mt-4 rounded-lg bg-error/10 p-3 text-sm text-error">
-            {error}
+            <p>{error}</p>
+            {errorFix && (
+              <button
+                type="button"
+                onClick={() => goToStepToFix(errorFix.step)}
+                data-testid="auth-register-error-fix"
+                className="mt-1 font-semibold text-primary underline underline-offset-4"
+              >
+                {errorFix.label} →
+              </button>
+            )}
           </div>
         )}
 
