@@ -19,6 +19,7 @@ import {
 } from '@/graphql/mutations/organizations.mutations';
 import { GET_ORGANIZATION_BY_ID_QUERY } from '@/graphql/queries/organizations.queries';
 import { ExerciseVisibilitySettings } from './ExerciseVisibilitySettings';
+import { PatientVisibilitySettings } from './PatientVisibilitySettings';
 
 interface Organization {
   id: string;
@@ -31,6 +32,7 @@ interface Organization {
   allowPersonalExercises?: boolean;
   sharedExercisesByDefault?: boolean;
   requireOrganizationVerification?: boolean;
+  therapistsSeeAllPatients?: boolean;
 }
 
 interface SettingsTabProps {
@@ -292,6 +294,13 @@ export function SettingsTab({ organization, currentUserRole, isLoading = false, 
             )}
         </CardContent>
       </Card>
+
+      <PatientVisibilitySettings
+        organizationId={organization.id}
+        therapistsSeeAllPatients={organization.therapistsSeeAllPatients}
+        canEdit={canEdit}
+        onSuccess={onRefresh}
+      />
 
       <ExerciseVisibilitySettings
         organizationId={organization.id}

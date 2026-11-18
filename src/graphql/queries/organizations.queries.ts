@@ -15,6 +15,8 @@ export const ORGANIZATION_FULL_FRAGMENT = gql`
     sharedExercisesByDefault
     requireOrganizationVerification
     autoSyncExampleExercises
+    # Real value only for the staff of the token's organization (fizjo-app#623)
+    therapistsSeeAllPatients
     # Contact info for PDF/branding
     address
     contactPhone

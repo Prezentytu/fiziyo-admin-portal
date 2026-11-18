@@ -60,6 +60,8 @@ export interface Organization {
   allowPersonalExercises?: boolean;
   sharedExercisesByDefault?: boolean;
   autoSyncExampleExercises?: boolean;
+  /** Terapeuci i personel widzą wszystkich pacjentów gabinetu; owner i admin zawsze. */
+  therapistsSeeAllPatients?: boolean;
   address?: string;
   contactPhone?: string;
   contactEmail?: string;
