@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  appendCueFromStep,
   realignMediaForBlankEntries,
   cycleStepImage,
   describeReadingFocus,
@@ -68,6 +69,19 @@ describe('cue phases', () => {
       { cue: 2, phase: 'rest' },
     ]);
     expect(removeCuePhaseAt(links, 0)).toEqual([{ cue: 1, phase: 'rest' }]);
+  });
+
+  it('wskazówka z kroku trafia na koniec listy w fazie przygotowania, bez ruszania faz innych wskazówek', () => {
+    const next = appendCueFromStep(['Trzymaj tempo.'], [{ cue: 0, phase: 'work' }], '  Połóż się na plecach.  ');
+    expect(next.cues).toEqual(['Trzymaj tempo.', 'Połóż się na plecach.']);
+    expect(next.cue_phases).toEqual([
+      { cue: 0, phase: 'work' },
+      { cue: 1, phase: 'preparation' },
+    ]);
+    expect(appendCueFromStep(undefined, undefined, 'Usiądź.')).toEqual({
+      cues: ['Usiądź.'],
+      cue_phases: [{ cue: 0, phase: 'preparation' }],
+    });
   });
 });
 

@@ -1,20 +1,13 @@
 import { describe, expect, it } from 'vitest';
-
 import {
-  getDescriptionPlayerHints,
-  getLongestPlayerHint,
+  EXERCISE_STEP_MAX_CHARS,
+  getLongestText,
   getPlayerHintLength,
-  getPlayerHints,
-  isShownInPlayer,
+  PATIENT_TEXT_MAX_CHARS,
   PLAYER_HINT_MAX_CHARS,
 } from '../playerHintLength';
 
-describe('getPlayerHintLength', () => {
-  it('nie ocenia pustej wskazówki', () => {
-    expect(getPlayerHintLength('   ').status).toBe('empty');
-    expect(getPlayerHintLength(undefined).status).toBe('empty');
-  });
-
+describe('playerHintLength', () => {
   it('wskazówka równa limitowi mieści się w playerze, o znak dłuższa już nie', () => {
     expect(getPlayerHintLength('a'.repeat(PLAYER_HINT_MAX_CHARS))).toEqual({
       length: PLAYER_HINT_MAX_CHARS,
@@ -24,58 +17,24 @@ describe('getPlayerHintLength', () => {
     expect(getPlayerHintLength('a'.repeat(PLAYER_HINT_MAX_CHARS + 1)).status).toBe('too-long');
   });
 
-  it('nie liczy spacji na brzegach, jak player przy trim()', () => {
+  it('liczy znaki bez białych znaków na brzegach, a pusty tekst nie ma statusu długości', () => {
     expect(getPlayerHintLength(`  ${'a'.repeat(PLAYER_HINT_MAX_CHARS)}  \n`).status).toBe('fits');
-  });
-});
-
-describe('getDescriptionPlayerHints', () => {
-  it('zwraca pusto, gdy ćwiczenie ma kroki, bo player wtedy nie bierze opisu', () => {
-    expect(getDescriptionPlayerHints('Długi opis', ['Usiądź prosto'])).toEqual([]);
+    expect(getPlayerHintLength('   ').status).toBe('empty');
+    expect(getPlayerHintLength(null).status).toBe('empty');
   });
 
-  it('bez kroków bierze dwie pierwsze linie opisu bez numeracji', () => {
-    expect(getDescriptionPlayerHints('1. Usiądź\n\n2) Wyprostuj plecy\n3- Oddychaj', ['  '])).toEqual([
-      'Usiądź',
-      'Wyprostuj plecy',
-    ]);
+  it('krok może być dłuższy niż wskazówka (T-0064): ten sam tekst mieści się jako krok, a jako wskazówka nie', () => {
+    expect(EXERCISE_STEP_MAX_CHARS).toBeGreaterThan(PLAYER_HINT_MAX_CHARS);
+    const text = 'a'.repeat(PLAYER_HINT_MAX_CHARS + 40);
+    expect(getPlayerHintLength(text, PATIENT_TEXT_MAX_CHARS.step).status).toBe('fits');
+    expect(getPlayerHintLength(text, PATIENT_TEXT_MAX_CHARS.cue).status).toBe('too-long');
+    expect(getPlayerHintLength('a'.repeat(EXERCISE_STEP_MAX_CHARS + 1), PATIENT_TEXT_MAX_CHARS.step).status).toBe(
+      'too-long'
+    );
   });
 
-  it('bez opisu nie ma czego pokazać', () => {
-    expect(getDescriptionPlayerHints('  ', null)).toEqual([]);
-  });
-});
-
-describe('getLongestPlayerHint', () => {
-  it('wybiera najdłuższą linię, żeby jeden licznik ostrzegał za wszystkie', () => {
-    expect(getLongestPlayerHint(['krótka', 'zdecydowanie dłuższa'])).toBe('zdecydowanie dłuższa');
-    expect(getLongestPlayerHint([])).toBe('');
-  });
-});
-
-describe('isShownInPlayer', () => {
-  it('player pokazuje tylko 2 pierwsze kroki', () => {
-    const steps = ['Usiądź', 'Wyprostuj plecy', 'Oddychaj'];
-
-    expect(steps.map((_step, index) => isShownInPlayer(steps, index, 'step'))).toEqual([true, true, false]);
-  });
-
-  it('player pokazuje 4 pierwsze wskazówki, puste wiersze nie zajmują miejsca', () => {
-    const cues = ['A', '  ', 'B', 'C', 'D', 'E'];
-
-    expect(cues.map((_cue, index) => isShownInPlayer(cues, index, 'cue'))).toEqual([
-      true,
-      false,
-      true,
-      true,
-      true,
-      false,
-    ]);
-  });
-});
-
-describe('getPlayerHints', () => {
-  it('bierze tyle niepustych pozycji, ile pokaże player', () => {
-    expect(getPlayerHints(['', ' Krok 1 ', 'Krok 2', 'Krok 3'], 'step')).toEqual(['Krok 1', 'Krok 2']);
+  it('najdłuższy tekst z listy pomija puste pozycje i białe znaki', () => {
+    expect(getLongestText(['  krótki  ', '', 'najdłuższy tekst', 'średni'])).toBe('najdłuższy tekst');
+    expect(getLongestText([])).toBe('');
   });
 });

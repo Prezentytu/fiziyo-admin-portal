@@ -4,13 +4,19 @@ import { Lightbulb, Volume2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ListEditor } from '@/components/shared/enrichment/ListEditor';
 import { PlayerHintLengthCounter } from '@/components/shared/enrichment/PlayerHintLengthCounter';
-import { isShownInPlayer } from '@/features/exercises/utils/playerHintLength';
+import { CueFromStepMenu } from '@/components/shared/enrichment/CueFromStepMenu';
 import { readExerciseContent } from '@/components/shared/exercise/readExerciseContent';
 import { cn } from '@/lib/utils';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import { EXERCISE_CONTENT_LABELS } from '@/components/shared/enrichment/enrichmentFieldLabels';
 import { SegmentedControl } from '@/components/ui/segmented-control';
-import { CUE_PHASE_OPTIONS, getCuePhase, removeCuePhaseAt, setCuePhase } from '@/features/verification/utils/stepMedia';
+import {
+  appendCueFromStep,
+  CUE_PHASE_OPTIONS,
+  getCuePhase,
+  removeCuePhaseAt,
+  setCuePhase,
+} from '@/features/verification/utils/stepMedia';
 
 const CUES_PATH = 'patient.cues';
 const CUE_PHASES_PATH = 'patient.cue_phases';
@@ -115,37 +121,47 @@ export function ExerciseAudioCues({
       )}
 
       {editable ? (
-        <ListEditor
-          title="Wskazówki dla pacjenta"
-          items={cues}
-          placeholder="Np. „Pilnuj, żeby kolano nie wychodziło za linię palców”"
-          addLabel="Dodaj wskazówkę"
-          disabled={disabled}
-          onChange={(items) => setPath?.(CUES_PATH, items)}
-          onBlur={() => void persist?.()}
-          testIdPrefix="exercise-audio-cues-editor"
-          onRemoveItem={(index) => setPath?.(CUE_PHASES_PATH, removeCuePhaseAt(cuePhases, index))}
-          renderItemFooter={(text, index, footerId) =>
-            isShownInPlayer(cues, index, 'cue') ? (
+        <>
+          <ListEditor
+            title="Wskazówki dla pacjenta"
+            items={cues}
+            placeholder="Np. „Pilnuj, żeby kolano nie wychodziło za linię palców”"
+            addLabel="Dodaj wskazówkę"
+            disabled={disabled}
+            onChange={(items) => setPath?.(CUES_PATH, items)}
+            onBlur={() => void persist?.()}
+            testIdPrefix="exercise-audio-cues-editor"
+            onRemoveItem={(index) => setPath?.(CUE_PHASES_PATH, removeCuePhaseAt(cuePhases, index))}
+            renderItemFooter={(text, index, footerId) => (
               <PlayerHintLengthCounter
                 id={footerId}
                 text={text}
                 testId={`exercise-audio-cues-editor-length-${index}`}
               />
-            ) : null
-          }
-          renderItemAccessory={(index) => (
-            <SegmentedControl
-              label={`Faza wskazówki ${index + 1}`}
-              options={CUE_PHASE_OPTIONS}
-              value={getCuePhase(cuePhases, index)}
-              onChange={(phase) => setPath?.(CUE_PHASES_PATH, setCuePhase(cuePhases, index, phase))}
-              disabled={disabled}
-              shape="pill"
-              testId={`exercise-audio-cues-editor-phase-${index}`}
-            />
-          )}
-        />
+            )}
+            renderItemAccessory={(index) => (
+              <SegmentedControl
+                label={`Faza wskazówki ${index + 1}`}
+                options={CUE_PHASE_OPTIONS}
+                value={getCuePhase(cuePhases, index)}
+                onChange={(phase) => setPath?.(CUE_PHASES_PATH, setCuePhase(cuePhases, index, phase))}
+                disabled={disabled}
+                shape="pill"
+                testId={`exercise-audio-cues-editor-phase-${index}`}
+              />
+            )}
+          />
+          <CueFromStepMenu
+            steps={enrichmentData?.patient?.steps ?? []}
+            disabled={disabled}
+            testIdPrefix="exercise-audio-cues-from-step"
+            onPick={(stepText) => {
+              const next = appendCueFromStep(cues, cuePhases, stepText);
+              setPath?.(CUES_PATH, next.cues);
+              setPath?.(CUE_PHASES_PATH, next.cue_phases);
+            }}
+          />
+        </>
       ) : (
         <>
           {hasCues && (
