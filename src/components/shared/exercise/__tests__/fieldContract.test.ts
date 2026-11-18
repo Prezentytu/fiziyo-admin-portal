@@ -175,14 +175,38 @@ describe('fieldContract', () => {
 
   it('getParameterSections(mapping) edytuje side/difficulty i content (bez inherited)', () => {
     const sections = getParameterSections('mapping', { includeContent: true });
-    const position = sections.find((section) => section.id === 'timing');
-    expect(position).toBeDefined();
-    expect(position?.fields.map((field) => field.key)).toContain('side');
-    expect(position?.fields.find((field) => field.key === 'side')?.role).toBe('editable');
+    const basic = sections.find((section) => section.id === 'basic');
+    expect(basic?.fields.map((field) => field.key)).toContain('side');
+    expect(basic?.fields.find((field) => field.key === 'side')?.role).toBe('editable');
     expect(sections.some((section) => section.id === 'content')).toBe(true);
 
     const timing = sections.find((section) => section.id === 'timing');
     expect(timing?.fields.map((field) => field.key)).not.toContain('duration');
+  });
+
+  it('strona ciała jest w podstawowych parametrach, a opór w zaawansowanych (każda powierzchnia)', () => {
+    for (const surface of ['template', 'mapping', 'patientPlan', 'patientOverride'] as const) {
+      const sections = getParameterSections(surface);
+      const basicKeys = sections.find((section) => section.id === 'basic')?.fields.map((field) => field.key) ?? [];
+      const advancedKeys = sections
+        .filter((section) => section.advanced)
+        .flatMap((section) => section.fields.map((field) => field.key));
+      expect(basicKeys).toContain('side');
+      expect(basicKeys).not.toContain('resistance');
+      if (surface === 'template') {
+        // Dwie kolumny: czasy po lewej, strona i tempo po prawej, obie przerwy w jednym rzędzie.
+        const row = (key: ExerciseFieldKey) => Math.floor(basicKeys.indexOf(key) / 2);
+        const column = (key: ExerciseFieldKey) => basicKeys.indexOf(key) % 2;
+        expect(row('restReps')).toBe(row('restSets'));
+        expect(row('executionTime')).toBe(row('side'));
+        expect(row('preparationTime')).toBe(row('tempo'));
+        expect([column('executionTime'), column('preparationTime')]).toEqual([0, 0]);
+        expect([column('side'), column('tempo')]).toEqual([1, 1]);
+      }
+      if (getFieldsForSurface(surface).some((config) => config.key === 'resistance')) {
+        expect(advancedKeys).toContain('resistance');
+      }
+    }
   });
 
   it('getParameterSections respektuje omitFields i includeContent', () => {
