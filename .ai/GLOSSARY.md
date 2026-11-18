@@ -1,4 +1,4 @@
-<!-- kopia z Prezentytu/fizjo-app@34d349d880bc3a554e9d46820254cf54c1a78048:.ai/GLOSSARY.md; nie edytuj, odśwież: npm run docs:sync -->
+<!-- kopia z Prezentytu/fizjo-app@5247bd54166ee831b114120d0fb369caa07a0e2d:.ai/GLOSSARY.md; nie edytuj, odśwież: npm run docs:sync -->
 
 > Kopia z fizjo-app. Numery `SPEC-0xx`, ścieżki (`.ai/BOARD.md`, `.ai/BUSINESS.md`, `app/`…) i „to repo” dotyczą **fizjo-app**, nie tego panelu: `SPEC-028` stąd to nie `.ai/specs/SPEC-028-*` portalu. Spec portalu bierzesz z `.ai/specs/README.md`.
 
