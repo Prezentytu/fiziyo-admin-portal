@@ -20,6 +20,7 @@ import {
   releaseNoteAnchorId,
   releaseNoteKindPresentation,
   safeReleaseNoteUrl,
+  unseenReleaseNoteIds,
 } from './utils/releaseNotes';
 
 const OPT_IN_LINK_LABEL = 'Włącz w ustawieniach';
@@ -32,16 +33,16 @@ export function WhatsNewTab() {
   });
   const unseen = useUnseenReleaseNote();
   const markSeen = useMarkReleaseNoteSeen();
-  // Keeps the „Nowe” badge for this visit after marking clears `unseenReleaseNote`.
-  const [newReleaseId, setNewReleaseId] = useState<string | null>(null);
+  const notes = data?.releaseNotes;
+  // Snapshot from the first load: marking as seen refetches `seen`, but the badges stay for this visit.
+  const [newReleaseIds, setNewReleaseIds] = useState<ReadonlySet<string> | null>(null);
   const markedRef = useRef(false);
   const scrolledRef = useRef(false);
 
-  if (unseen && newReleaseId === null) {
-    setNewReleaseId(unseen.id);
+  if (notes && newReleaseIds === null) {
+    setNewReleaseIds(unseenReleaseNoteIds(notes));
   }
 
-  const notes = data?.releaseNotes;
   const latestId = notes?.[0]?.id;
   const hasUnseen = unseen !== null;
 
@@ -92,7 +93,7 @@ export function WhatsNewTab() {
         <ol className="space-y-6">
           {notes.map((note) => (
             <li key={note.id}>
-              <ReleaseNoteCard note={note} isNew={note.id === newReleaseId} />
+              <ReleaseNoteCard note={note} isNew={newReleaseIds?.has(note.id) ?? false} />
             </li>
           ))}
         </ol>

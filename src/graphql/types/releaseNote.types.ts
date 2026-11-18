@@ -18,6 +18,8 @@ export interface ReleaseNote {
   items: ReleaseNoteItem[];
   fixes: string[];
   notified: boolean;
+  /** Zalogowany użytkownik obejrzał to wydanie albo nowsze. */
+  seen: boolean;
 }
 
 export interface GetReleaseNotesResponse {

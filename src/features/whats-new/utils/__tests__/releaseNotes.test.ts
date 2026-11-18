@@ -10,6 +10,7 @@ import {
   releaseNoteKindPresentation,
   safeReleaseNoteUrl,
   shouldShowReleaseBanner,
+  unseenReleaseNoteIds,
 } from '../releaseNotes';
 
 describe('releaseNoteKindPresentation', () => {
@@ -131,5 +132,20 @@ describe('notifications bell', () => {
   it('names the release in the label', () => {
     expect(notificationsBellLabel(0, true)).toBe('Powiadomienia: nowa wersja portalu');
     expect(notificationsBellLabel(2, true)).toBe('Powiadomienia: nowa wersja portalu i zgłoszenia pacjentów (2)');
+  });
+});
+
+describe('unseenReleaseNoteIds', () => {
+  it('oznacza jako nowe każde nieobejrzane wydanie, nie tylko najnowsze', () => {
+    const ids = unseenReleaseNoteIds([
+      { id: 'r3', seen: false },
+      { id: 'r2', seen: false },
+      { id: 'r1', seen: true },
+    ]);
+    expect([...ids]).toEqual(['r3', 'r2']);
+  });
+
+  it('nic nie jest nowe, gdy wszystko obejrzane', () => {
+    expect(unseenReleaseNoteIds([{ id: 'r1', seen: true }]).size).toBe(0);
   });
 });

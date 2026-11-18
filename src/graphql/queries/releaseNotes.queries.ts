@@ -9,6 +9,7 @@ const RELEASE_NOTE_FIELDS_FRAGMENT = gql`
     lead
     publishedAt
     notified
+    seen
     items {
       kind
       title

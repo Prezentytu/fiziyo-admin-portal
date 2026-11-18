@@ -37,6 +37,11 @@ export function formatReleaseNoteDate(publishedAt: string): string {
   return Number.isNaN(date.getTime()) ? '' : RELEASE_DATE_FORMAT.format(date);
 }
 
+/** Releases the user had not seen when the tab opened; they keep the „Nowe” badge for the whole visit. */
+export function unseenReleaseNoteIds(notes: readonly Pick<ReleaseNote, 'id' | 'seen'>[]): ReadonlySet<string> {
+  return new Set(notes.filter((note) => !note.seen).map((note) => note.id));
+}
+
 export function releaseNoteAnchorId(noteId: string): string {
   return `${RELEASE_ANCHOR_PREFIX}${noteId}`;
 }
