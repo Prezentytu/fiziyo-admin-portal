@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import type { ChatThreadMessage } from '../conversationStore';
 import {
+  accountQuestionReply,
   countQuestion,
   exerciseIdeaQuery,
+  isExerciseTopic,
   localReplyTo,
   PICK_PATIENT_ANSWERED,
   withExerciseIdeas,
@@ -57,6 +59,32 @@ describe('localReplyTo', () => {
     const local = localReplyTo('do Anny Kowalskiej', [PICK], PATIENTS);
     expect(local).toMatchObject({
       answeredMessageId: 'm1',
+      chosen: 'Anna Kowalska',
+      reply: { spec: { component: 'Schedule', draft: { patientId: 'p1' } } },
+    });
+  });
+
+  // Decyzja właściciela 18.11: samo imię po „Komu przypisać?” szło prosto do harmonogramu.
+  it('a patient named by one word is confirmed first, and the draft waits behind the question', () => {
+    const local = localReplyTo('do Anny', [PICK], PATIENTS);
+    expect(local).toMatchObject({
+      answeredMessageId: 'm1',
+      chosen: PICK_PATIENT_ANSWERED,
+      reply: {
+        text: 'Czy chodzi o Anna Kowalska?',
+        spec: { component: 'Clarify', options: ['Tak, Anna', 'Inny pacjent'] },
+      },
+      awaitingDraft: DRAFT,
+    });
+    const question: ChatThreadMessage = { ...PICK, id: 'm2', text: local?.reply.text, spec: local?.reply.spec };
+    const thread = [{ ...PICK, chosen: PICK_PATIENT_ANSWERED }, question];
+    // Inne nazwisko wpisane zamiast „Tak” nadal odpowiada na „Komu przypisać?”.
+    expect(localReplyTo('Jan Nowak', thread, PATIENTS, undefined, DRAFT)).toMatchObject({
+      answeredMessageId: 'm2',
+      reply: { spec: { component: 'Schedule', draft: { patientId: 'p2' } } },
+    });
+    expect(localReplyTo('Jan Nowak', thread, PATIENTS)).toBeNull();
+    expect(localReplyTo('do Anny', [PICK], PATIENTS, new Set(['p1']))).toMatchObject({
       chosen: 'Anna Kowalska',
       reply: { spec: { component: 'Schedule', draft: { patientId: 'p1' } } },
     });
@@ -121,5 +149,131 @@ describe('countQuestion', () => {
   it('leaves other questions to the assistant', () => {
     expect(countQuestion('ile serii dać na kolano?')).toBeNull();
     expect(countQuestion('pokaż pacjentów')).toBeNull();
+  });
+});
+
+// Test asystenta 17.11 (K7): „od dziś, 3 razy w tygodniu, 4 tygodnie” po pytaniu o harmonogram szło do modelu.
+describe('localReplyTo: schedule typed as text', () => {
+  const SCHEDULE: ChatThreadMessage = {
+    id: 'm-schedule',
+    role: 'assistant',
+    text: 'Od kiedy i jak często?',
+    spec: { component: 'Schedule', draft: { ...DRAFT, patientId: 'p1' } },
+    source: 'local',
+    creditsUsed: 0,
+    createdAt: 2,
+  };
+
+  it('goes to the send summary with the typed plan, the draft and its patient', () => {
+    const text = 'od dziś, 3 razy w tygodniu, 4 tygodnie';
+    const local = localReplyTo(text, [PICK, SCHEDULE], PATIENTS);
+    expect(local).toMatchObject({
+      answeredMessageId: 'm-schedule',
+      chosen: text,
+      reply: {
+        spec: {
+          component: 'SendSummary',
+          draft: { ...DRAFT, patientId: 'p1' },
+          plan: { start: 'today', weeks: 4, rhythm: 'three' },
+        },
+      },
+    });
+    expect(local?.reply.text).toContain('Gotowe do wysłania');
+  });
+
+  it('says what it could not set instead of starting over', () => {
+    const local = localReplyTo('od poniedziałku do piątku, 2 tygodnie', [SCHEDULE], PATIENTS);
+    expect(local?.reply.spec).toMatchObject({ component: 'SendSummary', plan: { weeks: 2, rhythm: 'daily' } });
+    expect(local?.reply.text).toContain('codziennie');
+  });
+
+  it('leaves a new request and an answered question to the assistant', () => {
+    expect(localReplyTo('dodaj jeszcze mostek, 3 razy w tygodniu', [SCHEDULE], PATIENTS)).toBeNull();
+    expect(localReplyTo('a czy 4 tygodnie to nie za długo?', [SCHEDULE], PATIENTS)).toBeNull();
+    expect(localReplyTo('zamień przysiad na wykrok', [SCHEDULE], PATIENTS)).toBeNull();
+    expect(localReplyTo('4 tygodnie', [{ ...SCHEDULE, chosen: 'Pasuje' }], PATIENTS)).toBeNull();
+  });
+});
+
+// Test asystenta 17.11 (K5, P15, P56): „Czy Halina odebrała zestaw?” → model nie zna stanu konta, −1 kredyt.
+describe('accountQuestionReply', () => {
+  const patients = [
+    { id: 'p-halina', name: 'Halina Kowalczyk', isShadowUser: true },
+    { id: 'p-kacper', name: 'Kacper Zielinski', isShadowUser: false, lastActivity: '2026-11-17T10:00:00Z' },
+    { id: 'p-nowy', name: 'Karolina Mazur', isShadowUser: false },
+    { id: 'p-jan-1', name: 'Jan Kowalski', isShadowUser: true },
+    { id: 'p-jan-2', name: 'Jan Kowalski', isShadowUser: false },
+  ];
+
+  it('says the patient has no account, so nothing was received', () => {
+    const reply = accountQuestionReply('Czy Halina Kowalczyk odebrała zestaw? Widziała go?', patients);
+    expect(reply?.text).toContain('Halina Kowalczyk nie ma jeszcze konta w aplikacji');
+    expect(reply?.spec).toEqual({ component: 'PatientPeek', patientId: 'p-halina' });
+    expect(accountQuestionReply('czy Halina Kowalczyk dostała zaproszenie', patients)?.text).toContain(
+      'nie ma jeszcze konta'
+    );
+  });
+
+  it('says the patient has an account and whether they were active', () => {
+    const known = new Set(['p-kacper']);
+    expect(accountQuestionReply('Czy Kacper Zielinski dostał zaproszenie?', patients)?.text).toContain(
+      'ma konto w aplikacji'
+    );
+    expect(accountQuestionReply('Czy Kacper odebrał plan?', patients, known)?.text).toContain('17 listopada');
+    expect(accountQuestionReply('czy Karolina Mazur ma już konto?', patients)?.text).toContain(
+      'nie ma jeszcze aktywności'
+    );
+  });
+
+  it('confirms a patient named by one word before answering', () => {
+    expect(accountQuestionReply('Czy Halina odebrała zestaw?', patients)).toEqual({
+      text: 'Czy chodzi o Halina Kowalczyk (bez konta)?',
+      spec: {
+        component: 'Clarify',
+        question: 'Czy chodzi o Halina Kowalczyk (bez konta)?',
+        options: ['Tak, Halina', 'Inny pacjent'],
+        choices: [{ label: 'Tak, Halina', patientId: 'p-halina' }, { label: 'Inny pacjent' }],
+      },
+    });
+  });
+
+  it('leaves everything else to the assistant', () => {
+    for (const text of [
+      'Czy Jan Kowalski odebrał zestaw?',
+      'Czy Oksana odebrała zestaw?',
+      'Halina odebrała wyniki rezonansu, ułóż jej zestaw',
+      'Czy Halina może już chodzić bez kuli?',
+      'Wyślij Halinie zaproszenie',
+    ]) {
+      expect(accountQuestionReply(text, patients)).toBeNull();
+    }
+  });
+});
+
+// Test asystenta 17.11 (W16, P92): treść pytania trafiała na przycisk „Utwórz ćwiczenie: …”.
+describe('isExerciseTopic', () => {
+  const QUESTION =
+    'Które ćwiczenia w moim katalogu są najczęściej przerywane albo zgłaszane jako bolesne? Chcę wiedzieć co wyrzucić z szablonów';
+
+  it.each(['wzmocnienie paliczków dłoni', 'mostek na jednej nodze', 'rozciąganie barku z gumą', 'Alfredson'])(
+    'a need or a name: %s',
+    (text) => {
+      expect(isExerciseTopic(text)).toBe(true);
+    }
+  );
+
+  it.each([
+    QUESTION,
+    exerciseIdeaQuery(QUESTION),
+    'czy mogę dać przysiad po rekonstrukcji',
+    'które są najtrudniejsze',
+    'jak często pacjenci przerywają',
+    'ab',
+  ])('a question or a sentence: %s', (text) => {
+    expect(isExerciseTopic(text)).toBe(false);
+  });
+
+  it('gives no ideas card for a question about the catalog', () => {
+    expect(withExerciseIdeas(QUESTION, { text: 'Nie widzę takich danych.' }).spec).toBeUndefined();
   });
 });

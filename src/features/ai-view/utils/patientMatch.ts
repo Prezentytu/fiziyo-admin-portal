@@ -1,3 +1,4 @@
+import { normalizeSearchText } from '@/features/exercises/utils/exerciseSearch';
 import { nameWordMatches, tokenizeWords } from './textMatch';
 
 export interface MatchablePatient {
@@ -7,6 +8,11 @@ export interface MatchablePatient {
   contextLabel?: string;
   email?: string;
   isShadowUser?: boolean;
+  /** Last activity in the patient app; answers "czy odebrał zestaw?" without the model. */
+  lastActivity?: string;
+  /** Phone and the day the patient was added: only ever shown as a detail that tells namesakes apart. */
+  phone?: string;
+  addedAt?: string;
 }
 
 export type PatientMatch =
@@ -74,44 +80,139 @@ function accountLabel(patient: MatchablePatient): string | undefined {
   return patient.isShadowUser ? 'bez konta' : 'ma konto';
 }
 
+const MAX_CONTEXT_LENGTH = 28;
+const DAY_FORMAT = new Intl.DateTimeFormat('pl-PL', { day: 'numeric', month: 'numeric', year: 'numeric' });
+
+function contextDetail(patient: MatchablePatient): string | undefined {
+  const label = patient.contextLabel?.trim();
+  if (!label) return undefined;
+  return label.length > MAX_CONTEXT_LENGTH ? `${label.slice(0, MAX_CONTEXT_LENGTH - 1).trimEnd()}…` : label;
+}
+
+function emailDetail(patient: MatchablePatient): string | undefined {
+  return patient.email?.trim() || undefined;
+}
+
+/** Only the last digits: enough to tell two people apart, not the whole number in the thread. */
+function phoneDetail(patient: MatchablePatient): string | undefined {
+  const digits = patient.phone?.replace(/\D/g, '') ?? '';
+  return digits.length >= 3 ? `tel. …${digits.slice(-3)}` : undefined;
+}
+
+function dayDetail(prefix: string, value: string | undefined): string | undefined {
+  const date = value ? new Date(value) : undefined;
+  return date && !Number.isNaN(date.getTime()) ? `${prefix} ${DAY_FORMAT.format(date)}` : undefined;
+}
+
+type Detail = (patient: MatchablePatient) => string | undefined;
+
+// In the order a therapist recognizes a patient by. All of it is already on the patient list in the browser.
+const DETAILS: readonly Detail[] = [
+  contextDetail,
+  accountLabel,
+  emailDetail,
+  phoneDetail,
+  (patient) => dayDetail('aktywność', patient.lastActivity),
+];
+const addedDetail: Detail = (patient) => dayDetail('dodano', patient.addedAt);
+/** The name and two details: a label stays short enough for a chip. */
+const MAX_DETAILS = 2;
+
+/** „Zieliński” and „Zielinski” are the same name on a chip: case, diacritics and punctuation do not count. */
+export function nameKey(name: string): string {
+  return tokenizeWords(name).join(' ');
+}
+
+interface ChoiceLabel {
+  details: string[];
+  /** Set when nothing on the list tells the namesakes apart. */
+  number?: number;
+}
+
+function describeChoices(patients: readonly MatchablePatient[]): ChoiceLabel[] {
+  const names = patients.map((patient) => nameKey(patient.name));
+  const isNamesake = names.map((name, index) => names.some((other, at) => at !== index && other === name));
+  const details: string[][] = patients.map(() => []);
+  const lookKey = (index: number) => [names[index], ...details[index].map(normalizeSearchText)].join('|');
+  const lookalikes = () => {
+    const groups = new Map<string, number[]>();
+    patients.forEach((_, index) => {
+      if (isNamesake[index]) groups.set(lookKey(index), [...(groups.get(lookKey(index)) ?? []), index]);
+    });
+    return [...groups.values()];
+  };
+  const differs = (values: Array<string | undefined>, members: number[]) =>
+    new Set(members.map((index) => normalizeSearchText(values[index]))).size > 1;
+
+  const apply = (detail: Detail, limit: number) => {
+    const values = patients.map(detail);
+    for (const members of lookalikes()) {
+      // A namesake left with the bare name would read as "the" Jan Kowalski, so each one gets a detail.
+      const isBare = members.length === 1 && details[members[0]].length === 0;
+      const rivals = isBare ? names.flatMap((name, at) => (name === names[members[0]] ? [at] : [])) : members;
+      // What every candidate shares („Leczenie podstawowe” on both) tells nobody apart and is left out.
+      if ((members.length === 1 && !isBare) || !differs(values, rivals)) continue;
+      for (const index of members) {
+        const value = values[index];
+        if (value && details[index].length < limit) details[index].push(value);
+      }
+    }
+  };
+  for (const detail of DETAILS) apply(detail, MAX_DETAILS);
+  // The last resort, also past the limit: the day the patient was added.
+  apply(addedDetail, Number.POSITIVE_INFINITY);
+
+  const numbers = new Map<number, number>();
+  for (const members of lookalikes()) {
+    if (members.length > 1) members.forEach((index, at) => numbers.set(index, at + 1));
+  }
+  return patients.map((_, index) => ({ details: details[index], number: numbers.get(index) }));
+}
+
 /**
- * Labels for a choice between patients, one per patient and never two the same: namesakes get what
- * tells them apart (reason for therapy, then e-mail, then account), and a number when nothing does.
+ * Labels for a choice between patients, one per patient and never two the same. Patients with the
+ * same name (also „Zieliński”/„Zielinski”) get what really tells them apart, at most two details:
+ * reason for therapy, account, e-mail, end of the phone number, last activity. A detail all of them
+ * share is left out; the day the patient was added and then a number are the last resort.
  */
 export function patientChoiceLabels(patients: readonly MatchablePatient[]): string[] {
-  const labels = patients.map((patient) => patient.name);
-  const isRepeated = (index: number) => labels.some((label, other) => other !== index && label === labels[index]);
-  const isNamesake = patients.map((_, index) => isRepeated(index));
-  const hasDetail = patients.map(() => false);
-  const details: Array<(patient: MatchablePatient) => string | undefined> = [
-    (patient) => patient.contextLabel?.trim() || undefined,
-    (patient) => patient.email?.trim() || undefined,
-    accountLabel,
-  ];
-  for (const detail of details) {
-    // A namesake left with the bare name would read as "the" Jan Kowalski, so each one gets a detail.
-    const needsDetail = patients.map((_, index) => isNamesake[index] && (isRepeated(index) || !hasDetail[index]));
-    patients.forEach((patient, index) => {
-      const value = detail(patient);
-      if (!needsDetail[index] || !value) return;
-      labels[index] = `${labels[index]} · ${value}`;
-      hasDetail[index] = true;
-    });
-  }
-  const repeated = patients.map((_, index) => isRepeated(index));
-  const counters = new Map<string, number>();
-  return labels.map((label, index) => {
-    if (!repeated[index]) return label;
-    const number = (counters.get(label) ?? 0) + 1;
-    counters.set(label, number);
-    return `${label} (${number})`;
+  return describeChoices(patients).map(({ details, number }, index) => {
+    const label = [patients[index].name, ...details].join(' · ');
+    return number ? `${label} (${number})` : label;
   });
+}
+
+function namesakesOf(patient: MatchablePatient, patients: readonly MatchablePatient[]): MatchablePatient[] {
+  const key = nameKey(patient.name);
+  const namesakes = patients.filter((candidate) => nameKey(candidate.name) === key);
+  return namesakes.some((candidate) => candidate.id === patient.id) ? namesakes : [patient, ...namesakes];
+}
+
+/** The label of one patient as a choice among the namesakes would show it; the bare name when there are none. */
+export function patientLabel(patient: MatchablePatient, patients: readonly MatchablePatient[]): string {
+  const namesakes = namesakesOf(patient, patients);
+  return patientChoiceLabels(namesakes)[namesakes.findIndex((candidate) => candidate.id === patient.id)];
+}
+
+/**
+ * „Tomasz Nowak (Ból kolana · bez konta)”: whom a confirmation asks about. Namesakes get the details
+ * of a choice between them; anyone else the first two the list has, so the therapist sees who it is.
+ */
+export function patientConfirmLabel(patient: MatchablePatient, patients: readonly MatchablePatient[]): string {
+  const namesakes = namesakesOf(patient, patients);
+  const own = describeChoices(namesakes)[namesakes.findIndex((candidate) => candidate.id === patient.id)];
+  const details =
+    namesakes.length > 1
+      ? [...own.details, ...(own.number ? [`${own.number}`] : [])]
+      : [contextDetail, emailDetail, accountLabel, phoneDetail]
+          .flatMap((detail) => detail(patient) ?? [])
+          .slice(0, MAX_DETAILS);
+  return details.length > 0 ? `${patient.name} (${details.join(' · ')})` : patient.name;
 }
 
 /** Someone else on the list has the same name: a typed or clicked name cannot say which one is meant. */
 export function hasNamesake(patientId: string, patients: readonly MatchablePatient[]): boolean {
-  const key = (name: string) => tokenizeWords(name).join(' ');
   const patient = patients.find((candidate) => candidate.id === patientId);
   if (!patient) return false;
-  return patients.some((other) => other.id !== patientId && key(other.name) === key(patient.name));
+  return patients.some((other) => other.id !== patientId && nameKey(other.name) === nameKey(patient.name));
 }

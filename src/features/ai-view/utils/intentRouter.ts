@@ -1,4 +1,5 @@
 import { normalizeSearchText } from '@/features/exercises/utils/exerciseSearch';
+import { confirmPatientSpec } from './clarifyChoice';
 import { matchPatients, patientChoiceLabels, type MatchablePatient } from './patientMatch';
 import { tokenizeWords, wordMatches } from './textMatch';
 import { MAX_CLARIFY_OPTIONS, UNSUPPORTED_SPEC, type ChatViewSpec, type NavigateRoute } from './viewSpec';
@@ -135,17 +136,23 @@ function navigateTarget(normalized: string): [RegExp, NavigateRoute] | null {
  * Rule-based dispatcher used without AI (organization opted out, no credits, model down).
  * Produces the same specs as the model, so both paths share one renderer. `pendingCommand` is the
  * message a question ("O kogo chodzi?") was about: a reply that only names one patient finishes that command.
+ * `knownPatientIds` are the patients the conversation already has (the header chip, earlier cards): one
+ * word of their name is enough, anyone else named by one word is confirmed first („Czy chodzi o…?”).
  */
-export function routeIntent(text: string, context: IntentContext, pendingCommand?: string): ChatViewSpec {
+export function routeIntent(
+  text: string,
+  context: IntentContext,
+  pendingCommand?: string,
+  knownPatientIds?: ReadonlySet<string>
+): ChatViewSpec {
   // Only a bare answer ("Ewa Nowicka", "Jan na lędźwie") finishes the pending command; a new request wins.
-  // As an answer to "O kogo chodzi?" a first name alone is enough.
   if (pendingCommand) {
-    const answer = routeCommand(text, context, { acceptPartial: true });
+    const answer = routeCommand(text, context, { knownPatientIds });
     if (answer.component === 'PatientPeek' && answer.patientId) {
       return routeForPatient(`${pendingCommand} ${text}`, context, answer.patientId);
     }
   }
-  return routeCommand(text, context);
+  return routeCommand(text, context, { knownPatientIds });
 }
 
 /**
@@ -161,7 +168,7 @@ export function routeForPatient(command: string | undefined, context: IntentCont
 function routeCommand(
   text: string,
   context: IntentContext,
-  options: { patientId?: string; acceptPartial?: boolean } = {}
+  options: { patientId?: string; knownPatientIds?: ReadonlySet<string> } = {}
 ): ChatViewSpec {
   const normalized = normalizeSearchText(text).trim();
   if (!normalized) return UNSUPPORTED_SPEC;
@@ -182,8 +189,8 @@ function routeCommand(
       return askWhichPatient(patientMatch.patients, 'Masz kilku pacjentów o tym imieniu. O kogo chodzi?');
     }
     // One word of a longer name ("dla Jana") is a guess: the plan is bound only after a confirmation.
-    if (patientMatch.kind === 'one' && patientMatch.partial && !options.acceptPartial) {
-      return askWhichPatient([patientMatch.patient], `Czy chodzi o pacjenta: ${patientMatch.patient.name}?`);
+    if (patientMatch.kind === 'one' && patientMatch.partial && !options.knownPatientIds?.has(patientMatch.patient.id)) {
+      return confirmPatientSpec(patientMatch.patient, context.patients);
     }
   }
   const patientId = options.patientId ?? (patientMatch.kind === 'one' ? patientMatch.patient.id : undefined);

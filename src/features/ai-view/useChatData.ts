@@ -21,6 +21,9 @@ export interface ChatPatient {
   attention?: PatientAttention | null;
   contextLabel?: string;
   therapistId?: string;
+  /** Only to tell namesakes apart on a choice in the thread; never sent to the model. */
+  phone?: string;
+  addedAt?: string;
 }
 
 type RawSet = OrganizationExerciseSetsResponse['exerciseSets'][number];
@@ -72,6 +75,8 @@ export function useChatData(organizationId: string | undefined, withSets: boolea
         attention: item.attention,
         contextLabel: item.contextLabel,
         therapistId: item.therapist?.id,
+        phone: item.patient.contactData?.phone ?? undefined,
+        addedAt: item.assignedAt ?? undefined,
       })),
     [patientsData]
   );

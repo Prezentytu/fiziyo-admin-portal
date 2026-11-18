@@ -9,7 +9,8 @@ import { QuickReplies } from './QuickReplies';
 /**
  * The question itself is the message text; the card is its ready answers. An answer tied to a set
  * opens its draft right here and an answer that is a patient picks that patient by id (no model, no
- * credit); any other answer is sent as the next message.
+ * credit); any other answer is sent as the next message. „Tak, {Imię}” of „Czy chodzi o…?” is such a
+ * patient answer; its „Inny pacjent” is read by the thread itself, also without the model.
  */
 export function ClarifyCard({ spec, testId, messageId, chosen }: CardProps<'Clarify'>) {
   const { sendMessage, markChosen, appendExchange, choosePatient, patients } = useChatActions();

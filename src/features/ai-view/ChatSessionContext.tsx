@@ -35,6 +35,7 @@ export interface AiCredits {
 interface CreateSetRequest {
   exerciseIds: string[];
   patient?: Patient;
+  name?: string;
 }
 
 export interface ChatSession {
@@ -88,7 +89,7 @@ export interface ChatSession {
   setContextOpen: (open: boolean) => void;
   showPatient: (patientId: string) => void;
   /** Escape hatch to the full set editor with what chat already knows. */
-  openCreateSet: (exerciseIds: string[], patient?: Patient) => void;
+  openCreateSet: (exerciseIds: string[], patient?: Patient, name?: string) => void;
 }
 
 /**
@@ -344,7 +345,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
   const { send, stop: stopReply, appendAssistant, appendExchange, choosePatient, runTask, markChosen } = thread;
   const sendMessage = useCallback((text: string) => void send(text), [send]);
   const openCreateSet = useCallback(
-    (exerciseIds: string[], patient?: Patient) => setCreateSetRequest({ exerciseIds, patient }),
+    (exerciseIds: string[], patient?: Patient, name?: string) => setCreateSetRequest({ exerciseIds, patient, name }),
     []
   );
 
@@ -480,6 +481,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
           onOpenChange={(open) => !open && setCreateSetRequest(null)}
           organizationId={organizationId}
           initialExerciseIds={createSetRequest?.exerciseIds}
+          initialName={createSetRequest?.name}
           patientId={createSetRequest?.patient?.id}
           patientName={createSetRequest?.patient?.name}
           onSuccess={(setId: string) => {

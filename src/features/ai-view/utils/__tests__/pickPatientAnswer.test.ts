@@ -10,7 +10,12 @@ const PATIENTS = [
 
 describe('pickPatientAnswer', () => {
   it('finds a patient named in any case', () => {
-    expect(pickPatientAnswer('do Anny Kowalskiej', PATIENTS)).toEqual({ kind: 'one', patient: PATIENTS[0] });
+    expect(pickPatientAnswer('do Anny Kowalskiej', PATIENTS)).toEqual({
+      kind: 'one',
+      patient: PATIENTS[0],
+      partial: false,
+    });
+    expect(pickPatientAnswer('do Anny', PATIENTS)).toMatchObject({ kind: 'one', partial: true });
   });
 
   it('lets the therapist choose when the answer fits several patients', () => {

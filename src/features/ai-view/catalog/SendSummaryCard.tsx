@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { SegmentedControl } from '@/components/ui/segmented-control';
 import { formatExerciseCount } from '@/utils/polishPlural';
 import { useChatActions } from '../ChatSessionContext';
-import { patientChoiceLabels } from '../utils/patientMatch';
+import { patientLabel as labelAmongNamesakes } from '../utils/patientMatch';
 import {
   describePlan,
   FLOW_CANCEL_LABEL,
@@ -23,6 +23,7 @@ import {
 import { draftMinutes, planNote } from '../utils/setDraft';
 import type { CardProps } from './cardProps';
 import { ChatCard, ChatCardNote } from './ChatCard';
+import { sentText } from '../utils/sendPlan';
 import { useSendPlan } from './useChatWrites';
 
 const WEEK_OPTIONS = PLAN_WEEKS.map((weeks) => ({ value: weeks, label: planWeeksLabel(weeks) }));
@@ -34,8 +35,7 @@ export function SendSummaryCard({ spec, testId, messageId, chosen }: CardProps<'
   const { send, sending } = useSendPlan();
   const patient = patients.find((candidate) => candidate.id === spec.draft.patientId);
   // Imiennicy: przed wysyłką widać, który to pacjent (powód, e-mail albo stan konta), nie samą nazwę.
-  const namesakes = patient ? patients.filter((candidate) => candidate.name === patient.name) : [];
-  const patientLabel = patient ? patientChoiceLabels(namesakes)[namesakes.indexOf(patient)] : undefined;
+  const patientLabel = patient ? labelAmongNamesakes(patient, patients) : undefined;
   const { endDate } = resolvePlanDates(plan);
   const isSent = chosen === 'sent';
   const isCancelled = chosen === 'cancelled';
@@ -47,7 +47,7 @@ export function SendSummaryCard({ spec, testId, messageId, chosen }: CardProps<'
     markChosen(messageId, 'sent');
     refetchCredits();
     appendAssistant({
-      text: `Wysłane. ${patient.name} zobaczy plan w aplikacji: ${describePlan(plan)}.`,
+      text: sentText(patient, describePlan(plan)),
       spec: { component: 'Sent', patientId: patient.id, setName: spec.draft.name, planLabel: describePlan(plan) },
     });
   };
@@ -61,7 +61,11 @@ export function SendSummaryCard({ spec, testId, messageId, chosen }: CardProps<'
       footer={
         isSent || isCancelled ? (
           <span className="text-[13px] text-label-secondary">
-            {isSent ? 'Plan jest już u pacjenta' : 'Nic nie zostało wysłane'}
+            {isSent
+              ? patient?.isShadowUser
+                ? 'Plan zapisany, pacjent nie ma jeszcze konta w aplikacji'
+                : 'Plan jest już u pacjenta'
+              : 'Nic nie zostało wysłane'}
           </span>
         ) : (
           <>

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { sendPlan, type SendPlanMutations } from '../sendPlan';
+import { sendPlan, sentText, type SendPlanMutations } from '../sendPlan';
 import type { DraftItem } from '../setDraft';
 
 const NOW = new Date(2026, 9, 30, 12, 0);
@@ -103,5 +103,29 @@ describe('sendPlan', () => {
       )
     ).rejects.toThrow();
     expect(writes.calls).toEqual(['createSet']);
+  });
+});
+
+// Test asystenta 17.11 (K5, P14): „Wysłane. Tomasz zobaczy plan w aplikacji”, a pacjent miał status „Bez konta”.
+describe('sentText', () => {
+  const plan = 'od jutra, 18 listopada · 2 tygodnie · codziennie';
+
+  it('promises the app only to a patient who has an account', () => {
+    expect(sentText({ name: 'Kacper Zielinski', isShadowUser: false }, plan)).toBe(
+      `Wysłane. Kacper Zielinski zobaczy plan w aplikacji: ${plan}.`
+    );
+  });
+
+  it('says the patient has no account yet and what to do next', () => {
+    const text = sentText({ name: 'Halina Kowalczyk', isShadowUser: true }, plan);
+    expect(text).not.toContain('zobaczy plan w aplikacji');
+    expect(text).toContain('Halina Kowalczyk nie ma jeszcze konta w aplikacji');
+    expect(text).toContain('kod QR');
+    expect(text).toContain('wydruk');
+    expect(text).toContain(plan);
+  });
+
+  it('does not promise the app when the account state is unknown', () => {
+    expect(sentText({ name: 'Jan Kowalski' }, plan)).not.toContain('zobaczy');
   });
 });

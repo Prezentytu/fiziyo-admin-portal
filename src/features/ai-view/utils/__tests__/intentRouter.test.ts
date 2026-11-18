@@ -171,7 +171,10 @@ describe('routeIntent', () => {
         setId: 's-knee',
         exerciseIds: [],
       });
-      expect(routeForPatient(undefined, namesakes, 'p-jan-1')).toEqual({ component: 'PatientPeek', patientId: 'p-jan-1' });
+      expect(routeForPatient(undefined, namesakes, 'p-jan-1')).toEqual({
+        component: 'PatientPeek',
+        patientId: 'p-jan-1',
+      });
       expect(routeForPatient('co u Jana Kowalskiego?', namesakes, 'p-jan-1')).toEqual({
         component: 'PatientPeek',
         patientId: 'p-jan-1',
@@ -183,9 +186,9 @@ describe('routeIntent', () => {
   it('asks „Czy chodzi o…?” when only one word of a longer name was said', () => {
     expect(routeIntent('zestaw dla Jana na kolano', CONTEXT)).toEqual({
       component: 'Clarify',
-      question: 'Czy chodzi o pacjenta: Jan Kowalski?',
-      options: ['Jan Kowalski'],
-      choices: [{ label: 'Jan Kowalski', patientId: 'p-jan' }],
+      question: 'Czy chodzi o Jan Kowalski?',
+      options: ['Tak, Jan', 'Inny pacjent'],
+      choices: [{ label: 'Tak, Jan', patientId: 'p-jan' }, { label: 'Inny pacjent' }],
     });
     expect(routeForPatient('zestaw dla Jana na kolano', CONTEXT, 'p-jan')).toMatchObject({
       component: 'SetDraft',
@@ -194,11 +197,32 @@ describe('routeIntent', () => {
     });
   });
 
-  it('takes a bare first name as the answer to „O kogo chodzi?”', () => {
+  // Decyzja właściciela 18.11: jedno słowo zawsze kończy się pytaniem, chyba że rozmowa ma już tego pacjenta.
+  it('confirms a bare first name also as the answer to „O kogo chodzi?”, the full name finishes the command', () => {
     expect(routeIntent('Jan', CONTEXT, 'Utwórz zestaw na kolano')).toMatchObject({
+      component: 'Clarify',
+      question: 'Czy chodzi o Jan Kowalski?',
+    });
+    expect(routeIntent('Jan Kowalski', CONTEXT, 'Utwórz zestaw na kolano')).toMatchObject({
       component: 'SetDraft',
       patientId: 'p-jan',
       setId: 's-knee',
+    });
+  });
+
+  it('takes one word for a patient the conversation already has', () => {
+    const known = new Set(['p-jan']);
+    expect(routeIntent('zestaw dla Jana na kolano', CONTEXT, undefined, known)).toMatchObject({
+      component: 'SetDraft',
+      patientId: 'p-jan',
+      setId: 's-knee',
+    });
+    expect(routeIntent('Jan', CONTEXT, 'Utwórz zestaw na kolano', known)).toMatchObject({
+      component: 'SetDraft',
+      patientId: 'p-jan',
+    });
+    expect(routeIntent('zestaw dla Jana na kolano', CONTEXT, undefined, new Set(['p-ewa-n']))).toMatchObject({
+      component: 'Clarify',
     });
   });
 

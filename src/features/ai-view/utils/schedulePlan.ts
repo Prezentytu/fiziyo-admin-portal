@@ -1,6 +1,7 @@
 import { addDays, startOfDay } from 'date-fns';
 
 import type { Frequency } from '@/features/assignment/types';
+import { normalizeSearchText } from '@/features/exercises/utils/exerciseSearch';
 import { normalizeFrequencySeed } from '@/features/assignment/utils/scheduleFrequencyUtils';
 import {
   DEFAULT_PLAN_WEEKS,
@@ -103,3 +104,126 @@ export function describePlan(plan: SchedulePlan, now: Date = new Date()): string
 /** The therapist stopped the flow before sending: nothing went to the patient. */
 export const FLOW_CANCEL_LABEL = 'Anuluj';
 export const FLOW_CANCELLED_TEXT = 'Anulowane. Nic nie zostało wysłane, propozycja zestawu zostaje wyżej.';
+
+/** The sentence above "Gotowe do wysłania"; notes say what a typed schedule could not set. */
+export function sendSummaryText(plan: SchedulePlan, notes: readonly string[] = []): string {
+  return [...notes, `Gotowe do wysłania: ${describePlan(plan)}. Sprawdź i wyślij.`].join(' ');
+}
+
+const NUMBER_WORDS: Record<string, number> = {
+  jeden: 1,
+  jedna: 1,
+  dwa: 2,
+  dwie: 2,
+  trzy: 3,
+  cztery: 4,
+  piec: 5,
+  szesc: 6,
+  siedem: 7,
+  osiem: 8,
+};
+const NUMBER = `(\\d+|${Object.keys(NUMBER_WORDS).join('|')})`;
+const TIMES_A_WEEK = new RegExp(`${NUMBER}\\s*(?:x|×|razy|raz)(?![a-z0-9])(?:\\s*(?:w|na)\\s*tyg[a-z]*\\.?)?`);
+const ONCE_A_WEEK = /(?:^|\s)raz (?:w|na) tyg[a-z]*\.?/;
+const WEEKS = new RegExp(`${NUMBER}\\s*(?:tyg|tydz)`);
+const MONTHS = new RegExp(`${NUMBER}\\s*mies`);
+const WEEKDAY_RANGE =
+  /od poniedzialku do piatku|pon[a-z]*\.?\s*(?:-|do)\s*(?:pt|piat[a-z]*)|dni robocze|dni powszednie|weekend[a-z]* woln[a-z]*|bez weekend[a-z]*/;
+const WEEKDAYS: ReadonlyArray<[string, RegExp]> = [
+  ['mon', /(?:^|[\s,])(?:pon|poniedzial[a-z]*)(?=[\s,.]|$)/],
+  ['tue', /(?:^|[\s,])(?:wt|wtor[a-z]*)(?=[\s,.]|$)/],
+  ['wed', /(?:^|[\s,])(?:sr|srod[a-z]*)(?=[\s,.]|$)/],
+  ['thu', /(?:^|[\s,])(?:czw|czwart[a-z]*)(?=[\s,.]|$)/],
+  ['fri', /(?:^|[\s,])(?:pt|piat[a-z]*)(?=[\s,.]|$)/],
+  ['sat', /(?:^|[\s,])(?:sob|sobot[a-z]*)(?=[\s,.]|$)/],
+  ['sun', /(?:^|[\s,])(?:nd|niedz|niedziel[a-z]*)(?=[\s,.]|$)/],
+];
+const ACCEPTS_DEFAULT = /^(?:pasuje|ok|okej|tak|dobrze|zgoda|moze byc)[\s.!]*$/;
+const MAX_TYPED_WEEKS = 12;
+
+function toNumber(token: string): number {
+  return NUMBER_WORDS[token] ?? Number.parseInt(token, 10);
+}
+
+function closestRhythm(timesPerWeek: number): PlanRhythm {
+  if (timesPerWeek <= 2) return 'two';
+  return timesPerWeek <= 4 ? 'three' : 'daily';
+}
+
+export interface ParsedSchedule {
+  plan: SchedulePlan;
+  /** What the text asked for and the chat cannot set yet, with what was set instead. */
+  notes: string[];
+}
+
+/**
+ * A schedule typed as an answer to "Od kiedy i jak często?" ("od dziś, 3 razy w tygodniu, 4 tygodnie").
+ * What the text leaves out stays as proposed; a rhythm the chat does not have becomes the closest
+ * one with a note. Null when the text names no start, length or rhythm: it is not a schedule.
+ */
+export function parseSchedulePlan(text: string): ParsedSchedule | null {
+  let rest = normalizeSearchText(text)
+    .replace(/[–—]/g, '-')
+    .trim();
+  if (!rest) return null;
+  if (ACCEPTS_DEFAULT.test(rest)) return { plan: DEFAULT_SCHEDULE_PLAN, notes: [] };
+
+  const notes: string[] = [];
+  let rhythm: PlanRhythm | undefined;
+  const setClosest = (asked: string, timesPerWeek: number) => {
+    rhythm = closestRhythm(timesPerWeek);
+    notes.push(`${asked} nie da się jeszcze ustawić w czacie. Ustawione najbliższe: ${planRhythmLabel(rhythm).toLowerCase()}.`);
+  };
+
+  if (WEEKDAY_RANGE.test(rest)) {
+    setClosest('Od poniedziałku do piątku', 5);
+    rest = rest.replace(WEEKDAY_RANGE, ' ');
+  } else if (/co drugi dzien|co 2 dni|co 2\.? dzien/.test(rest)) {
+    setClosest('Co drugi dzień', 3.5);
+  } else if (/codzien|co dzien|kazdego dnia|dzien w dzien/.test(rest)) {
+    rhythm = 'daily';
+  } else {
+    const times = TIMES_A_WEEK.exec(rest);
+    const timesPerWeek = times ? toNumber(times[1]) : ONCE_A_WEEK.test(rest) ? 1 : undefined;
+    if (times) rest = rest.replace(TIMES_A_WEEK, ' ');
+    if (timesPerWeek === 7) rhythm = 'daily';
+    else if (timesPerWeek === 3) rhythm = 'three';
+    else if (timesPerWeek === 2) rhythm = 'two';
+    else if (timesPerWeek !== undefined && timesPerWeek >= 1 && timesPerWeek <= 6) {
+      setClosest(`${timesPerWeek}× w tygodniu`, timesPerWeek);
+    } else if (timesPerWeek === undefined) {
+      const days = WEEKDAYS.filter(([, pattern]) => pattern.test(rest)).map(([day]) => day);
+      if (days.join() === 'mon,wed,fri') rhythm = 'three';
+      else if (days.length >= 2) setClosest('Wybranych dni tygodnia', days.length);
+    }
+  }
+
+  let start: PlanStart | undefined;
+  if (/(?:^|\s)(?:dzis|dzisiaj|od zaraz|od razu)(?=[\s,.]|$)/.test(rest)) start = 'today';
+  else if (/jutr/.test(rest)) start = 'tomorrow';
+  else if (/od pon|w poniedzialek|od (?:przyszlego|nastepnego) tyg/.test(rest)) start = 'monday';
+
+  let weeks: number | undefined;
+  const weeksMatch = WEEKS.exec(rest);
+  const monthsMatch = MONTHS.exec(rest);
+  if (weeksMatch) weeks = toNumber(weeksMatch[1]);
+  else if (/poltora mies/.test(rest)) weeks = 6;
+  else if (monthsMatch) weeks = toNumber(monthsMatch[1]) * 4;
+  else if (/(?:na|przez) miesiac/.test(rest)) weeks = 4;
+  else if (/(?:na|przez) tydzien/.test(rest)) weeks = 1;
+  if (weeks !== undefined && (!Number.isFinite(weeks) || weeks < 1)) weeks = undefined;
+  if (weeks !== undefined && weeks > MAX_TYPED_WEEKS) {
+    notes.push(`${planWeeksLabel(weeks)} to więcej, niż da się ustawić w czacie. Ustawione: ${planWeeksLabel(MAX_TYPED_WEEKS)}.`);
+    weeks = MAX_TYPED_WEEKS;
+  }
+
+  if (start === undefined && weeks === undefined && rhythm === undefined) return null;
+  return {
+    plan: {
+      start: start ?? DEFAULT_SCHEDULE_PLAN.start,
+      weeks: weeks ?? DEFAULT_SCHEDULE_PLAN.weeks,
+      rhythm: rhythm ?? DEFAULT_SCHEDULE_PLAN.rhythm,
+    },
+    notes,
+  };
+}

@@ -125,10 +125,177 @@ describe('useChatThread', () => {
       await act(() => result.current.send('co u Jana Kowalskiego'));
       expect(result.current.messages.at(-1)).toMatchObject({ spec: { component: 'Clarify' } });
       act(() => result.current.choosePatient('p-jan-1', 'Jan Kowalski · Ból kolana'));
-      expect(result.current.messages.at(-1)).toMatchObject({ spec: { component: 'PatientPeek', patientId: 'p-jan-1' } });
+      expect(result.current.messages.at(-1)).toMatchObject({
+        spec: { component: 'PatientPeek', patientId: 'p-jan-1' },
+      });
 
       await act(() => result.current.send('kto nie ćwiczy'));
       expect(result.current.messages.at(-1)).toMatchObject({ spec: { component: 'PatientPeek', filter: 'inactive' } });
+    });
+  });
+
+  // Decyzja właściciela 18.11: jedno słowo (samo imię albo nazwisko) to za mało, żeby związać plan z pacjentem.
+  describe('a patient named by one word', () => {
+    const context: IntentContext = {
+      patients: [
+        { id: 'p-tomasz', name: 'Tomasz Nowak', contextLabel: 'Ból kolana' },
+        { id: 'p-ewa', name: 'Ewa Lis' },
+      ],
+      sets: [{ id: 's-knee', name: 'Kolano · faza 2', description: '' }],
+    };
+    const modelDraft = { component: 'SetDraft', patientId: 'p-tomasz', exerciseIds: ['e1', 'e2'] };
+    const confirmQuestion = {
+      component: 'Clarify',
+      question: 'Czy chodzi o Tomasz Nowak (Ból kolana)?',
+      options: ['Tak, Tomasz', 'Inny pacjent'],
+      choices: [{ label: 'Tak, Tomasz', patientId: 'p-tomasz' }, { label: 'Inny pacjent' }],
+    };
+    const modelReply = { sessionId: 'session-a', text: 'Zestaw dla Tomasz Nowak.', spec: modelDraft, creditsUsed: 1 };
+
+    it('a model card for a patient named by the first name alone waits for a confirmation', async () => {
+      dispatchMock.mockResolvedValue(modelReply);
+      const { result } = renderHook(() => useChatThread({ useAi: true, context, ready: true, scopeKey: 'org-a' }));
+
+      await act(() => result.current.send('zestaw na kolano dla Tomasza'));
+      expect(result.current.messages.at(-1)).toMatchObject({ text: confirmQuestion.question, spec: confirmQuestion });
+
+      act(() => result.current.choosePatient('p-tomasz', 'Tak, Tomasz'));
+      expect(dispatchMock).toHaveBeenCalledTimes(1);
+      expect(result.current.messages.at(-1)).toMatchObject({ text: 'Zestaw dla Tomasz Nowak.', spec: modelDraft });
+
+      // Potwierdzony pacjent nie jest pytany drugi raz w tej rozmowie.
+      await act(() => result.current.send('dodaj Tomaszowi mostek'));
+      expect(result.current.messages.at(-1)).toMatchObject({ source: 'ai', spec: modelDraft });
+    });
+
+    it('the full name needs no confirmation', async () => {
+      dispatchMock.mockResolvedValue(modelReply);
+      const { result } = renderHook(() => useChatThread({ useAi: true, context, ready: true, scopeKey: 'org-a' }));
+
+      await act(() => result.current.send('zestaw na kolano dla Tomasza Nowaka'));
+
+      expect(result.current.messages.at(-1)).toMatchObject({ source: 'ai', spec: modelDraft });
+    });
+
+    it('the patient on the header chip needs no confirmation', async () => {
+      dispatchMock.mockResolvedValue(modelReply);
+      const { result } = renderHook(() =>
+        useChatThread({ useAi: true, context, ready: true, scopeKey: 'org-a', getContextPatientId: () => 'p-tomasz' })
+      );
+
+      await act(() => result.current.send('zestaw na kolano dla Tomasza'));
+
+      expect(result.current.messages.at(-1)).toMatchObject({ source: 'ai', spec: modelDraft });
+    });
+
+    it('a typed „tak” continues the command without the model and without a second question', async () => {
+      dispatchMock.mockResolvedValue(modelReply);
+      const { result } = renderHook(() => useChatThread({ useAi: true, context, ready: true, scopeKey: 'org-a' }));
+
+      await act(() => result.current.send('zestaw na kolano dla Tomasza'));
+      await act(() => result.current.send('tak'));
+
+      expect(dispatchMock).toHaveBeenCalledTimes(1);
+      expect(result.current.messages.at(-3)).toMatchObject({ spec: { component: 'Clarify' }, chosen: 'Tak, Tomasz' });
+      expect(result.current.messages.at(-1)).toMatchObject({ source: 'local', creditsUsed: 0, spec: modelDraft });
+    });
+
+    it('„Inny pacjent” opens the patient choice and the command goes on for the picked one', async () => {
+      dispatchMock.mockResolvedValue(modelReply);
+      const { result } = renderHook(() => useChatThread({ useAi: true, context, ready: true, scopeKey: 'org-a' }));
+
+      await act(() => result.current.send('zestaw na kolano dla Tomasza'));
+      await act(() => result.current.send('Inny pacjent'));
+      expect(dispatchMock).toHaveBeenCalledTimes(1);
+      expect(result.current.messages.at(-1)).toMatchObject({ source: 'local', spec: { component: 'PickPatient' } });
+
+      act(() => result.current.choosePatient('p-ewa', 'Ewa Lis'));
+      expect(dispatchMock).toHaveBeenCalledTimes(1);
+      expect(result.current.messages.at(-1)).toMatchObject({
+        text: 'Proponuję te ćwiczenia z katalogu dla: Ewa Lis. Zamień albo usuń, co nie pasuje.',
+        spec: { ...modelDraft, patientId: 'p-ewa' },
+      });
+    });
+
+    it('works the same from rules: the question once, then the command, also when the name is typed again', async () => {
+      const { result } = renderHook(() => useChatThread({ useAi: false, context, ready: true, scopeKey: 'org-a' }));
+
+      await act(() => result.current.send('zestaw na kolano dla Tomasza'));
+      expect(result.current.messages.at(-1)).toMatchObject({ source: 'rules', spec: confirmQuestion });
+
+      await act(() => result.current.send('Tomasz'));
+      expect(result.current.messages.at(-1)).toMatchObject({
+        source: 'local',
+        spec: { component: 'SetDraft', patientId: 'p-tomasz', setId: 's-knee' },
+      });
+
+      await act(() => result.current.send('plan Tomasza'));
+      expect(result.current.messages.at(-1)).toMatchObject({
+        spec: { component: 'PatientPeek', patientId: 'p-tomasz' },
+      });
+    });
+
+    it('a first name typed after „Komu przypisać?” is confirmed before the schedule, with the draft kept', async () => {
+      const draft = { name: 'Kolano · 18.11', items: [] };
+      const { result } = renderHook(() => useChatThread({ useAi: true, context, ready: true, scopeKey: 'org-a' }));
+      act(() => result.current.appendAssistant({ text: 'Komu przypisać?', spec: { component: 'PickPatient', draft } }));
+
+      await act(() => result.current.send('Tomaszowi'));
+      expect(result.current.messages.at(-1)).toMatchObject({ source: 'local', spec: confirmQuestion });
+
+      await act(() => result.current.send('Tak, Tomasz'));
+      expect(dispatchMock).not.toHaveBeenCalled();
+      expect(result.current.messages.at(-1)).toMatchObject({
+        spec: { component: 'Schedule', draft: { ...draft, patientId: 'p-tomasz' } },
+      });
+    });
+  });
+
+  // Test asystenta 17.11 (K7, K5): odpowiedzi, które wątek zna sam, nie idą do modelu i nie kosztują kredytu.
+  describe('answers without the model', () => {
+    const draft = { name: 'Kolano · 17.11', patientId: 'p1', items: [] };
+
+    it('a schedule typed after „Od kiedy i jak często?” goes to the send summary with the same patient', async () => {
+      const { result } = renderHook(() =>
+        useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org-a' })
+      );
+      act(() =>
+        result.current.appendAssistant({ text: 'Od kiedy i jak często?', spec: { component: 'Schedule', draft } })
+      );
+
+      await act(() => result.current.send('od dziś, 3 razy w tygodniu, 4 tygodnie'));
+
+      expect(dispatchMock).not.toHaveBeenCalled();
+      expect(result.current.messages.at(-1)).toMatchObject({
+        source: 'local',
+        creditsUsed: 0,
+        spec: { component: 'SendSummary', draft, plan: { start: 'today', weeks: 4, rhythm: 'three' } },
+      });
+    });
+
+    it('„czy odebrał zestaw?” is answered from the account state', async () => {
+      const context: IntentContext = {
+        patients: [{ id: 'p-halina', name: 'Halina Kowalczyk', isShadowUser: true }],
+        sets: [],
+      };
+      const { result } = renderHook(() => useChatThread({ useAi: true, context, ready: true, scopeKey: 'org-a' }));
+
+      await act(() => result.current.send('Czy Halina odebrała zestaw?'));
+      expect(result.current.messages.at(-1)).toMatchObject({
+        source: 'local',
+        text: 'Czy chodzi o Halina Kowalczyk (bez konta)?',
+        spec: { component: 'Clarify' },
+      });
+      act(() => result.current.choosePatient('p-halina', 'Tak, Halina'));
+
+      expect(dispatchMock).not.toHaveBeenCalled();
+      expect(result.current.messages.at(-1)).toMatchObject({ source: 'local', creditsUsed: 0 });
+      expect(result.current.messages.at(-1)?.text).toContain('nie ma jeszcze konta');
+
+      // Pacjent rozmowy: drugie pytanie po samym imieniu już bez potwierdzania.
+      await act(() => result.current.send('Czy Halina ma już konto?'));
+      expect(result.current.messages.at(-1)?.text).toContain('nie ma jeszcze konta');
+      expect(dispatchMock).not.toHaveBeenCalled();
     });
   });
 

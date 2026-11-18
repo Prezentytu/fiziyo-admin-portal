@@ -155,9 +155,7 @@ describe('guardCardPatient', () => {
     expect(guardCardPatient(draftForTomas, copy, people, 'p-tomas')).toEqual(stripped);
     expect(guardCardPatient(draftForTomas, copy, people, undefined)).toEqual(stripped);
     expect(guardCardPatient(draftForTomas, 'to samo dla Haliny Kowalczyk', people, 'p-tomas')).toEqual(stripped);
-    expect(guardCardPatient(draftForTomas, 'mam nową pacjentkę, daj jej to samo', people, 'p-tomas')).toEqual(
-      stripped
-    );
+    expect(guardCardPatient(draftForTomas, 'mam nową pacjentkę, daj jej to samo', people, 'p-tomas')).toEqual(stripped);
   });
 
   it('asks before showing the plan of a patient nobody named', () => {
@@ -165,14 +163,74 @@ describe('guardCardPatient', () => {
       guardCardPatient({ component: 'PatientPeek', patientId: 'p-e2e' }, 'Pacjent pyta o ketonal', context, undefined)
     ).toEqual({
       component: 'Clarify',
-      question: 'Czy chodzi o pacjenta: E2E Pacjent?',
-      options: ['E2E Pacjent'],
-      choices: [{ label: 'E2E Pacjent', patientId: 'p-e2e' }],
+      question: 'Czy chodzi o E2E Pacjent?',
+      options: ['Tak, E2E', 'Inny pacjent'],
+      choices: [{ label: 'Tak, E2E', patientId: 'p-e2e' }, { label: 'Inny pacjent' }],
     });
     const peek = { component: 'PatientPeek' as const, patientId: 'p-e2e' };
     expect(guardCardPatient(peek, 'co u E2E Pacjent?', context, undefined)).toBe(peek);
     const inactive = { component: 'PatientPeek' as const, filter: 'inactive' as const };
     expect(guardCardPatient(inactive, 'kto nie ćwiczy', context, undefined)).toBe(inactive);
+  });
+
+  // Decyzja właściciela 18.11: „zestaw dla Tomasza” + karta modelu dla jedynego Tomasza była przyjmowana bez pytania.
+  describe('a patient named by one word', () => {
+    const people = {
+      patients: [
+        { id: 'p-tomasz', name: 'Tomasz Nowak', contextLabel: 'Ból kolana' },
+        { id: 'p-ewa', name: 'Ewa Lis' },
+      ],
+      sets: [],
+    };
+    const draft = { component: 'SetDraft' as const, patientId: 'p-tomasz', exerciseIds: ['e1'] };
+    const question = {
+      component: 'Clarify',
+      question: 'Czy chodzi o Tomasz Nowak (Ból kolana)?',
+      options: ['Tak, Tomasz', 'Inny pacjent'],
+      choices: [{ label: 'Tak, Tomasz', patientId: 'p-tomasz' }, { label: 'Inny pacjent' }],
+    };
+
+    it('asks before a model card is bound to that patient, whatever the card', () => {
+      expect(guardCardPatient(draft, 'zestaw dla Tomasza', people, undefined)).toEqual(question);
+      expect(guardCardPatient(draft, 'zestaw dla pana Nowaka', people, 'p-ewa')).toEqual(question);
+      for (const spec of [
+        { component: 'AssignSummary' as const, patientId: 'p-tomasz', setId: 's1' },
+        { component: 'ExerciseResults' as const, query: 'kolano', exerciseIds: [], patientId: 'p-tomasz' },
+        { component: 'PatientPeek' as const, patientId: 'p-tomasz' },
+      ]) {
+        expect(guardCardPatient(spec, 'Tomasz, kolano', people, undefined)).toEqual(question);
+      }
+    });
+
+    it('does not ask for the full name, the conversation patient or a patient of an earlier card', () => {
+      expect(guardCardPatient(draft, 'zestaw dla Tomasza Nowaka', people, undefined)).toBe(draft);
+      expect(guardCardPatient(draft, 'zestaw dla Tomasza', people, 'p-tomasz')).toBe(draft);
+      expect(guardCardPatient(draft, 'zestaw dla Tomasza', people, 'p-ewa', new Set(['p-tomasz']))).toBe(draft);
+    });
+
+    it('holds the model card and its sentence for the „Tak”', async () => {
+      const dispatch: Dispatcher = async () => ({
+        sessionId: 's',
+        text: 'Zestaw dla Tomasz Nowak: clamshell.',
+        spec: draft,
+        creditsUsed: 1,
+      });
+      const reply = await resolveReply('zestaw dla Tomasza', { useAi: true, context: people, dispatch });
+      expect(reply).toMatchObject({
+        text: question.question,
+        spec: question,
+        creditsUsed: 1,
+        held: { patientId: 'p-tomasz', text: 'Zestaw dla Tomasz Nowak: clamshell.', spec: draft },
+      });
+      const known = await resolveReply('zestaw dla Tomasza', {
+        useAi: true,
+        context: people,
+        dispatch,
+        knownPatientIds: new Set(['p-tomasz']),
+      });
+      expect(known.spec).toBe(draft);
+      expect(known.held).toBeUndefined();
+    });
   });
 
   it('applies to AI replies and drops the model sentence about the removed patient', async () => {
