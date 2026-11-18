@@ -32,7 +32,6 @@ interface Organization {
   allowPersonalExercises?: boolean;
   sharedExercisesByDefault?: boolean;
   requireOrganizationVerification?: boolean;
-  therapistsSeeAllPatients?: boolean;
 }
 
 interface SettingsTabProps {
@@ -295,12 +294,7 @@ export function SettingsTab({ organization, currentUserRole, isLoading = false, 
         </CardContent>
       </Card>
 
-      <PatientVisibilitySettings
-        organizationId={organization.id}
-        therapistsSeeAllPatients={organization.therapistsSeeAllPatients}
-        canEdit={canEdit}
-        onSuccess={onRefresh}
-      />
+      <PatientVisibilitySettings organizationId={organization.id} canEdit={canEdit} />
 
       <ExerciseVisibilitySettings
         organizationId={organization.id}

@@ -24,16 +24,16 @@
 
 ## Decyzje
 
-- Pole `therapistsSeeAllPatients` we wspólnym fragmencie organizacji (zlecenie: istniejący dokument). Skutek: panel wdrażamy po backendzie; opisane w „Uważaj na” mapy funkcji i w PR.
+- Pole `therapistsSeeAllPatients` w osobnym zapytaniu `GetOrganizationPatientVisibility`, nie we wspólnym fragmencie (poprawka koordynatora 18.11): kolejność wdrożeń nie może zepsuć PDF, QR ani danych do faktury. Brak odpowiedzi to „nie wiadomo”: bez karty i bez trybu ograniczonego.
 - Zakładka „Wszyscy” zostaje także dla ograniczonego fizjoterapeuty (lokator E2E `patient-filter-all-btn`); zmienia się podtytuł, dopisek pod zakładkami i puste stany.
 - „Przejmij opiekę” i „Przypisz do mnie” wyłączone z podpowiedzią dla ograniczonego fizjoterapeuty, zgodnie ze zleceniem; backend dopuszcza drugiego prowadzącego, czego lista nie rozróżnia.
 - Po potwierdzonym zapisie listy pacjentów wypadają z cache (`evictPatientLists`), zamiast listy zapytań do ponowienia: obejmuje też listy nieaktywne.
 
 ## Dowody
 
-- `npm run validate`: exit 0, 330 plików testów, 3181 testów i 2 oczekiwane porażki, `check:testids` unexpected=0, build przeszedł.
+- `npm run validate`: exit 0, 332 pliki testów, 3195 testów i 2 oczekiwane porażki, `check:testids` unexpected=0, build przeszedł.
 - `npm run agent:check`: przeszło (ostrzeżenia zastane).
-- Dokumenty GraphQL: zgodne ze schematem gałęzi `feat/widocznosc-pacjentow-ustawienie` (202 dokumenty); względem `origin/main` fizjo-app i wdrożonego API DEV 3 błędy, wszystkie o `therapistsSeeAllPatients` i `setTherapistsSeeAllPatients`.
+- Dokumenty GraphQL: zgodne ze schematem gałęzi `feat/widocznosc-pacjentow-ustawienie` (203 dokumenty); względem `origin/main` fizjo-app 2 błędy: nowe zapytanie o `therapistsSeeAllPatients` i mutacja `setTherapistsSeeAllPatients`. Wspólny dokument organizacji przechodzi.
 - Bez zrzutów i bez sprawdzenia w przeglądarce: backend z polem nie jest wdrożony.
 - Reviewer: unverified.
 

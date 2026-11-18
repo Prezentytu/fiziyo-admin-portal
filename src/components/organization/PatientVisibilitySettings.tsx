@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useMutation } from '@apollo/client/react';
+import { useMutation, useQuery } from '@apollo/client/react';
 import { Users } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -10,26 +10,33 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { evictPatientLists } from '@/features/patients/utils/patientCareAccess';
 import { SET_THERAPISTS_SEE_ALL_PATIENTS_MUTATION } from '@/graphql/mutations/organizations.mutations';
-import type { SetTherapistsSeeAllPatientsMutationData, SetTherapistsSeeAllPatientsVariables } from '@/graphql/types';
+import { GET_ORGANIZATION_PATIENT_VISIBILITY_QUERY } from '@/graphql/queries/organizations.queries';
+import type {
+  OrganizationPatientVisibilityQueryData,
+  SetTherapistsSeeAllPatientsMutationData,
+  SetTherapistsSeeAllPatientsVariables,
+} from '@/graphql/types';
 
 interface PatientVisibilitySettingsProps {
   organizationId: string;
-  therapistsSeeAllPatients?: boolean;
   canEdit?: boolean;
-  onSuccess?: () => void;
 }
 
 const SWITCH_ID = 'org-patient-visibility-switch';
 
-export function PatientVisibilitySettings({
-  organizationId,
-  therapistsSeeAllPatients = false,
-  canEdit = false,
-  onSuccess,
-}: PatientVisibilitySettingsProps) {
+/**
+ * Reads the setting with its own small query: on a backend without the field only this card is missing,
+ * the rest of the organization settings (shared fragment) keeps working.
+ */
+export function PatientVisibilitySettings({ organizationId, canEdit = false }: PatientVisibilitySettingsProps) {
+  const { data } = useQuery<OrganizationPatientVisibilityQueryData>(GET_ORGANIZATION_PATIENT_VISIBILITY_QUERY, {
+    variables: { id: organizationId },
+    errorPolicy: 'all',
+  });
+  const therapistsSeeAllPatients = data?.organizationById?.therapistsSeeAllPatients;
   // Value the server confirmed, shown until the organization query catches up with it.
   const [confirmed, setConfirmed] = useState<{ over: boolean; value: boolean } | null>(null);
-  const enabled = confirmed?.over === therapistsSeeAllPatients ? confirmed.value : therapistsSeeAllPatients;
+  const enabled = confirmed && confirmed.over === therapistsSeeAllPatients ? confirmed.value : therapistsSeeAllPatients;
 
   const [setVisibility, { loading }] = useMutation<
     SetTherapistsSeeAllPatientsMutationData,
@@ -41,7 +48,7 @@ export function PatientVisibilitySettings({
   });
 
   const handleChange = async (next: boolean) => {
-    if (!canEdit || loading) return;
+    if (!canEdit || loading || typeof therapistsSeeAllPatients !== 'boolean') return;
     try {
       const result = await setVisibility({ variables: { organizationId, enabled: next } });
       const saved = result.data?.setTherapistsSeeAllPatients;
@@ -53,12 +60,14 @@ export function PatientVisibilitySettings({
           ? 'Fizjoterapeuci widzą teraz wszystkich pacjentów gabinetu'
           : 'Fizjoterapeuci widzą teraz tylko pacjentów pod swoją opieką'
       );
-      onSuccess?.();
     } catch (error) {
       console.error('Błąd podczas zapisywania widoczności pacjentów:', error);
       toast.error('Nie udało się zapisać ustawienia. Widoczność pacjentów nie zmieniła się.');
     }
   };
+
+  // Unknown (still loading, or the API does not have the field yet): no card, never a switch showing „off”.
+  if (typeof enabled !== 'boolean') return null;
 
   return (
     <Card data-testid="org-patient-visibility-card">

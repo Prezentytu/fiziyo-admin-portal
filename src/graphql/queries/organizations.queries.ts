@@ -15,8 +15,6 @@ export const ORGANIZATION_FULL_FRAGMENT = gql`
     sharedExercisesByDefault
     requireOrganizationVerification
     autoSyncExampleExercises
-    # Real value only for the staff of the token's organization (fizjo-app#623)
-    therapistsSeeAllPatients
     # Contact info for PDF/branding
     address
     contactPhone
@@ -41,6 +39,17 @@ export const GET_ORGANIZATION_DEMO_POOL_QUERY = gql`
     organizationById(id: $id) {
       id
       demoPoolEnabled
+    }
+  }
+`;
+
+// Patient visibility setting (fizjo-app#623). Kept out of OrganizationFullFragment on purpose: a backend
+// without the field rejects the whole document, and the fragment also feeds PDF, QR and billing screens.
+export const GET_ORGANIZATION_PATIENT_VISIBILITY_QUERY = gql`
+  query GetOrganizationPatientVisibility($id: String!) {
+    organizationById(id: $id) {
+      id
+      therapistsSeeAllPatients
     }
   }
 `;
