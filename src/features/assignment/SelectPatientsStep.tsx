@@ -7,6 +7,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { usePatientVisibility } from '@/features/patients/hooks/usePatientVisibility';
+import { OWN_PATIENTS_ONLY_NOTE } from '@/features/patients/utils/patientCareAccess';
 import { cn } from '@/lib/utils';
 import type { Patient, AssignedPatientInfo } from './types';
 
@@ -32,6 +34,7 @@ export function SelectPatientsStep({
   isCreatingPatient = false,
 }: SelectPatientsStepProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const { isRestricted } = usePatientVisibility();
   const [patientsToUnassign, setPatientsToUnassign] = useState<Set<string>>(new Set());
 
   // Create a map for quick lookup of assigned patients
@@ -178,7 +181,7 @@ export function SelectPatientsStep({
                 {searchQuery ? 'Nie znaleziono pacjentów' : 'Brak pacjentów'}
               </p>
               <p className="text-xs text-muted-foreground">
-                {searchQuery ? 'Spróbuj innej frazy' : 'Dodaj nowych pacjentów do listy'}
+                {searchQuery ? 'Spróbuj innej frazy' : isRestricted ? OWN_PATIENTS_ONLY_NOTE : 'Dodaj nowych pacjentów do listy'}
               </p>
             </div>
           ) : (

@@ -100,6 +100,28 @@ describe('parseDispatchReply', () => {
     expect(parseDispatchReply({ component: 'Message' }, '')).toEqual({ spec: UNSUPPORTED_SPEC });
   });
 
+  it('passes the other-therapist notice through as text without a card', () => {
+    const text = 'Ten pacjent jest już w gabinecie i prowadzi go inny fizjoterapeuta.';
+    expect(parseDispatchReply({ component: 'Message', notice: 'patient_other_therapist' }, text)).toEqual({
+      text,
+      notice: 'patient_other_therapist',
+    });
+  });
+
+  it('still tells the therapist about the patient when the notice came without text', () => {
+    const reply = parseDispatchReply({ component: 'Message', notice: 'patient_other_therapist' }, null);
+    expect(reply.notice).toBe('patient_other_therapist');
+    expect(reply.text).toContain('prowadzi go inny fizjoterapeuta');
+    expect(reply.spec).toBeUndefined();
+  });
+
+  it('ignores an unknown notice and a notice on a card', () => {
+    expect(parseDispatchReply({ component: 'Message', notice: 'something_new' }, 'Tekst.')).toEqual({ text: 'Tekst.' });
+    expect(
+      parseDispatchReply({ component: 'Navigate', route: 'patients', notice: 'patient_other_therapist' }, 'Tekst.')
+    ).toEqual({ text: 'Tekst.', spec: { component: 'Navigate', route: 'patients' } });
+  });
+
   it('caps the text length', () => {
     const reply = parseDispatchReply({ component: 'Message' }, 'a'.repeat(MAX_REPLY_LENGTH + 50));
     expect(reply.text).toHaveLength(MAX_REPLY_LENGTH);

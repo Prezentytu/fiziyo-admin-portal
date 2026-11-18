@@ -4,7 +4,7 @@ import { routeIntent, type IntentContext } from './intentRouter';
 import { matchPatients } from './patientMatch';
 import { withNewPatientDetails } from './newPatientDetails';
 import { describeSpec } from './replyText';
-import type { ChatViewSpec } from './viewSpec';
+import type { ChatNotice, ChatViewSpec } from './viewSpec';
 
 export type DispatchFailure = 'unavailable' | 'insufficient_credits' | 'unauthorized';
 
@@ -25,6 +25,8 @@ export interface DispatchResult {
   /** Absent when the model answered in words only. */
   spec?: ChatViewSpec;
   creditsUsed: number;
+  /** Server refusal without a card (a clinic patient the therapist does not see). */
+  notice?: ChatNotice;
 }
 
 export type Dispatcher = (message: string, sessionId?: string, signal?: AbortSignal) => Promise<DispatchResult>;
@@ -35,6 +37,7 @@ export interface ResolvedReply {
   source: 'ai' | 'rules';
   sessionId?: string;
   creditsUsed: number;
+  notice?: ChatNotice;
   /** Why the reply came from rules although AI was on; shown once as a quiet note. */
   fallbackReason?: DispatchFailure;
   /** The model's answer waiting for „Czy chodzi o…?”: shown after the „Tak”, without asking the model again. */
@@ -100,6 +103,7 @@ export async function resolveReply(
         sessionId: result.sessionId,
         creditsUsed: result.creditsUsed,
         ...(held ? { held } : {}),
+        ...(result.notice && !spec ? { notice: result.notice } : {}),
       };
     } catch (error) {
       const fallbackReason = error instanceof ChatDispatchError ? error.reason : 'unavailable';

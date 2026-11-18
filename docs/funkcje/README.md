@@ -15,5 +15,6 @@ Mapa, która kłamie, jest gorsza niż jej brak. Gdy zmiana robi zdanie w mapie 
 | Weryfikacja katalogu                    | [weryfikacja-katalogu.md](weryfikacja-katalogu.md) |
 | Tworzenie i edycja ćwiczenia            | [edycja-cwiczenia.md](edycja-cwiczenia.md)         |
 | Czat AI i kredyty                       | [czat-ai.md](czat-ai.md)                           |
+| Widoczność pacjentów w gabinecie        | [widocznosc-pacjentow.md](widocznosc-pacjentow.md) |
 
 Konta testowe obu tenantów są w `fizjo-app:docs/testing/agent-access.md`; tutejszy [agent-access.md](../testing/agent-access.md) tylko tam wskazuje. Ich istnienie w Clerk DEV jest tam oznaczone jako `unverified` (§6), więc sprawdzenia z kontem B traktuj jako `blocked`, dopóki §6 nie zejdzie z tego stanu. Konta backoffice (`ContentManager`, `SiteSuperAdmin`) nie mają tam wpisu.

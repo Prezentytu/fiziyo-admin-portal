@@ -19,6 +19,7 @@ import {
 } from '@/graphql/mutations/organizations.mutations';
 import { GET_ORGANIZATION_BY_ID_QUERY } from '@/graphql/queries/organizations.queries';
 import { ExerciseVisibilitySettings } from './ExerciseVisibilitySettings';
+import { PatientVisibilitySettings } from './PatientVisibilitySettings';
 
 interface Organization {
   id: string;
@@ -292,6 +293,8 @@ export function SettingsTab({ organization, currentUserRole, isLoading = false, 
             )}
         </CardContent>
       </Card>
+
+      <PatientVisibilitySettings organizationId={organization.id} canEdit={canEdit} />
 
       <ExerciseVisibilitySettings
         organizationId={organization.id}

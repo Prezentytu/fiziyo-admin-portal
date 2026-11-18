@@ -105,6 +105,16 @@ export const CREATE_ORGANIZATION_MUTATION = gql`
   }
 `;
 
+// Owner albo admin: czy terapeuci i personel widzą wszystkich pacjentów gabinetu (fizjo-app#623).
+export const SET_THERAPISTS_SEE_ALL_PATIENTS_MUTATION = gql`
+  mutation SetTherapistsSeeAllPatients($organizationId: String!, $enabled: Boolean!) {
+    setTherapistsSeeAllPatients(organizationId: $organizationId, enabled: $enabled) {
+      id
+      therapistsSeeAllPatients
+    }
+  }
+`;
+
 /**
  * Mutacja do aktualizacji ustawień widoczności ćwiczeń w organizacji
  * Kontroluje czy członkowie mogą tworzyć osobiste ćwiczenia

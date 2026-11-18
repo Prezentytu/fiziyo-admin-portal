@@ -491,6 +491,10 @@ Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu r
 | `patient-card-therapist-badge-unassigned`           | Badge nieprzypisany                                       | `TherapistBadge.tsx`             |
 | `patient-takeover-btn`                              | Przejmij opiekę (przycisk)                                | `PatientExpandableCard.tsx`      |
 | `patient-takeover-dialog`                           | Dialog przejmowania opieki                                | `TakeOverDialog.tsx`             |
+| `patient-list-own-only-note`                        | Dopisek: widzisz tylko pacjentów pod swoją opieką         | `patients/page.tsx`              |
+| `patient-unified-other-therapist-notice`            | Komunikat po `PATIENT_UNDER_OTHER_THERAPIST`              | `UnifiedPatientInput.tsx`        |
+| `patient-detail-other-therapist`                    | Karta z linku: pacjenta prowadzi inny fizjoterapeuta      | `patients/[id]/page.tsx`         |
+| `patient-detail-other-therapist-back-btn`           | Wróć do moich pacjentów                                   | `patients/[id]/page.tsx`         |
 | `patient-takeover-confirm-btn`                      | Potwierdź przejęcie                                       | `TakeOverDialog.tsx`             |
 | `patient-expandable-{id}`                           | Karta rozwijana                                           | `PatientExpandableCard.tsx`      |
 | `patient-expandable-{id}-assign-btn`                | Personalizuj i przypisz                                   | `PatientExpandableCard.tsx`      |
@@ -644,50 +648,51 @@ Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu r
 
 ### 10. Organizacja (org-)
 
-| data-testid                    | Element                  | Plik                     |
-| ------------------------------ | ------------------------ | ------------------------ |
-| `org-page-title`               | Tytuł strony             | `organization/page.tsx`  |
-| `org-tab-team`                 | Zakładka: Zespół         | `organization/page.tsx`  |
-| `org-tab-clinics`              | Zakładka: Placówki       | `organization/page.tsx`  |
-| `org-tab-invitations`          | Zakładka: Zaproszenia    | `organization/page.tsx`  |
-| `org-tab-settings`             | Zakładka: Ustawienia     | `organization/page.tsx`  |
-| `org-team-section`             | Sekcja zespołu           | `TeamSection.tsx`        |
-| `org-team-invite-btn`          | Zaproś członka           | `TeamSection.tsx`        |
-| `org-member-{id}`              | Karta członka            | `MemberCard.tsx`         |
-| `org-member-{id}-menu`         | Menu członka             | `MemberCard.tsx`         |
-| `org-member-{id}-remove-btn`   | Usuń członka             | `MemberCard.tsx`         |
-| `org-member-{id}-role-select`  | Zmień rolę               | `MemberCard.tsx`         |
-| `org-clinics-section`          | Sekcja placówek          | `ClinicsSection.tsx`     |
-| `org-clinics-add-btn`          | Dodaj placówkę           | `ClinicsSection.tsx`     |
-| `org-clinic-{id}`              | Karta placówki           | `ClinicCard.tsx`         |
-| `org-clinic-{id}-edit-btn`     | Edytuj                   | `ClinicCard.tsx`         |
-| `org-clinic-{id}-delete-btn`   | Usuń                     | `ClinicCard.tsx`         |
-| `org-invite-dialog`            | Dialog zaproszenia       | `InviteMemberDialog.tsx` |
-| `org-invite-tab-email`         | Zakładka: Email          | `InviteMemberDialog.tsx` |
-| `org-invite-tab-link`          | Zakładka: Link           | `InviteMemberDialog.tsx` |
-| `org-invite-email-input`       | Email                    | `InviteMemberDialog.tsx` |
-| `org-invite-role-select`       | Rola                     | `InviteMemberDialog.tsx` |
-| `org-invite-message-input`     | Wiadomość                | `InviteMemberDialog.tsx` |
-| `org-invite-submit-btn`        | Wyślij zaproszenie       | `InviteMemberDialog.tsx` |
-| `org-invite-generate-link-btn` | Generuj link             | `InviteMemberDialog.tsx` |
-| `org-invite-copy-link-btn`     | Kopiuj link              | `InviteMemberDialog.tsx` |
-| `org-share-sheet`              | Arkusz udostępniania     | `ShareSheet.tsx`         |
-| `org-share-qr`                 | QR zaproszenia personelu | `ShareSheet.tsx`         |
-| `org-share-qr-loading`         | Pusty URL — spinner QR   | `ShareSheet.tsx`         |
-| `org-share-copy-btn`           | Kopiuj link personelu    | `ShareSheet.tsx`         |
-| `org-share-native-btn`         | Native share (mobile)    | `ShareSheet.tsx`         |
-| `org-share-copy-url-btn`       | Kopiuj URL z podglądu    | `ShareSheet.tsx`         |
-| `org-clinic-dialog`            | Dialog placówki          | `ClinicDialog.tsx`       |
-| `org-clinic-name-input`        | Nazwa placówki           | `ClinicDialog.tsx`       |
-| `org-clinic-address-input`     | Adres                    | `ClinicDialog.tsx`       |
-| `org-clinic-contact-input`     | Kontakt                  | `ClinicDialog.tsx`       |
-| `org-clinic-submit-btn`        | Zapisz placówkę          | `ClinicDialog.tsx`       |
-| `org-settings-tab`             | Ustawienia org.          | `SettingsTab.tsx`        |
-| `org-settings-name-input`      | Nazwa organizacji        | `SettingsTab.tsx`        |
-| `org-settings-submit-btn`      | Zapisz ustawienia        | `SettingsTab.tsx`        |
-| `org-subscription-card`        | Karta subskrypcji        | `SubscriptionCard.tsx`   |
-| `org-subscription-plan`        | Aktualny plan            | `SubscriptionCard.tsx`   |
-| `org-subscription-upgrade-btn` | Ulepsz plan              | `SubscriptionCard.tsx`   |
+| data-testid                                                                                                                                  | Element                                  | Plik                            |
+| -------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | ------------------------------- |
+| `org-patient-visibility-card`, `org-patient-visibility-switch`, `org-patient-visibility-description`, `org-patient-visibility-readonly-note` | Widoczność pacjentów: przełącznik i opis | `PatientVisibilitySettings.tsx` |
+| `org-page-title`                                                                                                                             | Tytuł strony                             | `organization/page.tsx`         |
+| `org-tab-team`                                                                                                                               | Zakładka: Zespół                         | `organization/page.tsx`         |
+| `org-tab-clinics`                                                                                                                            | Zakładka: Placówki                       | `organization/page.tsx`         |
+| `org-tab-invitations`                                                                                                                        | Zakładka: Zaproszenia                    | `organization/page.tsx`         |
+| `org-tab-settings`                                                                                                                           | Zakładka: Ustawienia                     | `organization/page.tsx`         |
+| `org-team-section`                                                                                                                           | Sekcja zespołu                           | `TeamSection.tsx`               |
+| `org-team-invite-btn`                                                                                                                        | Zaproś członka                           | `TeamSection.tsx`               |
+| `org-member-{id}`                                                                                                                            | Karta członka                            | `MemberCard.tsx`                |
+| `org-member-{id}-menu`                                                                                                                       | Menu członka                             | `MemberCard.tsx`                |
+| `org-member-{id}-remove-btn`                                                                                                                 | Usuń członka                             | `MemberCard.tsx`                |
+| `org-member-{id}-role-select`                                                                                                                | Zmień rolę                               | `MemberCard.tsx`                |
+| `org-clinics-section`                                                                                                                        | Sekcja placówek                          | `ClinicsSection.tsx`            |
+| `org-clinics-add-btn`                                                                                                                        | Dodaj placówkę                           | `ClinicsSection.tsx`            |
+| `org-clinic-{id}`                                                                                                                            | Karta placówki                           | `ClinicCard.tsx`                |
+| `org-clinic-{id}-edit-btn`                                                                                                                   | Edytuj                                   | `ClinicCard.tsx`                |
+| `org-clinic-{id}-delete-btn`                                                                                                                 | Usuń                                     | `ClinicCard.tsx`                |
+| `org-invite-dialog`                                                                                                                          | Dialog zaproszenia                       | `InviteMemberDialog.tsx`        |
+| `org-invite-tab-email`                                                                                                                       | Zakładka: Email                          | `InviteMemberDialog.tsx`        |
+| `org-invite-tab-link`                                                                                                                        | Zakładka: Link                           | `InviteMemberDialog.tsx`        |
+| `org-invite-email-input`                                                                                                                     | Email                                    | `InviteMemberDialog.tsx`        |
+| `org-invite-role-select`                                                                                                                     | Rola                                     | `InviteMemberDialog.tsx`        |
+| `org-invite-message-input`                                                                                                                   | Wiadomość                                | `InviteMemberDialog.tsx`        |
+| `org-invite-submit-btn`                                                                                                                      | Wyślij zaproszenie                       | `InviteMemberDialog.tsx`        |
+| `org-invite-generate-link-btn`                                                                                                               | Generuj link                             | `InviteMemberDialog.tsx`        |
+| `org-invite-copy-link-btn`                                                                                                                   | Kopiuj link                              | `InviteMemberDialog.tsx`        |
+| `org-share-sheet`                                                                                                                            | Arkusz udostępniania                     | `ShareSheet.tsx`                |
+| `org-share-qr`                                                                                                                               | QR zaproszenia personelu                 | `ShareSheet.tsx`                |
+| `org-share-qr-loading`                                                                                                                       | Pusty URL — spinner QR                   | `ShareSheet.tsx`                |
+| `org-share-copy-btn`                                                                                                                         | Kopiuj link personelu                    | `ShareSheet.tsx`                |
+| `org-share-native-btn`                                                                                                                       | Native share (mobile)                    | `ShareSheet.tsx`                |
+| `org-share-copy-url-btn`                                                                                                                     | Kopiuj URL z podglądu                    | `ShareSheet.tsx`                |
+| `org-clinic-dialog`                                                                                                                          | Dialog placówki                          | `ClinicDialog.tsx`              |
+| `org-clinic-name-input`                                                                                                                      | Nazwa placówki                           | `ClinicDialog.tsx`              |
+| `org-clinic-address-input`                                                                                                                   | Adres                                    | `ClinicDialog.tsx`              |
+| `org-clinic-contact-input`                                                                                                                   | Kontakt                                  | `ClinicDialog.tsx`              |
+| `org-clinic-submit-btn`                                                                                                                      | Zapisz placówkę                          | `ClinicDialog.tsx`              |
+| `org-settings-tab`                                                                                                                           | Ustawienia org.                          | `SettingsTab.tsx`               |
+| `org-settings-name-input`                                                                                                                    | Nazwa organizacji                        | `SettingsTab.tsx`               |
+| `org-settings-submit-btn`                                                                                                                    | Zapisz ustawienia                        | `SettingsTab.tsx`               |
+| `org-subscription-card`                                                                                                                      | Karta subskrypcji                        | `SubscriptionCard.tsx`          |
+| `org-subscription-plan`                                                                                                                      | Aktualny plan                            | `SubscriptionCard.tsx`          |
+| `org-subscription-upgrade-btn`                                                                                                               | Ulepsz plan                              | `SubscriptionCard.tsx`          |
 
 ### 11. Rozliczenia Pay-as-you-go (billing-)
 
