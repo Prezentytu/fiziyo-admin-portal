@@ -7,6 +7,7 @@ import { cardPatientIds, latestCardPatientId, type ChatCardSpec } from './utils/
 import { confirmAnswer, OTHER_PATIENT_OPTION, patientConfirmation } from './utils/clarifyChoice';
 import type { ChatThreadMessage } from './utils/conversationStore';
 import { routeForPatient, type IntentContext } from './utils/intentRouter';
+import { threadNewPatientDetails } from './utils/newPatientDetails';
 import { replyText, resolveReply, type HeldReply } from './utils/resolveReply';
 import { scheduleQuestion, type SetDraftPayload } from './utils/setDraft';
 import { accountQuestionReply, countQuestion, localReplyTo, withExerciseIdeas } from './utils/threadLocalReply';
@@ -254,6 +255,7 @@ export function useChatThread({ useAi, context, ready, scopeKey, getContextPatie
           pendingCommand: pendingCommandRef.current,
           contextPatientId,
           knownPatientIds,
+          newPatientContext: threadNewPatientDetails(messagesRef.current),
         });
         // Pytanie o ćwiczenia bez karty w odpowiedzi (nic nie pasuje): pomysły na nowe dla tej potrzeby.
         const reply = withExerciseIdeas(trimmed, resolved);

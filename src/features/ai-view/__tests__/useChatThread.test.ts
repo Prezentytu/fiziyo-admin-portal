@@ -77,6 +77,39 @@ describe('useChatThread', () => {
     });
   });
 
+  // Demo 18.11: e-mail z pierwszej wiadomości ginął, gdy formularz przychodził dopiero po dopytaniu o imię.
+  it('keeps the e-mail of the first message when the add-patient form comes after a question', async () => {
+    dispatchMock.mockResolvedValueOnce({ sessionId: 'session-a', text: 'Na jaki problem?', creditsUsed: 1 });
+    dispatchMock.mockResolvedValueOnce({
+      sessionId: 'session-a',
+      spec: { component: 'AddPatient', name: 'Ala Nowak' },
+      creditsUsed: 1,
+    });
+    const { result } = renderHook(() =>
+      useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org-a' })
+    );
+
+    await act(() => result.current.send('nowa osoba ala@example.com, zestaw na kolano'));
+    await act(() => result.current.send('Ala Nowak'));
+
+    expect(result.current.messages.at(-1)).toMatchObject({
+      spec: { component: 'AddPatient', name: 'Ala Nowak', email: 'ala@example.com' },
+    });
+  });
+
+  it('opens the add-patient form at once, without the model', async () => {
+    const { result } = renderHook(() =>
+      useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org-a' })
+    );
+
+    await act(() => result.current.send('dodaj pacjenta ala@example.com'));
+
+    expect(dispatchMock).not.toHaveBeenCalled();
+    expect(result.current.messages.at(-1)).toMatchObject({
+      spec: { component: 'AddPatient', email: 'ala@example.com' },
+    });
+  });
+
   // Test asystenta 17.11 (K3): dwóch „Jan Kowalski”, klik chipa wysyłał samą nazwę i wracało to samo pytanie.
   describe('namesakes', () => {
     const context: IntentContext = {

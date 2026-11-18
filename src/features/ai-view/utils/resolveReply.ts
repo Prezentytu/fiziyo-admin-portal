@@ -2,7 +2,7 @@ import { normalizeSearchText } from '@/features/exercises/utils/exerciseSearch';
 import { confirmPatientSpec, labelPatientChoices, patientConfirmation } from './clarifyChoice';
 import { routeIntent, type IntentContext } from './intentRouter';
 import { matchPatients } from './patientMatch';
-import { withNewPatientDetails } from './newPatientDetails';
+import { addPatientReply, withNewPatientDetails, type NewPatientDetails } from './newPatientDetails';
 import { describeSpec } from './replyText';
 import type { ChatViewSpec } from './viewSpec';
 
@@ -71,15 +71,25 @@ export async function resolveReply(
     contextPatientId?: string;
     /** Patients earlier cards of the conversation are about: one word of their name needs no confirmation. */
     knownPatientIds?: ReadonlySet<string>;
+    /** What earlier messages of the open exchange said about a new patient (`threadNewPatientDetails`). */
+    newPatientContext?: NewPatientDetails;
   }
 ): Promise<ResolvedReply> {
+  // „Dodaj pacjenta …” needs no model: the form opens at once with what was given, so nothing is asked in the chat.
+  const added = addPatientReply(text, options.context.patients, options.newPatientContext);
+  if (added) return { text: added.text, spec: added.spec, source: 'rules', creditsUsed: 0 };
   const known = new Set(options.knownPatientIds);
   if (options.contextPatientId) known.add(options.contextPatientId);
-  const routed = () => withNewPatientDetails(routeIntent(text, options.context, options.pendingCommand, known), text);
+  const routed = () =>
+    withNewPatientDetails(
+      routeIntent(text, options.context, options.pendingCommand, known),
+      text,
+      options.newPatientContext
+    );
   if (options.useAi) {
     try {
       const result = await options.dispatch(text, options.sessionId, options.signal);
-      const original = withNewPatientDetails(result.spec, text);
+      const original = withNewPatientDetails(result.spec, text, options.newPatientContext);
       const guarded = guardCardPatient(original, text, options.context, options.contextPatientId, known);
       // A card the guard changed keeps no model sentence: it may name the patient just taken off.
       const modelText = guarded === result.spec ? result.text : undefined;

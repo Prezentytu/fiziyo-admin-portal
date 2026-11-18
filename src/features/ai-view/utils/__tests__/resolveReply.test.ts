@@ -62,6 +62,58 @@ describe('resolveReply', () => {
   });
 });
 
+// Demo 18.11: prośba o dodanie pacjenta z samym e-mailem skończyła się pytaniem modelu o imię i formularzem bez e-maila.
+describe('resolveReply: adding a patient', () => {
+  it('opens the filled form at once, without the model and without a credit', async () => {
+    const dispatch = vi.fn<Dispatcher>();
+    const reply = await resolveReply('stwórz mi pacjenta dla takiego maila: ala@example.com', {
+      useAi: true,
+      context: CONTEXT,
+      dispatch,
+    });
+    expect(dispatch).not.toHaveBeenCalled();
+    expect(reply).toEqual({
+      text: 'Uzupełnij brakujące dane w formularzu, a dodam pacjenta.',
+      spec: { component: 'AddPatient', email: 'ala@example.com' },
+      source: 'rules',
+      creditsUsed: 0,
+    });
+  });
+
+  it('shows the patient who is already on the list instead of the form', async () => {
+    const dispatch = vi.fn<Dispatcher>();
+    const reply = await resolveReply('dodaj pacjenta Jan Kowalski', { useAi: true, context: CONTEXT, dispatch });
+    expect(dispatch).not.toHaveBeenCalled();
+    expect(reply.spec).toEqual({ component: 'PatientPeek', patientId: 'p-jan' });
+  });
+
+  it('keeps the e-mail from the earlier message when the model card comes a turn later', async () => {
+    const dispatch: Dispatcher = async () => ({
+      sessionId: 's-3',
+      text: 'Dodaję pacjenta.',
+      spec: { component: 'AddPatient' as const, name: 'Ala Nowak' },
+      creditsUsed: 1,
+    });
+    const reply = await resolveReply('Ala Nowak', {
+      useAi: true,
+      context: CONTEXT,
+      dispatch,
+      newPatientContext: { email: 'ala@example.com' },
+    });
+    expect(reply.spec).toEqual({ component: 'AddPatient', name: 'Ala Nowak', email: 'ala@example.com' });
+  });
+
+  it('gives the form from rules for the other verbs too', async () => {
+    const dispatch = vi.fn<Dispatcher>();
+    const reply = await resolveReply('utwórz pacjenta Adam Lis, 601 202 303', {
+      useAi: false,
+      context: CONTEXT,
+      dispatch,
+    });
+    expect(reply.spec).toEqual({ component: 'AddPatient', name: 'Adam Lis', phone: '601 202 303' });
+  });
+});
+
 describe('replyText', () => {
   it('describes the card when the model gave no text', () => {
     expect(replyText(undefined, { component: 'AddPatient', name: 'Anna Nowak' }, CONTEXT)).toBe(
