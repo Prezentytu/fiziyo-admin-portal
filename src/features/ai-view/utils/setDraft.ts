@@ -301,6 +301,11 @@ export interface SetDraftReturn {
   patientId?: string;
   note?: string;
   doses?: Record<string, DraftDose>;
+  /**
+   * The whole rows (rests, tempo, load, notes, side, preparation), from 18.11. Drafts stored earlier
+   * carry only `doses`, which stay for them.
+   */
+  items?: DraftItem[];
 }
 
 /** Sets, reps and hold time of each draft item, so a rebuilt draft keeps what the therapist set. */
@@ -326,5 +331,6 @@ export function draftReturnOf(
     patientId: options.patientId,
     note: options.note,
     doses: itemsToDoses(items),
+    items: [...items],
   };
 }

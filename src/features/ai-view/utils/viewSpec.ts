@@ -1,7 +1,7 @@
 import type { SetDraftReturn } from './setDraft';
 import { z } from 'zod';
 
-import type { DraftDose } from './setDraft';
+import type { DraftDose, DraftItem } from './setDraft';
 
 export const NAVIGATE_ROUTES = {
   patients: { href: '/patients', label: 'Pacjenci' },
@@ -29,6 +29,8 @@ export type ChatViewSpec =
       note?: string;
       /** Only from the thread itself (a scanned note), never from the model. */
       doses?: Record<string, DraftDose>;
+      /** Only from the thread itself: rows of the proposal this card continues (`SetDraftReturn.items`). */
+      items?: DraftItem[];
     }
   | { component: 'AssignSummary'; patientId: string; setId: string }
   | { component: 'ExerciseResults'; query: string; exerciseIds: string[]; patientId?: string }

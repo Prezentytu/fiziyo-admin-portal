@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { addToDraftReply, draftRequest, openSetDraft } from '../addToDraft';
+import { addToDraftReply, draftRequest, exerciseCreatedReply, openSetDraft } from '../addToDraft';
+import { draftReturnOf, type DraftItem } from '../setDraft';
 
 const CATALOG = [
   { id: 'e-bridge', name: 'Mostek' },
@@ -133,5 +134,64 @@ describe('addToDraftReply', () => {
     expect(addToDraftReply('zamień clamshell na mostek', DRAFT, CATALOG, PATIENTS)).toBeNull();
     expect(addToDraftReply('dodaj serię do mostka', DRAFT, CATALOG, PATIENTS)).toBeNull();
     expect(addToDraftReply('dodaj Adam Lis adam@example.com', DRAFT, CATALOG, PATIENTS)).toBeNull();
+  });
+});
+
+// Właściciel 18.11: fizjo, który poprawił przerwy i dopisał ćwiczenie, nie może ich stracić.
+describe('everything the therapist set survives a return to the proposal', () => {
+  const tuned: DraftItem = {
+    exerciseId: 'e-clam',
+    sets: 4,
+    reps: 12,
+    duration: 0,
+    executionTime: 3,
+    restSets: 45,
+    restReps: 2,
+    preparationTime: 10,
+    side: 'left',
+    tempo: '2-1-2',
+    loadKg: 5,
+    notes: 'bez bólu',
+  };
+  const live = draftReturnOf([tuned], { patientId: 'p-tomasz', note: 'biodro' });
+
+  it('carries the whole rows next to the short doses older cards read', () => {
+    expect(live).toEqual({
+      exerciseIds: ['e-clam'],
+      patientId: 'p-tomasz',
+      note: 'biodro',
+      doses: { 'e-clam': { sets: 4, reps: 12 } },
+      items: [tuned],
+    });
+  });
+
+  it('keeps the rows when an exercise is added from the chat', () => {
+    expect(addToDraftReply('dodaj mostek', live, CATALOG, PATIENTS)?.reply.spec).toMatchObject({
+      component: 'SetDraft',
+      exerciseIds: ['e-clam', 'e-bridge'],
+      items: [tuned],
+    });
+  });
+});
+
+// Właściciel 18.11: „pojawi się dodawanie ćwiczenia i cyk, pokazuje się ten zestaw z tym nowym ćwiczeniem”.
+describe('exerciseCreatedReply', () => {
+  it('shows the proposal with the new exercise at once when it was created for a set', () => {
+    expect(exerciseCreatedReply({ id: 'e-new', name: 'Wykrok z rotacją' }, { addToSet: DRAFT })).toEqual({
+      text: 'Ćwiczenie „Wykrok z rotacją” jest w katalogu gabinetu i w zestawie. Zdjęcie i szczegóły dodasz później w katalogu ćwiczeń.',
+      spec: {
+        component: 'SetDraft',
+        patientId: 'p-tomasz',
+        exerciseIds: ['e-clam', 'e-new'],
+        note: 'wzmocnienie biodra',
+        doses: { 'e-clam': { sets: 4, reps: 12 } },
+      },
+    });
+  });
+
+  it('stays the created-exercise card with its next steps when no set is waiting', () => {
+    expect(exerciseCreatedReply({ id: 'e-new', name: 'Wykrok' }, { patientId: 'p1' })).toEqual({
+      spec: { component: 'ExerciseCreated', exerciseId: 'e-new', name: 'Wykrok', patientId: 'p1' },
+    });
   });
 });

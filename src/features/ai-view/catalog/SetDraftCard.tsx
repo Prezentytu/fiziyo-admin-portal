@@ -224,6 +224,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
       setId: spec.setId,
       exerciseIds: spec.exerciseIds,
       doses: spec.doses,
+      items: spec.items,
       sets: organizationSets,
       setsReady,
       exercises,

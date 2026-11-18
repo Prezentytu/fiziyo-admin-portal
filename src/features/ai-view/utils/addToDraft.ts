@@ -168,7 +168,36 @@ export function addToDraftReply(
     closesDraft: true,
     reply: {
       text: `Dodane do zestawu: ${best.name}. Parametry pozostałych ćwiczeń zostają bez zmian.${hint}`,
-      spec: { component: 'SetDraft', ...draft, exerciseIds: [...draft.exerciseIds, best.id] },
+      spec: draftWithExercise(draft, best.id),
+    },
+  };
+}
+
+/** The proposal `back` with one more exercise at the end; everything else as the therapist left it. */
+export function draftWithExercise(back: SetDraftReturn, exerciseId: string): SetDraftSpec {
+  return { component: 'SetDraft', ...back, exerciseIds: [...back.exerciseIds, exerciseId] };
+}
+
+/**
+ * What the thread shows once a new exercise is saved: created for a set proposal (`addToSet`), that
+ * proposal comes back at once with the exercise in it; otherwise the created-exercise card with its next steps.
+ */
+export function exerciseCreatedReply(
+  exercise: { id: string; name: string },
+  options: { patientId?: string; addToSet?: SetDraftReturn }
+): { text?: string; spec: ChatCardSpec } {
+  if (options.addToSet) {
+    return {
+      text: `Ćwiczenie „${exercise.name}” jest w katalogu gabinetu i w zestawie. Zdjęcie i szczegóły dodasz później w katalogu ćwiczeń.`,
+      spec: draftWithExercise(options.addToSet, exercise.id),
+    };
+  }
+  return {
+    spec: {
+      component: 'ExerciseCreated',
+      exerciseId: exercise.id,
+      name: exercise.name,
+      ...(options.patientId ? { patientId: options.patientId } : {}),
     },
   };
 }

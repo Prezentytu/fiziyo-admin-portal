@@ -84,4 +84,47 @@ describe('seedDraftItems', () => {
       ['e2', 2, 12],
     ]);
   });
+
+  // Właściciel 18.11: po dopisaniu ćwiczenia przerwy, tempo i notatki pozostałych pozycji zostają.
+  it('keeps the rows the therapist tuned and seeds only the added exercise from the catalog', () => {
+    const tuned = {
+      exerciseId: 'e1',
+      sets: 5,
+      reps: 8,
+      duration: 0,
+      executionTime: 4,
+      restSets: 45,
+      restReps: 2,
+      preparationTime: 10,
+      side: 'left',
+      tempo: '2-1-2',
+      loadKg: 5,
+      notes: 'bez bólu',
+    };
+    const seed = seedDraftItems({
+      exerciseIds: ['e1', 'e2'],
+      items: [tuned],
+      doses: { e1: { sets: 1, reps: 1 } },
+      sets: [],
+      setsReady: false,
+      exercises: EXERCISES,
+      exercisesReady: true,
+    });
+
+    expect(seed?.items[0]).toEqual(tuned);
+    expect(seed?.items[1]).toMatchObject({ exerciseId: 'e2', sets: 2, reps: 12 });
+  });
+
+  it('still reads an older draft that carries only the short doses', () => {
+    expect(
+      seedDraftItems({
+        exerciseIds: ['e1'],
+        doses: { e1: { sets: 4, reps: 6 } },
+        sets: [],
+        setsReady: false,
+        exercises: EXERCISES,
+        exercisesReady: true,
+      })
+    ).toMatchObject({ items: [{ exerciseId: 'e1', sets: 4, reps: 6 }] });
+  });
 });

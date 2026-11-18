@@ -4,6 +4,7 @@ import Link from 'next/link';
 
 import { useChatActions } from '../ChatSessionContext';
 import type { CardProps } from './cardProps';
+import { draftWithExercise } from '../utils/addToDraft';
 import { QuickReplies } from './QuickReplies';
 
 const NEXT_STEPS = ['Dodaj do zestawu', 'Gotowe'] as const;
@@ -33,13 +34,9 @@ export function ExerciseCreatedCard({ spec, testId, messageId, chosen }: CardPro
               text: back
                 ? 'Nowe ćwiczenie jest w zestawie. Sprawdź całość i przejdź dalej.'
                 : 'Zestaw z nowym ćwiczeniem. Dodaj kolejne z katalogu albo przejdź dalej.',
-              spec: {
-                component: 'SetDraft',
-                patientId: back?.patientId ?? spec.patientId,
-                exerciseIds: [...(back?.exerciseIds ?? []), spec.exerciseId],
-                note: back?.note,
-                doses: back?.doses,
-              },
+              spec: back
+                ? draftWithExercise(back, spec.exerciseId)
+                : { component: 'SetDraft', patientId: spec.patientId, exerciseIds: [spec.exerciseId] },
             });
           } else {
             appendExchange(option, { text: 'Dobrze. Ćwiczenie znajdziesz w katalogu.' });
