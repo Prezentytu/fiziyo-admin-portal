@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState, useCallback, useRef } from 'react';
+import { Fragment, use, useState, useCallback, useRef } from 'react';
 import { useQuery, useMutation, useApolloClient } from '@apollo/client/react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -104,12 +104,18 @@ import { buildDuplicateExerciseVariables } from '@/features/exercises/utils/buil
 import { isDuplicateAllowed, useExerciseAvailability } from '@/hooks/useExerciseAvailability';
 import { DemoReleaseButton } from '@/features/exercises/DemoReleaseButton';
 import { canReleaseFromDemoPool } from '@/features/exercises/utils/demoRelease';
+import {
+  canShowExerciseDelete,
+  resolveExerciseDetailMenuGroups,
+  type ExerciseDetailMenuItem,
+} from '@/features/exercises/utils/exerciseDetailMenu';
 import { normalizeExerciseType } from '@/utils/exerciseEnums';
 import { canOpenVideoOutsidePortal } from '@/utils/videoEmbed';
 import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
 import { verificationCopy } from '@/features/verification/verificationCopy';
 import { hasPatientVideo } from '@/features/verification/utils/verificationStages';
 import { useSystemRole } from '@/hooks/useSystemRole';
+import { useStickyColumnTop } from '@/hooks/useStickyColumnTop';
 import { ORG_VERIFICATION_REFETCH_QUERIES } from '@/hooks/useOrganizationVerificationRealtime';
 import { PageSheet } from '@/components/shared/page';
 
@@ -120,9 +126,11 @@ interface ExerciseDetailPageProps {
 export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) {
   const { id } = use(params);
   const router = useRouter();
-  const { canReviewExercises, isLoading: isRoleLoading } = useSystemRole();
+  const { canReviewExercises, isSiteAdmin, isSiteSuperAdmin, isLoading: isRoleLoading } = useSystemRole();
   const { currentOrganization } = useOrganization();
   const [isEditMode, setIsEditMode] = useState(false);
+  // Pasek zapisu w edycji zabiera dół okna; kolumna mediów ma się zmieścić nad nim.
+  const mediaColumn = useStickyColumnTop<HTMLDivElement>({ gap: 24, bottomReserve: isEditMode ? 80 : 0 });
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const {
@@ -558,8 +566,95 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
     hasMediaPersistNotice: Boolean(mediaPersistNotice),
   });
 
+  const menuGroups = resolveExerciseDetailMenuGroups({
+    showDuplicate: canDuplicate || availabilityPending,
+    canOpenVideo: canOpenVideoOutsidePortal(exercise.videoUrl),
+    canSubmitToGlobal,
+    canSubmitToOrganization,
+    canResubmit,
+    canDelete: canShowExerciseDelete({ scope: exercise.scope, isSiteAdmin, isSiteSuperAdmin }),
+  });
+  const menuItems: Record<ExerciseDetailMenuItem, React.ReactNode> = {
+    duplicate: (
+      <DropdownMenuItem
+        key="duplicate"
+        onClick={handleDuplicateExercise}
+        disabled={duplicating || !canDuplicate}
+        title={
+          availabilityPending
+            ? availabilityState.status === 'loading'
+              ? 'Sprawdzam dostępność ćwiczenia...'
+              : 'Nie udało się sprawdzić dostępności ćwiczenia. Odśwież stronę.'
+            : undefined
+        }
+        data-testid="exercise-detail-duplicate-btn"
+      >
+        <Copy className="mr-2 h-4 w-4" />
+        {duplicating ? 'Tworzenie kopii...' : 'Duplikuj'}
+      </DropdownMenuItem>
+    ),
+    'open-video': (
+      <DropdownMenuItem key="open-video" asChild>
+        <a
+          href={exercise.videoUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          data-testid="exercise-detail-open-video-link"
+        >
+          <ExternalLink className="mr-2 h-4 w-4" />
+          Otwórz film
+        </a>
+      </DropdownMenuItem>
+    ),
+    'submit-global': (
+      <DropdownMenuItem
+        key="submit-global"
+        onClick={() => setIsSubmitToGlobalDialogOpen(true)}
+        className="text-primary focus:text-primary"
+        data-testid="exercise-detail-submit-global-btn"
+      >
+        <Rocket className="mr-2 h-4 w-4" />
+        {verificationCopy.submitGlobal}
+      </DropdownMenuItem>
+    ),
+    'submit-organization': (
+      <DropdownMenuItem
+        key="submit-organization"
+        onClick={() => setIsSubmitToOrganizationDialogOpen(true)}
+        className="text-status-success focus:text-status-success"
+        data-testid="exercise-detail-submit-org-btn"
+      >
+        <Rocket className="mr-2 h-4 w-4" />
+        {verificationCopy.submitOrganization}
+      </DropdownMenuItem>
+    ),
+    resubmit: (
+      <DropdownMenuItem
+        key="resubmit"
+        onClick={handleResubmit}
+        disabled={resubmitting}
+        className="text-primary focus:text-primary"
+        data-testid="exercise-detail-resubmit-btn"
+      >
+        <RefreshCw className={cn('mr-2 h-4 w-4', resubmitting && 'animate-spin')} />
+        Zgłoś ponownie do weryfikacji
+      </DropdownMenuItem>
+    ),
+    delete: (
+      <DropdownMenuItem
+        key="delete"
+        onClick={() => setIsDeleteDialogOpen(true)}
+        className="text-destructive focus:text-destructive"
+        data-testid="exercise-detail-delete-btn"
+      >
+        <Trash2 className="mr-2 h-4 w-4" />
+        Usuń ćwiczenie
+      </DropdownMenuItem>
+    ),
+  };
+
   return (
-    <PageSheet contentClassName="gap-6" className={isEditing ? 'pb-24' : undefined}>
+    <PageSheet contentClassName="gap-6">
       {/* Compact Header */}
       <div className="flex items-center justify-between">
         <Button
@@ -573,95 +668,24 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         </Button>
 
         <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2" data-testid="exercise-detail-menu-trigger">
-                Opcje
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {(canDuplicate || availabilityPending) && (
-                <DropdownMenuItem
-                  onClick={handleDuplicateExercise}
-                  disabled={duplicating || !canDuplicate}
-                  title={
-                    availabilityPending
-                      ? availabilityState.status === 'loading'
-                        ? 'Sprawdzam dostępność ćwiczenia...'
-                        : 'Nie udało się sprawdzić dostępności ćwiczenia. Odśwież stronę.'
-                      : undefined
-                  }
-                  data-testid="exercise-detail-duplicate-btn"
-                >
-                  <Copy className="mr-2 h-4 w-4" />
-                  {duplicating ? 'Tworzenie kopii...' : 'Duplikuj'}
-                </DropdownMenuItem>
-              )}
-              {canOpenVideoOutsidePortal(exercise.videoUrl) && (
-                <DropdownMenuItem asChild>
-                  <a
-                    href={exercise.videoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    data-testid="exercise-detail-open-video-link"
-                  >
-                    <ExternalLink className="mr-2 h-4 w-4" />
-                    Otwórz film
-                  </a>
-                </DropdownMenuItem>
-              )}
-              {canSubmitToGlobal && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => setIsSubmitToGlobalDialogOpen(true)}
-                    className="text-primary focus:text-primary"
-                    data-testid="exercise-detail-submit-global-btn"
-                  >
-                    <Rocket className="mr-2 h-4 w-4" />
-                    {verificationCopy.submitGlobal}
-                  </DropdownMenuItem>
-                </>
-              )}
-              {canSubmitToOrganization && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => setIsSubmitToOrganizationDialogOpen(true)}
-                    className="text-status-success focus:text-status-success"
-                    data-testid="exercise-detail-submit-org-btn"
-                  >
-                    <Rocket className="mr-2 h-4 w-4" />
-                    {verificationCopy.submitOrganization}
-                  </DropdownMenuItem>
-                </>
-              )}
-              {canResubmit && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={handleResubmit}
-                    disabled={resubmitting}
-                    className="text-primary focus:text-primary"
-                    data-testid="exercise-detail-resubmit-btn"
-                  >
-                    <RefreshCw className={cn('mr-2 h-4 w-4', resubmitting && 'animate-spin')} />
-                    Zgłoś ponownie do weryfikacji
-                  </DropdownMenuItem>
-                </>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => setIsDeleteDialogOpen(true)}
-                className="text-destructive focus:text-destructive"
-                data-testid="exercise-detail-delete-btn"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Usuń ćwiczenie
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {menuGroups.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2" data-testid="exercise-detail-menu-trigger">
+                  Opcje
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {menuGroups.map((group, index) => (
+                  <Fragment key={group[0]}>
+                    {index > 0 && <DropdownMenuSeparator />}
+                    {group.map((item) => menuItems[item])}
+                  </Fragment>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
 
@@ -805,7 +829,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
 
       <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
         {/* Left column: media */}
-        <div className="space-y-4 lg:sticky lg:top-6">
+        <div ref={mediaColumn.ref} className="space-y-4 lg:sticky" style={{ top: mediaColumn.top }}>
           <h2 className="flex items-center gap-2 text-base font-semibold text-foreground">
             <Dumbbell className="h-4 w-4 text-muted-foreground" />
             Zdjęcia i media
@@ -980,7 +1004,12 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
               />
 
               {/* 3. Bezpieczeństwo */}
-              <SafetySection data={readEnrichment} editable={false} isPathDirty={isPathDirty} setPath={setEnrichmentPath} />
+              <SafetySection
+                data={readEnrichment}
+                editable={false}
+                isPathDirty={isPathDirty}
+                setPath={setEnrichmentPath}
+              />
 
               {/* 4. Dla terapeuty */}
               <TherapistSection
@@ -1013,13 +1042,13 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         </div>
       </div>
 
-      {/* Sticky save bar */}
+      {/* Pasek zapisu: szerokość treści; ujemny `bottom` = odstęp `main` w layoucie, żeby pasek dochodził do dołu okna */}
       {isEditing && (
         <div
-          className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80"
+          className="sticky -bottom-4 z-30 -mb-6 border-t border-border/60 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 sm:-mb-8 lg:-bottom-6 xl:-mb-9 2xl:-bottom-8"
           data-testid="exercise-detail-save-bar"
         >
-          <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+          <div className="flex items-center justify-between gap-3 py-3">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               {saveBarKind === 'error' ? (
                 <span className="flex items-center gap-1.5 text-destructive">
