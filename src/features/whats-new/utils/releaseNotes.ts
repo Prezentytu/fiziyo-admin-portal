@@ -50,9 +50,14 @@ export function releaseNoteHref(noteId: string): string {
   return `/settings?tab=${WHATS_NEW_TAB}#${releaseNoteAnchorId(noteId)}`;
 }
 
-/** Kotwica wydania z `location.hash` albo null, gdy hash wskazuje coś innego. */
+/** Kotwica wydania z `location.hash` albo null, gdy hash wskazuje coś innego albo ma zepsute kodowanie `%`. */
 export function releaseNoteAnchorFromHash(hash: string): string | null {
-  const anchor = decodeURIComponent(hash.replace(/^#/, ''));
+  let anchor: string;
+  try {
+    anchor = decodeURIComponent(hash.replace(/^#/, ''));
+  } catch {
+    return null;
+  }
   return anchor.startsWith(RELEASE_ANCHOR_PREFIX) && anchor.length > RELEASE_ANCHOR_PREFIX.length ? anchor : null;
 }
 

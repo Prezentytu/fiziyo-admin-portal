@@ -66,6 +66,11 @@ describe('release note links', () => {
     expect(releaseNoteAnchorFromHash('')).toBeNull();
   });
 
+  it('ignores a malformed hash instead of throwing (link pasted with a broken %-sequence)', () => {
+    expect(releaseNoteAnchorFromHash('#wydanie-%E0')).toBeNull();
+    expect(releaseNoteAnchorFromHash('#%')).toBeNull();
+  });
+
   it.each([
     ['/settings?tab=accessibility', '/settings?tab=accessibility'],
     [
