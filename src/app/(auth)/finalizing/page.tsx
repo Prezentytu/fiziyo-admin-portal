@@ -7,6 +7,11 @@ import { Loader2, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { decideAdminAccess } from '@/lib/auth/adminAccessDecision';
 import { getUserRoleFromToken } from '@/lib/auth/jwtClaims';
+import {
+  forgetRegistrationAttempt,
+  getRememberedRegistrationAttempt,
+  reportRegistrationStep,
+} from '@/lib/registrationAttempts';
 import { clearBackendToken } from '@/lib/tokenCache';
 import { tokenExchangeService } from '@/services/tokenExchangeService';
 
@@ -102,6 +107,11 @@ export default function FinalizingRegistrationPage() {
 
     hasRedirected.current = true;
     setStatus('success');
+    const attempt = getRememberedRegistrationAttempt();
+    if (attempt) {
+      reportRegistrationStep({ ...attempt, step: 'completed' });
+      forgetRegistrationAttempt();
+    }
     clearBackendToken();
     setTimeout(() => {
       router.replace('/');
@@ -139,6 +149,10 @@ export default function FinalizingRegistrationPage() {
       // Po dłuższym czasie pokazujemy spokojny komunikat i dyskretną pomoc,
       // ale dalej automatycznie ponawiamy - użytkownik nigdy nie musi klikać.
       if (attempts >= HELP_AFTER_ATTEMPTS) {
+        if (attempts === HELP_AFTER_ATTEMPTS) {
+          const attempt = getRememberedRegistrationAttempt();
+          if (attempt) reportRegistrationStep({ ...attempt, step: 'finalizing_timeout' });
+        }
         setStatus('taking-longer');
       }
 
