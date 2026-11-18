@@ -19,7 +19,7 @@ import {
 import { getLongestPlayerHint, getPlayerHints } from '@/features/exercises/utils/playerHintLength';
 import { cn } from '@/lib/utils';
 import { FloatingMark } from '../FloatingMark';
-import { useChatActions } from '../ChatSessionContext';
+import { useChatActions, useChatBusy } from '../ChatSessionContext';
 import { useChatMode } from '../useChatMode';
 import {
   buildChatExerciseEnrichment,
@@ -32,6 +32,7 @@ import {
 } from '../utils/chatExerciseDraft';
 import type { CardProps } from './cardProps';
 import { ChatCard } from './ChatCard';
+import { QuickReplies } from './QuickReplies';
 import { useCreateExercise } from './useChatWrites';
 import { useExerciseDraftAi, type DraftFill, type DraftSection, type DraftSectionState } from './useExerciseDraftAi';
 
@@ -101,7 +102,10 @@ const SECTION_COPY: Record<DraftSection, { title: string; working: string; faile
  * again. Nothing is saved before „Utwórz ćwiczenie” (DEC-20261029-01).
  */
 export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProps<'CreateExercise'>) {
-  const { organizationId, contextPatient, appendAssistant, markChosen } = useChatActions();
+  const { organizationId, contextPatient, appendAssistant, markChosen, sendMessage } = useChatActions();
+  const isBusy = useChatBusy();
+  // Wybrana inna pozycja idzie jako następna wiadomość; ta karta zostaje, a jej odpowiedzi są już zużyte.
+  const [pickedPosition, setPickedPosition] = useState<string>();
   const { create, creating } = useCreateExercise();
   const { preference } = useChatMode();
   const useAi = preference.useAi;
@@ -271,6 +275,20 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
         ) : undefined
       }
     >
+      {spec.positionOptions && spec.positionOptions.length > 0 && (
+        <div data-testid={`${testId}-position`}>
+          <QuickReplies
+            options={spec.positionOptions}
+            chosen={pickedPosition}
+            disabled={isBusy}
+            testId={`${testId}-position`}
+            onPick={(option) => {
+              setPickedPosition(option);
+              sendMessage(option);
+            }}
+          />
+        </div>
+      )}
       <form
         id={`${testId}-form`}
         noValidate

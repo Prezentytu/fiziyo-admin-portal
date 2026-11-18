@@ -16,6 +16,8 @@ export type NavigateRoute = keyof typeof NAVIGATE_ROUTES;
 
 const NAVIGATE_ROUTE_KEYS = Object.keys(NAVIGATE_ROUTES) as [NavigateRoute, ...NavigateRoute[]];
 export const MAX_CLARIFY_OPTIONS = 4;
+/** Inne pozycje wyjściowe pod kartą nowego ćwiczenia; backend daje najwyżej tyle (`ChatExercisePosition.MaxOptions`). */
+export const MAX_POSITION_OPTIONS = 3;
 const MAX_IDS = 20;
 
 export type ChatViewSpec =
@@ -51,6 +53,11 @@ export type ChatViewSpec =
       component: 'CreateExercise';
       name?: string;
       description?: string;
+      /**
+       * Other starting positions, when the assistant assumed one because the therapist gave only the
+       * name (the reply above the card names it and asks „Inna pozycja?”). A click sends the answer.
+       */
+      positionOptions?: string[];
       /** Only from the thread itself: the set draft the new exercise goes back to. */
       addToSet?: SetDraftReturn;
     };
@@ -100,6 +107,13 @@ export const UNSUPPORTED_SPEC: ChatViewSpec = {
   options: ['Utwórz zestaw', 'Pokaż, kto nie ćwiczy', 'Dodaj pacjenta'],
 };
 
+function cleanOptions(options: readonly string[] | null | undefined, limit: number): string[] {
+  return (options ?? [])
+    .map((option) => option.trim())
+    .filter(Boolean)
+    .slice(0, limit);
+}
+
 /**
  * Turns whatever the dispatcher returned into one renderable card. A spec missing the data
  * its card needs degrades to the closest card that can still help, never to free text.
@@ -142,13 +156,17 @@ export function toChatViewSpec(input: unknown): ChatViewSpec {
     }
     case 'AddPatient':
       return { component: 'AddPatient', name: raw.query };
-    case 'CreateExercise':
-      return { component: 'CreateExercise', name: raw.query, description: raw.note };
+    case 'CreateExercise': {
+      const positionOptions = cleanOptions(raw.options, MAX_POSITION_OPTIONS);
+      return {
+        component: 'CreateExercise',
+        name: raw.query,
+        description: raw.note,
+        ...(positionOptions.length > 0 ? { positionOptions } : {}),
+      };
+    }
     case 'Clarify': {
-      const options = (raw.options ?? [])
-        .map((option) => option.trim())
-        .filter(Boolean)
-        .slice(0, MAX_CLARIFY_OPTIONS);
+      const options = cleanOptions(raw.options, MAX_CLARIFY_OPTIONS);
       if (!raw.question) return UNSUPPORTED_SPEC;
       const choices: ClarifyChoice[] = (raw.choices ?? [])
         .map((choice) => ({ label: choice.label.trim(), setId: choice.setId, patientId: choice.patientId }))
