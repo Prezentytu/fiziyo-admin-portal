@@ -103,27 +103,42 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 
 ### 1. Autentykacja (auth-)
 
-| data-testid                            | Element              | Plik                |
-| -------------------------------------- | -------------------- | ------------------- |
-| `auth-login-btn`                       | Przycisk logowania   | `login/page.tsx`    |
-| `auth-register-link-btn`               | Link do rejestracji  | `login/page.tsx`    |
-| `auth-register-email-input`            | Email w rejestracji  | `register/page.tsx` |
-| `auth-register-password-input`         | Hasło                | `register/page.tsx` |
-| `auth-register-password-confirm-input` | Potwierdzenie hasła  | `register/page.tsx` |
-| `auth-register-firstname-input`        | Imię                 | `register/page.tsx` |
-| `auth-register-lastname-input`         | Nazwisko             | `register/page.tsx` |
-| `auth-register-phone-input`            | Telefon              | `register/page.tsx` |
-| `auth-register-company-input`          | Nazwa firmy          | `register/page.tsx` |
-| `auth-register-company-edit-btn`       | Edytuj nazwę firmy   | `register/page.tsx` |
-| `auth-register-step-indicator`         | Wskaźnik kroków      | `register/page.tsx` |
-| `auth-register-next-btn`               | Przycisk Dalej       | `register/page.tsx` |
-| `auth-register-submit-btn`             | Przycisk Załóż konto | `register/page.tsx` |
-| `auth-register-back-btn`               | Przycisk Wstecz      | `register/page.tsx` |
-| `auth-register-login-link`             | Link do logowania    | `register/page.tsx` |
-| `auth-register-error`                  | Komunikat błędu      | `register/page.tsx` |
-| `auth-verify-code-input`               | Kod weryfikacyjny    | `verify/page.tsx`   |
-| `auth-verify-submit-btn`               | Potwierdź kod        | `verify/page.tsx`   |
-| `auth-verify-resend-btn`               | Wyślij ponownie      | `verify/page.tsx`   |
+| data-testid                            | Element                          | Plik                |
+| -------------------------------------- | -------------------------------- | ------------------- |
+| `auth-login-btn`                       | Przycisk logowania               | `login/page.tsx`    |
+| `auth-register-link-btn`               | Link do rejestracji              | `login/page.tsx`    |
+| `auth-register-email-input`            | Email w rejestracji              | `register/page.tsx` |
+| `auth-register-password-input`         | Hasło                            | `register/page.tsx` |
+| `auth-register-password-confirm-input` | Potwierdzenie hasła              | `register/page.tsx` |
+| `auth-register-firstname-input`        | Imię                             | `register/page.tsx` |
+| `auth-register-lastname-input`         | Nazwisko                         | `register/page.tsx` |
+| `auth-register-phone-input`            | Telefon                          | `register/page.tsx` |
+| `auth-register-company-input`          | Nazwa firmy                      | `register/page.tsx` |
+| `auth-register-company-edit-btn`       | Edytuj nazwę firmy               | `register/page.tsx` |
+| `auth-register-step-indicator`         | Wskaźnik kroków                  | `register/page.tsx` |
+| `auth-register-next-btn`               | Przycisk Dalej                   | `register/page.tsx` |
+| `auth-register-submit-btn`             | Przycisk Załóż konto             | `register/page.tsx` |
+| `auth-register-back-btn`               | Przycisk Wstecz                  | `register/page.tsx` |
+| `auth-register-login-link`             | Link do logowania                | `register/page.tsx` |
+| `auth-register-error`                  | Komunikat błędu                  | `register/page.tsx` |
+| `auth-register-error-fix`              | Zmień hasło / Zmień adres e-mail | `register/page.tsx` |
+| `auth-register-email-banner-2`         | Konto dla: adres (krok 2)        | `register/page.tsx` |
+| `auth-register-email-banner-2-change`  | zmień (krok 2)                   | `register/page.tsx` |
+| `auth-register-email-banner-3`         | Konto dla: adres (krok 3)        | `register/page.tsx` |
+| `auth-register-email-banner-3-change`  | zmień (krok 3)                   | `register/page.tsx` |
+| `auth-verify-code-input`               | Kod weryfikacyjny                | `verify/page.tsx`   |
+| `auth-verify-submit-btn`               | Potwierdź kod                    | `verify/page.tsx`   |
+| `auth-verify-resend-btn`               | Wyślij ponownie                  | `verify/page.tsx`   |
+| `auth-verify-code-help`                | Podpowiedź: kod nie dochodzi     | `verify/page.tsx`   |
+| `auth-verify-code-help-mail`           | Mailto kontakt@fiziyo.pl         | `verify/page.tsx`   |
+| `auth-verify-email`                    | Adres, na który poszedł kod      | `verify/page.tsx`   |
+| `auth-verify-change-email-btn`         | Zmień adres                      | `verify/page.tsx`   |
+| `auth-verify-email-form`               | Poprawka adresu                  | `verify/page.tsx`   |
+| `auth-verify-email-input`              | Poprawny adres email             | `verify/page.tsx`   |
+| `auth-verify-email-error`              | Błąd poprawki adresu             | `verify/page.tsx`   |
+| `auth-verify-email-save-btn`           | Wyślij kod na ten adres          | `verify/page.tsx`   |
+| `auth-verify-email-cancel-btn`         | Anuluj poprawkę                  | `verify/page.tsx`   |
+| `auth-verify-email-changed`            | Kod na nowy adres                | `verify/page.tsx`   |
 
 ### 2. Nawigacja (nav-)
 
