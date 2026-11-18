@@ -2,6 +2,8 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { ExerciseParametersFields } from '../ExerciseParametersFields';
+import { fieldHelpToText } from '@/utils/fieldHelp';
+
 import { getTimerModeDescription } from '../timerModeCopy';
 
 const BASE_VALUES = {
@@ -37,7 +39,7 @@ describe('ExerciseParametersFields timer badge', () => {
     expect(screen.getByTestId('exercise-param-mode-indicator')).toHaveTextContent('Timer w aplikacji');
     expect(screen.getByTestId('exercise-param-mode-indicator')).toHaveAttribute(
       'aria-label',
-      getTimerModeDescription(true)
+      fieldHelpToText(getTimerModeDescription(true))
     );
   });
 });

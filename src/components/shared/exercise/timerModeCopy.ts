@@ -1,9 +1,17 @@
+import type { FieldHelp } from '@/utils/fieldHelp';
+
 export function getTimerModeLabel(isTimeBased: boolean): string {
   return isTimeBased ? 'Timer w aplikacji' : 'Timer wyłączony';
 }
 
-export function getTimerModeDescription(isTimeBased: boolean): string {
+export function getTimerModeDescription(isTimeBased: boolean): FieldHelp {
   return isTimeBased
-    ? 'Czas powtórzenia ma wartość, więc aplikacja pacjenta odlicza sekundy przy każdym powtórzeniu.'
-    : 'Czas powtórzenia jest pusty, więc pacjent ćwiczy bez odliczania sekund. Wpisz sekundy w polu Czas powtórzenia, aby włączyć timer.';
+    ? {
+        summary: 'Aplikacja pacjenta odlicza sekundy przy każdym powtórzeniu.',
+        points: [{ term: 'Wyłączenie', text: 'wyczyść pole „Czas powtórzenia”.' }],
+      }
+    : {
+        summary: 'Czas powtórzenia jest pusty, więc pacjent ćwiczy bez odliczania.',
+        points: [{ term: 'Włączenie', text: 'wpisz sekundy w polu „Czas powtórzenia”.' }],
+      };
 }

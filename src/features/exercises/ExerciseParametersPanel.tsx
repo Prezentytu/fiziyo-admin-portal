@@ -11,12 +11,13 @@ import {
   FileText,
   Volume2,
   Move,
-  Info,
   Activity,
   Package,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { FieldHelpTooltip } from '@/components/shared/FieldHelpTooltip';
+import type { FieldHelpInput } from '@/utils/fieldHelp';
 import { cn } from '@/lib/utils';
 import { buildExerciseParameterGroups } from './utils/buildExerciseParameterGroups';
 import type { ExerciseParameterItem } from './utils/buildExerciseParameterGroups';
@@ -42,7 +43,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
 export interface ExerciseParameterSummaryStat {
   label: string;
   value: string;
-  tooltip: string;
+  tooltip: FieldHelpInput;
 }
 
 interface ExerciseParametersPanelProps {
@@ -85,21 +86,12 @@ export function ExerciseParametersPanel({
           >
             {item.label}
           </span>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                className="ml-auto inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full text-muted-foreground/50 transition-colors hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
-                aria-label={`Informacja: ${item.label}`}
-                data-testid={`exercise-param-${item.key}-info`}
-              >
-                <Info className="h-3 w-3" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="max-w-xs text-xs">
-              {item.tooltip}
-            </TooltipContent>
-          </Tooltip>
+          <FieldHelpTooltip
+            label={item.label}
+            help={item.help}
+            testId={`exercise-param-${item.key}-info`}
+            className="ml-auto"
+          />
         </div>
         <p
           className={cn(
@@ -132,21 +124,11 @@ export function ExerciseParametersPanel({
               >
                 <div className="flex items-center gap-1">
                   <span className="text-xs font-medium text-muted-foreground">{summaryStat.label}</span>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        className="inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full text-muted-foreground/50 transition-colors hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
-                        aria-label={`Informacja: ${summaryStat.label}`}
-                        data-testid="exercise-param-summary-stat-info"
-                      >
-                        <Info className="h-3 w-3" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-xs text-xs">
-                      {summaryStat.tooltip}
-                    </TooltipContent>
-                  </Tooltip>
+                  <FieldHelpTooltip
+                    label={summaryStat.label}
+                    help={summaryStat.tooltip}
+                    testId="exercise-param-summary-stat-info"
+                  />
                 </div>
                 <p className="text-xl font-bold leading-tight tabular-nums text-foreground">
                   {summaryStat.value}

@@ -1,3 +1,4 @@
+import type { FieldHelp } from '@/utils/fieldHelp';
 import {
   EXERCISE_FIELD_METADATA,
   EMPTY_NUMERIC_VALUE,
@@ -8,7 +9,7 @@ import type { ExerciseFieldKey, ExerciseFieldValueSource } from '@/components/sh
 export interface ExerciseParameterItem {
   key: ExerciseFieldKey;
   label: string;
-  tooltip: string;
+  help: FieldHelp;
   iconKey: string;
   value: string;
   isEmpty: boolean;
@@ -40,7 +41,7 @@ function buildItems(
     return {
       key,
       label: metadata.label,
-      tooltip: metadata.tooltip,
+      help: metadata.help,
       iconKey: metadata.iconKey ?? 'time',
       value,
       isEmpty: raw === null,

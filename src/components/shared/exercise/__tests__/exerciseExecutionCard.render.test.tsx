@@ -168,8 +168,8 @@ describe('ExerciseExecutionCard inline read-only source info', () => {
       />
     );
 
-    expect(screen.getAllByTitle(/pełnych serii/).length).toBeGreaterThan(0);
-    expect(screen.getAllByTitle(/powtórzeń pacjent wykonuje/).length).toBeGreaterThan(0);
+    expect(screen.getAllByTitle(/Ile serii pacjent wykonuje/).length).toBeGreaterThan(0);
+    expect(screen.getAllByTitle(/Ile powtórzeń pacjent robi/).length).toBeGreaterThan(0);
     expect(screen.getAllByTitle(/łączny czas wykonania ćwiczenia/).length).toBeGreaterThan(0);
   });
 

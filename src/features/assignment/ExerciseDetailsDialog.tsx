@@ -1,12 +1,12 @@
 'use client';
 
 import Image from 'next/image';
-import { Info } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { FieldHelpTooltip } from '@/components/shared/FieldHelpTooltip';
 import { VideoEmbed } from '@/components/shared/VideoEmbed';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { canOpenVideoOutsidePortal } from '@/utils/videoEmbed';
@@ -46,21 +46,7 @@ function FieldInfoItem({
       <div className="flex items-center gap-2">
         <p className="text-xs font-medium text-muted-foreground">{field.label}</p>
         <TooltipProvider delayDuration={150}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                className="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground"
-                aria-label={`Informacja o polu: ${field.label}`}
-                data-testid={`assign-set-preview-exercise-details-help-${field.key}`}
-              >
-                <Info className="h-3.5 w-3.5" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="max-w-xs text-xs">
-              {field.tooltip}
-            </TooltipContent>
-          </Tooltip>
+          <FieldHelpTooltip label={field.label} help={field.help} testId={`assign-set-preview-exercise-details-help-${field.key}`} />
         </TooltipProvider>
       </div>
       <p className="mt-1 text-sm text-foreground whitespace-pre-wrap">{value}</p>
