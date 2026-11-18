@@ -40,6 +40,15 @@ describe('toPendingOfferViews', () => {
     expect(countAdoptable([view])).toBe(0);
   });
 
+  it('treats a transfer like adopt: the exercise lands in the clinic library', () => {
+    const [view] = toPendingOfferViews([offer({ mode: 'TRANSFER' })]);
+
+    expect(view.mode).toBe('TRANSFER');
+    expect(countAdoptable([view])).toBe(1);
+    expect(decisionCopy('ACCEPT', 'TRANSFER').confirmLabel).toBe('Dodaj');
+    expect(decisionCopy('REJECT', 'TRANSFER').title).toBe('Odrzuć propozycję');
+  });
+
   it('picks the first non-empty image and falls back to the clinical description', () => {
     const [view] = toPendingOfferViews([
       offer({
