@@ -2,6 +2,10 @@ import type { SetDraftReturn } from './setDraft';
 import { z } from 'zod';
 
 import type { DraftDose } from './setDraft';
+import {
+  PATIENT_OTHER_THERAPIST_NOTICE,
+  PATIENT_UNDER_OTHER_THERAPIST_MESSAGE,
+} from '@/features/patients/utils/patientCareAccess';
 
 export const NAVIGATE_ROUTES = {
   patients: { href: '/patients', label: 'Pacjenci' },
@@ -169,7 +173,12 @@ export function toChatViewSpec(input: unknown): ChatViewSpec {
 
 export const MAX_REPLY_LENGTH = 1200;
 
+/** Codes the backend may put in `spec.notice` next to a `Message`; unknown codes are ignored. */
+export type ChatNotice = typeof PATIENT_OTHER_THERAPIST_NOTICE;
+
 export interface DispatchReply {
+  /** The text is a refusal the server wrote itself (no model, no card): shown as a notice, not as chat prose. */
+  notice?: ChatNotice;
   /** Plain text under which the card renders; React escapes it, so model text never becomes markup. */
   text?: string;
   spec?: ChatViewSpec;
@@ -183,6 +192,12 @@ export function parseDispatchReply(rawSpec: unknown, rawText: unknown): Dispatch
   const text = typeof rawText === 'string' ? rawText.trim().slice(0, MAX_REPLY_LENGTH) || undefined : undefined;
   const component =
     typeof rawSpec === 'object' && rawSpec !== null ? (rawSpec as { component?: unknown }).component : undefined;
-  if (component === 'Message') return text ? { text } : { spec: UNSUPPORTED_SPEC };
+  if (component === 'Message') {
+    const isOtherTherapist = (rawSpec as { notice?: unknown }).notice === PATIENT_OTHER_THERAPIST_NOTICE;
+    if (isOtherTherapist) {
+      return { text: text ?? PATIENT_UNDER_OTHER_THERAPIST_MESSAGE, notice: PATIENT_OTHER_THERAPIST_NOTICE };
+    }
+    return text ? { text } : { spec: UNSUPPORTED_SPEC };
+  }
   return { text, spec: toChatViewSpec(rawSpec) };
 }
