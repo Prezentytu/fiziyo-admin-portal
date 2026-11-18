@@ -18,6 +18,14 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 
 ## Wpisy
 
+### 2026-11-18 - Allowlista testid z numerem linii czerwieniła CI bez nowego elementu
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: Dopisanie linii nad starym elementem bez `data-testid` (`CreateExerciseWizard.tsx` w PR 300, `SettingsTab.tsx` na `main`) czerwieniło „Data-testid guard”.
+- **Przyczyna**: Klucz allowlisty `plik:linia:tag` zmieniał się przy każdym przesunięciu linii.
+- **Rozwiązanie**: Allowlista to licznik per `plik:tag`; guard pada, gdy licznik rośnie, a `--update-allowlist` odmawia podniesienia bez `--allow-increase`.
+- **Reguła**: Baza długu w guardzie liczy wystąpienia per plik, nie trzyma pozycji. [egzekwowane: scripts/check-testid-coverage.test.mjs]
+
 ### 2026-11-16 - Kreator edycji planu wracał do kroku 1 po odświeżeniu cache
 
 - **Kategoria**: `React`
@@ -270,9 +278,9 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 
 - **Kategoria**: `Testing` | `Build/Tooling`
 - **Problem**: PR z importem i formatowaniem `hasParams` wywalił `check:testids` na `chat/ExerciseCard` Button, który już miał `data-testid`.
-- **Przyczyna**: Guard kończył opening tag na pierwszym `>` (`onClick={() =>}`), więc testid w kolejnej linii był niewidoczny; allowlista trzyma numer linii, więc +2 linie dały „nowy” wpis.
+- **Przyczyna**: Guard kończył opening tag na pierwszym `>` (`onClick={() =>}`), więc testid w kolejnej linii był niewidoczny; a ówczesna allowlista z numerem linii dała z +2 linii „nowy” wpis.
 - **Rozwiązanie**: `data-testid` jako pierwszy atrybut; parser pomija `>` wewnątrz `{...}`; regresja w `scripts/check-testid-coverage.test.mjs`.
-- **Reguła**: Nie regeneruj allowlisty po samym przesunięciu linii. Guard ma widzieć testid mimo `=>`; trzymaj `data-testid` przed handlerami z `=>`. [egzekwowane: scripts/check-testid-coverage.test.mjs]
+- **Reguła**: Guard ma widzieć testid mimo `=>`; trzymaj `data-testid` przed handlerami z `=>`. [egzekwowane: scripts/check-testid-coverage.test.mjs]
 
 ### 2026-09-14 - Hook klasyfikuje każdy segment `&&` osobno
 
