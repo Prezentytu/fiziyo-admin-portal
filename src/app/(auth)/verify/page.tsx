@@ -11,8 +11,12 @@ import { Label } from '@/components/ui/label';
 import { SUPPORT_EMAIL } from '@/lib/support';
 import { CODE_HELP_DELAY_S, CODE_HELP_MAILTO_URL } from '@/lib/auth/verificationCodeHelp';
 import { parseRegistrationError } from '@/lib/auth/registrationErrors';
+import { rememberRegistrationAttempt, reportRegistrationStep } from '@/lib/registrationAttempts';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Rejestracja w portalu zawsze zakłada konto gabinetu (isCompanyAccount: true w register/page.tsx).
+const ACCOUNT_KIND = 'company' as const;
 
 export default function VerifyEmailPage() {
   const { signUp, setActive, isLoaded } = useSignUp();
@@ -65,6 +69,13 @@ export default function VerifyEmailPage() {
         });
 
         if (result.status === 'complete') {
+          reportRegistrationStep({
+            signUpId: signUp.id,
+            step: 'code_verified',
+            accountKind: ACCOUNT_KIND,
+            email,
+          });
+          if (signUp.id) rememberRegistrationAttempt({ signUpId: signUp.id, accountKind: ACCOUNT_KIND });
           await setActive({ session: result.createdSessionId });
           router.replace('/finalizing');
         } else {
@@ -76,6 +87,20 @@ export default function VerifyEmailPage() {
           errors?: Array<{ code?: string; message?: string }>;
         };
         const errorCode = error?.errors?.[0]?.code;
+
+        // Tylko zły albo wygasły kod; błąd setActive po `complete` to nie próba kodu.
+        if (
+          errorCode === 'form_code_incorrect' ||
+          errorCode === 'verification_failed' ||
+          errorCode === 'verification_expired'
+        ) {
+          reportRegistrationStep({
+            signUpId: signUp.id,
+            step: 'code_error',
+            accountKind: ACCOUNT_KIND,
+            email,
+          });
+        }
 
         switch (errorCode) {
           case 'form_code_incorrect':
@@ -95,7 +120,7 @@ export default function VerifyEmailPage() {
         setLoading(false);
       }
     },
-    [code, isLoaded, signUp, setActive, router]
+    [code, email, isLoaded, signUp, setActive, router]
   );
 
   const handleResendCode = async () => {
@@ -110,6 +135,12 @@ export default function VerifyEmailPage() {
       setResendSuccess(false);
 
       await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
+      reportRegistrationStep({
+        signUpId: signUp.id,
+        step: 'code_resent',
+        accountKind: ACCOUNT_KIND,
+        email,
+      });
       setResendSuccess(true);
       setEmailChangedTo(null);
       setCodeSentCount((count) => count + 1);
@@ -153,6 +184,12 @@ export default function VerifyEmailPage() {
       const updated = await signUp.update({ emailAddress: next });
       await updated.prepareEmailAddressVerification({ strategy: 'email_code' });
       const sentTo = updated.emailAddress ?? next;
+      reportRegistrationStep({
+        signUpId: updated.id,
+        step: 'code_resent',
+        accountKind: ACCOUNT_KIND,
+        email: sentTo,
+      });
       setCorrectedEmail(sentTo);
       setEmailChangedTo(sentTo);
       setEditingEmail(false);

@@ -11,6 +11,7 @@ import { PhoneInput } from '@/components/ui/phone-input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { parseRegistrationError, type RegistrationErrorView } from '@/lib/auth/registrationErrors';
+import { reportRegistrationStep } from '@/lib/registrationAttempts';
 
 interface FormData {
   email: string;
@@ -229,6 +230,12 @@ export default function RegisterPage() {
       });
 
       await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
+      reportRegistrationStep({
+        signUpId: signUp.id,
+        step: 'code_sent',
+        accountKind: 'company',
+        email: signUp.emailAddress,
+      });
       router.push('/verify');
     } catch (err) {
       console.error('Registration error:', err);

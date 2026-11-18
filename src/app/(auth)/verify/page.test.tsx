@@ -10,6 +10,12 @@ const mocks = vi.hoisted(() => ({
   update: vi.fn(),
   replace: vi.fn(),
   setActive: vi.fn(),
+  report: vi.fn(),
+}));
+
+vi.mock('@/lib/registrationAttempts', () => ({
+  reportRegistrationStep: mocks.report,
+  rememberRegistrationAttempt: vi.fn(),
 }));
 
 vi.mock('@clerk/nextjs/legacy', () => ({
@@ -17,6 +23,7 @@ vi.mock('@clerk/nextjs/legacy', () => ({
     isLoaded: true,
     setActive: mocks.setActive,
     signUp: {
+      id: 'sua_2abcdefghijk',
       emailAddress: 'gabinet.ruch@poczta.pl',
       update: mocks.update,
       attemptEmailAddressVerification: mocks.attempt,
@@ -178,5 +185,77 @@ describe('verify page: zły kod', () => {
 
     expect(screen.getByText('Nieprawidłowy kod weryfikacyjny')).toBeInTheDocument();
     expect(screen.getByTestId('auth-verify-code-help')).toBeInTheDocument();
+  });
+});
+
+describe('verify page: telemetria kroków rejestracji', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  });
+
+  afterEach(cleanup);
+
+  const changeEmailTo = async (next: string) => {
+    fireEvent.click(screen.getByTestId('auth-verify-change-email-btn'));
+    fireEvent.change(screen.getByTestId('auth-verify-email-input'), { target: { value: next } });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('auth-verify-email-save-btn'));
+    });
+  };
+
+  it('verification_failed to zły kod: zgłasza code_error', async () => {
+    mocks.attempt.mockRejectedValue({ errors: [{ code: 'verification_failed' }] });
+    render(<VerifyEmailPage />);
+
+    fireEvent.change(screen.getByTestId('auth-verify-code-input'), { target: { value: '000000' } });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('auth-verify-submit-btn'));
+    });
+
+    expect(mocks.report).toHaveBeenCalledWith({
+      signUpId: 'sua_2abcdefghijk',
+      step: 'code_error',
+      accountKind: 'company',
+      email: 'gabinet.ruch@poczta.pl',
+    });
+  });
+
+  it('poprawka adresu zgłasza code_resent z nowym adresem', async () => {
+    mocks.update.mockResolvedValue({
+      id: 'sua_2abcdefghijk',
+      emailAddress: 'gabinet@poczta.pl',
+      prepareEmailAddressVerification: vi.fn().mockResolvedValue({}),
+    });
+    render(<VerifyEmailPage />);
+
+    await changeEmailTo('gabinet@poczta.pl');
+
+    expect(mocks.report).toHaveBeenCalledWith({
+      signUpId: 'sua_2abcdefghijk',
+      step: 'code_resent',
+      accountKind: 'company',
+      email: 'gabinet@poczta.pl',
+    });
+  });
+
+  it('nowy kod po poprawce adresu zgłasza poprawiony adres, nie stary z hooka', async () => {
+    mocks.update.mockResolvedValue({
+      id: 'sua_2abcdefghijk',
+      emailAddress: 'gabinet@poczta.pl',
+      prepareEmailAddressVerification: vi.fn().mockResolvedValue({}),
+    });
+    mocks.prepare.mockResolvedValue({});
+    render(<VerifyEmailPage />);
+
+    await changeEmailTo('gabinet@poczta.pl');
+    mocks.report.mockClear();
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('auth-verify-resend-btn'));
+    });
+
+    expect(mocks.report).toHaveBeenCalledWith(
+      expect.objectContaining({ step: 'code_resent', email: 'gabinet@poczta.pl' })
+    );
   });
 });

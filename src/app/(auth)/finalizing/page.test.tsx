@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   getToken: vi.fn(),
   replace: vi.fn(),
   exchangeClerkToken: vi.fn(),
+  reportRegistrationStep: vi.fn(),
 }));
 
 vi.mock('@clerk/nextjs', () => ({
@@ -21,6 +22,13 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/services/tokenExchangeService', () => ({
   tokenExchangeService: { exchangeClerkToken: mocks.exchangeClerkToken },
 }));
+
+vi.mock('@/lib/registrationAttempts', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/registrationAttempts')>()),
+  reportRegistrationStep: mocks.reportRegistrationStep,
+}));
+
+vi.mock('@/lib/auth/jwtClaims', () => ({ getUserRoleFromToken: () => 'owner' }));
 
 describe('finalizing page', () => {
   beforeEach(() => {
@@ -43,5 +51,38 @@ describe('finalizing page', () => {
     });
 
     expect(mocks.getToken).toHaveBeenCalledTimes(2);
+  });
+
+  it('zgłasza finalizing_timeout po czasie oczekiwania i completed po pojawieniu się konta', async () => {
+    sessionStorage.setItem(
+      'REGISTRATION_ATTEMPT',
+      JSON.stringify({ signUpId: 'sua_2abcDEF123456', accountKind: 'company' })
+    );
+    mocks.getToken.mockResolvedValue(null);
+
+    render(<FinalizingRegistrationPage />);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000 * 30);
+    });
+
+    expect(mocks.reportRegistrationStep).toHaveBeenCalledTimes(1);
+    expect(mocks.reportRegistrationStep).toHaveBeenCalledWith({
+      signUpId: 'sua_2abcDEF123456',
+      accountKind: 'company',
+      step: 'finalizing_timeout',
+    });
+
+    mocks.getToken.mockResolvedValue('clerk-token');
+    mocks.exchangeClerkToken.mockResolvedValue({ access_token: 'backend-token' });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+
+    expect(mocks.reportRegistrationStep).toHaveBeenLastCalledWith({
+      signUpId: 'sua_2abcDEF123456',
+      accountKind: 'company',
+      step: 'completed',
+    });
+    expect(sessionStorage.getItem('REGISTRATION_ATTEMPT')).toBeNull();
   });
 });
