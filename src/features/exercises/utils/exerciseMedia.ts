@@ -50,8 +50,8 @@ export function insertGeneratedImage<T>(files: T[], file: T, phase: ExerciseImag
   return phase === 'end' ? [...files, file] : [file, ...files];
 }
 
-/** Ćwiczenie ma najwyżej tyle zdjęć; backend i panel trzymają ten sam limit. */
-export const MAX_EXERCISE_IMAGES = 5;
+/** Ćwiczenie ma w panelu najwyżej tyle zdjęć (limit panelu, backend go nie wymusza). */
+export const MAX_EXERCISE_IMAGES = 15;
 
 /**
  * Podpowiedź przy pełnej galerii: bez niej „Dodaj zdjęcie” i „Generuj AI” są po prostu wyszarzone,

@@ -86,6 +86,6 @@ describe('imageLimitHint', () => {
   });
 
   it('przy pełnej galerii mówi, dlaczego dodawanie i generowanie są wyłączone i co zrobić', () => {
-    expect(imageLimitHint(MAX_EXERCISE_IMAGES)).toBe('Masz 5 z 5 zdjęć. Usuń jedno, żeby dodać albo wygenerować nowe.');
+    expect(imageLimitHint(MAX_EXERCISE_IMAGES)).toBe('Masz 15 z 15 zdjęć. Usuń jedno, żeby dodać albo wygenerować nowe.');
   });
 });
