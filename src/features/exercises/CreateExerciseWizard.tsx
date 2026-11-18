@@ -64,6 +64,8 @@ import { useExerciseImageGeneration } from './useExerciseImageGeneration';
 import { ImageStylePicker } from './ImageStylePicker';
 import { formatDurationPolish } from '@/utils/durationPolish';
 import { calculateExerciseTotalSeconds } from '@/utils/exerciseTime';
+import { isV33ExerciseRecord } from '@/utils/exerciseRecordVersion';
+import { NEW_EXERCISE_SCHEMA_VERSION } from './utils/newExerciseV33';
 import {
   findSimilarExercises,
   prepareExerciseNames,
@@ -95,6 +97,12 @@ import {
 } from './utils/aiFullExercise';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import type { ExerciseCoreDraft } from './useExerciseEditorForm';
+
+/**
+ * Kreator zapisuje nowe ćwiczenie w wersji `NEW_EXERCISE_SCHEMA_VERSION` (3.3), więc „naprzemiennie” liczy się już
+ * na stronę: czas w nagłówku i podpowiedź strony muszą się zgadzać z tym, co pokaże edycja po zapisie.
+ */
+const NEW_EXERCISE_ALTERNATING_PER_SIDE = isV33ExerciseRecord({ schemaVersion: NEW_EXERCISE_SCHEMA_VERSION });
 
 // ============================================================
 // QUICK PRESETS (Unified - shows all params)
@@ -1125,6 +1133,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
         preparationTime: data.preparationTime ?? undefined,
         tempo: data.tempo || undefined,
         side: data.exerciseSide,
+        alternatingPerSide: NEW_EXERCISE_ALTERNATING_PER_SIDE,
       }),
     [
       data.sets,
@@ -2133,6 +2142,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
               <ExerciseParametersEditor
                 variant="create"
                 exerciseType="draft"
+                alternatingPerSide={NEW_EXERCISE_ALTERNATING_PER_SIDE}
                 core={parametersCore}
                 isDirtyField={() => false}
                 onNumberChange={(field, value) => {
