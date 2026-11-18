@@ -49,3 +49,15 @@ export function nextGeneratedImagePhase(existingCount: number): ExerciseImagePha
 export function insertGeneratedImage<T>(files: T[], file: T, phase: ExerciseImagePhase | undefined): T[] {
   return phase === 'end' ? [...files, file] : [file, ...files];
 }
+
+/** Ćwiczenie ma w panelu najwyżej tyle zdjęć (limit panelu, backend go nie wymusza). */
+export const MAX_EXERCISE_IMAGES = 15;
+
+/**
+ * Podpowiedź przy pełnej galerii: bez niej „Dodaj zdjęcie” i „Generuj AI” są po prostu wyszarzone,
+ * a fizjoterapeuta myśli, że generowania w edycji nie ma (zgłoszenie z DEV 18.11).
+ */
+export function imageLimitHint(imageCount: number): string | null {
+  if (imageCount < MAX_EXERCISE_IMAGES) return null;
+  return `Masz ${MAX_EXERCISE_IMAGES} z ${MAX_EXERCISE_IMAGES} zdjęć. Usuń jedno, żeby dodać albo wygenerować nowe.`;
+}

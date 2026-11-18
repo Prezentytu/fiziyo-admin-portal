@@ -47,3 +47,55 @@ export function formatExerciseSideLabel(side?: string | null, alternatingPerSide
   if (normalized === 'alternating' && alternatingPerSide) return `${EXERCISE_SIDE_LABELS.alternating}, na każdą stronę`;
   return EXERCISE_SIDE_LABELS[normalized as keyof typeof EXERCISE_SIDE_LABELS] ?? side ?? EXERCISE_SIDE_LABELS.none;
 }
+
+/** Suma powtórzeń w serii, gdy liczba w polu jest na stronę, oraz kolejność stron słowami. */
+export interface RepsPerSideSummary {
+  total: number;
+  order: string;
+}
+
+const positiveCount = (reps?: number | null): number => (reps != null && reps > 0 ? Math.floor(reps) : 0);
+
+/**
+ * `null`, gdy liczba w polu „Powtórzenia” nie jest na stronę: brak stron, jedna strona albo
+ * „naprzemiennie” w rekordzie bez wersji (tam liczba jest łączna).
+ */
+export function summarizeRepsPerSide(
+  reps?: number | null,
+  side?: string | null,
+  alternatingPerSide = false
+): RepsPerSideSummary | null {
+  const count = positiveCount(reps);
+  if (count === 0) return null;
+  const normalized = side?.trim().toLowerCase();
+  if (normalized === 'both') {
+    return { total: count * 2, order: `najpierw ${count} lewa, potem ${count} prawa` };
+  }
+  if (normalized === 'alternating' && alternatingPerSide) {
+    return { total: count * 2, order: `${count} lewa i ${count} prawa naprzemiennie` };
+  }
+  return null;
+}
+
+/** Druga linijka opcji na liście „Strona ciała”: co wpisana liczba powtórzeń znaczy przy tej stronie. */
+export function describeSideOption(
+  optionSide: string,
+  reps?: number | null,
+  alternatingPerSide = false
+): string | null {
+  const count = positiveCount(reps);
+  if (count === 0) return null;
+  const summary = summarizeRepsPerSide(count, optionSide, alternatingPerSide);
+  if (summary) {
+    const order = optionSide === 'alternating' ? `${count} lewa i ${count} prawa` : summary.order;
+    return `${order} · łącznie ${summary.total}`;
+  }
+  if (optionSide === 'alternating') return `${count} w serii, łącznie dla obu stron`;
+  return `${count} w serii`;
+}
+
+/** Podpowiedź pola „Powtórzenia”, gdy liczba jest na stronę. */
+export const REPS_PER_SIDE_HELP: FieldHelp = {
+  summary: 'Ile powtórzeń pacjent robi jedną stroną w serii.',
+  example: '4 na stronę = 4 lewa i 4 prawa, razem 8 w serii.',
+};

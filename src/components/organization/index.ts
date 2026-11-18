@@ -13,6 +13,7 @@ export { AssignToClinicDialog } from './AssignToClinicDialog';
 
 // Settings
 export { SettingsTab } from './SettingsTab';
+export { PatientVisibilitySettings } from './PatientVisibilitySettings';
 export { ExerciseVisibilitySettings } from './ExerciseVisibilitySettings';
 export { CatalogBundleImportCard } from './CatalogBundleImportCard';
 

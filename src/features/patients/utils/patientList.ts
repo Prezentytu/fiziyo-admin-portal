@@ -98,3 +98,50 @@ export function settledSearchResultsCount(input: SearchResultsInput): number | n
   }
   return input.count;
 }
+
+export type PatientListFilter = 'my' | 'all' | 'needs_attention' | 'subscription';
+
+interface PatientListCopyInput {
+  filter: PatientListFilter;
+  /** Therapist or staff in a clinic that shows them only patients in their care. */
+  isRestricted: boolean;
+}
+
+/**
+ * Empty-state copy of the patient list. A restricted therapist cannot take patients over from „Wszyscy”
+ * and sees no clinic-wide list, so the copy must not send them there.
+ */
+export function patientListEmptyState({ filter, isRestricted }: PatientListCopyInput): { title: string; description: string } {
+  switch (filter) {
+    case 'my':
+      return {
+        title: 'Nie masz jeszcze pacjentów',
+        description: isRestricted
+          ? 'Dodaj pierwszą osobę albo poproś właściciela lub administratora gabinetu o przypisanie pacjenta.'
+          : 'Dodaj pierwszą osobę albo przejmij opiekę w zakładce „Wszyscy”.',
+      };
+    case 'needs_attention':
+      return { title: 'Wszyscy Twoi pacjenci ćwiczą', description: 'Nikt nie ma przerwy dłuższej niż 1 dzień.' };
+    case 'subscription':
+      return {
+        title: 'Wszyscy mają aktywne Premium',
+        description: 'Nikomu z Twoich pacjentów nie kończy się dostęp w tym tygodniu.',
+      };
+    default:
+      return isRestricted
+        ? {
+            title: 'Nie masz jeszcze pacjentów pod opieką',
+            description:
+              'Widzisz tylko pacjentów pod swoją opieką. Pozostałych przypisuje właściciel albo administrator gabinetu.',
+          }
+        : { title: 'Brak pacjentów w organizacji', description: 'Dodaj pierwszego pacjenta do organizacji' };
+  }
+}
+
+/** Header line under „Pacjenci”. The clinic total would be a wrong number for a restricted therapist. */
+export function patientListSubtitle(input: { myCount: number; totalCount: number; isRestricted: boolean }): string {
+  if (!input.isRestricted) return `${input.myCount} pod Twoją opieką · ${input.totalCount} w organizacji`;
+  return input.totalCount > input.myCount
+    ? `${input.myCount} pod Twoją opieką · ${input.totalCount} widocznych dla Ciebie`
+    : `${input.myCount} pod Twoją opieką`;
+}

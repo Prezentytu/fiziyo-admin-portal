@@ -256,7 +256,8 @@ export function useChatThread({ useAi, context, ready, scopeKey, getContextPatie
           knownPatientIds,
         });
         // Pytanie o ćwiczenia bez karty w odpowiedzi (nic nie pasuje): pomysły na nowe dla tej potrzeby.
-        const reply = withExerciseIdeas(trimmed, resolved);
+        // A refusal about a patient gets no card, so no exercise ideas either.
+        const reply = resolved.notice ? resolved : withExerciseIdeas(trimmed, resolved);
         if (threadEpochRef.current !== epoch) return;
         // AI questions count too: if the next dispatch fails, rules finish the command.
         const isUnsupported = reply.spec === UNSUPPORTED_SPEC;
@@ -279,6 +280,7 @@ export function useChatThread({ useAi, context, ready, scopeKey, getContextPatie
             source: reply.source,
             creditsUsed: reply.creditsUsed,
             fallbackReason: showFallback ? reply.fallbackReason : undefined,
+            ...(reply.notice ? { notice: reply.notice } : {}),
             createdAt: Date.now(),
           },
         ]);

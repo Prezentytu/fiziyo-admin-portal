@@ -2,6 +2,8 @@ import { z } from 'zod';
 
 import { isCardComponent, type ChatCardSpec } from './chatCards';
 import type { DispatchFailure } from './resolveReply';
+import type { ChatNotice } from './viewSpec';
+import { PATIENT_OTHER_THERAPIST_NOTICE } from '@/features/patients/utils/patientCareAccess';
 
 export type ChatThreadMessage =
   | { id: string; role: 'user'; text: string; attachmentName?: string; createdAt: number }
@@ -14,6 +16,8 @@ export type ChatThreadMessage =
       source: 'ai' | 'rules' | 'local';
       creditsUsed: number;
       fallbackReason?: DispatchFailure;
+      /** The text is a server refusal (patient led by another therapist), rendered as a notice. */
+      notice?: ChatNotice;
       /** Quick reply the therapist picked; the other replies under this message are spent. */
       chosen?: string;
       createdAt: number;
@@ -51,6 +55,7 @@ const messageSchema = z.discriminatedUnion('role', [
     source: z.enum(['ai', 'rules', 'local']),
     creditsUsed: z.number(),
     fallbackReason: z.enum(['unavailable', 'insufficient_credits', 'unauthorized']).optional(),
+    notice: z.literal(PATIENT_OTHER_THERAPIST_NOTICE).optional().catch(undefined),
     chosen: z.string().optional(),
     createdAt: z.number(),
   }),

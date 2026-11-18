@@ -36,6 +36,28 @@ describe('conversationStorageKey', () => {
 });
 
 describe('parseConversations', () => {
+  it('keeps the other-therapist notice of a stored reply and drops an unknown one without losing the message', () => {
+    const reply = { id: 'a2', role: 'assistant', text: 'Prowadzi go inny fizjoterapeuta.', source: 'ai', creditsUsed: 0, createdAt: 3 };
+    const raw = JSON.stringify([
+      {
+        id: 'c1',
+        title: 'Pacjent',
+        updatedAt: 5,
+        messages: [
+          { ...reply, notice: 'patient_other_therapist' },
+          { ...reply, id: 'a3', notice: 'something_new' },
+        ],
+      },
+    ]);
+
+    const [conversation] = parseConversations(raw);
+
+    expect(conversation.messages).toHaveLength(2);
+    expect(conversation.messages[0]).toMatchObject({ id: 'a2', notice: 'patient_other_therapist' });
+    expect(conversation.messages[1]).toMatchObject({ id: 'a3', text: 'Prowadzi go inny fizjoterapeuta.' });
+    expect(conversation.messages[1]).not.toHaveProperty('notice', 'something_new');
+  });
+
   it('drops broken messages and unknown cards one by one', () => {
     const raw = JSON.stringify([
       {

@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { getPatientAccess, settledSearchResultsCount, sortPatients } from './patientList';
+import {
+  getPatientAccess,
+  patientListEmptyState,
+  patientListSubtitle,
+  settledSearchResultsCount,
+  sortPatients,
+} from './patientList';
 
 const NOW = new Date(2026, 9, 15, 12, 0);
 
@@ -69,5 +75,33 @@ describe('settledSearchResultsCount', () => {
   it('reports the visible count once the list can be shown', () => {
     expect(settledSearchResultsCount(ready)).toBe(0);
     expect(settledSearchResultsCount({ ...ready, filtersByTherapist: false, therapistId: null, count: 3 })).toBe(3);
+  });
+});
+
+describe('patient list copy for a therapist who sees only own patients', () => {
+  it('does not send a restricted therapist to take patients over from „Wszyscy”', () => {
+    expect(patientListEmptyState({ filter: 'my', isRestricted: false }).description).toContain('przejmij opiekę');
+    const restricted = patientListEmptyState({ filter: 'my', isRestricted: true }).description;
+    expect(restricted).not.toContain('przejmij');
+    expect(restricted).toContain('właściciela lub administratora');
+  });
+
+  it('explains an empty „Wszyscy” instead of claiming the clinic has no patients', () => {
+    expect(patientListEmptyState({ filter: 'all', isRestricted: false }).title).toBe('Brak pacjentów w organizacji');
+    expect(patientListEmptyState({ filter: 'all', isRestricted: true })).toEqual({
+      title: 'Nie masz jeszcze pacjentów pod opieką',
+      description:
+        'Widzisz tylko pacjentów pod swoją opieką. Pozostałych przypisuje właściciel albo administrator gabinetu.',
+    });
+  });
+
+  it('shows the clinic total only to those who see the whole clinic', () => {
+    expect(patientListSubtitle({ myCount: 3, totalCount: 12, isRestricted: false })).toBe(
+      '3 pod Twoją opieką · 12 w organizacji'
+    );
+    expect(patientListSubtitle({ myCount: 3, totalCount: 3, isRestricted: true })).toBe('3 pod Twoją opieką');
+    expect(patientListSubtitle({ myCount: 3, totalCount: 4, isRestricted: true })).toBe(
+      '3 pod Twoją opieką · 4 widocznych dla Ciebie'
+    );
   });
 });

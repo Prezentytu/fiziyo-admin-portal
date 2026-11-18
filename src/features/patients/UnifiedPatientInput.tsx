@@ -29,6 +29,8 @@ import type { FindUserByEmailData, FindUserByPhoneData } from '@/graphql/types/u
 import type { OrganizationPatientsResponse } from '@/types/apollo';
 import { PatientInvitePanel } from './PatientInvitePanel';
 import { PATIENT_INVITE_REQUIRED, getGraphQLErrorCode, getGraphQLErrorMessage } from './utils/patientConsent';
+import { patientUnderOtherTherapistMessage } from './utils/patientCareAccess';
+import { PatientOtherTherapistNotice } from './PatientOtherTherapistNotice';
 
 // ============================================
 // TYPES
@@ -38,7 +40,12 @@ type ContactType = 'email' | 'phone' | 'unknown';
 type ViewState = 'search' | 'found' | 'form' | 'invite';
 
 /** `invite-required`: the contact belongs to an account outside the clinic, so only an invitation can add it. */
-export type CreatePatientOutcome = { status: 'created' } | { status: 'invite-required'; message: string } | { status: 'failed' };
+export type CreatePatientOutcome =
+  | { status: 'created' }
+  | { status: 'invite-required'; message: string }
+  /** The contact belongs to a clinic patient another therapist leads: no duplicate, the owner assigns. */
+  | { status: 'other-therapist'; message: string }
+  | { status: 'failed' };
 
 interface FoundUser {
   id: string;
@@ -168,6 +175,7 @@ export function UnifiedPatientInput({
   } | null>(null);
   const [invite, setInvite] = useState<{ email: string; reason: string } | null>(null);
   const [invitationSent, setInvitationSent] = useState(false);
+  const [otherTherapistNotice, setOtherTherapistNotice] = useState<string | null>(null);
 
   // Refs
   const contactInputRef = useRef<HTMLInputElement>(null);
@@ -213,14 +221,22 @@ export function UnifiedPatientInput({
   });
 
   // Query: search by email
-  const { data: emailData, loading: emailLoading } = useQuery<FindUserByEmailData>(FIND_USER_BY_EMAIL_QUERY, {
+  const {
+    data: emailData,
+    loading: emailLoading,
+    error: emailError,
+  } = useQuery<FindUserByEmailData>(FIND_USER_BY_EMAIL_QUERY, {
     variables: { email: submittedContact },
     skip: detectContactType(submittedContact) !== 'email' || !isValidEmail(submittedContact),
     fetchPolicy: 'network-only',
   });
 
   // Query: search by phone
-  const { data: phoneData, loading: phoneLoading } = useQuery<FindUserByPhoneData>(FIND_USER_BY_PHONE_QUERY, {
+  const {
+    data: phoneData,
+    loading: phoneLoading,
+    error: phoneError,
+  } = useQuery<FindUserByPhoneData>(FIND_USER_BY_PHONE_QUERY, {
     variables: { phone: `+48${getCleanPhone(submittedContact)}` },
     skip: detectContactType(submittedContact) !== 'phone' || !isValidPhone(submittedContact),
     fetchPolicy: 'network-only',
@@ -309,6 +325,17 @@ export function UnifiedPatientInput({
     }
   }, [phoneData, phoneLoading, submittedContact]);
 
+  // Lookup refused: the contact is a clinic patient under another therapist. Stay on search, no new-patient form.
+  useEffect(() => {
+    if (!submittedContact || emailLoading || phoneLoading) return;
+    const lookupError = detectContactType(submittedContact) === 'email' ? emailError : phoneError;
+    const refusal = patientUnderOtherTherapistMessage(lookupError);
+    if (!refusal) return;
+    setFoundUser(null);
+    setViewState('search');
+    setOtherTherapistNotice(refusal);
+  }, [emailError, phoneError, emailLoading, phoneLoading, submittedContact]);
+
   // ============================================
   // COMPUTED
   // ============================================
@@ -352,6 +379,8 @@ export function UnifiedPatientInput({
     }
 
     setContactValue(value);
+    setSubmittedContact('');
+    setOtherTherapistNotice(null);
   }, []);
 
   const handleNext = useCallback(() => {
@@ -426,6 +455,14 @@ export function UnifiedPatientInput({
         openInvite(foundUser.email ?? '', getGraphQLErrorMessage(error, ''));
         return;
       }
+      const refusal = patientUnderOtherTherapistMessage(error);
+      if (refusal) {
+        setFoundUser(null);
+        setSubmittedContact('');
+        setViewState('search');
+        setOtherTherapistNotice(refusal);
+        return;
+      }
       console.error('Błąd przy dodawaniu pacjenta:', error);
       toast.error(getGraphQLErrorMessage(error, 'Nie udało się dodać pacjenta'));
     }
@@ -444,6 +481,11 @@ export function UnifiedPatientInput({
       const outcome = await onCreateNewPatient(patientData);
       if (outcome?.status === 'invite-required') {
         openInvite(contactType === 'email' ? contactValue.trim() : '', outcome.message);
+      }
+      if (outcome?.status === 'other-therapist') {
+        setSubmittedContact('');
+        setViewState('search');
+        setOtherTherapistNotice(outcome.message);
       }
     },
     [contactType, contactValue, onCreateNewPatient, openInvite]
@@ -464,6 +506,7 @@ export function UnifiedPatientInput({
     setIsNoteExpanded(false);
     setInvite(null);
     setInvitationSent(false);
+    setOtherTherapistNotice(null);
     setTimeout(() => contactInputRef.current?.focus(), 100);
   }, [form]);
 
@@ -589,6 +632,13 @@ export function UnifiedPatientInput({
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 Szukam pacjenta...
               </p>
+            )}
+            {otherTherapistNotice && !isSearching && (
+              <PatientOtherTherapistNotice
+                message={otherTherapistNotice}
+                testId="patient-unified-other-therapist-notice"
+                className="mt-3"
+              />
             )}
           </div>
 

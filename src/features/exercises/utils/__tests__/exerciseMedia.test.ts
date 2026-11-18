@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest';
 import {
   buildExerciseMediaChangeSet,
   getExerciseMediaGalleryUrls,
+  imageLimitHint,
   insertGeneratedImage,
+  MAX_EXERCISE_IMAGES,
   nextGeneratedImagePhase,
 } from '../exerciseMedia';
 
@@ -74,5 +76,16 @@ describe('obrazy Start i Koniec z AI', () => {
 
     expect(both).toEqual(['start.png', 'end.png']);
     expect(insertGeneratedImage(both, 'extra.png', undefined)).toEqual(['extra.png', 'start.png', 'end.png']);
+  });
+});
+
+describe('imageLimitHint', () => {
+  it('milczy, dopóki jest miejsce na kolejne zdjęcie', () => {
+    expect(imageLimitHint(0)).toBeNull();
+    expect(imageLimitHint(MAX_EXERCISE_IMAGES - 1)).toBeNull();
+  });
+
+  it('przy pełnej galerii mówi, dlaczego dodawanie i generowanie są wyłączone i co zrobić', () => {
+    expect(imageLimitHint(MAX_EXERCISE_IMAGES)).toBe('Masz 15 z 15 zdjęć. Usuń jedno, żeby dodać albo wygenerować nowe.');
   });
 });

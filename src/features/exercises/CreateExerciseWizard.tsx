@@ -83,7 +83,7 @@ import {
   positiveAiNumber,
 } from './utils/aiSuggestionParams';
 import { inferExerciseType } from './utils/inferExerciseType';
-import { insertGeneratedImage, nextGeneratedImagePhase } from './utils/exerciseMedia';
+import { MAX_EXERCISE_IMAGES, insertGeneratedImage, nextGeneratedImagePhase } from './utils/exerciseMedia';
 import { ExerciseParametersEditor } from './ExerciseParametersEditor';
 import { ExerciseContentSections } from './ExerciseContentSections';
 import { useEnrichmentDraft } from './useEnrichmentDraft';
@@ -1319,8 +1319,8 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
         return true;
       });
 
-      if (mediaFiles.length + newFiles.length > 5) {
-        toast.error('Maksymalnie 5 zdjęć');
+      if (mediaFiles.length + newFiles.length > MAX_EXERCISE_IMAGES) {
+        toast.error(`Maksymalnie ${MAX_EXERCISE_IMAGES} zdjęć`);
         return;
       }
 
@@ -1887,7 +1887,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                   Media
                 </label>
                 <span className="text-[10px] tabular-nums text-muted-foreground" data-testid="exercise-create-media-count">
-                  {mediaFiles.length}/5
+                  {mediaFiles.length}/{MAX_EXERCISE_IMAGES}
                 </span>
               </div>
 
@@ -2010,7 +2010,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                     </div>
                   ))}
 
-                  {isGeneratingImage && mediaFiles.length < 5 && (
+                  {isGeneratingImage && mediaFiles.length < MAX_EXERCISE_IMAGES && (
                     <div
                       className="relative flex aspect-video flex-col items-center justify-center gap-2 overflow-hidden rounded-xl border border-border bg-muted/30"
                       aria-busy
@@ -2022,7 +2022,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                     </div>
                   )}
 
-                  {!isGeneratingImage && mediaFiles.length < 5 && (
+                  {!isGeneratingImage && mediaFiles.length < MAX_EXERCISE_IMAGES && (
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
@@ -2081,7 +2081,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                   variant="outline"
                   size="sm"
                   onClick={handleGenerateImage}
-                  disabled={isGeneratingImage || !data.name.trim() || mediaFiles.length >= 5}
+                  disabled={isGeneratingImage || !data.name.trim() || mediaFiles.length >= MAX_EXERCISE_IMAGES}
                   aria-busy={isGeneratingImage}
                   className="shrink-0 gap-1.5"
                   data-testid="exercise-create-ai-image-btn"

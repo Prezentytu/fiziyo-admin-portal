@@ -16,7 +16,7 @@ import type { CardProps } from './cardProps';
 import { ChatCard, ChatCardEmpty } from './ChatCard';
 import { ClarifyChips } from './ClarifyChips';
 import { ExerciseIdeasList } from './ExerciseIdeas';
-import { EXERCISE_CLARIFY_QUESTIONS } from '../utils/setDraft';
+import { EXERCISE_CLARIFY_TOPICS } from '../utils/setDraft';
 
 /** Search tiles: pick what fits and compose a set from it; when nothing fits, ideas for new exercises. */
 export function ExerciseResultsCard({ spec, testId, messageId, chosen }: CardProps<'ExerciseResults'>) {
@@ -175,7 +175,7 @@ export function ExerciseResultsCard({ spec, testId, messageId, chosen }: CardPro
       {!locked && (
         <ClarifyChips
           lead="Doprecyzuj, a dobiorę trafniej. Z wybranych ułożysz zestaw przyciskiem poniżej:"
-          questions={EXERCISE_CLARIFY_QUESTIONS}
+          topics={EXERCISE_CLARIFY_TOPICS}
           testId={`${testId}-clarify`}
         />
       )}

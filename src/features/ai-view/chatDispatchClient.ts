@@ -49,5 +49,11 @@ export async function dispatchChatMessage(
   const creditsUsed = parsed.data.creditsUsed ?? 0;
   if (creditsUsed > 0) triggerCreditsRefresh();
   const reply = parseDispatchReply(parsed.data.spec, parsed.data.reply);
-  return { sessionId: parsed.data.sessionId, text: reply.text, spec: reply.spec, creditsUsed };
+  return {
+    sessionId: parsed.data.sessionId,
+    text: reply.text,
+    spec: reply.spec,
+    creditsUsed,
+    ...(reply.notice ? { notice: reply.notice } : {}),
+  };
 }

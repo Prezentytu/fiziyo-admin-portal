@@ -34,7 +34,7 @@ import {
   itemMinutes,
   proposeDraftName,
   itemsToDoses,
-  DRAFT_CLARIFY_QUESTIONS,
+  DRAFT_CLARIFY_TOPICS,
   proposeDraftDescription,
   type DraftItem,
   type SetDraftPayload,
@@ -477,11 +477,11 @@ export function SetDraftCard({ spec, testId, messageId, chosen }: CardProps<'Set
           </div>
         ))}
 
-      {/* Zestaw z opisu (bez zestawu z katalogu): pytania, które pomagają dobrać ćwiczenia trafniej. */}
+      {/* Zestaw z opisu (bez zestawu z katalogu): tematy, które pomagają dobrać ćwiczenia trafniej. */}
       {!set && !locked && spec.note && (
         <ClarifyChips
-          lead="Doprecyzuj, żeby lepiej dobrać ćwiczenia. Pytanie trafi do pola wiadomości, dopisz odpowiedź:"
-          questions={DRAFT_CLARIFY_QUESTIONS}
+          lead="Doprecyzuj, a lepiej dobiorę ćwiczenia. Wybierz temat i dopisz odpowiedź w wiadomości:"
+          topics={DRAFT_CLARIFY_TOPICS}
           testId={`${testId}-clarify`}
         />
       )}
