@@ -1,0 +1,124 @@
+{
+  "about": "Wspólne wektory scenariusza playera: aplikacja (utils/playerScript.ts) i portal (podgląd „Jak u pacjenta”). Kopiuj do portalu bez zmian. Kroki policzone ręcznie z kolejności w trasie playera, nie z kodu. Krok: [rodzaj, seria, powtórzenie, strona, startSec, durationSec, advance, countsInPlan]. Próbka wskazówki: [indeks kroku, sekunda kroku, oczekiwana wskazówka albo null].",
+  "guidance": {
+    "prepare": ["Ustaw biodra jedno nad drugim.", "Połóż się na boku.", "Unieś nogę."],
+    "work": ["Prowadź piętą.", "Nie odchylaj tułowia."],
+    "rest": []
+  },
+  "vectors": [
+    {
+      "name": "bez strony, na czas, przerwy między powtórzeniami i seriami",
+      "input": { "sets": 2, "reps": 3, "executionTimeSec": 4, "restReps": 2, "restSets": 10, "preparationTime": 5, "exerciseSide": "none" },
+      "plannedDurationSec": 47,
+      "timelineDurationSec": 47,
+      "steps": [
+        ["prepare", 1, 1, null, 0, 5, "timer", true],
+        ["work", 1, 1, null, 5, 4, "timer", true],
+        ["rest", 1, 2, null, 9, 2, "timer", true],
+        ["work", 1, 2, null, 11, 4, "timer", true],
+        ["rest", 1, 3, null, 15, 2, "timer", true],
+        ["work", 1, 3, null, 17, 4, "timer", true],
+        ["rest", 2, 1, null, 21, 10, "timer", true],
+        ["work", 2, 1, null, 31, 4, "timer", true],
+        ["rest", 2, 2, null, 35, 2, "timer", true],
+        ["work", 2, 2, null, 37, 4, "timer", true],
+        ["rest", 2, 3, null, 41, 2, "timer", true],
+        ["work", 2, 3, null, 43, 4, "timer", true]
+      ],
+      "hints": [
+        [0, 0, "Ustaw biodra jedno nad drugim."],
+        [2, 1, "Rozluźnij mięśnie"],
+        [6, 7, "Spokojny oddech"]
+      ]
+    },
+    {
+      "name": "na każdą stronę z przygotowaniem: lewa, przygotowanie, prawa w każdej serii",
+      "input": { "sets": 2, "reps": 2, "executionTimeSec": 3, "restReps": 0, "restSets": 20, "preparationTime": 5, "exerciseSide": "both" },
+      "plannedDurationSec": 59,
+      "timelineDurationSec": 59,
+      "steps": [
+        ["prepare", 1, 1, "left", 0, 5, "timer", true],
+        ["work", 1, 1, "left", 5, 3, "timer", true],
+        ["work", 1, 2, "left", 8, 3, "timer", true],
+        ["prepare", 1, 1, "right", 11, 5, "timer", true],
+        ["work", 1, 1, "right", 16, 3, "timer", true],
+        ["work", 1, 2, "right", 19, 3, "timer", true],
+        ["rest", 2, 1, "left", 22, 20, "timer", true],
+        ["work", 2, 1, "left", 42, 3, "timer", true],
+        ["work", 2, 2, "left", 45, 3, "timer", true],
+        ["prepare", 2, 1, "right", 48, 5, "timer", true],
+        ["work", 2, 1, "right", 53, 3, "timer", true],
+        ["work", 2, 2, "right", 56, 3, "timer", true]
+      ],
+      "hints": [
+        [0, 4, "Ustaw biodra jedno nad drugim."],
+        [1, 2, "Prowadź piętą."],
+        [3, 0, "Lewa strona zrobiona. Teraz prawa strona."]
+      ]
+    },
+    {
+      "name": "na każdą stronę bez przygotowania: start na stuknięcie, zmiana strony 5 s poza planem",
+      "input": { "sets": 1, "reps": 2, "executionTimeSec": 3, "restReps": 0, "restSets": 0, "preparationTime": 0, "exerciseSide": "both" },
+      "plannedDurationSec": 12,
+      "timelineDurationSec": 17,
+      "steps": [
+        ["start", 1, 1, "left", 0, 0, "tap", true],
+        ["work", 1, 1, "left", 0, 3, "timer", true],
+        ["work", 1, 2, "left", 3, 3, "timer", true],
+        ["sideSwitch", 1, 1, "right", 6, 5, "timer", false],
+        ["work", 1, 1, "right", 11, 3, "timer", true],
+        ["work", 1, 2, "right", 14, 3, "timer", true]
+      ],
+      "hints": [
+        [0, 0, null],
+        [3, 2, null]
+      ]
+    },
+    {
+      "name": "naprzemiennie (reps już razy 2), strona przez wszystkie serie",
+      "input": { "sets": 2, "reps": 4, "executionTimeSec": 2, "restReps": 1, "restSets": 15, "preparationTime": 0, "exerciseSide": "alternating" },
+      "plannedDurationSec": 37,
+      "timelineDurationSec": 37,
+      "steps": [
+        ["start", 1, 1, "left", 0, 0, "tap", true],
+        ["work", 1, 1, "left", 0, 2, "timer", true],
+        ["rest", 1, 2, "right", 2, 1, "timer", true],
+        ["work", 1, 2, "right", 3, 2, "timer", true],
+        ["rest", 1, 3, "left", 5, 1, "timer", true],
+        ["work", 1, 3, "left", 6, 2, "timer", true],
+        ["rest", 1, 4, "right", 8, 1, "timer", true],
+        ["work", 1, 4, "right", 9, 2, "timer", true],
+        ["rest", 2, 1, "left", 11, 15, "timer", true],
+        ["work", 2, 1, "left", 26, 2, "timer", true],
+        ["rest", 2, 2, "right", 28, 1, "timer", true],
+        ["work", 2, 2, "right", 29, 2, "timer", true],
+        ["rest", 2, 3, "left", 31, 1, "timer", true],
+        ["work", 2, 3, "left", 32, 2, "timer", true],
+        ["rest", 2, 4, "right", 34, 1, "timer", true],
+        ["work", 2, 4, "right", 35, 2, "timer", true]
+      ],
+      "hints": []
+    },
+    {
+      "name": "powtórzenia odhaczane przez pacjenta (bez czasu wykonania), jedna strona",
+      "input": { "sets": 2, "reps": 3, "executionTimeSec": 0, "restReps": 0, "restSets": 30, "preparationTime": 10, "exerciseSide": "left" },
+      "plannedDurationSec": 58,
+      "timelineDurationSec": 58,
+      "steps": [
+        ["prepare", 1, 1, "left", 0, 10, "timer", true],
+        ["work", 1, 1, "left", 10, 3, "tap", true],
+        ["work", 1, 2, "left", 13, 3, "tap", true],
+        ["work", 1, 3, "left", 16, 3, "tap", true],
+        ["rest", 2, 1, "left", 19, 30, "timer", true],
+        ["work", 2, 1, "left", 49, 3, "tap", true],
+        ["work", 2, 2, "left", 52, 3, "tap", true],
+        ["work", 2, 3, "left", 55, 3, "tap", true]
+      ],
+      "hints": [
+        [0, 7, "Połóż się na boku."],
+        [1, 0, "Zacznij serię albo zakończ ją przyciskiem ✓"],
+        [2, 7, "Nie odchylaj tułowia."]
+      ]
+    }
+  ]
+}

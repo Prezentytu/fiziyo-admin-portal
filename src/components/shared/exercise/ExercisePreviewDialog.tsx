@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { FieldHelpTooltip } from '@/components/shared/FieldHelpTooltip';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
@@ -26,6 +27,7 @@ import { computeExerciseTimeLabels } from './computedExerciseTime';
 import { ExerciseComputedTime } from './ExerciseComputedTime';
 import { ExercisePatientContentFields } from './ExercisePatientContentFields';
 import type { ExerciseExecutionCardData } from './types';
+import { PatientPreviewTab } from './patient-preview/PatientPreviewTab';
 
 interface ExercisePreviewDialogProps {
   open: boolean;
@@ -34,9 +36,7 @@ interface ExercisePreviewDialogProps {
   testIdPrefix?: string;
 }
 
-type ExerciseMediaItem =
-  | { kind: 'image'; url: string }
-  | { kind: 'video'; url: string };
+type ExerciseMediaItem = { kind: 'image'; url: string } | { kind: 'video'; url: string };
 
 /** Kolumny treści wycofane w kontrakcie 3.3 (§2); rekord 3.3 ich nie pokazuje, tak jak edycja w zestawie. */
 const V33_RETIRED_CONTENT_FIELDS = new Set(['clinicalDescription', 'audioCue']);
@@ -85,6 +85,7 @@ export function ExercisePreviewDialog({
   testIdPrefix = 'exercise-preview',
 }: Readonly<ExercisePreviewDialogProps>) {
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
+  const [view, setView] = useState<'details' | 'patient'>('details');
 
   const galleryImages = useMemo(() => {
     if (!exercise) return [];
@@ -104,6 +105,7 @@ export function ExercisePreviewDialog({
 
   useEffect(() => {
     setCurrentMediaIndex(0);
+    setView('details');
   }, [exercise?.id, open]);
 
   const mediaItems = useMemo<ExerciseMediaItem[]>(() => {
@@ -145,7 +147,9 @@ export function ExercisePreviewDialog({
     return { field, value };
   }).filter((item): item is { field: ExerciseFieldMetadata; value: string } => item !== null);
 
-  const fieldsByGroup = dialogFields.reduce<Record<ExerciseFieldGroup, Array<{ field: ExerciseFieldMetadata; value: string }>>>(
+  const fieldsByGroup = dialogFields.reduce<
+    Record<ExerciseFieldGroup, Array<{ field: ExerciseFieldMetadata; value: string }>>
+  >(
     (accumulator, fieldData) => {
       accumulator[fieldData.field.group].push(fieldData);
       return accumulator;
@@ -161,181 +165,212 @@ export function ExercisePreviewDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-3xl max-h-[90vh] overflow-hidden p-0 flex flex-col"
+        className={`${view === 'patient' ? 'max-w-[1240px]' : 'max-w-3xl'} max-h-[95vh] overflow-hidden p-0 flex flex-col`}
         data-testid={`${testIdPrefix}-dialog`}
       >
-        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border">
-          <DialogTitle data-testid={`${testIdPrefix}-title`}>{exercise.displayName}</DialogTitle>
-          <DialogDescription className="sr-only">
-            Podgląd opisu, mediów i parametrów wybranego ćwiczenia.
-          </DialogDescription>
-        </DialogHeader>
+        <Tabs
+          value={view}
+          onValueChange={(value) => setView(value === 'patient' ? 'patient' : 'details')}
+          className="flex min-h-0 flex-1 flex-col"
+        >
+          <DialogHeader className="px-6 pt-6 pb-0 border-b border-border">
+            <DialogTitle data-testid={`${testIdPrefix}-title`}>{exercise.displayName}</DialogTitle>
+            <DialogDescription className="sr-only">
+              Podgląd opisu, mediów i parametrów wybranego ćwiczenia.
+            </DialogDescription>
+            <TabsList variant="underline" className="-mb-px">
+              <TabsTrigger value="details" activeVariant="underline" data-testid={`${testIdPrefix}-tab-details`}>
+                Szczegóły
+              </TabsTrigger>
+              <TabsTrigger value="patient" activeVariant="underline" data-testid={`${testIdPrefix}-tab-patient`}>
+                Jak u pacjenta
+              </TabsTrigger>
+            </TabsList>
+          </DialogHeader>
 
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain" data-testid={`${testIdPrefix}-content`}>
-          <div className="px-6 py-5 space-y-5">
-            {currentMedia && (
-              <div
-                className="relative aspect-video rounded-xl overflow-hidden border border-border bg-surface-light"
-                data-testid={`${testIdPrefix}-media`}
-              >
-                {currentMedia.kind === 'video' ? (
-                  <video
-                    src={currentMedia.url}
-                    controls
-                    className="w-full h-full object-contain"
-                    poster={currentImage ?? undefined}
+          <TabsContent value="patient" className="mt-0 min-h-0 flex-1 overflow-y-auto overscroll-contain">
+            {view === 'patient' ? (
+              <PatientPreviewTab exercise={exercise} imageUrl={galleryImages[0] ?? null} testIdPrefix={testIdPrefix} />
+            ) : null}
+          </TabsContent>
+
+          <TabsContent value="details" className="mt-0 flex min-h-0 flex-1 flex-col">
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain" data-testid={`${testIdPrefix}-content`}>
+              <div className="px-6 py-5 space-y-5">
+                {currentMedia && (
+                  <div
+                    className="relative aspect-video rounded-xl overflow-hidden border border-border bg-surface-light"
+                    data-testid={`${testIdPrefix}-media`}
                   >
-                    <track kind="captions" />
-                  </video>
-                ) : (
-                  <Image src={currentMedia.url} alt="" fill className="object-contain" sizes="768px" />
+                    {currentMedia.kind === 'video' ? (
+                      <video
+                        src={currentMedia.url}
+                        controls
+                        className="w-full h-full object-contain"
+                        poster={currentImage ?? undefined}
+                      >
+                        <track kind="captions" />
+                      </video>
+                    ) : (
+                      <Image src={currentMedia.url} alt="" fill className="object-contain" sizes="768px" />
+                    )}
+
+                    {hasMultipleMedia && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setCurrentMediaIndex((prevIndex) =>
+                              prevIndex === 0 ? mediaItems.length - 1 : prevIndex - 1
+                            )
+                          }
+                          className="absolute z-10 left-2 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full border border-border bg-background/90 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-colors shadow-sm"
+                          aria-label="Poprzednie medium"
+                          data-testid={`${testIdPrefix}-media-prev-btn`}
+                          disabled={!hasMultipleMedia}
+                        >
+                          <ChevronLeft className="h-6 w-6" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setCurrentMediaIndex((prevIndex) =>
+                              prevIndex === mediaItems.length - 1 ? 0 : prevIndex + 1
+                            )
+                          }
+                          className="absolute z-10 right-2 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full border border-border bg-background/90 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-colors shadow-sm"
+                          aria-label="Następne medium"
+                          data-testid={`${testIdPrefix}-media-next-btn`}
+                          disabled={!hasMultipleMedia}
+                        >
+                          <ChevronRight className="h-6 w-6" />
+                        </button>
+                      </>
+                    )}
+
+                    {currentMedia.kind === 'video' && (
+                      <div className="absolute top-3 right-3 rounded-md bg-background/85 border border-border px-2 py-1 text-xs font-medium inline-flex items-center gap-1">
+                        <Play className="h-3 w-3" />
+                        Wideo
+                      </div>
+                    )}
+
+                    {hasMultipleMedia && (
+                      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-md bg-background/85 border border-border px-2.5 py-1 text-xs font-medium">
+                        {currentMediaIndex + 1} / {mediaItems.length}
+                      </div>
+                    )}
+                  </div>
                 )}
 
-                {hasMultipleMedia && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setCurrentMediaIndex((prevIndex) => (prevIndex === 0 ? mediaItems.length - 1 : prevIndex - 1))
-                      }
-                      className="absolute z-10 left-2 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full border border-border bg-background/90 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-colors shadow-sm"
-                      aria-label="Poprzednie medium"
-                      data-testid={`${testIdPrefix}-media-prev-btn`}
-                      disabled={!hasMultipleMedia}
-                    >
-                      <ChevronLeft className="h-6 w-6" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setCurrentMediaIndex((prevIndex) => (prevIndex === mediaItems.length - 1 ? 0 : prevIndex + 1))
-                      }
-                      className="absolute z-10 right-2 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full border border-border bg-background/90 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-colors shadow-sm"
-                      aria-label="Następne medium"
-                      data-testid={`${testIdPrefix}-media-next-btn`}
-                      disabled={!hasMultipleMedia}
-                    >
-                      <ChevronRight className="h-6 w-6" />
-                    </button>
-                  </>
-                )}
-
-                {currentMedia.kind === 'video' && (
-                  <div className="absolute top-3 right-3 rounded-md bg-background/85 border border-border px-2 py-1 text-xs font-medium inline-flex items-center gap-1">
-                    <Play className="h-3 w-3" />
-                    Wideo
+                {!currentMedia && (
+                  <div
+                    className="relative aspect-video rounded-xl overflow-hidden border border-border bg-surface-light flex items-center justify-center"
+                    data-testid={`${testIdPrefix}-media-empty`}
+                  >
+                    <ImagePlaceholder type="exercise" iconClassName="h-16 w-16" />
                   </div>
                 )}
 
                 {hasMultipleMedia && (
-                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-md bg-background/85 border border-border px-2.5 py-1 text-xs font-medium">
-                    {currentMediaIndex + 1} / {mediaItems.length}
+                  <div
+                    className="flex flex-wrap items-center justify-center gap-2"
+                    data-testid={`${testIdPrefix}-media-slider`}
+                  >
+                    {mediaItems.map((mediaItem, mediaIndex) => (
+                      <button
+                        key={`${mediaItem.kind}-${mediaIndex}-${mediaItem.url}`}
+                        type="button"
+                        onClick={() => setCurrentMediaIndex(mediaIndex)}
+                        className={`h-2.5 rounded-full transition-all ${
+                          mediaIndex === currentMediaIndex
+                            ? 'w-8 bg-primary'
+                            : 'w-2.5 bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                        }`}
+                        aria-label={`Przejdź do medium ${mediaIndex + 1}`}
+                        data-testid={`${testIdPrefix}-media-dot-${mediaIndex}`}
+                      />
+                    ))}
                   </div>
                 )}
-              </div>
-            )}
 
-            {!currentMedia && (
-              <div
-                className="relative aspect-video rounded-xl overflow-hidden border border-border bg-surface-light flex items-center justify-center"
-                data-testid={`${testIdPrefix}-media-empty`}
-              >
-                <ImagePlaceholder type="exercise" iconClassName="h-16 w-16" />
-              </div>
-            )}
+                <Separator />
 
-            {hasMultipleMedia && (
-              <div className="flex flex-wrap items-center justify-center gap-2" data-testid={`${testIdPrefix}-media-slider`}>
-                {mediaItems.map((mediaItem, mediaIndex) => (
-                  <button
-                    key={`${mediaItem.kind}-${mediaIndex}-${mediaItem.url}`}
-                    type="button"
-                    onClick={() => setCurrentMediaIndex(mediaIndex)}
-                    className={`h-2.5 rounded-full transition-all ${
-                      mediaIndex === currentMediaIndex
-                        ? 'w-8 bg-primary'
-                        : 'w-2.5 bg-muted-foreground/30 hover:bg-muted-foreground/50'
-                    }`}
-                    aria-label={`Przejdź do medium ${mediaIndex + 1}`}
-                    data-testid={`${testIdPrefix}-media-dot-${mediaIndex}`}
+                <div className="space-y-4">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Parametry i informacje kliniczne
+                  </p>
+                  <div className="grid gap-4" data-testid={`${testIdPrefix}-params`}>
+                    {(Object.keys(fieldsByGroup) as ExerciseFieldGroup[]).map((groupKey) => {
+                      const groupFields = fieldsByGroup[groupKey];
+                      if (groupFields.length === 0) return null;
+
+                      return (
+                        <div key={groupKey} className="space-y-2">
+                          <p className="text-xs font-semibold text-foreground/80">{GROUP_TITLES[groupKey]}</p>
+                          <div className="grid gap-2 sm:grid-cols-2">
+                            {groupFields.map(({ field, value }) => (
+                              <FieldInfoItem key={field.key} field={field} value={value} testIdPrefix={testIdPrefix} />
+                            ))}
+                          </div>
+                          {groupKey === 'dosage' ? (
+                            <ExerciseComputedTime times={computedTimes} testIdPrefix={testIdPrefix} />
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-3" data-testid={`${testIdPrefix}-instruction`}>
+                  {instruction.source === 'override' ? (
+                    <div
+                      className="rounded-lg border border-border/60 bg-surface-light/20 p-3"
+                      data-testid={`${testIdPrefix}-instruction-override`}
+                    >
+                      <p className="text-xs font-medium text-muted-foreground">Opis dla pacjenta w tym planie</p>
+                      <p className="mt-1 text-sm text-foreground whitespace-pre-wrap">{instruction.text}</p>
+                    </div>
+                  ) : null}
+                  <ExercisePatientContentFields
+                    readOnly
+                    surface="mapping"
+                    enrichment={exercise.enrichment ?? {}}
+                    setPath={noopSetPath}
+                    isPathDirty={neverDirty}
+                    patientDescription={instruction.source === 'override' ? '' : (exercise.patientDescription ?? '')}
+                    audioCue={exercise.audioCue ?? ''}
+                    contentVersion={contentVersion}
+                    testIdPrefix={`${testIdPrefix}-patient-content`}
                   />
-                ))}
-              </div>
-            )}
+                </div>
 
-            <Separator />
-
-            <div className="space-y-4">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Parametry i informacje kliniczne</p>
-              <div className="grid gap-4" data-testid={`${testIdPrefix}-params`}>
-                {(Object.keys(fieldsByGroup) as ExerciseFieldGroup[]).map((groupKey) => {
-                  const groupFields = fieldsByGroup[groupKey];
-                  if (groupFields.length === 0) return null;
-
-                  return (
-                    <div key={groupKey} className="space-y-2">
-                      <p className="text-xs font-semibold text-foreground/80">{GROUP_TITLES[groupKey]}</p>
-                      <div className="grid gap-2 sm:grid-cols-2">
-                        {groupFields.map(({ field, value }) => (
-                          <FieldInfoItem key={field.key} field={field} value={value} testIdPrefix={testIdPrefix} />
+                {!HIDE_EXERCISE_TAGS && (exercise.mainTags?.length || exercise.additionalTags?.length) ? (
+                  <>
+                    <Separator />
+                    <div className="space-y-2">
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Tagi</p>
+                      <div className="flex flex-wrap gap-2">
+                        {exercise.mainTags?.map((tag) => (
+                          <Badge key={`main-${tag}`} variant="default">
+                            {tag}
+                          </Badge>
+                        ))}
+                        {exercise.additionalTags?.map((tag) => (
+                          <Badge key={`additional-${tag}`} variant="outline">
+                            {tag}
+                          </Badge>
                         ))}
                       </div>
-                      {groupKey === 'dosage' ? (
-                        <ExerciseComputedTime times={computedTimes} testIdPrefix={testIdPrefix} />
-                      ) : null}
                     </div>
-                  );
-                })}
+                  </>
+                ) : null}
               </div>
             </div>
-
-            <Separator />
-
-            <div className="space-y-3" data-testid={`${testIdPrefix}-instruction`}>
-              {instruction.source === 'override' ? (
-                <div
-                  className="rounded-lg border border-border/60 bg-surface-light/20 p-3"
-                  data-testid={`${testIdPrefix}-instruction-override`}
-                >
-                  <p className="text-xs font-medium text-muted-foreground">Opis dla pacjenta w tym planie</p>
-                  <p className="mt-1 text-sm text-foreground whitespace-pre-wrap">{instruction.text}</p>
-                </div>
-              ) : null}
-              <ExercisePatientContentFields
-                readOnly
-                surface="mapping"
-                enrichment={exercise.enrichment ?? {}}
-                setPath={noopSetPath}
-                isPathDirty={neverDirty}
-                patientDescription={instruction.source === 'override' ? '' : (exercise.patientDescription ?? '')}
-                audioCue={exercise.audioCue ?? ''}
-                contentVersion={contentVersion}
-                testIdPrefix={`${testIdPrefix}-patient-content`}
-              />
-            </div>
-
-            {!HIDE_EXERCISE_TAGS && (exercise.mainTags?.length || exercise.additionalTags?.length) ? (
-              <>
-                <Separator />
-                <div className="space-y-2">
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Tagi</p>
-                  <div className="flex flex-wrap gap-2">
-                    {exercise.mainTags?.map((tag) => (
-                      <Badge key={`main-${tag}`} variant="default">
-                        {tag}
-                      </Badge>
-                    ))}
-                    {exercise.additionalTags?.map((tag) => (
-                      <Badge key={`additional-${tag}`} variant="outline">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              </>
-            ) : null}
-          </div>
-        </div>
+          </TabsContent>
+        </Tabs>
 
         <div className="px-6 py-4 border-t border-border flex justify-end">
           <Button
