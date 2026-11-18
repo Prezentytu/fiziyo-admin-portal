@@ -41,3 +41,6 @@ export * from './adminExercises.queries';
 
 // Patient Journal (notatki pacjenta udostępnione fizjoterapeucie)
 export * from './patientJournal.queries';
+
+// Co nowego (wydania portalu z Ops)
+export * from './releaseNotes.queries';

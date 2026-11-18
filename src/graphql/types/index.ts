@@ -27,3 +27,4 @@ export type {
   TagSuggestions,
 } from './adminExercise.types';
 export * from './aiCredits.types';
+export * from './releaseNote.types';
