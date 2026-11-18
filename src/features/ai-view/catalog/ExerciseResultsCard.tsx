@@ -174,7 +174,7 @@ export function ExerciseResultsCard({ spec, testId, messageId, chosen, request }
       </ul>
       {!locked && (
         <ClarifyChips
-          lead="Doprecyzuj, a dobiorę trafniej. Z wybranych ułożysz zestaw przyciskiem poniżej:"
+          lead="Doprecyzuj, a dobiorę trafniej: wybierz pytanie i dopisz odpowiedź w wiadomości. Z wybranych ułożysz zestaw przyciskiem poniżej."
           questions={exerciseClarifyQuestions(spec.query, request)}
           testId={`${testId}-clarify`}
         />
