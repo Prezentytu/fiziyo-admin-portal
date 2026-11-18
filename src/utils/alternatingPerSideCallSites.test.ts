@@ -30,8 +30,6 @@ const CALL_TARGETS = [
 
 /** `plik#funkcja` -> powód, dla którego wywołanie bez wersji jest poprawne. */
 const EXEMPT: Record<string, string> = {
-  'features/exercises/CreateExerciseWizard.tsx#calculateExerciseTotalSeconds':
-    'Nowe ćwiczenie, jeszcze bez rekordu: portal nie zapisuje schemaVersion, więc liczy łącznie jak rekord bez wersji.',
   'features/verification/utils/changeSummary.ts#formatExerciseSideLabel':
     'Zestawienie zmian w centrum weryfikacji (stos #223): porównuje stronę przed i po, nie opisuje dawki rekordu.',
   'utils/exerciseTime.ts#formatExerciseSideLabel':
@@ -47,6 +45,10 @@ const WIRING: Record<string, string[]> = {
   'app/(dashboard)/exercises/page.tsx': ['toBuilderExercise(exercise)'],
   'features/exercises/utils/toBuilderExercise.ts': ['alternatingPerSide: isV33ExerciseRecord(exercise)'],
   'features/exercises/useExerciseEditorForm.ts': ['isV33ExerciseRecord(source)'],
+  'features/exercises/CreateExerciseWizard.tsx': [
+    'isV33ExerciseRecord({ schemaVersion: NEW_EXERCISE_SCHEMA_VERSION })',
+    'alternatingPerSide={NEW_EXERCISE_ALTERNATING_PER_SIDE}',
+  ],
   'features/exercises/ExerciseEditor.tsx': ['alternatingPerSide={form.alternatingPerSide}'],
   'features/patients/EditExerciseOverrideDialog.tsx': [
     'const alternatingPerSide = isV33ExerciseRecord(exercise);',
