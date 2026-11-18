@@ -23,3 +23,6 @@ export * from './billing.mutations';
 
 // Admin Exercises (weryfikacja ćwiczeń - Centrum Weryfikacji)
 export * from './adminExercises.mutations';
+
+// Co nowego (wydania portalu z Ops)
+export * from './releaseNotes.mutations';

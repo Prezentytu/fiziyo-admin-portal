@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
-import { User, Building2, Eye, Settings, SlidersHorizontal } from 'lucide-react';
+import { User, Building2, Eye, Settings, SlidersHorizontal, Sparkles } from 'lucide-react';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
@@ -16,19 +16,39 @@ import { ChatModeSettings } from '@/features/ai-view/ChatModeSettings';
 import { TelemetrySettings } from '@/components/settings/TelemetrySettings';
 import { CatalogBundleImportCard } from '@/components/organization/CatalogBundleImportCard';
 import { SettingsTab } from '@/components/organization/SettingsTab';
+import { WhatsNewTab } from '@/features/whats-new/WhatsNewTab';
+import { WhatsNewDot } from '@/features/whats-new/WhatsNewDot';
 
 import { GET_USER_BY_CLERK_ID_QUERY, GET_USER_ORGANIZATIONS_QUERY } from '@/graphql/queries/users.queries';
 import { GET_ORGANIZATION_BY_ID_QUERY } from '@/graphql/queries/organizations.queries';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
 import type { UserByClerkIdResponse, UserOrganizationsResponse, OrganizationByIdResponse } from '@/types/apollo';
+import { parseSettingsTab, WHATS_NEW_TAB } from '@/features/whats-new/utils/releaseNotes';
+
+type SettingsTabValue = 'profile' | 'organization' | 'advanced' | 'organizations' | 'accessibility' | 'whats-new';
 
 export default function SettingsPage() {
   const { user: clerkUser } = useUser();
   const { currentOrganization, isLoading: orgContextLoading } = useOrganization();
   const { canManageOrganization, canImportCatalog } = useRoleAccess();
   const organizationId = currentOrganization?.organizationId;
-  const [activeTab, setActiveTab] = useState('profile');
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const availableTabs: SettingsTabValue[] = [
+    'profile',
+    ...(canManageOrganization ? (['organization'] as const) : []),
+    ...(canImportCatalog ? (['advanced'] as const) : []),
+    'organizations',
+    'accessibility',
+    WHATS_NEW_TAB,
+  ];
+  // The tab lives in ?tab= so the banner, the bell and shared links can open „Co nowego” directly.
+  const activeTab = parseSettingsTab(searchParams.get('tab'), availableTabs, 'profile');
+  const setActiveTab = (tab: string) => {
+    router.replace(`${pathname}?tab=${encodeURIComponent(tab)}`, { scroll: false });
+  };
 
   // Get user data
   const {
@@ -183,6 +203,17 @@ export default function SettingsPage() {
                 <Eye className="h-4 w-4" />
                 Wygląd
               </TabsTrigger>
+
+              <TabsTrigger
+                value={WHATS_NEW_TAB}
+                activeVariant="subtle"
+                className="justify-start gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:bg-accent/30 hover:text-foreground data-[state=active]:font-medium"
+                data-testid="settings-tab-whats-new"
+              >
+                <Sparkles className="h-4 w-4" />
+                <span>Co nowego</span>
+                <WhatsNewDot testId="settings-tab-whats-new-dot" className="ml-auto" />
+              </TabsTrigger>
             </TabsList>
           </div>
         </div>
@@ -254,6 +285,10 @@ export default function SettingsPage() {
               <ChatModeSettings />
               <AccessibilitySettings />
               <TelemetrySettings />
+            </TabsContent>
+
+            <TabsContent value={WHATS_NEW_TAB} className="mt-0 outline-none">
+              <WhatsNewTab />
             </TabsContent>
           </div>
         </div>

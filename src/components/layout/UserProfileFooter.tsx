@@ -19,6 +19,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { OrganizationSwitchMenuItems } from './OrganizationSwitchMenuItems';
 import { useCurrentUserDisplay } from './useCurrentUserDisplay';
 import { useAccountNavigationItems } from './useNavigationItems';
+import { WhatsNewDot } from '@/features/whats-new/WhatsNewDot';
 
 // ========================================
 // Types
@@ -76,10 +77,16 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
           )}
         >
           {/* Avatar */}
-          <Avatar className="h-9 w-9 shrink-0">
-            <AvatarImage src={avatarUrl} alt={displayName} />
-            <AvatarFallback className="bg-avatar text-avatar-label text-sm font-semibold">{initials}</AvatarFallback>
-          </Avatar>
+          <span className="relative shrink-0">
+            <Avatar className="h-9 w-9">
+              <AvatarImage src={avatarUrl} alt={displayName} />
+              <AvatarFallback className="bg-avatar text-avatar-label text-sm font-semibold">{initials}</AvatarFallback>
+            </Avatar>
+            <WhatsNewDot
+              testId="nav-user-footer-whats-new-dot"
+              className="absolute -top-0.5 -right-0.5 size-2.5 ring-2 ring-grouped"
+            />
+          </span>
 
           {/* User Info (expanded only) */}
           {!isCollapsed && (
@@ -143,6 +150,7 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
           <Link href="/settings" data-testid="nav-user-footer-settings">
             <Settings className="h-4 w-4 text-muted-foreground" />
             <span>Ustawienia</span>
+            <WhatsNewDot testId="nav-user-footer-settings-whats-new-dot" className="ml-auto" />
           </Link>
         </DropdownMenuItem>
 

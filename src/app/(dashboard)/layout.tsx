@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { usePathname } from 'next/navigation';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { MobileSidebar } from '@/components/layout/MobileSidebar';
@@ -14,6 +15,7 @@ import { TelemetryIdentity } from '@/components/telemetry/TelemetryIdentity';
 import { TelemetryConsentPrompt } from '@/components/telemetry/TelemetryConsentPrompt';
 import { AiCreditsRequestHost } from '@/features/ai-credits/AiCreditsRequestHost';
 import { useChatMode } from '@/features/ai-view/useChatMode';
+import { ReleaseNoteBanner } from '@/features/whats-new/ReleaseNoteBanner';
 
 export default function DashboardLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const pathname = usePathname();
@@ -29,6 +31,15 @@ export default function DashboardLayout({ children }: Readonly<{ children: React
       </div>
     );
   }
+
+  const content = (
+    <>
+      <Suspense fallback={null}>
+        <ReleaseNoteBanner />
+      </Suspense>
+      {children}
+    </>
+  );
 
   // Normalne strony dashboardu
   return (
@@ -47,7 +58,7 @@ export default function DashboardLayout({ children }: Readonly<{ children: React
                 toggleMobile={toggleMobile}
                 closeMobile={closeMobile}
               >
-                {children}
+                {content}
               </ChatShell>
             ) : (
               <div className="flex h-dvh bg-grouped">
@@ -64,7 +75,7 @@ export default function DashboardLayout({ children }: Readonly<{ children: React
                     className="flex flex-1 flex-col overflow-y-auto min-h-0 bg-grouped p-4 lg:p-6 2xl:p-8"
                     style={{ scrollbarGutter: 'stable' }}
                   >
-                    {children}
+                    {content}
                   </main>
                 </div>
               </div>
