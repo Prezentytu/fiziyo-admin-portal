@@ -25,8 +25,6 @@ export type ThinkingTopic = 'document' | 'set' | 'patients' | 'exercises' | 'gen
 
 type ThinkingStep = { afterMs: number; label: string };
 
-const LONG_WAIT: ThinkingStep = { afterMs: 9000, label: 'Jeszcze chwila, to dłuższe zadanie…' };
-
 const THINKING_STEPS: Record<ThinkingTopic, readonly ThinkingStep[]> = {
   document: [
     { afterMs: 0, label: 'Czytam dokument…' },
@@ -36,22 +34,69 @@ const THINKING_STEPS: Record<ThinkingTopic, readonly ThinkingStep[]> = {
   set: [
     { afterMs: 0, label: 'Czytam pytanie…' },
     { afterMs: 1200, label: 'Przeglądam zestawy i plany…' },
-    { afterMs: 4000, label: 'Układam zestaw…' },
-    LONG_WAIT,
+    { afterMs: 4000, label: 'Dobieram ćwiczenia z katalogu…' },
+    { afterMs: 9000, label: 'Układam zestaw…' },
+    { afterMs: 14000, label: 'Sprawdzam propozycję…' },
   ],
   patients: [
     { afterMs: 0, label: 'Czytam pytanie…' },
     { afterMs: 1200, label: 'Sprawdzam pacjentów…' },
-    { afterMs: 4000, label: 'Układam odpowiedź…' },
-    LONG_WAIT,
+    { afterMs: 4000, label: 'Przeglądam plany i aktywność…' },
+    { afterMs: 9000, label: 'Układam odpowiedź…' },
   ],
   exercises: [
     { afterMs: 0, label: 'Czytam pytanie…' },
     { afterMs: 1200, label: 'Przeglądam katalog ćwiczeń…' },
     { afterMs: 4000, label: 'Dobieram ćwiczenia…' },
-    LONG_WAIT,
+    { afterMs: 9000, label: 'Porównuję pasujące ćwiczenia…' },
   ],
-  general: [{ afterMs: 0, label: 'Czytam pytanie…' }, { afterMs: 1500, label: 'Układam odpowiedź…' }, LONG_WAIT],
+  general: [
+    { afterMs: 0, label: 'Czytam pytanie…' },
+    { afterMs: 1500, label: 'Układam odpowiedź…' },
+    { afterMs: 9000, label: 'Sprawdzam dane gabinetu…' },
+  ],
+};
+
+const LONG_WAIT_MS = 20000;
+const LONG_STEP_MS = 6000;
+const STILL_WAITING = 'Trwa to dłużej niż zwykle. Możesz poczekać albo zatrzymać i zapytać krócej.';
+
+/**
+ * A long wait keeps saying what is going on for the topic, in turns, so the line never freezes
+ * (demo 18.11: it stood on one sentence from the 9th second). Only what the assistant really does
+ * for such a question is named; the progress itself is not known here.
+ */
+const LONG_WAIT_LABELS: Record<ThinkingTopic, readonly string[]> = {
+  document: [
+    'Dokument jest dłuższy, nadal go czytam…',
+    'Wyłuskuję zalecenia…',
+    'Dopasowuję ćwiczenia z katalogu…',
+    STILL_WAITING,
+  ],
+  set: [
+    'To dłuższe zadanie, nadal układam zestaw…',
+    'Porównuję ćwiczenia z katalogu…',
+    'Sprawdzam, czy propozycja pasuje do prośby…',
+    STILL_WAITING,
+  ],
+  patients: [
+    'To dłuższe pytanie, nadal sprawdzam pacjentów…',
+    'Przeglądam plany i aktywność…',
+    'Układam odpowiedź…',
+    STILL_WAITING,
+  ],
+  exercises: [
+    'To dłuższe zadanie, nadal szukam w katalogu…',
+    'Porównuję pasujące ćwiczenia…',
+    'Układam odpowiedź…',
+    STILL_WAITING,
+  ],
+  general: [
+    'To dłuższe zadanie, nadal nad nim pracuję…',
+    'Sprawdzam dane gabinetu…',
+    'Układam odpowiedź…',
+    STILL_WAITING,
+  ],
 };
 
 // Kolejność ma znaczenie: „kto nie ćwiczy” to pytanie o pacjentów, „zestaw ćwiczeń” o zestaw.
@@ -71,10 +116,23 @@ export function thinkingTopic(question: string | undefined, hasAttachment = fals
 
 /** The busy line under the question: it moves on with time, like a status, not a spinner. */
 export function thinkingLabel(elapsedMs: number, topic: ThinkingTopic = 'general'): string {
+  if (elapsedMs >= LONG_WAIT_MS) {
+    const labels = LONG_WAIT_LABELS[topic];
+    return labels[Math.floor((elapsedMs - LONG_WAIT_MS) / LONG_STEP_MS) % labels.length];
+  }
   const steps = THINKING_STEPS[topic];
   let label = steps[0].label;
   for (const step of steps) if (elapsedMs >= step.afterMs) label = step.label;
   return label;
+}
+
+const ELAPSED_FROM_MS = 15000;
+const ELAPSED_STEP_S = 5;
+
+/** „20 s” next to the status once the wait is long: the therapist sees the reply is still on its way. */
+export function thinkingElapsed(elapsedMs: number): string | undefined {
+  if (elapsedMs < ELAPSED_FROM_MS) return undefined;
+  return `${Math.floor(elapsedMs / 1000 / ELAPSED_STEP_S) * ELAPSED_STEP_S} s`;
 }
 
 export interface RevealMarker {

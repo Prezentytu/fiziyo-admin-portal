@@ -41,6 +41,7 @@ import type { ChatThreadMessage } from './utils/conversationStore';
 import {
   nextRevealMarker,
   revealSegments,
+  thinkingElapsed,
   thinkingLabel,
   thinkingTopic,
   type RevealMarker,
@@ -213,6 +214,7 @@ function ThinkingLine({ topic }: { readonly topic: ThinkingTopic }) {
     return () => window.clearInterval(interval);
   }, []);
   const label = thinkingLabel(elapsedMs, topic);
+  const elapsed = thinkingElapsed(elapsedMs);
   return (
     <li
       className="flex animate-chat-rise items-center gap-2.5 text-[15px]"
@@ -223,6 +225,15 @@ function ThinkingLine({ topic }: { readonly topic: ThinkingTopic }) {
       <span key={label} className="text-chat-shimmer animate-chat-rise">
         {label}
       </span>
+      {elapsed && (
+        <span
+          aria-hidden="true"
+          className="text-[13px] tabular-nums text-label-secondary"
+          data-testid="common-chat-thinking-elapsed"
+        >
+          {elapsed}
+        </span>
+      )}
     </li>
   );
 }
