@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { addToDraftReply, draftRequest, exerciseCreatedReply, openSetDraft } from '../addToDraft';
+import { addToDraftReply, draftRequest, draftWithExercise, exerciseCreatedReply, openSetDraft } from '../addToDraft';
 import { draftReturnOf, type DraftItem } from '../setDraft';
 
 const CATALOG = [
@@ -87,6 +87,7 @@ describe('addToDraftReply', () => {
           exerciseIds: ['e-clam', 'e-plank'],
           note: 'wzmocnienie biodra',
           doses: { 'e-clam': { sets: 4, reps: 12 } },
+          addedExerciseId: 'e-plank',
         },
       },
     });
@@ -185,6 +186,7 @@ describe('exerciseCreatedReply', () => {
         exerciseIds: ['e-clam', 'e-new'],
         note: 'wzmocnienie biodra',
         doses: { 'e-clam': { sets: 4, reps: 12 } },
+        addedExerciseId: 'e-new',
       },
     });
   });
@@ -193,5 +195,18 @@ describe('exerciseCreatedReply', () => {
     expect(exerciseCreatedReply({ id: 'e-new', name: 'Wykrok' }, { patientId: 'p1' })).toEqual({
       spec: { component: 'ExerciseCreated', exerciseId: 'e-new', name: 'Wykrok', patientId: 'p1' },
     });
+  });
+});
+
+// Decyzja właściciela 18.11: dopisana pozycja ma plakietkę „nowe”, tylko ta z ostatniego kroku.
+describe('draftWithExercise', () => {
+  it('marks the exercise added in this step and moves the mark with the next one', () => {
+    const first = draftWithExercise(DRAFT, 'e-bridge');
+    expect(first.addedExerciseId).toBe('e-bridge');
+
+    // Karta oddaje wątkowi swój stan bez znacznika (`draftReturnOf`), więc kolejny krok oznacza tylko nową pozycję.
+    const live = draftReturnOf([], { note: first.note });
+    expect('addedExerciseId' in live).toBe(false);
+    expect(draftWithExercise({ ...live, exerciseIds: first.exerciseIds }, 'e-plank').addedExerciseId).toBe('e-plank');
   });
 });

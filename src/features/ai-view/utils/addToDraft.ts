@@ -173,9 +173,17 @@ export function addToDraftReply(
   };
 }
 
-/** The proposal `back` with one more exercise at the end; everything else as the therapist left it. */
+/**
+ * The proposal `back` with one more exercise at the end, marked as the one added in this step;
+ * everything else as the therapist left it.
+ */
 export function draftWithExercise(back: SetDraftReturn, exerciseId: string): SetDraftSpec {
-  return { component: 'SetDraft', ...back, exerciseIds: [...back.exerciseIds, exerciseId] };
+  return {
+    component: 'SetDraft',
+    ...back,
+    exerciseIds: [...back.exerciseIds, exerciseId],
+    addedExerciseId: exerciseId,
+  };
 }
 
 /**

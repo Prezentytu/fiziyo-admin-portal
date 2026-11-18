@@ -24,8 +24,15 @@ describe('useChatThread', () => {
 
   it('sends a full name that is not on the visible list to the server and shows its notice without a card', async () => {
     const text = 'Ten pacjent jest już w gabinecie i prowadzi go inny fizjoterapeuta.';
-    dispatchMock.mockResolvedValueOnce({ sessionId: 'session-a', text, creditsUsed: 0, notice: 'patient_other_therapist' });
-    const { result } = renderHook(() => useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org-a' }));
+    dispatchMock.mockResolvedValueOnce({
+      sessionId: 'session-a',
+      text,
+      creditsUsed: 0,
+      notice: 'patient_other_therapist',
+    });
+    const { result } = renderHook(() =>
+      useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org-a' })
+    );
 
     await act(() => result.current.send('pokaż ćwiczenia na kolano dla Marii Zielińskiej'));
 
@@ -43,7 +50,9 @@ describe('useChatThread', () => {
       creditsUsed: 0,
       notice: 'patient_other_therapist',
     });
-    const { result } = renderHook(() => useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org-a' }));
+    const { result } = renderHook(() =>
+      useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org-a' })
+    );
 
     await act(() => result.current.send('Czy Maria Zielińska odebrała zestaw?'));
 

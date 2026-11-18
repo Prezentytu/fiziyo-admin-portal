@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Plus, Repeat2, SlidersHorizontal, Sparkles, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -61,6 +62,8 @@ interface RowProps {
   readonly exercise?: ChatCatalogExercise;
   readonly alternatives: ChatCatalogExercise[];
   readonly locked: boolean;
+  /** Dopisana w tym kroku („dodaj ćwiczenie X”, nowe ćwiczenie): plakietka „nowe” przy nazwie. */
+  readonly added: boolean;
   /** Treść ćwiczeń jeszcze nie dotarła: czas „naprzemiennie” byłby liczony bez wersji rekordu. */
   readonly versionPending: boolean;
   readonly testId: string;
@@ -74,6 +77,7 @@ function DraftRow({
   exercise,
   alternatives,
   locked,
+  added,
   versionPending,
   testId,
   onRemove,
@@ -97,7 +101,14 @@ function DraftRow({
           className="rounded-[10px]"
         />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[15px] font-medium leading-[21px] text-foreground">{name}</p>
+          <p className="flex items-center gap-2 text-[15px] font-medium leading-[21px] text-foreground">
+            <span className="truncate">{name}</span>
+            {added && (
+              <Badge className="shrink-0" data-testid={`${testId}-new-${item.exerciseId}`}>
+                nowe
+              </Badge>
+            )}
+          </p>
           <p className="truncate text-[13px] leading-[18px] tabular-nums text-label-secondary">
             {formatDraftParams(item)}
             {timeUnknown ? '' : ` · ok. ${itemMinutes(item)} min`}
@@ -406,6 +417,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
                 exercise={exercise}
                 alternatives={exercise ? findAlternatives(exercise, exercises, draftIds) : []}
                 locked={locked}
+                added={item.exerciseId === spec.addedExerciseId}
                 versionPending={versionPending}
                 testId={testId}
                 onRemove={() => removeItem(index)}

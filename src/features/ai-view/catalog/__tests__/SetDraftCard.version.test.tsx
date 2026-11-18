@@ -238,4 +238,27 @@ describe('SetDraftCard: wersja rekordu ćwiczeń szkicu', () => {
       })
     );
   });
+
+  // Decyzja właściciela 18.11: po powrocie zestawu z dopisanym ćwiczeniem widać, która pozycja doszła.
+  it('dopisana pozycja ma plakietkę „nowe”, a karta bez tej informacji jej nie pokazuje', async () => {
+    mockClientQuery.mockResolvedValue({
+      data: { exerciseById: { id: 'ex-alt', updatedAt: 't1', enrichmentData: {} } },
+    });
+    const { unmount } = render(
+      <SetDraftCard
+        spec={{ component: 'SetDraft', exerciseIds: ['ex-alt'], addedExerciseId: 'ex-alt' } as never}
+        testId="draft"
+        messageId="m1"
+      />
+    );
+    await screen.findByTestId('draft-item-ex-alt');
+    expect(screen.getByTestId('draft-new-ex-alt').textContent).toBe('nowe');
+    unmount();
+
+    render(
+      <SetDraftCard spec={{ component: 'SetDraft', exerciseIds: ['ex-alt'] } as never} testId="draft" messageId="m2" />
+    );
+    await screen.findByTestId('draft-item-ex-alt');
+    expect(screen.queryByTestId('draft-new-ex-alt')).toBeNull();
+  });
 });

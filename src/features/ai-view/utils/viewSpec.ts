@@ -35,6 +35,8 @@ export type ChatViewSpec =
       doses?: Record<string, DraftDose>;
       /** Only from the thread itself: rows of the proposal this card continues (`SetDraftReturn.items`). */
       items?: DraftItem[];
+      /** Only from the thread itself: the exercise added in this step, shown with the „nowe” mark. */
+      addedExerciseId?: string;
     }
   | { component: 'AssignSummary'; patientId: string; setId: string }
   | { component: 'ExerciseResults'; query: string; exerciseIds: string[]; patientId?: string }
