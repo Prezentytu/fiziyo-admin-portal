@@ -14,6 +14,7 @@ import type { UserByClerkIdResponse } from '@/types/apollo';
 import { useChatData, type ChatPatient } from './useChatData';
 import { useChatMode } from './useChatMode';
 import { newChatId, useChatThread, type AssistantReply, type ChatThreadMessage } from './useChatThread';
+import type { LiveDraft } from './utils/addToDraft';
 import { conversationPatientId, type PinnedPatient } from './utils/chatCards';
 import {
   conversationStorageKey,
@@ -90,6 +91,11 @@ export interface ChatSession {
   showPatient: (patientId: string) => void;
   /** Escape hatch to the full set editor with what chat already knows. */
   openCreateSet: (exerciseIds: string[], patient?: Patient, name?: string) => void;
+  /**
+   * An open set proposal tells the thread what it holds now (null when it closes), so „dodaj ćwiczenie X”
+   * typed in the chat adds to it. Kept in memory only, never in the stored history.
+   */
+  reportLiveDraft: (messageId: string, live: LiveDraft | null) => void;
 }
 
 /**
@@ -114,6 +120,7 @@ export type ChatActions = Pick<
   | 'refetchCredits'
   | 'showPatient'
   | 'openCreateSet'
+  | 'reportLiveDraft'
 >;
 
 const ChatSessionContext = createContext<ChatSession | null>(null);
@@ -220,12 +227,19 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
   // The chip's patient (set below) is what a model card is checked against when a message is sent.
   const contextPatientIdRef = useRef<string | undefined>(undefined);
   const getContextPatientId = useCallback(() => contextPatientIdRef.current, []);
+  const liveDraftsRef = useRef(new Map<string, LiveDraft>());
+  const getLiveDraft = useCallback((messageId: string) => liveDraftsRef.current.get(messageId), []);
+  const reportLiveDraft = useCallback((messageId: string, live: LiveDraft | null) => {
+    if (live) liveDraftsRef.current.set(messageId, live);
+    else liveDraftsRef.current.delete(messageId);
+  }, []);
   const thread = useChatThread({
     useAi: preference.useAi,
     context: intentContext,
     ready: isReady,
     scopeKey: organizationId,
     getContextPatientId,
+    getLiveDraft,
   });
   const { messages, reset, isBusy } = thread;
 
@@ -367,6 +381,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       refetchCredits,
       showPatient,
       openCreateSet,
+      reportLiveDraft,
     }),
     [
       organizationId,
@@ -385,6 +400,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       refetchCredits,
       showPatient,
       openCreateSet,
+      reportLiveDraft,
     ]
   );
   const setUseAi = useCallback((useAi: boolean) => update({ useAi }), [update]);
@@ -428,6 +444,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       setContextOpen,
       showPatient,
       openCreateSet,
+      reportLiveDraft,
     }),
     [
       organizationId,
@@ -467,6 +484,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       isContextOpen,
       showPatient,
       openCreateSet,
+      reportLiveDraft,
     ]
   );
 

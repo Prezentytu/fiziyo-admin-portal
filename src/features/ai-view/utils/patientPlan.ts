@@ -93,7 +93,9 @@ export function summarizePatientPlans(
             effective.isTimeBased && effective.duration
               ? `${effective.sets} × ${formatSecondsPolish(effective.duration)}`
               : `${effective.sets} × ${effective.reps}${
-                  effective.alternatingPerSide && effective.side?.toLowerCase() === 'alternating' ? ' na każdą stronę' : ''
+                  effective.alternatingPerSide && effective.side?.toLowerCase() === 'alternating'
+                    ? ' na każdą stronę'
+                    : ''
                 }`,
         }));
       const week = adherence.find((entry) => entry.assignmentId === assignment.id);

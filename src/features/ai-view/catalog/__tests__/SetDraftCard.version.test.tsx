@@ -8,6 +8,7 @@ const appendExchange = vi.hoisted(() => vi.fn());
 const mockToastError = vi.hoisted(() => vi.fn());
 const mockSaveTemplateSet = vi.hoisted(() => vi.fn());
 const openCreateSet = vi.hoisted(() => vi.fn());
+const reportLiveDraft = vi.hoisted(() => vi.fn());
 let listItems: Array<Record<string, unknown>> = [];
 
 const apolloClient = { query: mockClientQuery };
@@ -47,6 +48,7 @@ vi.mock('../../ChatSessionContext', () => ({
     appendExchange,
     markChosen: vi.fn(),
     openCreateSet,
+    reportLiveDraft,
   }),
   toWizardPatient: () => undefined,
 }));
@@ -71,7 +73,9 @@ const alternating = {
 };
 
 const renderCard = () =>
-  render(<SetDraftCard spec={{ component: 'SetDraft', exerciseIds: ['ex-alt'] } as never} testId="draft" messageId="m1" />);
+  render(
+    <SetDraftCard spec={{ component: 'SetDraft', exerciseIds: ['ex-alt'] } as never} testId="draft" messageId="m1" />
+  );
 
 const dailyMinutes = () => screen.getByTestId('draft').textContent?.match(/dziennie ok\. (\d+) min/)?.[1];
 
@@ -137,11 +141,9 @@ describe('SetDraftCard: wersja rekordu ćwiczeń szkicu', () => {
   });
 
   it('po błędzie wczytania: „Dalej” ponawia z komunikatem i nie przechodzi, po ponowieniu pyta o harmonogram z 6 min', async () => {
-    mockClientQuery
-      .mockRejectedValueOnce(new Error('network'))
-      .mockResolvedValue({
-        data: { exerciseById: { id: 'ex-alt', updatedAt: 't1', enrichmentData: { schemaVersion: '3.3' } } },
-      });
+    mockClientQuery.mockRejectedValueOnce(new Error('network')).mockResolvedValue({
+      data: { exerciseById: { id: 'ex-alt', updatedAt: 't1', enrichmentData: { schemaVersion: '3.3' } } },
+    });
     render(
       <SetDraftCard
         spec={{ component: 'SetDraft', exerciseIds: ['ex-alt'], patientId: 'p1' } as never}
@@ -197,6 +199,43 @@ describe('SetDraftCard: wersja rekordu ćwiczeń szkicu', () => {
     );
     await screen.findByTestId('draft-item-ex-alt');
     screen.getByTestId('draft-full-editor-btn').click();
-    expect(openCreateSet).toHaveBeenCalledWith(['ex-alt'], undefined, expect.stringMatching(/^Po rekonstrukcji ACL · \d\d\.\d\d$/));
+    expect(openCreateSet).toHaveBeenCalledWith(
+      ['ex-alt'],
+      undefined,
+      expect.stringMatching(/^Po rekonstrukcji ACL · \d\d\.\d\d$/)
+    );
+  });
+
+  // Demo 18.11: droga do nowego ćwiczenia była schowana za wyszukiwarką (dopiero po 3 znakach).
+  it('„Utwórz nowe ćwiczenie” jest od razu na karcie, a nowe ćwiczenie wraca do tej propozycji', async () => {
+    mockClientQuery.mockResolvedValue({
+      data: { exerciseById: { id: 'ex-alt', updatedAt: 't1', enrichmentData: {} } },
+    });
+    appendExchange.mockReset();
+    reportLiveDraft.mockReset();
+    render(
+      <SetDraftCard
+        spec={{ component: 'SetDraft', exerciseIds: ['ex-alt'], note: 'biodro' } as never}
+        testId="draft"
+        messageId="m1"
+      />
+    );
+    await screen.findByTestId('draft-item-ex-alt');
+    // Karta zgłasza wątkowi swój stan: „dodaj ćwiczenie X” z czatu dopisuje do tej propozycji.
+    expect(reportLiveDraft).toHaveBeenLastCalledWith(
+      'm1',
+      expect.objectContaining({ draft: expect.objectContaining({ exerciseIds: ['ex-alt'], note: 'biodro' }) })
+    );
+    expect(screen.getByTestId('draft-add-btn')).toBeTruthy();
+    screen.getByTestId('draft-create-btn').click();
+    expect(appendExchange).toHaveBeenCalledWith(
+      'Utwórz nowe ćwiczenie',
+      expect.objectContaining({
+        spec: expect.objectContaining({
+          component: 'CreateExercise',
+          addToSet: expect.objectContaining({ exerciseIds: ['ex-alt'], note: 'biodro' }),
+        }),
+      })
+    );
   });
 });

@@ -38,7 +38,14 @@ describe('reminders go only to patients behind their plan', () => {
       id: 'pain-trained-today',
       therapistId: 'me',
       lastActivity: today,
-      attention: { tone: 'danger', reasons: ['PAIN'], maxPainLevel: 5, lastSignalAt: today, daysSinceTraining: 0, hasPatientSignal: true },
+      attention: {
+        tone: 'danger',
+        reasons: ['PAIN'],
+        maxPainLevel: 5,
+        lastSignalAt: today,
+        daysSinceTraining: 0,
+        hasPatientSignal: true,
+      },
     },
     {
       id: 'behind-plan',

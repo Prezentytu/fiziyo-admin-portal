@@ -40,9 +40,6 @@ export function useAvailableExercises(
     GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY,
     { variables: { organizationId }, skip }
   );
-  const exercises = useMemo(
-    () => withTagNames(listed, tagsData?.exerciseTags ?? NO_TAGS),
-    [listed, tagsData]
-  );
+  const exercises = useMemo(() => withTagNames(listed, tagsData?.exerciseTags ?? NO_TAGS), [listed, tagsData]);
   return { exercises, loading, error, detailsReady, detailsPending, ensureDetailsReady };
 }

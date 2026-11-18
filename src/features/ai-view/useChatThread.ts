@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { dispatchChatMessage } from './chatDispatchClient';
+import { addToDraftReply, draftRequest, openSetDraft, type LiveDraft } from './utils/addToDraft';
 import { cardPatientIds, latestCardPatientId, type ChatCardSpec } from './utils/chatCards';
 import { confirmAnswer, OTHER_PATIENT_OPTION, patientConfirmation } from './utils/clarifyChoice';
 import type { ChatThreadMessage } from './utils/conversationStore';
@@ -33,6 +34,8 @@ interface ChatThreadOptions {
   ready: boolean;
   /** Active organization; a new one starts a new conversation and a new AI session. */
   scopeKey: string;
+  /** The open set proposal as its card has it now (the therapist's changes included), by message id. */
+  getLiveDraft?: (messageId: string) => LiveDraft | undefined;
 }
 
 export const STOPPED_TEXT = 'Zatrzymane. Napisz, co zrobić inaczej.';
@@ -42,7 +45,14 @@ export const PICK_OTHER_PATIENT_TEXT = 'Wybierz pacjenta z listy albo napisz imi
  * One conversation: what the therapist wrote and what came back (a sentence and a card from the
  * dispatcher, AI or rules, or the next step of a flow the thread runs itself).
  */
-export function useChatThread({ useAi, context, ready, scopeKey, getContextPatientId }: ChatThreadOptions) {
+export function useChatThread({
+  useAi,
+  context,
+  ready,
+  scopeKey,
+  getContextPatientId,
+  getLiveDraft,
+}: ChatThreadOptions) {
   const [messages, setMessages] = useState<ChatThreadMessage[]>([]);
   const [isBusy, setIsBusy] = useState(false);
   const [threadScope, setThreadScope] = useState(scopeKey);
@@ -239,6 +249,18 @@ export function useChatThread({ useAi, context, ready, scopeKey, getContextPatie
         appendAssistant(account);
         return;
       }
+      // „Dodaj ćwiczenie X” przy otwartej propozycji zestawu: ćwiczenie trafia do niej, bez AI i bez kredytu.
+      const openDraft = openSetDraft(messagesRef.current);
+      const liveDraft = openDraft ? getLiveDraft?.(openDraft.messageId) : undefined;
+      const addition =
+        openDraft && liveDraft ? addToDraftReply(trimmed, liveDraft.draft, liveDraft.catalog, context.patients) : null;
+      if (openDraft && addition) {
+        if (addition.closesDraft) markChosen(openDraft.messageId, 'added');
+        pendingCommandRef.current = undefined;
+        pushUser(trimmed);
+        appendAssistant(addition.reply);
+        return;
+      }
       inFlightRef.current = true;
       pushUser(trimmed);
       setIsBusy(true);
@@ -258,8 +280,13 @@ export function useChatThread({ useAi, context, ready, scopeKey, getContextPatie
           newPatientContext: threadNewPatientDetails(messagesRef.current),
         });
         // Pytanie o ćwiczenia bez karty w odpowiedzi (nic nie pasuje): pomysły na nowe dla tej potrzeby.
-        const reply = withExerciseIdeas(trimmed, resolved);
+        let reply = withExerciseIdeas(trimmed, resolved);
         if (threadEpochRef.current !== epoch) return;
+        // Nowe ćwiczenie, o które poproszono przy otwartej propozycji zestawu, wraca do tej propozycji.
+        if (openDraft && liveDraft && reply.spec?.component === 'CreateExercise' && draftRequest(trimmed)) {
+          reply = { ...reply, spec: { ...reply.spec, addToSet: liveDraft.draft } };
+          markChosen(openDraft.messageId, 'added');
+        }
         // AI questions count too: if the next dispatch fails, rules finish the command.
         const isUnsupported = reply.spec === UNSUPPORTED_SPEC;
         const asksForPatient = reply.spec?.component === 'Clarify' && !isUnsupported;
@@ -291,7 +318,18 @@ export function useChatThread({ useAi, context, ready, scopeKey, getContextPatie
         }
       }
     },
-    [appendAssistant, choosePatient, context, getContextPatientId, markChosen, pushUser, ready, scopeKey, useAi]
+    [
+      appendAssistant,
+      choosePatient,
+      context,
+      getContextPatientId,
+      getLiveDraft,
+      markChosen,
+      pushUser,
+      ready,
+      scopeKey,
+      useAi,
+    ]
   );
 
   /** What the therapist chose (a shortcut, a quick reply) and the thread's answer to it, both local. */

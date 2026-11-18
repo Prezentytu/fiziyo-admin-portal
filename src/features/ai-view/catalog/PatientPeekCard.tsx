@@ -67,7 +67,9 @@ function InactivePatients({ testId }: { readonly testId: string }) {
   if (attention.length === 0) {
     return (
       <ChatCard testId={testId} title="Wszyscy ćwiczą">
-        <ChatCardEmpty testId={`${testId}-empty`}>Każdy z Twoich pacjentów ćwiczy zgodnie z planem i nikt nie zgłosił bólu ani trudności.</ChatCardEmpty>
+        <ChatCardEmpty testId={`${testId}-empty`}>
+          Każdy z Twoich pacjentów ćwiczy zgodnie z planem i nikt nie zgłosił bólu ani trudności.
+        </ChatCardEmpty>
       </ChatCard>
     );
   }

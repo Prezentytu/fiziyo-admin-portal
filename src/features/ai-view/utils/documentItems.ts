@@ -10,7 +10,23 @@ const MIN_CONTENT_WORD = 4;
 const FILLER_WORDS = new Set(['przy', 'oraz', 'albo', 'jako', 'przez']);
 const SEARCH_CANDIDATES = 3;
 // Joining words only; every other token tells exercises apart, short ones too ("Noga L", "SLR P").
-const JOINING_WORDS = new Set(['w', 'we', 'na', 'z', 'ze', 'do', 'i', 'o', 'po', 'od', 'u', 'a', 'oraz', 'albo', 'przez']);
+const JOINING_WORDS = new Set([
+  'w',
+  'we',
+  'na',
+  'z',
+  'ze',
+  'do',
+  'i',
+  'o',
+  'po',
+  'od',
+  'u',
+  'a',
+  'oraz',
+  'albo',
+  'przez',
+]);
 
 // Words that change what the exercise is: position, side, equipment ("na brzuchu", "przy ścianie").
 function contentWords(name: string): string[] {

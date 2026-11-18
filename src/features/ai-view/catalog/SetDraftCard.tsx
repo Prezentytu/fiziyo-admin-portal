@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Plus, Repeat2, SlidersHorizontal, Sparkles, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -34,7 +34,7 @@ import {
   formatDraftParams,
   itemMinutes,
   proposeDraftName,
-  itemsToDoses,
+  draftReturnOf,
   proposeDraftDescription,
   type DraftItem,
   type SetDraftPayload,
@@ -140,7 +140,7 @@ function DraftRow({
       {panel === 'swap' && !locked && (
         <div className="mb-1 ml-[52px] flex flex-col gap-2 rounded-[12px] bg-fill-quaternary px-3 py-2.5 text-[14px]">
           {alternatives.length === 0 ? (
-            <p className="text-label-secondary">Brak podobnych ćwiczeń w katalogu. Dodaj inne przyciskiem poniżej.</p>
+            <p className="text-label-secondary">Brak podobnych ćwiczeń w katalogu. Dodaj inne przyciskami pod listą.</p>
           ) : (
             alternatives.map((alternative) => (
               <div key={alternative.id} className="flex items-center gap-2">
@@ -190,8 +190,16 @@ function DraftRow({
  * the catalog. Nothing is saved here; the next step asks for the schedule and the summary sends.
  */
 export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardProps<'SetDraft'>) {
-  const { organizationId, patients, organizationSets, setsReady, appendExchange, markChosen, openCreateSet } =
-    useChatActions();
+  const {
+    organizationId,
+    patients,
+    organizationSets,
+    setsReady,
+    appendExchange,
+    markChosen,
+    openCreateSet,
+    reportLiveDraft,
+  } = useChatActions();
   const [items, setItems] = useState<DraftItem[] | null>(null);
   // Treść ćwiczeń szkicu (wersja rekordu) dociąga się osobno: lista z czatu jej nie niesie, a od wersji zależy,
   // czy „naprzemiennie” liczy na stronę jak w aplikacji pacjenta.
@@ -227,6 +235,17 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
       setMissingSet(seed.missingSet);
     }
   }
+
+  // Co karta trzyma teraz (ze zmianami fizjoterapeuty): wraca tu nowe ćwiczenie i „dodaj ćwiczenie X” z czatu.
+  const draftReturn = useMemo(
+    () => (items ? draftReturnOf(items, { patientId: patient?.id, note: spec.note ?? set?.name }) : null),
+    [items, patient?.id, spec.note, set?.name]
+  );
+  useEffect(() => {
+    if (locked || !draftReturn) return undefined;
+    reportLiveDraft(messageId, { draft: draftReturn, catalog: exercises });
+    return () => reportLiveDraft(messageId, null);
+  }, [draftReturn, exercises, locked, messageId, reportLiveDraft]);
 
   const draftIds = (items ?? []).map((item) => item.exerciseId);
   const searchResults = useMemo(() => {
@@ -284,6 +303,18 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
   });
   const versionPending = !detailsReady;
   const minutesUnknown = versionPending && draftItems.some(isAlternating);
+
+  // Nowe ćwiczenie wraca do tej propozycji: z nazwą wpisaną w wyszukiwarce albo bez niej.
+  const createExercise = (exerciseName?: string) => {
+    if (!draftReturn) return;
+    markChosen(messageId, 'create-exercise');
+    appendExchange(exerciseName ? `Utwórz ćwiczenie: ${exerciseName}` : 'Utwórz nowe ćwiczenie', {
+      text: exerciseName
+        ? 'Sprawdź nazwę i kliknij „Generuj”. Gotowe ćwiczenie wróci do tej propozycji zestawu.'
+        : 'Wpisz nazwę ćwiczenia i kliknij „Generuj”. Gotowe ćwiczenie wróci do tej propozycji zestawu.',
+      spec: { component: 'CreateExercise', name: exerciseName, addToSet: draftReturn },
+    });
+  };
 
   const handleNext = () => {
     // Treść nie dotarła (błąd sieci): ponawiamy i nie przechodzimy dalej z dawką liczoną bez wersji rekordu.
@@ -399,16 +430,22 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
 
       {!locked &&
         (search === null ? (
-          <Button
-            variant="plain"
-            size="sm"
-            className="self-start"
-            onClick={() => setSearch('')}
-            data-testid={`${testId}-add-btn`}
-          >
-            <Plus aria-hidden="true" />
-            Dodaj ćwiczenie
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={() => setSearch('')} data-testid={`${testId}-add-btn`}>
+              <Plus aria-hidden="true" />
+              Dodaj z katalogu
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => createExercise()}
+              disabled={!draftReturn}
+              data-testid={`${testId}-create-btn`}
+            >
+              <Sparkles aria-hidden="true" />
+              Utwórz nowe ćwiczenie
+            </Button>
+          </div>
         ) : (
           <div className="flex flex-col gap-2">
             <Input
@@ -450,22 +487,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
               <button
                 type="button"
                 data-testid={`${testId}-add-create-btn`}
-                onClick={() => {
-                  markChosen(messageId, 'create-exercise');
-                  appendExchange(`Utwórz ćwiczenie: ${search.trim()}`, {
-                    text: 'Sprawdź nazwę i kliknij „Generuj”. Gotowe ćwiczenie wróci do tej propozycji zestawu.',
-                    spec: {
-                      component: 'CreateExercise',
-                      name: search.trim(),
-                      addToSet: {
-                        exerciseIds: items.map((item) => item.exerciseId),
-                        patientId: patient?.id,
-                        note: spec.note,
-                        doses: itemsToDoses(items),
-                      },
-                    },
-                  });
-                }}
+                onClick={() => createExercise(search.trim())}
                 className="flex w-full items-center gap-3 rounded-[10px] px-2 py-1.5 text-left text-[14px] text-tint hover:bg-fill-quaternary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-fill-quaternary">

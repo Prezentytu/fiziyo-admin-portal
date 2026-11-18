@@ -315,3 +315,16 @@ export function itemsToDoses(items: readonly DraftItem[]): Record<string, DraftD
     })
   );
 }
+
+/** What an open proposal holds now, as a new card rebuilds it (a new exercise returns to it this way). */
+export function draftReturnOf(
+  items: readonly DraftItem[],
+  options: { patientId?: string; note?: string }
+): SetDraftReturn {
+  return {
+    exerciseIds: items.map((item) => item.exerciseId),
+    patientId: options.patientId,
+    note: options.note,
+    doses: itemsToDoses(items),
+  };
+}

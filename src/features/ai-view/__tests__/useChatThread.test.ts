@@ -110,6 +110,66 @@ describe('useChatThread', () => {
     });
   });
 
+  // Demo 18.11: przy otwartej propozycji zestawu „dodaj ćwiczenie” z czatu nie trafiało do tej propozycji.
+  describe('an open set proposal', () => {
+    const draft = { exerciseIds: ['e-clam'], note: 'biodro', doses: { 'e-clam': { sets: 4, reps: 12 } } };
+    const getLiveDraft = () => ({ draft, catalog: [{ id: 'e-bridge', name: 'Mostek' }] });
+    const modelDraft = {
+      sessionId: 'session-a',
+      spec: { component: 'SetDraft', exerciseIds: ['e-clam'], note: 'biodro' },
+      creditsUsed: 1,
+    };
+
+    it('takes an exercise from the catalog with the parameters the card has now, without the model', async () => {
+      dispatchMock.mockResolvedValueOnce(modelDraft);
+      const { result } = renderHook(() =>
+        useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org-a', getLiveDraft })
+      );
+
+      await act(() => result.current.send('zestaw na biodro'));
+      await act(() => result.current.send('dodaj ćwiczenie mostek'));
+
+      expect(dispatchMock).toHaveBeenCalledTimes(1);
+      expect(result.current.messages.at(-1)).toMatchObject({
+        source: 'local',
+        spec: { component: 'SetDraft', exerciseIds: ['e-clam', 'e-bridge'], doses: draft.doses, note: 'biodro' },
+      });
+      expect(result.current.messages.at(-3)).toMatchObject({ chosen: 'added' });
+    });
+
+    it('sends a new exercise the model proposes back to the proposal', async () => {
+      dispatchMock.mockResolvedValueOnce(modelDraft);
+      dispatchMock.mockResolvedValueOnce({
+        sessionId: 'session-a',
+        spec: { component: 'CreateExercise', name: 'Wykrok z rotacją' },
+        creditsUsed: 1,
+      });
+      const { result } = renderHook(() =>
+        useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org-a', getLiveDraft })
+      );
+
+      await act(() => result.current.send('zestaw na biodro'));
+      await act(() => result.current.send('dodaj wykrok z rotacją'));
+
+      expect(result.current.messages.at(-1)).toMatchObject({
+        spec: { component: 'CreateExercise', name: 'Wykrok z rotacją', addToSet: draft },
+      });
+    });
+
+    it('works the same without AI', async () => {
+      const { result } = renderHook(() =>
+        useChatThread({ useAi: false, context: CONTEXT, ready: true, scopeKey: 'org-a', getLiveDraft })
+      );
+
+      act(() => result.current.appendAssistant({ spec: { component: 'SetDraft', exerciseIds: ['e-clam'] } }));
+      await act(() => result.current.send('dodaj do zestawu wykrok z rotacją'));
+
+      expect(result.current.messages.at(-1)).toMatchObject({
+        spec: { component: 'CreateExercise', name: 'wykrok z rotacją', addToSet: draft },
+      });
+    });
+  });
+
   // Test asystenta 17.11 (K3): dwóch „Jan Kowalski”, klik chipa wysyłał samą nazwę i wracało to samo pytanie.
   describe('namesakes', () => {
     const context: IntentContext = {

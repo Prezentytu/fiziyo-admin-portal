@@ -115,11 +115,7 @@ function PatientFacts({ patient }: { readonly patient: ChatPatient }) {
           }
           testId="common-chat-context-pain"
         />
-        <Fact
-          label="Zestaw"
-          value={assignmentsLoading ? '…' : planFacts.set}
-          testId="common-chat-context-set"
-        />
+        <Fact label="Zestaw" value={assignmentsLoading ? '…' : planFacts.set} testId="common-chat-context-set" />
         <Fact
           label="Ostatnia wizyta"
           value={visit ? formatPlanDate(new Date(visit.visitDate)) : 'brak notatki'}

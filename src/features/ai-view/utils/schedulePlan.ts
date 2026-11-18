@@ -162,9 +162,7 @@ export interface ParsedSchedule {
  * one with a note. Null when the text names no start, length or rhythm: it is not a schedule.
  */
 export function parseSchedulePlan(text: string): ParsedSchedule | null {
-  let rest = normalizeSearchText(text)
-    .replace(/[–—]/g, '-')
-    .trim();
+  let rest = normalizeSearchText(text).replace(/[–—]/g, '-').trim();
   if (!rest) return null;
   if (ACCEPTS_DEFAULT.test(rest)) return { plan: DEFAULT_SCHEDULE_PLAN, notes: [] };
 
@@ -172,7 +170,9 @@ export function parseSchedulePlan(text: string): ParsedSchedule | null {
   let rhythm: PlanRhythm | undefined;
   const setClosest = (asked: string, timesPerWeek: number) => {
     rhythm = closestRhythm(timesPerWeek);
-    notes.push(`${asked} nie da się jeszcze ustawić w czacie. Ustawione najbliższe: ${planRhythmLabel(rhythm).toLowerCase()}.`);
+    notes.push(
+      `${asked} nie da się jeszcze ustawić w czacie. Ustawione najbliższe: ${planRhythmLabel(rhythm).toLowerCase()}.`
+    );
   };
 
   if (WEEKDAY_RANGE.test(rest)) {
@@ -213,7 +213,9 @@ export function parseSchedulePlan(text: string): ParsedSchedule | null {
   else if (/(?:na|przez) tydzien/.test(rest)) weeks = 1;
   if (weeks !== undefined && (!Number.isFinite(weeks) || weeks < 1)) weeks = undefined;
   if (weeks !== undefined && weeks > MAX_TYPED_WEEKS) {
-    notes.push(`${planWeeksLabel(weeks)} to więcej, niż da się ustawić w czacie. Ustawione: ${planWeeksLabel(MAX_TYPED_WEEKS)}.`);
+    notes.push(
+      `${planWeeksLabel(weeks)} to więcej, niż da się ustawić w czacie. Ustawione: ${planWeeksLabel(MAX_TYPED_WEEKS)}.`
+    );
     weeks = MAX_TYPED_WEEKS;
   }
 
