@@ -46,6 +46,7 @@ import { useChatSession } from './ChatSessionContext';
 import { useChatShortcuts } from './useChatShortcuts';
 import { useChatMode } from './useChatMode';
 import { groupConversationsByDay, type StoredConversation } from './utils/conversationStore';
+import { WhatsNewDot } from '@/features/whats-new/WhatsNewDot';
 
 interface ChatSidebarProps {
   readonly isCollapsed: boolean;
@@ -280,12 +281,18 @@ function SidebarBody({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button type="button" className={cn(ROW_CLASS, 'h-11')} data-testid="nav-chat-user-menu-btn">
-            <Avatar className="h-7 w-7">
-              <AvatarImage src={account.avatarUrl} alt="" />
-              <AvatarFallback className="bg-avatar text-[11px] font-semibold text-avatar-label">
-                {account.initials}
-              </AvatarFallback>
-            </Avatar>
+            <span className="relative shrink-0">
+              <Avatar className="h-7 w-7">
+                <AvatarImage src={account.avatarUrl} alt="" />
+                <AvatarFallback className="bg-avatar text-[11px] font-semibold text-avatar-label">
+                  {account.initials}
+                </AvatarFallback>
+              </Avatar>
+              <WhatsNewDot
+                testId="nav-chat-user-menu-whats-new-dot"
+                className="absolute -top-0.5 -right-0.5 ring-2 ring-grouped"
+              />
+            </span>
             <span className="min-w-0 flex-1 truncate" title={account.displayName}>
               {account.compactDisplayName}
             </span>
@@ -298,6 +305,7 @@ function SidebarBody({
             <Link href="/settings" onClick={onNavigate}>
               <Settings className={MENU_ICON_CLASS} aria-hidden="true" />
               Ustawienia
+              <WhatsNewDot testId="nav-chat-settings-whats-new-dot" className="ml-auto" />
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild className="gap-2.5" data-testid="nav-chat-organization-link">

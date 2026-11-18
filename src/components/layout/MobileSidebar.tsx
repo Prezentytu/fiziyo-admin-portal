@@ -20,6 +20,7 @@ import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import type { UserByClerkIdResponse } from '@/types/apollo';
 import { resolveDisplayName } from './userDisplayName';
 import { getInitialsFromName } from '@/utils/textUtils';
+import { WhatsNewDot } from '@/features/whats-new/WhatsNewDot';
 
 interface MobileSidebarProps {
   readonly isOpen: boolean;
@@ -152,6 +153,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                 >
                   <User className="h-4 w-4" />
                   <span>Ustawienia</span>
+                  <WhatsNewDot testId="nav-mobile-user-profile-whats-new-dot" />
                   <ChevronRight className="h-4 w-4 ml-auto opacity-50" />
                 </button>
 

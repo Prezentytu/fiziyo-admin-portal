@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useMutation, useQuery } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
-import { Bell } from 'lucide-react';
+import { Bell, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -16,12 +16,21 @@ import {
   PATIENT_SIGNALS_POLL_MS,
   selectPatientSignals,
 } from '@/features/patients/utils/patientSignals';
+import { useMarkReleaseNoteSeen, useUnseenReleaseNote } from '@/features/whats-new/useReleaseNotes';
+import {
+  notificationsBellCount,
+  notificationsBellLabel,
+  releaseNoteHref,
+} from '@/features/whats-new/utils/releaseNotes';
 import { MARK_PATIENT_SIGNALS_REVIEWED_MUTATION } from '@/graphql/mutations/therapists.mutations';
 import { GET_ORGANIZATION_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import type { OrganizationPatientsResponse, UserByClerkIdResponse } from '@/types/apollo';
 
-/** Dzwonek: pacjenci, którzy zgłosili ból, „za trudne” albo notatkę od ostatniego przejrzenia (SPEC-039). */
+/**
+ * Dzwonek: pacjenci, którzy zgłosili ból, „za trudne” albo notatkę od ostatniego przejrzenia (SPEC-039),
+ * a nad nimi wysłane, nieobejrzane wydanie portalu („Co nowego”).
+ */
 export function NotificationsBell() {
   const { user } = useUser();
   const { currentOrganization } = useOrganization();
@@ -52,7 +61,10 @@ export function NotificationsBell() {
     () => selectPatientSignals(patients ?? [], therapistId),
     [patients, therapistId]
   );
-  const count = signals.length;
+  const releaseNote = useUnseenReleaseNote();
+  const markReleaseSeen = useMarkReleaseNoteSeen();
+  const sentRelease = releaseNote?.notified ? releaseNote : null;
+  const count = notificationsBellCount(signals.length, releaseNote);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -62,7 +74,7 @@ export function NotificationsBell() {
           size="icon"
           className="relative"
           data-testid="nav-notifications-btn"
-          aria-label={count > 0 ? `Powiadomienia: zgłoszenia pacjentów (${count})` : 'Powiadomienia'}
+          aria-label={notificationsBellLabel(signals.length, sentRelease !== null)}
         >
           <Bell className="h-5 w-5 text-label-secondary" />
           {count > 0 && (
@@ -76,6 +88,23 @@ export function NotificationsBell() {
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-0" data-testid="nav-notifications-panel">
+        {sentRelease && (
+          <Link
+            href={releaseNoteHref(sentRelease.id)}
+            onClick={() => {
+              setOpen(false);
+              markReleaseSeen(sentRelease.id);
+            }}
+            className="flex items-start gap-3 border-b-[0.5px] border-hairline bg-tint-muted px-4 py-3 hover:bg-tint-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+            data-testid="nav-notifications-release-link"
+          >
+            <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-tint" aria-hidden="true" />
+            <span className="min-w-0 flex-1">
+              <b className="block text-[14px] text-foreground">Nowa wersja portalu</b>
+              <span className="block truncate text-[13px] text-label-secondary">{sentRelease.title}</span>
+            </span>
+          </Link>
+        )}
         <h2 className="border-b-[0.5px] border-hairline px-4 py-3 text-[15px] font-semibold text-foreground">
           Zgłoszenia pacjentów
         </h2>
