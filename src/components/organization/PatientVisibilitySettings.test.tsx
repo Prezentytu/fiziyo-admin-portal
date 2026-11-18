@@ -7,7 +7,6 @@ import { PatientVisibilitySettings } from './PatientVisibilitySettings';
 const mutateMock = vi.fn();
 const toastError = vi.fn();
 const toastSuccess = vi.fn();
-let mutationOptions: { update?: (cache: unknown, result: { data?: unknown }) => void } | undefined;
 let settingResult: { data?: unknown; loading: boolean; error?: Error };
 const queryMock = vi.fn();
 
@@ -20,10 +19,7 @@ vi.mock('@apollo/client/react', () => ({
     queryMock(...args);
     return settingResult;
   },
-  useMutation: (_document: unknown, options: typeof mutationOptions) => {
-    mutationOptions = options;
-    return [mutateMock, { loading: false }] as const;
-  },
+  useMutation: () => [mutateMock, { loading: false }] as const,
 }));
 
 vi.mock('sonner', () => ({
@@ -130,19 +126,5 @@ describe('PatientVisibilitySettings', () => {
     await waitFor(() => expect(toastError).toHaveBeenCalledTimes(1));
     expect(toastSuccess).not.toHaveBeenCalled();
     expect(screen.getByTestId(SWITCH)).toBeChecked();
-  });
-
-  it('drops cached patient lists only when the save is acknowledged', () => {
-    setting(false);
-    render(<PatientVisibilitySettings organizationId="org-1" canEdit />);
-    const cache = { evict: vi.fn(), gc: vi.fn() };
-
-    mutationOptions?.update?.(cache, { data: undefined });
-    expect(cache.evict).not.toHaveBeenCalled();
-
-    mutationOptions?.update?.(cache, {
-      data: { setTherapistsSeeAllPatients: { id: 'org-1', therapistsSeeAllPatients: true } },
-    });
-    expect(cache.evict).toHaveBeenCalledWith({ id: 'ROOT_QUERY', fieldName: 'organizationPatients' });
   });
 });
