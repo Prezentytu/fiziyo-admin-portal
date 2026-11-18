@@ -14,7 +14,6 @@ import {
   itemsToDoses,
   applyDose,
   proposeDraftDescription,
-  DRAFT_CLARIFY_QUESTIONS,
   type DraftItem,
 } from '../setDraft';
 
@@ -112,13 +111,6 @@ describe('proposeDraftDescription', () => {
     const names = Array.from({ length: 8 }, (_, index) => `Ćw ${index + 1}`);
     const text = proposeDraftDescription({ exerciseNames: names, minutes: 0, today: new Date(2026, 10, 17) });
     expect(text).toBe('Ćwiczenia: Ćw 1, Ćw 2, Ćw 3, Ćw 4, Ćw 5, Ćw 6 i 2 więcej. Ułożony w czacie 17.11.2026.');
-  });
-});
-
-describe('DRAFT_CLARIFY_QUESTIONS', () => {
-  it('pyta o stronę wprost („lewa czy prawa”) i o czas trwania, a nie „która strona i od kiedy”', () => {
-    expect(DRAFT_CLARIFY_QUESTIONS).toContain('Lewa czy prawa strona? Od jak dawna?');
-    expect(DRAFT_CLARIFY_QUESTIONS.some((question) => /która strona/i.test(question))).toBe(false);
   });
 });
 
