@@ -50,9 +50,17 @@ export function isRestrictedToOwnPatients(
   return (normalized === 'therapist' || normalized === 'staff') && therapistsSeeAllPatients === false;
 }
 
-const PATIENT_LIST_FIELDS = ['organizationPatients', 'therapistPatients', 'organizationMembers'] as const;
+// userById and patientAssignments back /patients/[id] (cache-first): without them a card opened before the
+// setting changed renders from cache instead of the refusal.
+const PATIENT_LIST_FIELDS = [
+  'organizationPatients',
+  'therapistPatients',
+  'organizationMembers',
+  'userById',
+  'patientAssignments',
+] as const;
 
-/** Patient lists depend on the visibility setting: drop them so every screen reads them again. */
+/** Patient reads depend on the visibility setting: drop them so every screen reads them again. */
 export function evictPatientLists(cache: Pick<ApolloCache, 'evict' | 'gc'>): void {
   for (const fieldName of PATIENT_LIST_FIELDS) {
     cache.evict({ id: 'ROOT_QUERY', fieldName });

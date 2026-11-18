@@ -18,7 +18,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { TAKE_OVER_PATIENT_MUTATION } from '@/graphql/mutations/therapists.mutations';
 import { GET_ORGANIZATION_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
-import { patientUnderOtherTherapistMessage } from '@/features/patients/utils/patientCareAccess';
+import { evictPatientLists, patientUnderOtherTherapistMessage } from '@/features/patients/utils/patientCareAccess';
 import type { TakeOverPatientResponse } from '@/types/apollo';
 import { getInitialsFromName } from '@/utils/textUtils';
 
@@ -55,7 +55,7 @@ export function TakeOverDialog({
 }: TakeOverDialogProps) {
   const [isConfirming, setIsConfirming] = useState(false);
 
-  const [takeOver, { loading }] = useMutation(TAKE_OVER_PATIENT_MUTATION, {
+  const [takeOver, { loading, client }] = useMutation(TAKE_OVER_PATIENT_MUTATION, {
     refetchQueries: [{ query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'all' } }],
   });
 
@@ -91,6 +91,8 @@ export function TakeOverDialog({
       const refusal = patientUnderOtherTherapistMessage(error);
       if (refusal) {
         toast.error(refusal);
+        // refetchQueries runs only after a successful mutation; the stale row would keep its button.
+        evictPatientLists(client.cache);
         onOpenChange(false);
         setIsConfirming(false);
         return;
