@@ -61,6 +61,11 @@ jobs:
             };
             const zablokowany = (pr) => pr.draft || pr.head.repo?.full_name !== full ||
               pr.labels.some((l) => ["hold", "needs-adam"].includes(l.name));
+            // Czerwień, której agent nie naprawi z założenia: PR botów zależności i PR zmieniający `.github/`
+            // (agent nie rusza `.github/`, a check `review` jest wtedy czerwony celowo).
+            const pozaAgentem = async (pr) => ["dependabot[bot]", "renovate[bot]"].includes(pr.user?.login) ||
+              (await github.paginate(github.rest.pulls.listFiles, { owner, repo, pull_number: pr.number }))
+                .some((f) => [f.filename, f.previous_filename].some((s) => s?.startsWith(".github/")));
             const juzProbowano = async (pr, powod) => (await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: pr.number }))
               .some((k) => k.user?.login === "github-actions[bot]" && k.body?.includes(ZNACZNIK(pr.number, powod, pr.head.sha)));
 
@@ -78,13 +83,14 @@ jobs:
             } else {
               const otwarte = await github.paginate(github.rest.pulls.list, { owner, repo, state: "open", base: context.payload.repository?.default_branch || "main", sort: "created", direction: "asc" });
               for (const p of otwarte) {
-                if (zablokowany(p)) continue;
+                if (zablokowany(p) || (await pozaAgentem(p))) continue;
                 const pe = await pelny(p.number);
                 if (pe.mergeable === false && !(await juzProbowano(pe, "konflikt"))) { pr = pe; powod = "konflikt"; break; }
               }
               if (!pr) return nic("Brak PR w konflikcie do naprawy");
             }
             if (zablokowany(pr)) return nic(`#${pr.number}: szkic, fork, hold albo needs-adam`);
+            if (await pozaAgentem(pr)) return nic(`#${pr.number}: PR bota zależności albo zmiana w .github/, naprawa u człowieka`);
             if (await juzProbowano(pr, powod)) return nic(`#${pr.number}: ${powod} dla ${pr.head.sha.slice(0, 7)} już był naprawiany`);
 
             // 2. Limit prób na PR.

@@ -19,8 +19,7 @@
     "/src/features/",
     "/src/app/",
     "/src/utils/",
-    "/src/hooks/",
-    "/public/"
+    "/src/hooks/"
   ],
   "zakazane": [
     "/.github/",
