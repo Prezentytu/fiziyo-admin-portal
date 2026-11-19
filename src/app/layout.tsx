@@ -21,8 +21,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'FiziYo Admin',
-  description: 'Panel administracyjny dla fizjoterapeutów',
+  title: 'FiziYo — panel fizjoterapeuty',
+  description:
+    'Panel FiziYo dla fizjoterapeutów i gabinetów: plany ćwiczeń dla pacjentów, przypisania i postępy między wizytami.',
 };
 
 // Inline script to apply accessibility preferences before React hydration (prevents FOUC)
