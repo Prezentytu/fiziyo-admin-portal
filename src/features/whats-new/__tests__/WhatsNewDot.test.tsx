@@ -12,7 +12,7 @@ afterEach(cleanup);
 describe('WhatsNewDot', () => {
   it('does not change the accessible name of the link it sits in', () => {
     render(
-      <a href="/settings">
+      <a href="/settings" data-testid="settings-link">
         <span>Ustawienia</span>
         <WhatsNewDot testId="dot" />
       </a>
