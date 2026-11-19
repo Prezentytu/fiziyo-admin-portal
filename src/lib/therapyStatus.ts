@@ -4,7 +4,7 @@
  */
 
 import {
-  isDiscomfortPain,
+  isDiscomfortFeedback,
   isHardDifficulty,
   mapDifficultyToFeeling,
   type FeelingType,
@@ -50,6 +50,8 @@ export interface ExerciseProgressData {
   completedSets?: number | null;
   completedTime?: number | null;
   painLevel?: number | null;
+  /** Ból 0–10 (NRS); gdy jest, ma pierwszeństwo przed starą skalą 1–5. */
+  painNrs?: number | null;
   difficultyLevel?: number | null;
   notes?: string | null;
   patientNotes?: string | null;
@@ -190,13 +192,6 @@ export function getRequiredWeeklyTrainings(assignments: PatientAssignmentData[])
 }
 
 /**
- * Mapuje painLevel na status samopoczucia
- */
-export function mapPainToWellbeing(level: number | null | undefined): WellbeingType {
-  return isDiscomfortPain(level) ? 'discomfort' : 'ok';
-}
-
-/**
  * Zwraca etykietę dla odczucia trudności
  */
 export function getFeelingLabel(feeling: FeelingType | null): string {
@@ -285,7 +280,7 @@ export function calculateTherapyStatus(
   ).size;
 
   // Sprawdź czy jest dyskomfort
-  const hasDiscomfort = recentProgress.some((p) => isDiscomfortPain(p.painLevel));
+  const hasDiscomfort = recentProgress.some(isDiscomfortFeedback);
 
   const missedTrainings = Math.max(0, requiredSoFar - activeDays);
   const lastActivityAt = recentProgress[0]?.completedAt ?? undefined;
@@ -407,7 +402,7 @@ export function generateHeatmapData(
 
     if (dayProgress.length > 0) {
       // Użyj najgorszego statusu z dnia
-      const hasDiscomfort = dayProgress.some((p) => isDiscomfortPain(p.painLevel));
+      const hasDiscomfort = dayProgress.some(isDiscomfortFeedback);
       const notes = getDayNote(dayProgress);
 
       const feeling = getDayFeeling(dayProgress);
