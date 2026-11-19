@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useMutation, useQuery } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
-import { Bell, Sparkles } from 'lucide-react';
+import { Bell, MessageCircle, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,8 @@ import {
   PATIENT_SIGNALS_POLL_MS,
   selectPatientSignals,
 } from '@/features/patients/utils/patientSignals';
+import { useSupportUnreadCount } from '@/features/support/useSupport';
+import { SUPPORT_PATH, supportTabUnread } from '@/features/support/utils/support';
 import { useMarkReleaseNoteSeen, useUnseenReleaseNote } from '@/features/whats-new/useReleaseNotes';
 import {
   notificationsBellCount,
@@ -57,14 +59,14 @@ export function NotificationsBell() {
   const patients = data?.organizationPatients;
 
   const therapistId = userData?.userByClerkId?.id;
-  const signals = useMemo(
-    () => selectPatientSignals(patients ?? [], therapistId),
-    [patients, therapistId]
-  );
+  const signals = useMemo(() => selectPatientSignals(patients ?? [], therapistId), [patients, therapistId]);
   const releaseNote = useUnseenReleaseNote();
   const markReleaseSeen = useMarkReleaseNoteSeen();
   const sentRelease = releaseNote?.notified ? releaseNote : null;
-  const count = notificationsBellCount(signals.length, releaseNote);
+  const supportCount = useSupportUnreadCount();
+  const teamMessages = supportTabUnread(supportCount, 'CONVERSATIONS');
+  const patientCount = notificationsBellCount(signals.length, releaseNote);
+  const count = patientCount + (teamMessages > 0 ? 1 : 0);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -105,6 +107,22 @@ export function NotificationsBell() {
             </span>
           </Link>
         )}
+        {teamMessages > 0 && (
+          <Link
+            href={SUPPORT_PATH}
+            onClick={() => setOpen(false)}
+            className="flex items-start gap-3 border-b-[0.5px] border-hairline bg-tint-muted px-4 py-3 hover:bg-tint-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+            data-testid="nav-notifications-support-link"
+          >
+            <MessageCircle className="mt-0.5 h-4 w-4 shrink-0 text-tint" aria-hidden="true" />
+            <span className="min-w-0 flex-1">
+              <b className="block text-[14px] text-foreground">Wiadomość od zespołu FiziYo</b>
+              <span className="block truncate text-[13px] text-label-secondary">
+                {teamMessages === 1 ? 'Nowa wiadomość we Wsparciu' : `Nowe wiadomości we Wsparciu: ${teamMessages}`}
+              </span>
+            </span>
+          </Link>
+        )}
         <h2 className="border-b-[0.5px] border-hairline px-4 py-3 text-[15px] font-semibold text-foreground">
           Zgłoszenia pacjentów
         </h2>
@@ -112,7 +130,7 @@ export function NotificationsBell() {
           <p className="px-4 py-5 text-[13px] text-label-secondary" data-testid="nav-notifications-unavailable">
             {error ? 'Nie udało się wczytać zgłoszeń. Spróbuj ponownie za chwilę.' : 'Wczytywanie zgłoszeń…'}
           </p>
-        ) : count === 0 ? (
+        ) : patientCount === 0 ? (
           <p className="px-4 py-5 text-[13px] text-label-secondary" data-testid="nav-notifications-empty">
             Nikt nie zgłosił bólu, trudności ani notatki od ostatniego przejrzenia.
           </p>
