@@ -55,6 +55,8 @@
     "layout.tsx",
     "vitest.config.*",
     "next.config.*",
-    "vercel.json"
+    "vercel.json",
+    "/.ai/skills/",
+    "/.ai/docs/agent-rules.md"
   ]
 }

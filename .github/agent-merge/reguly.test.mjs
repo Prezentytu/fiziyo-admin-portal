@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { drzwiZOpisu, ocen, ocenPliki, werdykt, wzorce, wzorzecNaRegex } from './reguly.mjs';
+import { drzwiZOpisu, ocen, ocenPliki, otwarteWatki, werdykt, wzorce, wzorzecNaRegex } from './reguly.mjs';
 
 const SHA = 'a'.repeat(40);
 const cfg = { gate: 'gate', review: 'review', maxLinii: 300, maxPlikow: 15 };
@@ -49,7 +49,7 @@ const wejscie = (zmiany = {}) => ({
   checkRuns: ZIELONE,
   komentarze: PASS,
   reviews: [],
-  nierozwiazane: 0,
+  watki: [],
   mainCzerwony: null,
   cfg,
   zakazane,
@@ -267,7 +267,7 @@ test('pozostałe hamulce', () => {
     }),
     /prośba/
   );
-  assert.match(nie({ nierozwiazane: 2 }), /wątki/);
+  assert.match(nie({ watki: [{ isResolved: false, isOutdated: false, autor: 'adam' }] }), /wątki/);
   assert.match(nie({ mainCzerwony: 'E2E Dev Full: failure' }), /czerwony/);
   assert.match(nie({ komentarze: [] }), /brak/);
   assert.equal(ocen(wejscie({ pr: { ...PR, draft: true } })).stan, 'czeka');
@@ -282,4 +282,56 @@ test('wzorce: składnia spoza modelu rzuca błąd, komentarz i pusta linia znika
   assert.ok(wzorzecNaRegex('*.graphql').test('src/x/y.graphql'));
   assert.ok(!wzorzecNaRegex('/src/proxy.ts').test('src/proxy.tsx'));
   assert.ok(wzorzecNaRegex('/.claude/settings*.json').test('.claude/settings.local.json'));
+});
+
+test('wątki: człowiek blokuje zawsze, recenzent CI tylko bez PASS, przestarzałe i rozwiązane nie', () => {
+  const czlowiek = { isResolved: false, isOutdated: false, autor: 'adam' };
+  const bot = { isResolved: false, isOutdated: false, autor: 'claude' };
+  assert.equal(otwarteWatki([czlowiek, bot], true), 1);
+  assert.equal(otwarteWatki([czlowiek, bot], false), 2);
+  assert.equal(otwarteWatki([{ ...czlowiek, isOutdated: true }], false), 0);
+  assert.equal(otwarteWatki([{ ...czlowiek, isResolved: true }], false), 0);
+  assert.equal(ocen(wejscie({ watki: [bot] })).stan, 'tak');
+});
+
+test('testy: przeniesienie testu poza testy i warianty skip blokują', () => {
+  const d = wzorce('**');
+  const z = [];
+  const przeniesiony = {
+    filename: 'docs/archiwum/x.test.ts.md',
+    previous_filename: 'utils/__tests__/x.test.ts',
+    status: 'renamed',
+    additions: 0,
+    deletions: 0,
+  };
+  assert.match(ocenPliki([przeniesiony], { dozwolone: d, zakazane: z }).join(' '), /przeniesiony poza testy/);
+  assert.deepEqual(
+    ocenPliki([{ ...przeniesiony, filename: 'utils/__tests__/y.test.ts' }], {
+      dozwolone: d,
+      zakazane: z,
+    }),
+    []
+  );
+  for (const linia of [
+    "+it.skipIf(ci)('x', () => {})",
+    "+describe.runIf(false)('x', () => {})",
+    "+test.concurrent.skip('x')",
+  ]) {
+    assert.match(
+      ocenPliki(
+        [
+          {
+            filename: 'src/a.test.ts',
+            status: 'modified',
+            additions: 1,
+            deletions: 0,
+            patch: linia,
+          },
+        ],
+        { dozwolone: d, zakazane: z }
+      )[0],
+      /wyłączony/,
+      linia
+    );
+  }
 });

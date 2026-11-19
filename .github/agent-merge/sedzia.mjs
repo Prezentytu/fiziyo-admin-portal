@@ -61,14 +61,18 @@ async function plikZBazy(sciezka, ref) {
   }
 }
 
-async function nierozwiazaneWatki(n) {
+async function watkiReview(n) {
   const [owner, name] = REPO.split('/');
-  const q = `query($o:String!,$r:String!,$n:Int!){repository(owner:$o,name:$r){pullRequest(number:$n){reviewThreads(first:100){nodes{isResolved}}}}}`;
+  const q = `query($o:String!,$r:String!,$n:Int!){repository(owner:$o,name:$r){pullRequest(number:$n){reviewThreads(first:100){nodes{isResolved isOutdated comments(first:1){nodes{author{login}}}}}}}}`;
   const d = await api('graphql', {
     metoda: 'POST',
     body: { query: q, variables: { o: owner, r: name, n } },
   });
-  return d.data.repository.pullRequest.reviewThreads.nodes.filter((t) => !t.isResolved).length;
+  return d.data.repository.pullRequest.reviewThreads.nodes.map((t) => ({
+    isResolved: t.isResolved,
+    isOutdated: t.isOutdated,
+    autor: t.comments.nodes[0]?.author?.login,
+  }));
 }
 
 async function mainCzerwony(galaz) {
@@ -147,12 +151,12 @@ async function main() {
   for (const p of otwarte) {
     const pr = await pelnyPr(p.number);
     const sha = pr.head.sha;
-    const [pliki, checkRuns, komentarze, reviews, nierozwiazane] = await Promise.all([
+    const [pliki, checkRuns, komentarze, reviews, watki] = await Promise.all([
       wszystko(`repos/${REPO}/pulls/${pr.number}/files`),
       wszystko(`repos/${REPO}/commits/${sha}/check-runs?filter=latest`, 'check_runs'),
       wszystko(`repos/${REPO}/issues/${pr.number}/comments`),
       wszystko(`repos/${REPO}/pulls/${pr.number}/reviews`),
-      nierozwiazaneWatki(pr.number),
+      watkiReview(pr.number),
     ]);
     let wynik;
     try {
@@ -162,7 +166,7 @@ async function main() {
         checkRuns,
         komentarze,
         reviews,
-        nierozwiazane,
+        watki,
         mainCzerwony: czerwony,
         cfg,
         zakazane,

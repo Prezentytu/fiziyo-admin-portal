@@ -43,7 +43,7 @@ const TEST_PLIK = /(^|\/)(__tests__|tests?|e2e)\/|\.(test|spec)\.[cm]?[jt]sx?$|T
 const ASERCJA =
   /\b(expect|assert\w*|Assert\.\w+|toBe\w*|toEqual|toMatch\w*|toHaveBeenCalled\w*|should\.\w+)\b|\b(it|test|describe)(\.each)?\(|\[(Fact|Theory)/;
 const WYLACZENIE =
-  /\b(it|test|describe)\.(skip|only|todo)\b|\b(xit|xdescribe|fit|fdescribe)\(|\btest\.fixme\b|Skip\s*=\s*"|\[Ignore\]|@ts-nocheck/;
+  /\b(it|test|describe)(\.concurrent)?\.(skip|only|todo|skipIf|runIf)\b|\b(xit|xdescribe|fit|fdescribe)\(|\btest\.fixme\b|Skip\s*=\s*"|\[Ignore\]|@ts-nocheck/;
 
 // pliki: [{filename, previous_filename?, status, additions, deletions, patch?}]
 export function ocenPliki(pliki, { dozwolone, zakazane }) {
@@ -54,6 +54,13 @@ export function ocenPliki(pliki, { dozwolone, zakazane }) {
       else if (!pasuje(s, dozwolone)) powody.push(`plik spoza listy dozwolonych: \`${s}\``);
     }
     const test = TEST_PLIK.test(p.filename) || (p.previous_filename && TEST_PLIK.test(p.previous_filename));
+    // Przeniesienie testu pod nazwę, której runner nie uruchomi, to też usunięcie testu.
+    const wypadlZTestow =
+      p.status === 'renamed' &&
+      p.previous_filename &&
+      TEST_PLIK.test(p.previous_filename) &&
+      !TEST_PLIK.test(p.filename);
+    if (wypadlZTestow) powody.push(`test przeniesiony poza testy: \`${p.previous_filename}\` → \`${p.filename}\``);
     if (test && p.status === 'removed') powody.push(`usunięty plik testu: \`${p.filename}\``);
     if (p.patch === undefined && (p.additions || p.deletions))
       powody.push(`brak diffu do sprawdzenia (za duży albo binarny): \`${p.filename}\``);
@@ -114,7 +121,7 @@ export function ocen({
   checkRuns,
   komentarze,
   reviews,
-  nierozwiazane,
+  watki = [],
   mainCzerwony,
   cfg,
   zakazane,
@@ -144,7 +151,14 @@ export function ocen({
   const ostatnie = new Map();
   for (const r of reviews) if (r.user && r.state !== 'COMMENTED') ostatnie.set(r.user.login, r.state);
   for (const [kto, s] of ostatnie) if (s === 'CHANGES_REQUESTED') powody.push(`prośba o zmiany od ${kto}`);
-  if (nierozwiazane > 0) powody.push(`nierozwiązane wątki review: ${nierozwiazane}`);
+  const otwarte = otwarteWatki(watki, w === 'PASS');
+  if (otwarte > 0) powody.push(`nierozwiązane wątki review: ${otwarte}`);
   if (pr.mergeable !== true) powody.push(`GitHub nie widzi PR jako mergeable (${pr.mergeable_state})`);
   return { stan: powody.length ? 'nie' : 'tak', powody };
+}
+
+// Wątki, które blokują merge: nierozwiązane, nieprzestarzałe, a przy PASS dla heada bez wątków samego
+// recenzenta CI (jego PASS rozlicza własne znaleziska; P3 inline nie blokuje). Wątek człowieka liczy się zawsze.
+export function otwarteWatki(watki, pass) {
+  return watki.filter((t) => !t.isResolved && !t.isOutdated && !(pass && t.autor === 'claude')).length;
 }

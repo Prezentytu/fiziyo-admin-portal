@@ -131,6 +131,8 @@ jobs:
         with:
           ref: ${{ needs.decyzja.outputs.galaz }}
           fetch-depth: 0
+          # Push robi claude-code-action własnym tokenem aplikacji Claude, nie GITHUB_TOKEN z checkoutu.
+          persist-credentials: false
       - name: Stan gałęzi i diagnoza
         id: stan
         env:
@@ -138,7 +140,7 @@ jobs:
         run: |
           if [ "$(git rev-parse HEAD)" != "$HEAD_SHA" ]; then echo "Gałąź ma nowszy commit: naprawa niepotrzebna"; echo "aktualny=nie" >> "$GITHUB_OUTPUT"; exit 0; fi
           echo "aktualny=tak" >> "$GITHUB_OUTPUT"
-          git fetch -q origin "${{ github.event.repository.default_branch || 'main' }}"
+          # origin/main jest już lokalnie: checkout z fetch-depth 0 pobiera wszystkie gałęzie.
           : > "$RUNNER_TEMP/diagnoza.txt"
           if [ -n "$RUN_ID" ]; then gh run view "$RUN_ID" -R "$GITHUB_REPOSITORY" --log-failed 2>/dev/null | tail -n 400 >> "$RUNNER_TEMP/diagnoza.txt" || true; fi
           if ! git merge-tree --write-tree "origin/${{ github.event.repository.default_branch || 'main' }}" HEAD > "$RUNNER_TEMP/merge-tree.txt" 2>&1; then
@@ -149,7 +151,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - if: steps.stan.outputs.aktualny == 'tak'
         uses: anthropics/claude-code-action@f3b070c88125d33dbae5653df5f143101d4ea9dc # v1
         with:
