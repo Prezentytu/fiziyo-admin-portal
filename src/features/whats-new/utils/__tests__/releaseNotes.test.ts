@@ -138,6 +138,15 @@ describe('notifications bell', () => {
     expect(notificationsBellLabel(0, true)).toBe('Powiadomienia: nowa wersja portalu');
     expect(notificationsBellLabel(2, true)).toBe('Powiadomienia: nowa wersja portalu i zgłoszenia pacjentów (2)');
   });
+
+  it('counts and names a message from the FiziYo team as one notification', () => {
+    expect(notificationsBellCount(0, null, true)).toBe(1);
+    expect(notificationsBellCount(2, { notified: true }, true)).toBe(4);
+    expect(notificationsBellLabel(0, false, true)).toBe('Powiadomienia: wiadomość od zespołu FiziYo');
+    expect(notificationsBellLabel(2, true, true)).toBe(
+      'Powiadomienia: nowa wersja portalu, wiadomość od zespołu FiziYo i zgłoszenia pacjentów (2)'
+    );
+  });
 });
 
 describe('unseenReleaseNoteIds', () => {

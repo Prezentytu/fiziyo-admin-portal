@@ -1067,6 +1067,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
           organizationId={organizationId}
           initialExerciseIds={[exercise.id]}
           onSuccess={() => setIsCreateSetWizardOpen(false)}
+          nextStepsBackLabel="Wróć do ćwiczenia"
         />
       )}
 

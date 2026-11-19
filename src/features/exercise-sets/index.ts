@@ -1,6 +1,7 @@
 export { SetCard } from './SetCard';
 export type { ExerciseSet } from './SetCard';
 export { CreateSetWizard } from './CreateSetWizard';
+export { SetCreatedDialog } from './SetCreatedDialog';
 export { AddExerciseToSetDialog } from './AddExerciseToSetDialog';
 export { EditExerciseInSetDialog } from './EditExerciseInSetDialog';
 export { EditExerciseSetFullDialog } from './EditExerciseSetFullDialog';

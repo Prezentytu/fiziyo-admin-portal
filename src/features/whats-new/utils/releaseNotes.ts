@@ -91,16 +91,25 @@ export function shouldShowReleaseBanner(
   return !(pathname === '/settings' && settingsTab === WHATS_NEW_TAB);
 }
 
-/** Licznik dzwonka: zgłoszenia pacjentów plus jedno wysłane, nieobejrzane wydanie portalu. */
-export function notificationsBellCount(signalCount: number, note: Pick<ReleaseNote, 'notified'> | null): number {
-  return signalCount + (note?.notified ? 1 : 0);
+/**
+ * Licznik dzwonka: zgłoszenia pacjentów plus jedno wysłane, nieobejrzane wydanie portalu
+ * i jedna pozycja za nieprzeczytane wiadomości od zespołu FiziYo.
+ */
+export function notificationsBellCount(
+  signalCount: number,
+  note: Pick<ReleaseNote, 'notified'> | null,
+  hasTeamMessage = false
+): number {
+  return signalCount + (note?.notified ? 1 : 0) + (hasTeamMessage ? 1 : 0);
 }
 
-export function notificationsBellLabel(signalCount: number, hasRelease: boolean): string {
-  if (hasRelease) {
-    return signalCount > 0
-      ? `Powiadomienia: nowa wersja portalu i zgłoszenia pacjentów (${signalCount})`
-      : 'Powiadomienia: nowa wersja portalu';
-  }
-  return signalCount > 0 ? `Powiadomienia: zgłoszenia pacjentów (${signalCount})` : 'Powiadomienia';
+export function notificationsBellLabel(signalCount: number, hasRelease: boolean, hasTeamMessage = false): string {
+  const parts = [
+    hasRelease ? 'nowa wersja portalu' : null,
+    hasTeamMessage ? 'wiadomość od zespołu FiziYo' : null,
+    signalCount > 0 ? `zgłoszenia pacjentów (${signalCount})` : null,
+  ].filter((part): part is string => part !== null);
+  if (parts.length === 0) return 'Powiadomienia';
+  const last = parts.pop();
+  return `Powiadomienia: ${parts.length > 0 ? `${parts.join(', ')} i ${last}` : last}`;
 }

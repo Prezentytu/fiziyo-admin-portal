@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import { useQuery, useMutation, useApolloClient } from '@apollo/client/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
@@ -78,6 +78,7 @@ import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { DashboardRouteLoading } from '@/components/layout/DashboardRouteLoading';
 import { isTemplateSet } from '@/features/exercise-sets/utils/setKind';
+import { buildSetHrefWithoutAssign, shouldOpenAssignOnLoad } from '@/features/exercise-sets/utils/setAssignHref';
 import { PageSheet } from '@/components/shared/page';
 import { normalizeExerciseSide } from '@/utils/exerciseEnums';
 
@@ -260,6 +261,15 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
   );
   const exerciseSet = (data as ExerciseSetData | undefined)?.exerciseSetById;
   const backToListHref = searchParams.get('from') === 'patient-plans' ? '/exercise-sets?filter=patient-plans' : '/exercise-sets';
+  const shouldOpenAssign = shouldOpenAssignOnLoad(searchParams);
+  const canAssign = Boolean(organizationId && therapistId && exerciseSet);
+
+  // ?assign=1 (np. po utworzeniu zestawu): od razu kreator przypisania, potem adres bez assign.
+  useEffect(() => {
+    if (!shouldOpenAssign || !canAssign) return;
+    setIsAssignDialogOpen(true);
+    router.replace(buildSetHrefWithoutAssign(id, searchParams), { scroll: false });
+  }, [shouldOpenAssign, canAssign, id, router, searchParams]);
 
   if (orgContextLoading && !organizationId) {
     return (
