@@ -211,14 +211,29 @@ jobs:
         env:
           OUT: ${{ steps.review.outputs.structured_output }}
           EXEC: ${{ steps.review.outputs.execution_file }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           # Odmowy narzędzi: czego recenzentowi brakuje w --allowedTools.
           [ -f "$EXEC" ] && jq -c '.[] | select(.type == "result") | .permission_denials[]? | {tool_name, input: (.tool_input.command // .tool_input.file_path // .tool_input)}' "$EXEC" || true
           verdict=$(jq -r '.verdict // empty' <<<"$OUT")
           sha=$(jq -r '.sha // empty' <<<"$OUT")
           echo "Werdykt: ${verdict:-brak} dla ${sha:-brak} (head $HEAD_SHA)"
-          # Brak werdyktu albo werdykt dla innego SHA nie jest review. Akcja pomija się sama,
-          # gdy ten plik różni się od wersji na main (PR zmieniający workflow): wtedy też czerwono.
-          [ -n "$verdict" ] || { echo "::error::Brak werdyktu: review się nie odbyło (np. ten PR zmienia claude-review.yml)"; exit 1; }
+          # Brak werdyktu albo werdykt dla innego SHA nie jest review. Akcja pomija się sama, gdy plik
+          # workflowu w tym runie (z merge refu PR) różni się od wersji na main: wtedy też czerwono,
+          # z przyczyną i wyjściem. Re-run używa tego samego merge refu, więc nie pomaga.
+          if [ -z "$verdict" ]; then
+            wf=.github/workflows/claude-review.yml
+            if ! git diff --quiet "$(git merge-base "origin/$BASE" "$HEAD_SHA")" "$HEAD_SHA" -- "$wf"; then
+              why="ten PR zmienia $wf, review ruszy na następnych PR po merge"
+            elif [ "$BASE" != "$DEFAULT_BRANCH" ] && ! git diff --quiet "origin/$BASE" "origin/$DEFAULT_BRANCH" -- "$wf"; then
+              why="PR w stosie na $BASE, gdzie $wf różni się od $DEFAULT_BRANCH: najpierw zaktualizuj $BASE z $DEFAULT_BRANCH, potem ten PR (gh pr update-branch $PR)"
+            elif ! git diff --quiet "$HEAD_SHA" "origin/$DEFAULT_BRANCH" -- "$wf"; then
+              why="gałąź ma starszy $wf niż $DEFAULT_BRANCH, a merge ref PR jest sprzed tej zmiany: zaktualizuj gałąź (gh pr update-branch $PR) albo wypchnij commit"
+            else
+              why="przyczyna w logu kroku claude-code-action"
+            fi
+            echo "::error::Brak werdyktu: review się nie odbyło, $why"
+            exit 1
+          fi
           [ "$sha" = "$HEAD_SHA" ] || { echo "::error::Werdykt dotyczy $sha, nie heada PR"; exit 1; }
           [ "$verdict" = "PASS" ] || { echo "::error::Review: FAIL, szczegóły w komentarzu na PR"; exit 1; }
