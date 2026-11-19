@@ -113,12 +113,30 @@ jobs:
               [ "$found" = "$prev" ] || prev_id=${found#*$'\t'}
             fi
           fi
+          # Komentarz bota da się wymusić wstrzyknięciem w treść PR (np. „PASS <sha przyszłego commita>”).
+          # Werdykt liczy się więc tylko, gdy dla jego SHA jest zakończony run tego workflow z tym samym
+          # wynikiem (PASS = success, FAIL = failure). Inaczej pełna recenzja.
+          if [ -n "$prev_id" ]; then
+            word=${prev%% *}; short=${prev#* }; want=failure; [ "$word" = PASS ] && want=success
+            full=$(git rev-parse --verify -q "$short^{commit}" || true)
+            ok=""
+            if [ -n "$full" ]; then
+              ok=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/claude-review.yml/runs?head_sha=$full&status=completed&per_page=100" \
+                --jq "[.workflow_runs[] | select(.conclusion == \"$want\")] | length" || true)
+            fi
+            if [ "${ok:-0}" -lt 1 ]; then
+              echo "::warning::Werdykt $prev z komentarza $prev_id bez zakończonego runu ($want) dla tego SHA: pełna recenzja"
+              prev="brak"; prev_id=""
+            fi
+          fi
           echo "Poprzedni werdykt: $prev ${prev_id:+(komentarz $prev_id)}"
           echo "prev=$prev" >> "$GITHUB_OUTPUT"
           echo "prev_id=$prev_id" >> "$GITHUB_OUTPUT"
           # Recenzja startuje razem z CI, więc joby CI mogą jeszcze czekać na runner i nie mieć checków.
           err="$RUNNER_TEMP/checks.err"
-          checks=$(gh pr checks "$PR" -R "$GITHUB_REPOSITORY" --json name,bucket --jq '.[] | select(.name != "review") | "\(.name): \(.bucket)"' 2>"$err" | tr -cd '[:alnum:][:space:]:_./()-' | head -40 || true)
+          # Nazwa checka pochodzi z workflowu (także z PR): bez znaków sterujących i backticków, jedna linia na check.
+          checks=$(gh pr checks "$PR" -R "$GITHUB_REPOSITORY" --json name,bucket \
+            --jq '.[] | select(.name != "review") | "\(.name | gsub("[[:cntrl:]`$]+"; " ")): \(.bucket)"' 2>"$err" | head -40 || true)
           if [ -z "$checks" ]; then
             if [ ! -s "$err" ] || grep -q "no checks reported" "$err"; then
               checks="brak innych checków w chwili startu recenzji (CI mogło jeszcze nie wystartować)"
@@ -128,7 +146,8 @@ jobs:
             fi
           fi
           printf 'Stan CI:\n%s\n' "$checks"
-          { echo "checks<<CHECKS_EOF"; echo "$checks"; echo "CHECKS_EOF"; } >> "$GITHUB_OUTPUT"
+          delim="CHECKS_$(openssl rand -hex 8)"
+          { echo "checks<<$delim"; echo "$checks"; echo "$delim"; } >> "$GITHUB_OUTPUT"
       - uses: anthropics/claude-code-action@f3b070c88125d33dbae5653df5f143101d4ea9dc # v1
         id: review
         with:
