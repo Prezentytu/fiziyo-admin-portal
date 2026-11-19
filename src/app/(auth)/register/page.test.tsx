@@ -72,3 +72,46 @@ describe('register page: błędy z Clerk', () => {
     expect(screen.getByTestId('auth-register-email-input')).toHaveValue('gabinet@poczta.pl');
   });
 });
+
+describe('register page: link polecający (SPEC-054)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    sessionStorage.clear();
+    mocks.create.mockResolvedValue(undefined);
+    mocks.prepare.mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    cleanup();
+    window.history.replaceState(null, '', '/');
+  });
+
+  it('kod z ?ref= trafia do unsafeMetadata.referralCode', async () => {
+    window.history.replaceState(null, '', '/register?ref=przem-7k3d');
+    render(<RegisterPage />);
+    await fillAndSubmit();
+
+    expect(mocks.create).toHaveBeenCalledWith(
+      expect.objectContaining({ unsafeMetadata: expect.objectContaining({ referralCode: 'PRZEM-7K3D' }) })
+    );
+  });
+
+  it('kod przetrwa powrót na /register bez parametru (sessionStorage)', async () => {
+    window.history.replaceState(null, '', '/register?ref=PRZEM-7K3D');
+    const first = render(<RegisterPage />);
+    first.unmount();
+    window.history.replaceState(null, '', '/register');
+    render(<RegisterPage />);
+    await fillAndSubmit();
+
+    expect(mocks.create.mock.calls[0][0].unsafeMetadata.referralCode).toBe('PRZEM-7K3D');
+  });
+
+  it('bez kodu metadane nie mają pola referralCode', async () => {
+    window.history.replaceState(null, '', '/register');
+    render(<RegisterPage />);
+    await fillAndSubmit();
+
+    expect(mocks.create.mock.calls[0][0].unsafeMetadata).not.toHaveProperty('referralCode');
+  });
+});
