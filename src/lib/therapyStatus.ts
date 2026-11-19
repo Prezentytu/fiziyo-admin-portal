@@ -5,7 +5,6 @@
 
 import {
   isDiscomfortFeedback,
-  isDiscomfortPain,
   isHardDifficulty,
   mapDifficultyToFeeling,
   type FeelingType,
@@ -190,13 +189,6 @@ export function getRequiredWeeklyTrainings(assignments: PatientAssignmentData[])
   }
 
   return total;
-}
-
-/**
- * Mapuje painLevel na status samopoczucia
- */
-export function mapPainToWellbeing(level: number | null | undefined): WellbeingType {
-  return isDiscomfortPain(level) ? 'discomfort' : 'ok';
 }
 
 /**

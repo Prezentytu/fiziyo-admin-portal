@@ -44,31 +44,6 @@ interface ActivityReportProps {
   readonly onCall?: () => void;
 }
 
-interface ExerciseProgressQueryItem {
-  id: string;
-  assignmentId?: string | null;
-  exerciseId?: string | null;
-  exerciseSetId?: string | null;
-  completedAt?: string | null;
-  status: string;
-  completedReps?: number | null;
-  completedSets?: number | null;
-  completedTime?: number | null;
-  painLevel?: number | null;
-  /** Ból 0–10 (NRS); gdy jest, ma pierwszeństwo przed starą skalą 1–5. */
-  painNrs?: number | null;
-  difficultyLevel?: number | null;
-  notes?: string | null;
-  patientNotes?: string | null;
-  rating?: number | null;
-  realDuration?: number | null;
-  exercise?: {
-    id: string;
-    name: string;
-    type?: string | null;
-  } | null;
-}
-
 interface PatientAssignmentsQueryItem {
   id: string;
   completionCount?: number | null;
@@ -92,7 +67,7 @@ interface ExerciseSetProgressQueryItem {
 }
 
 interface ExerciseProgressQueryResponse {
-  exerciseProgress?: ExerciseProgressQueryItem[];
+  exerciseProgress?: ExerciseProgressData[];
 }
 
 interface PatientAssignmentsQueryResponse {
@@ -255,26 +230,8 @@ export function ActivityReport({
     setLastRefreshedAt(new Date());
   };
 
-  const exerciseProgress: ExerciseProgressData[] = (
-    (progressData as ExerciseProgressQueryResponse | undefined)?.exerciseProgress || []
-  ).map((progress) => ({
-    id: progress.id,
-    assignmentId: progress.assignmentId,
-    exerciseId: progress.exerciseId,
-    exerciseSetId: progress.exerciseSetId,
-    completedAt: progress.completedAt,
-    status: progress.status,
-    completedReps: progress.completedReps,
-    completedSets: progress.completedSets,
-    completedTime: progress.completedTime,
-    painLevel: progress.painLevel,
-    difficultyLevel: progress.difficultyLevel,
-    notes: progress.notes,
-    patientNotes: progress.patientNotes,
-    rating: progress.rating,
-    realDuration: progress.realDuration,
-    exercise: progress.exercise,
-  }));
+  const exerciseProgress =
+    (progressData as ExerciseProgressQueryResponse | undefined)?.exerciseProgress || [];
 
   const rawAssignments = (assignmentsData as PatientAssignmentsQueryResponse | undefined)?.patientAssignments || [];
   const setProgress =

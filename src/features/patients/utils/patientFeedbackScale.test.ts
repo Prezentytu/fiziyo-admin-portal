@@ -6,6 +6,7 @@ import { progressToEvents } from '../EventJournal';
 
 import {
   formatFeedbackLevel,
+  formatPainFeedback,
   isDiscomfortFeedback,
   isDiscomfortPain,
   isHardDifficulty,
@@ -37,6 +38,13 @@ describe('patient feedback scale (mobile 1–5)', () => {
   it('formats levels against the five-point scale', () => {
     expect(formatFeedbackLevel(5)).toBe('5/5');
     expect(formatFeedbackLevel(0)).toBeNull();
+  });
+
+  it('formats pain 0–10 before the old scale, and "bez bólu" 0/10 as an answer', () => {
+    expect(formatPainFeedback({ painNrs: 8, painLevel: 0 })).toBe('8/10');
+    expect(formatPainFeedback({ painNrs: 0, painLevel: 0 })).toBe('0/10');
+    expect(formatPainFeedback({ painNrs: null, painLevel: 4 })).toBe('4/5');
+    expect(formatPainFeedback({ painNrs: null, painLevel: 0 })).toBeNull();
   });
 });
 
@@ -142,5 +150,12 @@ describe('event journal on a discomfort day', () => {
       expect(today.type).toBe('discomfort');
       expect(today.description).toBe('Kolano bolało przy przysiadzie');
     }
+  });
+
+  it('shows discomfort for pain 8/10 without an old-scale answer, like the therapy status', () => {
+    const completedAt = new Date().toISOString();
+    const [today] = progressToEvents([{ id: 'nrs', status: 'completed', completedAt, painNrs: 8, painLevel: 0 }], 1);
+
+    expect(today.type).toBe('discomfort');
   });
 });

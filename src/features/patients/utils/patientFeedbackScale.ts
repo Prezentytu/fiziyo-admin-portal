@@ -48,3 +48,12 @@ export function formatFeedbackLevel(level: number | null | undefined): string | 
   if (!isAnswered(level)) return null;
   return `${Number.isInteger(level) ? level : level.toFixed(1)}/${PATIENT_FEEDBACK_SCALE_MAX}`;
 }
+
+export const PAIN_NRS_MAX = 10;
+
+/** Ból do pokazania terapeucie: NRS 0–10, gdy pacjent odpowiedział w tej skali, inaczej stara skala 1–5. */
+export function formatPainFeedback(feedback: { painNrs?: number | null; painLevel?: number | null }): string | null {
+  const nrs = feedback.painNrs;
+  if (typeof nrs === 'number' && Number.isFinite(nrs)) return `${nrs}/${PAIN_NRS_MAX}`;
+  return formatFeedbackLevel(feedback.painLevel);
+}

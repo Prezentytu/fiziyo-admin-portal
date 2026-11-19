@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { formatDateWithTime } from '@/lib/therapyStatus';
 import type { ExerciseProgressData } from '@/lib/therapyStatus';
 
-import { formatFeedbackLevel } from './utils/patientFeedbackScale';
+import { formatFeedbackLevel, formatPainFeedback } from './utils/patientFeedbackScale';
 
 interface ExerciseExecutionLogProps {
   readonly progress: ExerciseProgressData[];
@@ -27,8 +27,7 @@ function formatMetric(label: string, value?: number | null): string | null {
   return `${label}: ${value}`;
 }
 
-function formatScaleMetric(label: string, value?: number | null): string | null {
-  const formatted = formatFeedbackLevel(value);
+function formatScaleMetric(label: string, formatted: string | null): string | null {
   return formatted ? `${label}: ${formatted}` : null;
 }
 
@@ -62,8 +61,8 @@ export function ExerciseExecutionLog({ progress, maxItems = 8, className }: Exer
               formatMetric('Serie', execution.completedSets),
               formatMetric('Powt.', execution.completedReps),
               duration ? `Czas: ${duration}` : null,
-              formatScaleMetric('Ból', execution.painLevel),
-              formatScaleMetric('Trudność', execution.difficultyLevel),
+              formatScaleMetric('Ból', formatPainFeedback(execution)),
+              formatScaleMetric('Trudność', formatFeedbackLevel(execution.difficultyLevel)),
             ].filter((metric): metric is string => Boolean(metric));
 
             return (
