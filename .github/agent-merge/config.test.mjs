@@ -37,6 +37,9 @@ test('ścieżki krytyczne nie trafiają do sędziego', () => {
     'src/app/nowa-publiczna/page.tsx',
     'src/stores/x.ts',
     'src/hooks/useUserRole.ts',
+    'vitest.setup.ts',
+    'src/services/aiService.ts',
+    '.npmrc',
   ]) {
     assert.equal(dlaSedziego(p), false, p);
   }
