@@ -7,6 +7,7 @@ import {
   decisionCopy,
   exercisesLabel,
   runBatchAccept,
+  toOfferPreview,
   toPendingOfferViews,
   validateDecisionNote,
 } from '../exerciseOffers';
@@ -109,5 +110,43 @@ describe('exercisesLabel', () => {
     [25, '25 ćwiczeń'],
   ])('%i → %s', (count, label) => {
     expect(exercisesLabel(count)).toBe(label);
+  });
+});
+
+describe('toOfferPreview', () => {
+  it('shows the offered exercise with its own media, texts and template parameters', () => {
+    const preview = toOfferPreview({
+      id: 'fx-1',
+      name: 'Mostek biodrowy',
+      type: 'reps',
+      side: 'LEFT',
+      patientDescription: 'Unieś biodra.',
+      clinicalDescription: null,
+      images: ['', 'https://cdn/a.jpg', 'https://cdn/b.jpg'],
+      videoUrl: 'https://cdn/film.mp4',
+      defaultSets: 3,
+      defaultReps: 12,
+      mainTags: ['pośladki'],
+      enrichmentData: null,
+    });
+
+    expect(preview).toMatchObject({
+      id: 'fx-1',
+      sourceExerciseId: 'fx-1',
+      displayName: 'Mostek biodrowy',
+      imageUrls: ['https://cdn/a.jpg', 'https://cdn/b.jpg'],
+      videoUrl: 'https://cdn/film.mp4',
+      sets: 3,
+      reps: 12,
+      side: 'left',
+      patientDescription: 'Unieś biodra.',
+      mainTags: ['pośladki'],
+    });
+    expect(preview?.clinicalDescription).toBeUndefined();
+  });
+
+  it('has nothing to show when the backend hides the exercise', () => {
+    expect(toOfferPreview(null)).toBeNull();
+    expect(toOfferPreview(undefined)).toBeNull();
   });
 });

@@ -1,6 +1,9 @@
+import { fromBuilderExercise } from '@/components/shared/exercise/adapters';
+import type { ExerciseExecutionCardData } from '@/components/shared/exercise/types';
 import type {
   ExerciseOffer,
   ExerciseOfferDecision,
+  ExerciseOfferExercise,
   ExerciseOfferMode,
 } from '@/graphql/types/exerciseOffer.types';
 
@@ -14,6 +17,8 @@ export interface OfferView {
   hasVideo: boolean;
   message: string | null;
   offeredAt: string;
+  /** Ćwiczenie tak, jak zobaczy je gabinet po przyjęciu; null, gdy backend nie pokazuje treści. */
+  preview: ExerciseExecutionCardData | null;
 }
 
 /**
@@ -42,8 +47,47 @@ export function toPendingOfferViews(offers: ReadonlyArray<ExerciseOffer> | null 
       hasVideo: Boolean(offer.exercise?.videoUrl?.trim()),
       message: offer.message?.trim() || null,
       offeredAt: offer.offeredAt,
+      preview: toOfferPreview(offer.exercise),
     }))
     .sort((left, right) => right.offeredAt.localeCompare(left.offeredAt));
+}
+
+/**
+ * Podgląd proponowanego ćwiczenia z jego własnymi parametrami (bez nadpisań gabinetu, bo jeszcze ich nie ma),
+ * ten sam co przy wyborze ćwiczenia do zestawu.
+ */
+export function toOfferPreview(exercise: ExerciseOfferExercise | null | undefined): ExerciseExecutionCardData | null {
+  if (!exercise) {
+    return null;
+  }
+  return fromBuilderExercise(
+    {
+      id: exercise.id,
+      name: exercise.name,
+      type: exercise.type ?? undefined,
+      side: exercise.side ?? undefined,
+      patientDescription: exercise.patientDescription ?? undefined,
+      clinicalDescription: exercise.clinicalDescription ?? undefined,
+      audioCue: exercise.audioCue ?? undefined,
+      rangeOfMotion: exercise.rangeOfMotion ?? undefined,
+      resistance: exercise.resistance,
+      equipment: exercise.equipment,
+      difficultyLevel: exercise.difficultyLevel ?? undefined,
+      mainTags: exercise.mainTags ?? undefined,
+      additionalTags: exercise.additionalTags ?? undefined,
+      images: exercise.images,
+      videoUrl: exercise.videoUrl ?? undefined,
+      preparationTime: exercise.preparationTime ?? undefined,
+      defaultSets: exercise.defaultSets ?? undefined,
+      defaultReps: exercise.defaultReps ?? undefined,
+      defaultDuration: exercise.defaultDuration ?? undefined,
+      defaultExecutionTime: exercise.defaultExecutionTime ?? undefined,
+      defaultRestBetweenSets: exercise.defaultRestBetweenSets ?? undefined,
+      defaultRestBetweenReps: exercise.defaultRestBetweenReps ?? undefined,
+      enrichmentData: exercise.enrichmentData,
+    },
+    { tempo: exercise.tempo ?? undefined }
+  );
 }
 
 export function countAdoptable(offers: ReadonlyArray<OfferView>): number {

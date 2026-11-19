@@ -1,19 +1,37 @@
+import type { ExerciseEnrichmentData } from './exerciseEnrichment.types';
+
 export type ExerciseOfferMode = 'ADOPT' | 'REVIEW' | 'TRANSFER';
 
 export type ExerciseOfferStatus = 'PENDING' | 'ACCEPTED' | 'CHANGES_REQUESTED' | 'REJECTED' | 'WITHDRAWN';
 
 export type ExerciseOfferDecision = 'ACCEPT' | 'REQUEST_CHANGES' | 'REJECT';
 
+/** Ćwiczenie w propozycji: pola karty i wszystko, czego potrzebuje podgląd (`ExercisePreviewDialog`). */
 export interface ExerciseOfferExercise {
   id: string;
   name: string;
+  type?: string | null;
+  side?: string | null;
   patientDescription?: string | null;
   clinicalDescription?: string | null;
+  audioCue?: string | null;
+  tempo?: string | null;
+  rangeOfMotion?: string | null;
+  resistance?: string | null;
+  equipment?: string | null;
+  difficultyLevel?: string | null;
+  mainTags?: string[] | null;
+  additionalTags?: string[] | null;
   images?: string[] | null;
   videoUrl?: string | null;
+  preparationTime?: number | null;
   defaultSets?: number | null;
   defaultReps?: number | null;
+  defaultDuration?: number | null;
   defaultExecutionTime?: number | null;
+  defaultRestBetweenSets?: number | null;
+  defaultRestBetweenReps?: number | null;
+  enrichmentData?: ExerciseEnrichmentData | null;
 }
 
 export interface ExerciseOffer {

@@ -94,6 +94,15 @@ describe('ExerciseOffersPanel', () => {
     );
   });
 
+  it('opens the offered exercise in the preview before deciding', async () => {
+    render(<ExerciseOffersPanel />);
+
+    await userEvent.click(screen.getByTestId('exercise-offer-preview-btn-a'));
+
+    expect(await screen.findByTestId('exercise-offer-preview-title')).toHaveTextContent('Ćwiczenie a');
+    expect(respondMock).not.toHaveBeenCalled();
+  });
+
   it('accepts all adopt offers and leaves review offers alone', async () => {
     render(<ExerciseOffersPanel />);
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, MessageSquareText, PlayCircle, Undo2, X } from 'lucide-react';
+import { Check, Eye, MessageSquareText, PlayCircle, Undo2, X } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,9 +15,10 @@ interface ExerciseOfferCardProps {
   offer: OfferView;
   disabled: boolean;
   onDecide: (offer: OfferView, decision: ExerciseOfferDecision) => void;
+  onPreview: (offer: OfferView) => void;
 }
 
-export function ExerciseOfferCard({ offer, disabled, onDecide }: ExerciseOfferCardProps) {
+export function ExerciseOfferCard({ offer, disabled, onDecide, onPreview }: ExerciseOfferCardProps) {
   const [expanded, setExpanded] = useState(false);
   const isAdopt = landsInLibrary(offer.mode);
 
@@ -27,7 +28,19 @@ export function ExerciseOfferCard({ offer, disabled, onDecide }: ExerciseOfferCa
       data-testid={`exercise-offer-card-${offer.id}`}
     >
       <div className="flex items-start gap-3">
-        <ExerciseThumbnail src={getMediaUrl(offer.imageUrl)} sizeClass="h-16 w-16 shrink-0 rounded-lg" sizes="64px" />
+        {offer.preview ? (
+          <button
+            type="button"
+            className="shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            onClick={() => onPreview(offer)}
+            aria-label={`Podgląd: ${offer.exerciseName}`}
+            data-testid={`exercise-offer-thumbnail-btn-${offer.id}`}
+          >
+            <ExerciseThumbnail src={getMediaUrl(offer.imageUrl)} sizeClass="h-16 w-16 rounded-lg" sizes="64px" />
+          </button>
+        ) : (
+          <ExerciseThumbnail src={getMediaUrl(offer.imageUrl)} sizeClass="h-16 w-16 shrink-0 rounded-lg" sizes="64px" />
+        )}
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <h3 className="line-clamp-2 text-sm font-semibold text-foreground" title={offer.exerciseName}>
             {offer.exerciseName}
@@ -41,6 +54,18 @@ export function ExerciseOfferCard({ offer, disabled, onDecide }: ExerciseOfferCa
               </Badge>
             ) : null}
           </div>
+          {offer.preview ? (
+            <Button
+              variant="link"
+              size="sm"
+              className="h-auto self-start px-0"
+              onClick={() => onPreview(offer)}
+              data-testid={`exercise-offer-preview-btn-${offer.id}`}
+            >
+              <Eye />
+              Podgląd ćwiczenia
+            </Button>
+          ) : null}
         </div>
       </div>
 

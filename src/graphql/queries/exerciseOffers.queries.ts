@@ -13,13 +13,28 @@ export const EXERCISE_OFFER_FIELDS_FRAGMENT = gql`
     exercise {
       id
       name
+      type
+      side
       patientDescription
       clinicalDescription
+      audioCue
+      tempo
+      rangeOfMotion
+      resistance
+      equipment
+      difficultyLevel
+      mainTags
+      additionalTags
       images
       videoUrl
+      preparationTime
       defaultSets
       defaultReps
+      defaultDuration
       defaultExecutionTime
+      defaultRestBetweenSets
+      defaultRestBetweenReps
+      enrichmentData
     }
   }
 `;
