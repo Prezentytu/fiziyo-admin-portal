@@ -9,10 +9,10 @@ name: Agent merge
 
 on:
   workflow_run:
-    workflows: ["CI", "Claude review"]
+    workflows: ['CI', 'Claude review']
     types: [completed]
   schedule:
-    - cron: "*/30 6-22 * * *"
+    - cron: '*/30 6-22 * * *'
   workflow_dispatch:
 
 # Jeden sędzia na repo naraz, bez przerywania: merge'e idą szeregowo.

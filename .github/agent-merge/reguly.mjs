@@ -7,34 +7,34 @@
 // a sędzia traktuje błąd jak brak zgody.
 export function wzorzecNaRegex(wzorzec) {
   let w = wzorzec.trim();
-  if (!w || w.startsWith("#")) return null;
-  if (/[!\[\]\\]/.test(w)) throw new Error(`nieobsługiwana składnia wzorca: ${wzorzec}`);
-  const katalog = w.endsWith("/");
+  if (!w || w.startsWith('#')) return null;
+  if (/[![\]\\]/.test(w)) throw new Error(`nieobsługiwana składnia wzorca: ${wzorzec}`);
+  const katalog = w.endsWith('/');
   if (katalog) w = w.slice(0, -1);
-  const kotwica = w.startsWith("/") || w.slice(0, -1).includes("/");
-  if (w.startsWith("/")) w = w.slice(1);
-  let re = "";
+  const kotwica = w.startsWith('/') || w.slice(0, -1).includes('/');
+  if (w.startsWith('/')) w = w.slice(1);
+  let re = '';
   for (let i = 0; i < w.length; i++) {
     const c = w[i];
-    if (c === "*" && w[i + 1] === "*") {
-      if (w[i + 2] === "/") {
-        re += "(?:.*/)?";
+    if (c === '*' && w[i + 1] === '*') {
+      if (w[i + 2] === '/') {
+        re += '(?:.*/)?';
         i += 2;
       } else {
-        re += ".*";
+        re += '.*';
         i += 1;
       }
-    } else if (c === "*") re += "[^/]*";
-    else if (c === "?") re += "[^/]";
-    else re += c.replace(/[.+^${}()|]/g, "\\$&");
+    } else if (c === '*') re += '[^/]*';
+    else if (c === '?') re += '[^/]';
+    else re += c.replace(/[.+^${}()|]/g, '\\$&');
   }
-  const poczatek = kotwica ? "^" : "^(?:.*/)?";
+  const poczatek = kotwica ? '^' : '^(?:.*/)?';
   // Katalog pasuje do wszystkiego pod nim; plik także do wszystkiego pod nim (wzorzec może nazywać katalog).
   return new RegExp(`${poczatek}${re}(?:/.*)?$`);
 }
 
 export function wzorce(tekst) {
-  return tekst.split("\n").map(wzorzecNaRegex).filter(Boolean);
+  return tekst.split('\n').map(wzorzecNaRegex).filter(Boolean);
 }
 
 export const pasuje = (sciezka, lista) => lista.some((r) => r.test(sciezka));
@@ -54,20 +54,20 @@ export function ocenPliki(pliki, { dozwolone, zakazane }) {
       else if (!pasuje(s, dozwolone)) powody.push(`plik spoza listy dozwolonych: \`${s}\``);
     }
     const test = TEST_PLIK.test(p.filename) || (p.previous_filename && TEST_PLIK.test(p.previous_filename));
-    if (test && p.status === "removed") powody.push(`usunięty plik testu: \`${p.filename}\``);
+    if (test && p.status === 'removed') powody.push(`usunięty plik testu: \`${p.filename}\``);
     if (p.patch === undefined && (p.additions || p.deletions))
       powody.push(`brak diffu do sprawdzenia (za duży albo binarny): \`${p.filename}\``);
     // Zmiana oczekiwania (linia z asercją usunięta i dodana) jest w porządku; spadek liczby asercji nie.
     if (test) {
       let bilans = 0;
-      for (const linia of (p.patch || "").split("\n")) {
+      for (const linia of (p.patch || '').split('\n')) {
         if (/^-(?!--)/.test(linia) && ASERCJA.test(linia)) bilans--;
         if (/^\+(?!\+\+)/.test(linia) && ASERCJA.test(linia)) bilans++;
       }
       if (bilans < 0) powody.push(`ubyło asercji albo testów (${bilans}) w \`${p.filename}\``);
     }
-    for (const linia of (p.patch || "").split("\n")) {
-      if (linia.startsWith("+") && !linia.startsWith("+++") && WYLACZENIE.test(linia)) {
+    for (const linia of (p.patch || '').split('\n')) {
+      if (linia.startsWith('+') && !linia.startsWith('+++') && WYLACZENIE.test(linia)) {
         powody.push(`wyłączony test albo sprawdzenie w \`${p.filename}\``);
         break;
       }
@@ -91,17 +91,17 @@ export function werdykt(komentarze, headSha) {
   let pass = false,
     fail = false;
   for (const k of komentarze) {
-    if (k.user?.login !== "claude[bot]" || k.user?.type !== "Bot" || k.created_at !== k.updated_at) continue;
-    const m = /^(PASS|FAIL) ([0-9a-f]{7,40})\s*$/.exec((k.body || "").split("\n")[0]);
+    if (k.user?.login !== 'claude[bot]' || k.user?.type !== 'Bot' || k.created_at !== k.updated_at) continue;
+    const m = /^(PASS|FAIL) ([0-9a-f]{7,40})\s*$/.exec((k.body || '').split('\n')[0]);
     if (!m || !headSha.startsWith(m[2])) continue;
-    if (m[1] === "FAIL") fail = true;
+    if (m[1] === 'FAIL') fail = true;
     else pass = true;
   }
-  return fail ? "FAIL" : pass ? "PASS" : "brak";
+  return fail ? 'FAIL' : pass ? 'PASS' : 'brak';
 }
 
 export function drzwiZOpisu(body) {
-  const t = body || "";
+  const t = body || '';
   const dwu = /^\s*-\s*\[[xX]\]\s*Dwukierunkowe/m.test(t);
   const jedno = /^\s*-\s*\[[xX]\]\s*Jednokierunkowe/m.test(t);
   return dwu && !jedno;
@@ -121,30 +121,30 @@ export function ocen({
   dozwolone,
 }) {
   const powody = [];
-  if (pr.draft) return { stan: "czeka", powody: ["szkic"] };
+  if (pr.draft) return { stan: 'czeka', powody: ['szkic'] };
   const etykiety = (pr.labels || []).map((l) => l.name);
-  for (const e of ["hold", "needs-adam"]) if (etykiety.includes(e)) powody.push(`etykieta \`${e}\``);
-  if (pr.head.repo?.full_name !== pr.base.repo.full_name) powody.push("PR z forka");
+  for (const e of ['hold', 'needs-adam']) if (etykiety.includes(e)) powody.push(`etykieta \`${e}\``);
+  if (pr.head.repo?.full_name !== pr.base.repo.full_name) powody.push('PR z forka');
 
   const checki = stanCheckow(checkRuns);
   for (const nazwa of [cfg.gate, cfg.review]) {
     const c = checki.get(nazwa);
-    if (!c || c.status !== "completed") return { stan: "czeka", powody: [`check \`${nazwa}\` w toku`] };
-    if (c.conclusion !== "success") powody.push(`check \`${nazwa}\`: ${c.conclusion}`);
+    if (!c || c.status !== 'completed') return { stan: 'czeka', powody: [`check \`${nazwa}\` w toku`] };
+    if (c.conclusion !== 'success') powody.push(`check \`${nazwa}\`: ${c.conclusion}`);
   }
   const w = werdykt(komentarze, pr.head.sha);
-  if (w !== "PASS") powody.push(`werdykt Claude review dla ${pr.head.sha.slice(0, 7)}: ${w}`);
+  if (w !== 'PASS') powody.push(`werdykt Claude review dla ${pr.head.sha.slice(0, 7)}: ${w}`);
   if (mainCzerwony) powody.push(`main jest czerwony (${mainCzerwony}): merge'e wstrzymane do zielonego`);
-  if (!drzwiZOpisu(pr.body)) powody.push("opis PR nie ma zaznaczonych wyłącznie drzwi dwukierunkowych");
+  if (!drzwiZOpisu(pr.body)) powody.push('opis PR nie ma zaznaczonych wyłącznie drzwi dwukierunkowych');
   const linie = pr.additions + pr.deletions;
   if (linie > cfg.maxLinii) powody.push(`za duży: ${linie} linii (limit ${cfg.maxLinii})`);
   if (pr.changed_files > cfg.maxPlikow) powody.push(`za dużo plików: ${pr.changed_files} (limit ${cfg.maxPlikow})`);
-  if (pliki.length < pr.changed_files) powody.push("nie odczytano wszystkich plików PR");
+  if (pliki.length < pr.changed_files) powody.push('nie odczytano wszystkich plików PR');
   powody.push(...ocenPliki(pliki, { dozwolone, zakazane }));
   const ostatnie = new Map();
-  for (const r of reviews) if (r.user && r.state !== "COMMENTED") ostatnie.set(r.user.login, r.state);
-  for (const [kto, s] of ostatnie) if (s === "CHANGES_REQUESTED") powody.push(`prośba o zmiany od ${kto}`);
+  for (const r of reviews) if (r.user && r.state !== 'COMMENTED') ostatnie.set(r.user.login, r.state);
+  for (const [kto, s] of ostatnie) if (s === 'CHANGES_REQUESTED') powody.push(`prośba o zmiany od ${kto}`);
   if (nierozwiazane > 0) powody.push(`nierozwiązane wątki review: ${nierozwiazane}`);
   if (pr.mergeable !== true) powody.push(`GitHub nie widzi PR jako mergeable (${pr.mergeable_state})`);
-  return { stan: powody.length ? "nie" : "tak", powody };
+  return { stan: powody.length ? 'nie' : 'tak', powody };
 }
