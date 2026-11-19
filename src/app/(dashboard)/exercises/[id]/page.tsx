@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, use, useState, useCallback, useRef } from 'react';
+import { Fragment, use, useState, useCallback, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useApolloClient } from '@apollo/client/react';
 import { useRouter } from 'next/navigation';
 import {
@@ -211,6 +211,12 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
 
   const tagsMap = createTagsMap(tags, categories);
   const exercise = rawExercise ? mapExerciseTagsToObjects(rawExercise, tagsMap) : null;
+  // Telefon „Jak u pacjenta”: ostatnia zapisana wersja; nowy obiekt tylko po zmianie rekordu z serwera.
+  const patientPreviewExercise = useMemo(
+    () => (rawExercise ? fromBuilderExercise(mapExerciseTagsToObjects(rawExercise, tagsMap), {}) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- tagsMap powstaje na każdym renderze; dane tagów zmieniają się razem z odpowiedziami zapytań
+    [rawExercise, tagsData, categoriesData]
+  );
 
   // ============================================
   // SINGLE FORM MODEL (core + v3) — coordinated save, dirty tracking
@@ -1079,7 +1085,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
       <PatientPreviewDialog
         open={isPatientPreviewOpen}
         onOpenChange={setIsPatientPreviewOpen}
-        exercise={isPatientPreviewOpen ? fromBuilderExercise(exercise, {}) : null}
+        exercise={patientPreviewExercise}
         testIdPrefix="exercise-detail-patient-preview"
       />
     </PageSheet>

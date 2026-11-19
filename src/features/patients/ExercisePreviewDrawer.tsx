@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { Play, Info, ArrowLeftRight, ChevronLeft, ChevronRight, ImageIcon } from 'lucide-react';
 
@@ -70,10 +70,14 @@ export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, o
     setView('details');
   }, [mapping?.id, open]);
 
-  if (!mapping) return null;
-
   // Telefon „Jak u pacjenta” dostaje te same dane co karta planu: przypisanie > mapping > szablon.
-  const patientViewExercise = fromExerciseMapping(mapping as AssignmentExerciseMapping, override);
+  // Stała tożsamość obiektu, bo zmiana danych restartuje przebieg na telefonie.
+  const patientViewExercise = useMemo(
+    () => (mapping ? fromExerciseMapping(mapping as AssignmentExerciseMapping, override) : null),
+    [mapping, override]
+  );
+
+  if (!mapping || !patientViewExercise) return null;
 
   const normalizedMapping = mapping as ExerciseMappingWithPreviewFields;
   const exercise = normalizedMapping.exercise as ExerciseWithPreviewFields | undefined;

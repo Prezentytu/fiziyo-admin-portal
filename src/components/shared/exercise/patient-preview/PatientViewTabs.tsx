@@ -1,5 +1,7 @@
 'use client';
 
+import { useMemo } from 'react';
+
 import { TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { ExerciseExecutionCardData } from '../types';
 import { PatientPreviewTab } from './PatientPreviewTab';
@@ -33,14 +35,11 @@ export function PatientViewTabContent({
   view,
   testIdPrefix,
 }: Readonly<{ exercise: ExerciseExecutionCardData; view: ExercisePreviewView; testIdPrefix: string }>) {
+  const imageUrl = useMemo(() => buildPreviewGallery(exercise)[0] ?? null, [exercise]);
   return (
     <TabsContent value="patient" className="mt-0 min-h-0 flex-1 overflow-y-auto overscroll-contain">
       {view === 'patient' ? (
-        <PatientPreviewTab
-          exercise={exercise}
-          imageUrl={buildPreviewGallery(exercise)[0] ?? null}
-          testIdPrefix={testIdPrefix}
-        />
+        <PatientPreviewTab exercise={exercise} imageUrl={imageUrl} testIdPrefix={testIdPrefix} />
       ) : null}
     </TabsContent>
   );

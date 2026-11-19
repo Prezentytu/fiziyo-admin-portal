@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -76,7 +76,7 @@ export function ExerciseDetailsDialog({ open, mapping, onOpenChange }: Readonly<
   }, [mapping?.id, open]);
 
   const viewModel = mapping ? buildExerciseDetailsViewModel(mapping) : null;
-  const patientViewExercise = mapping ? fromExerciseMapping(mapping) : null;
+  const patientViewExercise = useMemo(() => (mapping ? fromExerciseMapping(mapping) : null), [mapping]);
   const imageUrls = viewModel?.imageUrls ?? [];
   const primaryImage = imageUrls[0] ?? null;
   const fallbackImage = getMediaUrl(mapping?.exercise?.imageUrl) ?? null;

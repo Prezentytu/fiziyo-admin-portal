@@ -1,5 +1,7 @@
 'use client';
 
+import { useMemo } from 'react';
+
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import type { ExerciseExecutionCardData } from '../types';
@@ -16,6 +18,7 @@ interface PatientPreviewDialogProps {
 
 /** Sam telefon „Jak u pacjenta” dla stron, które pokazują szczegóły ćwiczenia na sobie (strona ćwiczenia, weryfikacja). */
 export function PatientPreviewDialog({ open, onOpenChange, exercise, testIdPrefix }: PatientPreviewDialogProps) {
+  const imageUrl = useMemo(() => buildPreviewGallery(exercise)[0] ?? null, [exercise]);
   if (!exercise) return null;
 
   return (
@@ -29,13 +32,7 @@ export function PatientPreviewDialog({ open, onOpenChange, exercise, testIdPrefi
           <DialogDescription>Tak zobaczy to ćwiczenie pacjent w aplikacji.</DialogDescription>
         </DialogHeader>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-          {open ? (
-            <PatientPreviewTab
-              exercise={exercise}
-              imageUrl={buildPreviewGallery(exercise)[0] ?? null}
-              testIdPrefix={testIdPrefix}
-            />
-          ) : null}
+          {open ? <PatientPreviewTab exercise={exercise} imageUrl={imageUrl} testIdPrefix={testIdPrefix} /> : null}
         </div>
         <div className="px-6 py-4 border-t border-border flex justify-end">
           <Button

@@ -354,6 +354,7 @@ export function VerificationWorkspace({
   const [isGeneratingProposal, setIsGeneratingProposal] = useState(false);
   const [photoDialogIndex, setPhotoDialogIndex] = useState<number | null>(null);
   const [isPatientPreviewOpen, setIsPatientPreviewOpen] = useState(false);
+  const patientPreviewExercise = useMemo(() => fromBuilderExercise(exercise, {}), [exercise]);
   const [mediaIndex, setMediaIndex] = useState(0);
   const [isMediaFollowingText, setIsMediaFollowingText] = useState(true);
   const [focusedStep, setFocusedStep] = useState<number | null>(null);
@@ -1390,7 +1391,7 @@ export function VerificationWorkspace({
       <PatientPreviewDialog
         open={isPatientPreviewOpen}
         onOpenChange={setIsPatientPreviewOpen}
-        exercise={isPatientPreviewOpen ? fromBuilderExercise(exercise, {}) : null}
+        exercise={patientPreviewExercise}
         testIdPrefix="verification-patient-preview"
       />
     </PageSheet>

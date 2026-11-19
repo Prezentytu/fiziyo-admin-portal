@@ -14,8 +14,12 @@ import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagC
 import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
 import type { ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
 import type { ExercisePickerLibraryView } from '@/hooks/useExercisePickerLibrary';
-import type { Exercise, ExerciseMapping } from './types';
-import { ExerciseDetailsDialog } from './ExerciseDetailsDialog';
+import type { Exercise } from './types';
+import {
+  ExercisePreviewDialog,
+  fromBuilderExercise,
+  type ExerciseExecutionCardData,
+} from '@/components/shared/exercise';
 
 type RawExerciseTag = string | { id: string; name: string; color?: string | null };
 type TaggableExercise = Exercise & { mainTags?: RawExerciseTag[]; additionalTags?: RawExerciseTag[] };
@@ -69,7 +73,7 @@ interface CustomizeSetStepProps {
   hideNameSection?: boolean;
 
   // Preview exercise callback
-  onPreviewExercise?: (exercise: BuilderExercise) => void;
+  onPreviewExercise?: (exercise: BuilderExercise, params?: ExerciseParams) => void;
   // Quick action - create exercise without leaving wizard
   onCreateExercise?: () => void;
   isCreatingExercise?: boolean;
@@ -95,7 +99,7 @@ export function CustomizeSetStep({
   onCreateExercise,
   isCreatingExercise = false,
 }: CustomizeSetStepProps) {
-  const [detailsMapping, setDetailsMapping] = useState<ExerciseMapping | null>(null);
+  const [previewExercise, setPreviewExercise] = useState<ExerciseExecutionCardData | null>(null);
   // Load tags for filtering
   const { data: tagsData } = useQuery(GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY, {
     variables: { organizationId },
@@ -147,46 +151,16 @@ export function CustomizeSetStep({
         : 'np. Rehabilitacja kolana - tydzień 1';
 
   const testIdPrefix = isCreatingNew ? 'create-set' : 'customize-set';
-  // Podgląd bez kolumn mappingu: parametry dziedziczy resolver z domyślnych ćwiczenia (kanon).
-  const buildMappingForDetails = useCallback((exercise: BuilderExercise): ExerciseMapping => {
-    return {
-      id: `preview-${exercise.id}`,
-      exerciseId: exercise.id,
-      exercise: {
-        id: exercise.id,
-        name: exercise.name,
-        type: exercise.type,
-        patientDescription: exercise.patientDescription ?? exercise.description,
-        side: exercise.side,
-        exerciseSide: exercise.exerciseSide,
-        imageUrl: exercise.imageUrl,
-        thumbnailUrl: exercise.thumbnailUrl,
-        images: exercise.images,
-        defaultSets: exercise.defaultSets,
-        defaultReps: exercise.defaultReps,
-        defaultDuration: exercise.defaultDuration,
-        defaultExecutionTime: exercise.defaultExecutionTime,
-        defaultRestBetweenSets: exercise.defaultRestBetweenSets,
-        defaultRestBetweenReps: exercise.defaultRestBetweenReps,
-        preparationTime: exercise.preparationTime,
-        tempo: exercise.tempo,
-        mainTags: exercise.mainTags?.map((tag) => tag.name),
-        additionalTags: exercise.additionalTags?.map((tag) => tag.name),
-        scope: exercise.scope,
-        enrichmentData: exercise.enrichmentData,
-      },
-    };
-  }, []);
-
+  // Podgląd z parametrami tej pozycji planu (jak w kreatorach zestawu): to zobaczy pacjent.
   const handlePreviewExercise = useCallback(
-    (exercise: BuilderExercise) => {
+    (exercise: BuilderExercise, params?: ExerciseParams) => {
       if (onPreviewExercise) {
-        onPreviewExercise(exercise);
+        onPreviewExercise(exercise, params);
         return;
       }
-      setDetailsMapping(buildMappingForDetails(exercise));
+      setPreviewExercise(fromBuilderExercise(exercise, params ?? {}));
     },
-    [buildMappingForDetails, onPreviewExercise]
+    [onPreviewExercise]
   );
 
   return (
@@ -215,14 +189,15 @@ export function CustomizeSetStep({
         cardSurface="patientPlan"
       />
       {!onPreviewExercise && (
-        <ExerciseDetailsDialog
-          open={Boolean(detailsMapping)}
-          mapping={detailsMapping}
+        <ExercisePreviewDialog
+          open={Boolean(previewExercise)}
+          exercise={previewExercise}
           onOpenChange={(open) => {
             if (!open) {
-              setDetailsMapping(null);
+              setPreviewExercise(null);
             }
           }}
+          testIdPrefix="assign-set-preview-exercise-details"
         />
       )}
     </div>
