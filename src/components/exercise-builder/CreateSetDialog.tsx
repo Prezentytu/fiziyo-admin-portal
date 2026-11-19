@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMutation } from '@apollo/client/react';
-import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 
@@ -24,6 +23,7 @@ import {
 } from '@/graphql/mutations/exercises.mutations';
 import { aiService } from '@/services/aiService';
 import { submitCreateTemplateSet } from '@/features/exercise-sets/utils/createSetSubmit';
+import type { CreatedSetInfo } from '@/features/exercise-sets/SetCreatedDialog';
 import { SetNameField } from '@/features/exercise-sets/components/SetNameField';
 import { SetDescriptionCollapsible } from '@/features/exercise-sets/components/SetDescriptionCollapsible';
 
@@ -37,10 +37,14 @@ interface CreateExerciseSetResponse {
 interface CreateSetDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /**
+   * Zestaw zapisany. Okno „co dalej” renderuje rodzic, który zostaje zamontowany,
+   * bo `clearBuilder()` zaraz po zapisie może odmontować to okno razem z koszykiem.
+   */
+  onCreated: (set: CreatedSetInfo) => void;
 }
 
-export function CreateSetDialog({ open, onOpenChange }: CreateSetDialogProps) {
-  const router = useRouter();
+export function CreateSetDialog({ open, onOpenChange, onCreated }: CreateSetDialogProps) {
   const { currentOrganization } = useOrganization();
   const { selectedExercises, clearBuilder, exerciseCount } = useExerciseBuilder();
   const [isCreating, setIsCreating] = useState(false);
@@ -147,15 +151,7 @@ export function CreateSetDialog({ open, onOpenChange }: CreateSetDialogProps) {
         selectedExercises.map(buildBuilderExerciseMapping)
       );
 
-      toast.success('Zestaw został utworzony', {
-        description: `${exerciseCount} ${exerciseCount === 1 ? 'ćwiczenie' : exerciseCount < 5 ? 'ćwiczenia' : 'ćwiczeń'} w zestawie`,
-        action: {
-          label: 'Zobacz zestaw',
-          onClick: () => {
-            router.push(`/exercise-sets/${exerciseSetId}`);
-          },
-        },
-      });
+      onCreated({ id: exerciseSetId, name: sanitizedName });
 
       clearBuilder();
       resetForm();
