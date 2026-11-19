@@ -112,8 +112,17 @@ jobs:
           fi
           echo "Poprzedni werdykt: $prev"
           echo "prev=$prev" >> "$GITHUB_OUTPUT"
-          checks=$(gh pr checks "$PR" -R "$GITHUB_REPOSITORY" --json name,bucket --jq '.[] | select(.name != "review") | "\(.name): \(.bucket)"' | tr -cd '[:alnum:][:space:]:_./()-' | head -40 || true)
-          [ -n "$checks" ] || checks="stanu CI nie odczytano"
+          # Recenzja startuje razem z CI, więc joby CI mogą jeszcze czekać na runner i nie mieć checków.
+          err="$RUNNER_TEMP/checks.err"
+          checks=$(gh pr checks "$PR" -R "$GITHUB_REPOSITORY" --json name,bucket --jq '.[] | select(.name != "review") | "\(.name): \(.bucket)"' 2>"$err" | tr -cd '[:alnum:][:space:]:_./()-' | head -40 || true)
+          if [ -z "$checks" ]; then
+            if [ ! -s "$err" ] || grep -q "no checks reported" "$err"; then
+              checks="brak innych checków w chwili startu recenzji (CI mogło jeszcze nie wystartować)"
+            else
+              echo "::warning::gh pr checks: $(head -1 "$err")"
+              checks="stanu CI nie odczytano"
+            fi
+          fi
           printf 'Stan CI:\n%s\n' "$checks"
           { echo "checks<<CHECKS_EOF"; echo "$checks"; echo "CHECKS_EOF"; } >> "$GITHUB_OUTPUT"
       - uses: anthropics/claude-code-action@f3b070c88125d33dbae5653df5f143101d4ea9dc # v1
