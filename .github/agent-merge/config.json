@@ -91,6 +91,11 @@
     ".gitignore",
     ".npmrc",
     ".nvmrc",
-    "vitest.*"
+    "vitest.*",
+    "/src/lib/meFeatures.ts",
+    "/src/hooks/useMeFeature.ts",
+    "/src/features/ai-view/chatDispatchClient.ts",
+    "/src/components/telemetry/TelemetryIdentity.tsx",
+    "/src/app/(dashboard)/onboarding/page.tsx"
   ]
 }
