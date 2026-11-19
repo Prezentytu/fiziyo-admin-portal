@@ -50,7 +50,9 @@ vi.mock('./CreateExerciseWizard', () => ({
 }));
 
 vi.mock('./ExerciseEditor', () => ({
-  ExerciseEditor: () => <div data-testid="mock-exercise-editor" />,
+  ExerciseEditor: ({ showVideoUrl = true }: { showVideoUrl?: boolean }) => (
+    <div data-testid="mock-exercise-editor" data-show-video-url={String(showVideoUrl)} />
+  ),
 }));
 
 vi.mock('./useExerciseEditorForm', () => ({
@@ -186,6 +188,15 @@ describe('ExerciseDialog media edit flow', () => {
     });
 
     expect(screen.queryByTestId('exercise-form-media-ai-skeleton')).not.toBeInTheDocument();
+  });
+
+  it('link do filmu stoi przy zdjęciach, a edytor treści go nie powtarza', () => {
+    render(<ExerciseDialog open onOpenChange={vi.fn()} exercise={baseExercise} organizationId="org-1" />);
+
+    const videoInput = screen.getByTestId('exercise-detail-video-url-input');
+    const editor = screen.getByTestId('mock-exercise-editor');
+    expect(videoInput.compareDocumentPosition(editor) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(editor).toHaveAttribute('data-show-video-url', 'false');
   });
 
   it('wykonuje update + delete + upload dla zmienionej galerii', async () => {

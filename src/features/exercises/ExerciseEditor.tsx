@@ -50,6 +50,8 @@ interface ExerciseEditorProps {
   aiFillContext?: ExerciseEditorAiFillContext;
   /** Pokazuje zwijaną sekcję "Zaawansowane (JSON)" do edycji surowego enrichmentu. */
   showAdvancedJson?: boolean;
+  /** false = link do filmu renderuje host obok mediów (dialog edycji, strona ćwiczenia). */
+  showVideoUrl?: boolean;
   className?: string;
 }
 
@@ -285,6 +287,7 @@ export function ExerciseEditor({
     type: form.exerciseType,
   },
   showAdvancedJson = false,
+  showVideoUrl = true,
   className,
 }: Readonly<ExerciseEditorProps>) {
   const {
@@ -372,6 +375,7 @@ export function ExerciseEditor({
         onNotesChange={(value) => setCoreField('notes', value)}
         setPath={setEnrichmentPath}
         contentVersion={contentVersion}
+        showVideoUrl={showVideoUrl}
       />
 
       {showAdvancedJson && (

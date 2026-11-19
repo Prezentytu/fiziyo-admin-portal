@@ -67,4 +67,28 @@ describe('ExerciseContentSections parity', () => {
     expect(screen.getByTestId('exercise-detail-therapist')).toBeInTheDocument();
     expect(screen.getByTestId('exercise-detail-metadata')).toBeInTheDocument();
   });
+
+  it('showVideoUrl=false: link do filmu nie dubluje się (kreator pokazuje go przy mediach)', () => {
+    const props = {
+      enrichment: {},
+      patientDescription: '',
+      clinicalDescription: '',
+      audioCue: '',
+      videoUrl: 'https://vimeo.com/1',
+      notes: '',
+      isPathDirty: () => false,
+      onPatientDescriptionChange: vi.fn(),
+      onClinicalDescriptionChange: vi.fn(),
+      onAudioCueChange: vi.fn(),
+      onVideoUrlChange: vi.fn(),
+      onNotesChange: vi.fn(),
+      setPath: vi.fn(),
+    };
+    const { rerender } = render(<ExerciseContentSections {...props} />);
+    expect(screen.getByTestId('exercise-detail-video-url-input')).toHaveValue('https://vimeo.com/1');
+
+    rerender(<ExerciseContentSections {...props} showVideoUrl={false} />);
+    expect(screen.queryByTestId('exercise-detail-video-url-input')).not.toBeInTheDocument();
+    expect(screen.getByTestId('exercise-detail-metadata')).toBeInTheDocument();
+  });
 });
