@@ -140,7 +140,7 @@ async function main() {
   } else log('Merge na GITHUB_TOKEN (brak AGENT_MERGE_APP_ID/KEY)');
   const repo = await api(`repos/${REPO}`);
   const baza = repo.default_branch;
-  const dozwolone = wzorce(cfg.dozwolone.join('\n'));
+  const dozwolone = wzorce(cfg.dozwolone.join('\n'), { poddrzewo: false });
   const drzwi = await plikZBazy('.github/drzwi-jednokierunkowe', baza);
   const zakazane = wzorce([...cfg.zakazane, drzwi].join('\n'));
   const czerwony = await mainCzerwony(baza);

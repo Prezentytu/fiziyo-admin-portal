@@ -4,8 +4,9 @@
 // Wzorzec w stylu .gitignore: "/" na początku kotwiczy w katalogu głównym, "/" na końcu oznacza katalog,
 // wzorzec bez "/" w środku pasuje do nazwy na dowolnym poziomie, "**" to dowolna liczba katalogów,
 // "*" i "?" nie przechodzą przez "/". Negacja, klasy znaków i ucieczki nie są obsługiwane: rzucają błąd,
-// a sędzia traktuje błąd jak brak zgody.
-export function wzorzecNaRegex(wzorzec) {
+// a sędzia traktuje błąd jak brak zgody. `poddrzewo`: wzorzec bez "/" na końcu pasuje też do wszystkiego pod
+// nazwą (dla listy zakazanych, gdzie nadmiar jest bezpieczny); lista dozwolonych bierze poddrzewo tylko z "/".
+export function wzorzecNaRegex(wzorzec, { poddrzewo = true } = {}) {
   let w = wzorzec.trim();
   if (!w || w.startsWith('#')) return null;
   if (/[![\]\\]/.test(w)) throw new Error(`nieobsługiwana składnia wzorca: ${wzorzec}`);
@@ -29,12 +30,15 @@ export function wzorzecNaRegex(wzorzec) {
     else re += c.replace(/[.+^${}()|]/g, '\\$&');
   }
   const poczatek = kotwica ? '^' : '^(?:.*/)?';
-  // Katalog pasuje do wszystkiego pod nim; plik także do wszystkiego pod nim (wzorzec może nazywać katalog).
-  return new RegExp(`${poczatek}${re}(?:/.*)?$`);
+  const pod = katalog || poddrzewo ? '(?:/.*)?' : '';
+  return new RegExp(`${poczatek}${re}${pod}$`);
 }
 
-export function wzorce(tekst) {
-  return tekst.split('\n').map(wzorzecNaRegex).filter(Boolean);
+export function wzorce(tekst, opcje) {
+  return tekst
+    .split('\n')
+    .map((w) => wzorzecNaRegex(w, opcje))
+    .filter(Boolean);
 }
 
 export const pasuje = (sciezka, lista) => lista.some((r) => r.test(sciezka));
@@ -42,6 +46,8 @@ export const pasuje = (sciezka, lista) => lista.some((r) => r.test(sciezka));
 const TEST_PLIK = /(^|\/)(__tests__|tests?|e2e)\/|\.(test|spec)\.[cm]?[jt]sx?$|Tests?\.cs$|\.Tests\//;
 const ASERCJA =
   /\b(expect|assert\w*|Assert\.\w+|toBe\w*|toEqual|toMatch\w*|toHaveBeenCalled\w*|should\.\w+)\b|\b(it|test|describe)(\.each)?\(|\[(Fact|Theory)/;
+// Nowa server action w Next.js to nowy publiczny endpoint zapisu, niezależnie od nazwy pliku.
+const SERVER_ACTION = /["']use server["']/;
 const WYLACZENIE =
   /\b(it|test|describe)(\.concurrent)?\.(skip|only|todo|skipIf|runIf)\b|\b(xit|xdescribe|fit|fdescribe)\(|\btest\.fixme\b|Skip\s*=\s*"|\[Ignore\]|@ts-nocheck/;
 
@@ -76,6 +82,12 @@ export function ocenPliki(pliki, { dozwolone, zakazane }) {
     for (const linia of (p.patch || '').split('\n')) {
       if (linia.startsWith('+') && !linia.startsWith('+++') && WYLACZENIE.test(linia)) {
         powody.push(`wyłączony test albo sprawdzenie w \`${p.filename}\``);
+        break;
+      }
+    }
+    for (const linia of (p.patch || '').split('\n')) {
+      if (/^\+(?!\+\+)/.test(linia) && SERVER_ACTION.test(linia)) {
+        powody.push(`nowa server action (\`use server\`) w \`${p.filename}\``);
         break;
       }
     }

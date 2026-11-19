@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { drzwiZOpisu, ocen, ocenPliki, otwarteWatki, werdykt, wzorce, wzorzecNaRegex } from './reguly.mjs';
+import { drzwiZOpisu, ocen, ocenPliki, otwarteWatki, pasuje, werdykt, wzorce, wzorzecNaRegex } from './reguly.mjs';
 
 const SHA = 'a'.repeat(40);
 const cfg = { gate: 'gate', review: 'review', maxLinii: 300, maxPlikow: 15 };
-const dozwolone = wzorce('/components/ui/\n/docs/\n*.md\n/app/(tabs)/therapist/');
+const dozwolone = wzorce('/components/ui/\n/docs/\n*.md\n/app/(tabs)/therapist/', { poddrzewo: false });
 const zakazane = wzorce('/.github/\nAGENTS.md\n/app/(tabs)/therapist/_layout.tsx\n/backend/');
 
 const PR = {
@@ -334,4 +334,35 @@ test('testy: przeniesienie testu poza testy i warianty skip blokują', () => {
       linia
     );
   }
+});
+
+test('dozwolone: wzorzec pliku nie otwiera poddrzewa, zakazany tak', () => {
+  const allow = wzorce('*.md\n/docs/', { poddrzewo: false });
+  assert.ok(pasuje('docs/x/y.ts', allow));
+  assert.ok(pasuje('src/README.md', allow));
+  assert.ok(!pasuje('src/app/foo.md/page.tsx', allow));
+  const deny = wzorce('*auth*\nactions.*\nroute.*');
+  assert.ok(pasuje('src/app/auth/page.tsx', deny));
+  assert.ok(pasuje('src/app/(ops)/x/actions.tsx', deny));
+  assert.ok(pasuje('src/app/api/x/route.js', deny));
+});
+
+test('nowa server action blokuje niezależnie od nazwy pliku', () => {
+  const d = wzorce('**');
+  const p = (patch) =>
+    ocenPliki(
+      [
+        {
+          filename: 'src/components/Form.tsx',
+          status: 'modified',
+          additions: 1,
+          deletions: 0,
+          patch,
+        },
+      ],
+      { dozwolone: d, zakazane: [] }
+    );
+  assert.match(p('+"use server";')[0], /server action/);
+  assert.match(p("+  'use server'")[0], /server action/);
+  assert.deepEqual(p('-"use server";'), []);
 });

@@ -16,7 +16,9 @@ on:
     - cron: '15,45 6-22 * * *'
   workflow_dispatch:
 
-# Osobna kolejka na gałąź PR (zdarzenia CI nie giną w jednej wspólnej kolejce), wspólna dla skanu konfliktów.
+# Kolejka na gałąź: CI i review z gałęzi PR idą osobno, Agent merge (head_branch = main) ma kolejkę `main`,
+# a cron i ręczne uruchomienie kolejkę `skan`. GitHub trzyma jeden oczekujący przebieg na kolejkę, więc pominięty skan
+# nadrabia następny (co 30 minut), a naprawę jednego PR i tak szereguje kolejka joba `napraw`.
 concurrency:
   group: napraw-pr-${{ github.event.workflow_run.head_branch || 'skan' }}
   cancel-in-progress: false
@@ -117,7 +119,8 @@ jobs:
       contents: read
       pull-requests: write
       issues: write
-      actions: read
+      # write: `gh run rerun --failed` przy awarii infrastruktury (jedyny dozwolony rerun).
+      actions: write
       id-token: write
     env:
       PR: ${{ needs.decyzja.outputs.pr }}
