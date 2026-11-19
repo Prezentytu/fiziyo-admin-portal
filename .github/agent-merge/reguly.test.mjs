@@ -1,7 +1,17 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { drzwiZOpisu, ocen, ocenPliki, otwarteWatki, pasuje, werdykt, wzorce, wzorzecNaRegex } from './reguly.mjs';
+import {
+  drzwiZOpisu,
+  ocen,
+  ocenPliki,
+  otwarteWatki,
+  pasuje,
+  skrocPowody,
+  werdykt,
+  wzorce,
+  wzorzecNaRegex,
+} from './reguly.mjs';
 
 const SHA = 'a'.repeat(40);
 const cfg = { gate: 'gate', review: 'review', maxLinii: 300, maxPlikow: 15 };
@@ -435,4 +445,18 @@ test('wyłączenie testu w fixture poza plikiem testu blokuje', () => {
     )[0],
     /wyłączony/
   );
+});
+
+test('komentarz sędziego: pliki zgrupowane, reszta policzona z katalogami', () => {
+  const pliki = ['backend/a.cs', 'backend/b.cs', 'src/x.ts', 'src/y.ts', 'src/z.ts', 'backend/c.cs', 'app/q.tsx'];
+  const wynik = skrocPowody([
+    'za duży: 900 linii (limit 500)',
+    ...pliki.map((p) => `plik poza zasięgiem agenta: \`${p}\``),
+    'plik spoza listy dozwolonych: `utils/a.ts`',
+  ]);
+  assert.equal(wynik.length, 3);
+  assert.equal(wynik[0], 'za duży: 900 linii (limit 500)');
+  assert.match(wynik[1], /^7 plików poza zasięgiem agenta: `backend\/a.cs`/);
+  assert.match(wynik[1], /i 2 innych \(`backend\/`, `app\/`\)$/);
+  assert.equal(wynik[2], 'plik spoza listy dozwolonych: `utils/a.ts`');
 });
