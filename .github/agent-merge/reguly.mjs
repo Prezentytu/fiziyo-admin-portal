@@ -51,7 +51,7 @@ const ASERCJA =
 // Nowa server action w Next.js to nowy publiczny endpoint zapisu, niezależnie od nazwy pliku.
 const SERVER_ACTION = /["']use server["']/;
 const WYLACZENIE =
-  /\b(it|test|describe)(\.concurrent)?\.(skip|only|todo|skipIf|runIf)\b|\b(xit|xdescribe|fit|fdescribe)\(|\btest\.fixme\b|Skip\s*=\s*"|\[Ignore\]|@ts-nocheck/;
+  /\b(it|test|describe)(\.concurrent)?\.(skip|only|todo|skipIf|runIf|fixme|fail)\b|\b(test\.info\(\)|testInfo)\.(skip|fixme|fail)\b|\b(xit|xdescribe|fit|fdescribe)\(|Skip\s*=\s*"|\[Ignore\]|@ts-nocheck/;
 
 // pliki: [{filename, previous_filename?, status, additions, deletions, patch?}]
 export function ocenPliki(pliki, { dozwolone, zakazane }) {
