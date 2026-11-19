@@ -170,6 +170,13 @@ describe('buildPrerequisiteOptions', () => {
       'paused',
     ]);
   });
+
+  it('shows a prerequisite missing from the candidates as a placeholder so the select is not empty and can be cleared', () => {
+    expect(buildPrerequisiteOptions('self', candidates, 'gone')).toEqual([
+      { id: 'warm', name: 'Rozgrzewka' },
+      { id: 'gone', name: 'Niedostępny zestaw' },
+    ]);
+  });
 });
 
 describe('buildWarmupDependencyItems', () => {

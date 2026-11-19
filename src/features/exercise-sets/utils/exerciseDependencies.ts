@@ -183,7 +183,7 @@ export interface PrerequisiteCandidate {
 
 /**
  * „Przed tym zestawem zrób”: inne aktywne przypisania pacjenta, bez tych, które (pośrednio) wymagają tego zestawu,
- * bo backend odrzuci cykl. Obecny wybór zostaje na liście, nawet gdy przestał być aktywny.
+ * bo backend odrzuci cykl. Obecny wybór zostaje na liście, nawet gdy przestał być aktywny albo zniknął z listy.
  */
 export function buildPrerequisiteOptions(
   assignmentId: string,
@@ -201,10 +201,16 @@ export function buildPrerequisiteOptions(
     }
     return false;
   };
-  return candidates
+  const options = candidates
     .filter((candidate) => candidate.id !== assignmentId)
     .filter((candidate) => candidate.id === currentRequiresId || (candidate.isActive && !leadsBackToSelf(candidate.id)))
     .map((candidate) => ({ id: candidate.id, name: candidate.name }));
+  // Wymagany zestaw spoza kandydatów (usunięty z planu albo spoza listy): bez tej pozycji select byłby pusty
+  // i terapeuta nie mógłby zdjąć wymagania.
+  if (currentRequiresId && !requiresById.has(currentRequiresId)) {
+    options.push({ id: currentRequiresId, name: 'Niedostępny zestaw' });
+  }
+  return options;
 }
 
 /**
