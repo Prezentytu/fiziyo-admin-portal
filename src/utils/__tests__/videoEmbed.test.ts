@@ -23,6 +23,16 @@ function startParam(url: string): string | null {
 
 describe('getYouTubeEmbedUrl (CAT04)', () => {
   it.each([
+    'https://youtube.com/shorts/4QVKjqOvJc4?is=CqN9pP5gZJfMgxfg',
+    'https://www.youtube.com/shorts/4QVKjqOvJc4',
+    'https://www.youtube.com/live/4QVKjqOvJc4?si=abc',
+  ])('rozpoznaje link Shorts i live (%s)', (url) => {
+    expect(getYouTubeEmbedUrl(url)).toBe(
+      'https://www.youtube.com/embed/4QVKjqOvJc4?playsinline=1&modestbranding=1&rel=0'
+    );
+  });
+
+  it.each([
     ['https://www.youtube.com/watch?v=7rnlAVhAK-8&t=6s', '6'],
     ['https://www.youtube.com/watch?v=7rnlAVhAK-8&start=6', '6'],
     ['https://youtu.be/7rnlAVhAK-8?t=6', '6'],
