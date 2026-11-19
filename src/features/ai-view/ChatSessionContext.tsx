@@ -521,6 +521,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
           initialName={createSetRequest?.name}
           patientId={createSetRequest?.patient?.id}
           patientName={createSetRequest?.patient?.name}
+          showNextSteps={false}
           onSuccess={(setId: string) => {
             const patientId = createSetRequest?.patient?.id;
             setCreateSetRequest(null);

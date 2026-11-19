@@ -503,6 +503,7 @@ export default function ExerciseSetsPage() {
           onOpenChange={setIsCreateWizardOpen}
           organizationId={organizationId}
           onSuccess={() => setIsCreateWizardOpen(false)}
+          nextStepsBackLabel="Wróć do zestawów"
         />
       )}
 

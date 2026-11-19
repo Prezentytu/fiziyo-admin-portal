@@ -46,6 +46,7 @@ import { submitCreateTemplateSet } from '@/features/exercise-sets/utils/createSe
 import { defaultSetName } from '@/features/exercise-sets/utils/defaultSetName';
 import { countExerciseUsage } from '@/features/exercise-sets/utils/builderExercises';
 import { buildMappingOverridesFromParams } from '@/features/exercise-sets/utils/buildMappingOverridesFromParams';
+import { SetCreatedDialog, type CreatedSetInfo } from '@/features/exercise-sets/SetCreatedDialog';
 
 interface CreateSetWizardProps {
   open: boolean;
@@ -57,6 +58,13 @@ interface CreateSetWizardProps {
   initialExerciseIds?: string[];
   /** Nazwa, z którą kreator się otwiera (np. nazwa propozycji z czatu); bez niej nazwa domyślna. */
   initialName?: string;
+  /**
+   * Po zapisie pokaż okno „co dalej” (przypisz / zobacz / wróć). Domyślnie tak;
+   * wyłącza je tylko ścieżka, która sama prowadzi dalej (czat z kartą przypisania).
+   */
+  showNextSteps?: boolean;
+  /** Tekst przycisku powrotu w oknie „co dalej”. */
+  nextStepsBackLabel?: string;
 }
 
 interface PatientContext {
@@ -75,7 +83,10 @@ export function CreateSetWizard({
   patientName,
   initialExerciseIds,
   initialName,
+  showNextSteps = true,
+  nextStepsBackLabel,
 }: CreateSetWizardProps) {
+  const [createdSet, setCreatedSet] = useState<CreatedSetInfo | null>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [showDescription, setShowDescription] = useState(false);
@@ -177,9 +188,7 @@ export function CreateSetWizard({
     let painLocation: string | undefined;
 
     if (latestNote?.sections?.diagnosis?.icd10Codes) {
-      diagnosis = latestNote.sections.diagnosis.icd10Codes.map(
-        (code) => `${code.code}: ${code.description}`
-      );
+      diagnosis = latestNote.sections.diagnosis.icd10Codes.map((code) => `${code.code}: ${code.description}`);
     }
 
     if (latestNote?.sections?.interview?.painLocation) {
@@ -211,7 +220,6 @@ export function CreateSetWizard({
     () => tags.map((tag) => ({ id: tag.id, name: tag.name, color: tag.color })),
     [tags]
   );
-
 
   const getDefaultParams = useCallback(
     (exercise: BuilderExercise): ExerciseParams => getExerciseDefaultParams(exercise),
@@ -361,7 +369,11 @@ export function CreateSetWizard({
         include: [GET_ORGANIZATION_EXERCISE_SETS_QUERY, GET_ORGANIZATION_EXERCISE_USAGE_QUERY],
       });
 
-      toast.success(`Zestaw "${sanitizedName}" utworzony`);
+      if (showNextSteps) {
+        setCreatedSet({ id: newSetId, name: sanitizedName });
+      } else {
+        toast.success(`Zestaw "${sanitizedName}" utworzony`);
+      }
       onOpenChange(false);
       onSuccess?.(newSetId);
     } catch (error) {
@@ -371,151 +383,155 @@ export function CreateSetWizard({
   };
 
   return (
-    <Dialog open={open} onOpenChange={() => handleCloseAttempt()}>
-      <DialogContent
-        className="max-w-7xl w-[98vw] max-h-[95vh] h-[90vh] md:h-[85vh] flex flex-col p-0 gap-0 overflow-hidden bg-surface border-border"
-        hideCloseButton
-        data-testid="set-composer"
-        onKeyDown={(event) => {
-          if (event.key !== 'Enter') return;
-          if (!event.metaKey && !event.ctrlKey) return;
-          event.preventDefault();
-          if (isLoading || detailsPending) return;
-          void handleCreateSet();
-        }}
-        onInteractOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => {
-          e.preventDefault();
-          handleCloseAttempt();
-        }}
-      >
-        <VisuallyHidden.Root>
-          <DialogTitle>Nowy zestaw ćwiczeń</DialogTitle>
-        </VisuallyHidden.Root>
-        <div className="shrink-0 bg-surface/95 backdrop-blur-sm border-b border-border">
-          <div className="px-6">
-            <div className="h-7 flex items-end pb-1">
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 leading-none">
-                Nazwa zestawu
-              </span>
-            </div>
-            <div className="min-h-11 py-1 flex items-start gap-0 -mx-1">
-              <div className="w-full lg:w-[40%] min-w-0 pr-3 flex flex-col">
-                <SetNameField
-                  value={name}
-                  onChange={setName}
-                  onGenerateAiName={() => {
-                    void handleGenerateAIName();
-                  }}
-                  isGeneratingName={isGeneratingName}
-                  showError={showNameError}
-                  onClearError={() => setShowNameError(false)}
-                  inputRef={nameInputRef}
-                  autoFocus
-                  testIdPrefix="set-composer"
+    <>
+      <Dialog open={open} onOpenChange={() => handleCloseAttempt()}>
+        <DialogContent
+          className="max-w-7xl w-[98vw] max-h-[95vh] h-[90vh] md:h-[85vh] flex flex-col p-0 gap-0 overflow-hidden bg-surface border-border"
+          hideCloseButton
+          data-testid="set-composer"
+          onKeyDown={(event) => {
+            if (event.key !== 'Enter') return;
+            if (!event.metaKey && !event.ctrlKey) return;
+            event.preventDefault();
+            if (isLoading || detailsPending) return;
+            void handleCreateSet();
+          }}
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => {
+            e.preventDefault();
+            handleCloseAttempt();
+          }}
+        >
+          <VisuallyHidden.Root>
+            <DialogTitle>Nowy zestaw ćwiczeń</DialogTitle>
+          </VisuallyHidden.Root>
+          <div className="shrink-0 bg-surface/95 backdrop-blur-sm border-b border-border">
+            <div className="px-6">
+              <div className="h-7 flex items-end pb-1">
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 leading-none">
+                  Nazwa zestawu
+                </span>
+              </div>
+              <div className="min-h-11 py-1 flex items-start gap-0 -mx-1">
+                <div className="w-full lg:w-[40%] min-w-0 pr-3 flex flex-col">
+                  <SetNameField
+                    value={name}
+                    onChange={setName}
+                    onGenerateAiName={() => {
+                      void handleGenerateAIName();
+                    }}
+                    isGeneratingName={isGeneratingName}
+                    showError={showNameError}
+                    onClearError={() => setShowNameError(false)}
+                    inputRef={nameInputRef}
+                    autoFocus
+                    testIdPrefix="set-composer"
+                  />
+                </div>
+                <div className="flex-1 flex items-center justify-end gap-3 min-w-0 pl-3">
+                  {patientContext && (
+                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground shrink-0">
+                      <span>Dla:</span>
+                      <span className="font-medium text-foreground">{patientContext.patientName}</span>
+                    </div>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleCloseAttempt}
+                    className="h-9 w-9 min-w-9 shrink-0 text-muted-foreground hover:text-foreground rounded-md"
+                    aria-label="Zamknij"
+                    data-testid="set-composer-close-btn"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="w-full lg:w-[40%]">
+                <SetDescriptionCollapsible
+                  open={showDescription}
+                  onOpenChange={setShowDescription}
+                  value={description}
+                  onChange={setDescription}
+                  testIdPrefix="set-composer-description"
+                  className="pb-4"
                 />
               </div>
-              <div className="flex-1 flex items-center justify-end gap-3 min-w-0 pl-3">
-                {patientContext && (
-                  <div className="flex items-center gap-2 text-[10px] text-muted-foreground shrink-0">
-                    <span>Dla:</span>
-                    <span className="font-medium text-foreground">{patientContext.patientName}</span>
-                  </div>
-                )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleCloseAttempt}
-                  className="h-9 w-9 min-w-9 shrink-0 text-muted-foreground hover:text-foreground rounded-md"
-                  aria-label="Zamknij"
-                  data-testid="set-composer-close-btn"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-
-            <div className="w-full lg:w-[40%]">
-              <SetDescriptionCollapsible
-                open={showDescription}
-                onOpenChange={setShowDescription}
-                value={description}
-                onChange={setDescription}
-                testIdPrefix="set-composer-description"
-                className="pb-4"
-              />
             </div>
           </div>
-        </div>
 
-        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-          <ExerciseSetBuilder
-            name={name}
-            onNameChange={setName}
-            selectedInstances={selectedInstances}
-            onSelectedInstancesChange={setSelectedInstances}
-            exerciseParams={exerciseParams}
-            onExerciseParamsChange={setExerciseParams}
-            availableExercises={exercises}
-            library={library}
-            tags={builderTags}
-            hideNameSection
-            onPreviewExercise={handlePreviewExercise}
-            testIdPrefix="set-create-wizard"
-          />
-        </div>
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+            <ExerciseSetBuilder
+              name={name}
+              onNameChange={setName}
+              selectedInstances={selectedInstances}
+              onSelectedInstancesChange={setSelectedInstances}
+              exerciseParams={exerciseParams}
+              onExerciseParamsChange={setExerciseParams}
+              availableExercises={exercises}
+              library={library}
+              tags={builderTags}
+              hideNameSection
+              onPreviewExercise={handlePreviewExercise}
+              testIdPrefix="set-create-wizard"
+            />
+          </div>
 
-        <div className="px-6 py-4 border-t border-border bg-surface shrink-0 flex items-center justify-between gap-3">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={handleCloseAttempt}
-            disabled={isLoading}
-            className="text-muted-foreground hover:text-foreground"
-            data-testid="set-composer-cancel-btn"
-          >
-            Anuluj
-          </Button>
+          <div className="px-6 py-4 border-t border-border bg-surface shrink-0 flex items-center justify-between gap-3">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={handleCloseAttempt}
+              disabled={isLoading}
+              className="text-muted-foreground hover:text-foreground"
+              data-testid="set-composer-cancel-btn"
+            >
+              Anuluj
+            </Button>
 
-          <Button
-            type="button"
-            onClick={handleCreateSet}
-            disabled={isLoading || detailsPending}
-            className={cn(
-              'px-8 bg-tint-fill hover:bg-tint-fill-hover text-on-tint font-semibold',
-              'disabled:opacity-50 disabled:cursor-not-allowed'
-            )}
-            data-testid="set-composer-create-btn"
-          >
-            {isLoading || detailsPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Check className="h-4 w-4 mr-2" />
-            )}
-            Utwórz zestaw
-          </Button>
-        </div>
-      </DialogContent>
+            <Button
+              type="button"
+              onClick={handleCreateSet}
+              disabled={isLoading || detailsPending}
+              className={cn(
+                'px-8 bg-tint-fill hover:bg-tint-fill-hover text-on-tint font-semibold',
+                'disabled:opacity-50 disabled:cursor-not-allowed'
+              )}
+              data-testid="set-composer-create-btn"
+            >
+              {isLoading || detailsPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Check className="h-4 w-4 mr-2" />
+              )}
+              Utwórz zestaw
+            </Button>
+          </div>
+        </DialogContent>
 
-      <ConfirmDialog
-        open={showCloseConfirm}
-        onOpenChange={setShowCloseConfirm}
-        title="Porzucić zmiany?"
-        description="Masz niezapisane zmiany. Czy na pewno chcesz zamknąć bez zapisywania?"
-        confirmText="Tak, zamknij"
-        cancelText="Kontynuuj edycję"
-        variant="destructive"
-        onConfirm={handleConfirmClose}
-      />
+        <ConfirmDialog
+          open={showCloseConfirm}
+          onOpenChange={setShowCloseConfirm}
+          title="Porzucić zmiany?"
+          description="Masz niezapisane zmiany. Czy na pewno chcesz zamknąć bez zapisywania?"
+          confirmText="Tak, zamknij"
+          cancelText="Kontynuuj edycję"
+          variant="destructive"
+          onConfirm={handleConfirmClose}
+        />
 
-      <ExercisePreviewDialog
-        open={previewExercise !== null}
-        exercise={previewExercise}
-        onOpenChange={(isOpen) => {
-          if (!isOpen) setPreviewExercise(null);
-        }}
-        testIdPrefix="set-create-wizard-preview"
-      />
-    </Dialog>
+        <ExercisePreviewDialog
+          open={previewExercise !== null}
+          exercise={previewExercise}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setPreviewExercise(null);
+          }}
+          testIdPrefix="set-create-wizard-preview"
+        />
+      </Dialog>
+
+      <SetCreatedDialog createdSet={createdSet} onClose={() => setCreatedSet(null)} backLabel={nextStepsBackLabel} />
+    </>
   );
 }
