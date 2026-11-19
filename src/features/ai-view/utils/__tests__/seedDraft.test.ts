@@ -152,4 +152,17 @@ describe('seedDraftItems', () => {
       })
     ).toEqual({ items: [kept], missingSet: false });
   });
+
+  it('marks the proposed warm-up on fresh rows and keeps the flag the therapist left on continued rows', () => {
+    const seed = seedDraftItems({
+      exerciseIds: ['e1', 'e2'],
+      warmupExerciseIds: ['e1', 'e2'],
+      items: [{ exerciseId: 'e2', sets: 1, reps: 1, duration: 0, executionTime: 0, restSets: 0, restReps: 0, preparationTime: 0 }],
+      sets: [],
+      setsReady: true,
+      exercises: EXERCISES,
+      exercisesReady: true,
+    });
+    expect(seed?.items.map((item) => item.isWarmup)).toEqual([true, undefined]);
+  });
 });
