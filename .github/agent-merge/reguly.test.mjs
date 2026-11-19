@@ -366,6 +366,8 @@ test('testy: przeniesienie testu poza testy i warianty skip blokują', () => {
     '+test.sequential.skip("x")',
     '+  await test.step.skip("krok", async () => {})',
     '+test("x", ({ skip }: TestContext) => { skip() })',
+    '+test("x", ({ skip: s }) => { s() })',
+    '+test("x", { skip: true }, () => {})',
   ]) {
     assert.match(
       ocenPliki(
@@ -415,4 +417,22 @@ test('nowa server action blokuje niezależnie od nazwy pliku', () => {
   assert.match(p('+"use server";')[0], /server action/);
   assert.match(p("+  'use server'")[0], /server action/);
   assert.deepEqual(p('-"use server";'), []);
+});
+
+test('wyłączenie testu w fixture poza plikiem testu blokuje', () => {
+  assert.match(
+    ocenPliki(
+      [
+        {
+          filename: 'src/fixtures/x.fixture.ts',
+          status: 'modified',
+          additions: 1,
+          deletions: 0,
+          patch: '+    t.skip();',
+        },
+      ],
+      { dozwolone: wzorce('**'), zakazane: [] }
+    )[0],
+    /wyłączony/
+  );
 });

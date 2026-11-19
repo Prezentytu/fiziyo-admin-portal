@@ -52,9 +52,9 @@ const ASERCJA =
 const SERVER_ACTION = /["']use server["']/;
 // W pliku testu szerzej, bo wariantów wyłączenia jest za dużo na listę: każde `.skip`, `.only`, `.todo`,
 // `.fixme`, `.fails` (także `test.step.skip`, `c.skip()`, `test.sequential.skip`) i każde wywołanie `skip(`.
-const WYLACZENIE_W_TESCIE = /\.(skip|only|todo|fixme|fails?|skipIf|runIf)\b|\bskip\s*\(/;
+const WYLACZENIE_W_TESCIE = /\.(skip|only|todo|fixme|fails?|skipIf|runIf)\b|\bskip\s*\(|\b(skip|only|todo|fails?)\s*:/;
 const WYLACZENIE =
-  /\b(it|test|describe)(\.concurrent)?\.(skip|only|todo|skipIf|runIf|fixme|fails?)\b|\b(test\.info\(\)|testInfo)\.(skip|fixme|fail)\b|\b(xit|xdescribe|fit|fdescribe)\(|Skip\s*=\s*"|\[Ignore\]|@ts-nocheck/;
+  /\b(it|test|describe)(\.concurrent)?\.(skip|only|todo|skipIf|runIf|fixme|fails?)\b|\b(test\.info\(\)|testInfo)\.(skip|fixme|fail)\b|\.(skip|fixme|fail|fails)\s*\(|\b(xit|xdescribe|fit|fdescribe)\(|Skip\s*=\s*"|\[Ignore\]|@ts-nocheck/;
 
 // pliki: [{filename, previous_filename?, status, additions, deletions, patch?}]
 export function ocenPliki(pliki, { dozwolone, zakazane }) {
