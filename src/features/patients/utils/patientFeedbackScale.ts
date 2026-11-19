@@ -20,6 +20,19 @@ export function isDiscomfortPain(level: number | null | undefined): boolean {
   return isAnswered(level) && level >= DISCOMFORT_PAIN_LEVEL;
 }
 
+/** Ból 0–10 (NRS) od tego poziomu to dyskomfort; ten sam alarm co sygnał w backendzie (`PatientAttentionRule.PainNrsAlarm`). */
+export const DISCOMFORT_PAIN_NRS = 7;
+
+/**
+ * Dyskomfort w jednej odpowiedzi pacjenta: NRS 0–10, gdy pacjent odpowiedział w tej skali, inaczej stara skala 1–5
+ * (jak `PatientAttentionRule.IsPainSignal`). NRS 0 to odpowiedź „bez bólu”, nie brak odpowiedzi.
+ */
+export function isDiscomfortFeedback(feedback: { painNrs?: number | null; painLevel?: number | null }): boolean {
+  const nrs = feedback.painNrs;
+  if (typeof nrs === 'number' && Number.isFinite(nrs)) return nrs >= DISCOMFORT_PAIN_NRS;
+  return isDiscomfortPain(feedback.painLevel);
+}
+
 export function isHardDifficulty(level: number | null | undefined): boolean {
   return isAnswered(level) && level <= HARD_DIFFICULTY_LEVEL;
 }

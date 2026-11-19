@@ -6,6 +6,7 @@ import { progressToEvents } from '../EventJournal';
 
 import {
   formatFeedbackLevel,
+  isDiscomfortFeedback,
   isDiscomfortPain,
   isHardDifficulty,
   mapDifficultyToFeeling,
@@ -65,6 +66,35 @@ describe('therapy status with the highest pain from the app', () => {
     expect(status.nextStep).not.toMatch(/pozytywny feedback/i);
     expect(todayCell?.wellbeing).toBe('discomfort');
     expect(todayCell?.feeling).toBe('hard');
+  });
+});
+
+describe('pain 0–10 (NRS) in therapy status', () => {
+  const today = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const assignments = [{ id: 'assignment-1', status: 'active', startDate: today }];
+
+  it.each([
+    { feedback: { painNrs: 7 }, expected: true },
+    { feedback: { painNrs: 6 }, expected: false },
+    // NRS answered wins over the old scale: 2/10 is not discomfort even with an old 5/5 on the same record.
+    { feedback: { painNrs: 2, painLevel: 5 }, expected: false },
+    { feedback: { painNrs: 0 }, expected: false },
+    { feedback: { painNrs: null, painLevel: 4 }, expected: true },
+    { feedback: {}, expected: false },
+  ])('isDiscomfortFeedback($feedback) = $expected', ({ feedback, expected }) => {
+    expect(isDiscomfortFeedback(feedback)).toBe(expected);
+  });
+
+  it('pain 8/10 without an old-scale answer asks the therapist to check the plan', () => {
+    const progress = [{ id: 'p1', status: 'completed', completedAt: today, painNrs: 8, painLevel: 0 }];
+
+    const status = calculateTherapyStatus(progress, assignments);
+    const todayCell = generateHeatmapData(progress, assignments).find(
+      (day) => day.dateStr === new Date(today).toDateString()
+    );
+
+    expect(status.reason).toBe('discomfort');
+    expect(todayCell?.wellbeing).toBe('discomfort');
   });
 });
 

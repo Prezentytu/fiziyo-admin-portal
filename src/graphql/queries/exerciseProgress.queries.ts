@@ -18,6 +18,7 @@ export const EXERCISE_PROGRESS_FULL_FRAGMENT = gql`
     patientNotes
     rating
     painLevel
+    painNrs
     realDuration
     exercise {
       id

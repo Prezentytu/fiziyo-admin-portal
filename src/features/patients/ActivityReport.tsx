@@ -55,6 +55,8 @@ interface ExerciseProgressQueryItem {
   completedSets?: number | null;
   completedTime?: number | null;
   painLevel?: number | null;
+  /** Ból 0–10 (NRS); gdy jest, ma pierwszeństwo przed starą skalą 1–5. */
+  painNrs?: number | null;
   difficultyLevel?: number | null;
   notes?: string | null;
   patientNotes?: string | null;
