@@ -167,7 +167,7 @@ function addPatientThenRest(
 
   const existing = existingPatient(form, patients);
   if (existing) {
-    return resolveForPatient(rest, existing.id, options).then((reply) => ({
+    return resolveForPatient(rest, existing.id, { ...options, patientName: existing.name }).then((reply) => ({
       ...reply,
       text: `${existing.name} jest już na liście pacjentów. ${reply.text}`.trim(),
     }));
@@ -215,6 +215,17 @@ function bindPatient(spec: ChatViewSpec | undefined, patientId: string): ChatVie
 }
 
 /**
+ * The rest of a request („ułóż mu zestaw na biodro”) names nobody, so the model answered „Nie widzę,
+ * którego pacjenta dotyczy prośba” (DEV 19.11). The name goes into the message text, the only thing the
+ * dispatcher gets; the backend turns it into an alias and the model sees „Pacjent: P1”.
+ */
+function commandNamingPatient(command: string, patientName: string | undefined): string {
+  const name = patientName?.trim();
+  if (!name) return command;
+  return `${command.trim().replace(/[\s.!;,:]+$/, '')}. Pacjent: ${name}.`;
+}
+
+/**
  * A command carried out for one patient known by id (just added, or found by e-mail): the model
  * composes when allowed and its card is bound to that patient whatever it put there; a reply that
  * only asks, a failure and the no-AI mode end with the rules card for that patient.
@@ -222,7 +233,10 @@ function bindPatient(spec: ChatViewSpec | undefined, patientId: string): ChatVie
 export async function resolveForPatient(
   command: string,
   patientId: string,
-  options: ForPatientOptions
+  options: ForPatientOptions & {
+    /** The patient's name as the list has it: it goes into the message, so the model knows whom the command is for. */
+    patientName?: string;
+  }
 ): Promise<ResolvedReply> {
   const rules = (): ResolvedReply => {
     const spec = routeForPatient(command, options.context, patientId);
@@ -230,13 +244,19 @@ export async function resolveForPatient(
   };
   if (!options.useAi) return rules();
   try {
-    const result = await options.dispatch(command, options.sessionId, options.signal);
+    const result = await options.dispatch(
+      commandNamingPatient(command, options.patientName),
+      options.sessionId,
+      options.signal
+    );
     const spec = bindPatient(result.spec, patientId);
     const session = { sessionId: result.sessionId, creditsUsed: result.creditsUsed };
     if (!spec) return { ...rules(), source: 'ai', ...session };
-    // A sentence written for another patient may name them: the card's own sentence stands in.
+    // The model's sentence stands only when its card was for this patient: written for someone else it may
+    // name them, written for nobody it says the patient is unknown (DEV 19.11). The card's own sentence stands in.
+    const cardNamesPatient = spec.component !== 'CreateExercise' && spec.component !== 'Navigate';
     const modelPatientId = result.spec && 'patientId' in result.spec ? result.spec.patientId : undefined;
-    const modelText = !modelPatientId || modelPatientId === patientId ? result.text : undefined;
+    const modelText = !cardNamesPatient || modelPatientId === patientId ? result.text : undefined;
     return { text: replyText(modelText, spec, options.context), spec, source: 'ai', ...session };
   } catch (error) {
     return { ...rules(), fallbackReason: error instanceof ChatDispatchError ? error.reason : 'unavailable' };

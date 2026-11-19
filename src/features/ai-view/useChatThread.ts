@@ -380,6 +380,7 @@ export function useChatThread({
           sessionId: sessionRef.current?.scopeKey === scopeKey ? sessionRef.current.id : undefined,
           context,
           dispatch: dispatchChatMessage,
+          patientName: name,
         });
         if (threadEpochRef.current !== epoch) return;
         if (reply.sessionId) sessionRef.current = { scopeKey, id: reply.sessionId };
