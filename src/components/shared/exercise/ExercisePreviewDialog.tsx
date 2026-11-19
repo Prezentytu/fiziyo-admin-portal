@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { FieldHelpTooltip } from '@/components/shared/FieldHelpTooltip';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
@@ -27,7 +27,14 @@ import { computeExerciseTimeLabels } from './computedExerciseTime';
 import { ExerciseComputedTime } from './ExerciseComputedTime';
 import { ExercisePatientContentFields } from './ExercisePatientContentFields';
 import type { ExerciseExecutionCardData } from './types';
-import { PatientPreviewTab } from './patient-preview/PatientPreviewTab';
+import {
+  PATIENT_VIEW_DIALOG_WIDTH,
+  PatientViewTabContent,
+  PatientViewTabsList,
+  toExercisePreviewView,
+  type ExercisePreviewView,
+} from './patient-preview/PatientViewTabs';
+import { buildPreviewGallery } from './patient-preview/previewGallery';
 
 interface ExercisePreviewDialogProps {
   open: boolean;
@@ -85,23 +92,9 @@ export function ExercisePreviewDialog({
   testIdPrefix = 'exercise-preview',
 }: Readonly<ExercisePreviewDialogProps>) {
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
-  const [view, setView] = useState<'details' | 'patient'>('details');
+  const [view, setView] = useState<ExercisePreviewView>('details');
 
-  const galleryImages = useMemo(() => {
-    if (!exercise) return [];
-    const imagesFromGallery = (exercise.imageUrls ?? [])
-      .map((image) => getMediaUrl(image) ?? image)
-      .filter((image): image is string => Boolean(image?.trim()));
-    const thumbnailFallback = exercise.thumbnailUrl
-      ? (getMediaUrl(exercise.thumbnailUrl) ?? exercise.thumbnailUrl)
-      : null;
-
-    if (thumbnailFallback && !imagesFromGallery.includes(thumbnailFallback)) {
-      return [thumbnailFallback, ...imagesFromGallery];
-    }
-
-    return imagesFromGallery;
-  }, [exercise]);
+  const galleryImages = useMemo(() => buildPreviewGallery(exercise), [exercise]);
 
   useEffect(() => {
     setCurrentMediaIndex(0);
@@ -165,12 +158,12 @@ export function ExercisePreviewDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className={`${view === 'patient' ? 'max-w-[1240px]' : 'max-w-3xl'} max-h-[95vh] overflow-hidden p-0 flex flex-col`}
+        className={`${view === 'patient' ? PATIENT_VIEW_DIALOG_WIDTH : 'max-w-3xl'} max-h-[95vh] overflow-hidden p-0 flex flex-col`}
         data-testid={`${testIdPrefix}-dialog`}
       >
         <Tabs
           value={view}
-          onValueChange={(value) => setView(value === 'patient' ? 'patient' : 'details')}
+          onValueChange={(value) => setView(toExercisePreviewView(value))}
           className="flex min-h-0 flex-1 flex-col"
         >
           <DialogHeader className="px-6 pt-6 pb-0 border-b border-border">
@@ -178,21 +171,10 @@ export function ExercisePreviewDialog({
             <DialogDescription className="sr-only">
               Podgląd opisu, mediów i parametrów wybranego ćwiczenia.
             </DialogDescription>
-            <TabsList variant="underline" className="-mb-px">
-              <TabsTrigger value="details" activeVariant="underline" data-testid={`${testIdPrefix}-tab-details`}>
-                Szczegóły
-              </TabsTrigger>
-              <TabsTrigger value="patient" activeVariant="underline" data-testid={`${testIdPrefix}-tab-patient`}>
-                Jak u pacjenta
-              </TabsTrigger>
-            </TabsList>
+            <PatientViewTabsList testIdPrefix={testIdPrefix} />
           </DialogHeader>
 
-          <TabsContent value="patient" className="mt-0 min-h-0 flex-1 overflow-y-auto overscroll-contain">
-            {view === 'patient' ? (
-              <PatientPreviewTab exercise={exercise} imageUrl={galleryImages[0] ?? null} testIdPrefix={testIdPrefix} />
-            ) : null}
-          </TabsContent>
+          <PatientViewTabContent exercise={exercise} view={view} testIdPrefix={testIdPrefix} />
 
           <TabsContent value="details" className="mt-0 flex min-h-0 flex-1 flex-col">
             <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain" data-testid={`${testIdPrefix}-content`}>
