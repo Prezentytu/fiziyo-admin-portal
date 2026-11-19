@@ -94,7 +94,8 @@ jobs:
             if (await juzProbowano(pr, powod)) return nic(`#${pr.number}: ${powod} dla ${pr.head.sha.slice(0, 7)} już był naprawiany`);
 
             // 2. Limit prób na PR.
-            const proby = pr.labels.filter((l) => /^naprawa-\d$/.test(l.name)).length;
+            // Najwyższy numer, nie liczba etykiet: zwrot próby (DELETE niżej) przy wyścigu może zostawić dziurę w numeracji.
+            const proby = Math.max(0, ...pr.labels.map((l) => /^naprawa-(\d)$/.exec(l.name)?.[1]).filter(Boolean).map(Number));
             if (proby >= 3) {
               await github.rest.issues.addLabels({ owner, repo, issue_number: pr.number, labels: ["needs-adam"] });
               await github.rest.issues.createComment({ owner, repo, issue_number: pr.number,

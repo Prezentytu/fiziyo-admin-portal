@@ -1,4 +1,4 @@
-// Konfiguracja tego repo na prawdziwym config.json: lista zakazów (dozwolone "**"), krytyczne ścieżki zostają u człowieka.
+// Konfiguracja tego repo na prawdziwym config.json: lista zakazów; w `src/app` tylko grupa `(dashboard)`, bo nowa trasa poza nią zmienia, kto ją widzi. Krytyczne ścieżki zostają u człowieka.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
@@ -30,6 +30,13 @@ test('ścieżki krytyczne nie trafiają do sędziego', () => {
     'schema.graphql',
     'public/robots.txt',
     'AGENTS.md',
+    'src/features/exercises/AGENTS.md',
+    'src/graphql/CLAUDE.md',
+    'src/app/(blocked)/page.tsx',
+    'src/app/robots.ts',
+    'src/app/nowa-publiczna/page.tsx',
+    'src/stores/x.ts',
+    'src/hooks/useUserRole.ts',
   ]) {
     assert.equal(dlaSedziego(p), false, p);
   }

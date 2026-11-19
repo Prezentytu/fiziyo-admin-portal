@@ -199,6 +199,7 @@ const PLIKOWE = [
   [/^plik spoza listy dozwolonych: `(.+)`$/, 'spoza listy dozwolonych'],
   [/^brak diffu do sprawdzenia \(za duży albo binarny\): `(.+)`$/, 'bez diffu do sprawdzenia (za duży albo binarny)'],
 ];
+const plikow = (n) => (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 'pliki' : 'plików');
 export function skrocPowody(powody, { ile = 5 } = {}) {
   const grupy = new Map();
   const inne = [];
@@ -218,7 +219,7 @@ export function skrocPowody(powody, { ile = 5 } = {}) {
     const reszta = sciezki.slice(ile);
     const katalogi = [...new Set(reszta.map((s) => (s.includes('/') ? `${s.split('/')[0]}/` : s)))];
     const dopisek = reszta.length ? ` i ${reszta.length} innych (${katalogi.map((k) => `\`${k}\``).join(', ')})` : '';
-    return `${sciezki.length} plików ${nazwa}: ${pokaz.join(', ')}${dopisek}`;
+    return `${sciezki.length} ${plikow(sciezki.length)} ${nazwa}: ${pokaz.join(', ')}${dopisek}`;
   });
   return [...inne, ...plikowe];
 }
