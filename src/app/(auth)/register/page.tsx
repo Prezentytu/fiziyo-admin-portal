@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { parseRegistrationError, type RegistrationErrorView } from '@/lib/auth/registrationErrors';
 import { reportRegistrationStep } from '@/lib/registrationAttempts';
+import { referralMetadata, rememberReferralCode } from '@/features/referrals/utils/referrals';
 
 interface FormData {
   email: string;
@@ -96,6 +97,13 @@ function PracticeNamePreview({ name, onEdit }: PracticeNamePreviewProps) {
 export default function RegisterPage() {
   const { signUp, isLoaded } = useSignUp();
   const router = useRouter();
+  const [referralCode, setReferralCode] = useState<string | null>(null);
+
+  // SPEC-054: ?ref= is kept in sessionStorage so it survives the e-mail code step; read from location to stay
+  // outside a Suspense boundary.
+  useEffect(() => {
+    setReferralCode(rememberReferralCode(new URLSearchParams(window.location.search).get('ref')));
+  }, []);
 
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
@@ -226,6 +234,7 @@ export default function RegisterPage() {
           phone: formData.phone.trim(),
           companyName: formData.companyName.trim() || generatedName,
           isCompanyAccount: true,
+          ...referralMetadata(referralCode),
         },
       });
 

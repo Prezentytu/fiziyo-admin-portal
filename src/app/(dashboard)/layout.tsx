@@ -17,6 +17,7 @@ import { AiCreditsRequestHost } from '@/features/ai-credits/AiCreditsRequestHost
 import { useChatMode } from '@/features/ai-view/useChatMode';
 import { ReleaseNoteBanner } from '@/features/whats-new/ReleaseNoteBanner';
 import { SupportReplyBanner } from '@/features/support/SupportReplyBanner';
+import { ReferralRequestBanner } from '@/features/referrals/ReferralRequestBanner';
 
 export default function DashboardLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const pathname = usePathname();
@@ -39,6 +40,9 @@ export default function DashboardLayout({ children }: Readonly<{ children: React
         <ReleaseNoteBanner />
       </Suspense>
       <SupportReplyBanner />
+      <Suspense fallback={null}>
+        <ReferralRequestBanner />
+      </Suspense>
       {children}
     </>
   );
