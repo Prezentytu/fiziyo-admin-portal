@@ -27,7 +27,8 @@ export function isDirectVideoUrl(url: string | undefined | null): boolean {
 }
 
 export function extractYouTubeId(url: string): string | null {
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+  // shorts/ i live/: link z udostępniania w aplikacji YouTube (np. youtube.com/shorts/ID?is=...).
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|shorts\/|live\/|watch\?v=|&v=)([^#&?]*).*/;
   const match = url.match(regExp);
   return match?.[2]?.length === 11 ? match[2] : null;
 }
