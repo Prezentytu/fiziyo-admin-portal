@@ -57,6 +57,7 @@
     "vercel.json",
     "/.ai/skills/",
     "/.ai/docs/agent-rules.md",
-    "route.*"
+    "route.*",
+    "/public/"
   ]
 }
