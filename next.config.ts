@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 import bundleAnalyzer from "@next/bundle-analyzer";
 import { buildAppVersionLabel, buildReleaseHeaders } from "./src/lib/release/build-identity";
+import { buildIndexingHeaders } from "./src/lib/seo/indexing";
 import packageJson from "./package.json";
 
 const withBundleAnalyzer = bundleAnalyzer({
@@ -32,6 +33,8 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       ...buildReleaseHeaders(process.env),
+      // Panel poza indeksem wyszukiwarek i AI; tylko logowanie i rejestracja na PROD.
+      ...buildIndexingHeaders(),
       {
         source: "/(.*)",
         headers: [

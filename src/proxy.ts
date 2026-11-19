@@ -11,6 +11,8 @@ const isPublicRoute = createRouteMatcher([
   '/terms',
   '/privacy',
   '/support',
+  // Crawlers must read the rules without signing in; Clerk would answer 404.
+  '/robots.txt',
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
