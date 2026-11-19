@@ -34,6 +34,12 @@ export const WIZARD_OWNED_OVERRIDE_KEYS = ['restAfterExercise'] as const satisfi
   keyof ExerciseOverrideFields
 >;
 
+/**
+ * Patient-only extra exercises written by the mobile app next to mapping keys. Not a mapping ID,
+ * so the wizard must carry it over untouched instead of pruning it with removed mappings.
+ */
+const ADDITIONAL_EXERCISES_KEY = '__additionalExercises__';
+
 export interface MergeAssignmentOverridesOnEditInput {
   existingJson: string | null | undefined;
   /** Clinical/enrichment deltas keyed by mapping.id from the builder. */
@@ -92,7 +98,7 @@ export function mergeAssignmentOverridesOnEdit(
   const dosageWritten = new Set(input.mappingIdsWithWrittenDosage);
 
   for (const key of Object.keys(map)) {
-    if (!activeIds.has(key)) {
+    if (key !== ADDITIONAL_EXERCISES_KEY && !activeIds.has(key)) {
       delete map[key];
     }
   }
