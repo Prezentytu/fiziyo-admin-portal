@@ -8,15 +8,18 @@ interface WhatsNewDotProps {
   readonly className?: string;
 }
 
-/** Tint dot next to „Ustawienia” while a published release is unseen. */
+/**
+ * Tint dot next to „Ustawienia” while a published release is unseen.
+ * Decorative: hidden from the accessibility tree so the parent link, menu item or tab keeps its
+ * name („Ustawienia”, not „Ustawienia Nowości w portalu”). The banner and the bell announce the release.
+ */
 export function WhatsNewDot({ testId, className }: WhatsNewDotProps) {
   const unseen = useUnseenReleaseNote();
   if (!unseen) return null;
 
   return (
     <span
-      role="img"
-      aria-label="Nowości w portalu"
+      aria-hidden="true"
       className={cn('inline-block size-2 shrink-0 rounded-full bg-tint', className)}
       data-testid={testId}
     />
