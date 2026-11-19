@@ -30,6 +30,8 @@ jobs:
       # Odczyt checków dla kroku Kontekst recenzji.
       checks: read
       statuses: read
+      # Nazwy workflowów przy checkach (w repo prywatnym bez tego gh pr checks dostaje odmowę).
+      actions: read
     env:
       PR: ${{ github.event.pull_request.number }}
       HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -110,7 +112,7 @@ jobs:
           fi
           echo "Poprzedni werdykt: $prev"
           echo "prev=$prev" >> "$GITHUB_OUTPUT"
-          checks=$(gh pr checks "$PR" -R "$GITHUB_REPOSITORY" --json name,bucket --jq '.[] | select(.name != "review") | "\(.name): \(.bucket)"' 2>/dev/null | tr -cd '[:alnum:][:space:]:_./()-' | head -40 || true)
+          checks=$(gh pr checks "$PR" -R "$GITHUB_REPOSITORY" --json name,bucket --jq '.[] | select(.name != "review") | "\(.name): \(.bucket)"' | tr -cd '[:alnum:][:space:]:_./()-' | head -40 || true)
           [ -n "$checks" ] || checks="stanu CI nie odczytano"
           printf 'Stan CI:\n%s\n' "$checks"
           { echo "checks<<CHECKS_EOF"; echo "$checks"; echo "CHECKS_EOF"; } >> "$GITHUB_OUTPUT"
