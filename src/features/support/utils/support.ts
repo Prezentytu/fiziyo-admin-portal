@@ -109,6 +109,20 @@ export function supportCtaTarget(
   return null;
 }
 
+export type SupportInboxState = 'loading' | 'unavailable' | 'disabled' | 'enabled';
+
+/**
+ * Co pokazuje strona Wsparcia, zanim wczyta wątki. Licznik niesie flagę `supportInbox`; gdy padł bez danych,
+ * lista się nie odpyta, więc strona mówi o błędzie zamiast stać na „Wczytywanie…”.
+ */
+export function supportInboxState(
+  count: SupportUnreadCount | null | undefined,
+  countFailed: boolean
+): SupportInboxState {
+  if (count) return count.enabled ? 'enabled' : 'disabled';
+  return countFailed ? 'unavailable' : 'loading';
+}
+
 /** Baner na pulpicie: tylko gdy Wsparcie jest włączone, a zespół prosi o odpowiedź. */
 export function shouldShowSupportBanner(count: SupportUnreadCount | null | undefined): boolean {
   return Boolean(count?.enabled && count.replyRequested);

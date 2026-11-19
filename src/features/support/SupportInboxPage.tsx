@@ -15,12 +15,13 @@ import { SUPPORT_EMAIL } from '@/lib/support';
 import { GET_SUPPORT_THREADS_QUERY } from '@/graphql/queries/support.queries';
 import type { GetSupportThreadsResponse, GetSupportThreadsVariables, SupportThread } from '@/graphql/types';
 import { NewConversationDialog } from './NewConversationDialog';
-import { useSupportUnreadCount } from './useSupport';
+import { useSupportUnreadCountState } from './useSupport';
 import {
   SUPPORT_TABS,
   SUPPORT_TAB_LABELS,
   canStartSupportConversation,
   parseSupportTab,
+  supportInboxState,
   supportKindLabel,
   supportStatusLabel,
   supportTabHref,
@@ -79,17 +80,18 @@ export function SupportInboxPage() {
   const searchParams = useSearchParams();
   const tab = parseSupportTab(searchParams.get('tab'));
   const { currentOrganization } = useOrganization();
-  const count = useSupportUnreadCount();
+  const { count, failed: countFailed } = useSupportUnreadCountState();
+  const inboxState = supportInboxState(count, countFailed);
   const [newOpen, setNewOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const { data, loading, error } = useQuery<GetSupportThreadsResponse, GetSupportThreadsVariables>(
     GET_SUPPORT_THREADS_QUERY,
-    { variables: { tab }, fetchPolicy: 'cache-and-network', errorPolicy: 'all', skip: !count?.enabled }
+    { variables: { tab }, fetchPolicy: 'cache-and-network', errorPolicy: 'all', skip: inboxState !== 'enabled' }
   );
   const canWrite = canStartSupportConversation(currentOrganization?.role);
   const threads = data?.supportThreads;
 
-  if (count && !count.enabled) {
+  if (inboxState === 'disabled') {
     return (
       <div className="mx-auto flex max-w-3xl flex-col gap-4 py-6">
         <PageHeader title="Wsparcie" />
@@ -150,7 +152,9 @@ export function SupportInboxPage() {
 
       {!threads ? (
         <p className="text-[14px] text-label-secondary" data-testid="support-loading">
-          {error && !loading ? 'Nie udało się wczytać wątków. Spróbuj ponownie za chwilę.' : 'Wczytywanie…'}
+          {inboxState === 'unavailable' || (error && !loading)
+            ? 'Nie udało się wczytać wątków. Spróbuj ponownie za chwilę.'
+            : 'Wczytywanie…'}
         </p>
       ) : threads.length === 0 ? (
         <p

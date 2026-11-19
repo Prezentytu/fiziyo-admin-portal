@@ -65,8 +65,7 @@ export function NotificationsBell() {
   const sentRelease = releaseNote?.notified ? releaseNote : null;
   const supportCount = useSupportUnreadCount();
   const teamMessages = supportTabUnread(supportCount, 'CONVERSATIONS');
-  const patientCount = notificationsBellCount(signals.length, releaseNote);
-  const count = patientCount + (teamMessages > 0 ? 1 : 0);
+  const count = notificationsBellCount(signals.length, releaseNote, teamMessages > 0);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -76,7 +75,7 @@ export function NotificationsBell() {
           size="icon"
           className="relative"
           data-testid="nav-notifications-btn"
-          aria-label={notificationsBellLabel(signals.length, sentRelease !== null)}
+          aria-label={notificationsBellLabel(signals.length, sentRelease !== null, teamMessages > 0)}
         >
           <Bell className="h-5 w-5 text-label-secondary" />
           {count > 0 && (
@@ -130,7 +129,7 @@ export function NotificationsBell() {
           <p className="px-4 py-5 text-[13px] text-label-secondary" data-testid="nav-notifications-unavailable">
             {error ? 'Nie udało się wczytać zgłoszeń. Spróbuj ponownie za chwilę.' : 'Wczytywanie zgłoszeń…'}
           </p>
-        ) : patientCount === 0 ? (
+        ) : signals.length === 0 ? (
           <p className="px-4 py-5 text-[13px] text-label-secondary" data-testid="nav-notifications-empty">
             Nikt nie zgłosił bólu, trudności ani notatki od ostatniego przejrzenia.
           </p>

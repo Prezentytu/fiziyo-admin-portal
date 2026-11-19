@@ -6,6 +6,7 @@ import {
   shouldShowSupportBanner,
   supportBadgeCount,
   supportCtaTarget,
+  supportInboxState,
   supportKindLabel,
   supportStatusLabel,
   supportTabHref,
@@ -53,6 +54,19 @@ describe('supportCtaTarget', () => {
   it('no label or url means no button', () => {
     expect(supportCtaTarget({ ctaLabel: null, ctaKind: 'PORTAL_PATH', ctaUrl: '/settings' })).toBeNull();
     expect(supportCtaTarget({ ctaLabel: 'X', ctaKind: 'PORTAL_PATH', ctaUrl: null })).toBeNull();
+  });
+});
+
+describe('supportInboxState', () => {
+  it('waits while the counter loads, and gives up with an error when it failed', () => {
+    expect(supportInboxState(null, false)).toBe('loading');
+    expect(supportInboxState(null, true)).toBe('unavailable');
+  });
+
+  it('shows the inbox only when the flag is on, also with stale data after a failed poll', () => {
+    expect(supportInboxState(count(), false)).toBe('enabled');
+    expect(supportInboxState(count(), true)).toBe('enabled');
+    expect(supportInboxState(count({ enabled: false }), false)).toBe('disabled');
   });
 });
 

@@ -17,14 +17,18 @@ import { SUPPORT_POLL_MS } from './utils/support';
  * Licznik Wsparcia współdzielony przez ikonę, dzwonek, baner i zakładki. Błąd albo API bez Wsparcia ukrywa funkcję,
  * zamiast psuć nagłówek; `enabled` to flaga `supportInbox` z Ops.
  */
-export function useSupportUnreadCount(): SupportUnreadCount | null {
-  const { data } = useQuery<GetSupportUnreadCountResponse>(GET_SUPPORT_UNREAD_COUNT_QUERY, {
+export function useSupportUnreadCountState(): { count: SupportUnreadCount | null; failed: boolean } {
+  const { data, error } = useQuery<GetSupportUnreadCountResponse>(GET_SUPPORT_UNREAD_COUNT_QUERY, {
     fetchPolicy: 'cache-first',
     pollInterval: SUPPORT_POLL_MS,
     skipPollAttempt: () => document.hidden,
     errorPolicy: 'all',
   });
-  return data?.supportUnreadCount ?? null;
+  return { count: data?.supportUnreadCount ?? null, failed: Boolean(error) };
+}
+
+export function useSupportUnreadCount(): SupportUnreadCount | null {
+  return useSupportUnreadCountState().count;
 }
 
 /** Oznacza wątek jako przeczytany i odświeża licznik oraz listy; błąd jest cichy (ponowimy przy następnym wejściu). */
