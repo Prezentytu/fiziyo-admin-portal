@@ -41,7 +41,7 @@ jobs:
         with:
           node-version: 22
       - name: Testy reguł
-        run: node --test .github/agent-merge/reguly.test.mjs
+        run: node --test .github/agent-merge/reguly.test.mjs .github/agent-merge/config.test.mjs
       - name: Sędzia
         env:
           GH_TOKEN: ${{ github.token }}
