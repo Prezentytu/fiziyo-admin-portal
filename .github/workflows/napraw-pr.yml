@@ -176,5 +176,5 @@ jobs:
             Każde polecenie Bash uruchamiasz osobno, w bieżącym katalogu, bez `cd`, `&&`, `;` i `|`.
           claude_args: >-
             --model claude-opus-5-5 --effort high --max-turns 80 --setting-sources user
-            --disallowedTools "Edit(.git/**),Write(.git/**),Read(//proc/**)"
+            --disallowedTools "Edit(.git/**),Write(.git/**),Edit(~/**),Write(~/**),Read(.git/config),Read(//proc/**)"
             --allowedTools "Read,Edit,Write,Grep,Glob,Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git add:*),Bash(git commit:*),Bash(git merge origin/main:*),Bash(git merge --abort),Bash(git checkout --ours:*),Bash(git checkout --theirs:*),Bash(git push origin HEAD),Bash(gh pr view ${{ env.PR }}:*),Bash(gh pr diff ${{ env.PR }}:*),Bash(gh pr comment ${{ env.PR }}:*),Bash(gh run rerun ${{ env.RUN_ID }} --failed)"
