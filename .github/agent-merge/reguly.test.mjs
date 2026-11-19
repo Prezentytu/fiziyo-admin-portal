@@ -359,6 +359,9 @@ test('testy: przeniesienie testu poza testy i warianty skip blokują', () => {
     '+  test.fail();',
     '+  test.info().skip();',
     '+  testInfo.fixme();',
+    '+it.fails("x", () => { expect(1).toBe(2) })',
+    '+test("x", (ctx) => { ctx.skip() })',
+    '+test("x", ({ skip }) => { skip() })',
   ]) {
     assert.match(
       ocenPliki(
