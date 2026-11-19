@@ -10,7 +10,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { ocen, stanCheckow, wzorce } from './reguly.mjs';
+import { ocen, skrocPowody, stanCheckow, wzorce } from './reguly.mjs';
 
 const tu = dirname(fileURLToPath(import.meta.url));
 const cfg = JSON.parse(readFileSync(join(tu, 'config.json'), 'utf8'));
@@ -195,7 +195,13 @@ async function main() {
       if (wynik.stan === 'nie')
         await komentarz(
           pr.number,
-          `**Merge u człowieka** dla ${sha.slice(0, 7)}. Sędzia merge'u agenta nie zmerguje tego PR, bo:\n\n${wynik.powody.map((x) => `- ${x}`).join('\n')}\n\nNowy commit albo zmiana stanu uruchamia ocenę ponownie. Polityka: [auto-merge](https://github.com/Prezentytu/baza-wiedzy/blob/main/praca-z-agentami/model-pracy/auto-merge-2026-11-19.md).`
+          `**Merge u człowieka** dla ${sha.slice(0, 7)}. Sędzia merge'u agenta nie zmerguje tego PR, bo:\n\n${skrocPowody(
+            wynik.powody
+          )
+            .map((x) => `- ${x}`)
+            .join(
+              '\n'
+            )}\n\nNowy commit albo zmiana stanu uruchamia ocenę ponownie. Polityka: [auto-merge](https://github.com/Prezentytu/baza-wiedzy/blob/main/praca-z-agentami/model-pracy/auto-merge-2026-11-19.md).`
         );
       continue;
     }

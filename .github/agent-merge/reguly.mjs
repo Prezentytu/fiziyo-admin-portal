@@ -191,3 +191,34 @@ export function otwarteWatki(watki, pass) {
     return !t.isOutdated && !pass;
   }).length;
 }
+
+// Komentarz ma się dać przeczytać: przy dużym PR lista plików zajmowała cały ekran (fizjo-app#681: 30 pozycji).
+// Powody o plikach grupujemy po rodzaju i pokazujemy kilka pierwszych ścieżek z liczbą i katalogami reszty.
+const PLIKOWE = [
+  [/^plik poza zasięgiem agenta: `(.+)`$/, 'poza zasięgiem agenta'],
+  [/^plik spoza listy dozwolonych: `(.+)`$/, 'spoza listy dozwolonych'],
+  [/^brak diffu do sprawdzenia \(za duży albo binarny\): `(.+)`$/, 'bez diffu do sprawdzenia (za duży albo binarny)'],
+];
+export function skrocPowody(powody, { ile = 5 } = {}) {
+  const grupy = new Map();
+  const inne = [];
+  for (const p of powody) {
+    const typ = PLIKOWE.find(([re]) => re.test(p));
+    if (!typ) {
+      inne.push(p);
+      continue;
+    }
+    const lista = grupy.get(typ[1]) ?? [];
+    lista.push(p.match(typ[0])[1]);
+    grupy.set(typ[1], lista);
+  }
+  const plikowe = [...grupy].map(([nazwa, sciezki]) => {
+    if (sciezki.length === 1) return `plik ${nazwa}: \`${sciezki[0]}\``;
+    const pokaz = sciezki.slice(0, ile).map((s) => `\`${s}\``);
+    const reszta = sciezki.slice(ile);
+    const katalogi = [...new Set(reszta.map((s) => (s.includes('/') ? `${s.split('/')[0]}/` : s)))];
+    const dopisek = reszta.length ? ` i ${reszta.length} innych (${katalogi.map((k) => `\`${k}\``).join(', ')})` : '';
+    return `${sciezki.length} plików ${nazwa}: ${pokaz.join(', ')}${dopisek}`;
+  });
+  return [...inne, ...plikowe];
+}
