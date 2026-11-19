@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { CheckCheck, Gift } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { ExercisePreviewDialog } from '@/components/shared/exercise/ExercisePreviewDialog';
 import { Button } from '@/components/ui/button';
 import type { ExerciseOfferDecision } from '@/graphql/types/exerciseOffer.types';
 
@@ -20,6 +21,7 @@ export function ExerciseOffersPanel() {
   const { offers, respond, refetch } = useExerciseOffers();
   const [pending, setPending] = useState<PendingDecision | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [previewOffer, setPreviewOffer] = useState<OfferView | null>(null);
 
   const adoptable = countAdoptable(offers);
 
@@ -103,9 +105,24 @@ export function ExerciseOffersPanel() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {offers.map((offer) => (
-          <ExerciseOfferCard key={offer.id} offer={offer} disabled={submitting} onDecide={handleDecide} />
+          <ExerciseOfferCard
+            key={offer.id}
+            offer={offer}
+            disabled={submitting}
+            onDecide={handleDecide}
+            onPreview={setPreviewOffer}
+          />
         ))}
       </div>
+
+      <ExercisePreviewDialog
+        open={previewOffer !== null}
+        exercise={previewOffer?.preview ?? null}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) setPreviewOffer(null);
+        }}
+        testIdPrefix="exercise-offer-preview"
+      />
 
       <ExerciseOfferNoteDialog
         pending={pending}
