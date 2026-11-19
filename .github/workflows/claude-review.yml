@@ -156,7 +156,7 @@ jobs:
           # Copilot (merge main na wzmiankę) nie przechodzi wymiany OIDC na token aplikacji Claude
           # (401 „User does not have write access”, także przy rerunie), więc jego push idzie
           # na GITHUB_TOKEN; allowed_bots przepuszcza go potem w sprawdzeniu uprawnień akcji.
-          allowed_bots: 'prezentytu-skrzynka-internal,Copilot,claude'
+          allowed_bots: "prezentytu-skrzynka-internal,Copilot"
           github_token: ${{ github.actor == 'Copilot' && secrets.GITHUB_TOKEN || '' }}
           prompt: |
             Recenzujesz PR ${{ github.repository }}#${{ env.PR }} na SHA ${{ env.HEAD_SHA }} (checkout w bieżącym katalogu), baza `${{ env.BASE }}`.
