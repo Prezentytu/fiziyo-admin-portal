@@ -73,3 +73,17 @@ describe('mergeAssignmentOverridesOnEdit: odpoczynek po ćwiczeniu', () => {
     expect(JSON.parse(result)).toEqual({ 'm-1': { restAfterExercise: 0, hidden: true } });
   });
 });
+
+describe('mergeAssignmentOverridesOnEdit: ćwiczenia dodatkowe z aplikacji', () => {
+  it('keeps patient-only additional exercises added in the mobile app', () => {
+    const additional = [{ id: 'add_1', exerciseId: 'ex-9', sets: 3, reps: 10 }];
+    const result = mergeAssignmentOverridesOnEdit({
+      existingJson: JSON.stringify({ 'm-1': { hidden: true }, __additionalExercises__: additional }),
+      clinicalByMappingId: {},
+      activeMappingIds: ['m-1'],
+      mappingIdsWithWrittenDosage: [],
+    });
+
+    expect(JSON.parse(result)).toEqual({ 'm-1': { hidden: true }, __additionalExercises__: additional });
+  });
+});
