@@ -22,6 +22,7 @@ import {
   Loader2,
   Pencil,
   Check,
+  Smartphone,
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -62,7 +63,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
-import { normalizeExerciseFieldValues } from '@/components/shared/exercise';
+import { fromBuilderExercise, normalizeExerciseFieldValues } from '@/components/shared/exercise';
+import { PatientPreviewDialog } from '@/components/shared/exercise/patient-preview/PatientPreviewDialog';
 
 import {
   GET_EXERCISE_BY_ID_QUERY,
@@ -141,6 +143,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const apolloClient = useApolloClient();
   const [isCreateSetWizardOpen, setIsCreateSetWizardOpen] = useState(false);
+  const [isPatientPreviewOpen, setIsPatientPreviewOpen] = useState(false);
   const [isSubmitToGlobalDialogOpen, setIsSubmitToGlobalDialogOpen] = useState(false);
   const [isSubmitToOrganizationDialogOpen, setIsSubmitToOrganizationDialogOpen] = useState(false);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
@@ -667,6 +670,16 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         </Button>
 
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => setIsPatientPreviewOpen(true)}
+            data-testid="exercise-detail-patient-preview-btn"
+          >
+            <Smartphone className="h-4 w-4" />
+            Jak u pacjenta
+          </Button>
           {menuGroups.length > 0 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -1061,6 +1074,13 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         onOpenChange={setIsReportDialogOpen}
         exercise={exercise}
         organizationId={organizationId}
+      />
+
+      <PatientPreviewDialog
+        open={isPatientPreviewOpen}
+        onOpenChange={setIsPatientPreviewOpen}
+        exercise={isPatientPreviewOpen ? fromBuilderExercise(exercise, {}) : null}
+        testIdPrefix="exercise-detail-patient-preview"
       />
     </PageSheet>
   );

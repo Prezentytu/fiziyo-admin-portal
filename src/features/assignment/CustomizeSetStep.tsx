@@ -173,6 +173,7 @@ export function CustomizeSetStep({
         mainTags: exercise.mainTags?.map((tag) => tag.name),
         additionalTags: exercise.additionalTags?.map((tag) => tag.name),
         scope: exercise.scope,
+        enrichmentData: exercise.enrichmentData,
       },
     };
   }, []);

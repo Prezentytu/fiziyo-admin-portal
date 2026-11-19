@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { Play, Info, ArrowLeftRight, ChevronLeft, ChevronRight, ImageIcon } from 'lucide-react';
 
@@ -8,17 +8,26 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import {
   EXERCISE_FIELD_METADATA,
   formatFieldValueWithPlaceholder,
+  fromExerciseMapping,
   normalizeExerciseFieldValues,
   resolveEffectiveExerciseParams,
 } from '@/components/shared/exercise';
+import {
+  PATIENT_VIEW_DIALOG_WIDTH,
+  PatientViewTabContent,
+  PatientViewTabsList,
+  toExercisePreviewView,
+  type ExercisePreviewView,
+} from '@/components/shared/exercise/patient-preview/PatientViewTabs';
 import { resolvePatientInstruction } from '@/components/shared/exercise/patientInstruction';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import type { ExerciseMapping, ExerciseOverride } from './PatientAssignmentCard';
-import type { ExerciseLoad } from '@/features/assignment/types';
+import type { ExerciseLoad, ExerciseMapping as AssignmentExerciseMapping } from '@/features/assignment/types';
 import { translateExerciseSidePolish } from '@/components/pdf/polishUtils';
 
 interface ExercisePreviewDrawerProps {
@@ -55,8 +64,16 @@ type ExerciseMappingWithPreviewFields = ExerciseMapping & {
 
 export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, onEdit }: ExercisePreviewDrawerProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [view, setView] = useState<ExercisePreviewView>('details');
+
+  useEffect(() => {
+    setView('details');
+  }, [mapping?.id, open]);
 
   if (!mapping) return null;
+
+  // Telefon „Jak u pacjenta” dostaje te same dane co karta planu: przypisanie > mapping > szablon.
+  const patientViewExercise = fromExerciseMapping(mapping as AssignmentExerciseMapping, override);
 
   const normalizedMapping = mapping as ExerciseMappingWithPreviewFields;
   const exercise = normalizedMapping.exercise as ExerciseWithPreviewFields | undefined;
@@ -131,14 +148,16 @@ export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, o
     side: effectiveSide,
     rangeOfMotion: exercise?.rangeOfMotion,
     resistance: effective.resistance,
-    equipment: exercise?.equipment, equipmentOverride: effective.equipmentOverride,
+    equipment: exercise?.equipment,
+    equipmentOverride: effective.equipmentOverride,
     difficultyLevel: exercise?.difficultyLevel,
     patientDescription: effectivePatientDescription,
     clinicalDescription: effectiveClinicalDescription,
     audioCue: exercise?.audioCue,
     notes: normalizedOverride?.notes || normalizedMapping.notes,
     loadText: effectiveLoadDisplayText,
-    defaultLoad: exercise?.defaultLoad, enrichmentData: exercise?.enrichmentData,
+    defaultLoad: exercise?.defaultLoad,
+    enrichmentData: exercise?.enrichmentData,
   });
   const parameterFieldOrder = [
     EXERCISE_FIELD_METADATA.sets,
@@ -167,186 +186,210 @@ export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, o
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl p-0 flex flex-col" data-testid="exercise-preview-dialog">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border">
-          <div className="flex items-center gap-3">
-            <DialogTitle className="text-lg">{effectiveName || 'Nieznane ćwiczenie'}</DialogTitle>
-            {hasOverride && (
-              <Badge variant="outline" className="text-xs border-primary/40 text-primary">
-                Zmodyfikowane
-              </Badge>
-            )}
-          </div>
-        </DialogHeader>
+      <DialogContent
+        className={`${view === 'patient' ? PATIENT_VIEW_DIALOG_WIDTH : 'max-w-2xl'} max-h-[95vh] overflow-hidden p-0 flex flex-col`}
+        data-testid="exercise-preview-dialog"
+      >
+        <Tabs
+          value={view}
+          onValueChange={(value) => setView(toExercisePreviewView(value))}
+          className="flex min-h-0 flex-1 flex-col"
+        >
+          <DialogHeader className="px-6 pt-6 pb-0 border-b border-border">
+            <div className="flex items-center gap-3">
+              <DialogTitle className="text-lg">{effectiveName || 'Nieznane ćwiczenie'}</DialogTitle>
+              {hasOverride && (
+                <Badge variant="outline" className="text-xs border-primary/40 text-primary">
+                  Zmodyfikowane
+                </Badge>
+              )}
+            </div>
+            <PatientViewTabsList testIdPrefix="patient-exercise-preview" />
+          </DialogHeader>
 
-        <div className="max-h-[calc(90vh-180px)] overflow-y-auto">
-          <div className="px-6 py-6 space-y-6">
-            {/* Media - Image Gallery or Video */}
-            <div className="relative aspect-video rounded-xl overflow-hidden bg-surface-light">
-              {videoUrl ? (
-                <video
-                  src={videoUrl}
-                  controls
-                  className="w-full h-full object-contain"
-                  poster={currentImage?.url || undefined}
-                >
-                  <track kind="captions" />
-                </video>
-              ) : currentImage ? (
-                <>
-                  <div className="relative w-full h-full">
-                    <Image
-                      src={currentImage.url}
-                      alt={effectiveName || 'Ćwiczenie'}
-                      fill
-                      className="object-contain"
-                      sizes="(max-width: 768px) 100vw, 400px"
-                    />
-                  </div>
-                  {currentImage.isCustom && (
-                    <span className="absolute top-3 left-3 bg-tint-fill text-on-tint text-xs font-medium px-2 py-1 rounded-md flex items-center gap-1">
-                      <ImageIcon className="h-3 w-3" />
-                      Dla pacjenta
-                    </span>
+          <PatientViewTabContent exercise={patientViewExercise} view={view} testIdPrefix="patient-exercise-preview" />
+
+          <TabsContent value="details" className="mt-0 flex min-h-0 flex-1 flex-col">
+            <div className="max-h-[calc(90vh-180px)] overflow-y-auto">
+              <div className="px-6 py-6 space-y-6">
+                {/* Media - Image Gallery or Video */}
+                <div className="relative aspect-video rounded-xl overflow-hidden bg-surface-light">
+                  {videoUrl ? (
+                    <video
+                      src={videoUrl}
+                      controls
+                      className="w-full h-full object-contain"
+                      poster={currentImage?.url || undefined}
+                    >
+                      <track kind="captions" />
+                    </video>
+                  ) : currentImage ? (
+                    <>
+                      <div className="relative w-full h-full">
+                        <Image
+                          src={currentImage.url}
+                          alt={effectiveName || 'Ćwiczenie'}
+                          fill
+                          className="object-contain"
+                          sizes="(max-width: 768px) 100vw, 400px"
+                        />
+                      </div>
+                      {currentImage.isCustom && (
+                        <span className="absolute top-3 left-3 bg-tint-fill text-on-tint text-xs font-medium px-2 py-1 rounded-md flex items-center gap-1">
+                          <ImageIcon className="h-3 w-3" />
+                          Dla pacjenta
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <div className="flex items-center justify-center h-full">
+                      <ImagePlaceholder type="exercise" iconClassName="h-16 w-16" />
+                    </div>
                   )}
-                </>
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <ImagePlaceholder type="exercise" iconClassName="h-16 w-16" />
+
+                  {/* Navigation arrows */}
+                  {hasMultipleImages && !videoUrl && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={goToPrevious}
+                        className="absolute left-2 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-colors"
+                      >
+                        <ChevronLeft className="h-6 w-6" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={goToNext}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-colors"
+                      >
+                        <ChevronRight className="h-6 w-6" />
+                      </button>
+                    </>
+                  )}
+
+                  {/* Dots indicator */}
+                  {hasMultipleImages && !videoUrl && (
+                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                      {allImages.map((img, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => setCurrentImageIndex(index)}
+                          className={`h-2 rounded-full transition-all ${
+                            index === currentImageIndex
+                              ? 'w-6 bg-primary'
+                              : `w-2 ${img.isCustom ? 'bg-primary/40' : 'bg-white/60'} hover:bg-white/80`
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {videoUrl && !open && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                      <div className="h-16 w-16 rounded-full bg-white/90 flex items-center justify-center">
+                        <Play className="h-8 w-8 text-foreground ml-1" />
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
 
-              {/* Navigation arrows */}
-              {hasMultipleImages && !videoUrl && (
-                <>
-                  <button
-                    type="button"
-                    onClick={goToPrevious}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-colors"
-                  >
-                    <ChevronLeft className="h-6 w-6" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={goToNext}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-colors"
-                  >
-                    <ChevronRight className="h-6 w-6" />
-                  </button>
-                </>
-              )}
-
-              {/* Dots indicator */}
-              {hasMultipleImages && !videoUrl && (
-                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-                  {allImages.map((img, index) => (
-                    <button
-                      key={index}
-                      type="button"
-                      onClick={() => setCurrentImageIndex(index)}
-                      className={`h-2 rounded-full transition-all ${
-                        index === currentImageIndex
-                          ? 'w-6 bg-primary'
-                          : `w-2 ${img.isCustom ? 'bg-primary/40' : 'bg-white/60'} hover:bg-white/80`
-                      }`}
-                    />
-                  ))}
-                </div>
-              )}
-
-              {videoUrl && !open && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                  <div className="h-16 w-16 rounded-full bg-white/90 flex items-center justify-center">
-                    <Play className="h-8 w-8 text-foreground ml-1" />
+                {/* Parameters */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Parametry</h3>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {parameterFieldOrder.map((field) => (
+                      <div key={field.key} className="rounded-xl border border-border/40 bg-surface/30 p-3">
+                        <p className="text-xs text-muted-foreground">{field.label}</p>
+                        <p className="mt-1 text-sm font-semibold text-foreground">
+                          {formatFieldValueWithPlaceholder(
+                            field,
+                            normalizedFields,
+                            field.group === 'content' ? 'Nie ustawiono' : '—'
+                          )}
+                        </p>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              )}
-            </div>
 
-            {/* Parameters */}
-            <div className="space-y-3">
-              <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Parametry</h3>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {parameterFieldOrder.map((field) => (
-                  <div key={field.key} className="rounded-xl border border-border/40 bg-surface/30 p-3">
-                    <p className="text-xs text-muted-foreground">{field.label}</p>
-                    <p className="mt-1 text-sm font-semibold text-foreground">
-                      {formatFieldValueWithPlaceholder(field, normalizedFields, field.group === 'content' ? 'Nie ustawiono' : '—')}
-                    </p>
+                {/* Additional info */}
+                {translateExerciseSidePolish(effectiveSide, Boolean(normalizedFields.alternatingPerSide)) && (
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-surface-light/50 border border-border/40">
+                    <ArrowLeftRight className="h-5 w-5 text-muted-foreground shrink-0" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Strona wykonania</p>
+                      <p className="text-sm font-medium">
+                        {translateExerciseSidePolish(effectiveSide, Boolean(normalizedFields.alternatingPerSide))}
+                      </p>
+                    </div>
                   </div>
-                ))}
+                )}
+
+                {/* Patient description */}
+                {effectivePatientDescription && (
+                  <>
+                    <Separator />
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                        <Info className="h-4 w-4" />
+                        Opis dla pacjenta
+                      </h3>
+                      <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+                        {effectivePatientDescription}
+                      </p>
+                    </div>
+                  </>
+                )}
+
+                {effectiveClinicalDescription && (
+                  <>
+                    <Separator />
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                        <Info className="h-4 w-4" />
+                        Opis dla fizjoterapeuty
+                      </h3>
+                      <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+                        {effectiveClinicalDescription}
+                      </p>
+                    </div>
+                  </>
+                )}
+
+                {/* Notes */}
+                {(normalizedOverride?.notes || normalizedMapping.notes) && (
+                  <>
+                    <Separator />
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                        Notatki dla pacjenta
+                      </h3>
+                      <div className="rounded-xl bg-primary/5 border border-primary/20 p-4">
+                        <p className="text-sm text-foreground whitespace-pre-wrap">
+                          {normalizedOverride?.notes || normalizedMapping.notes}
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Override info */}
+                {hasOverride && (
+                  <>
+                    <Separator />
+                    <div className="rounded-xl bg-info/5 border border-info/20 p-4">
+                      <p className="text-xs text-muted-foreground">
+                        <strong className="text-info">Uwaga:</strong> To ćwiczenie ma zmodyfikowane parametry specjalnie
+                        dla tego pacjenta. Oryginalne wartości z zestawu mogą być inne.
+                      </p>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
-
-            {/* Additional info */}
-            {translateExerciseSidePolish(effectiveSide, Boolean(normalizedFields.alternatingPerSide)) && (
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-surface-light/50 border border-border/40">
-                <ArrowLeftRight className="h-5 w-5 text-muted-foreground shrink-0" />
-                <div>
-                  <p className="text-xs text-muted-foreground">Strona wykonania</p>
-                  <p className="text-sm font-medium">{translateExerciseSidePolish(effectiveSide, Boolean(normalizedFields.alternatingPerSide))}</p>
-                </div>
-              </div>
-            )}
-
-            {/* Patient description */}
-            {effectivePatientDescription && (
-              <>
-                <Separator />
-                <div className="space-y-3">
-                  <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                    <Info className="h-4 w-4" />
-                    Opis dla pacjenta
-                  </h3>
-                  <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{effectivePatientDescription}</p>
-                </div>
-              </>
-            )}
-
-            {effectiveClinicalDescription && (
-              <>
-                <Separator />
-                <div className="space-y-3">
-                  <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                    <Info className="h-4 w-4" />
-                    Opis dla fizjoterapeuty
-                  </h3>
-                  <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{effectiveClinicalDescription}</p>
-                </div>
-              </>
-            )}
-
-            {/* Notes */}
-            {(normalizedOverride?.notes || normalizedMapping.notes) && (
-              <>
-                <Separator />
-                <div className="space-y-3">
-                  <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                    Notatki dla pacjenta
-                  </h3>
-                  <div className="rounded-xl bg-primary/5 border border-primary/20 p-4">
-                    <p className="text-sm text-foreground whitespace-pre-wrap">
-                      {normalizedOverride?.notes || normalizedMapping.notes}
-                    </p>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* Override info */}
-            {hasOverride && (
-              <>
-                <Separator />
-                <div className="rounded-xl bg-info/5 border border-info/20 p-4">
-                  <p className="text-xs text-muted-foreground">
-                    <strong className="text-info">Uwaga:</strong> To ćwiczenie ma zmodyfikowane parametry specjalnie dla
-                    tego pacjenta. Oryginalne wartości z zestawu mogą być inne.
-                  </p>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
+          </TabsContent>
+        </Tabs>
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-border flex justify-end gap-3">

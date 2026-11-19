@@ -4,12 +4,14 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { useMutation } from '@apollo/client/react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
-import { Archive, ArrowLeft, FileText, Loader2 } from 'lucide-react';
+import { Archive, ArrowLeft, FileText, Loader2, Smartphone } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MediaGallery, buildMediaItems } from '@/components/shared';
+import { fromBuilderExercise } from '@/components/shared/exercise/adapters';
+import { PatientPreviewDialog } from '@/components/shared/exercise/patient-preview/PatientPreviewDialog';
 import { readExerciseContent } from '@/components/shared/exercise/readExerciseContent';
 import { PageSheet } from '@/components/shared/page';
 import { useExerciseEditorForm, type ExerciseCoreDraft } from '@/features/exercises/useExerciseEditorForm';
@@ -351,6 +353,7 @@ export function VerificationWorkspace({
   const [proposal, setProposal] = useState<InstructionProposal | null>(null);
   const [isGeneratingProposal, setIsGeneratingProposal] = useState(false);
   const [photoDialogIndex, setPhotoDialogIndex] = useState<number | null>(null);
+  const [isPatientPreviewOpen, setIsPatientPreviewOpen] = useState(false);
   const [mediaIndex, setMediaIndex] = useState(0);
   const [isMediaFollowingText, setIsMediaFollowingText] = useState(true);
   const [focusedStep, setFocusedStep] = useState<number | null>(null);
@@ -1085,6 +1088,16 @@ export function VerificationWorkspace({
         )}
         <span className="flex-1" />
         <SaveStatus status={form.saveStatus} />
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsPatientPreviewOpen(true)}
+          data-testid="verification-patient-preview-btn"
+        >
+          <Smartphone />
+          Jak u pacjenta
+        </Button>
         {canArchive && (
           <Button
             type="button"
@@ -1373,6 +1386,12 @@ export function VerificationWorkspace({
         isSubmitting={rejecting || isLeaving}
         onOpenChange={setIsDuplicateOpen}
         onConfirm={(target) => void handleMarkDuplicate(target)}
+      />
+      <PatientPreviewDialog
+        open={isPatientPreviewOpen}
+        onOpenChange={setIsPatientPreviewOpen}
+        exercise={isPatientPreviewOpen ? fromBuilderExercise(exercise, {}) : null}
+        testIdPrefix="verification-patient-preview"
       />
     </PageSheet>
   );
