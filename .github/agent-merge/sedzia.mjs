@@ -76,7 +76,9 @@ async function watkiReview(n) {
 }
 
 // Czerwony main: commit status `cfg.statusMain` (np. E2E Dev Full) albo check run bramki `cfg.gate` na
-// ostatnim commicie gałęzi domyślnej. Brak checków (merge na GITHUB_TOKEN nie uruchamia CI) nie blokuje.
+// ostatnim commicie gałęzi domyślnej. Brak checków nie blokuje: bramka jest na main tylko tam, gdzie CI biegnie
+// na push (ops, panel), a merge na GITHUB_TOKEN CI nie uruchamia. Gdzie jej nie ma (fizjo-app, fiziyo-tests),
+// błąd z main i tak wychodzi w bramce na merge refie każdego PR.
 async function mainCzerwony(galaz) {
   const zle = ['failure', 'error', 'timed_out'];
   if (cfg.statusMain) {
