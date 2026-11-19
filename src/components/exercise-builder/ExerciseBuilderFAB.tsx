@@ -5,6 +5,7 @@ import { ShoppingCart } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useExerciseBuilder } from '@/contexts/ExerciseBuilderContext';
+import { SetCreatedDialog, type CreatedSetInfo } from '@/features/exercise-sets/SetCreatedDialog';
 import { ExerciseBuilderSheet } from './ExerciseBuilderSheet';
 
 interface ExerciseBuilderFABProps {
@@ -14,10 +15,15 @@ interface ExerciseBuilderFABProps {
 export function ExerciseBuilderFAB({ className }: ExerciseBuilderFABProps) {
   const { hasExercises, exerciseCount } = useExerciseBuilder();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [createdSet, setCreatedSet] = useState<CreatedSetInfo | null>(null);
 
-  // Don't render if no exercises
+  // Zapis czyści koszyk, a pusty koszyk chowa przycisk i arkusz. Okno „co dalej” zostaje.
+  const setCreatedDialog = (
+    <SetCreatedDialog createdSet={createdSet} onClose={() => setCreatedSet(null)} backLabel="Wróć do ćwiczeń" />
+  );
+
   if (!hasExercises) {
-    return null;
+    return setCreatedDialog;
   }
 
   return (
@@ -46,7 +52,8 @@ export function ExerciseBuilderFAB({ className }: ExerciseBuilderFABProps) {
       </button>
 
       {/* Mobile Sheet */}
-      <ExerciseBuilderSheet open={isSheetOpen} onOpenChange={setIsSheetOpen} />
+      <ExerciseBuilderSheet open={isSheetOpen} onOpenChange={setIsSheetOpen} onSetCreated={setCreatedSet} />
+      {setCreatedDialog}
     </>
   );
 }

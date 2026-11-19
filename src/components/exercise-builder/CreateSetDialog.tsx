@@ -23,7 +23,7 @@ import {
 } from '@/graphql/mutations/exercises.mutations';
 import { aiService } from '@/services/aiService';
 import { submitCreateTemplateSet } from '@/features/exercise-sets/utils/createSetSubmit';
-import { SetCreatedDialog, type CreatedSetInfo } from '@/features/exercise-sets/SetCreatedDialog';
+import type { CreatedSetInfo } from '@/features/exercise-sets/SetCreatedDialog';
 import { SetNameField } from '@/features/exercise-sets/components/SetNameField';
 import { SetDescriptionCollapsible } from '@/features/exercise-sets/components/SetDescriptionCollapsible';
 
@@ -37,10 +37,14 @@ interface CreateExerciseSetResponse {
 interface CreateSetDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /**
+   * Zestaw zapisany. Okno „co dalej” renderuje rodzic, który zostaje zamontowany,
+   * bo `clearBuilder()` zaraz po zapisie może odmontować to okno razem z koszykiem.
+   */
+  onCreated: (set: CreatedSetInfo) => void;
 }
 
-export function CreateSetDialog({ open, onOpenChange }: CreateSetDialogProps) {
-  const [createdSet, setCreatedSet] = useState<CreatedSetInfo | null>(null);
+export function CreateSetDialog({ open, onOpenChange, onCreated }: CreateSetDialogProps) {
   const { currentOrganization } = useOrganization();
   const { selectedExercises, clearBuilder, exerciseCount } = useExerciseBuilder();
   const [isCreating, setIsCreating] = useState(false);
@@ -147,7 +151,7 @@ export function CreateSetDialog({ open, onOpenChange }: CreateSetDialogProps) {
         selectedExercises.map(buildBuilderExerciseMapping)
       );
 
-      setCreatedSet({ id: exerciseSetId, name: sanitizedName });
+      onCreated({ id: exerciseSetId, name: sanitizedName });
 
       clearBuilder();
       resetForm();
@@ -170,93 +174,89 @@ export function CreateSetDialog({ open, onOpenChange }: CreateSetDialogProps) {
   };
 
   return (
-    <>
-      <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent
-          data-testid="create-set-dialog"
-          onKeyDown={(event) => {
-            if (event.key !== 'Enter') return;
-            if (!event.metaKey && !event.ctrlKey) return;
-            event.preventDefault();
-            if (isCreating) return;
-            void handleSubmit();
-          }}
-        >
-          <DialogHeader>
-            <DialogTitle>Utwórz nowy zestaw</DialogTitle>
-            <DialogDescription>
-              Zestaw będzie zawierał {exerciseCount}{' '}
-              {exerciseCount === 1 ? 'ćwiczenie' : exerciseCount < 5 ? 'ćwiczenia' : 'ćwiczeń'}. Nadaj mu nazwę i dodaj
-              opis.
-            </DialogDescription>
-          </DialogHeader>
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent
+        data-testid="create-set-dialog"
+        onKeyDown={(event) => {
+          if (event.key !== 'Enter') return;
+          if (!event.metaKey && !event.ctrlKey) return;
+          event.preventDefault();
+          if (isCreating) return;
+          void handleSubmit();
+        }}
+      >
+        <DialogHeader>
+          <DialogTitle>Utwórz nowy zestaw</DialogTitle>
+          <DialogDescription>
+            Zestaw będzie zawierał {exerciseCount}{' '}
+            {exerciseCount === 1 ? 'ćwiczenie' : exerciseCount < 5 ? 'ćwiczenia' : 'ćwiczeń'}. Nadaj mu nazwę i
+            dodaj opis.
+          </DialogDescription>
+        </DialogHeader>
 
-          <div className="space-y-4">
-            <div>
-              <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
-                Nazwa zestawu
-              </span>
-              <SetNameField
-                value={name}
-                onChange={setName}
-                onGenerateAiName={() => {
-                  void handleGenerateAiName();
-                }}
-                isGeneratingName={isGeneratingName}
-                showError={showNameError}
-                onClearError={() => setShowNameError(false)}
-                disabled={isCreating}
-                inputRef={nameInputRef}
-                autoFocus
-                testIdPrefix="create-set"
-                aiButtonTestId="create-set-ai-name-btn"
-                placeholder="np. Rehabilitacja kolana"
-              />
-            </div>
-
-            <SetDescriptionCollapsible
-              open={showDescription}
-              onOpenChange={setShowDescription}
-              value={description}
-              onChange={setDescription}
+        <div className="space-y-4">
+          <div>
+            <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+              Nazwa zestawu
+            </span>
+            <SetNameField
+              value={name}
+              onChange={setName}
+              onGenerateAiName={() => {
+                void handleGenerateAiName();
+              }}
+              isGeneratingName={isGeneratingName}
+              showError={showNameError}
+              onClearError={() => setShowNameError(false)}
               disabled={isCreating}
-              testIdPrefix="create-set-description"
-              placeholder="Krótki opis zestawu..."
+              inputRef={nameInputRef}
+              autoFocus
+              testIdPrefix="create-set"
+              aiButtonTestId="create-set-ai-name-btn"
+              placeholder="np. Rehabilitacja kolana"
             />
           </div>
 
-          <DialogFooter className="flex items-center justify-between sm:justify-between">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isCreating}
-              data-testid="create-set-cancel-btn"
-            >
-              Anuluj
-            </Button>
-            <Button
-              type="button"
-              onClick={() => {
-                void handleSubmit();
-              }}
-              disabled={isCreating}
-              data-testid="create-set-submit-btn"
-            >
-              {isCreating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Tworzenie...
-                </>
-              ) : (
-                'Utwórz zestaw'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          <SetDescriptionCollapsible
+            open={showDescription}
+            onOpenChange={setShowDescription}
+            value={description}
+            onChange={setDescription}
+            disabled={isCreating}
+            testIdPrefix="create-set-description"
+            placeholder="Krótki opis zestawu..."
+          />
+        </div>
 
-      <SetCreatedDialog createdSet={createdSet} onClose={() => setCreatedSet(null)} backLabel="Wróć do ćwiczeń" />
-    </>
+        <DialogFooter className="flex items-center justify-between sm:justify-between">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleClose}
+            disabled={isCreating}
+            data-testid="create-set-cancel-btn"
+          >
+            Anuluj
+          </Button>
+          <Button
+            type="button"
+            onClick={() => {
+              void handleSubmit();
+            }}
+            disabled={isCreating}
+            data-testid="create-set-submit-btn"
+          >
+            {isCreating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Tworzenie...
+              </>
+            ) : (
+              'Utwórz zestaw'
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

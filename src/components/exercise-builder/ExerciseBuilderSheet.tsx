@@ -20,13 +20,15 @@ import { useExerciseBuilder } from '@/contexts/ExerciseBuilderContext';
 import { formatExerciseDuration } from '@/utils/exerciseTime';
 import { BuilderExerciseItem } from './BuilderExerciseItem';
 import { CreateSetDialog } from './CreateSetDialog';
+import type { CreatedSetInfo } from '@/features/exercise-sets/SetCreatedDialog';
 
 interface ExerciseBuilderSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSetCreated: (set: CreatedSetInfo) => void;
 }
 
-export function ExerciseBuilderSheet({ open, onOpenChange }: ExerciseBuilderSheetProps) {
+export function ExerciseBuilderSheet({ open, onOpenChange, onSetCreated }: ExerciseBuilderSheetProps) {
   const {
     selectedExercises,
     removeExercise,
@@ -175,7 +177,7 @@ export function ExerciseBuilderSheet({ open, onOpenChange }: ExerciseBuilderShee
         </SheetContent>
       </Sheet>
 
-      <CreateSetDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} />
+      <CreateSetDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} onCreated={onSetCreated} />
     </>
   );
 }

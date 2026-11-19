@@ -569,6 +569,7 @@ function ClassicDashboard() {
           onOpenChange={setIsCreateSetWizardOpen}
           organizationId={organizationId}
           onSuccess={() => setIsCreateSetWizardOpen(false)}
+          nextStepsBackLabel="Wróć do pulpitu"
         />
       )}
 

@@ -53,7 +53,7 @@ Mapowanie ćwiczenia do zestawu. Pola NULL = wartość z Exercise.
 - Zawsze wysyłaj domyślny `frequency` (elastyczny 3×/tydzień) przez `buildCreateTemplateSetVariables`
 - Mappingi: pełny payload + dual-write load przez `buildExerciseLoadMutationVars`
 - UI karty ćwiczenia: wyłącznie `ExerciseExecutionCard` (bez lokalnych klonów / `layoutVariant`)
-- Po utworzeniu (kreator i szybki kreator z listy): wspólne okno `SetCreatedDialog` z „Przypisz pacjentowi” (`/exercise-sets/{id}?assign=1` otwiera Assignment Wizard), „Zobacz zestaw” i powrotem w miejsce startu; bez auto-redirect. Wyłącza je tylko czat (`showNextSteps={false}`), który prowadzi dalej własną kartą
+- Po utworzeniu (kreator i szybki kreator z listy): wspólne okno `SetCreatedDialog` (w szybkim kreatorze renderuje je zawsze zamontowany rodzic: `ExerciseBuilderFAB` albo `ExerciseBuilderSidebar`, bo zapis czyści koszyk) z „Przypisz pacjentowi” (`/exercise-sets/{id}?assign=1` otwiera Assignment Wizard), „Zobacz zestaw” i powrotem w miejsce startu; bez auto-redirect. Wyłącza je tylko czat (`showNextSteps={false}`), który prowadzi dalej własną kartą
 
 ## ExerciseLoad (kg-only, SPEC-003)
 

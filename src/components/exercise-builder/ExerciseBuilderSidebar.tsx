@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils';
 import { useExerciseBuilder } from '@/contexts/ExerciseBuilderContext';
 import { formatExerciseDuration } from '@/utils/exerciseTime';
 import { BuilderExerciseItem } from './BuilderExerciseItem';
+import { SetCreatedDialog, type CreatedSetInfo } from '@/features/exercise-sets/SetCreatedDialog';
 import { CreateSetDialog } from './CreateSetDialog';
 
 interface ExerciseBuilderSidebarProps {
@@ -38,6 +39,7 @@ export function ExerciseBuilderSidebar({ className }: ExerciseBuilderSidebarProp
   } = useExerciseBuilder();
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [createdSet, setCreatedSet] = useState<CreatedSetInfo | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -181,7 +183,8 @@ export function ExerciseBuilderSidebar({ className }: ExerciseBuilderSidebarProp
         )}
       </aside>
 
-      <CreateSetDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} />
+      <CreateSetDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} onCreated={setCreatedSet} />
+      <SetCreatedDialog createdSet={createdSet} onClose={() => setCreatedSet(null)} backLabel="Wróć do ćwiczeń" />
     </>
   );
 }
