@@ -156,7 +156,7 @@ describe('resolveReply: adding a patient together with something else', () => {
     const dispatch = vi.fn<Dispatcher>(async () => ({
       sessionId: 's-9',
       text: 'Proponuję zestaw na biodro.',
-      spec: { component: 'SetDraft' as const, exerciseIds: ['e1', 'e2'], note: 'biodro' },
+      spec: { component: 'SetDraft' as const, patientId: 'p-jan', exerciseIds: ['e1', 'e2'], note: 'biodro' },
       creditsUsed: 1,
     }));
     const reply = await resolveReply('dodaj pacjenta jan@example.com i ułóż mu zestaw na biodro', {
@@ -165,7 +165,8 @@ describe('resolveReply: adding a patient together with something else', () => {
       dispatch,
     });
 
-    expect(dispatch).toHaveBeenCalledWith('ułóż mu zestaw na biodro', undefined, undefined);
+    // Reszta idzie do dyspozytora z nazwanym pacjentem: backend zamienia nazwisko na alias i model wie, dla kogo.
+    expect(dispatch).toHaveBeenCalledWith('ułóż mu zestaw na biodro. Pacjent: Jan Kowalski.', undefined, undefined);
     expect(reply.spec).toEqual({
       component: 'SetDraft',
       patientId: 'p-jan',
@@ -213,6 +214,44 @@ describe('resolveForPatient', () => {
 
     expect(reply.spec).toEqual({ component: 'SetDraft', patientId: 'p-new', exerciseIds: ['e1'] });
     expect(reply.sessionId).toBe('s-1');
+  });
+
+  // DEV 19.11: model dostawał samą resztę („ułóż mu zestaw…”) i pisał „Nie widzę, którego pacjenta dotyczy prośba”,
+  // choć karta była przypięta do pacjenta.
+  it('names the patient in what goes to the dispatcher, and nothing else', async () => {
+    const dispatch = vi.fn<Dispatcher>(async () => ({
+      sessionId: 's-1',
+      text: 'Proponuję zestaw na biodro.',
+      spec: { component: 'SetDraft' as const, patientId: 'p-new', exerciseIds: ['e1'] },
+      creditsUsed: 1,
+    }));
+    const reply = await resolveForPatient('ułóż mu zestaw na biodro!', 'p-new', {
+      useAi: true,
+      context,
+      dispatch,
+      patientName: ' Jan Plynnosc ',
+    });
+
+    expect(dispatch).toHaveBeenCalledWith('ułóż mu zestaw na biodro. Pacjent: Jan Plynnosc.', undefined, undefined);
+    expect(reply.text).toBe('Proponuję zestaw na biodro.');
+  });
+
+  it('does not show a model sentence written without knowing the patient', async () => {
+    const dispatch: Dispatcher = async () => ({
+      sessionId: 's-1',
+      text: 'Proponuję zestaw. Nie widzę, którego pacjenta dotyczy prośba, więc wybierzesz go na karcie.',
+      spec: { component: 'SetDraft' as const, exerciseIds: ['e1'] },
+      creditsUsed: 1,
+    });
+    const reply = await resolveForPatient('ułóż mu zestaw na biodro', 'p-new', {
+      useAi: true,
+      context: { ...context, patients: [{ id: 'p-new', name: 'Jan Plynnosc' }] },
+      dispatch,
+      patientName: 'Jan Plynnosc',
+    });
+
+    expect(reply.spec).toEqual({ component: 'SetDraft', patientId: 'p-new', exerciseIds: ['e1'] });
+    expect(reply.text).toBe('Proponuję te ćwiczenia z katalogu dla: Jan Plynnosc. Zamień albo usuń, co nie pasuje.');
   });
 
   it('finishes from rules when the model asks instead of answering, when it fails and without AI', async () => {

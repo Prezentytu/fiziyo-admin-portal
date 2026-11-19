@@ -175,7 +175,7 @@ describe('useChatThread', () => {
     dispatchMock.mockResolvedValueOnce({
       sessionId: 'session-a',
       text: 'Proponuję zestaw na biodro.',
-      spec: { component: 'SetDraft', exerciseIds: ['e1', 'e2'] },
+      spec: { component: 'SetDraft', patientId: 'p-new', exerciseIds: ['e1', 'e2'] },
       creditsUsed: 1,
     });
     const { result } = renderHook(() =>
@@ -190,7 +190,11 @@ describe('useChatThread', () => {
 
     await act(() => result.current.continueForPatient('p-new', 'Adam Lis', 'ułóż mu zestaw na biodro'));
 
-    expect(dispatchMock).toHaveBeenCalledWith('ułóż mu zestaw na biodro', undefined, expect.anything());
+    expect(dispatchMock).toHaveBeenCalledWith(
+      'ułóż mu zestaw na biodro. Pacjent: Adam Lis.',
+      undefined,
+      expect.anything()
+    );
     expect(result.current.messages.at(-1)).toMatchObject({
       text: 'Dodano: Adam Lis. Proponuję zestaw na biodro.',
       spec: { component: 'SetDraft', patientId: 'p-new', exerciseIds: ['e1', 'e2'] },
