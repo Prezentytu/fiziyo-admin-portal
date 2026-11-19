@@ -10,7 +10,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { ocen, wzorce } from './reguly.mjs';
+import { ocen, stanCheckow, wzorce } from './reguly.mjs';
 
 const tu = dirname(fileURLToPath(import.meta.url));
 const cfg = JSON.parse(readFileSync(join(tu, 'config.json'), 'utf8'));
@@ -75,11 +75,21 @@ async function watkiReview(n) {
   }));
 }
 
+// Czerwony main: commit status `cfg.statusMain` (np. E2E Dev Full) albo check run bramki `cfg.gate` na
+// ostatnim commicie gałęzi domyślnej. Brak checków (merge na GITHUB_TOKEN nie uruchamia CI) nie blokuje.
 async function mainCzerwony(galaz) {
-  if (!cfg.statusMain) return null;
-  const s = await api(`repos/${REPO}/commits/${galaz}/status`);
-  const st = s.statuses.find((x) => x.context === cfg.statusMain);
-  return st && (st.state === 'failure' || st.state === 'error') ? `${cfg.statusMain}: ${st.state}` : null;
+  const zle = ['failure', 'error', 'timed_out'];
+  if (cfg.statusMain) {
+    const s = await api(`repos/${REPO}/commits/${galaz}/status`);
+    const st = s.statuses.find((x) => x.context === cfg.statusMain);
+    if (st && zle.includes(st.state)) return `${cfg.statusMain}: ${st.state}`;
+  }
+  const runy = await wszystko(
+    `repos/${REPO}/commits/${galaz}/check-runs?filter=latest&check_name=${encodeURIComponent(cfg.gate)}`,
+    'check_runs'
+  );
+  const c = stanCheckow(runy).get(cfg.gate);
+  return c?.status === 'completed' && zle.includes(c.conclusion) ? `${cfg.gate}: ${c.conclusion}` : null;
 }
 
 async function pelnyPr(n) {
