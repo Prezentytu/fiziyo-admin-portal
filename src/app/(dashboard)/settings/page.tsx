@@ -3,7 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
-import { User, Building2, Eye, Settings, SlidersHorizontal, Sparkles } from 'lucide-react';
+import { User, Building2, Eye, Gift, Settings, SlidersHorizontal, Sparkles } from 'lucide-react';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
@@ -18,6 +18,9 @@ import { CatalogBundleImportCard } from '@/components/organization/CatalogBundle
 import { SettingsTab } from '@/components/organization/SettingsTab';
 import { WhatsNewTab } from '@/features/whats-new/WhatsNewTab';
 import { WhatsNewDot } from '@/features/whats-new/WhatsNewDot';
+import { ReferralsTab } from '@/features/referrals/ReferralsTab';
+import { REFERRALS_FEATURE_FLAG, REFERRALS_TAB } from '@/features/referrals/utils/referrals';
+import { useMeFeature } from '@/hooks/useMeFeature';
 
 import { GET_USER_BY_CLERK_ID_QUERY, GET_USER_ORGANIZATIONS_QUERY } from '@/graphql/queries/users.queries';
 import { GET_ORGANIZATION_BY_ID_QUERY } from '@/graphql/queries/organizations.queries';
@@ -26,7 +29,8 @@ import { useRoleAccess } from '@/hooks/useRoleAccess';
 import type { UserByClerkIdResponse, UserOrganizationsResponse, OrganizationByIdResponse } from '@/types/apollo';
 import { parseSettingsTab, WHATS_NEW_TAB } from '@/features/whats-new/utils/releaseNotes';
 
-type SettingsTabValue = 'profile' | 'organization' | 'advanced' | 'organizations' | 'accessibility' | 'whats-new';
+type SettingsTabValue =
+  'profile' | 'organization' | 'advanced' | 'organizations' | 'accessibility' | 'whats-new' | typeof REFERRALS_TAB;
 
 export default function SettingsPage() {
   const { user: clerkUser } = useUser();
@@ -36,6 +40,7 @@ export default function SettingsPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const referralsEnabled = useMeFeature(REFERRALS_FEATURE_FLAG);
   const availableTabs: SettingsTabValue[] = [
     'profile',
     ...(canManageOrganization ? (['organization'] as const) : []),
@@ -43,6 +48,7 @@ export default function SettingsPage() {
     'organizations',
     'accessibility',
     WHATS_NEW_TAB,
+    ...(referralsEnabled ? ([REFERRALS_TAB] as const) : []),
   ];
   // The tab lives in ?tab= so the banner, the bell and shared links can open „Co nowego” directly.
   const activeTab = parseSettingsTab(searchParams.get('tab'), availableTabs, 'profile');
@@ -214,6 +220,18 @@ export default function SettingsPage() {
                 <span>Co nowego</span>
                 <WhatsNewDot testId="settings-tab-whats-new-dot" className="ml-auto" />
               </TabsTrigger>
+
+              {referralsEnabled && (
+                <TabsTrigger
+                  value={REFERRALS_TAB}
+                  activeVariant="subtle"
+                  className="justify-start gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:bg-accent/30 hover:text-foreground data-[state=active]:font-medium"
+                  data-testid="settings-tab-referrals"
+                >
+                  <Gift className="h-4 w-4" />
+                  Polecenia
+                </TabsTrigger>
+              )}
             </TabsList>
           </div>
         </div>
@@ -290,6 +308,12 @@ export default function SettingsPage() {
             <TabsContent value={WHATS_NEW_TAB} className="mt-0 outline-none">
               <WhatsNewTab />
             </TabsContent>
+
+            {referralsEnabled && (
+              <TabsContent value={REFERRALS_TAB} className="mt-0 outline-none">
+                <ReferralsTab ownEmail={userByClerkId.email} />
+              </TabsContent>
+            )}
           </div>
         </div>
       </Tabs>
