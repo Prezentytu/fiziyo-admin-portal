@@ -44,6 +44,8 @@ export function wzorce(tekst, opcje) {
 export const pasuje = (sciezka, lista) => lista.some((r) => r.test(sciezka));
 
 const TEST_PLIK = /(^|\/)(__tests__|tests?|e2e)\/|\.(test|spec)\.[cm]?[jt]sx?$|Tests?\.cs$|\.Tests\//;
+// Nazwa pliku, którą runner uruchamia jako test (sam katalog `tests/` nie wystarcza: `x.spec.ts.off` w nim leży).
+const TEST_NAZWA = /\.(test|spec|setup)\.[cm]?[jt]sx?$|Tests?\.cs$/;
 const ASERCJA =
   /\b(expect|assert\w*|Assert\.\w+|toBe\w*|toEqual|toMatch\w*|toHaveBeenCalled\w*|should\.\w+)\b|\b(it|test|describe)(\.each)?\(|\[(Fact|Theory)/;
 // Nowa server action w Next.js to nowy publiczny endpoint zapisu, niezależnie od nazwy pliku.
@@ -65,7 +67,7 @@ export function ocenPliki(pliki, { dozwolone, zakazane }) {
       p.status === 'renamed' &&
       p.previous_filename &&
       TEST_PLIK.test(p.previous_filename) &&
-      !TEST_PLIK.test(p.filename);
+      (!TEST_PLIK.test(p.filename) || (TEST_NAZWA.test(p.previous_filename) && !TEST_NAZWA.test(p.filename)));
     if (wypadlZTestow) powody.push(`test przeniesiony poza testy: \`${p.previous_filename}\` → \`${p.filename}\``);
     if (test && p.status === 'removed') powody.push(`usunięty plik testu: \`${p.filename}\``);
     if (p.patch === undefined && (p.additions || p.deletions))
@@ -169,8 +171,14 @@ export function ocen({
   return { stan: powody.length ? 'nie' : 'tak', powody };
 }
 
-// Wątki, które blokują merge: nierozwiązane, nieprzestarzałe, a przy PASS dla heada bez wątków samego
-// recenzenta CI (jego PASS rozlicza własne znaleziska; P3 inline nie blokuje). Wątek człowieka liczy się zawsze.
+// Wątki, które blokują merge. Wątek z komentarzem kogokolwiek poza recenzentem CI blokuje, dopóki ktoś go
+// nie rozwiąże, także gdy kod pod nim się zmienił. Wątek samego recenzenta CI blokuje tylko bez jego PASS
+// dla heada i tylko, gdy nie jest przestarzały (PASS rozlicza jego znaleziska; P3 inline nie blokuje).
 export function otwarteWatki(watki, pass) {
-  return watki.filter((t) => !t.isResolved && !t.isOutdated && !(pass && t.autor === 'claude')).length;
+  return watki.filter((t) => {
+    if (t.isResolved) return false;
+    const tylkoRecenzent = t.autorzy.length > 0 && t.autorzy.every((a) => a === 'claude');
+    if (!tylkoRecenzent) return true;
+    return !t.isOutdated && !pass;
+  }).length;
 }

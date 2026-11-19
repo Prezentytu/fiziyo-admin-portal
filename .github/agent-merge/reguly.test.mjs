@@ -267,7 +267,7 @@ test('pozostałe hamulce', () => {
     }),
     /prośba/
   );
-  assert.match(nie({ watki: [{ isResolved: false, isOutdated: false, autor: 'adam' }] }), /wątki/);
+  assert.match(nie({ watki: [{ isResolved: false, isOutdated: false, autorzy: ['adam'] }] }), /wątki/);
   assert.match(nie({ mainCzerwony: 'E2E Dev Full: failure' }), /czerwony/);
   assert.match(nie({ komentarze: [] }), /brak/);
   assert.equal(ocen(wejscie({ pr: { ...PR, draft: true } })).stan, 'czeka');
@@ -284,12 +284,14 @@ test('wzorce: składnia spoza modelu rzuca błąd, komentarz i pusta linia znika
   assert.ok(wzorzecNaRegex('/.claude/settings*.json').test('.claude/settings.local.json'));
 });
 
-test('wątki: człowiek blokuje zawsze, recenzent CI tylko bez PASS, przestarzałe i rozwiązane nie', () => {
-  const czlowiek = { isResolved: false, isOutdated: false, autor: 'adam' };
-  const bot = { isResolved: false, isOutdated: false, autor: 'claude' };
+test('wątki: człowiek blokuje do rozwiązania, recenzent CI tylko bez PASS i nieprzestarzały', () => {
+  const czlowiek = { isResolved: false, isOutdated: false, autorzy: ['adam'] };
+  const bot = { isResolved: false, isOutdated: false, autorzy: ['claude'] };
   assert.equal(otwarteWatki([czlowiek, bot], true), 1);
   assert.equal(otwarteWatki([czlowiek, bot], false), 2);
-  assert.equal(otwarteWatki([{ ...czlowiek, isOutdated: true }], false), 0);
+  assert.equal(otwarteWatki([{ ...czlowiek, isOutdated: true }], true), 1);
+  assert.equal(otwarteWatki([{ ...bot, isOutdated: true }], false), 0);
+  assert.equal(otwarteWatki([{ ...bot, autorzy: ['claude', 'adam'] }], true), 1);
   assert.equal(otwarteWatki([{ ...czlowiek, isResolved: true }], false), 0);
   assert.equal(ocen(wejscie({ watki: [bot] })).stan, 'tak');
 });
@@ -311,6 +313,19 @@ test('testy: przeniesienie testu poza testy i warianty skip blokują', () => {
       zakazane: z,
     }),
     []
+  );
+  assert.match(
+    ocenPliki(
+      [
+        {
+          ...przeniesiony,
+          previous_filename: 'tests/logged/patients/x.spec.ts',
+          filename: 'tests/logged/patients/x.spec.ts.off',
+        },
+      ],
+      { dozwolone: d, zakazane: z }
+    ).join(' '),
+    /przeniesiony poza testy/
   );
   for (const linia of [
     "+it.skipIf(ci)('x', () => {})",

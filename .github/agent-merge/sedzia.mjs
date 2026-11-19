@@ -63,7 +63,7 @@ async function plikZBazy(sciezka, ref) {
 
 async function watkiReview(n) {
   const [owner, name] = REPO.split('/');
-  const q = `query($o:String!,$r:String!,$n:Int!){repository(owner:$o,name:$r){pullRequest(number:$n){reviewThreads(first:100){nodes{isResolved isOutdated comments(first:1){nodes{author{login}}}}}}}}`;
+  const q = `query($o:String!,$r:String!,$n:Int!){repository(owner:$o,name:$r){pullRequest(number:$n){reviewThreads(first:100){nodes{isResolved isOutdated comments(first:100){nodes{author{login}}}}}}}}`;
   const d = await api('graphql', {
     metoda: 'POST',
     body: { query: q, variables: { o: owner, r: name, n } },
@@ -71,7 +71,7 @@ async function watkiReview(n) {
   return d.data.repository.pullRequest.reviewThreads.nodes.map((t) => ({
     isResolved: t.isResolved,
     isOutdated: t.isOutdated,
-    autor: t.comments.nodes[0]?.author?.login,
+    autorzy: t.comments.nodes.map((k) => k.author?.login ?? '?'),
   }));
 }
 
