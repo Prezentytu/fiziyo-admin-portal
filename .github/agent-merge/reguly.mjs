@@ -44,7 +44,7 @@ export function wzorce(tekst, opcje) {
 export const pasuje = (sciezka, lista) => lista.some((r) => r.test(sciezka));
 
 const TEST_PLIK = /(^|\/)(__tests__|tests?|e2e)\/|\.(test|spec)\.[cm]?[jt]sx?$|Tests?\.cs$|\.Tests\//;
-// Nazwa pliku, którą runner uruchamia jako test (sam katalog `tests/` nie wystarcza: `x.spec.ts.off` w nim leży).
+// Nazwa pliku testu (sam katalog `tests/` nie wystarcza: `x.spec.ts.off` też w nim leży).
 const TEST_NAZWA = /\.(test|spec|setup)\.[cm]?[jt]sx?$|Tests?\.cs$/;
 const ASERCJA =
   /\b(expect|assert\w*|Assert\.\w+|toBe\w*|toEqual|toMatch\w*|toHaveBeenCalled\w*|should\.\w+)\b|\b(it|test|describe)(\.each)?\(|\[(Fact|Theory)/;
@@ -62,13 +62,15 @@ export function ocenPliki(pliki, { dozwolone, zakazane }) {
       else if (!pasuje(s, dozwolone)) powody.push(`plik spoza listy dozwolonych: \`${s}\``);
     }
     const test = TEST_PLIK.test(p.filename) || (p.previous_filename && TEST_PLIK.test(p.previous_filename));
-    // Przeniesienie testu pod nazwę, której runner nie uruchomi, to też usunięcie testu.
+    // Rename pliku testu blokuje zawsze: nazwa, która wygląda na test, nie musi pasować do `testMatch`
+    // runnera (`x.spec.ts` → `x.test.ts` w Playwright), a zmiana nazwy testu rzadko jest konieczna.
     const wypadlZTestow =
       p.status === 'renamed' &&
       p.previous_filename &&
       TEST_PLIK.test(p.previous_filename) &&
-      (!TEST_PLIK.test(p.filename) || (TEST_NAZWA.test(p.previous_filename) && !TEST_NAZWA.test(p.filename)));
-    if (wypadlZTestow) powody.push(`test przeniesiony poza testy: \`${p.previous_filename}\` → \`${p.filename}\``);
+      (!TEST_PLIK.test(p.filename) || TEST_NAZWA.test(p.previous_filename));
+    if (wypadlZTestow)
+      powody.push(`test przeniesiony albo przemianowany: \`${p.previous_filename}\` → \`${p.filename}\``);
     if (test && p.status === 'removed') powody.push(`usunięty plik testu: \`${p.filename}\``);
     if (p.patch === undefined && (p.additions || p.deletions))
       powody.push(`brak diffu do sprawdzenia (za duży albo binarny): \`${p.filename}\``);

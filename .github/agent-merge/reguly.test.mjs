@@ -267,7 +267,12 @@ test('pozostałe hamulce', () => {
     }),
     /prośba/
   );
-  assert.match(nie({ watki: [{ isResolved: false, isOutdated: false, autorzy: ['adam'] }] }), /wątki/);
+  assert.match(
+    nie({
+      watki: [{ isResolved: false, isOutdated: false, autorzy: ['adam'] }],
+    }),
+    /wątki/
+  );
   assert.match(nie({ mainCzerwony: 'E2E Dev Full: failure' }), /czerwony/);
   assert.match(nie({ komentarze: [] }), /brak/);
   assert.equal(ocen(wejscie({ pr: { ...PR, draft: true } })).stan, 'czeka');
@@ -306,12 +311,18 @@ test('testy: przeniesienie testu poza testy i warianty skip blokują', () => {
     additions: 0,
     deletions: 0,
   };
-  assert.match(ocenPliki([przeniesiony], { dozwolone: d, zakazane: z }).join(' '), /przeniesiony poza testy/);
+  assert.match(ocenPliki([przeniesiony], { dozwolone: d, zakazane: z }).join(' '), /przeniesiony albo przemianowany/);
   assert.deepEqual(
-    ocenPliki([{ ...przeniesiony, filename: 'utils/__tests__/y.test.ts' }], {
-      dozwolone: d,
-      zakazane: z,
-    }),
+    ocenPliki(
+      [
+        {
+          ...przeniesiony,
+          previous_filename: 'utils/__tests__/pomocnik.ts',
+          filename: 'utils/__tests__/fixtury.ts',
+        },
+      ],
+      { dozwolone: d, zakazane: z }
+    ),
     []
   );
   assert.match(
@@ -325,7 +336,20 @@ test('testy: przeniesienie testu poza testy i warianty skip blokują', () => {
       ],
       { dozwolone: d, zakazane: z }
     ).join(' '),
-    /przeniesiony poza testy/
+    /przeniesiony albo przemianowany/
+  );
+  assert.match(
+    ocenPliki(
+      [
+        {
+          ...przeniesiony,
+          previous_filename: 'tests/logged/patients/x.spec.ts',
+          filename: 'tests/logged/patients/x.test.ts',
+        },
+      ],
+      { dozwolone: d, zakazane: z }
+    ).join(' '),
+    /przeniesiony albo przemianowany/
   );
   for (const linia of [
     "+it.skipIf(ci)('x', () => {})",
