@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { CreateExerciseWizard, type CreateExerciseWizardSuccessEvent } from './CreateExerciseWizard';
 import { FeedbackBanner } from './FeedbackBanner';
 import { ExerciseEditor } from './ExerciseEditor';
+import { VideoUrlField } from './ExerciseDetailSections';
 import { useExerciseEditorForm } from './useExerciseEditorForm';
 import {
   UPDATE_EXERCISE_MUTATION,
@@ -798,9 +799,15 @@ export function ExerciseDialog({
               currentIndex={activeMediaPreviewIndex}
               onIndexChange={setActiveMediaPreviewIndex}
             />
+            <VideoUrlField
+              value={editorForm.core.videoUrl}
+              dirty={editorForm.isCoreFieldDirty('videoUrl')}
+              disabled={false}
+              onChange={(value) => editorForm.setCoreField('videoUrl', value)}
+            />
           </div>
 
-          <ExerciseEditor form={editorForm} showNameField />
+          <ExerciseEditor form={editorForm} showNameField showVideoUrl={false} />
 
           <div className="flex items-center justify-between gap-3 border-t border-border pt-4">
             <Button

@@ -789,6 +789,8 @@ interface MetadataSectionProps {
   setPath: (path: string, value: unknown) => void;
   /** `3.3` keeps the video link and edits `equipment_items`; retired and team-only fields are not rendered (edit mode). */
   contentVersion?: ExerciseContentVersion;
+  /** false = pole linku do filmu jest gdzie indziej (kreator pokazuje je przy mediach). */
+  showVideoUrl?: boolean;
 }
 
 function ReadChips({ label, items }: Readonly<{ label: string; items: string[] }>) {
@@ -810,25 +812,35 @@ function ReadChips({ label, items }: Readonly<{ label: string; items: string[] }
   );
 }
 
-function VideoUrlField({
+export function VideoUrlField({
   value,
   dirty,
   disabled,
   onChange,
-}: Readonly<{ value: string; dirty: boolean; disabled: boolean; onChange: (value: string) => void }>) {
+  inputId = 'exercise-detail-video-url',
+  testId = 'exercise-detail-video-url-input',
+}: Readonly<{
+  value: string;
+  dirty: boolean;
+  disabled: boolean;
+  onChange: (value: string) => void;
+  inputId?: string;
+  testId?: string;
+}>) {
   return (
     <div className="space-y-1.5">
       <div className="flex items-center gap-1">
-        <Label className="text-xs text-muted-foreground" htmlFor="exercise-detail-video-url">
+        <Label className="text-xs text-muted-foreground" htmlFor={inputId}>
           Link do filmu
         </Label>
         <DirtyDot active={dirty} />
       </div>
       <Input
-        data-testid="exercise-detail-video-url-input"
-        id="exercise-detail-video-url"
+        data-testid={testId}
+        id={inputId}
+        inputMode="url"
         value={value}
-        placeholder="https://..."
+        placeholder="https://vimeo.com/… lub https://youtu.be/…"
         onChange={(event) => onChange(event.target.value)}
         disabled={disabled}
         className={cn(
@@ -887,6 +899,7 @@ export function MetadataSection({
   onNotesChange,
   setPath,
   contentVersion = 'legacy',
+  showVideoUrl = true,
 }: Readonly<MetadataSectionProps>) {
   const isV33Edit = editable && contentVersion === '3.3';
   const equipment = data.equipment ?? [];
@@ -919,7 +932,9 @@ export function MetadataSection({
     >
       {isV33Edit ? (
         <div className="space-y-4">
-          <VideoUrlField value={videoUrl} dirty={videoUrlDirty} disabled={disabled} onChange={onVideoUrlChange} />
+          {showVideoUrl && (
+            <VideoUrlField value={videoUrl} dirty={videoUrlDirty} disabled={disabled} onChange={onVideoUrlChange} />
+          )}
           <EquipmentItemsEditor
             items={data.equipment_items ?? []}
             disabled={disabled}
@@ -929,7 +944,9 @@ export function MetadataSection({
         </div>
       ) : editable ? (
         <div className="space-y-4">
-          <VideoUrlField value={videoUrl} dirty={videoUrlDirty} disabled={disabled} onChange={onVideoUrlChange} />
+          {showVideoUrl && (
+            <VideoUrlField value={videoUrl} dirty={videoUrlDirty} disabled={disabled} onChange={onVideoUrlChange} />
+          )}
           <EditableTextBlock
             label={LABELS.notes}
             value={notes}

@@ -86,6 +86,7 @@ import { inferExerciseType } from './utils/inferExerciseType';
 import { MAX_EXERCISE_IMAGES, insertGeneratedImage, nextGeneratedImagePhase } from './utils/exerciseMedia';
 import { ExerciseParametersEditor } from './ExerciseParametersEditor';
 import { ExerciseContentSections } from './ExerciseContentSections';
+import { VideoUrlField } from './ExerciseDetailSections';
 import { useEnrichmentDraft } from './useEnrichmentDraft';
 import { AiFullExercisePanel, type AiFullExerciseSummary } from './AiFullExercisePanel';
 import {
@@ -2103,6 +2104,17 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                 className="hidden"
                 onChange={handleFileSelect}
               />
+
+              <div className="mt-4" data-testid="exercise-create-video-url">
+                <VideoUrlField
+                  value={data.videoUrl}
+                  dirty={false}
+                  disabled={false}
+                  onChange={(value) => updateField('videoUrl', value)}
+                  inputId="exercise-create-video-url"
+                  testId="exercise-create-video-url-input"
+                />
+              </div>
             </section>
 
             {/* SEKCJA 3: Parametry — shared ExerciseParametersEditor (fieldContract) */}
@@ -2219,6 +2231,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                   onClinicalDescriptionChange={(value) => updateField('clinicalDescription', value)}
                   onAudioCueChange={(value) => updateField('audioCue', value)}
                   onVideoUrlChange={(value) => updateField('videoUrl', value)}
+                  showVideoUrl={false}
                   onNotesChange={(value) => updateField('notes', value)}
                   setPath={enrichmentDraft.setPath}
                 />

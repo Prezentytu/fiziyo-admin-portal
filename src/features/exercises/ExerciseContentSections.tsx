@@ -31,6 +31,8 @@ export interface ExerciseContentSectionsProps {
    * (opis dla pacjenta, opis kliniczny, notatka, polecenie audio i stare pola dokumentu); SPEC-038.
    */
   contentVersion?: ExerciseContentVersion;
+  /** false = link do filmu renderuje rodzic (kreator: w sekcji Media). */
+  showVideoUrl?: boolean;
 }
 
 /**
@@ -58,6 +60,7 @@ export function ExerciseContentSections({
   setPath,
   showPatientLead = true,
   contentVersion = 'legacy',
+  showVideoUrl = true,
 }: Readonly<ExerciseContentSectionsProps>) {
   const isV33 = contentVersion === '3.3';
 
@@ -106,6 +109,7 @@ export function ExerciseContentSections({
         onNotesChange={onNotesChange}
         setPath={setPath}
         contentVersion={contentVersion}
+        showVideoUrl={showVideoUrl}
       />
     </div>
   );

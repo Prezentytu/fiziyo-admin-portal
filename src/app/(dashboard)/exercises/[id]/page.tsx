@@ -42,6 +42,7 @@ import {
   SafetySection,
   TherapistSection,
   MetadataSection,
+  VideoUrlField,
   readViewDocument,
 } from '@/features/exercises/ExerciseDetailSections';
 import { CreateSetWizard } from '@/features/exercise-sets';
@@ -857,6 +858,15 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
             />
           )}
 
+          {isEditing && (
+            <VideoUrlField
+              value={core.videoUrl}
+              dirty={isCoreFieldDirty('videoUrl')}
+              disabled={false}
+              onChange={(value) => setCoreField('videoUrl', value)}
+            />
+          )}
+
           {isLocked && (
             <div className="rounded-2xl border border-border/40 bg-surface/50 px-4 py-3 text-xs text-muted-foreground flex items-center gap-2">
               <AlertCircle className="h-3.5 w-3.5 shrink-0" />
@@ -894,7 +904,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         {/* Right column: content, ordered by importance */}
         <div className="space-y-4">
           {isEditing ? (
-            <ExerciseEditor form={exerciseEditorForm} />
+            <ExerciseEditor form={exerciseEditorForm} showVideoUrl={false} />
           ) : (
             <>
               {/* 1. Podstawowe parametry */}
