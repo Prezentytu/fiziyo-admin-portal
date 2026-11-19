@@ -37,6 +37,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { ScheduleSummary } from '@/components/shared';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
@@ -71,6 +73,9 @@ import {
   resolveTherapistNoteReadState,
   type TherapistNoteStampIndex,
 } from './utils/therapistNoteReadStatus';
+import type { AssignmentPrerequisiteControl } from './hooks/useAssignmentPrerequisites';
+
+const NO_PREREQUISITE = 'none';
 
 // Types
 export interface Frequency {
@@ -198,6 +203,8 @@ interface PatientAssignmentCardProps {
   readonly onGeneratePDF?: (assignment: PatientAssignment) => void;
   readonly onActivatePremium?: () => void;
   readonly onRefresh?: () => void;
+  /** „Zestaw po zestawie” (SPEC-061); brak = API bez pola, sekcja ukryta. */
+  readonly prerequisite?: AssignmentPrerequisiteControl | null;
 }
 
 function toPositiveNumber(value: number | string | null | undefined): number | undefined {
@@ -237,6 +244,7 @@ export function PatientAssignmentCard({
   onGeneratePDF,
   onActivatePremium,
   onRefresh,
+  prerequisite,
 }: PatientAssignmentCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -637,6 +645,38 @@ export function PatientAssignmentCard({
                           })}
                           testId={`patient-assignment-${assignment.id}-plan-note-read`}
                         />
+                      </div>
+                    )}
+                    {prerequisite && (prerequisite.options.length > 0 || prerequisite.currentId) && (
+                      <div className="space-y-1 pt-1" data-testid={`patient-assignment-${assignment.id}-prerequisite-field`}>
+                        <Label
+                          htmlFor={`patient-assignment-${assignment.id}-prerequisite-select`}
+                          className="text-xs font-medium text-muted-foreground"
+                        >
+                          Przed tym zestawem zrób
+                        </Label>
+                        <Select
+                          data-testid={`patient-assignment-${assignment.id}-prerequisite`}
+                          value={prerequisite.currentId ?? NO_PREREQUISITE}
+                          disabled={prerequisite.saving}
+                          onValueChange={(value) => prerequisite.onChange(value === NO_PREREQUISITE ? null : value)}
+                        >
+                          <SelectTrigger
+                            id={`patient-assignment-${assignment.id}-prerequisite-select`}
+                            className="w-full sm:w-72"
+                            data-testid={`patient-assignment-${assignment.id}-prerequisite-select`}
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={NO_PREREQUISITE}>Nic – można zacząć od razu</SelectItem>
+                            {prerequisite.options.map((option) => (
+                              <SelectItem key={option.id} value={option.id}>
+                                {option.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     )}
                   </div>

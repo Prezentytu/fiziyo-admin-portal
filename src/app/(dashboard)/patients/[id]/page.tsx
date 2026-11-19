@@ -52,6 +52,7 @@ import { usePatientPremium } from '@/hooks/usePatientPremium';
 import { resolveAssignmentDisplayStatus } from '@/features/patients/utils/assignmentDisplayStatus';
 import { usePatientTherapyActions } from '@/features/patients/hooks/usePatientTherapyActions';
 import { useTherapistNoteStamps } from '@/features/patients/hooks/useTherapistNoteStamps';
+import { useAssignmentPrerequisites } from '@/features/patients/hooks/useAssignmentPrerequisites';
 import type { OrganizationPatientsResponse, UserByIdResponse } from '@/types/apollo';
 
 // Dialogs
@@ -159,6 +160,23 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   // Filter only exercise set assignments (not individual exercises)
   const setAssignments = assignments.filter((a) => a.exerciseSetId && !isRemovedAssignment(a.status));
   const therapistNoteStamps = useTherapistNoteStamps(id, setAssignments);
+  const prerequisiteCandidates = useMemo(
+    () =>
+      setAssignments
+        .filter((assignment) => !organizationId || !assignment.exerciseSet?.organizationId || assignment.exerciseSet.organizationId === organizationId)
+        .map((assignment) => ({
+          id: assignment.id,
+          name: assignment.exerciseSet?.name || 'Zestaw',
+          isActive:
+            resolveAssignmentDisplayStatus({
+              status: assignment.status,
+              endDate: assignment.endDate,
+              premiumValidUntil: patientPremiumValidUntil,
+            }).primary.kind === 'active',
+        })),
+    [setAssignments, organizationId, patientPremiumValidUntil]
+  );
+  const prerequisiteFor = useAssignmentPrerequisites(id, prerequisiteCandidates);
 
   const handleEditPlan = useCallback((assignment: PatientAssignment) => {
     setEditingPlanAssignment(assignment);
@@ -407,6 +425,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
             onGeneratePDF={handleGeneratePDF}
             onActivatePremium={() => initiateActivation(patient.id, displayName, patientPremiumValidUntil)}
             onRefresh={() => refetchAssignments()}
+            prerequisite={prerequisiteFor(assignment.id)}
           />
         ))}
       </div>
