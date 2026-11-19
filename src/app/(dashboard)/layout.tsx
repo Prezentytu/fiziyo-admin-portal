@@ -16,6 +16,7 @@ import { TelemetryConsentPrompt } from '@/components/telemetry/TelemetryConsentP
 import { AiCreditsRequestHost } from '@/features/ai-credits/AiCreditsRequestHost';
 import { useChatMode } from '@/features/ai-view/useChatMode';
 import { ReleaseNoteBanner } from '@/features/whats-new/ReleaseNoteBanner';
+import { SupportReplyBanner } from '@/features/support/SupportReplyBanner';
 
 export default function DashboardLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const pathname = usePathname();
@@ -37,6 +38,7 @@ export default function DashboardLayout({ children }: Readonly<{ children: React
       <Suspense fallback={null}>
         <ReleaseNoteBanner />
       </Suspense>
+      <SupportReplyBanner />
       {children}
     </>
   );

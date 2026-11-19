@@ -20,6 +20,7 @@ const routeNames: Record<string, string> = {
   tags: 'Tagi',
   import: 'Import dokumentów',
   verification: 'Weryfikacja',
+  wsparcie: 'Wsparcie',
 };
 
 function Breadcrumbs() {
