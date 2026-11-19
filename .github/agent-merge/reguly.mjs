@@ -50,8 +50,11 @@ const ASERCJA =
   /\b(expect|assert\w*|Assert\.\w+|toBe\w*|toEqual|toMatch\w*|toHaveBeenCalled\w*|should\.\w+)\b|\b(it|test|describe)(\.each)?\(|\[(Fact|Theory)/;
 // Nowa server action w Next.js to nowy publiczny endpoint zapisu, niezależnie od nazwy pliku.
 const SERVER_ACTION = /["']use server["']/;
+// W pliku testu szerzej, bo wariantów wyłączenia jest za dużo na listę: każde `.skip`, `.only`, `.todo`,
+// `.fixme`, `.fails` (także `test.step.skip`, `c.skip()`, `test.sequential.skip`) i każde wywołanie `skip(`.
+const WYLACZENIE_W_TESCIE = /\.(skip|only|todo|fixme|fails?|skipIf|runIf)\b|\bskip\s*\(/;
 const WYLACZENIE =
-  /\b(it|test|describe)(\.concurrent)?\.(skip|only|todo|skipIf|runIf|fixme|fails?)\b|\b(test\.info\(\)|testInfo)\.(skip|fixme|fail)\b|\b(ctx|context|t)\.skip\(|\(\s*\{[^}]*\bskip\b[^}]*\}\s*\)\s*=>|\b(xit|xdescribe|fit|fdescribe)\(|Skip\s*=\s*"|\[Ignore\]|@ts-nocheck/;
+  /\b(it|test|describe)(\.concurrent)?\.(skip|only|todo|skipIf|runIf|fixme|fails?)\b|\b(test\.info\(\)|testInfo)\.(skip|fixme|fail)\b|\b(xit|xdescribe|fit|fdescribe)\(|Skip\s*=\s*"|\[Ignore\]|@ts-nocheck/;
 
 // pliki: [{filename, previous_filename?, status, additions, deletions, patch?}]
 export function ocenPliki(pliki, { dozwolone, zakazane }) {
@@ -84,7 +87,11 @@ export function ocenPliki(pliki, { dozwolone, zakazane }) {
       if (bilans < 0) powody.push(`ubyło asercji albo testów (${bilans}) w \`${p.filename}\``);
     }
     for (const linia of (p.patch || '').split('\n')) {
-      if (linia.startsWith('+') && !linia.startsWith('+++') && WYLACZENIE.test(linia)) {
+      if (
+        linia.startsWith('+') &&
+        !linia.startsWith('+++') &&
+        (WYLACZENIE.test(linia) || (test && WYLACZENIE_W_TESCIE.test(linia)))
+      ) {
         powody.push(`wyłączony test albo sprawdzenie w \`${p.filename}\``);
         break;
       }

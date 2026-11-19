@@ -362,6 +362,10 @@ test('testy: przeniesienie testu poza testy i warianty skip blokują', () => {
     '+it.fails("x", () => { expect(1).toBe(2) })',
     '+test("x", (ctx) => { ctx.skip() })',
     '+test("x", ({ skip }) => { skip() })',
+    '+test("x", (c) => { c.skip() })',
+    '+test.sequential.skip("x")',
+    '+  await test.step.skip("krok", async () => {})',
+    '+test("x", ({ skip }: TestContext) => { skip() })',
   ]) {
     assert.match(
       ocenPliki(
