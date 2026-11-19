@@ -997,3 +997,28 @@ export const RESTART_ASSIGNMENT_PLAN_MUTATION = gql`
     }
   }
 `;
+
+// SPEC-061: rozgrzewka, „Wymaga wcześniej” i siła; pozycje spoza items zostają bez zmian.
+export const UPDATE_EXERCISE_SET_DEPENDENCIES_MUTATION = gql`
+  mutation UpdateExerciseSetDependencies($exerciseSetId: String!, $items: [ExerciseSetDependencyInput!]!) {
+    updateExerciseSetDependencies(exerciseSetId: $exerciseSetId, items: $items) {
+      id
+      exerciseMappings {
+        id
+        isWarmup
+        requiresMappingIds
+        dependencyMode
+      }
+    }
+  }
+`;
+
+// SPEC-061 „zestaw po zestawie”: null usuwa wymaganie.
+export const SET_ASSIGNMENT_PREREQUISITE_MUTATION = gql`
+  mutation SetAssignmentPrerequisite($assignmentId: String!, $requiresAssignmentId: String) {
+    setAssignmentPrerequisite(assignmentId: $assignmentId, requiresAssignmentId: $requiresAssignmentId) {
+      id
+      requiresAssignmentId
+    }
+  }
+`;
