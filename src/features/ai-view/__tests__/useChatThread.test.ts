@@ -284,7 +284,7 @@ describe('useChatThread', () => {
         expect(reply).toMatchObject({ spec: { component: 'SetDraft', exerciseIds: ['e-clam', 'new'], doses: draft.doses } });
       } else {
         expect(reply).toMatchObject({ role: 'assistant' });
-        expect(reply).not.toHaveProperty('spec');
+        expect(reply?.role === 'assistant' && reply.spec).toBeUndefined();
       }
       expect(dispatchMock).not.toHaveBeenCalled();
     });
