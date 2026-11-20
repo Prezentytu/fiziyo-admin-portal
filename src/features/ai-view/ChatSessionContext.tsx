@@ -15,6 +15,7 @@ import { useChatData, type ChatPatient } from './useChatData';
 import { useChatMode } from './useChatMode';
 import { newChatId, useChatThread, type AssistantReply, type ChatThreadMessage } from './useChatThread';
 import type { LiveDraft } from './utils/addToDraft';
+import { clearExerciseDrafts } from './catalog/exerciseDraftStore';
 import { conversationPatientId, type ChatCardSpec, type PinnedPatient } from './utils/chatCards';
 import {
   conversationStorageKey,
@@ -262,6 +263,9 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
     setConversations(readConversations(storageKey));
     setActiveConversationId(newChatId());
   }
+
+  // Exercise drafts in memory belong to the previous account or organization.
+  useEffect(() => clearExerciseDrafts, [storageKey]);
 
   const lastSavedRef = useRef<readonly ChatThreadMessage[] | null>(null);
   // Saved once an exchange settles, not on each step of it: the whole history is serialized.
