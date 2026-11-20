@@ -261,7 +261,7 @@ export default function OrganizationPage() {
                   data-testid="org-tab-clinics"
                 >
                   <MapPin className="h-4 w-4" />
-                  <span>Gabinety</span>
+                  <span>Placówki</span>
                   <span className="ml-auto text-xs text-muted-foreground/60">{clinicsCount}</span>
                 </TabsTrigger>
 

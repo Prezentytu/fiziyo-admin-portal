@@ -110,7 +110,7 @@ export function ClinicDialog({ open, onOpenChange, clinic, organizationId, onSuc
             contactInfo: values.contactInfo || null,
           },
         });
-        toast.success('Gabinet został zaktualizowany');
+        toast.success('Placówka została zaktualizowana');
       } else {
         await createClinic({
           variables: {
@@ -120,13 +120,13 @@ export function ClinicDialog({ open, onOpenChange, clinic, organizationId, onSuc
             contactInfo: values.contactInfo || null,
           },
         });
-        toast.success('Gabinet został utworzony');
+        toast.success('Placówka została utworzona');
       }
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {
       console.error('Błąd podczas zapisywania:', error);
-      toast.error(isEditing ? 'Nie udało się zaktualizować gabinetu' : 'Nie udało się utworzyć gabinetu');
+      toast.error(isEditing ? 'Nie udało się zaktualizować placówki' : 'Nie udało się utworzyć placówki');
     }
   };
 
@@ -147,9 +147,9 @@ export function ClinicDialog({ open, onOpenChange, clinic, organizationId, onSuc
               <MapPin className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <DialogTitle>{isEditing ? 'Edytuj gabinet' : 'Nowy gabinet'}</DialogTitle>
+              <DialogTitle>{isEditing ? 'Edytuj placówkę' : 'Nowa placówka'}</DialogTitle>
               <DialogDescription>
-                {isEditing ? 'Zaktualizuj dane gabinetu' : 'Dodaj nowy gabinet do organizacji'}
+                {isEditing ? 'Zaktualizuj dane placówki' : 'Dodaj nową placówkę do organizacji'}
               </DialogDescription>
             </div>
           </div>
@@ -162,10 +162,10 @@ export function ClinicDialog({ open, onOpenChange, clinic, organizationId, onSuc
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nazwa gabinetu *</FormLabel>
+                  <FormLabel>Nazwa placówki *</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="np. Gabinet Główny"
+                      placeholder="np. Placówka główna"
                       className="h-11"
                       data-testid="org-clinic-name-input"
                       {...field}
@@ -231,7 +231,7 @@ export function ClinicDialog({ open, onOpenChange, clinic, organizationId, onSuc
                 data-testid="org-clinic-submit-btn"
               >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isEditing ? 'Zapisz zmiany' : 'Utwórz gabinet'}
+                {isEditing ? 'Zapisz zmiany' : 'Utwórz placówkę'}
               </Button>
             </DialogFooter>
           </form>

@@ -91,7 +91,7 @@ function helpTopic(text: string): ProductHelpTopic | undefined {
     return 'organizations';
   if (/widocznosc pacjent|(?:nie widze|widziec) wszystkich pacjent/.test(text)) return 'visibility';
   if (
-    /(?:dodac|dodaj|utworz\w*|zaloz\w*|otworz\w*) (?:(?:drug\w*|kolejn\w*|now\w*|nastepn\w*|pierwsz\w*|dodatkow\w*) )?(?:gabinet|lokalizacj)\w*\b/.test(
+    /(?:dodac|dodaj|utworz\w*|zaloz\w*|otworz\w*) (?:(?:drug\w*|kolejn\w*|now\w*|nastepn\w*|pierwsz\w*|dodatkow\w*) )?(?:placowk|gabinet|lokalizacj)\w*\b/.test(
       text
     )
   )

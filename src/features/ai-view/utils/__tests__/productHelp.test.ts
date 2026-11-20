@@ -3,6 +3,7 @@ import { productHelpFor } from '../productHelp';
 
 describe('product help routing', () => {
   it.each([
+    ['Jak dodać drugą placówkę?', 'clinic'],
     ['Jak dodać drugi gabinet?', 'clinic'],
     ['Gdzie zmienię logo organizacji?', 'company-profile'],
     ['Jak dołączyć do innej organizacji?', 'organizations'],

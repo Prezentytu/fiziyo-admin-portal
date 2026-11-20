@@ -129,10 +129,10 @@ Samouczek uruchamia się w sesji utworzonej przy założeniu konta Clerk (do 5 m
 
 - Pusty wynik doboru ćwiczeń do zestawu prowadzi do propozycji nazw i tworzenia ćwiczenia z asystentem. Powrót do szkicu następuje po potwierdzonym zapisie ćwiczenia.
 
-- Karta dodawania lokalizacji prowadzi przyciskiem „Otwórz Gabinety” do zakładki `/organization?tab=clinics`. W menu konta czatu ten ekran jest pod „Organizacja”, a w menu klasycznym pod „Zespół”.
+- Karta dodawania placówki prowadzi przyciskiem „Otwórz Placówki” do zakładki `/organization?tab=clinics`. W menu konta czatu ten ekran jest pod „Organizacja”, a w menu klasycznym pod „Zespół”.
 
 - Pomoc produktowa uruchamia się lokalnie przed dispatcherem. Historia przechowuje temat karty, a w przypadku zgłoszenia wyłącznie szkic z bieżącej wiadomości lub standardowy opis problemu z dostępem do zestawu. Karta odczytuje bieżące uprawnienia przy wyświetleniu.
-- Zakres pierwszej wersji obejmuje gabinety, zespół, polecenia, widoczność pacjentów, dostęp do planu na telefonie, materiały FiziYo i opublikowane nowości portalu. Formularz zgłoszenia otwiera się z edytowalnym opisem. Potwierdzenie w rozmowie pojawia się po sukcesie istniejącej usługi zgłoszeń.
+- Zakres pierwszej wersji obejmuje placówki, zespół, polecenia, widoczność pacjentów, dostęp do planu na telefonie, materiały FiziYo i opublikowane nowości portalu. Formularz zgłoszenia otwiera się z edytowalnym opisem. Potwierdzenie w rozmowie pojawia się po sukcesie istniejącej usługi zgłoszeń.
 - Prośba o jedno ćwiczenie rozpoczyna rozmowę z listą pasujących pozycji z widocznego katalogu. Kolejne wiadomości doprecyzowują wybór. Formularz otwiera przycisk lub wiadomość „Utwórz własne ćwiczenie”. Po udanym zapisie czat pyta „Czy dodać to ćwiczenie do zestawu?”. Odpowiedź można kliknąć lub wpisać.
 
 ### 2026-11-18

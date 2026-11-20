@@ -92,12 +92,12 @@ export function ClinicExpandableCard({
           isActive: !clinic.isActive,
         },
       });
-      toast.success(clinic.isActive ? 'Gabinet został dezaktywowany' : 'Gabinet został aktywowany');
+      toast.success(clinic.isActive ? 'Placówka została dezaktywowana' : 'Placówka została aktywowana');
       setIsToggleStatusDialogOpen(false);
       onRefresh?.();
     } catch (error) {
       console.error('Błąd podczas zmiany statusu:', error);
-      toast.error('Nie udało się zmienić statusu gabinetu');
+      toast.error('Nie udało się zmienić statusu placówki');
     }
   };
 
@@ -106,12 +106,12 @@ export function ClinicExpandableCard({
       await deleteClinic({
         variables: { clinicId: clinic.id },
       });
-      toast.success('Gabinet został usunięty');
+      toast.success('Placówka została usunięta');
       setIsDeleteDialogOpen(false);
       onRefresh?.();
     } catch (error) {
       console.error('Błąd podczas usuwania:', error);
-      toast.error('Nie udało się usunąć gabinetu');
+      toast.error('Nie udało się usunąć placówki');
     }
   };
 
@@ -221,7 +221,7 @@ export function ClinicExpandableCard({
                         className="text-destructive focus:text-destructive"
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
-                        Usuń gabinet
+                        Usuń placówkę
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -300,11 +300,11 @@ export function ClinicExpandableCard({
       <ConfirmDialog
         open={isToggleStatusDialogOpen}
         onOpenChange={setIsToggleStatusDialogOpen}
-        title={clinic.isActive ? 'Dezaktywuj gabinet' : 'Aktywuj gabinet'}
+        title={clinic.isActive ? 'Dezaktywuj placówkę' : 'Aktywuj placówkę'}
         description={
           clinic.isActive
-            ? `Czy na pewno chcesz dezaktywować gabinet "${clinic.name}"? Nieaktywne gabinety nie będą widoczne przy planowaniu wizyt.`
-            : `Czy na pewno chcesz aktywować gabinet "${clinic.name}"?`
+            ? `Czy na pewno chcesz dezaktywować placówkę "${clinic.name}"? Nieaktywne placówki nie będą widoczne przy planowaniu wizyt.`
+            : `Czy na pewno chcesz aktywować placówkę "${clinic.name}"?`
         }
         confirmText={clinic.isActive ? 'Dezaktywuj' : 'Aktywuj'}
         variant={clinic.isActive ? 'destructive' : 'default'}
@@ -316,8 +316,8 @@ export function ClinicExpandableCard({
       <ConfirmDialog
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
-        title="Usuń gabinet"
-        description={`Czy na pewno chcesz usunąć gabinet "${clinic.name}"? Ta operacja jest nieodwracalna.`}
+        title="Usuń placówkę"
+        description={`Czy na pewno chcesz usunąć placówkę "${clinic.name}"? Ta operacja jest nieodwracalna.`}
         confirmText="Usuń"
         variant="destructive"
         onConfirm={handleDelete}

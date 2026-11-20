@@ -47,9 +47,9 @@ const guides = {
     link: { href: '/settings?tab=organizations', label: 'Otwórz Organizacje' },
   },
   clinic: {
-    title: 'Dodanie gabinetu',
-    text: 'Menu konta → Organizacja → Gabinety → Dodaj gabinet. Podaj nazwę i adres lokalizacji, a następnie wybierz „Utwórz gabinet”.',
-    link: { href: '/organization?tab=clinics', label: 'Otwórz Gabinety' },
+    title: 'Dodanie placówki',
+    text: 'Menu konta → Organizacja → Placówki → Dodaj placówkę. Podaj nazwę i adres placówki, a następnie wybierz „Utwórz placówkę”.',
+    link: { href: '/organization?tab=clinics', label: 'Otwórz Placówki' },
   },
   team: {
     title: 'Zaproszenie do zespołu',
