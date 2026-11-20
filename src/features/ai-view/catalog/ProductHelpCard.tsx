@@ -48,7 +48,7 @@ const guides = {
   },
   clinic: {
     title: 'Dodanie gabinetu',
-    text: 'Otwórz Gabinety i wybierz „Dodaj gabinet”. Podaj nazwę i adres lokalizacji, a następnie wybierz „Utwórz gabinet”.',
+    text: 'Menu konta → Organizacja → Gabinety → Dodaj gabinet. Podaj nazwę i adres lokalizacji, a następnie wybierz „Utwórz gabinet”.',
     link: { href: '/organization?tab=clinics', label: 'Otwórz Gabinety' },
   },
   team: {
