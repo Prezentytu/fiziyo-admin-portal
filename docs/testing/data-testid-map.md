@@ -675,12 +675,10 @@ Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu r
 | `org-invite-message-input`                                                                                                                   | Wiadomość                                | `InviteMemberDialog.tsx`        |
 | `org-invite-submit-btn`                                                                                                                      | Wyślij zaproszenie                       | `InviteMemberDialog.tsx`        |
 | `org-invite-generate-link-btn`                                                                                                               | Generuj link                             | `InviteMemberDialog.tsx`        |
-| `org-invite-copy-link-btn`                                                                                                                   | Kopiuj link                              | `InviteMemberDialog.tsx`        |
+| `org-invite-retry-switch-btn`                                                                                                                | Ponów przełączenie po przyjęciu          | `invite/page.tsx`               |
 | `org-share-sheet`                                                                                                                            | Arkusz udostępniania                     | `ShareSheet.tsx`                |
 | `org-share-qr`                                                                                                                               | QR zaproszenia personelu                 | `ShareSheet.tsx`                |
-| `org-share-qr-loading`                                                                                                                       | Pusty URL — spinner QR                   | `ShareSheet.tsx`                |
-| `org-share-copy-btn`                                                                                                                         | Kopiuj link personelu                    | `ShareSheet.tsx`                |
-| `org-share-native-btn`                                                                                                                       | Native share (mobile)                    | `ShareSheet.tsx`                |
+| `org-share-url-input`                                                                                                                        | Adres zaproszenia do zaznaczenia         | `ShareSheet.tsx`                |
 | `org-share-copy-url-btn`                                                                                                                     | Kopiuj URL z podglądu                    | `ShareSheet.tsx`                |
 | `org-clinic-dialog`                                                                                                                          | Dialog placówki                          | `ClinicDialog.tsx`              |
 | `org-clinic-name-input`                                                                                                                      | Nazwa placówki                           | `ClinicDialog.tsx`              |
@@ -747,27 +745,29 @@ Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu r
 
 ### 12. Ustawienia (settings-)
 
-| data-testid                        | Element                   | Plik                        |
-| ---------------------------------- | ------------------------- | --------------------------- |
-| `settings-page-title`              | Tytuł strony              | `settings/page.tsx`         |
-| `settings-tab-profile`             | Zakładka: Profil          | `settings/page.tsx`         |
-| `settings-tab-organizations`       | Zakładka: Organizacje     | `settings/page.tsx`         |
-| `settings-tab-display`             | Zakładka: Wygląd          | `settings/page.tsx`         |
-| `settings-tab-organization`        | Zakładka: Org. ustawienia | `settings/page.tsx`         |
-| `settings-profile-form`            | Formularz profilu         | `ProfileForm.tsx`           |
-| `settings-profile-firstname`       | Imię                      | `ProfileForm.tsx`           |
-| `settings-profile-lastname`        | Nazwisko                  | `ProfileForm.tsx`           |
-| `settings-profile-phone`           | Telefon                   | `ProfileForm.tsx`           |
-| `settings-profile-submit-btn`      | Zapisz profil             | `ProfileForm.tsx`           |
-| `settings-orgs-list`               | Lista organizacji         | `OrganizationsList.tsx`     |
-| `settings-orgs-create-btn`         | Utwórz organizację        | `OrganizationsList.tsx`     |
-| `settings-org-{id}`                | Organizacja               | `OrganizationsList.tsx`     |
-| `settings-org-{id}-switch-btn`     | Przełącz                  | `OrganizationsList.tsx`     |
-| `settings-accessibility`           | Ustawienia dostępności    | `AccessibilitySettings.tsx` |
-| `settings-accessibility-font-size` | Rozmiar czcionki          | `AccessibilitySettings.tsx` |
-| `settings-ai-credits`              | Panel kredytów AI         | `AICreditsPanel.tsx`        |
-| `settings-ai-credits-balance`      | Saldo kredytów            | `AICreditsPanel.tsx`        |
-| `settings-ai-credits-buy-btn`      | Kup kredyty               | `AICreditsPanel.tsx`        |
+| data-testid                        | Element                   | Plik                         |
+| ---------------------------------- | ------------------------- | ---------------------------- |
+| `settings-page-title`              | Tytuł strony              | `settings/page.tsx`          |
+| `settings-tab-profile`             | Zakładka: Profil          | `settings/page.tsx`          |
+| `settings-tab-organizations`       | Zakładka: Organizacje     | `settings/page.tsx`          |
+| `settings-tab-display`             | Zakładka: Wygląd          | `settings/page.tsx`          |
+| `settings-tab-organization`        | Zakładka: Org. ustawienia | `settings/page.tsx`          |
+| `settings-profile-form`            | Formularz profilu         | `ProfileForm.tsx`            |
+| `settings-profile-firstname`       | Imię                      | `ProfileForm.tsx`            |
+| `settings-profile-lastname`        | Nazwisko                  | `ProfileForm.tsx`            |
+| `settings-profile-phone`           | Telefon                   | `ProfileForm.tsx`            |
+| `settings-profile-submit-btn`      | Zapisz profil             | `ProfileForm.tsx`            |
+| `settings-orgs-list`               | Lista organizacji         | `OrganizationsList.tsx`      |
+| `settings-orgs-create-btn`         | Utwórz organizację        | `OrganizationsList.tsx`      |
+| `settings-orgs-join-hero-btn`      | Wklej link zaproszenia    | `OrganizationsList.tsx`      |
+| `settings-join-org-token-input`    | Pole na link zaproszenia  | `JoinOrganizationDialog.tsx` |
+| `settings-org-{id}`                | Organizacja               | `OrganizationsList.tsx`      |
+| `settings-org-{id}-switch-btn`     | Przełącz                  | `OrganizationsList.tsx`      |
+| `settings-accessibility`           | Ustawienia dostępności    | `AccessibilitySettings.tsx`  |
+| `settings-accessibility-font-size` | Rozmiar czcionki          | `AccessibilitySettings.tsx`  |
+| `settings-ai-credits`              | Panel kredytów AI         | `AICreditsPanel.tsx`         |
+| `settings-ai-credits-balance`      | Saldo kredytów            | `AICreditsPanel.tsx`         |
+| `settings-ai-credits-buy-btn`      | Kup kredyty               | `AICreditsPanel.tsx`         |
 
 ### 13. Onboarding (onboarding-)
 

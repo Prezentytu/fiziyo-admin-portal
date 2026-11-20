@@ -81,20 +81,16 @@ export function WelcomeModal({
   const [isVisible, setIsVisible] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
 
-  const handleContinue = useCallback(() => {
-    setIsExiting(true);
-    setTimeout(() => {
-      onClose?.();
-      router.push('/');
-    }, 300);
-  }, [onClose, router]);
-
   const handleClose = useCallback(() => {
     setIsExiting(true);
     setTimeout(() => {
-      onClose?.();
+      if (onClose) {
+        onClose();
+      } else {
+        router.push('/');
+      }
     }, 300);
-  }, [onClose]);
+  }, [onClose, router]);
 
   // Animate in on mount
   useEffect(() => {
@@ -106,11 +102,11 @@ export function WelcomeModal({
   useEffect(() => {
     if (autoRedirectDelay > 0) {
       const timer = setTimeout(() => {
-        handleContinue();
+        handleClose();
       }, autoRedirectDelay);
       return () => clearTimeout(timer);
     }
-  }, [autoRedirectDelay, handleContinue]);
+  }, [autoRedirectDelay, handleClose]);
 
   return (
     <div
@@ -259,7 +255,7 @@ export function WelcomeModal({
             )}
           >
             <Button
-              onClick={handleContinue}
+              onClick={handleClose}
               size="lg"
               className="w-full gap-2 bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-accent-green text-primary-foreground font-semibold shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300"
             >

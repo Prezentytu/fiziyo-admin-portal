@@ -333,7 +333,6 @@ export default function OrganizationPage() {
             open={isInviteDialogOpen}
             onOpenChange={setIsInviteDialogOpen}
             organizationId={organizationId}
-            organizationName={organization?.name}
             onSuccess={() => refetchMembers()}
           />
         )}

@@ -25,7 +25,7 @@ interface OrganizationContextValue {
   /** Switch to a different organization */
   switchOrganization: (organizationId: string) => Promise<void>;
   /**
-   * Make a just-created organization active. Unlike `switchOrganization` it does not need the
+   * Make a newly created or joined organization active. Unlike `switchOrganization` it does not need the
    * organization in `organizations` yet, shows no toast and rethrows, so the caller reports failure.
    */
   enterOrganization: (organizationId: string) => Promise<void>;
@@ -67,6 +67,7 @@ function setLastOrganizationId(orgId: string): void {
 
 interface OrganizationProviderProps {
   children: React.ReactNode;
+  skipOrganizationsQuery?: boolean;
 }
 
 /**
@@ -82,7 +83,7 @@ export function isOrganizationContextLoading(
   return queryLoading || (organizationCount > 0 && !hasCurrentOrganization);
 }
 
-export function OrganizationProvider({ children }: OrganizationProviderProps) {
+export function OrganizationProvider({ children, skipOrganizationsQuery = false }: OrganizationProviderProps) {
   const apolloClient = useApolloClient();
   const [currentOrgId, setCurrentOrgId] = useState<string | null>(null);
   const [isSwitching, setIsSwitching] = useState(false);
@@ -95,6 +96,7 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
     refetch,
   } = useQuery<UserOrganizationsResponse>(GET_USER_ORGANIZATIONS_QUERY, {
     fetchPolicy: 'cache-and-network',
+    skip: skipOrganizationsQuery,
   });
 
   // Log query errors
@@ -218,7 +220,7 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
   );
 
   const refreshOrganizations = useCallback(() => {
-    refetch();
+    void refetch().catch(() => undefined);
   }, [refetch]);
 
   const value = useMemo<OrganizationContextValue>(

@@ -9,7 +9,7 @@ export const LEGACY_STATUS = "Aktywny";
 
 // Wiersze, które 2026-10-29 zostały na `Aktywny`, bo plik speca nie dowodzi statusu.
 // Przy edycji speca nadaj status ze słownika i usuń numer stąd. Pusta lista = `Aktywny` zawsze błędem.
-export const LEGACY_AKTYWNY = ["007", "008", "009", "010", "011", "013", "015", "016"];
+export const LEGACY_AKTYWNY = ["007", "008", "009", "010", "013", "015", "016"];
 
 export function parseFrontmatter(text) {
   if (!text.startsWith("---")) return null;
