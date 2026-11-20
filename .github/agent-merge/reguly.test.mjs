@@ -463,15 +463,27 @@ test('komentarz sędziego: pliki zgrupowane, reszta policzona z katalogami', () 
 });
 
 test('jakPrzejsc: podział PR, drzwi, rozmiar i wątki; bez kroku, gdy wszystkie pliki są u człowieka', () => {
+  const pliki = (n) =>
+    Array.from({ length: n }, (_, i) => ({ filename: i ? `src/x${i}.ts` : 'src/features/exercise-sets/AGENTS.md' }));
   const powody = [
     'plik poza zasięgiem agenta: `src/features/exercise-sets/AGENTS.md`',
     'opis PR nie ma zaznaczonych wyłącznie drzwi dwukierunkowych',
     'za duży: 1700 linii (limit 1500)',
     'nierozwiązane wątki review: 2',
   ];
-  const kroki = jakPrzejsc(powody, { plikow: 9 });
+  const kroki = jakPrzejsc(powody, { pliki: pliki(9) });
   assert.equal(kroki.length, 4);
   assert.match(kroki[0], /`src\/features\/exercise-sets\/AGENTS\.md`.*8 z 9 plików/);
-  assert.deepEqual(jakPrzejsc(['plik poza zasięgiem agenta: `AGENTS.md`'], { plikow: 1 }), []);
-  assert.deepEqual(jakPrzejsc(['check `gate`: failure'], { plikow: 3 }), []);
+  assert.deepEqual(jakPrzejsc(['plik poza zasięgiem agenta: `AGENTS.md`'], { pliki: [{ filename: 'AGENTS.md' }] }), []);
+  assert.deepEqual(jakPrzejsc(['check `gate`: failure'], { pliki: pliki(3) }), []);
+});
+
+test('jakPrzejsc: rename z obiema ścieżkami u człowieka liczy się jako jeden plik', () => {
+  const pliki = [
+    { filename: 'docs/AGENTS.md', previous_filename: 'AGENTS.md', status: 'renamed' },
+    { filename: 'src/x.ts' },
+  ];
+  const powody = ['plik poza zasięgiem agenta: `docs/AGENTS.md`', 'plik poza zasięgiem agenta: `AGENTS.md`'];
+  const [krok] = jakPrzejsc(powody, { pliki });
+  assert.match(krok, /`docs\/AGENTS\.md`\).*1 z 2 plików/);
 });

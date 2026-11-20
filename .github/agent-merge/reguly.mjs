@@ -228,9 +228,14 @@ export function skrocPowody(powody, { ile = 5 } = {}) {
 // albo jego część przejdzie sama. Nie zmienia oceny, tylko komentarz. Bez kroków dla powodów, które naprawia
 // pętla `napraw-pr` (CI, FAIL review) albo które są decyzją człowieka (main czerwony, etykiety).
 const PLIK_U_CZLOWIEKA = /^plik (?:poza zasięgiem agenta|spoza listy dozwolonych): `(.+)`$/;
-export function jakPrzejsc(powody, { plikow = 0, ile = 5 } = {}) {
+export function jakPrzejsc(powody, { pliki = [], ile = 5 } = {}) {
   const kroki = [];
-  const u = powody.map((p) => p.match(PLIK_U_CZLOWIEKA)?.[1]).filter(Boolean);
+  // Liczymy pliki, nie ścieżki: rename ma dwie ścieżki i dwa powody, a to jeden plik.
+  const sciezki = new Set(powody.map((p) => p.match(PLIK_U_CZLOWIEKA)?.[1]).filter(Boolean));
+  const u = pliki
+    .filter((p) => sciezki.has(p.filename) || (p.previous_filename && sciezki.has(p.previous_filename)))
+    .map((p) => p.filename);
+  const plikow = pliki.length;
   if (u.length && u.length < plikow) {
     const pokaz = u
       .slice(0, ile)

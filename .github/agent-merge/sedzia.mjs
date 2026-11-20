@@ -141,8 +141,8 @@ async function tokenAplikacji(appId, klucz) {
   ).token;
 }
 
-const kroki = (powody, plikow) => {
-  const k = jakPrzejsc(powody, { plikow });
+const kroki = (powody, pliki) => {
+  const k = jakPrzejsc(powody, { pliki });
   return k.length
     ? `\n\n**Co może zrobić autor, żeby PR (albo jego część) przeszedł sam:**\n\n${k.map((x) => `- ${x}`).join('\n')}`
     : '';
@@ -208,7 +208,7 @@ async function main() {
             .map((x) => `- ${x}`)
             .join(
               '\n'
-            )}${kroki(wynik.powody, pliki.length)}\n\nNowy commit albo zmiana stanu uruchamia ocenę ponownie. Polityka: [auto-merge](https://github.com/Prezentytu/baza-wiedzy/blob/main/praca-z-agentami/model-pracy/auto-merge-2026-11-19.md).`
+            )}${kroki(wynik.powody, pliki)}\n\nNowy commit albo zmiana stanu uruchamia ocenę ponownie. Polityka: [auto-merge](https://github.com/Prezentytu/baza-wiedzy/blob/main/praca-z-agentami/model-pracy/auto-merge-2026-11-19.md).`
         );
       continue;
     }
