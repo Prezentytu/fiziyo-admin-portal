@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, ListOrdered, Pause, Play, SlidersHorizontal } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,8 @@ import { cn } from '@/lib/utils';
 import { polishPlural } from '@/utils/polishPlural';
 import type { ExerciseExecutionCardData } from '../types';
 import {
+  PATIENT_PHONE_HEIGHT,
+  PATIENT_PHONE_WIDTH,
   PatientPhone,
   type PatientPhoneButtons,
   type PatientPhoneProgress,
@@ -86,12 +88,28 @@ export function PatientPreviewTab({ exercise, imageUrl, testIdPrefix }: Readonly
   const [progress, setProgress] = useState<PatientPhoneProgress>('tiles');
   const [buttons, setButtons] = useState<PatientPhoneButtons>('pause');
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const phoneAreaRef = useRef<HTMLDivElement>(null);
+  const [phoneScale, setPhoneScale] = useState(1);
 
   const script = useMemo(() => buildPatientPreviewScript(source), [source]);
   const blocks = useMemo(() => buildPatientPreviewBlocks(source, script), [source, script]);
   const notes = useMemo(() => buildPatientPreviewNotes(source, script), [source, script]);
   const details = useMemo(() => buildPatientPreviewDetails(exercise, source, script), [exercise, source, script]);
   const totalSec = script.timelineDurationSec;
+
+  useLayoutEffect(() => {
+    const phoneArea = phoneAreaRef.current;
+    if (!phoneArea) return;
+
+    const observer = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      if (width > 0 && height > 0) {
+        setPhoneScale(Math.min(1, width / PATIENT_PHONE_WIDTH, height / PATIENT_PHONE_HEIGHT));
+      }
+    });
+    observer.observe(phoneArea);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     setClockSec(0);
@@ -147,12 +165,18 @@ export function PatientPreviewTab({ exercise, imageUrl, testIdPrefix }: Readonly
 
   return (
     <div
-      className="grid min-h-0 grid-cols-[minmax(0,1fr)_400px_minmax(0,1fr)] gap-6 bg-surface-light/30 px-6 py-5"
+      className="grid h-[820px] min-h-0 grid-cols-[auto_minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] gap-3 bg-surface-light/30 p-3 lg:grid-cols-[minmax(0,1fr)_400px_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)] lg:gap-6 lg:px-6 lg:py-5"
       data-testid={`${testIdPrefix}-patient-view`}
     >
-      <div className="flex min-h-0 min-w-0 flex-col items-start">
+      <div
+        className={cn(
+          'col-start-1 row-start-1 flex min-h-0 min-w-0 flex-col items-start',
+          isOptionsOpen && 'max-lg:col-span-2',
+          isFlowOpen && 'max-lg:hidden'
+        )}
+      >
         {isOptionsOpen ? (
-          <div className="flex max-h-[780px] w-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-raised">
+          <div className="flex max-h-[30dvh] w-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-raised lg:max-h-full">
             <PanelHeader
               title="Opcje podglądu"
               onClose={() => setIsOptionsOpen(false)}
@@ -227,8 +251,12 @@ export function PatientPreviewTab({ exercise, imageUrl, testIdPrefix }: Readonly
         )}
       </div>
 
-      <div className="flex justify-center">
+      <div
+        ref={phoneAreaRef}
+        className="col-span-2 row-start-2 flex min-h-0 min-w-0 items-center justify-center lg:col-span-1 lg:col-start-2 lg:row-start-1"
+      >
         <PatientPhone
+          scale={phoneScale}
           frame={frame}
           exerciseName={exercise.displayName}
           imageUrl={imageUrl}
@@ -245,9 +273,15 @@ export function PatientPreviewTab({ exercise, imageUrl, testIdPrefix }: Readonly
         />
       </div>
 
-      <div className="flex min-h-0 min-w-0 flex-col items-end">
+      <div
+        className={cn(
+          'col-start-2 row-start-1 flex min-h-0 min-w-0 flex-col items-end lg:col-start-3',
+          isFlowOpen && 'max-lg:col-span-2 max-lg:col-start-1',
+          isOptionsOpen && !isFlowOpen && 'max-lg:hidden'
+        )}
+      >
         {isFlowOpen ? (
-          <div className="patient-timeline flex max-h-[780px] w-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-raised">
+          <div className="patient-timeline flex max-h-[30dvh] w-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-raised lg:max-h-full">
             <PanelHeader
               title="Przebieg"
               onClose={() => setIsFlowOpen(false)}

@@ -113,7 +113,7 @@ export function ExerciseDetailsDialog({ open, mapping, onOpenChange }: Readonly<
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className={`${view === 'patient' ? PATIENT_VIEW_DIALOG_WIDTH : 'max-w-3xl'} max-h-[90vh] overflow-hidden p-0 flex flex-col`}
+        className={`${view === 'patient' ? `${PATIENT_VIEW_DIALOG_WIDTH} max-h-[90dvh]` : 'max-w-3xl max-h-[90vh]'} overflow-hidden p-0 flex flex-col`}
         data-testid="assign-set-preview-exercise-details-dialog"
       >
         <Tabs
