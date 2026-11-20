@@ -39,6 +39,7 @@ import { OrganizationSwitchMenuItems } from '@/components/layout/OrganizationSwi
 import { useOpenCreateOrganization } from '@/components/organization/CreateOrganizationDialogProvider';
 import { verificationItem } from '@/components/layout/navigationConfig';
 import { useCurrentUserDisplay } from '@/components/layout/useCurrentUserDisplay';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import { useOrganizationVerificationRealtime } from '@/hooks/useOrganizationVerificationRealtime';
 import { useVerificationQueuesRealtime } from '@/hooks/useVerificationQueuesRealtime';
 import { useAppSignOut } from '@/lib/auth/useAppSignOut';
@@ -90,6 +91,7 @@ function SidebarBody({
   const pathname = usePathname();
   const router = useRouter();
   const account = useCurrentUserDisplay();
+  const { currentOrganization } = useOrganization();
   const signOut = useAppSignOut();
   const { update } = useChatMode();
   const openCreateOrganization = useOpenCreateOrganization();
@@ -280,6 +282,23 @@ function SidebarBody({
             </span>
           </AiCreditsDetailsPopover>
           <AiCreditsNotice usage={{ totalLimit: credits.limit, totalRemaining: credits.remaining }} />
+        </div>
+      )}
+
+      {currentOrganization && (
+        <div
+          className="flex shrink-0 items-center gap-2.5 rounded-control bg-fill-quaternary px-2.5 py-2"
+          data-testid="nav-chat-active-org"
+        >
+          <span className="flex size-7 shrink-0 items-center justify-center">
+            <Building2 className={MENU_ICON_CLASS} aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-xs text-label-secondary">Aktywna organizacja</p>
+            <p className="truncate text-sm font-medium text-foreground" title={currentOrganization.organizationName}>
+              {currentOrganization.organizationName}
+            </p>
+          </div>
         </div>
       )}
 
