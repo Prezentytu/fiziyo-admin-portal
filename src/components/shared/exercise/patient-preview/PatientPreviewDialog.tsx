@@ -24,14 +24,14 @@ export function PatientPreviewDialog({ open, onOpenChange, exercise, testIdPrefi
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className={`${PATIENT_VIEW_DIALOG_WIDTH} max-h-[95vh] overflow-hidden p-0 flex flex-col`}
+        className={`${PATIENT_VIEW_DIALOG_WIDTH} max-h-[95dvh] overflow-hidden p-0 flex flex-col gap-0`}
         data-testid={`${testIdPrefix}-dialog`}
       >
-        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border">
+        <DialogHeader className="px-6 pt-6 pb-4 pr-14 border-b border-border">
           <DialogTitle data-testid={`${testIdPrefix}-title`}>{exercise.displayName}</DialogTitle>
           <DialogDescription>Tak zobaczy to ćwiczenie pacjent w aplikacji.</DialogDescription>
         </DialogHeader>
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
           {open ? <PatientPreviewTab exercise={exercise} imageUrl={imageUrl} testIdPrefix={testIdPrefix} /> : null}
         </div>
         <div className="px-6 py-4 border-t border-border flex justify-end">
