@@ -115,6 +115,7 @@ import {
   type VerificationStageKey,
 } from './utils/verificationStages';
 import { InternalNotesPanel } from '@/features/exercises/InternalNotesPanel';
+import { ReviewNotesPanel } from './ReviewNotesPanel';
 
 const PRIMARY_LABELS: Record<VerificationStageKey, string> = {
   material: 'Materiał gotowy, dalej',
@@ -243,6 +244,7 @@ export function VerificationWorkspace({
   const { user } = useUser();
   const { canReviewExercises } = useSystemRole();
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const [isNotesPanelOpen, setIsNotesPanelOpen] = useState(false);
 
   // Contract v3.3 (FR-007): the record is read and saved in contract places; a legacy record keeps the old path.
   const isV33 = useMemo(() => readExerciseContent(exercise).version === '3.3', [exercise]);
@@ -886,10 +888,16 @@ export function VerificationWorkspace({
         leaveToNext();
       } catch (error) {
         console.error('Błąd oznaczania duplikatu:', error);
-        const originalError = CombinedGraphQLErrors.is(error) && error.errors.find(({ extensions }) =>
-          extensions?.code === 'DUPLICATE_ORIGINAL_UNAVAILABLE' || extensions?.code === 'DUPLICATE_ORIGINAL_NOTES_FULL'
+        const originalError =
+          CombinedGraphQLErrors.is(error) &&
+          error.errors.find(
+            ({ extensions }) =>
+              extensions?.code === 'DUPLICATE_ORIGINAL_UNAVAILABLE' ||
+              extensions?.code === 'DUPLICATE_ORIGINAL_NOTES_FULL'
+          );
+        toast.error(
+          originalError ? originalError.message : actionErrorMessage(error, 'Nie udało się oznaczyć duplikatu')
         );
-        toast.error(originalError ? originalError.message : actionErrorMessage(error, 'Nie udało się oznaczyć duplikatu'));
         setIsLeaving(false);
       }
     },
@@ -1065,7 +1073,11 @@ export function VerificationWorkspace({
   }
 
   return (
-    <PageSheet contentClassName="gap-5" data-testid={rootTestId}>
+    <PageSheet
+      contentClassName="gap-5"
+      className={canReviewExercises && isNotesPanelOpen ? 'lg:pr-[372px] xl:pr-[372px]' : undefined}
+      data-testid={rootTestId}
+    >
       <div ref={rootRef} className="scroll-mt-6" />
 
       <header className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -1349,6 +1361,18 @@ export function VerificationWorkspace({
           )}
         </div>
       </div>
+
+      {canReviewExercises && (
+        <ReviewNotesPanel
+          key={exercise.id}
+          exerciseId={exercise.id}
+          context={{ key: stage, label: STAGE_TITLES[stage] }}
+          canSendToAuthor={isOrganization ? canRequestChanges : exercise.status === 'PENDING_REVIEW'}
+          beforeSend={flushBeforeDecision}
+          onSent={leaveToNext}
+          onOpenChange={setIsNotesPanelOpen}
+        />
+      )}
 
       <VerificationFloatingBar
         hint={hints[stage]}
