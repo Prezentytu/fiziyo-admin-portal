@@ -52,7 +52,7 @@ Poziomy: powyżej limitu albo brak wymaganej wartości = „Błąd” (czerwony,
 | Decyzja                                                                       | Dlaczego                                                                                                       |
 | ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | Brak „Odrzuć” na ekranie globalnym                                            | Ćwiczenie się poprawia, nie odrzuca. Wyjścia: publikacja, „Odłóż na później”, „To duplikat”.                   |
-| „To duplikat” = `rejectExercise(POTENTIAL_DUPLICATE)` z notatką o celu        | Backend nie ma scalania ćwiczeń; copy mówi uczciwie, że ćwiczenie znika z listy, a autor dostaje wskazanie.    |
+| „To duplikat” = `rejectExercise(POTENTIAL_DUPLICATE)` z notatką o celu        | Autor dostaje wskazanie oryginału. Notatki robocze oryginału zawierają nazwę i ID duplikatu.                     |
 | Publikacja z paska, bez dialogu                                               | Etapy są potwierdzeniem; dialog dublował decyzję. Publikacja zablokowana, dopóki jakiś etap ma uwagi.          |
 | Bez checkboxów „sprawdziłem” i bez `⌘D`, `Esc` nie pomija                     | Przycisk etapu jest potwierdzeniem; `Esc` zamyka dialogi, a pomijanie ćwiczenia jednym klawiszem gubiło pracę. |
 | Wymiana zdjęcia w miejscu: `UpdateExercise(images)` z data URL na indeksie    | Backend zapisuje data URL jako nowy blob i zachowuje kolejność; stary blob usuwany `DeleteExerciseImage`.      |
@@ -75,6 +75,8 @@ Poziomy: powyżej limitu albo brak wymaganej wartości = „Błąd” (czerwony,
 ### GraphQL
 
 Bez zmian kontraktu. Używane: `GetExerciseByIdForAdmin`, `GetVerificationQueueNavigator`, `GetVerificationQueuePage(filter: "published")` (szukanie duplikatu), `ApproveExercise`, `RejectExercise`, `UpdateExercise`, `UpdateExerciseField`, `UploadExerciseImage`, `DeleteExerciseImage`.
+
+Dialog pokazuje nazwę weryfikowanego ćwiczenia i oznacza wybór z bazy etykietą „To jest oryginał”. Podgląd otwiera wspólny `ExercisePreviewDialog` i po zamknięciu przywraca wybór. Potwierdzenie zapisuje decyzję i dopisuje notatkę do oryginału w tej samej transakcji. `RejectExercise` rozpoznaje oryginał po ID zawartym w istniejącym formacie informacji dla autora.
 
 ### enrichmentData v3 (additive)
 
@@ -123,6 +125,7 @@ Zdjęcie przy czytanym kroku ma test integracyjny `VerificationWorkspace.reading
 
 ## Changelog
 
+- 2026-11-20 — Rozróżnienie obu ćwiczeń w dialogu duplikatu, podgląd oryginału i wpis w jego notatkach roboczych.
 - 2026-10-26: Pierwsza wersja (etapy, ocena parametrów, zdjęcia przy krokach, fazy wskazówek, duplikat).
 - 2026-10-27: Testy zdjęć przy krokach (integracyjne i E2E), test ID dużego medium w panelu.
 - 2026-11-03: Pozostałe treści karty w etapie Decyzja, przerwa między powtórzeniami i czas przygotowania w Parametrach, liczniki bez pustych pozycji, „Przerwij, gdy…” jako tekst, wspólne braki treści z kartą ćwiczenia, jeden format czasu, zapisane obciążenie spoza kg, wspólne etykiety pól (`enrichmentFieldLabels.ts`); sam GIF nie spełnia wymogu materiału, pola liczb w Parametrach trzymają wpisany ułamek, serie i powtórzenia tylko całkowite.

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
 
@@ -12,7 +12,9 @@ import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { FieldHelpTooltip } from '@/components/shared/FieldHelpTooltip';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
+import { VideoEmbed } from '@/components/shared/VideoEmbed';
 import { getMediaUrl } from '@/utils/mediaUrl';
+import { isVimeoUrl, isYouTubeUrl } from '@/utils/videoEmbed';
 import {
   DIALOG_EXERCISE_FIELD_ORDER,
   EXERCISE_FIELD_METADATA,
@@ -92,6 +94,7 @@ export function ExercisePreviewDialog({
   testIdPrefix = 'exercise-preview',
 }: Readonly<ExercisePreviewDialogProps>) {
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
+  const titleRef = useRef<HTMLHeadingElement>(null);
   const [view, setView] = useState<ExercisePreviewView>('details');
 
   const galleryImages = useMemo(() => buildPreviewGallery(exercise), [exercise]);
@@ -159,6 +162,10 @@ export function ExercisePreviewDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className={`${view === 'patient' ? `${PATIENT_VIEW_DIALOG_WIDTH} max-h-[95dvh]` : 'max-w-3xl max-h-[95vh]'} overflow-hidden p-0 flex flex-col`}
+        onOpenAutoFocus={(event) => {
+          event.preventDefault();
+          titleRef.current?.focus();
+        }}
         data-testid={`${testIdPrefix}-dialog`}
       >
         <Tabs
@@ -167,7 +174,9 @@ export function ExercisePreviewDialog({
           className="flex min-h-0 flex-1 flex-col"
         >
           <DialogHeader className="px-6 pt-6 pb-0 border-b border-border">
-            <DialogTitle data-testid={`${testIdPrefix}-title`}>{exercise.displayName}</DialogTitle>
+            <DialogTitle ref={titleRef} tabIndex={-1} className="pr-8" data-testid={`${testIdPrefix}-title`}>
+              {exercise.displayName}
+            </DialogTitle>
             <DialogDescription className="sr-only">
               Podgląd opisu, mediów i parametrów wybranego ćwiczenia.
             </DialogDescription>
@@ -184,7 +193,9 @@ export function ExercisePreviewDialog({
                     className="relative aspect-video rounded-xl overflow-hidden border border-border bg-surface-light"
                     data-testid={`${testIdPrefix}-media`}
                   >
-                    {currentMedia.kind === 'video' ? (
+                    {currentMedia.kind === 'video' && (isYouTubeUrl(currentMedia.url) || isVimeoUrl(currentMedia.url)) ? (
+                      <VideoEmbed url={currentMedia.url} title={exercise.displayName} />
+                    ) : currentMedia.kind === 'video' ? (
                       <video
                         src={currentMedia.url}
                         controls

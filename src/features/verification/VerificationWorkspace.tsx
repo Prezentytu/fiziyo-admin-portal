@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { useMutation } from '@apollo/client/react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
@@ -872,19 +873,23 @@ export function VerificationWorkspace({
     async (target: DuplicateTarget) => {
       if (!canDecide) return;
       setIsLeaving(true);
+      // The API reads the original ID from this established feedback format (SPEC-030).
       const notes = `To ćwiczenie jest już w bazie jako „${target.name}” (ID: ${target.id}).`;
       try {
         await flushBeforeDecision();
         await rejectExercise({
           variables: { exerciseId: exercise.id, rejectionReason: 'POTENTIAL_DUPLICATE', notes },
         });
-        toast.success(`Oznaczono jako duplikat „${target.name}”`);
+        toast.success('Oznaczono weryfikowane ćwiczenie jako duplikat');
         void resolveReports(notes);
         setIsDuplicateOpen(false);
         leaveToNext();
       } catch (error) {
         console.error('Błąd oznaczania duplikatu:', error);
-        toast.error(actionErrorMessage(error, 'Nie udało się oznaczyć duplikatu'));
+        const originalError = CombinedGraphQLErrors.is(error) && error.errors.find(({ extensions }) =>
+          extensions?.code === 'DUPLICATE_ORIGINAL_UNAVAILABLE' || extensions?.code === 'DUPLICATE_ORIGINAL_NOTES_FULL'
+        );
+        toast.error(originalError ? originalError.message : actionErrorMessage(error, 'Nie udało się oznaczyć duplikatu'));
         setIsLeaving(false);
       }
     },
