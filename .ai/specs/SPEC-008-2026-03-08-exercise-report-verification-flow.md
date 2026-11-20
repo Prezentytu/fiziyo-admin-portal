@@ -68,7 +68,7 @@ reportedFilter[reported] --> reportedConnection[reportedVerificationQueueConnect
 - `Exercise detail`:
   - secondary CTA `Zgłoś do poprawki` obok akcji hero (jedno wejście na ekranie, bez duplikatu w menu `Opcje`)
 
-Widoczność: `canReportExerciseIssue` w `src/features/exercises/utils/exerciseReportRouting.ts`. Zgłoszenie jest dla ćwiczenia z bazy FiziYo (`scope = GLOBAL`), którego nie poprawisz edycją, i widzi je każda rola. Weryfikator FiziYo (`canReviewExercises`) ma je obok `Popraw w weryfikacji`: zgłoszenie zostawia ślad w kolejce, gdy poprawki nie robi od razu (decyzja Adama, odwraca część Skrzynki #26). Własne ćwiczenie gabinetu poprawia się edycją albo w weryfikacji organizacji (`Zgłoś do weryfikacji organizacyjnej`), więc bez zgłoszenia.
+Widoczność: `canReportExerciseIssue` w `src/features/exercises/utils/exerciseReportRouting.ts`. Zgłoszenie jest dla ćwiczenia z bazy FiziYo (`scope = GLOBAL`), którego nie poprawisz edycją, i widzi je każda rola. Weryfikator FiziYo (`canReviewExercises`) ma je obok `Popraw w weryfikacji`: zgłasza, gdy poprawki nie robi od razu, a zgłoszenie idzie tą samą drogą co od terapeuty (decyzja Adama, odwraca część Skrzynki #26). Własne ćwiczenie gabinetu poprawia się edycją albo w weryfikacji organizacji (`Zgłoś do weryfikacji organizacyjnej`), więc bez zgłoszenia.
 
 ### Report dialog
 

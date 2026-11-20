@@ -30,7 +30,7 @@ interface ExerciseReportVisibilityInput {
 
 /**
  * „Zgłoś do poprawki” jest dla ćwiczenia z bazy FiziYo, którego nie poprawisz edycją. Widzi je każdy,
- * także weryfikator FiziYo: zgłoszenie zostawia ślad w kolejce, a „Popraw w weryfikacji” jest obok.
+ * także weryfikator FiziYo: zgłoszenie idzie do zespołu (Discord), a „Popraw w weryfikacji” jest obok.
  * Własne ćwiczenie gabinetu poprawia się edycją albo w weryfikacji organizacji, więc bez zgłoszenia.
  */
 export function canReportExerciseIssue({ scope }: ExerciseReportVisibilityInput): boolean {
