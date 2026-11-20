@@ -48,8 +48,8 @@ const guides = {
   },
   clinic: {
     title: 'Dodanie gabinetu',
-    text: 'W menu konta otwórz Zespół → Gabinety → Dodaj gabinet. Nowa lokalizacja będzie należała do aktywnej organizacji.',
-    link: teamLink,
+    text: 'Otwórz Gabinety i wybierz „Dodaj gabinet”. Podaj nazwę i adres lokalizacji, a następnie wybierz „Utwórz gabinet”.',
+    link: { href: '/organization?tab=clinics', label: 'Otwórz Gabinety' },
   },
   team: {
     title: 'Zaproszenie do zespołu',

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
 import { Building2, Users, MapPin, Mail } from 'lucide-react';
@@ -51,7 +52,9 @@ const STAFF_ROLES = new Set(['owner', 'admin', 'therapist', 'staff']);
 export default function OrganizationPage() {
   const { user } = useUser();
   const { currentOrganization, isLoading: orgContextLoading } = useOrganization();
-  const [activeTab, setActiveTab] = useState('team');
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [isClinicDialogOpen, setIsClinicDialogOpen] = useState(false);
   const [isAssignToClinicDialogOpen, setIsAssignToClinicDialogOpen] = useState(false);
@@ -130,6 +133,17 @@ export default function OrganizationPage() {
   const teamCount = staffMembers.length;
   const clinicsCount = clinics.length;
   const canEdit = currentUserRole === 'owner' || currentUserRole === 'admin';
+
+  const requestedTab = searchParams.get('tab');
+  const activeTab = requestedTab === 'clinics' || (requestedTab === 'invitations' && canEdit) ? requestedTab : 'team';
+
+  function setActiveTab(tab: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (tab === 'team') params.delete('tab');
+    else params.set('tab', tab);
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }
 
   // Billing data for patient counts
   const billingStatus = billingData?.currentBillingStatus;
@@ -218,12 +232,12 @@ export default function OrganizationPage() {
         <Tabs
           value={activeTab}
           onValueChange={setActiveTab}
-          className="flex w-full overflow-hidden"
+          className="flex w-full min-w-0 flex-col overflow-y-auto md:flex-row md:overflow-hidden"
           orientation="vertical"
         >
           {/* Inner Sidebar */}
-          <div className="w-64 border-r-[0.5px] border-separator bg-transparent flex flex-col shrink-0">
-            <div className="p-6">
+          <div className="flex shrink-0 flex-col border-b-[0.5px] border-separator md:w-64 md:border-r-[0.5px] md:border-b-0">
+            <div className="p-4 md:p-6">
               <h1 className="text-[28px] font-bold leading-[34px] tracking-tight text-foreground mb-6" data-testid="org-page-title">
                 Zespół
               </h1>
@@ -272,8 +286,8 @@ export default function OrganizationPage() {
           </div>
 
           {/* Content Area */}
-          <div className="flex-1 overflow-y-auto">
-            <div className="max-w-5xl mx-auto p-8 lg:p-12">
+          <div className="min-w-0 md:flex-1 md:overflow-y-auto">
+            <div className="mx-auto max-w-5xl p-4 md:p-8 lg:p-12">
               <TabsContent value="team" className="mt-0 outline-none">
                 <TeamSection
                   members={members}

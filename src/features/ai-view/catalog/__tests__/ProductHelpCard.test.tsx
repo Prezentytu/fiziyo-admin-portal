@@ -43,12 +43,12 @@ describe('product help cards', () => {
     state.referrals = false;
   });
 
-  it('offers the team screen only to organization managers, including when rereading a card', () => {
+  it('offers the clinics tab only to organization managers, including when rereading a card', () => {
     const { rerender } = render(<ProductHelpCard {...props} />);
     expect(screen.queryByRole('link')).toBeNull();
     state.manage = true;
     rerender(<ProductHelpCard {...props} />);
-    expect(screen.getByRole('link')).toHaveAttribute('href', '/organization');
+    expect(screen.getByRole('link')).toHaveAttribute('href', '/organization?tab=clinics');
   });
 
   it('respects the referrals flag independently of team management', () => {
