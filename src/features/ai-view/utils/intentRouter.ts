@@ -18,7 +18,11 @@ export interface IntentContext {
 
 const INACTIVE_PATTERN = /nie cwicz|nieaktywn|kto nie|bez trening|zaniedbuj/;
 const ADD_PATIENT_PATTERN = /(dodaj|dopisz|stworz|utworz|zarejestruj|nowy|nowa|nowego|nowej|zaloz)\w* (?:mi )?pacjent/;
-const CREATE_EXERCISE_PATTERN = /(utworz|stworz|dodaj|nowe|nowego)\w* (wlasne )?cwiczeni/;
+// The singular object matters: a catalog search, a set, and a list of exercises have their own flow.
+const CREATE_VERB =
+  /^(?:prosze[ ,]+)?(?:zrobmy|zrob|utworz|stworz|dodaj|przygotuj|zaproponuj|uloz|daj|chce(?: (?:stworzyc|utworzyc))?|(?:po)?prosze(?: o)?)\s+(?:mi\s+)?/;
+const SINGLE_EXERCISE = /^(?:(?:jedno|nowe|wlasne|pojedyncze)\s+)*cwiczenie\b/;
+const MENTIONS_SET = /\b(?:zestaw\w*|plan(?:u|em|ie|y|ow)?|program(?:u|em|ie|y|ow)?)\b/;
 const SET_PATTERN = /zestaw|plan|przypisz|program/;
 const SEARCH_PATTERN = /znajdz|wyszukaj|szukaj|cwiczeni|cwiczen/;
 const NAVIGATE_VERB_PATTERN = /^(przejdz|otworz|pokaz|idz)\b/;
@@ -183,9 +187,8 @@ function routeCommand(
   if (NO_PATIENT_PATTERN.test(normalized)) return { component: 'SetDraft', exerciseIds: [] };
   if (INACTIVE_PATTERN.test(normalized)) return { component: 'PatientPeek', filter: 'inactive' };
   if (ADD_PATIENT_PATTERN.test(normalized)) return { component: 'AddPatient', name: parseNewPatientDetails(text).name };
-  if (CREATE_EXERCISE_PATTERN.test(normalized)) {
-    return { component: 'CreateExercise', name: textAfter(text, /^ćwiczeni/i) };
-  }
+  const exercise = singleExerciseRequest(text, context.patients);
+  if (exercise) return exercise;
 
   const target = navigateTarget(normalized);
   if (target && !SET_PATTERN.test(normalized)) return { component: 'Navigate', route: target[1] };
@@ -229,16 +232,26 @@ function routeCommand(
   return UNSUPPORTED_SPEC;
 }
 
-/** "Dodaj pacjentkę Anna Nowak, ból lędźwi" → "Anna Nowak": what follows the keyword, up to a comma. */
-function textAfter(text: string, keyword: RegExp): string | undefined {
-  const words = text.trim().split(/\s+/);
-  const index = words.findIndex((word) => keyword.test(word));
-  if (index < 0) return undefined;
-  const rest = words
-    .slice(index + 1)
-    .join(' ')
-    .replace(/^[:\-–,\s]+/, '')
-    .split(',')[0]
-    .trim();
-  return rest || undefined;
+/**
+ * A request about a patient is not a catalog exercise: it keeps its patient flow, and a patient's name
+ * never becomes the name of an exercise the whole organization sees.
+ */
+export function singleExerciseRequest(
+  text: string,
+  patients: readonly MatchablePatient[]
+): Extract<ChatViewSpec, { component: 'CreateExercise' }> | null {
+  const original = text.trim().normalize('NFC');
+  const normalized = normalizeSearchText(original);
+  if (MENTIONS_SET.test(normalized) || /pacjent/.test(normalized)) return null;
+  if (matchPatients(original, patients).kind !== 'none') return null;
+  const verb = normalized.match(CREATE_VERB)?.[0] ?? '';
+  const object = normalized.slice(verb.length);
+  // Bare „ćwiczenie nie działa” describes a problem. „Ćwiczenie na stopę” requests one.
+  if (!verb && !/^(?:nowe |jedno |cwiczenie (?:na|przy) )/.test(object)) return null;
+  const prefix = SINGLE_EXERCISE.exec(object);
+  if (!prefix) return null;
+
+  const topic = original.slice(verb.length + prefix[0].length).replace(/^[\s:,–-]+|[.!?\s]+$/g, '');
+  const name = /^(?:na|przy|dla)\s/i.test(topic) ? `Ćwiczenie ${topic}` : topic;
+  return { component: 'CreateExercise', name: name || undefined };
 }

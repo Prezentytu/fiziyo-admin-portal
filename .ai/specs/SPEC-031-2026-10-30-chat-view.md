@@ -119,6 +119,7 @@ Błędy: `400 invalid_message`, `400 insufficient_credits`, `403 forbidden`, `50
 
 - Pomoc produktowa uruchamia się lokalnie przed dispatcherem. Historia przechowuje temat karty, a w przypadku zgłoszenia wyłącznie szkic z bieżącej wiadomości lub standardowy opis problemu z dostępem do zestawu. Karta odczytuje bieżące uprawnienia przy wyświetleniu.
 - Zakres pierwszej wersji obejmuje gabinety, zespół, polecenia, widoczność pacjentów, dostęp do planu na telefonie, materiały FiziYo i opublikowane nowości portalu. Formularz zgłoszenia otwiera się z edytowalnym opisem. Potwierdzenie w rozmowie pojawia się po sukcesie istniejącej usługi zgłoszeń.
+- Prośba o utworzenie jednego ćwiczenia otwiera kartę „Nowe ćwiczenie”. Po udanym zapisie czat pyta „Czy dodać to ćwiczenie do zestawu?”. Odpowiedź można kliknąć lub wpisać.
 
 ### 2026-11-18
 

@@ -192,7 +192,7 @@ export function draftWithExercise(back: SetDraftReturn, exerciseId: string): Set
  */
 export function exerciseCreatedReply(
   exercise: { id: string; name: string },
-  options: { patientId?: string; addToSet?: SetDraftReturn }
+  options: { patientId?: string; addToSet?: SetDraftReturn; offerForSet?: SetDraftReturn }
 ): { text?: string; spec: ChatCardSpec } {
   if (options.addToSet) {
     return {
@@ -205,7 +205,37 @@ export function exerciseCreatedReply(
       component: 'ExerciseCreated',
       exerciseId: exercise.id,
       name: exercise.name,
+      ...(options.offerForSet ? { addToSet: options.offerForSet } : {}),
       ...(options.patientId ? { patientId: options.patientId } : {}),
     },
+  };
+}
+
+export const EXERCISE_NEXT_STEPS = ['Dodaj do zestawu', 'Gotowe'] as const;
+type ExerciseNextStep = (typeof EXERCISE_NEXT_STEPS)[number];
+
+export function exerciseNextStep(text: string): ExerciseNextStep | null {
+  const answer = text
+    .trim()
+    .replace(/[.!]+$/, '')
+    .toLocaleLowerCase('pl');
+  if (['tak', 'dodaj', 'tak, dodaj', 'dodaj do zestawu'].includes(answer)) return 'Dodaj do zestawu';
+  if (['nie', 'gotowe', 'nie teraz'].includes(answer)) return 'Gotowe';
+  return null;
+}
+
+export function afterExerciseChoice(
+  spec: Extract<ChatCardSpec, { component: 'ExerciseCreated' }>,
+  choice: ExerciseNextStep
+): { text: string; spec?: ChatCardSpec } {
+  if (choice === 'Gotowe') return { text: 'Dobrze. Ćwiczenie znajdziesz w katalogu.' };
+  const back = spec.addToSet;
+  return {
+    text: back
+      ? 'Nowe ćwiczenie jest w zestawie. Sprawdź całość i przejdź dalej.'
+      : 'Zestaw z nowym ćwiczeniem. Dodaj kolejne z katalogu albo przejdź dalej.',
+    spec: back
+      ? draftWithExercise(back, spec.exerciseId)
+      : { component: 'SetDraft', patientId: spec.patientId, exerciseIds: [spec.exerciseId] },
   };
 }

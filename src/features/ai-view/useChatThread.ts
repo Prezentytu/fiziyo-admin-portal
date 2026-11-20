@@ -3,12 +3,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { dispatchChatMessage } from './chatDispatchClient';
-import { addToDraftReply, draftRequest, openSetDraft, type LiveDraft } from './utils/addToDraft';
+import {
+  addToDraftReply,
+  afterExerciseChoice,
+  exerciseNextStep,
+  draftRequest,
+  openSetDraft,
+  type LiveDraft,
+} from './utils/addToDraft';
 import { lockSupersededDrafts, RESTORE_DRAFT_LABEL, RESTORED_DRAFT_TEXT } from './utils/draftVersions';
 import { cardPatientIds, latestCardPatientId, type ChatCardSpec } from './utils/chatCards';
 import { confirmAnswer, OTHER_PATIENT_OPTION, patientConfirmation } from './utils/clarifyChoice';
 import type { ChatThreadMessage } from './utils/conversationStore';
-import { routeForPatient, type IntentContext } from './utils/intentRouter';
+import { routeForPatient, singleExerciseRequest, type IntentContext } from './utils/intentRouter';
 import { threadNewPatientDetails } from './utils/newPatientDetails';
 import { replyText, resolveForPatient, resolveReply, type HeldReply } from './utils/resolveReply';
 import { scheduleQuestion, type SetDraftPayload } from './utils/setDraft';
@@ -229,6 +236,15 @@ export function useChatThread({
       // „Czy chodzi o…?”: „tak” (albo to samo imię) idzie dalej z tym pacjentem, „inny pacjent” otwiera wybór.
       const asked = messagesRef.current.findLast((message) => message.role === 'assistant');
       const isOpen = asked?.role === 'assistant' && (asked.chosen === undefined || asked.chosen === trimmed);
+      if (isOpen && asked.spec?.component === 'ExerciseCreated') {
+        const choice = exerciseNextStep(trimmed);
+        if (choice) {
+          markChosen(asked.id, choice);
+          pushUser(trimmed);
+          appendAssistant(afterExerciseChoice(asked.spec, choice));
+          return;
+        }
+      }
       const confirmation = isOpen ? patientConfirmation(asked.spec) : null;
       const answer = confirmation ? confirmAnswer(trimmed, confirmation.patientId, context.patients) : null;
       if (asked && confirmation && answer === 'yes') {
@@ -286,8 +302,12 @@ export function useChatThread({
       // „Dodaj ćwiczenie X” przy otwartej propozycji zestawu: ćwiczenie trafia do niej, bez AI i bez kredytu.
       const openDraft = openSetDraft(messagesRef.current);
       const liveDraft = openDraft ? getLiveDraft?.(openDraft.messageId) : undefined;
+      // „Dodaj” next to an open set edits it. Creating an exercise on its own offers the set after save.
+      const standalone = singleExerciseRequest(trimmed, context.patients) &&!/^(?:prosz[ęe]\s+)?dodaj\b/i.test(trimmed);
       const addition =
-        openDraft && liveDraft ? addToDraftReply(trimmed, liveDraft.draft, liveDraft.catalog, context.patients) : null;
+        openDraft && liveDraft && !standalone
+          ? addToDraftReply(trimmed, liveDraft.draft, liveDraft.catalog, context.patients)
+          : null;
       if (openDraft && addition) {
         // Nowa karta zestawu sama blokuje poprzednią; karta nowego ćwiczenia zamyka ją tutaj.
         if (addition.closesDraft && addition.reply.spec?.component !== 'SetDraft') {
@@ -321,7 +341,11 @@ export function useChatThread({
         let reply = resolved.notice ? resolved : withExerciseIdeas(trimmed, resolved);
         if (threadEpochRef.current !== epoch) return;
         // Nowe ćwiczenie, o które poproszono przy otwartej propozycji zestawu, wraca do tej propozycji.
-        if (openDraft && liveDraft && reply.spec?.component === 'CreateExercise' && draftRequest(trimmed)) {
+        if (openDraft && liveDraft && reply.spec?.component === 'CreateExercise' && standalone) {
+          reply = { ...reply, spec: { ...reply.spec, offerForSet: liveDraft.draft } };
+          // The offer carries this copy, so the card is locked: a later edit there would be lost on „Dodaj do zestawu”.
+          markChosen(openDraft.messageId, 'create-exercise');
+        } else if (openDraft && liveDraft && reply.spec?.component === 'CreateExercise' && draftRequest(trimmed)) {
           reply = { ...reply, spec: { ...reply.spec, addToSet: liveDraft.draft } };
           markChosen(openDraft.messageId, 'create-exercise');
         }

@@ -12,6 +12,44 @@ import {
 const CONTEXT = { patients: [{ id: 'p-jan', name: 'Jan Kowalski' }], sets: [] };
 
 describe('resolveReply', () => {
+  it.each([true, false])('starts one exercise for the reported request (AI %s)', async (useAi) => {
+    const dispatch: Dispatcher = vi.fn(async () => ({
+      sessionId: 's-foot',
+      text: 'Proponuję zestaw na ból stopy.',
+      spec: { component: 'SetDraft' as const, exerciseIds: ['e1', 'e2', 'e3'] },
+      creditsUsed: 1,
+    }));
+    const reply = await resolveReply('Zróbmy cwiczenie na bolącą stopę', { useAi, context: CONTEXT, dispatch });
+    expect(reply.spec).toEqual({ component: 'CreateExercise', name: 'Ćwiczenie na bolącą stopę' });
+    expect(reply.text).not.toContain('zestaw');
+    expect(reply.creditsUsed).toBe(useAi ? 1 : 0);
+  });
+
+  it('uses the name and description when the model proposes a single exercise', async () => {
+    const spec = { component: 'CreateExercise' as const, name: 'Przykładowy ruch', description: 'Opis testowy' };
+    const dispatch: Dispatcher = async () => ({ sessionId: 's', spec, creditsUsed: 1 });
+    const reply = await resolveReply('Proszę o jedno ćwiczenie na stopę', { useAi: true, context: CONTEXT, dispatch });
+    expect(reply.spec).toEqual(spec);
+  });
+
+  it('keeps the model card for the patient the exercise request names', async () => {
+    const spec = { component: 'ExerciseResults' as const, query: 'kolano', exerciseIds: ['e1'], patientId: 'p-jan' };
+    const dispatch = vi.fn<Dispatcher>(async () => ({ sessionId: 's', spec, creditsUsed: 1 }));
+    const message = 'Zaproponuj ćwiczenie na kolano dla Jana Kowalskiego';
+    const reply = await resolveReply(message, { useAi: true, context: CONTEXT, dispatch });
+    expect(dispatch).toHaveBeenCalledWith(message, undefined, undefined);
+    expect(reply.spec).toEqual(spec);
+  });
+
+  it.each(['Zróbmy zestaw ćwiczeń na stopę', 'Zróbmy ćwiczenia na stopę', 'Dodaj ćwiczenie do zestawu'])(
+    'keeps a requested set or multiple exercises (%s)',
+    async (message) => {
+      const spec = { component: 'SetDraft' as const, exerciseIds: ['e1', 'e2'] };
+      const dispatch: Dispatcher = async () => ({ sessionId: 's', spec, creditsUsed: 1 });
+      expect((await resolveReply(message, { useAi: true, context: CONTEXT, dispatch })).spec).toEqual(spec);
+    }
+  );
+
   it('uses the AI dispatcher when allowed', async () => {
     const dispatch: Dispatcher = vi.fn(async () => ({
       sessionId: 's-1',

@@ -16,6 +16,8 @@ Pomoc produktowa działa również bez kredytów. Czat pokazuje ścieżki dodani
 
 ## Jak sprawdzić
 
+- „Zróbmy ćwiczenie na bolącą stopę” otwiera kartę jednego ćwiczenia. Po jego zapisaniu czat pyta o dodanie do zestawu. „Tak” otwiera propozycję z zapisanym ćwiczeniem, a „Nie” kończy pracę z ćwiczeniem w katalogu.
+
 - Testy: `src/features/ai-view/utils/__tests__/viewSpec.test.ts`, `src/features/ai-view/utils/__tests__/resolveReply.test.ts`, `src/features/ai-view/utils/__tests__/intentRouter.test.ts`, `src/features/ai-view/utils/__tests__/sendPlan.test.ts`, `src/features/ai-view/utils/__tests__/setDraft.test.ts`, `src/features/ai-view/utils/__tests__/seedDraft.test.ts`, `src/features/ai-view/utils/__tests__/conversationStore.test.ts`, `src/features/ai-view/catalog/__tests__/useChatWrites.test.ts`, `src/features/ai-view/__tests__/useChatThread.test.ts`, `src/features/ai-credits/utils/__tests__/creditsRequest.test.ts`, `src/features/ai-credits/utils/__tests__/creditsUsage.test.ts`, `src/features/ai-credits/AiCreditsDetailsPopover.test.tsx`.
 - E2E w `fiziyo-tests:TEST_PLAN.md`: N04 (w trybie czatu menu zwinięte na `/patients`, „Rozwiń menu” w nagłówku je przywraca), stan nieodhaczony.
 - Ręcznie: „znajdź ćwiczenie na kolano” daje kartę wyników; szkic zestawu z czatu wysłany pacjentowi daje plan widoczny w karcie pacjenta i w aplikacji z tymi samymi liczbami; przy wyłączonym AI albo błędzie dyspozytora odpowiedź przychodzi z reguł; przy zerowym saldzie czat mówi o kredytach, a saldo nie spada.

@@ -209,7 +209,13 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
     if (!exercise) return;
     markChosen(messageId, 'created');
     // Ćwiczenie utworzone dla propozycji zestawu: zestaw wraca od razu, z nowym ćwiczeniem.
-    appendAssistant(exerciseCreatedReply(exercise, { patientId: contextPatient?.id, addToSet: spec.addToSet }));
+    appendAssistant(
+      exerciseCreatedReply(exercise, {
+        patientId: contextPatient?.id,
+        addToSet: spec.addToSet,
+        offerForSet: spec.offerForSet,
+      })
+    );
   });
 
   if (chosen !== undefined) {

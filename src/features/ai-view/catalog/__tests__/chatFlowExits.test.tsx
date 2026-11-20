@@ -77,6 +77,21 @@ describe('wyjścia z kroków czatu', () => {
     expect(screen.queryByTestId('old-assign-btn')).toBeNull();
   });
 
+  it.each(['Dodaj do zestawu', 'Gotowe'])('pyta po zapisie i respektuje odpowiedź „%s”', (choice) => {
+    render(
+      <ExerciseCreatedCard
+        spec={{ component: 'ExerciseCreated', exerciseId: 'e1', name: 'Test' }}
+        testId="created"
+        messageId="m1"
+      />
+    );
+    expect(screen.getByText(/Czy dodać to ćwiczenie do zestawu/)).toBeInTheDocument();
+    expect(appendExchange).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: choice }));
+    if (choice === 'Gotowe') expect(appendExchange.mock.calls[0][1].spec).toBeUndefined();
+    else expect(appendExchange.mock.calls[0][1].spec).toMatchObject({ component: 'SetDraft', exerciseIds: ['e1'] });
+  });
+
   it('ćwiczenie utworzone z propozycji zestawu wraca do niej z dawkami pozostałych ćwiczeń', () => {
     render(
       <ExerciseCreatedCard

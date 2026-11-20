@@ -263,6 +263,34 @@ describe('useChatThread', () => {
       });
     });
 
+    it.each(['tak', 'nie'])('offers the open draft after saving and accepts a typed „%s”', async (answer) => {
+      const { result } = renderHook(() =>
+        useChatThread({ useAi: false, context: CONTEXT, ready: true, scopeKey: 'org-a', getLiveDraft })
+      );
+      act(() => result.current.appendAssistant({ spec: { component: 'SetDraft', ...draft } }));
+      await act(() => result.current.send('Utwórz ćwiczenie na stopę'));
+      expect(result.current.messages.at(-1)).toMatchObject({
+        spec: { component: 'CreateExercise', name: 'Ćwiczenie na stopę', offerForSet: draft },
+      });
+      expect(result.current.messages.at(-1)).not.toHaveProperty('spec.addToSet');
+      // The offer holds a copy of the proposal, so the proposal cannot be edited behind it.
+      expect(result.current.messages.at(-3)).toMatchObject({ chosen: 'create-exercise' });
+      act(() =>
+        result.current.appendAssistant({
+          spec: { component: 'ExerciseCreated', exerciseId: 'new', name: 'Test', addToSet: draft },
+        })
+      );
+      await act(() => result.current.send(answer));
+      const reply = result.current.messages.at(-1);
+      if (answer === 'tak') {
+        expect(reply).toMatchObject({ spec: { component: 'SetDraft', exerciseIds: ['e-clam', 'new'], doses: draft.doses } });
+      } else {
+        expect(reply).toMatchObject({ role: 'assistant' });
+        expect(reply?.role === 'assistant' && reply.spec).toBeUndefined();
+      }
+      expect(dispatchMock).not.toHaveBeenCalled();
+    });
+
     it('works the same without AI', async () => {
       const { result } = renderHook(() =>
         useChatThread({ useAi: false, context: CONTEXT, ready: true, scopeKey: 'org-a', getLiveDraft })

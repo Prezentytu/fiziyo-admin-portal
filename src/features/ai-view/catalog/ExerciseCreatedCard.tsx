@@ -4,10 +4,8 @@ import Link from 'next/link';
 
 import { useChatActions } from '../ChatSessionContext';
 import type { CardProps } from './cardProps';
-import { draftWithExercise } from '../utils/addToDraft';
+import { afterExerciseChoice, EXERCISE_NEXT_STEPS } from '../utils/addToDraft';
 import { QuickReplies } from './QuickReplies';
-
-const NEXT_STEPS = ['Dodaj do zestawu', 'Gotowe'] as const;
 
 /** Stored result of the create-exercise form, so a reload never offers to create it twice. */
 export function ExerciseCreatedCard({ spec, testId, messageId, chosen }: CardProps<'ExerciseCreated'>) {
@@ -21,26 +19,15 @@ export function ExerciseCreatedCard({ spec, testId, messageId, chosen }: CardPro
         </Link>
         .
       </p>
+      <p>Czy dodać to ćwiczenie do zestawu?</p>
       <QuickReplies
-        options={NEXT_STEPS}
+        options={EXERCISE_NEXT_STEPS}
         chosen={chosen}
         testId={testId}
-        onPick={(option) => {
+        onPick={(_, index) => {
+          const option = EXERCISE_NEXT_STEPS[index];
           markChosen(messageId, option);
-          if (option === 'Dodaj do zestawu') {
-            // Ćwiczenie utworzone z propozycji zestawu wraca do tej propozycji, z jej parametrami.
-            const back = spec.addToSet;
-            appendExchange(option, {
-              text: back
-                ? 'Nowe ćwiczenie jest w zestawie. Sprawdź całość i przejdź dalej.'
-                : 'Zestaw z nowym ćwiczeniem. Dodaj kolejne z katalogu albo przejdź dalej.',
-              spec: back
-                ? draftWithExercise(back, spec.exerciseId)
-                : { component: 'SetDraft', patientId: spec.patientId, exerciseIds: [spec.exerciseId] },
-            });
-          } else {
-            appendExchange(option, { text: 'Dobrze. Ćwiczenie znajdziesz w katalogu.' });
-          }
+          appendExchange(option, afterExerciseChoice(spec, option));
         }}
       />
     </div>

@@ -72,6 +72,8 @@ export type ChatViewSpec =
       positionOptions?: string[];
       /** Only from the thread itself: the set draft the new exercise goes back to. */
       addToSet?: SetDraftReturn;
+      /** A standalone request can join this proposal only after the therapist chooses to add it. */
+      offerForSet?: SetDraftReturn;
     };
 
 export interface ClarifyChoice {

@@ -124,6 +124,14 @@ describe('routeIntent', () => {
     expect(routeIntent('znajdź ćwiczenia na bark', CONTEXT).component).toBe('ExerciseResults');
   });
 
+  it('keeps the patient of an exercise request instead of naming a catalog exercise after them', () => {
+    expect(routeIntent('Zaproponuj ćwiczenie na kolano dla Jana Kowalskiego', CONTEXT)).toMatchObject({
+      component: 'ExerciseResults',
+      patientId: 'p-jan',
+    });
+    expect(routeIntent('Zrób ćwiczenie na kolano dla pacjenta', CONTEXT).component).not.toBe('CreateExercise');
+  });
+
   it('says it cannot help with anything else', () => {
     expect(routeIntent('jaka jest pogoda', CONTEXT)).toEqual(UNSUPPORTED_SPEC);
     expect(routeIntent('   ', CONTEXT)).toEqual(UNSUPPORTED_SPEC);

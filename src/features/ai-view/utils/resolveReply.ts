@@ -1,6 +1,12 @@
 import { normalizeSearchText } from '@/features/exercises/utils/exerciseSearch';
 import { confirmPatientSpec, labelPatientChoices, patientConfirmation } from './clarifyChoice';
-import { askWhichPatient, routeForPatient, routeIntent, type IntentContext } from './intentRouter';
+import {
+  askWhichPatient,
+  routeForPatient,
+  routeIntent,
+  singleExerciseRequest,
+  type IntentContext,
+} from './intentRouter';
 import { matchPatients } from './patientMatch';
 import {
   addPatientReply,
@@ -102,7 +108,27 @@ export async function resolveReply(
     );
   if (options.useAi) {
     try {
-      const result = await options.dispatch(text, options.sessionId, options.signal);
+      const exercise = singleExerciseRequest(text, options.context.patients);
+      const command = exercise
+        ? `Utwórz jedno ćwiczenie do katalogu gabinetu. Jeśli podano tylko cel, zaproponuj konkretny ruch. Podaj jego nazwę i opis wykonania. Prośba: ${text}`
+        : text;
+      const result = await options.dispatch(command, options.sessionId, options.signal);
+      // Keep the server refusal and any clarifying question. A proposed plan or search cannot fulfil this request.
+      if (
+        exercise &&
+        !result.notice &&
+        (result.spec?.component === 'SetDraft' ||
+          result.spec?.component === 'AssignSummary' ||
+          result.spec?.component === 'ExerciseResults')
+      ) {
+        return {
+          text: replyText(undefined, exercise, options.context),
+          spec: exercise,
+          source: 'ai',
+          sessionId: result.sessionId,
+          creditsUsed: result.creditsUsed,
+        };
+      }
       const original = withNewPatientDetails(result.spec, text, options.newPatientContext);
       const guarded = guardCardPatient(original, text, options.context, options.contextPatientId, known);
       // A card the guard changed keeps no model sentence: it may name the patient just taken off.
