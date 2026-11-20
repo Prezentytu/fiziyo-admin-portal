@@ -299,12 +299,13 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
         className="flex flex-col gap-3"
         data-testid={`${testId}-form`}
       >
-        <label className="flex flex-col gap-1.5 text-[13px] text-label-secondary">
-          Nazwa
+        <div className="flex flex-col gap-1.5 text-[13px] text-label-secondary">
+          <label htmlFor={`${testId}-name`}>Nazwa</label>
           <span className="flex gap-2">
             <Input
               className="min-w-0 flex-1"
               aria-invalid={errors.name ? true : undefined}
+              id={`${testId}-name`}
               data-testid={`${testId}-name-input`}
               {...form.register('name')}
               onKeyDown={(event) => {
@@ -327,7 +328,7 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
             )}
           </span>
           {errors.name && <span className="text-[12px] text-status-danger">{errors.name.message}</span>}
-        </label>
+        </div>
 
         {!started && useAi && (
           <p className="text-[13px] text-label-tertiary">

@@ -47,7 +47,7 @@ export type LocalCardSpec =
   | { component: 'PatientAdded'; patientId: string; name: string }
   | { component: 'ExerciseCreated'; exerciseId: string; name: string; patientId?: string; addToSet?: SetDraftReturn }
   | { component: 'ScanVisit'; patientId?: string }
-  | { component: 'ExerciseIdeas'; query: string; patientId?: string }
+  | { component: 'ExerciseIdeas'; query: string; patientId?: string; forSet?: SetDraftReturn }
   | { component: 'CatalogCounts'; focus: CountFocus }
   | { component: 'DocumentResult'; fileName: string; items: DocumentItem[]; patientId?: string };
 

@@ -117,6 +117,8 @@ Błędy: `400 invalid_message`, `400 insufficient_credits`, `403 forbidden`, `50
 
 ### 2026-11-20
 
+- Pusty wynik doboru ćwiczeń do zestawu prowadzi do propozycji nazw i tworzenia ćwiczenia z asystentem. Powrót do szkicu następuje po potwierdzonym zapisie ćwiczenia.
+
 - Karta dodawania lokalizacji prowadzi przyciskiem „Otwórz Gabinety” do zakładki `/organization?tab=clinics`. W menu konta czatu ten ekran jest pod „Organizacja”, a w menu klasycznym pod „Zespół”.
 
 - Pomoc produktowa uruchamia się lokalnie przed dispatcherem. Historia przechowuje temat karty, a w przypadku zgłoszenia wyłącznie szkic z bieżącej wiadomości lub standardowy opis problemu z dostępem do zestawu. Karta odczytuje bieżące uprawnienia przy wyświetleniu.

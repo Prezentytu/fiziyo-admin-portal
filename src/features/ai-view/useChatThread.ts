@@ -19,8 +19,14 @@ import { routeForPatient, singleExerciseRequest, type IntentContext } from './ut
 import { threadNewPatientDetails } from './utils/newPatientDetails';
 import { replyText, resolveForPatient, resolveReply, type HeldReply } from './utils/resolveReply';
 import { scheduleQuestion, type SetDraftPayload } from './utils/setDraft';
-import { accountQuestionReply, countQuestion, localReplyTo, withExerciseIdeas } from './utils/threadLocalReply';
 import { exerciseFormFromDiscussion, opensExerciseForm } from './utils/exerciseDiscussion';
+import {
+  accountQuestionReply,
+  countQuestion,
+  localReplyTo,
+  setCatalogFallback,
+  withExerciseIdeas,
+} from './utils/threadLocalReply';
 import { productHelpFor } from './utils/productHelp';
 import { UNSUPPORTED_SPEC } from './utils/viewSpec';
 
@@ -328,6 +334,11 @@ export function useChatThread({
         appendAssistant(addition.reply);
         return;
       }
+      const catalogContext =
+        pendingCommandRef.current ??
+        (asked?.spec?.component === 'Clarify'
+          ? messagesRef.current.findLast((message) => message.role === 'user')?.text
+          : undefined);
       inFlightRef.current = true;
       pushUser(trimmed);
       setIsBusy(true);
@@ -349,7 +360,16 @@ export function useChatThread({
         });
         // Pytanie o ćwiczenia bez karty w odpowiedzi (nic nie pasuje): pomysły na nowe dla tej potrzeby.
         // A refusal about a patient gets no card, so no exercise ideas either.
-        let reply = resolved.notice ? resolved : withExerciseIdeas(trimmed, resolved);
+        const search = !resolved.notice && setCatalogFallback(trimmed, catalogContext, resolved.spec, context.patients);
+        let reply = search
+          ? {
+              ...resolved,
+              spec: search,
+              text: 'Sprawdźmy katalog. Jeśli brakuje pasującego ruchu, możesz przygotować nowe ćwiczenie z asystentem.',
+            }
+          : resolved.notice
+            ? resolved
+            : withExerciseIdeas(trimmed, resolved);
         if (threadEpochRef.current !== epoch) return;
         // Nowe ćwiczenie, o które poproszono przy otwartej propozycji zestawu, wraca do tej propozycji.
         if (openDraft && liveDraft && reply.spec?.component === 'CreateExercise' && standalone) {

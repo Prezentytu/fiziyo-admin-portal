@@ -69,6 +69,39 @@ describe('useChatThread', () => {
     expect(dispatchMock).toHaveBeenCalledTimes(2);
   });
 
+  it('keeps the set request when the catalog choice gives only a link to exercises', async () => {
+    const choice = 'Dobierz z katalogu na zdrowe plecy';
+    dispatchMock.mockResolvedValueOnce({
+      sessionId: 's',
+      spec: { component: 'Clarify', question: 'Skąd mam wziąć ćwiczenia do zestawu?', options: [choice] },
+      creditsUsed: 1,
+    });
+    dispatchMock.mockResolvedValueOnce({
+      sessionId: 's',
+      spec: { component: 'Navigate', route: 'exercises' },
+      text: 'Nie znalazłem ćwiczeń. Podaj nazwy.',
+      creditsUsed: 1,
+    });
+    const { result } = renderHook(() => useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org' }));
+    await act(() =>
+      result.current.send('Stworzymy zestaw bazujący na https://blog.fiziyo.pl/kurs/zdrowe-plecy-7-dni/')
+    );
+    await act(() => result.current.send(choice));
+    expect(result.current.messages.at(-1)).toMatchObject({
+      spec: {
+        component: 'ExerciseResults',
+        query: 'zdrowe plecy',
+        exerciseIds: [],
+        forSet: { exerciseIds: [], note: 'zdrowe plecy' },
+      },
+    });
+    await act(() => result.current.send('Tak, zróbmy ćwiczenie z asystentem'));
+    expect(result.current.messages.at(-1)).toMatchObject({
+      spec: { component: 'CreateExercise', addToSet: { note: 'zdrowe plecy' } },
+    });
+    expect(dispatchMock).toHaveBeenCalledTimes(2);
+  });
+
   it('sends a full name that is not on the visible list to the server and shows its notice without a card', async () => {
     const text = 'Ten pacjent jest już w gabinecie i prowadzi go inny fizjoterapeuta.';
     dispatchMock.mockResolvedValueOnce({

@@ -16,6 +16,7 @@ Pomoc produktowa działa również bez kredytów. Czat pokazuje ścieżki dodani
 
 ## Jak sprawdzić
 
+- Po prośbie o zestaw i wyborze „Dobierz z katalogu na zdrowe plecy” czat sprawdza bibliotekę gabinetu. Przy pustym wyniku proponuje nazwy nowych ćwiczeń. Wybór propozycji otwiera formularz z przyciskiem „Generuj”. Fizjoterapeuta może poprawić opis i parametry. „Utwórz ćwiczenie” zapisuje je w katalogu i umieszcza w szkicu zestawu.
 - „Zróbmy ćwiczenie na bolącą stopę” rozpoczyna rozmowę o ćwiczeniach dostępnych w katalogu aktywnej organizacji. Kliknięcie nazwy pozwala omówić ruch. „Utwórz własne ćwiczenie” otwiera formularz. Po jego zapisaniu czat pyta o dodanie do zestawu. „Tak” otwiera propozycję z zapisanym ćwiczeniem, a „Nie” kończy pracę z ćwiczeniem w katalogu.
 
 - Testy: `src/features/ai-view/utils/__tests__/viewSpec.test.ts`, `src/features/ai-view/utils/__tests__/resolveReply.test.ts`, `src/features/ai-view/utils/__tests__/intentRouter.test.ts`, `src/features/ai-view/utils/__tests__/sendPlan.test.ts`, `src/features/ai-view/utils/__tests__/setDraft.test.ts`, `src/features/ai-view/utils/__tests__/seedDraft.test.ts`, `src/features/ai-view/utils/__tests__/conversationStore.test.ts`, `src/features/ai-view/catalog/__tests__/useChatWrites.test.ts`, `src/features/ai-view/__tests__/useChatThread.test.ts`, `src/features/ai-credits/utils/__tests__/creditsRequest.test.ts`, `src/features/ai-credits/utils/__tests__/creditsUsage.test.ts`, `src/features/ai-credits/AiCreditsDetailsPopover.test.tsx`.

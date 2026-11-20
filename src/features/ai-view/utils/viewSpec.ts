@@ -42,7 +42,7 @@ export type ChatViewSpec =
       warmupExerciseIds?: string[];
     }
   | { component: 'AssignSummary'; patientId: string; setId: string }
-  | { component: 'ExerciseResults'; query: string; exerciseIds: string[]; patientId?: string }
+  | { component: 'ExerciseResults'; query: string; exerciseIds: string[]; patientId?: string; forSet?: SetDraftReturn }
   | { component: 'PatientPeek'; patientId?: string; filter?: 'inactive' }
   | { component: 'Navigate'; route: NavigateRoute }
   | {
