@@ -115,6 +115,10 @@ import type {
   PatientAssignmentsByUserQueryData,
 } from '@/graphql/types/operation-responses';
 import { isTemplateSet } from '@/features/exercise-sets/utils/setKind';
+import { orderWarmupFirst, seedSourceWarmup } from '@/features/exercise-sets/utils/exerciseDependencies';
+import { useMarkWarmupPositions } from '@/features/exercise-sets/hooks/useMarkWarmupPositions';
+import { GET_EXERCISE_SET_DEPENDENCIES_QUERY } from '@/graphql/queries/exerciseSets.queries';
+import type { GetExerciseSetDependenciesResponse } from '@/graphql/types';
 import { polishPlural } from '@/utils/polishPlural';
 import {
   trackAssignmentWizardAbandon,
@@ -316,6 +320,7 @@ function AssignmentWizardContent({
   // State for CustomizeSetStep builder
   const [builderInstances, setBuilderInstances] = useState<ExerciseInstance[]>([]);
   const [builderParams, setBuilderParams] = useState<Map<string, ExerciseParams>>(new Map());
+  const markWarmup = useMarkWarmupPositions();
   const [isExerciseDialogOpen, setIsExerciseDialogOpen] = useState(false);
   const [isPatientDialogOpen, setIsPatientDialogOpen] = useState(false);
 
@@ -417,6 +422,29 @@ function AssignmentWizardContent({
     setEndDate(new Date(initialAssignment.endDate));
     setAssignmentNote(initialAssignment.notes ?? '');
   }, [open, isEditMode, initialAssignment, preselectedPatient]);
+
+  // SPEC-061: rozgrzewka zestawu źródłowego przechodzi do nowego planu (kopia idzie pozycja po pozycji).
+  // errorPolicy all: API bez fizjo-app#682 = brak flag, bez błędu.
+  const sourceSetId = isEditMode ? undefined : (selectedSet?.id ?? preselectedSet?.id);
+  const { data: sourceDependencies } = useQuery<GetExerciseSetDependenciesResponse>(GET_EXERCISE_SET_DEPENDENCIES_QUERY, {
+    variables: { exerciseSetId: sourceSetId ?? '' },
+    skip: !open || !sourceSetId,
+    errorPolicy: 'all',
+  });
+  const sourceWarmupMappingIds = useMemo(
+    () =>
+      (sourceDependencies?.exerciseSetById?.exerciseMappings ?? [])
+        .filter((mapping) => mapping.isWarmup)
+        .map((mapping) => mapping.id),
+    [sourceDependencies]
+  );
+  useEffect(() => {
+    if (sourceWarmupMappingIds.length === 0) return;
+    const seeded = seedSourceWarmup(builderInstances, builderParams, sourceWarmupMappingIds);
+    if (!seeded) return;
+    setBuilderParams(seeded);
+    setBuilderInstances(orderWarmupFirst(builderInstances, (instance) => seeded.get(instance.instanceId)?.isWarmup === true));
+  }, [sourceWarmupMappingIds, builderInstances, builderParams]);
 
   // Handle set change - create Ghost Copy and apply Smart Defaults
   const handleSetChange = useCallback((set: ExerciseSet | null) => {
@@ -1448,6 +1476,9 @@ function AssignmentWizardContent({
       let effectiveSetForSuccess: ExerciseSet | null = null;
 
       const instanceIdToMappingId = new Map<string, string>();
+      const isWarmupInstance = (instance: ExerciseInstance) => builderParams.get(instance.instanceId)?.isWarmup === true;
+      const orderedInstances = orderWarmupFirst(builderInstances, isWarmupInstance);
+      const warmupFlags = orderedInstances.map(isWarmupInstance);
       const deltasByInstanceId = buildAssignmentOverrideDeltasFromBuilder(
         builderInstances,
         builderParams,
@@ -1472,8 +1503,8 @@ function AssignmentWizardContent({
           throw new Error('Nie udało się utworzyć planu pacjenta');
         }
 
-        for (let i = 0; i < builderInstances.length; i++) {
-          const instance = builderInstances[i];
+        for (let i = 0; i < orderedInstances.length; i++) {
+          const instance = orderedInstances[i];
           const exercise = availableExercises.find((item) => item.id === instance.exerciseId);
 
           try {
@@ -1492,11 +1523,12 @@ function AssignmentWizardContent({
         }
 
         exerciseSetIdToAssign = newSet.id;
+        await markWarmup(newSet.id, warmupFlags);
         effectiveSetForSuccess = buildExerciseSetFromBuilder({
           setId: newSet.id,
           setName: planName.trim(),
           description: undefined,
-          builderInstances,
+          builderInstances: orderedInstances,
           builderParams,
           availableExercises,
         });
@@ -1533,8 +1565,8 @@ function AssignmentWizardContent({
 
           const organizationSet = organizationSetResult.data?.createExerciseSet;
           if (organizationSet?.id) {
-            for (let i = 0; i < builderInstances.length; i++) {
-              const instance = builderInstances[i];
+            for (let i = 0; i < orderedInstances.length; i++) {
+              const instance = orderedInstances[i];
               const exercise = availableExercises.find((item) => item.id === instance.exerciseId);
 
               try {
@@ -1547,6 +1579,7 @@ function AssignmentWizardContent({
                 throw new Error(`Nie udalo sie dodac cwiczenia "${exerciseName}" do zestawu organizacji`);
               }
             }
+            await markWarmup(organizationSet.id, warmupFlags);
             toast.success(`Zapisano zestaw organizacji "${organizationSetName}"`);
           }
         } catch (organizationSetError) {
@@ -1737,6 +1770,7 @@ function AssignmentWizardContent({
             hideNameSection
             onCreateExercise={() => setIsExerciseDialogOpen(true)}
             isCreatingExercise={isExerciseDialogOpen}
+            showWarmupToggle={!isEditMode}
           />
         );
 

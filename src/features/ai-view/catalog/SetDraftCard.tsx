@@ -104,7 +104,8 @@ function DraftRow({
           className="rounded-[10px]"
         />
         <div className="min-w-0 flex-1">
-          <p className="flex items-center gap-2 text-[15px] font-medium leading-[21px] text-foreground">
+          {/* div, nie p: znaczniki (Badge) renderują div, a div w p psuje hydratację (SPEC-061, znalezione na żywo). */}
+          <div className="flex items-center gap-2 text-[15px] font-medium leading-[21px] text-foreground">
             <span className="truncate">{name}</span>
             {added && (
               <Badge className="shrink-0" data-testid={`${testId}-new-${item.exerciseId}`}>
@@ -128,7 +129,7 @@ function DraftRow({
                 )}
               </Badge>
             )}
-          </p>
+          </div>
           <p className="truncate text-[13px] leading-[18px] tabular-nums text-label-secondary">
             {formatDraftParams(item)}
             {timeUnknown ? '' : ` · ok. ${itemMinutes(item)} min`}
@@ -427,7 +428,14 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => openCreateSet(draftIds, toWizardPatient(patient), name)}
+                onClick={() =>
+                  openCreateSet(
+                    draftIds,
+                    toWizardPatient(patient),
+                    name,
+                    items.filter((item) => item.isWarmup).map((item) => item.exerciseId)
+                  )
+                }
                 disabled={items.length === 0}
                 data-testid={`${testId}-full-editor-btn`}
               >

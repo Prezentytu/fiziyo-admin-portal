@@ -1,6 +1,5 @@
 'use client';
 
-import { useCallback } from 'react';
 import { useApolloClient, useMutation } from '@apollo/client/react';
 import { toast } from 'sonner';
 
@@ -11,7 +10,6 @@ import {
   ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION,
   CREATE_EXERCISE_MUTATION,
   CREATE_EXERCISE_SET_MUTATION,
-  UPDATE_EXERCISE_SET_DEPENDENCIES_MUTATION,
   UPLOAD_EXERCISE_IMAGE_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
 import { formatPatientPhone, patientCreateRefetchQueries } from '@/features/patients/utils/shadowPatient';
@@ -19,19 +17,12 @@ import { CREATE_SHADOW_PATIENT_MUTATION } from '@/graphql/mutations/users.mutati
 import { GET_CURRENT_BILLING_STATUS_QUERY } from '@/graphql/queries/billing.queries';
 import { GET_AVAILABLE_EXERCISES_PICKER_QUERY } from '@/graphql/queries/exercises.queries';
 import { fetchWholeLibrary } from '@/lib/graphql/wholeLibrary';
-import {
-  GET_EXERCISE_SET_DEPENDENCIES_QUERY,
-  GET_ORGANIZATION_EXERCISE_SETS_QUERY,
-} from '@/graphql/queries/exerciseSets.queries';
+import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import { GET_ORGANIZATION_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
 import type { CreateExerciseMutationResult, CreateExerciseVariables } from '@/graphql/types/exercise.types';
-import type {
-  GetExerciseSetDependenciesResponse,
-  UpdateExerciseSetDependenciesResponse,
-  UpdateExerciseSetDependenciesVariables,
-} from '@/graphql/types';
-import { buildWarmupDependencyItems } from '@/features/exercise-sets/utils/exerciseDependencies';
+import { useMarkWarmupPositions } from '@/features/exercise-sets/hooks/useMarkWarmupPositions';
+import { orderWarmupFirst } from '@/features/exercise-sets/utils/exerciseDependencies';
 import {
   submitCreateTemplateSet,
   type AddExerciseToSetVariables,
@@ -43,6 +34,8 @@ import {
 import type { SchedulePlan } from '../utils/schedulePlan';
 import { sendPlan, type AssignPlanVariables, type CreatePatientPlanVariables } from '../utils/sendPlan';
 import { toMappingInput, type DraftItem, type SetDraftPayload } from '../utils/setDraft';
+
+const isWarmupItem = (item: DraftItem) => item.isWarmup === true;
 
 interface CreatedSet {
   createExerciseSet?: { id?: string; name?: string };
@@ -61,41 +54,6 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
-/**
- * SPEC-061: rozgrzewka zaakceptowana w propozycji trafia na pozycje nowego zestawu. Zestaw jest już zapisany,
- * więc błąd tutaj (np. API bez fizjo-app#682) tylko ostrzega i nie cofa zapisu.
- */
-function useMarkWarmup() {
-  const apolloClient = useApolloClient();
-  const [updateDependencies] = useMutation<
-    UpdateExerciseSetDependenciesResponse,
-    UpdateExerciseSetDependenciesVariables
-  >(UPDATE_EXERCISE_SET_DEPENDENCIES_MUTATION);
-
-  return useCallback(
-    async (exerciseSetId: string, items: readonly DraftItem[]) => {
-      if (!items.some((item) => item.isWarmup)) return;
-      try {
-        const { data } = await apolloClient.query<GetExerciseSetDependenciesResponse>({
-          query: GET_EXERCISE_SET_DEPENDENCIES_QUERY,
-          variables: { exerciseSetId },
-          fetchPolicy: 'network-only',
-        });
-        const dependencyItems = buildWarmupDependencyItems(
-          data?.exerciseSetById?.exerciseMappings ?? [],
-          items.map((item) => item.isWarmup === true)
-        );
-        if (dependencyItems.length === 0) throw new Error('Pozycje zestawu nie zgadzają się z propozycją');
-        await updateDependencies({ variables: { exerciseSetId, items: dependencyItems } });
-      } catch (error) {
-        console.error('Błąd oznaczania rozgrzewki:', error);
-        toast.warning('Zestaw zapisany, ale bez oznaczenia rozgrzewki. Oznacz ją w edycji zestawu.');
-      }
-    },
-    [apolloClient, updateDependencies]
-  );
-}
-
 function errorText(error: unknown, fallback: string): string {
   return error instanceof Error && error.message ? error.message : fallback;
 }
@@ -105,20 +63,21 @@ export function useSaveTemplateSet() {
   const [createSet] = useMutation(CREATE_EXERCISE_SET_MUTATION);
   const [addExercise] = useMutation(ADD_EXERCISE_TO_EXERCISE_SET_MUTATION);
   const apolloClient = useApolloClient();
-  const markWarmup = useMarkWarmup();
+  const markWarmup = useMarkWarmupPositions();
 
   const { run: saveTemplateSet, pending: saving } = useSingleFlight(
     async (organizationId: string, name: string, items: readonly DraftItem[], description?: string) => {
       try {
+        const ordered = orderWarmupFirst(items, isWarmupItem);
         const setId = await submitCreateTemplateSet(
           {
             createSet: (options) => createSet(options),
             addExercise: (options: { variables: AddExerciseToSetVariables }) => addExercise(options),
           },
           { organizationId, name, description },
-          items.map(toMappingInput)
+          ordered.map(toMappingInput)
         );
-        await markWarmup(setId, items);
+        await markWarmup(setId, ordered.map(isWarmupItem));
         void apolloClient.refetchQueries({ include: [GET_ORGANIZATION_EXERCISE_SETS_QUERY] }).catch(() => undefined);
         return { id: setId, name };
       } catch (error) {
@@ -137,13 +96,14 @@ export function useSendPlan() {
   const [addExercise] = useMutation(ADD_EXERCISE_TO_EXERCISE_SET_MUTATION);
   const [assign] = useMutation<AssignedSet>(ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION);
   const apolloClient = useApolloClient();
-  const markWarmup = useMarkWarmup();
+  const markWarmup = useMarkWarmupPositions();
 
   const { run: send, pending: sending } = useSingleFlight(
     async (organizationId: string, patientId: string, draft: SetDraftPayload, plan: SchedulePlan) => {
       try {
+        const ordered = { ...draft, items: orderWarmupFirst(draft.items, isWarmupItem) };
         const result = await sendPlan(
-          { organizationId, patientId, draft, plan },
+          { organizationId, patientId, draft: ordered, plan },
           {
             createSet: async (variables: CreatePatientPlanVariables) =>
               (await createSet({ variables })).data?.createExerciseSet?.id ?? null,
@@ -152,7 +112,7 @@ export function useSendPlan() {
               (await assign({ variables })).data?.assignExerciseSetToPatient?.id ?? null,
           }
         );
-        await markWarmup(result.setId, draft.items);
+        await markWarmup(result.setId, ordered.items.map(isWarmupItem));
         void Promise.all([
           apolloClient.query({
             query: GET_ORGANIZATION_PATIENTS_QUERY,

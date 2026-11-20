@@ -9,6 +9,8 @@ import {
   countDependencyStats,
   describeDependencyChips,
   mergeDependencyFields,
+  orderWarmupFirst,
+  seedSourceWarmup,
   normalizeDependencyMode,
   rankPositions,
   sanitizeRequirements,
@@ -199,5 +201,38 @@ describe('buildWarmupDependencyItems', () => {
   it('sends nothing when the created set does not match the proposal or nothing is a warm-up', () => {
     expect(buildWarmupDependencyItems([{ id: 'm0', order: 0 }], [true, false])).toEqual([]);
     expect(buildWarmupDependencyItems([{ id: 'm0', order: 0 }], [false])).toEqual([]);
+  });
+});
+
+describe('orderWarmupFirst', () => {
+  it('moves warm-up rows to the top and keeps the rest of the order', () => {
+    const rows = [
+      { id: 'a', warmup: false },
+      { id: 'w1', warmup: true },
+      { id: 'b', warmup: false },
+      { id: 'w2', warmup: true },
+    ];
+    expect(orderWarmupFirst(rows, (row) => row.warmup).map((row) => row.id)).toEqual(['w1', 'w2', 'a', 'b']);
+  });
+});
+
+describe('seedSourceWarmup', () => {
+  const instances = [{ instanceId: 'existing-m1' }, { instanceId: 'existing-m2' }, { instanceId: 'new-x' }];
+
+  it('marks copied positions that are a warm-up in the source set', () => {
+    const params = new Map<string, { sets?: number; isWarmup?: boolean }>([
+      ['existing-m1', { sets: 3 }],
+      ['existing-m2', { sets: 2 }],
+      ['new-x', { sets: 1 }],
+    ]);
+    const next = seedSourceWarmup(instances, params, ['m2']);
+    expect(next?.get('existing-m2')).toEqual({ sets: 2, isWarmup: true });
+    expect(next?.get('existing-m1')).toEqual({ sets: 3 });
+  });
+
+  it('leaves the therapist decision alone and reports no change', () => {
+    const params = new Map<string, { isWarmup?: boolean }>([['existing-m2', { isWarmup: false }]]);
+    expect(seedSourceWarmup(instances, params, ['m2'])).toBeNull();
+    expect(seedSourceWarmup(instances, new Map<string, { isWarmup?: boolean }>([['existing-m1', {}]]), [])).toBeNull();
   });
 });
