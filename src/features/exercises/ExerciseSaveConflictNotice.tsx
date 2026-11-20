@@ -38,7 +38,7 @@ export const SAVE_COLLISION_FIELD_LABELS: Readonly<Record<string, string>> = {
   'therapist.checkpoints': 'Punkty kontrolne',
   equipment_items: 'Sprzęt',
   'ai.keywords': 'Słowa kluczowe',
-  side: 'Strona: tryb i strona startowa',
+  side: 'Strona: tryb',
   prescription: 'Cel, zakresy dawki, progresja i regresja',
 };
 

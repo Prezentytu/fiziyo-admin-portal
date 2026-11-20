@@ -125,7 +125,7 @@ describe('readExerciseContent: rekord stary', () => {
     expect(content.notes).toBe('Korzyści: siła nóg');
     expect(content.audioCue).toBe('Plecy proste');
     expect(content.equipment.map((item) => item.label)).toEqual(['krzesło']);
-    expect(content.side).toEqual({ mode: 'BOTH', perSideDose: false, start: null, shownInMedia: null });
+    expect(content.side).toEqual({ mode: 'BOTH', perSideDose: false, shownInMedia: null });
   });
 
   it('rekord bez dokumentu czyta same kolumny', () => {
@@ -152,7 +152,7 @@ describe('readExerciseContent: rekord stary', () => {
       side: 'ALTERNATING',
       enrichmentData: { $schema: 'fiziyo-exercise-v3', side: { mode: 'alternating', per_side_dose: true } },
     });
-    expect(content.side).toEqual({ mode: 'ALTERNATING', perSideDose: false, start: null, shownInMedia: null });
+    expect(content.side).toEqual({ mode: 'ALTERNATING', perSideDose: false, shownInMedia: null });
   });
 });
 
@@ -205,7 +205,7 @@ describe('readExerciseContent: rekord 3.3', () => {
       { label: 'mata albo łóżko', code: 'mat', qty: 1, required: true, substitutes: [] },
       { label: 'mały zrolowany ręcznik', code: 'towel', qty: 1, required: true, substitutes: [] },
     ]);
-    expect(content.side).toEqual({ mode: 'each_side', perSideDose: true, start: 'left', shownInMedia: 'right' });
+    expect(content.side).toEqual({ mode: 'each_side', perSideDose: true, shownInMedia: 'right' });
     expect(content.clinicalDescription).toBeNull();
   });
 
@@ -367,7 +367,7 @@ describe('readExerciseContent: odporność', () => {
       { label: 'Guma', code: null, qty: null, required: null, substitutes: ['pasek'] },
     ]);
     expect(asNew.breathing).toBeNull();
-    expect(asNew.side).toEqual({ mode: null, perSideDose: false, start: null, shownInMedia: null });
+    expect(asNew.side).toEqual({ mode: null, perSideDose: false, shownInMedia: null });
     expect(asNew.indications).toEqual([]);
 
     expect(() => readExerciseContent({ enrichmentData: malformed } as unknown as ExerciseContentSource)).not.toThrow();
