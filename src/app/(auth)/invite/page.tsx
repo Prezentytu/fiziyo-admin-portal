@@ -12,7 +12,6 @@ import {
   AlertTriangle,
   Mail,
   Clock,
-  ArrowRight,
   UserPlus,
   Sparkles,
 } from 'lucide-react';
@@ -203,9 +202,8 @@ function InvitePageContent() {
       <PageWrapper>
         <Card
           className={cn(
-            'w-full max-w-md border-border/60 backdrop-blur-sm bg-surface/95',
-            'transition-all duration-700',
-            isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'
+            'w-full max-w-md border-border/60 transition-opacity duration-300 motion-reduce:transition-none',
+            isVisible ? 'opacity-100' : 'opacity-0'
           )}
         >
           <CardHeader className="text-center pb-4">
@@ -254,34 +252,23 @@ function InvitePageContent() {
             </div>
 
             {invitation.message && (
-              <div
-                className={cn(
-                  'rounded-xl bg-surface-light p-4 text-sm text-muted-foreground italic border border-border/60',
-                  'transition-all duration-500 delay-500',
-                  isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-                )}
-              >
+              <div className="rounded-xl border border-border/60 bg-surface-light p-4 text-sm text-foreground">
                 &ldquo;{invitation.message}&rdquo;
               </div>
             )}
 
-            <div
-              className={cn(
-                'space-y-3 transition-all duration-500 delay-600',
-                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-              )}
-            >
-              <Button asChild className="w-full gap-2" size="lg">
+            <div className="space-y-3">
+              <Button asChild className="w-full px-3 text-center sm:px-6" size="lg">
                 <Link href={`/sign-in?redirect_url=/invite?token=${token}`}>
                   <Mail className="h-4 w-4" />
-                  Zaloguj się aby dołączyć
+                  <span className="whitespace-normal">Zaloguj się aby dołączyć</span>
                 </Link>
               </Button>
-              <p className="text-xs text-center text-muted-foreground">
+              <p className="text-center text-sm text-foreground">
                 Nie masz konta?{' '}
                 <Link
                   href={`/register?redirect_url=/invite?token=${token}`}
-                  className="text-primary hover:underline font-medium"
+                  className="font-semibold text-tint underline underline-offset-4"
                 >
                   Zarejestruj się
                 </Link>
@@ -352,9 +339,9 @@ function InvitePageContent() {
     <PageWrapper>
       <Card
         className={cn(
-          'w-full max-w-md border-primary/30 shadow-2xl shadow-primary/10 backdrop-blur-sm bg-surface/95 overflow-hidden',
-          'transition-all duration-700',
-          isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'
+          'w-full max-w-md overflow-hidden border-primary/30 shadow-2xl shadow-primary/10',
+          'transition-opacity duration-300 motion-reduce:transition-none',
+          isVisible ? 'opacity-100' : 'opacity-0'
         )}
       >
         {/* Gradient accent top */}
@@ -435,46 +422,21 @@ function InvitePageContent() {
           )}
 
           {invitation.message && (
-            <div
-              className={cn(
-                'rounded-xl bg-surface-light p-4 text-sm text-muted-foreground italic border border-border/60',
-                'transition-all duration-500 delay-600',
-                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-              )}
-            >
+            <div className="rounded-xl border border-border/60 bg-surface-light p-4 text-sm text-foreground">
               &ldquo;{invitation.message}&rdquo;
             </div>
           )}
 
-          <div
-            className={cn(
-              'transition-all duration-500 delay-700',
-              isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+          <Button onClick={handleAccept} className="w-full px-3 sm:px-6" size="lg" disabled={isAccepting}>
+            {isAccepting ? (
+              <Loader2 className="animate-spin" />
+            ) : (
+              <>
+                <UserPlus />
+                <span className="whitespace-normal">Dołącz do organizacji</span>
+              </>
             )}
-          >
-            <Button
-              onClick={handleAccept}
-              className={cn(
-                'w-full gap-2 h-12 text-base font-semibold',
-                'bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary',
-                'shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30',
-                'transition-all duration-300 hover:scale-[1.02]',
-                !isAccepting && 'animate-pulse'
-              )}
-              size="lg"
-              disabled={isAccepting}
-            >
-              {isAccepting ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <>
-                  <UserPlus className="h-5 w-5" />
-                  Dołącz do organizacji
-                  <ArrowRight className="h-4 w-4 ml-1" />
-                </>
-              )}
-            </Button>
-          </div>
+          </Button>
         </CardContent>
       </Card>
     </PageWrapper>
