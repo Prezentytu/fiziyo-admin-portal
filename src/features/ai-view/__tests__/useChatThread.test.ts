@@ -22,6 +22,21 @@ describe('useChatThread', () => {
     });
   });
 
+  it.each([false, true])('guides a missing mobile plan through to feedback with AI=%s', async (useAi) => {
+    const { result } = renderHook(() => useChatThread({ useAi, context: CONTEXT, ready: true, scopeKey: 'org-a' }));
+    for (const [message, topic] of [
+      ['Pacjent nie widzi zestawu na telefonie. Co sprawdzić?', 'missing-plan'],
+      ['Gabinet widzi', 'check-assignment'],
+      ['Dalej pusto', 'report'],
+    ]) {
+      await act(() => result.current.send(message));
+      expect(result.current.messages.at(-1)).toMatchObject({
+        spec: { component: 'ProductHelp', topic }, source: 'local', creditsUsed: 0,
+      });
+    }
+    expect(dispatchMock).not.toHaveBeenCalled();
+  });
+
   it('sends a full name that is not on the visible list to the server and shows its notice without a card', async () => {
     const text = 'Ten pacjent jest już w gabinecie i prowadzi go inny fizjoterapeuta.';
     dispatchMock.mockResolvedValueOnce({

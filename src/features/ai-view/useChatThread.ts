@@ -13,6 +13,7 @@ import { threadNewPatientDetails } from './utils/newPatientDetails';
 import { replyText, resolveForPatient, resolveReply, type HeldReply } from './utils/resolveReply';
 import { scheduleQuestion, type SetDraftPayload } from './utils/setDraft';
 import { accountQuestionReply, countQuestion, localReplyTo, withExerciseIdeas } from './utils/threadLocalReply';
+import { productHelpFor } from './utils/productHelp';
 import { UNSUPPORTED_SPEC } from './utils/viewSpec';
 
 export type { ChatThreadMessage } from './utils/conversationStore';
@@ -190,6 +191,21 @@ export function useChatThread({
     async (text: string) => {
       const trimmed = text.trim();
       if (!trimmed || inFlightRef.current || !ready) return;
+      const last = messagesRef.current.at(-1);
+      const previousHelp =
+        last?.role === 'assistant' && last.spec?.component === 'ProductHelp' ? last.spec.topic : undefined;
+      const help = productHelpFor(trimmed, previousHelp);
+      if (help) {
+        if (previousHelp && last && last.role === 'assistant' && last.chosen === undefined) {
+          markChosen(last.id, trimmed);
+        }
+        pendingCommandRef.current = undefined;
+        heldRef.current = undefined;
+        awaitingDraftRef.current = undefined;
+        pushUser(trimmed);
+        appendAssistant({ spec: help });
+        return;
+      }
       // „Ilu mam pacjentów?”: liczby są w panelu, odpowiedź bez AI i bez kredytu.
       const countFocus = countQuestion(trimmed);
       if (countFocus) {

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { productHelpSchema } from './productHelp';
 import { isCardComponent, type ChatCardSpec } from './chatCards';
 import type { DispatchFailure } from './resolveReply';
 import type { ChatNotice } from './viewSpec';
@@ -37,7 +38,10 @@ const MAX_TITLE_LENGTH = 60;
 const specSchema = z
   .object({ component: z.string() })
   .passthrough()
-  .refine((spec) => isCardComponent(spec.component));
+  .refine(
+    (spec) =>
+      isCardComponent(spec.component) && (spec.component !== 'ProductHelp' || productHelpSchema.safeParse(spec).success)
+  );
 
 const messageSchema = z.discriminatedUnion('role', [
   z.object({

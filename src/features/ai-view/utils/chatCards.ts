@@ -1,3 +1,4 @@
+import type { ProductHelpSpec } from './productHelp';
 import type { SchedulePlan } from './schedulePlan';
 import type { NewPatientDetails } from './newPatientDetails';
 import type { SetDraftPayload, SetDraftReturn } from './setDraft';
@@ -28,6 +29,7 @@ export interface DocumentItem {
  * therapist's decisions (exercise list, schedule) and never come from the model.
  */
 export type LocalCardSpec =
+  | ProductHelpSpec
   | {
       component: 'PickPatient';
       /** Absent after „Inny pacjent”: the pick then finishes the command behind the question. */
@@ -72,6 +74,7 @@ const CARD_COMPONENTS = {
   DocumentResult: true,
   ExerciseIdeas: true,
   CatalogCounts: true,
+  ProductHelp: true,
 } satisfies Record<ChatCardSpec['component'], true>;
 
 export function isCardComponent(component: string): boolean {
