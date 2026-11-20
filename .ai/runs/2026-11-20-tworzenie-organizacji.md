@@ -35,7 +35,7 @@
 
 - Kandydat: `feat/tworzenie-organizacji` (commit w PR)
 - Kontrola: `npm run validate`, exit 0, 362 pliki testów, 3657 testów zielonych i 2 oczekiwane porażki, build OK
-- Reviewer: brak niezależnego review (unverified)
+- Reviewer: `principal-review` FAIL @737c7c06: duplikat organizacji przez odmontowany dialog, mylący toast po błędzie `resetStore`. Poprawki: aaad2cc8, 1cb61dfc. PASS @1cb61dfc. Uwagę P3 (ponowienie listy po błędzie odświeżenia) poprawia 3ed445ab, z testem padającym bez poprawki; `npm run validate` exit 0 na 3ed445ab. Niesprawdzone: create→switch na backendzie DEV oraz dialog nad otwartym Sheetem na mobile (ręcznie po merge'u).
 
 ## Handoff
 
