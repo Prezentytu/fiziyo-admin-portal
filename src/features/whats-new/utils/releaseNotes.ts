@@ -103,10 +103,13 @@ export function notificationsBellCount(
   return signalCount + (note?.notified ? 1 : 0) + (hasTeamMessage ? 1 : 0);
 }
 
-export function notificationsBellLabel(signalCount: number, hasRelease: boolean, hasTeamMessage = false): string {
+export function notificationsBellLabel(
+  signalCount: number, hasRelease: boolean, hasTeamMessage = false, duplicateSubmissionCount = 0
+): string {
   const parts = [
     hasRelease ? 'nowa wersja portalu' : null,
     hasTeamMessage ? 'wiadomość od zespołu FiziYo' : null,
+    duplicateSubmissionCount > 0 ? `decyzje o zgłoszeniach do FiziYo (${duplicateSubmissionCount})` : null,
     signalCount > 0 ? `zgłoszenia pacjentów (${signalCount})` : null,
   ].filter((part): part is string => part !== null);
   if (parts.length === 0) return 'Powiadomienia';
