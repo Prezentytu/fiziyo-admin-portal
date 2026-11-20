@@ -51,23 +51,6 @@ describe('ExerciseCard menu actions', () => {
     expect(onReportIssue).toHaveBeenCalledTimes(1);
   });
 
-  it('weryfikator FiziYo nie widzi „Zgłoś do poprawki” przy ćwiczeniu globalnym', async () => {
-    const user = userEvent.setup();
-
-    render(
-      <ExerciseCard
-        exercise={{ ...baseExercise, scope: 'GLOBAL' }}
-        compact
-        onReportIssue={vi.fn()}
-        canReviewExercises
-      />
-    );
-
-    await user.click(screen.getByRole('button', { name: /Więcej opcji/ }));
-
-    expect(screen.queryByTestId('exercise-card-exercise-1-report-btn')).not.toBeInTheDocument();
-  });
-
   it('pokazuje akcję submit do weryfikacji organizacyjnej i badge pending', async () => {
     const user = userEvent.setup();
     const onSubmitToOrganizationReview = vi.fn();

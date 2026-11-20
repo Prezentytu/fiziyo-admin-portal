@@ -268,6 +268,14 @@ Wpisy przeniesione z `.ai/lessons.md`: starsze niż 30 dni w chwili przeniesieni
 - **Rozwiązanie**: `mappingId` w adapterze + dual-read (`mappingId|_id|id|exerciseId`); parytet pól mappingu; merge override w wizardzie; realtime per-pacjent w backendzie; dodanie ćwiczenia jako real mapping.
 - **Reguła**: Klucz mapy JSON personalizacji (`ExerciseSetMapping.id`) jest częścią kontraktu admin↔mobile. Adapter read-modelu, który nadpisuje lub gubi `id`, zrywa kontrakt po cichu. Write/read muszą dzielić ten sam klucz; przy legacy kluczach stosuj dual-read, nie „naprawiaj” tylko jedną stronę.
 
+### 2026-07-28 - Jeden kontrakt pól na byt domenowy — powierzchnia derywuje podzbiór, nigdy semantykę
+
+- **Kategoria**: `UI/UX` | `React`
+- **Problem**: Create wizard, dialog edycji (`ExerciseForm`) i detal (`ExerciseEditor`) miały różne zestawy pól i etykiet (`Czas powtórzenia` vs `Czas 1 powtórzenia`); mapping/override też dryfowały.
+- **Przyczyna**: Trzy niezależne artefakty formularza z lokalnymi listami pól zamiast jednego field-setu z intencją (Salesforce page-layout tax).
+- **Rozwiązanie**: `fieldContract.ts` jako SSOT (tier, surfaces, zod, options) + etykiety z `displayRegistry`; `ExerciseParametersEditor` / `ExerciseEditor` współdzielone; create = lean subset; usunięto `ExerciseForm` i martwe legacy edytory.
+- **Reguła**: Dla danych domenowych edytowanych w wielu miejscach utrzymuj jeden kontrakt pól. Powierzchnia może różnić layout i podzbiór (create-as-prefix), nigdy etykietę, walidację ani mapowanie na mutację. Guardrail: test kompletności kontraktu + integralność testid. [egzekwowane: src/components/shared/exercise/__tests__/fieldContract.test.ts]
+
 ### 2026-07-28 - Personalizacja enrichment wymaga tej samej whitelist ścieżek w adminie i mobile
 
 - **Kategoria**: `GraphQL` | `React` | `UI/UX`
