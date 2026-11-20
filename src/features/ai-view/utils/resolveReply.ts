@@ -15,6 +15,7 @@ import {
   withNewPatientDetails,
   type NewPatientDetails,
 } from './newPatientDetails';
+import { continuesExerciseDiscussion, exerciseSearchTerms, type ExerciseForm } from './exerciseDiscussion';
 import { describeSpec } from './replyText';
 import type { ChatNotice, ChatViewSpec } from './viewSpec';
 
@@ -90,6 +91,7 @@ export async function resolveReply(
     knownPatientIds?: ReadonlySet<string>;
     /** What earlier messages of the open exchange said about a new patient (`threadNewPatientDetails`). */
     newPatientContext?: NewPatientDetails;
+    previousExercise?: ExerciseForm;
   }
 ): Promise<ResolvedReply> {
   // „Dodaj pacjenta …” needs no model: the form opens at once with what was given, so nothing is asked in the chat.
@@ -100,7 +102,25 @@ export async function resolveReply(
   if (combined) return combined;
   const known = new Set(options.knownPatientIds);
   if (options.contextPatientId) known.add(options.contextPatientId);
+  const requested = singleExerciseRequest(text, options.context.patients);
+  const previous = options.previousExercise;
+  const continuing = !requested && previous?.discussion && continuesExerciseDiscussion(text, options.context.patients);
+  const exercise = requested ?? (continuing ? previous : undefined);
+  const topic = requested ? text : (previous?.discussion?.topic ?? '');
+  const previousSearch = previous?.discussion?.search;
+  const refinement = continuing && !previous?.discussion?.selected && /^(?:w |z |ze |na |tylko )/i.test(text.trim());
+  const search = requested
+    ? exerciseSearchTerms(requested.name ?? '')
+    : refinement
+      ? [previousSearch, exerciseSearchTerms(text.replace(/^tylko /i, ''))].filter(Boolean).join(' ')
+      : previousSearch || exerciseSearchTerms(text);
+  const discussion =
+    continuing && previous?.discussion
+      ? { ...previous.discussion, search, ...(refinement && { ids: [] }) }
+      : { topic, search, ids: [] as string[] };
+  const catalogCard = exercise && { ...exercise, discussion };
   const routed = () =>
+    catalogCard ??
     withNewPatientDetails(
       routeIntent(text, options.context, options.pendingCommand, known),
       text,
@@ -108,24 +128,30 @@ export async function resolveReply(
     );
   if (options.useAi) {
     try {
-      const exercise = singleExerciseRequest(text, options.context.patients);
-      const command = exercise
-        ? `Utwórz jedno ćwiczenie do katalogu gabinetu. Jeśli podano tylko cel, zaproponuj konkretny ruch. Podaj jego nazwę i opis wykonania. Prośba: ${text}`
+      const command = catalogCard
+        ? `Rozmawiasz z fizjoterapeutą o jednym ćwiczeniu. Gdy fizjoterapeuta szuka ćwiczenia, użyj FindExercises i zwróć ExerciseResults z maksymalnie czterema pasującymi ID. Nazwy pokaże portal. Gdy pyta o wykonanie lub różnice, użyj opisów z katalogu i odpowiedz słownie (Message). Bez układania zestawu. Prośba: ${topic}${continuing ? `\nWiadomość fizjoterapeuty: ${text}` : ''}`
         : text;
       const result = await options.dispatch(command, options.sessionId, options.signal);
-      // Keep the server refusal and any clarifying question. A proposed plan or search cannot fulfil this request.
-      if (
-        exercise &&
-        !result.notice &&
-        (result.spec?.component === 'SetDraft' ||
-          result.spec?.component === 'AssignSummary' ||
-          result.spec?.component === 'ExerciseResults')
-      ) {
+      if (catalogCard && !result.notice) {
+        const model = result.spec;
+        const spec: ExerciseForm = {
+          ...catalogCard,
+          ...(model?.component === 'CreateExercise' && {
+            name: model.name ?? catalogCard.name,
+            description: model.description,
+          }),
+          discussion:
+            model?.component === 'ExerciseResults' && !discussion.selected
+              ? { ...discussion, ids: model.exerciseIds }
+              : discussion,
+        };
+        // A plan's sentence can claim that a plan exists. Only a conversational reply or question belongs here.
+        const answer = model?.component === 'Clarify' ? model.question : continuing && !model ? result.text : undefined;
         return {
-          text: replyText(undefined, exercise, options.context),
-          spec: exercise,
-          source: 'ai',
+          spec,
+          text: answer || replyText(undefined, spec, options.context),
           sessionId: result.sessionId,
+          source: 'ai',
           creditsUsed: result.creditsUsed,
         };
       }

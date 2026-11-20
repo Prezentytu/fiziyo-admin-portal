@@ -44,6 +44,7 @@ export function describeSpec(spec: ChatViewSpec, context: ReplyTextContext = {})
     case 'AddPatient':
       return spec.name ? `Uzupełnij dane, a dodam pacjenta: ${spec.name}.` : 'Uzupełnij dane, a dodam pacjenta.';
     case 'CreateExercise':
+      if (spec.discussion) return spec.discussion.search ? 'Jaki wariant ćwiczenia Cię interesuje? Możesz doprecyzować pozycję, sprzęt lub cel.' : 'Jakiego ruchu lub okolicy ciała ma dotyczyć ćwiczenie?';
       return 'Opisz ćwiczenie i ustaw podstawowe parametry, a dodam je do katalogu gabinetu.';
   }
 }
