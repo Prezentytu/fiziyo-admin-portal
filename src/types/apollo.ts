@@ -227,6 +227,9 @@ export interface AvailableExercisesResponse {
 
 export type ExerciseLibraryTab = 'ALL' | 'ORGANIZATION' | 'FIZIYO' | 'NEEDS_CHANGES';
 
+/** Status weryfikacji w bibliotece: czeka na weryfikację albo już zatwierdzone. */
+export type ExerciseLibraryReviewStatus = 'PENDING' | 'APPROVED';
+
 /** Pula demo (W-4): `DEMO` widzą tylko gabinety z dostępem do puli demo. */
 export type ExerciseAvailability = 'STANDARD' | 'DEMO';
 

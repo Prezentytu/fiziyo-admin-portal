@@ -148,6 +148,50 @@ export const GET_AVAILABLE_EXERCISES_DEMO_PAGE_QUERY = gql`
   ${EXERCISE_FULL_FRAGMENT}
 `;
 
+// Ta sama strona biblioteki zawężona statusem weryfikacji („Do weryfikacji” / „Zatwierdzone” w „Moje ćwiczenia”).
+// Osobny dokument z tego samego powodu co filtr demo: API bez argumentu `reviewStatus` odrzuca cały dokument,
+// więc zwykła lista go nie niesie. API, które zna `reviewStatus`, zna też `availability`.
+export const GET_AVAILABLE_EXERCISES_REVIEW_PAGE_QUERY = gql`
+  query GetAvailableExercisesReviewPage(
+    $organizationId: String!
+    $tab: ExerciseLibraryTab!
+    $search: String
+    $page: Int!
+    $pageSize: Int!
+    $region: ExerciseBodyRegion
+    $availability: ExerciseAvailability
+    $reviewStatus: ExerciseLibraryReviewStatus
+  ) {
+    availableExercisesPage(
+      organizationId: $organizationId
+      tab: $tab
+      search: $search
+      page: $page
+      pageSize: $pageSize
+      region: $region
+      availability: $availability
+      reviewStatus: $reviewStatus
+    ) {
+      items {
+        ...ExerciseFullFragment
+      }
+      totalCount
+      page
+      pageSize
+      totalPages
+      hasPreviousPage
+      hasNextPage
+      counts {
+        all
+        organization
+        fiziyo
+        needsChanges
+      }
+    }
+  }
+  ${EXERCISE_FULL_FRAGMENT}
+`;
+
 // Same root field and pages as GET_AVAILABLE_EXERCISES_PICKER_QUERY, so cached picker pages answer it without a
 // network trip. Read through fetchWholeLibrary / useWholeLibrary: one call stops at 5000 exercises.
 export const GET_AVAILABLE_EXERCISE_NAMES_QUERY = gql`
@@ -361,4 +405,5 @@ export const EXERCISE_LIBRARY_REFETCH_QUERIES = [
   GET_AVAILABLE_EXERCISES_PICKER_PAGE_QUERY,
   GET_AVAILABLE_EXERCISES_PAGE_QUERY,
   GET_AVAILABLE_EXERCISES_DEMO_PAGE_QUERY,
+  GET_AVAILABLE_EXERCISES_REVIEW_PAGE_QUERY,
 ];
