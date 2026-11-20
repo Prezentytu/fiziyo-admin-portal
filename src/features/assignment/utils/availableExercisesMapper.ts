@@ -41,6 +41,7 @@ export interface RawAvailableExercise {
   thumbnailUrl?: string;
   gifUrl?: string;
   videoUrl?: string;
+  videos?: string[] | null;
   imageUrl?: string;
   images?: string[];
   defaultLoad?: RawLoadShape | null;
@@ -134,6 +135,7 @@ export function mapAvailableExercises(rawExercises: RawAvailableExercise[] | und
         thumbnailUrl: exercise.thumbnailUrl,
         gifUrl: exercise.gifUrl,
         videoUrl: exercise.videoUrl,
+        videos: exercise.videos,
         imageUrl: exercise.imageUrl,
         images: exercise.images,
         defaultLoad,

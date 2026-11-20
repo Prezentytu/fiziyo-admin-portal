@@ -65,6 +65,7 @@ export interface ExerciseMapping {
   overridesJson?: string | null;
   // Media
   videoUrl?: string;
+  videos?: string[] | null;
   imageUrl?: string;
   images?: string[];
   // Exercise reference
@@ -118,6 +119,7 @@ export interface Exercise {
   images?: string[];
   gifUrl?: string;
   videoUrl?: string;
+  videos?: string[] | null;
   // Status
   scope?: string;
   status?: string;

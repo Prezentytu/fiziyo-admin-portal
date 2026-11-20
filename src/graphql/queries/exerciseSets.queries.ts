@@ -64,6 +64,7 @@ export const EXERCISE_SET_WITH_EXERCISES_FRAGMENT = gql`
       customDescription
       overridesJson
       videoUrl
+      videos
       imageUrl
       images
       exercise {
@@ -79,6 +80,7 @@ export const EXERCISE_SET_WITH_EXERCISES_FRAGMENT = gql`
         clinicalDescription
         notes
         videoUrl
+        videos
         audioCue
         preparationTime
         defaultExecutionTime

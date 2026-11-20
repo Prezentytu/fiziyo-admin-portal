@@ -1,3 +1,4 @@
+import { getExerciseVideos } from '@/utils/exerciseVideos';
 import { getMediaUrl, getMediaUrls } from '@/utils/mediaUrl';
 import { extractYouTubeId } from '@/utils/videoEmbed';
 
@@ -15,6 +16,8 @@ export interface BuildMediaItemsInput {
   imageUrl?: string | null;
   images?: (string | null | undefined)[] | null;
   videoUrl?: string | null;
+  /** All videos, main first; without it the single `videoUrl` is used. */
+  videos?: (string | null | undefined)[] | null;
   gifUrl?: string | null;
   title?: string;
 }
@@ -24,6 +27,7 @@ export function buildMediaItems({
   imageUrl,
   images,
   videoUrl,
+  videos,
   gifUrl,
   title,
 }: BuildMediaItemsInput): MediaItem[] {
@@ -37,14 +41,8 @@ export function buildMediaItems({
   }));
   items.push(...imageItems);
 
-  const normalizedVideoUrl = getMediaUrl(videoUrl);
-  if (normalizedVideoUrl) {
-    items.push({
-      kind: 'video',
-      src: normalizedVideoUrl,
-      poster: getYouTubePosterUrl(normalizedVideoUrl),
-      title: mediaTitle,
-    });
+  for (const src of getMediaUrls(getExerciseVideos({ videos, videoUrl }))) {
+    items.push({ kind: 'video', src, poster: getYouTubePosterUrl(src), title: mediaTitle });
   }
 
   const normalizedGifUrl = getMediaUrl(gifUrl);

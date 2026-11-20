@@ -159,6 +159,7 @@ export interface Exercise {
   images?: string[];
   gifUrl?: string;
   videoUrl?: string;
+  videos?: string[] | null;
   enrichmentData?: ExerciseEnrichmentData | null;
   // Status i widoczność
   scope?: 'PERSONAL' | 'ORGANIZATION' | 'GLOBAL';
@@ -301,6 +302,7 @@ export interface ExerciseSetMapping {
   customName?: string;
   customDescription?: string;
   videoUrl?: string;
+  videos?: string[] | null;
   imageUrl?: string;
   images?: string[];
   load?: ExerciseLoad | null;
@@ -324,6 +326,7 @@ export interface ExerciseSetMapping {
     equipment?: string | null;
     notes?: string;
     videoUrl?: string;
+    videos?: string[] | null;
     gifUrl?: string;
     tempo?: string;
     preparationTime?: number;

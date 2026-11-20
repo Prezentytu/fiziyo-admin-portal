@@ -76,6 +76,7 @@ export interface Exercise {
   defaultLoad?: ExerciseLoad;
   // Media (legacy + nowe)
   videoUrl?: string;
+  videos?: string[] | null;
   enrichmentData?: ExerciseEnrichmentData | null;
   gifUrl?: string;
   imageUrl?: string;
@@ -145,6 +146,7 @@ export interface CreateExerciseVariables {
   preparationTime?: number | null;
   executionTime?: number | null;
   videoUrl?: string | null;
+  videos?: string[] | null;
   gifUrl?: string | null;
   imageUrl?: string | null;
   images?: string[] | null;
@@ -195,6 +197,7 @@ export interface UpdateExerciseVariables {
   preparationTime?: number | null;
   executionTime?: number | null;
   videoUrl?: string | null;
+  videos?: string[] | null;
   images?: string[] | null;
   notes?: string | null;
   mainTags?: string[] | null;

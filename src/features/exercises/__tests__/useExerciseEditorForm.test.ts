@@ -22,7 +22,7 @@ function makeDraft(overrides: Partial<ExerciseCoreDraft> = {}): ExerciseCoreDraf
     equipment: '',
     side: 'none',
     difficultyLevel: 'UNKNOWN',
-    videoUrl: '',
+    videos: [],
     sets: 3,
     reps: 10,
     executionTime: null,
@@ -38,6 +38,24 @@ function makeDraft(overrides: Partial<ExerciseCoreDraft> = {}): ExerciseCoreDraf
 }
 
 describe('buildChangedCoreVariables', () => {
+  it('wysyła całą listę filmów bez videoUrl, gdy lista się zmieniła', () => {
+    const initial = makeDraft({ videos: ['https://vimeo.com/1'] });
+    const current = makeDraft({ videos: ['https://youtu.be/2', ' https://vimeo.com/1 ', '', 'https://youtu.be/2'] });
+    const variables = buildChangedCoreVariables(initial, current);
+    expect(variables).toEqual({ videos: ['https://youtu.be/2', 'https://vimeo.com/1'] });
+  });
+
+  it('usunięcie wszystkich filmów wysyła pustą listę', () => {
+    const variables = buildChangedCoreVariables(makeDraft({ videos: ['https://vimeo.com/1'] }), makeDraft());
+    expect(variables).toEqual({ videos: [] });
+  });
+
+  it('pusty wiersz i spacje nie są zmianą listy filmów', () => {
+    const initial = makeDraft({ videos: ['https://vimeo.com/1'] });
+    expect(buildChangedCoreVariables(initial, makeDraft({ videos: ['https://vimeo.com/1 ', ''] }))).toEqual({});
+    expect(buildChangedCoreVariables(makeDraft(), makeDraft({ videos: [''] }))).toEqual({});
+  });
+
   it('nie czyści tagów gdy edycja nie dotyczy tagów (passthrough)', () => {
     const initial = makeDraft();
     const current = makeDraft({ sets: 4 });

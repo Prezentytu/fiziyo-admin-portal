@@ -4,8 +4,9 @@ import { useRef, useState } from 'react';
 import { Loader2, Sparkles, Video } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { ExerciseVideosField } from '@/features/exercises/ExerciseVideosField';
 import { cn } from '@/lib/utils';
+import { normalizeVideoList } from '@/utils/exerciseVideos';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import type { EnrichmentStepImageV3 } from '@/graphql/types/exerciseEnrichment.types';
 import { stepsForImage } from '../utils/stepMedia';
@@ -19,7 +20,8 @@ export interface PendingPhoto {
 }
 
 interface MaterialStageProps {
-  videoUrl: string;
+  /** Draft rows of the video list, main video first. */
+  videos: string[];
   /** Video or GIF the photos can be compared with. */
   hasVideo: boolean;
   photos: string[];
@@ -29,7 +31,7 @@ interface MaterialStageProps {
   generatingIndex: number | null;
   isGenerating: boolean;
   isSavingPhoto: boolean;
-  onVideoUrlChange: (value: string) => void;
+  onVideosChange: (value: string[]) => void;
   onPreviewPhoto: (url: string) => void;
   onReplacePhoto: (index: number) => void;
   onDeletePhoto: (url: string) => void;
@@ -43,11 +45,12 @@ interface MaterialStageProps {
 }
 
 function VideoCard({
-  videoUrl,
-  onVideoUrlChange,
-}: Readonly<{ videoUrl: string; onVideoUrlChange: (value: string) => void }>) {
+  videos,
+  onVideosChange,
+}: Readonly<{ videos: string[]; onVideosChange: (value: string[]) => void }>) {
   const [isEditing, setIsEditing] = useState(false);
-  const hasVideo = videoUrl.trim().length > 0;
+  const savedVideos = normalizeVideoList(videos);
+  const hasVideo = savedVideos.length > 0;
 
   return (
     <section
@@ -60,12 +63,22 @@ function VideoCard({
       <div className="flex flex-wrap items-center gap-3">
         <Video className={cn('h-5 w-5 shrink-0', hasVideo ? 'text-label-secondary' : 'text-status-warning')} />
         <div className="min-w-0 flex-1">
-          <p className="text-[17px] font-semibold text-foreground">Nagranie</p>
-          <p className="truncate text-[13px] text-label-secondary">
-            {hasVideo
-              ? videoUrl
-              : 'Brak nagrania. Pacjent zobaczy tylko zdjęcia, więc muszą pokazywać każdą fazę ruchu.'}
+          <p className="text-[17px] font-semibold text-foreground">
+            {savedVideos.length > 1 ? `Nagrania (${savedVideos.length})` : 'Nagranie'}
           </p>
+          {hasVideo ? (
+            <ul className="text-[13px] text-label-secondary" data-testid="verification-material-video-list">
+              {savedVideos.map((video) => (
+                <li key={video} className="truncate">
+                  {video}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="truncate text-[13px] text-label-secondary">
+              Brak nagrania. Pacjent zobaczy tylko zdjęcia, więc muszą pokazywać każdą fazę ruchu.
+            </p>
+          )}
         </div>
         <Button
           type="button"
@@ -75,21 +88,18 @@ function VideoCard({
           onClick={() => setIsEditing((previous) => !previous)}
           data-testid="verification-material-video-edit-btn"
         >
-          {isEditing ? 'Gotowe' : hasVideo ? 'Wymień nagranie' : 'Dodaj nagranie'}
+          {isEditing ? 'Gotowe' : hasVideo ? 'Zmień nagrania' : 'Dodaj nagranie'}
         </Button>
       </div>
       {isEditing && (
-        <Input
+        <ExerciseVideosField
           autoFocus
-          type="url"
-          value={videoUrl}
-          aria-label="Adres nagrania"
-          placeholder="https://…"
-          onChange={(event) => onVideoUrlChange(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' && !event.metaKey && !event.ctrlKey) setIsEditing(false);
-          }}
-          data-testid="verification-material-video-url-input"
+          value={videos}
+          dirty={false}
+          disabled={false}
+          onChange={onVideosChange}
+          inputId="verification-material-video-url"
+          testId="verification-material-video-url-input"
         />
       )}
     </section>
@@ -97,7 +107,7 @@ function VideoCard({
 }
 
 export function MaterialStage({
-  videoUrl,
+  videos,
   hasVideo,
   photos,
   stepImages,
@@ -106,7 +116,7 @@ export function MaterialStage({
   generatingIndex,
   isGenerating,
   isSavingPhoto,
-  onVideoUrlChange,
+  onVideosChange,
   onPreviewPhoto,
   onReplacePhoto,
   onDeletePhoto,
@@ -126,7 +136,7 @@ export function MaterialStage({
 
   return (
     <div className="flex flex-col gap-4" data-testid="verification-stage-material">
-      <VideoCard videoUrl={videoUrl} onVideoUrlChange={onVideoUrlChange} />
+      <VideoCard videos={videos} onVideosChange={onVideosChange} />
 
       <StageSection
         title="Zdjęcia"

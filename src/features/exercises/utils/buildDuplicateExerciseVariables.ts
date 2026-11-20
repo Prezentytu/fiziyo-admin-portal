@@ -22,6 +22,7 @@ export interface DuplicateExerciseSource {
   exerciseSide?: string | null;
   difficultyLevel?: string | null;
   videoUrl?: string | null;
+  videos?: string[] | null;
   gifUrl?: string | null;
   imageUrl?: string | null;
   defaultSets?: number | null;
@@ -117,6 +118,7 @@ export function buildDuplicateExerciseVariables({
       side: source.side || source.exerciseSide,
       difficultyLevel: source.difficultyLevel,
       videoUrl: source.videoUrl,
+      videos: source.videos,
       // GraphQL Exercise ma tylko pola default* (bez sets/restSets/executionTime).
       sets: source.defaultSets ?? null,
       reps: source.defaultReps ?? null,

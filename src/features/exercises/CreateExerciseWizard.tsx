@@ -86,7 +86,7 @@ import { inferExerciseType } from './utils/inferExerciseType';
 import { MAX_EXERCISE_IMAGES, insertGeneratedImage, nextGeneratedImagePhase } from './utils/exerciseMedia';
 import { ExerciseParametersEditor } from './ExerciseParametersEditor';
 import { ExerciseContentSections } from './ExerciseContentSections';
-import { VideoUrlField } from './ExerciseDetailSections';
+import { ExerciseVideosField } from './ExerciseVideosField';
 import { useEnrichmentDraft } from './useEnrichmentDraft';
 import { AiFullExercisePanel, type AiFullExerciseSummary } from './AiFullExercisePanel';
 import {
@@ -135,7 +135,7 @@ interface ExerciseData {
   restReps: number | null;
   preparationTime: number | null;
   executionTime: number | null;
-  videoUrl: string;
+  videos: string[];
   notes: string;
   mainTags: string[];
   additionalTags: string[];
@@ -196,7 +196,7 @@ const DEFAULT_DATA: ExerciseData = {
   restReps: 0,
   preparationTime: 5,
   executionTime: null,
-  videoUrl: '',
+  videos: [],
   notes: '',
   mainTags: [],
   additionalTags: [],
@@ -1244,7 +1244,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
       equipment: data.equipment,
       side: data.exerciseSide,
       difficultyLevel: data.difficultyLevel,
-      videoUrl: data.videoUrl,
+      videos: data.videos,
       sets: data.sets,
       reps: data.reps,
       executionTime: data.executionTime,
@@ -1642,7 +1642,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
           restReps: data.restReps,
           preparationTime: data.preparationTime,
           executionTime: data.executionTime,
-          videoUrl: data.videoUrl,
+          videos: data.videos,
           tempo: data.tempo,
           rangeOfMotion: data.rangeOfMotion,
           resistance: data.resistance,
@@ -2106,11 +2106,11 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
               />
 
               <div className="mt-4" data-testid="exercise-create-video-url">
-                <VideoUrlField
-                  value={data.videoUrl}
+                <ExerciseVideosField
+                  value={data.videos}
                   dirty={false}
                   disabled={false}
-                  onChange={(value) => updateField('videoUrl', value)}
+                  onChange={(value) => updateField('videos', value)}
                   inputId="exercise-create-video-url"
                   testId="exercise-create-video-url-input"
                 />
@@ -2223,14 +2223,14 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                   patientDescription={data.description}
                   clinicalDescription={data.clinicalDescription}
                   audioCue={data.audioCue}
-                  videoUrl={data.videoUrl}
+                  videos={data.videos}
                   notes={data.notes}
                   isPathDirty={enrichmentDraft.isPathDirty}
                   showPatientLead={false}
                   onPatientDescriptionChange={(value) => updateField('description', value)}
                   onClinicalDescriptionChange={(value) => updateField('clinicalDescription', value)}
                   onAudioCueChange={(value) => updateField('audioCue', value)}
-                  onVideoUrlChange={(value) => updateField('videoUrl', value)}
+                  onVideosChange={(value) => updateField('videos', value)}
                   showVideoUrl={false}
                   onNotesChange={(value) => updateField('notes', value)}
                   setPath={enrichmentDraft.setPath}

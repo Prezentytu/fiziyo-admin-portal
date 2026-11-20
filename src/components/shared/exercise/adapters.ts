@@ -1,3 +1,4 @@
+import { getExerciseVideos } from '@/utils/exerciseVideos';
 import type { ExerciseExecutionCardData } from './types';
 import type { ExerciseMapping, ExerciseLoad } from '@/features/assignment/types';
 import type { ExerciseOverrideFields } from './exerciseOverride';
@@ -175,6 +176,7 @@ export function fromExerciseMapping(
     thumbnailUrl: overrideImages[0] ?? imageUrls[0] ?? effective.thumbnailUrl,
     imageUrls: overrideImages.length > 0 ? overrideImages : imageUrls,
     videoUrl: effective.videoUrl,
+    videos: effective.videos,
     sets: effective.sets,
     reps: effective.reps,
     duration: effective.duration,
@@ -227,6 +229,7 @@ export function fromBuilderExercise(
     imageUrl?: string;
     images?: unknown;
     videoUrl?: string;
+    videos?: string[] | null;
     defaultSets?: number;
     defaultReps?: number;
     defaultDuration?: number;
@@ -303,6 +306,7 @@ export function fromBuilderExercise(
     thumbnailUrl: thumb ?? undefined,
     imageUrls: buildImageUrls(exercise.thumbnailUrl, exercise.imageUrl, exercise.images),
     videoUrl: exercise.videoUrl,
+    videos: getExerciseVideos(exercise),
     sets: params.sets ?? template.sets,
     reps: params.reps ?? template.reps,
     duration: params.duration ?? template.duration,

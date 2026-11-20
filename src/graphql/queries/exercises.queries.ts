@@ -52,6 +52,7 @@ export const EXERCISE_FULL_FRAGMENT = gql`
     defaultSets
     type
     videoUrl
+    videos
     enrichmentData
     # Global submission tracking (nowy model weryfikacji)
     globalSubmissionId
@@ -257,6 +258,7 @@ export const EXERCISE_PICKER_FRAGMENT = gql`
     imageUrl
     thumbnailUrl
     videoUrl
+    videos
   }
 `;
 

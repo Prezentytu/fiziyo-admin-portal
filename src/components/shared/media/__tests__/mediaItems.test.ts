@@ -38,6 +38,20 @@ describe('buildMediaItems', () => {
     expect(result[2]?.src).toBe('https://cdn.example.com/loop.gif');
   });
 
+  it('lists every video of the exercise, main first, without repeating videoUrl', () => {
+    const result = buildMediaItems({
+      videoUrl: 'https://vimeo.com/1',
+      videos: ['https://vimeo.com/1', 'https://vimeo.com/2'],
+      gifUrl: 'https://cdn.example.com/loop.gif',
+    });
+
+    expect(result.map((item) => `${item.kind}:${item.src}`)).toEqual([
+      'video:https://vimeo.com/1',
+      'video:https://vimeo.com/2',
+      'gif:https://cdn.example.com/loop.gif',
+    ]);
+  });
+
   it('adds youtube poster for youtube video', () => {
     const result = buildMediaItems({
       videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',

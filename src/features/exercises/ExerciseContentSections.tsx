@@ -10,18 +10,18 @@ export interface ExerciseContentSectionsProps {
   patientDescription: string;
   clinicalDescription: string;
   audioCue: string;
-  videoUrl: string;
+  videos: string[];
   notes: string;
   disabled?: boolean;
   patientDescriptionDirty?: boolean;
   clinicalDescriptionDirty?: boolean;
-  videoUrlDirty?: boolean;
+  videosDirty?: boolean;
   notesDirty?: boolean;
   isPathDirty: (path: string) => boolean;
   onPatientDescriptionChange: (value: string) => void;
   onClinicalDescriptionChange: (value: string) => void;
   onAudioCueChange: (value: string) => void;
-  onVideoUrlChange: (value: string) => void;
+  onVideosChange: (value: string[]) => void;
   onNotesChange: (value: string) => void;
   setPath: (path: string, value: unknown) => void;
   /** When false, skips PatientLeadSection (create wizard keeps a lean description above). */
@@ -44,18 +44,18 @@ export function ExerciseContentSections({
   patientDescription,
   clinicalDescription,
   audioCue,
-  videoUrl,
+  videos,
   notes,
   disabled = false,
   patientDescriptionDirty = false,
   clinicalDescriptionDirty = false,
-  videoUrlDirty = false,
+  videosDirty = false,
   notesDirty = false,
   isPathDirty,
   onPatientDescriptionChange,
   onClinicalDescriptionChange,
   onAudioCueChange,
-  onVideoUrlChange,
+  onVideosChange,
   onNotesChange,
   setPath,
   showPatientLead = true,
@@ -98,14 +98,14 @@ export function ExerciseContentSections({
 
       <MetadataSection
         data={enrichment}
-        videoUrl={videoUrl}
+        videos={videos}
         notes={notes}
         editable
         disabled={disabled}
-        videoUrlDirty={videoUrlDirty}
+        videosDirty={videosDirty}
         notesDirty={notesDirty}
         isPathDirty={isPathDirty}
-        onVideoUrlChange={onVideoUrlChange}
+        onVideosChange={onVideosChange}
         onNotesChange={onNotesChange}
         setPath={setPath}
         contentVersion={contentVersion}

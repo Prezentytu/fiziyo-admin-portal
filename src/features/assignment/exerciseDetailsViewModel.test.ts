@@ -94,6 +94,7 @@ describe('buildExerciseDetailsViewModel', () => {
 
     expect(viewModel.imageUrls).toEqual(['/a.jpg', '/b.jpg']);
     expect(viewModel.videoUrl).toBe('https://example.com/video-fallback.mp4');
+    expect(viewModel.videos).toEqual(['https://example.com/video-fallback.mp4']);
   });
 
   it('normalizes tags safely when API returns undefined entries', () => {
