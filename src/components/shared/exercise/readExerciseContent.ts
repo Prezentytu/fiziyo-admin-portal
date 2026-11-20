@@ -96,7 +96,6 @@ export interface ExerciseContentSide {
   mode: string | null;
   /** Dawka liczona na stronę. 3.3 przy dwóch stronach: tak, chyba że dokument mówi wprost `false`. Rekord stary zawsze `false` (liczy łącznie). */
   perSideDose: boolean;
-  start: string | null;
   shownInMedia: string | null;
 }
 
@@ -348,7 +347,6 @@ function readSide(isNew: boolean, document: UnknownRecord, source: ExerciseConte
   return {
     mode,
     perSideDose: twoSided ? side?.per_side_dose !== false : side?.per_side_dose === true,
-    start: asText(side?.start),
     shownInMedia: asText(side?.shown_in_media),
   };
 }

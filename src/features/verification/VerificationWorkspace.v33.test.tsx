@@ -187,7 +187,6 @@ describe('VerificationWorkspace – rekord v3.3', () => {
     );
     expect(screen.queryByTestId('verification-param-side-mismatch-note')).not.toBeInTheDocument();
     expect(screen.getByTestId('verification-param-side-select')).toHaveTextContent('Na każdą stronę');
-    expect(screen.getByTestId('verification-param-side-start-select')).toHaveTextContent('Lewa');
     expect(screen.getByTestId('verification-param-equipment-items-label-1')).toHaveValue('mały zrolowany ręcznik');
     expect(screen.getByTestId('verification-param-range-sets-min-input')).toHaveValue('1');
     expect(screen.getByTestId('verification-param-range-sets-max-input')).toHaveValue('3');
@@ -367,7 +366,6 @@ describe('VerificationWorkspace – rekord v3.3', () => {
       'breathing.text': { stage: 'instruction', testId: 'verification-extra-breathing-input' },
       'side.mode': { stage: 'parameters', testId: 'verification-param-side-select' },
       'side.per_side_dose': { stage: 'parameters', testId: 'verification-param-per-side-note' },
-      'side.start': { stage: 'parameters', testId: 'verification-param-side-start-select' },
       'side.shown_in_media': { stage: 'material', testId: 'verification-fact-side-shown-in-media' },
       equipment_items: { stage: 'parameters', testId: 'verification-param-equipment-items-row-0' },
       'safety.stop_if': { stage: 'safety', testId: 'verification-safety-stop-if-input' },
@@ -461,8 +459,8 @@ describe('VerificationWorkspace – rekord v3.3', () => {
       side: {
         stage: 'parameters',
         act: async (user) => {
-          await user.click(screen.getByTestId('verification-param-side-start-select'));
-          await user.click(await screen.findByRole('option', { name: 'Prawa' }));
+          await user.click(screen.getByTestId('verification-param-side-select'));
+          await user.click(await screen.findByRole('option', { name: 'Naprzemiennie' }));
         },
       },
     };
@@ -506,7 +504,7 @@ describe('VerificationWorkspace – rekord v3.3', () => {
     }
     expect(restored).toEqual(golden);
     expect(saved.safety.precautions).toEqual([{ group: NEW_PRECAUTION_GROUP, text: 'X' }]);
-    expect(saved.side).toEqual({ ...golden.side, start: 'right' });
+    expect(saved.side).toEqual({ ...golden.side, mode: 'alternating' });
     expect((saved.prescription.params as Record<string, unknown>).reps).toEqual({
       ...(golden.prescription?.params as Record<string, object>).reps,
       max: 20,

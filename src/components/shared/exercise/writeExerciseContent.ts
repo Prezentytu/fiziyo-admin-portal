@@ -148,7 +148,6 @@ export const V33_PATIENT_VISIBLE_PATHS: readonly string[] = [
   'breathing.text',
   'side.mode',
   'side.per_side_dose',
-  'side.start',
   'side.shown_in_media',
   'equipment_items',
   'safety.stop_if',
