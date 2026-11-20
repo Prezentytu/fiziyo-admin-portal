@@ -9,7 +9,7 @@ import { ExerciseThumbnail } from '@/components/shared/exercise/ExerciseThumbnai
 import { buildExerciseImageUrls } from '@/components/shared/exercise/adapters';
 import { cn } from '@/lib/utils';
 import { useExercisePickerPages } from '@/hooks/useExercisePickerPages';
-import { tokenizeWords, wordStems } from '../utils/textMatch';
+import { exerciseSearchTerms } from '../utils/exerciseDiscussion';
 import { useChatActions } from '../ChatSessionContext';
 import { useAvailableExercises, type ChatCatalogExercise } from '../useAvailableExercises';
 import { pickExercisesById, searchExercises } from '../utils/exerciseLookup';
@@ -28,13 +28,14 @@ export function ExerciseResultsCard(props: CardProps<'ExerciseResults'>) {
 
 function SetCatalogResults(props: CardProps<'ExerciseResults'>) {
   const { organizationId } = useChatActions();
-  const words = tokenizeWords(props.spec.query).filter((word) => word.length >= 3 && !/^zdrow[aye]$/.test(word));
-  const search = words.map((word) => wordStems(word)[0]).join(' ') || props.spec.query;
+  const search = exerciseSearchTerms(props.spec.query) || props.spec.query;
   const page = useExercisePickerPages<ChatCatalogExercise>({ organizationId, search, sourceFilter: 'all' });
   if ((page.error && !page.items.length) || !organizationId) {
     return (
       <ChatCard testId={props.testId} title="Nie udało się sprawdzić katalogu">
-        <ChatCardEmpty>Napisz ponownie, żeby wyszukać ćwiczenia do zestawu.</ChatCardEmpty>
+        <ChatCardEmpty testId={`${props.testId}-error`}>
+          Napisz ponownie, żeby wyszukać ćwiczenia do zestawu.
+        </ChatCardEmpty>
       </ChatCard>
     );
   }

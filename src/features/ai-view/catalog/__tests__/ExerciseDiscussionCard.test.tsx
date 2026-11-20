@@ -8,6 +8,13 @@ const state = vi.hoisted(() => ({
   appendExchange: vi.fn(),
   markChosen: vi.fn(),
 }));
+vi.mock('../../useChatMode', () => ({ useChatMode: () => ({ preference: { useAi: true } }) }));
+vi.mock('../useExerciseIdeas', () => ({
+  useExerciseIdeas: () => ({
+    status: 'ready',
+    ideas: [{ name: 'Nowy ruch testowy', position: 'siad', equipment: null, side: 'none', level: 'easy' }],
+  }),
+}));
 vi.mock('@apollo/client/react', () => ({ useQuery: state.visible }));
 vi.mock('@/hooks/useExercisePickerPages', () => ({ useExercisePickerPages: state.search }));
 vi.mock('../../ChatSessionContext', () => ({
@@ -52,6 +59,17 @@ describe('rozmowa o ćwiczeniu', () => {
       skip: false,
     });
     expect(screen.getByText(entry.name)).toBeInTheDocument();
+  });
+
+  it('po pustym wyszukiwaniu proponuje utworzenie jednego ruchu bez powiązania z zestawem', () => {
+    state.visible.mockReturnValue({ data: {}, loading: false });
+    show();
+    expect(screen.getByText('Nowy ruch testowy')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Utwórz' }));
+    expect(state.appendExchange.mock.calls[0][1].spec).toEqual({
+      component: 'CreateExercise',
+      name: 'Nowy ruch testowy',
+    });
   });
 
   it('rozróżnia błąd od braku dopasowań i otwiera formularz na jawny wybór', () => {

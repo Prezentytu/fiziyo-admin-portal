@@ -9,6 +9,7 @@ import { useChatActions, useChatBusy } from '../ChatSessionContext';
 import { exerciseFormFromDiscussion, type ExerciseDiscussion } from '../utils/exerciseDiscussion';
 import { pickExercisesById, type SearchableExercise } from '../utils/exerciseLookup';
 import type { CardProps } from './cardProps';
+import { ExerciseIdeasList } from './ExerciseIdeas';
 import { ChatCard, ChatCardNote } from './ChatCard';
 
 interface VisibleRecords {
@@ -46,9 +47,13 @@ export function ExerciseDiscussionCard({
   const loading = !items.length && ((ids.length > 0 && records.loading) || (searchLibrary && page.loading));
   const failed = !items.length && (!organizationId || (searchLibrary ? page.error : ids.length && records.error));
 
-  function create() {
+  function create(name?: string) {
     markChosen(messageId, 'create');
-    appendExchange('Utwórz własne ćwiczenie', { spec: exerciseFormFromDiscussion(spec) });
+    appendExchange(name ? `Utwórz ćwiczenie: ${name}` : 'Utwórz własne ćwiczenie', {
+      spec: name
+        ? { component: 'CreateExercise', name, ...(spec.offerForSet && { offerForSet: spec.offerForSet }) }
+        : exerciseFormFromDiscussion(spec),
+    });
   }
 
   function discuss(exercise: SearchableExercise) {
@@ -68,7 +73,7 @@ export function ExerciseDiscussionCard({
       testId={testId}
       title={discussion.selected ? 'Wybrane ćwiczenie' : 'Ćwiczenia dostępne w katalogu'}
       footer={
-        <Button variant="outline" disabled={disabled} onClick={create} data-testid={`${testId}-create-btn`}>
+        <Button variant="outline" disabled={disabled} onClick={() => create()} data-testid={`${testId}-create-btn`}>
           Utwórz własne ćwiczenie
         </Button>
       }
@@ -111,9 +116,20 @@ export function ExerciseDiscussionCard({
               : discussion.selected
                 ? 'To ćwiczenie jest już niedostępne.'
                 : search
-                  ? 'Brak dopasowań w katalogu. Jak inaczej opisać ruch?'
+                  ? 'Brak dopasowań w katalogu. Możesz przygotować nowe ćwiczenie.'
                   : 'Podaj nazwę ruchu lub okolicę ciała, żeby sprawdzić katalog.'}
         </ChatCardNote>
+      )}
+      {searchLibrary && !loading && !failed && !items.length && (
+        <ExerciseIdeasList
+          query={spec.name || search}
+          messageId={messageId}
+          testId={`${testId}-ideas`}
+          catalogNames={[]}
+          offerOwn={false}
+          disabled={disabled}
+          onCreate={create}
+        />
       )}
     </ChatCard>
   );

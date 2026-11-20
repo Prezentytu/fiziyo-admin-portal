@@ -29,6 +29,7 @@ export function ExerciseIdeasList({
   offerOwn = true,
   showHeading = true,
   forSet,
+  onCreate,
 }: {
   readonly query: string;
   readonly messageId: string;
@@ -40,6 +41,7 @@ export function ExerciseIdeasList({
   /** Off in the ideas card, whose title already says it. */
   readonly showHeading?: boolean;
   readonly forSet?: SetDraftReturn;
+  readonly onCreate?: (name: string) => void;
 }) {
   const { appendExchange, markChosen } = useChatActions();
   const { preference } = useChatMode();
@@ -50,6 +52,7 @@ export function ExerciseIdeasList({
   );
 
   const create = (name: string) => {
+    if (onCreate) return onCreate(name);
     if (forSet) markChosen(messageId, name);
     appendExchange(
       `Utwórz ćwiczenie: ${name}`,

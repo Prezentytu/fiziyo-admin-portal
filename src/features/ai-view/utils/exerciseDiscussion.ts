@@ -15,7 +15,7 @@ export function exerciseSearchTerms(topic: string): string {
   // The library ANDs its search terms. Leave out the request and symptoms („na bolącą stopę” → „stop”).
   const words = normalizeSearchText(topic).match(/[a-z0-9]+/g) ?? [];
   return words
-    .filter((word) => word.length >= 3 && !/^(?:cwiczeni\w*|bolac\w*|bol|bolu|dla|przy|bez)$/.test(word))
+    .filter((word) => word.length >= 3 && !/^(?:cwiczeni\w*|bolac\w*|bol|bolu|zdrow[aye]|dla|przy|bez)$/.test(word))
     .map((word) => (word === 'siadzie' ? 'siad' : word.length >= 4 ? wordStems(word)[0] : word))
     .join(' ');
 }
