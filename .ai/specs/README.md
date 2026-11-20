@@ -33,7 +33,7 @@ Każda specyfikacja powinna zawierać:
 
 ### Statusy (wspólny słownik z `fizjo-app`, od 2026-09-10)
 
-`draft` → `approved` → `in-progress` → `implemented` → `verified`; `deprecated` dla wycofanych. Status jest **tylko** w tym indeksie i nadajesz go z dowodem w pliku speca albo w PR (np. „WDROŻONE”, changelog z numerem PR, spec opisujący istniejącą implementację = `implemented`). `Aktywny` to legacy: 2026-10-29 zostało 8 speców bez dowodu statusu (007, 008, 009, 010, 011, 013, 015, 016), wypisanych w `LEGACY_AKTYWNY` w `scripts/check-specs-index.mjs`. Przy edycji takiego specu nadaj status ze słownika i usuń numer z listy. `npm run agent:check` sprawdza wiersz i frontmatter każdego pliku, plik dla każdego wiersza, słownik statusów; `Aktywny` spoza listy jest błędem, z listy ostrzeżeniem.
+`draft` → `approved` → `in-progress` → `implemented` → `verified`; `deprecated` dla wycofanych. Status jest **tylko** w tym indeksie i nadajesz go z dowodem w pliku speca albo w PR (np. „WDROŻONE”, changelog z numerem PR, spec opisujący istniejącą implementację = `implemented`). Indeksy ze statusem `Aktywny` są zapisane w `LEGACY_AKTYWNY` w `scripts/check-specs-index.mjs`. Przy edycji takiego specu nadaj status ze słownika i usuń numer z listy. `npm run agent:check` sprawdza wiersz i frontmatter każdego pliku, plik dla każdego wiersza i słownik statusów. `Aktywny` spoza listy jest błędem, a z listy ostrzeżeniem.
 
 ### Metadane i dowody (od 2026-09-10)
 
@@ -86,7 +86,7 @@ Każda specyfikacja powinna mieć sekcję Changelog na końcu:
 | 008 | [Exercise Report Verification Flow](SPEC-008-2026-03-08-exercise-report-verification-flow.md)         | Zgłaszanie ćwiczeń do kolejki verification                       | Aktywny     |
 | 009 | [Organization Exercise Verification](SPEC-009-2026-05-25-organization-exercise-verification.md)       | Weryfikacja ćwiczeń na poziomie organizacji                      | Aktywny     |
 | 010 | [Import Module](SPEC-010-2026-03-08-import-module.md)                                                 | Import dokumentów (plik i plain text)                            | Aktywny     |
-| 011 | [Invite Flow Without Legacy Plan Limits](SPEC-011-2026-03-08-invite-flow-no-legacy-limits.md)         | Invite flow bez limitów starego modelu planów                    | Aktywny     |
+| 011 | [Invite Flow Without Legacy Plan Limits](SPEC-011-2026-03-08-invite-flow-no-legacy-limits.md)         | Invite flow bez limitów starego modelu planów                    | implemented |
 | 012 | [Exercise Dosage Model](SPEC-012-2026-04-08-exercise-dosage-model.md)                                 | Single source of truth dla semantyki podstawowych parametrów     | implemented |
 | 013 | [Verification Dual-Track](SPEC-013-2026-05-26-verification-dual-track.md)                             | Dwa tory weryfikacji + cross-org dla super admin                 | Aktywny     |
 | 014 | [Real-time Patient Assignment Sync](SPEC-014-2026-04-17-realtime-patient-sync.md)                     | Push admin->mobile przez GraphQL Subscriptions                   | implemented |

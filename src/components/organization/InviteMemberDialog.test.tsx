@@ -48,10 +48,12 @@ describe('InviteMemberDialog', () => {
     });
   });
 
-  it('kopiuje pełny adres długiego zaproszenia z podglądu linku', async () => {
+  it('kopiuje pełny adres długiego zaproszenia dopiero po kliknięciu przycisku', async () => {
     const user = userEvent.setup();
     const token = 'testowy-token-'.repeat(20);
     const url = `${window.location.origin}/invite?token=${token}`;
+    const previousClipboard = 'Tekst w schowku przed wygenerowaniem linku';
+    await navigator.clipboard.writeText(previousClipboard);
     generateInviteLinkMock.mockResolvedValueOnce({
       data: {
         generateInviteLink: {
@@ -66,9 +68,15 @@ describe('InviteMemberDialog', () => {
 
     await user.click(screen.getByTestId('org-invite-tab-link'));
     await user.click(screen.getByTestId('org-invite-generate-link-btn'));
-    await user.click(await screen.findByTestId('org-share-copy-url-btn'));
+    const copyButton = await screen.findByRole('button', { name: 'Kopiuj link' });
 
+    expect(screen.getByRole('textbox', { name: 'Link zaproszenia' })).toHaveValue(url);
+    expect(await navigator.clipboard.readText()).toBe(previousClipboard);
+    expect(toastSuccessMock).toHaveBeenCalledExactlyOnceWith('Link zaproszenia jest gotowy');
+
+    await user.click(copyButton);
     expect(await navigator.clipboard.readText()).toBe(url);
+    expect(toastSuccessMock).toHaveBeenLastCalledWith('Link skopiowany do schowka');
   });
 
   it('nie pokazuje juz dialogu LimitReached dla bledow GraphQL (model pay-as-you-go)', async () => {
@@ -88,7 +96,6 @@ describe('InviteMemberDialog', () => {
         open
         onOpenChange={vi.fn()}
         organizationId="org-1"
-        organizationName="Test Org"
       />
     );
 
@@ -120,7 +127,6 @@ describe('InviteMemberDialog', () => {
         open
         onOpenChange={vi.fn()}
         organizationId="org-1"
-        organizationName="Test Org"
       />
     );
 

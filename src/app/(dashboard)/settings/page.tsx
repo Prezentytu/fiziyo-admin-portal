@@ -70,7 +70,6 @@ export default function SettingsPage() {
   const {
     data: orgsData,
     loading: orgsLoading,
-    refetch: refetchOrganizations,
   } = useQuery(GET_USER_ORGANIZATIONS_QUERY, {
     skip: !clerkUser?.id,
   });
@@ -293,7 +292,6 @@ export default function SettingsPage() {
                 <OrganizationsList
                   organizations={organizations as UserOrganization[]}
                   defaultOrganizationId={userByClerkId.organizationIds?.[0]}
-                  onOrganizationsChange={() => refetchOrganizations()}
                   onNavigateToOrganization={() => setActiveTab('organization')}
                 />
               )}

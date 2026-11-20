@@ -39,7 +39,6 @@ interface InviteMemberDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   organizationId: string;
-  organizationName?: string;
   onSuccess?: () => void;
 }
 
@@ -73,7 +72,6 @@ export function InviteMemberDialog({
   open,
   onOpenChange,
   organizationId,
-  organizationName = 'organizacji',
   onSuccess,
 }: InviteMemberDialogProps) {
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
@@ -170,7 +168,7 @@ export function InviteMemberDialog({
           role: invitation.role,
         });
 
-        toast.success('Link został wygenerowany');
+        toast.success('Link zaproszenia jest gotowy');
       }
     } catch (error: unknown) {
       const errorMessage = getInviteErrorMessage(error, 'Nie udało się wygenerować linku');
@@ -336,7 +334,6 @@ export function InviteMemberDialog({
                 <div className="space-y-3">
                   <ShareSheet
                     url={generatedLink.url}
-                    organizationName={organizationName}
                     role={generatedLink.role}
                     expiresAt={generatedLink.expiresAt}
                   />
