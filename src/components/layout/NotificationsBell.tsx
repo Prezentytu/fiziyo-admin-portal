@@ -88,7 +88,7 @@ export function NotificationsBell() {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-80 p-0" data-testid="nav-notifications-panel">
+      <PopoverContent align="end" className="w-80 overflow-hidden p-0" data-testid="nav-notifications-panel">
         {sentRelease && (
           <Link
             href={releaseNoteHref(sentRelease.id)}
