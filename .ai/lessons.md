@@ -18,6 +18,22 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 
 ## Wpisy
 
+### 2026-11-20 - Draft ćwiczenia w czacie znikał po zmianie zakładki
+
+- **Kategoria**: `React`
+- **Problem**: Ćwiczenie w 3/4 wygenerowane w czacie, wyjście na inny ekran i powrót: rozmowa była, karta wracała pusta.
+- **Przyczyna**: Wątek żyje w providerze w layoucie, a formularz, sekcje, grafika i przebieg AI karty `CreateExercise` żyły w komponencie i ginęły przy odmontowaniu.
+- **Rozwiązanie**: Draft i przebieg AI w `catalog/exerciseDraftStore.ts` (pamięć, klucz `messageId`), czyszczone przy zmianie użytkownika lub organizacji.
+- **Reguła**: Stan karty czatu, którego utrata kosztuje pracę albo kredyty AI, trzymaj ponad kartą; karta tylko go wyświetla. [egzekwowane: src/features/ai-view/catalog/__tests__/CreateExerciseCard.remount.test.tsx]
+
+### 2026-11-20 - Przyjęcie zaproszenia nie przełączało organizacji
+
+- **Kategoria**: `React`
+- **Problem**: Portal po powitaniu otwierał stary gabinet.
+- **Przyczyna**: Akceptacja zapisywała członkostwo, przekierowanie brało stary kontekst.
+- **Rozwiązanie**: Obie ścieżki aktywują organizację z mutacji przed sukcesem.
+- **Reguła**: Po zapisaniu członkostwa błąd przełączenia ponawiaj samym przełączeniem. [egzekwowane: src/components/organization/__tests__/joinOrganizationFlow.test.tsx]
+
 ### 2026-11-20 - Weryfikator FiziYo nie widział „Zgłoś do poprawki”
 
 - **Kategoria**: `UI/UX`
@@ -186,14 +202,6 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 - **Rozwiązanie**: `navigationConfig.ts` + `useNavigationItems` dla obu menu; jedna pozycja „Weryfikacja” (`matchHrefs` na wszystkie kolejki) i `VerificationScopeTabs` z dostępnych zasięgów (`getVerificationScopes`). Sidebar ma tylko codzienną pracę; Zespół i Finanse są w menu konta (`buildAccountNavigationItems`), a zdublowany link „Ustawienia” zniknął.
 - **Reguła**: Nowa pozycja menu idzie tylko do `navigationConfig.ts`. Kilka widoków tej samej pracy (różny zasięg) to jedna pozycja menu z zakładkami, nie osobne linki. Strony odwiedzane rzadziej niż raz w tygodniu idą do menu konta, nie do sidebara.
 
-### 2026-10-30 - Globalny styl poza warstwą przykrywa utility Tailwinda
-
-- **Kategoria**: `UI`
-- **Problem**: Pole czatu miało `focus:outline-none`, a i tak rysowało prostokątny obrys w zaokrąglonym kompozytorze, co wyglądało tanio.
-- **Przyczyna**: W Tailwind 4 utility żyją w `@layer utilities`, a reguła `:focus-visible` w `globals.css` była poza warstwą; styl bez warstwy wygrywa z każdą warstwą niezależnie od specyficzności.
-- **Rozwiązanie**: Globalny obrys `:focus-visible` przeniesiony do `@layer base`; komponenty nadpisują go własnym `focus-visible:*`.
-- **Reguła**: Globalne style elementów i pseudoklas w `globals.css` trzymaj w `@layer base`, inaczej żadna klasa komponentu ich nie nadpisze.
-
 ### 2026-10-27 - Zwrot z weryfikacji FiziYo jest na kopii, nie na oryginale
 
 - **Kategoria**: `GraphQL`
@@ -225,14 +233,6 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 - **Przyczyna**: Źle zrozumiany SSOT: player liczy `prep + workOneSide * sets * sideMultiplier + restSets * (sets-1)`.
 - **Rozwiązanie**: Wzór z `main` / `computePlannedDurationSec`; test 420 s i fixture 110 s. `overridesJson` przy merge zostaje.
 - **Reguła**: Jeśli liczysz czas dla BOTH, mnoż tylko blok pracy jednej strony; `restSets` raz. `preparationTime` na starcie oraz przed prawą stroną każdej serii (2026-10-27). [egzekwowane: src/utils/exerciseTime.test.ts]
-
-### 2026-10-27 - BOTH dolicza przygotowanie przed prawą stroną
-
-- **Kategoria**: `UI/UX` | `Testing`
-- **Problem**: Player odlicza przygotowanie także przed prawą stroną (`fizjo-app` #191), a kafel w panelu zostawiał `preparationTime` raz — 105 s vs 130 s na tej samej dawce.
-- **Przyczyna**: Lesson 2026-09-24 i `src/features/exercises/AGENTS.md` mówiły „przygotowanie raz”, więc agent egzekwujący kontrakt cofałby `sideChangePreparationTime`.
-- **Rozwiązanie**: `calculateExerciseTotalSeconds` dodaje `preparationTime * sets` przy `side=both` (PR #131). Inne tryby bez zmian.
-- **Reguła**: Jeśli liczysz czas BOTH, dodaj `preparationTime` na starcie i `preparationTime` przed każdą prawą stroną; `restSets` bez mnożnika.
 
 ### 2026-09-21 - Pusta lista rulesets to nie 403 planu Free
 

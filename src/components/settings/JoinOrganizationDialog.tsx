@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useQuery, useMutation } from '@apollo/client/react';
+import { useState, useEffect } from 'react';
+import { useQuery } from '@apollo/client/react';
 import {
   Building2,
   Loader2,
@@ -13,16 +13,16 @@ import {
   UserPlus,
   ArrowRight,
 } from 'lucide-react';
-import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
 import { GET_INVITATION_BY_TOKEN_QUERY } from '@/graphql/queries/organizations.queries';
-import { ACCEPT_INVITATION_MUTATION } from '@/graphql/mutations/organizations.mutations';
+import { useAcceptOrganizationInvitation } from '@/components/organization/useAcceptOrganizationInvitation';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import type { OrganizationInvitation } from '@/types/apollo';
 import { cn } from '@/lib/utils';
 
@@ -33,7 +33,6 @@ import { cn } from '@/lib/utils';
 interface JoinOrganizationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSuccess?: () => void;
 }
 
 interface GetInvitationByTokenResponse {
@@ -79,26 +78,24 @@ function getRoleLabel(role: string): string {
 // Component
 // ========================================
 
-export function JoinOrganizationDialog({ open, onOpenChange, onSuccess }: JoinOrganizationDialogProps) {
+export function JoinOrganizationDialog({ open, onOpenChange }: JoinOrganizationDialogProps) {
   const [inputValue, setInputValue] = useState('');
   const [submittedToken, setSubmittedToken] = useState('');
   const [validationState, setValidationState] = useState<ValidationState>('idle');
-  const [isAccepting, setIsAccepting] = useState(false);
+  const { refreshOrganizations } = useOrganization();
+  const { status: joinStatus, join, retrySwitch, reset } = useAcceptOrganizationInvitation(() => onOpenChange(false));
+  const isBusy = joinStatus === 'accepting' || joinStatus === 'switching';
+  const switchFailed = joinStatus === 'switch-failed';
+  const visibleValidation = joinStatus === 'idle' || joinStatus === 'accepting' ? validationState : 'idle';
 
   const { data: inviteData, loading: validating } = useQuery<GetInvitationByTokenResponse>(
     GET_INVITATION_BY_TOKEN_QUERY,
     {
       variables: { token: submittedToken },
-      skip: !submittedToken,
+      skip: !open || !submittedToken,
       fetchPolicy: 'network-only',
     }
   );
-
-  // Accept mutation
-  const [acceptInvitation] = useMutation(ACCEPT_INVITATION_MUTATION, {
-    refetchQueries: ['GetUserOrganizations', 'GetOrganizationInvitations', 'GetOrganizationInvitationStats'],
-    awaitRefetchQueries: false,
-  });
 
   const invitation = inviteData?.invitationByToken;
 
@@ -160,35 +157,25 @@ export function JoinOrganizationDialog({ open, onOpenChange, onSuccess }: JoinOr
       setInputValue('');
       setSubmittedToken('');
       setValidationState('idle');
-      setIsAccepting(false);
+      reset();
     }
-  }, [open]);
+  }, [open, reset]);
 
-  // Handle accept
-  const handleAccept = useCallback(async () => {
+  const handleAccept = () => {
     const token = extractToken(inputValue);
-    if (!token || validationState !== 'valid') return;
+    if (!token || visibleValidation !== 'valid') return;
+    void join(token);
+  };
 
-    setIsAccepting(true);
-
-    try {
-      await acceptInvitation({
-        variables: { invitationToken: token },
-      });
-
-      toast.success('Dołączyłeś do organizacji!');
-      onOpenChange(false);
-      onSuccess?.();
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Nieznany błąd';
-      toast.error(`Błąd: ${errorMessage}`);
-      setIsAccepting(false);
-    }
-  }, [inputValue, validationState, acceptInvitation, onOpenChange, onSuccess]);
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (isBusy) return;
+    onOpenChange(nextOpen);
+    if (!nextOpen && switchFailed) refreshOrganizations();
+  };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md" data-testid="settings-join-org-dialog">
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-w-[95vw] grid-cols-1 sm:max-w-md" data-testid="settings-join-org-dialog">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5 text-primary" />
@@ -204,22 +191,25 @@ export function JoinOrganizationDialog({ open, onOpenChange, onSuccess }: JoinOr
               <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 data-testid="settings-join-org-token-input"
+                aria-label="Wklej link zaproszenia"
                 placeholder="https://portal.fiziyo.pl/invite?token=..."
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 className="pl-9 pr-10"
+                autoComplete="off"
+                readOnly={joinStatus !== 'idle'}
                 autoFocus
               />
-              {validationState === 'validating' && (
+              {visibleValidation === 'validating' && (
                 <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin" />
               )}
-              {validationState === 'valid' && (
+              {visibleValidation === 'valid' && (
                 <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
               )}
-              {(validationState === 'expired' ||
-                validationState === 'not_found' ||
-                validationState === 'already_used' ||
-                validationState === 'revoked') && (
+              {(visibleValidation === 'expired' ||
+                visibleValidation === 'not_found' ||
+                visibleValidation === 'already_used' ||
+                visibleValidation === 'revoked') && (
                 <XCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-destructive" />
               )}
             </div>
@@ -227,7 +217,7 @@ export function JoinOrganizationDialog({ open, onOpenChange, onSuccess }: JoinOr
           </div>
 
           {/* Validation states */}
-          {validationState === 'expired' && (
+          {visibleValidation === 'expired' && (
             <Card className="border-status-warning/30 bg-status-warning-muted">
               <CardContent className="flex items-center gap-3 p-4">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-status-warning-muted">
@@ -241,7 +231,7 @@ export function JoinOrganizationDialog({ open, onOpenChange, onSuccess }: JoinOr
             </Card>
           )}
 
-          {validationState === 'not_found' && inputValue.trim() && (
+          {visibleValidation === 'not_found' && inputValue.trim() && (
             <Card className="border-destructive/30 bg-destructive/5">
               <CardContent className="flex items-center gap-3 p-4">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-destructive/20">
@@ -255,7 +245,7 @@ export function JoinOrganizationDialog({ open, onOpenChange, onSuccess }: JoinOr
             </Card>
           )}
 
-          {validationState === 'already_used' && (
+          {visibleValidation === 'already_used' && (
             <Card className="border-border/60 bg-surface-light">
               <CardContent className="flex items-center gap-3 p-4">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/20">
@@ -269,7 +259,7 @@ export function JoinOrganizationDialog({ open, onOpenChange, onSuccess }: JoinOr
             </Card>
           )}
 
-          {validationState === 'revoked' && (
+          {visibleValidation === 'revoked' && (
             <Card className="border-destructive/30 bg-destructive/5">
               <CardContent className="flex items-center gap-3 p-4">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-destructive/20">
@@ -284,7 +274,7 @@ export function JoinOrganizationDialog({ open, onOpenChange, onSuccess }: JoinOr
           )}
 
           {/* Valid invitation preview */}
-          {validationState === 'valid' && invitation && (
+          {visibleValidation === 'valid' && invitation && (
             <Card className="border-primary/30 bg-primary/5 overflow-hidden">
               <div className="h-1 bg-gradient-to-r from-primary via-primary to-primary" />
               <CardContent className="p-4 space-y-4">
@@ -306,7 +296,7 @@ export function JoinOrganizationDialog({ open, onOpenChange, onSuccess }: JoinOr
                     <p className="font-semibold text-lg text-foreground truncate">
                       {invitation.organization?.name || 'Organizacja'}
                     </p>
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
                       <span className="text-sm text-muted-foreground">Dołączysz jako:</span>
                       <Badge variant="outline" className="border-primary/30 text-primary">
                         {getRoleLabel(invitation.role)}
@@ -341,28 +331,37 @@ export function JoinOrganizationDialog({ open, onOpenChange, onSuccess }: JoinOr
             </Card>
           )}
 
-          {/* Actions */}
-          <div className="flex justify-end gap-3 pt-2">
+          {switchFailed && (
+            <p role="alert" className="text-sm text-muted-foreground">
+              Zaproszenie zostało przyjęte. Nie udało się przełączyć na nową organizację.
+            </p>
+          )}
+          <DialogFooter className="pt-2">
             <Button
               data-testid="settings-join-org-cancel-btn"
               variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isAccepting}
+              onClick={() => handleOpenChange(false)}
+              disabled={isBusy}
             >
               Anuluj
             </Button>
             <Button
-              onClick={handleAccept}
-              disabled={validationState !== 'valid' || isAccepting}
+              onClick={switchFailed ? retrySwitch : handleAccept}
+              disabled={(!switchFailed && visibleValidation !== 'valid') || isBusy}
               className={cn(
                 'gap-2',
-                validationState === 'valid' &&
+                visibleValidation === 'valid' &&
                   'bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-accent-green'
               )}
               data-testid="settings-join-org-submit-btn"
             >
-              {isAccepting ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+              {isBusy ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {joinStatus === 'switching' ? 'Przełączanie…' : 'Dołączanie…'}
+                </>
+              ) : switchFailed ? (
+                'Spróbuj ponownie'
               ) : (
                 <>
                   <UserPlus className="h-4 w-4" />
@@ -371,7 +370,7 @@ export function JoinOrganizationDialog({ open, onOpenChange, onSuccess }: JoinOr
                 </>
               )}
             </Button>
-          </div>
+          </DialogFooter>
         </div>
       </DialogContent>
     </Dialog>

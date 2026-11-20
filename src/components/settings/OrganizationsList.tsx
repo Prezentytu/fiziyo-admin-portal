@@ -24,7 +24,6 @@ export interface UserOrganization {
 interface OrganizationsListProps {
   organizations: UserOrganization[];
   defaultOrganizationId?: string;
-  onOrganizationsChange?: () => void;
   onNavigateToOrganization?: () => void;
 }
 
@@ -64,16 +63,11 @@ function CreateOrganizationTile({ onClick }: Readonly<{ onClick: () => void }>) 
 export function OrganizationsList({
   organizations,
   defaultOrganizationId,
-  onOrganizationsChange,
   onNavigateToOrganization,
 }: OrganizationsListProps) {
   const { currentOrganization, switchOrganization, isSwitching } = useOrganization();
   const [showJoinDialog, setShowJoinDialog] = useState(false);
   const openCreateOrganization = useOpenCreateOrganization();
-
-  const handleJoinSuccess = () => {
-    onOrganizationsChange?.();
-  };
 
   const handleOrganizationClick = async (organizationId: string, isActive: boolean) => {
     if (!isActive) {
@@ -99,8 +93,8 @@ export function OrganizationsList({
               <UserPlus className="h-5 w-5 text-on-tint" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-base font-bold text-on-tint">Dołącz do organizacji</h3>
-              <p className="text-sm text-on-tint/80">Poproś o zaproszenie od właściciela gabinetu</p>
+              <h3 className="text-base font-bold text-on-tint">Wklej link zaproszenia</h3>
+              <p className="text-sm text-on-tint/80">Dołącz do organizacji, która Cię zaprosiła</p>
             </div>
             <ArrowRight className="h-5 w-5 text-on-tint/60 group-hover:text-on-tint group-hover:translate-x-1 transition-all duration-300 shrink-0" />
           </div>
@@ -117,7 +111,7 @@ export function OrganizationsList({
           </CardContent>
         </Card>
 
-        <JoinOrganizationDialog open={showJoinDialog} onOpenChange={setShowJoinDialog} onSuccess={handleJoinSuccess} />
+        <JoinOrganizationDialog open={showJoinDialog} onOpenChange={setShowJoinDialog} />
       </div>
     );
   }
@@ -140,8 +134,8 @@ export function OrganizationsList({
               <UserPlus className="h-5 w-5 text-on-tint" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-base font-bold text-on-tint">Dołącz do organizacji</h3>
-              <p className="text-sm text-on-tint/80">Poproś o zaproszenie od właściciela gabinetu</p>
+              <h3 className="text-base font-bold text-on-tint">Wklej link zaproszenia</h3>
+              <p className="text-sm text-on-tint/80">Dołącz do organizacji, która Cię zaprosiła</p>
             </div>
             <ArrowRight className="h-5 w-5 text-on-tint/60 group-hover:text-on-tint group-hover:translate-x-1 transition-all duration-300 shrink-0" />
           </div>
@@ -248,7 +242,7 @@ export function OrganizationsList({
         </CardContent>
       </Card>
 
-      <JoinOrganizationDialog open={showJoinDialog} onOpenChange={setShowJoinDialog} onSuccess={handleJoinSuccess} />
+      <JoinOrganizationDialog open={showJoinDialog} onOpenChange={setShowJoinDialog} />
     </div>
   );
 }

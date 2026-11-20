@@ -4,6 +4,22 @@ Wpisy przeniesione z `.ai/lessons.md`: starsze niż 30 dni w chwili przeniesieni
 
 ## Wpisy
 
+### 2026-10-30 - Globalny styl poza warstwą przykrywa utility Tailwinda
+
+- **Kategoria**: `UI`
+- **Problem**: Pole czatu miało `focus:outline-none`, a i tak rysowało prostokątny obrys w zaokrąglonym kompozytorze, co wyglądało tanio.
+- **Przyczyna**: W Tailwind 4 utility żyją w `@layer utilities`, a reguła `:focus-visible` w `globals.css` była poza warstwą; styl bez warstwy wygrywa z każdą warstwą niezależnie od specyficzności.
+- **Rozwiązanie**: Globalny obrys `:focus-visible` przeniesiony do `@layer base`; komponenty nadpisują go własnym `focus-visible:*`.
+- **Reguła**: Globalne style elementów i pseudoklas w `globals.css` trzymaj w `@layer base`, inaczej żadna klasa komponentu ich nie nadpisze.
+
+### 2026-10-27 - BOTH dolicza przygotowanie przed prawą stroną
+
+- **Kategoria**: `UI/UX` | `Testing`
+- **Problem**: Player odlicza przygotowanie także przed prawą stroną (`fizjo-app` #191), a kafel w panelu zostawiał `preparationTime` raz — 105 s vs 130 s na tej samej dawce.
+- **Przyczyna**: Lesson 2026-09-24 i `src/features/exercises/AGENTS.md` mówiły „przygotowanie raz”, więc agent egzekwujący kontrakt cofałby `sideChangePreparationTime`.
+- **Rozwiązanie**: `calculateExerciseTotalSeconds` dodaje `preparationTime * sets` przy `side=both` (PR #131). Inne tryby bez zmian.
+- **Reguła**: Jeśli liczysz czas BOTH, dodaj `preparationTime` na starcie i `preparationTime` przed każdą prawą stroną; `restSets` bez mnożnika.
+
 ### 2026-10-15 - Enter na ostatnim kroku kreatora nie zapisuje planu
 
 - **Kategoria**: `UI/UX`
@@ -274,7 +290,7 @@ Wpisy przeniesione z `.ai/lessons.md`: starsze niż 30 dni w chwili przeniesieni
 - **Problem**: Create wizard, dialog edycji (`ExerciseForm`) i detal (`ExerciseEditor`) miały różne zestawy pól i etykiet (`Czas powtórzenia` vs `Czas 1 powtórzenia`); mapping/override też dryfowały.
 - **Przyczyna**: Trzy niezależne artefakty formularza z lokalnymi listami pól zamiast jednego field-setu z intencją (Salesforce page-layout tax).
 - **Rozwiązanie**: `fieldContract.ts` jako SSOT (tier, surfaces, zod, options) + etykiety z `displayRegistry`; `ExerciseParametersEditor` / `ExerciseEditor` współdzielone; create = lean subset; usunięto `ExerciseForm` i martwe legacy edytory.
-- **Reguła**: Dla danych domenowych edytowanych w wielu miejscach utrzymuj jeden kontrakt pól. Powierzchnia może różnić layout i podzbiór (create-as-prefix), nigdy etykietę, walidację ani mapowanie na mutację. Guardrail: test kompletności kontraktu + integralność testid. [egzekwowane: src/components/shared/exercise/__tests__/fieldContract.test.ts]
+- **Reguła**: Dla danych domenowych edytowanych w wielu miejscach utrzymuj jeden kontrakt pól. Powierzchnia może różnić layout i podzbiór (create-as-prefix), nigdy etykietę, walidację ani mapowanie na mutację. Guardrail: test kompletności kontraktu + integralność testid. [egzekwowane: src/components/shared/exercise/**tests**/fieldContract.test.ts]
 
 ### 2026-07-28 - Personalizacja enrichment wymaga tej samej whitelist ścieżek w adminie i mobile
 

@@ -32,6 +32,7 @@ import type { CardProps } from './cardProps';
 import { ChatCard } from './ChatCard';
 import { QuickReplies } from './QuickReplies';
 import { useCreateExercise } from './useChatWrites';
+import { dropExerciseDraft, readExerciseDraft, updateExerciseDraft, useExerciseDraft } from './exerciseDraftStore';
 import { useExerciseDraftAi, type DraftFill, type DraftSection, type DraftSectionState } from './useExerciseDraftAi';
 
 const numberField = z.number({ message: 'Podaj liczbę' }).int().min(0).max(3600);
@@ -103,17 +104,18 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
   const { organizationId, contextPatient, appendAssistant, markChosen, sendMessage } = useChatActions();
   const isBusy = useChatBusy();
   // Wybrana inna pozycja idzie jako następna wiadomość; ta karta zostaje, a jej odpowiedzi są już zużyte.
-  const [pickedPosition, setPickedPosition] = useState<string>();
+  // Draft outside the card: another screen and back shows the same card, with AI done meanwhile.
+  const draft = useExerciseDraft(messageId);
+  const { exerciseType, image, pickedPosition } = draft;
+  const setImage = (file: File | null) => updateExerciseDraft(messageId, (current) => ({ ...current, image: file }));
   const { create, creating } = useCreateExercise();
   const { preference } = useChatMode();
   const useAi = preference.useAi;
-  const [exerciseType, setExerciseType] = useState<'reps' | 'time'>(CHAT_EXERCISE_DEFAULTS.type);
-  const [image, setImage] = useState<File | null>(null);
   const [staleDismissed, setStaleDismissed] = useState(false);
 
   const form = useForm<NewExerciseValues>({
     resolver: zodResolver(NEW_EXERCISE_SCHEMA),
-    defaultValues: {
+    defaultValues: readExerciseDraft(messageId)?.values ?? {
       name: spec.name ?? '',
       description: spec.description ?? '',
       side: CHAT_EXERCISE_DEFAULTS.side,
@@ -145,12 +147,20 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
   const stepItems = linesToItems(stepsText);
   const cueItems = linesToItems(cuesText);
 
+  // Every edit, by hand or by AI, goes to the draft, so a remount starts from it.
+  useEffect(() => {
+    if (chosen !== undefined) return undefined;
+    const keep = () => updateExerciseDraft(messageId, (current) => ({ ...current, values: form.getValues() }));
+    keep();
+    return form.subscribe({ formState: { values: true }, callback: keep });
+  }, [chosen, form, messageId]);
+
+  // Type and picture of an AI answer are already in the draft; the form takes the field values.
   const applyFill = (fill: DraftFill) => {
     const set = (field: keyof NewExerciseValues, value: string | number) =>
       form.setValue(field, value as never, { shouldDirty: true, shouldValidate: form.formState.isSubmitted });
     switch (fill.section) {
       case 'params':
-        setExerciseType(fill.params.type);
         set('side', fill.params.side);
         for (const field of PARAM_FIELDS) set(field.name, fill.params[field.name]);
         return;
@@ -159,7 +169,6 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
         set('stopIf', fill.stopIf);
         return;
       case 'image':
-        setImage(fill.file);
         return;
       default:
         set(fill.section, fill.text);
@@ -167,8 +176,15 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
   };
 
   const draftAi = useExerciseDraftAi({
+    draftKey: messageId,
     onFill: applyFill,
-    imageInput: () => ({ description: form.getValues('description'), type: exerciseType }),
+    imageInput: () => {
+      const current = readExerciseDraft(messageId);
+      return {
+        description: current?.values?.description ?? form.getValues('description'),
+        type: current?.exerciseType ?? exerciseType,
+      };
+    },
   });
   const { sections, generatedFor, running } = draftAi;
   const started = Object.values(sections).some((state) => state !== 'hidden');
@@ -207,6 +223,7 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
       image
     );
     if (!exercise) return;
+    dropExerciseDraft(messageId);
     markChosen(messageId, 'created');
     // Ćwiczenie utworzone dla propozycji zestawu: zestaw wraca od razu, z nowym ćwiczeniem.
     appendAssistant(
@@ -280,7 +297,7 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
             disabled={isBusy}
             testId={`${testId}-position`}
             onPick={(option) => {
-              setPickedPosition(option);
+              updateExerciseDraft(messageId, (current) => ({ ...current, pickedPosition: option }));
               sendMessage(option);
             }}
           />

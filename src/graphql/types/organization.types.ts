@@ -11,3 +11,9 @@ export interface CreateOrganizationResponse {
     creationTime: string;
   };
 }
+
+export interface AcceptInvitationResponse {
+  acceptInvitation: {
+    organizationId: string;
+  };
+}

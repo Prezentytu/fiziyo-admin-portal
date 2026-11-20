@@ -1,6 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { clearExerciseDrafts } from '../exerciseDraftStore';
 import { DRAFT_SECTIONS, useExerciseDraftAi, type DraftFill, type DraftSection } from '../useExerciseDraftAi';
 
 const { ai } = vi.hoisted(() => ({
@@ -44,6 +45,7 @@ function setup() {
   const order: DraftSection[] = [];
   const hook = renderHook(() =>
     useExerciseDraftAi({
+      draftKey: 'm1',
       onFill: (fill) => {
         fills.push(fill);
         order.push(fill.section);
@@ -64,6 +66,7 @@ async function runAll(promise: Promise<void>) {
 describe('useExerciseDraftAi', () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    clearExerciseDrafts();
     ai.suggestExercise.mockResolvedValue({ status: 'ok', suggestion: SUGGESTION });
     ai.generateEnrichment.mockResolvedValue(ENRICHMENT);
     ai.generateExerciseImage.mockResolvedValue({ status: 'ok', file: IMAGE });

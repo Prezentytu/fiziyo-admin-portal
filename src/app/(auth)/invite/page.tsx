@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useMutation, useQuery } from '@apollo/client/react';
+import { useQuery } from '@apollo/client/react';
 import { useUser, useAuth } from '@clerk/nextjs';
 import {
   Building2,
@@ -17,14 +17,14 @@ import {
   Sparkles,
 } from 'lucide-react';
 import Link from 'next/link';
-import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { WelcomeModal } from '@/components/organization/WelcomeModal';
-import { ACCEPT_INVITATION_MUTATION } from '@/graphql/mutations/organizations.mutations';
+import { useAcceptOrganizationInvitation } from '@/components/organization/useAcceptOrganizationInvitation';
+import { OrganizationProvider } from '@/contexts/OrganizationContext';
 import { GET_INVITATION_BY_TOKEN_QUERY } from '@/graphql/queries/organizations.queries';
 import type { OrganizationInvitation } from '@/types/apollo';
 import { cn } from '@/lib/utils';
@@ -35,15 +35,6 @@ import { cn } from '@/lib/utils';
 
 interface GetInvitationByTokenResponse {
   invitationByToken: OrganizationInvitation | null;
-}
-
-interface AcceptInvitationResponse {
-  acceptInvitation: {
-    id: string;
-    organizationId: string;
-    userId: string;
-    role: string;
-  };
 }
 
 // ========================================
@@ -57,9 +48,10 @@ function InvitePageContent() {
   const { signOut } = useAuth();
   const token = searchParams.get('token');
 
-  const [isAccepting, setIsAccepting] = useState(false);
-  const [showWelcome, setShowWelcome] = useState(false);
+  const [acceptedInvitation, setAcceptedInvitation] = useState<OrganizationInvitation | null>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const { status: joinStatus, join, retrySwitch } = useAcceptOrganizationInvitation();
+  const isAccepting = joinStatus === 'accepting';
 
   // Animate in on mount
   useEffect(() => {
@@ -77,16 +69,6 @@ function InvitePageContent() {
     skip: !token,
   });
 
-  // Accept mutation with refetch to update organization lists
-  const [acceptInvitation] = useMutation<AcceptInvitationResponse>(ACCEPT_INVITATION_MUTATION, {
-    // Refetch queries by operation name to update:
-    // - User's organization list (in Settings > Organizations)
-    // - Organization invitations list (for the inviter)
-    // - Organization invitation stats
-    refetchQueries: ['GetUserOrganizations', 'GetOrganizationInvitations', 'GetOrganizationInvitationStats'],
-    awaitRefetchQueries: false, // Don't wait - user sees welcome modal immediately
-  });
-
   const invitation = inviteData?.invitationByToken;
   const isExpired = invitation && new Date(invitation.expiresAt) < new Date();
   const isValid = invitation && !isExpired && invitation.status === 'pending';
@@ -95,25 +77,39 @@ function InvitePageContent() {
   const emailMismatch = isSignedIn && invitation?.email && user?.primaryEmailAddress?.emailAddress !== invitation.email;
 
   // Handle accept
-  const handleAccept = async () => {
-    if (!token || !isValid) return;
-
-    setIsAccepting(true);
-
-    try {
-      await acceptInvitation({
-        variables: { invitationToken: token },
-      });
-
-      // Show welcome modal instead of simple redirect
-      setShowWelcome(true);
-      toast.success('Dołączyłeś do organizacji!');
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Nieznany błąd';
-      toast.error(`Błąd: ${errorMessage}`);
-      setIsAccepting(false);
-    }
+  const handleAccept = () => {
+    if (!token || !invitation || !isValid || !isSignedIn) return;
+    setAcceptedInvitation(invitation);
+    void join(token);
   };
+
+  if (joinStatus === 'joined' && acceptedInvitation) {
+    return (
+      <WelcomeModal
+        organizationName={acceptedInvitation.organization?.name || 'organizacji'}
+        organizationLogo={acceptedInvitation.organization?.logoUrl}
+        invitedByName={acceptedInvitation.invitedBy?.fullname}
+        invitedByImage={acceptedInvitation.invitedBy?.image}
+        role={acceptedInvitation.role}
+        onClose={() => router.replace('/')}
+      />
+    );
+  }
+
+  if (joinStatus === 'switch-failed') {
+    return (
+      <InvalidState
+        icon={AlertTriangle}
+        title="Zaproszenie zostało przyjęte"
+        description="Nie udało się przełączyć na nową organizację. Spróbuj ponownie."
+        action={
+          <Button onClick={retrySwitch} data-testid="org-invite-retry-switch-btn">
+            Spróbuj ponownie
+          </Button>
+        }
+      />
+    );
+  }
 
   // No token provided
   if (!token) {
@@ -127,7 +123,7 @@ function InvitePageContent() {
   }
 
   // Loading state
-  if (validating || !userLoaded) {
+  if (joinStatus === 'switching' || validating || !userLoaded) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="relative">
@@ -142,7 +138,9 @@ function InvitePageContent() {
                 <Loader2 className="h-12 w-12 text-primary animate-spin" />
                 <div className="absolute inset-0 h-12 w-12 border-2 border-primary/20 rounded-full animate-ping" />
               </div>
-              <p className="text-muted-foreground mt-4">Weryfikacja zaproszenia...</p>
+              <p className="text-muted-foreground mt-4" role="status">
+                {joinStatus === 'switching' ? 'Przełączanie organizacji…' : 'Weryfikacja zaproszenia...'}
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -195,20 +193,6 @@ function InvitePageContent() {
         icon={XCircle}
         title="Zaproszenie zostało anulowane"
         description="To zaproszenie zostało wycofane przez administratora organizacji."
-      />
-    );
-  }
-
-  // Show Welcome Modal after successful accept
-  if (showWelcome) {
-    return (
-      <WelcomeModal
-        organizationName={invitation.organization?.name || 'organizacji'}
-        organizationLogo={invitation.organization?.logoUrl}
-        invitedByName={invitation.invitedBy?.fullname}
-        invitedByImage={invitation.invitedBy?.image}
-        role={invitation.role}
-        onClose={() => router.push('/')}
       />
     );
   }
@@ -602,6 +586,7 @@ function getRoleLabel(role: string): string {
 // ========================================
 
 export default function InvitePage() {
+  const { isSignedIn } = useAuth();
   return (
     <Suspense
       fallback={
@@ -613,7 +598,9 @@ export default function InvitePage() {
         </div>
       }
     >
-      <InvitePageContent />
+      <OrganizationProvider skipOrganizationsQuery={!isSignedIn}>
+        <InvitePageContent />
+      </OrganizationProvider>
     </Suspense>
   );
 }

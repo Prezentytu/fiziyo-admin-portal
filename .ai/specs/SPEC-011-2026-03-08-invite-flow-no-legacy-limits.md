@@ -30,6 +30,9 @@ flowchart LR
 - Dla legacy kodów limitu (`THERAPIST_LIMIT_REACHED`, `PATIENT_LIMIT_REACHED`, `EXERCISE_LIMIT_REACHED`, `CLINIC_LIMIT_REACHED`) pokazujemy ogólny komunikat techniczny bez słów `Starter`, `Pro`, `upgrade`.
 - Aktywne CTA finansowe prowadzą do `/finances` (bez pośrednich linków `/billing`).
 - `PatientInviteDialog` zachowuje odrębne kanały (`Link`, `QR kod`, `Wyślij`), ale wizualnie i strukturalnie odpowiada wzorcowi invite organizacyjnego.
+- Wygenerowany link organizacji można skopiować przyciskiem lub zeskanować z kodu QR. Podgląd mieści się w oknie przy długim adresie.
+- W Ustawieniach → Organizacje akcja „Wklej link zaproszenia” otwiera podgląd. Z linku otwartego bezpośrednio i z podglądu w ustawieniach akceptacja aktywuje organizację zwróconą przez API przed pokazaniem sukcesu.
+- Gdy członkostwo zostało zapisane, a przełączenie się nie udało, ponowienie dotyczy wyłącznie przełączenia.
 
 ## Interfejsy
 
@@ -37,6 +40,7 @@ flowchart LR
 
 - `SendInvitation(organizationId, email, role, message)`
 - `GenerateInviteLink(organizationId, role, expirationDays)`
+- `AcceptInvitation(invitationToken)` zwraca identyfikator organizacji używany przez wspólny mechanizm przełączania.
 
 ### GraphQL Contracts
 
@@ -74,15 +78,21 @@ flowchart LR
 
 ## Integration Test Coverage
 
-| Scenariusz                                                                           | Typ testu             | Priorytet |
-| ------------------------------------------------------------------------------------ | --------------------- | --------- |
-| `generateInviteLink` zwraca stary kod limitu i UI pokazuje neutralny komunikat       | Frontend komponentowy | High      |
-| standardowy błąd GraphQL invite pokazuje message z API                               | Frontend komponentowy | Medium    |
-| dialog zaproszenia pacjenta zachowuje wspólną strukturę kanałów i walidację wysyłki  | Frontend komponentowy | Medium    |
-| `sendInvitation` i `generateInviteLink` nie rzucają limitu planu po stronie backendu | Backend integracyjny  | High      |
-| zaakceptowanie zaproszenia i lista zaproszeń działają po zmianie                     | E2E/regresja          | High      |
+| Scenariusz                                                                                                     | Typ testu             | Priorytet |
+| -------------------------------------------------------------------------------------------------------------- | --------------------- | --------- |
+| `generateInviteLink` zwraca stary kod limitu i UI pokazuje neutralny komunikat                                 | Frontend komponentowy | High      |
+| standardowy błąd GraphQL invite pokazuje message z API                                                         | Frontend komponentowy | Medium    |
+| dialog zaproszenia pacjenta zachowuje wspólną strukturę kanałów i walidację wysyłki                            | Frontend komponentowy | Medium    |
+| `sendInvitation` i `generateInviteLink` nie rzucają limitu planu po stronie backendu                           | Backend integracyjny  | High      |
+| zaakceptowanie zaproszenia i lista zaproszeń działają po zmianie                                               | E2E/regresja          | High      |
+| przyjęcie z linku lub ustawień aktywuje nową organizację, a ponowienie przełączenia nie zużywa drugi raz linku | Frontend integracyjny | High      |
 
 ## Changelog
+
+### 2026-11-20
+
+- Uproszczono udostępnianie linku i udostępniono wklejanie zaproszenia w ustawieniach.
+- Po przyjęciu zaproszenia portal aktywuje organizację, do której dołączył użytkownik.
 
 ### 2026-03-08
 
