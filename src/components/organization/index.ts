@@ -20,6 +20,7 @@ export { CatalogBundleImportCard } from './CatalogBundleImportCard';
 // Dialogs (existing)
 export { InviteMemberDialog } from './InviteMemberDialog';
 export { ClinicDialog } from './ClinicDialog';
+export { CreateOrganizationDialog } from './CreateOrganizationDialog';
 
 // Sharing & Welcome
 export { ShareSheet } from './ShareSheet';

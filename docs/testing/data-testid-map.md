@@ -687,6 +687,12 @@ Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu r
 | `org-clinic-address-input`                                                                                                                   | Adres                                    | `ClinicDialog.tsx`              |
 | `org-clinic-contact-input`                                                                                                                   | Kontakt                                  | `ClinicDialog.tsx`              |
 | `org-clinic-submit-btn`                                                                                                                      | Zapisz placówkę                          | `ClinicDialog.tsx`              |
+| `org-create-dialog`                                                                                                                          | Dialog nowej organizacji                 | `CreateOrganizationDialog.tsx`  |
+| `org-create-name-input`                                                                                                                      | Nazwa nowej organizacji                  | `CreateOrganizationDialog.tsx`  |
+| `org-create-description-input`                                                                                                               | Opis nowej organizacji                   | `CreateOrganizationDialog.tsx`  |
+| `org-create-error`                                                                                                                           | Błąd utworzenia org.                     | `CreateOrganizationDialog.tsx`  |
+| `org-create-cancel-btn`                                                                                                                      | Anuluj nową organizację                  | `CreateOrganizationDialog.tsx`  |
+| `org-create-submit-btn`                                                                                                                      | Utwórz organizację                       | `CreateOrganizationDialog.tsx`  |
 | `org-settings-tab`                                                                                                                           | Ustawienia org.                          | `SettingsTab.tsx`               |
 | `org-settings-name-input`                                                                                                                    | Nazwa organizacji                        | `SettingsTab.tsx`               |
 | `org-settings-submit-btn`                                                                                                                    | Zapisz ustawienia                        | `SettingsTab.tsx`               |
@@ -754,6 +760,7 @@ Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu r
 | `settings-profile-phone`           | Telefon                   | `ProfileForm.tsx`           |
 | `settings-profile-submit-btn`      | Zapisz profil             | `ProfileForm.tsx`           |
 | `settings-orgs-list`               | Lista organizacji         | `OrganizationsList.tsx`     |
+| `settings-orgs-create-btn`         | Utwórz organizację        | `OrganizationsList.tsx`     |
 | `settings-org-{id}`                | Organizacja               | `OrganizationsList.tsx`     |
 | `settings-org-{id}-switch-btn`     | Przełącz                  | `OrganizationsList.tsx`     |
 | `settings-accessibility`           | Ustawienia dostępności    | `AccessibilitySettings.tsx` |

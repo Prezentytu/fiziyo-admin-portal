@@ -15,8 +15,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import Link from 'next/link';
 import { getInitialsFromName } from '@/utils/textUtils';
+import { CreateOrganizationDialog } from '@/components/organization/CreateOrganizationDialog';
 
 // ========================================
 // Types
@@ -63,21 +63,20 @@ export function OrganizationSwitcher({ isCollapsed = false }: OrganizationSwitch
     useOrganization();
 
   const [isOpen, setIsOpen] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   // Keyboard shortcut: Cmd+O / Ctrl+O
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'o') {
         e.preventDefault();
-        if (hasMultipleOrganizations) {
-          setIsOpen((prev) => !prev);
-        }
+        setIsOpen((prev) => !prev);
       }
     }
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [hasMultipleOrganizations]);
+  }, []);
 
   // Loading state
   if (isLoading) {
@@ -107,11 +106,8 @@ export function OrganizationSwitcher({ isCollapsed = false }: OrganizationSwitch
     <div
       data-testid="nav-org-switcher-trigger"
       className={cn(
-        'group flex items-center rounded-2xl transition-all duration-200',
-        hasMultipleOrganizations ? 'cursor-pointer' : 'cursor-default',
-        isCollapsed
-          ? cn('h-12 w-12 justify-center', hasMultipleOrganizations && 'hover:bg-fill-quaternary')
-          : cn('gap-3 p-2 w-full', hasMultipleOrganizations && 'hover:bg-fill-quaternary'),
+        'group flex items-center rounded-2xl transition-all duration-200 cursor-pointer hover:bg-fill-quaternary',
+        isCollapsed ? 'h-12 w-12 justify-center' : 'gap-3 p-2 w-full',
         isSwitching && 'opacity-60 pointer-events-none'
       )}
     >
@@ -164,25 +160,19 @@ export function OrganizationSwitcher({ isCollapsed = false }: OrganizationSwitch
           {/* Chevron or Loader */}
           {isSwitching ? (
             <Loader2 className="h-4 w-4 text-muted-foreground animate-spin shrink-0" />
-          ) : hasMultipleOrganizations ? (
+          ) : (
             <ChevronDown
               className={cn(
                 'h-4 w-4 text-muted-foreground transition-transform duration-200 shrink-0',
                 isOpen && 'rotate-180'
               )}
             />
-          ) : null}
+          )}
         </>
       )}
     </div>
   );
 
-  // Single organization - no dropdown
-  if (!hasMultipleOrganizations) {
-    return <div className={cn(isCollapsed ? 'p-2' : 'px-3 py-2')}>{triggerContent}</div>;
-  }
-
-  // Multiple organizations - with dropdown
   const dropdownContent = (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild disabled={isSwitching}>
@@ -196,7 +186,7 @@ export function OrganizationSwitcher({ isCollapsed = false }: OrganizationSwitch
         className="w-72"
       >
         <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
-          Przełącz organizację
+          {hasMultipleOrganizations ? 'Przełącz organizację' : 'Twoja organizacja'}
           <span className="ml-2 text-[10px] text-muted-foreground/60">⌘O</span>
         </DropdownMenuLabel>
 
@@ -251,18 +241,15 @@ export function OrganizationSwitcher({ isCollapsed = false }: OrganizationSwitch
 
         <DropdownMenuSeparator />
 
-        {/* Create new organization link */}
-        <DropdownMenuItem asChild>
-          <Link
-            href="/onboarding"
-            data-testid="nav-org-switcher-create"
-            className="flex items-center gap-3 p-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
-          >
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-dashed border-border">
-              <Plus className="h-4 w-4" />
-            </div>
-            <span className="text-sm">Utwórz nową organizację</span>
-          </Link>
+        <DropdownMenuItem
+          data-testid="nav-org-switcher-create"
+          onSelect={() => setIsCreateOpen(true)}
+          className="flex items-center gap-3 p-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
+        >
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-dashed border-border">
+            <Plus className="h-4 w-4" />
+          </div>
+          <span className="text-sm">Utwórz nową organizację</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -277,12 +264,20 @@ export function OrganizationSwitcher({ isCollapsed = false }: OrganizationSwitch
           </TooltipTrigger>
           <TooltipContent side="right" className="font-medium">
             <div className="text-sm">{currentOrganization.organizationName}</div>
-            <div className="text-xs text-muted-foreground">Kliknij aby przełączyć • ⌘O</div>
+            <div className="text-xs text-muted-foreground">
+              {hasMultipleOrganizations ? 'Przełącz lub utwórz organizację' : 'Utwórz organizację'} • ⌘O
+            </div>
           </TooltipContent>
         </Tooltip>
+        <CreateOrganizationDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} />
       </div>
     );
   }
 
-  return <div className="px-3 py-2">{dropdownContent}</div>;
+  return (
+    <div className="px-3 py-2">
+      {dropdownContent}
+      <CreateOrganizationDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} />
+    </div>
+  );
 }
