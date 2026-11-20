@@ -427,7 +427,14 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => openCreateSet(draftIds, toWizardPatient(patient), name)}
+                onClick={() =>
+                  openCreateSet(
+                    draftIds,
+                    toWizardPatient(patient),
+                    name,
+                    items.filter((item) => item.isWarmup).map((item) => item.exerciseId)
+                  )
+                }
                 disabled={items.length === 0}
                 data-testid={`${testId}-full-editor-btn`}
               >

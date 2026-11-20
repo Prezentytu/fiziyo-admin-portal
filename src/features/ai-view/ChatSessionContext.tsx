@@ -37,6 +37,7 @@ interface CreateSetRequest {
   exerciseIds: string[];
   patient?: Patient;
   name?: string;
+  warmupExerciseIds?: string[];
 }
 
 export interface ChatSession {
@@ -94,7 +95,8 @@ export interface ChatSession {
   setContextOpen: (open: boolean) => void;
   showPatient: (patientId: string) => void;
   /** Escape hatch to the full set editor with what chat already knows. */
-  openCreateSet: (exerciseIds: string[], patient?: Patient, name?: string) => void;
+  /** `warmupExerciseIds`: rozgrzewka z propozycji (SPEC-061), którą pełny edytor oznacza na start. */
+  openCreateSet: (exerciseIds: string[], patient?: Patient, name?: string, warmupExerciseIds?: string[]) => void;
   /**
    * An open set proposal tells the thread what it holds now (null when it closes), so „dodaj ćwiczenie X”
    * typed in the chat adds to it. Kept in memory only, never in the stored history.
@@ -370,7 +372,8 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
   );
   const sendMessage = useCallback((text: string) => void send(text), [send]);
   const openCreateSet = useCallback(
-    (exerciseIds: string[], patient?: Patient, name?: string) => setCreateSetRequest({ exerciseIds, patient, name }),
+    (exerciseIds: string[], patient?: Patient, name?: string, warmupExerciseIds?: string[]) =>
+      setCreateSetRequest({ exerciseIds, patient, name, warmupExerciseIds }),
     []
   );
 
@@ -519,6 +522,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
           organizationId={organizationId}
           initialExerciseIds={createSetRequest?.exerciseIds}
           initialName={createSetRequest?.name}
+          initialWarmupExerciseIds={createSetRequest?.warmupExerciseIds}
           patientId={createSetRequest?.patient?.id}
           patientName={createSetRequest?.patient?.name}
           showNextSteps={false}

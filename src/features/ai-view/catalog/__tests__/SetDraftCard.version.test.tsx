@@ -204,8 +204,32 @@ describe('SetDraftCard: wersja rekordu ćwiczeń szkicu', () => {
     expect(openCreateSet).toHaveBeenCalledWith(
       ['ex-alt'],
       undefined,
-      expect.stringMatching(/^Po rekonstrukcji ACL · \d\d\.\d\d$/)
+      expect.stringMatching(/^Po rekonstrukcji ACL · \d\d\.\d\d$/),
+      []
     );
+  });
+
+  // SPEC-061: rozgrzewka, którą terapeuta zostawił w propozycji, idzie do pełnego edytora; zdjęta już nie.
+  it('„Pełny edytor” dostaje rozgrzewkę z karty, a zdjęty znacznik przestaje się liczyć', async () => {
+    mockClientQuery.mockResolvedValue({
+      data: { exerciseById: { id: 'ex-alt', updatedAt: 't1', enrichmentData: {} } },
+    });
+    openCreateSet.mockReset();
+    render(
+      <SetDraftCard
+        spec={{ component: 'SetDraft', exerciseIds: ['ex-alt'], warmupExerciseIds: ['ex-alt'] } as never}
+        testId="draft"
+        messageId="m1"
+      />
+    );
+    await screen.findByTestId('draft-warmup-ex-alt');
+    screen.getByTestId('draft-full-editor-btn').click();
+    expect(openCreateSet).toHaveBeenLastCalledWith(['ex-alt'], undefined, expect.any(String), ['ex-alt']);
+
+    screen.getByTestId('draft-warmup-ex-alt-clear-btn').click();
+    await waitFor(() => expect(screen.queryByTestId('draft-warmup-ex-alt')).toBeNull());
+    screen.getByTestId('draft-full-editor-btn').click();
+    expect(openCreateSet).toHaveBeenLastCalledWith(['ex-alt'], undefined, expect.any(String), []);
   });
 
   // Demo 18.11: droga do nowego ćwiczenia była schowana za wyszukiwarką (dopiero po 3 znakach).
