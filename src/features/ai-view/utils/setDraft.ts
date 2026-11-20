@@ -276,6 +276,9 @@ export function draftTopic(topic: string | undefined, avoid: readonly string[] =
 }
 
 /** Catalog description of a set composed in the chat: topic, size and daily time, no personal data. */
+/** Limit kolumny `ExerciseSet.Description` w backendzie (`StringLength(300)`). */
+export const MAX_SET_DESCRIPTION_LENGTH = 300;
+
 export function proposeDraftDescription(options: {
   topic?: string;
   exerciseNames: readonly string[];
@@ -285,11 +288,22 @@ export function proposeDraftDescription(options: {
 }): string {
   const topic = draftTopic(options.topic, options.avoid);
   const head = topic ? `${capitalize(topic)}.` : '';
-  const list = options.exerciseNames.slice(0, 6).join(', ');
-  const more = options.exerciseNames.length > 6 ? ` i ${options.exerciseNames.length - 6} więcej` : '';
   const time = options.minutes > 0 ? ` Ok. ${options.minutes} min dziennie.` : '';
   const when = ` Ułożony w czacie ${format(options.today ?? new Date(), 'dd.MM.yyyy')}.`;
-  return `${head} Ćwiczenia: ${list}${more}.${time}${when}`.trim();
+  const build = (shown: number) => {
+    const list = options.exerciseNames.slice(0, shown).join(', ');
+    const rest = options.exerciseNames.length - shown;
+    const more = rest > 0 ? ` i ${rest} więcej` : '';
+    return `${head} Ćwiczenia: ${list}${more}.${time}${when}`.trim();
+  };
+  // Opis zestawu w bazie ma najwyżej 300 znaków: długie nazwy ćwiczeń (v3.3) przekraczały limit i zapis z czatu
+  // kończył się „Unexpected Execution Error”. Ucinamy listę nazw, a gdy i to za mało, cały tekst.
+  for (let shown = Math.min(6, options.exerciseNames.length); shown >= 1; shown--) {
+    const text = build(shown);
+    if (text.length <= MAX_SET_DESCRIPTION_LENGTH) return text;
+  }
+  const text = build(0);
+  return text.length <= MAX_SET_DESCRIPTION_LENGTH ? text : `${text.slice(0, MAX_SET_DESCRIPTION_LENGTH - 1).trimEnd()}…`;
 }
 
 function capitalize(value: string | undefined): string {
