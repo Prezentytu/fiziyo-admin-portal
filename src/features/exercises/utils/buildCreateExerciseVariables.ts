@@ -2,6 +2,7 @@ import type { CreateExerciseVariables, DifficultyLevel, ExerciseScope } from '@/
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
 import { normalizeExerciseType } from '@/utils/exerciseEnums';
+import { getExerciseVideos } from '@/utils/exerciseVideos';
 import { inferExerciseType } from './inferExerciseType';
 import { toNewExerciseV33 } from './newExerciseV33';
 
@@ -22,6 +23,7 @@ export interface CreateExerciseDraft {
   exerciseSide?: string | null;
   difficultyLevel?: string | null;
   videoUrl?: string | null;
+  videos?: string[] | null;
   sets?: number | null;
   reps?: number | null;
   executionTime?: number | null;
@@ -109,7 +111,8 @@ export function buildCreateExerciseVariables({
     restReps: draft.restReps ?? null,
     preparationTime: draft.preparationTime ?? null,
     executionTime: draft.executionTime ?? null,
-    videoUrl: asText(draft.videoUrl),
+    // The backend sets `videoUrl` from the first entry, so the list alone is sent.
+    videos: getExerciseVideos(draft),
     gifUrl: draft.gifUrl ?? null,
     imageUrl: draft.imageUrl ?? null,
     images: draft.images?.length ? draft.images : null,

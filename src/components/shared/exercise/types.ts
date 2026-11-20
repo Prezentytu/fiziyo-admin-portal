@@ -23,6 +23,7 @@ export interface ExerciseExecutionCardData {
   imageUrls?: string[];
   /** Optional video URL displayed in exercise preview. */
   videoUrl?: string;
+  videos?: string[] | null;
   /** Basic execution parameters (sets/reps/…) */
   sets: number;
   reps: number;

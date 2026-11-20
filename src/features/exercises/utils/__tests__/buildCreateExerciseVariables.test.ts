@@ -111,7 +111,7 @@ describe('buildCreateExerciseVariables', () => {
       difficultyLevel: 'MEDIUM',
       rangeOfMotion: 'Pełny zakres',
       notes: 'Notatki wewnętrzne',
-      videoUrl: 'https://example.com/v.mp4',
+      videos: ['https://example.com/v.mp4'],
       isActive: true,
       mainTags: ['tag-a'],
       additionalTags: ['tag-b'],
@@ -179,7 +179,8 @@ describe('buildCreateExerciseVariables', () => {
     expect(result.audioCue).toBeNull();
     expect(result.tempo).toBeNull();
     expect(result.rangeOfMotion).toBeNull();
-    expect(result.videoUrl).toBeNull();
+    expect(result.videos).toEqual([]);
+    expect(result).not.toHaveProperty('videoUrl');
     expect(result.mainTags).toBeNull();
     expect(result.additionalTags).toBeNull();
     expect(result.loadWeightKg).toBeNull();

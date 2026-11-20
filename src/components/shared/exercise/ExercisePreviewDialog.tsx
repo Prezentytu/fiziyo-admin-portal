@@ -13,7 +13,8 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { FieldHelpTooltip } from '@/components/shared/FieldHelpTooltip';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { VideoEmbed } from '@/components/shared/VideoEmbed';
-import { getMediaUrl } from '@/utils/mediaUrl';
+import { getExerciseVideos } from '@/utils/exerciseVideos';
+import { getMediaUrls } from '@/utils/mediaUrl';
 import { isVimeoUrl, isYouTubeUrl } from '@/utils/videoEmbed';
 import {
   DIALOG_EXERCISE_FIELD_ORDER,
@@ -107,9 +108,11 @@ export function ExercisePreviewDialog({
   const mediaItems = useMemo<ExerciseMediaItem[]>(() => {
     if (!exercise) return [];
     const imageItems: ExerciseMediaItem[] = galleryImages.map((image) => ({ kind: 'image', url: image }));
-    const videoUrl = getMediaUrl(exercise.videoUrl);
-    if (!videoUrl) return imageItems;
-    return [...imageItems, { kind: 'video', url: videoUrl }];
+    const videoItems: ExerciseMediaItem[] = getMediaUrls(getExerciseVideos(exercise)).map((video) => ({
+      kind: 'video',
+      url: video,
+    }));
+    return [...imageItems, ...videoItems];
   }, [exercise, galleryImages]);
 
   if (!exercise) return null;

@@ -11,12 +11,22 @@ const base: ChangeSnapshot = {
   executionTime: null,
   restSets: 300,
   side: 'none',
-  videoUrl: 'https://cdn/video.mp4',
+  videos: ['https://cdn/video.mp4'],
   imageCount: 3,
   enrichment: { patient: { steps: ['a', 'b'] }, safety: {} },
 };
 
 describe('summarizeChanges', () => {
+  it('rozróżnia pierwsze nagranie od zmiany listy nagrań', () => {
+    const second = 'https://cdn/second.mp4';
+    expect(summarizeChanges({ ...base, videos: [] }, base, 0).material).toEqual(['dodane nagranie']);
+    expect(summarizeChanges(base, { ...base, videos: [...base.videos, second] }, 0).material).toEqual([
+      'zmienione nagrania',
+    ]);
+    expect(summarizeChanges(base, { ...base, videos: [] }, 0).material).toEqual(['zmienione nagrania']);
+    expect(summarizeChanges(base, { ...base, videos: [...base.videos] }, 0).material).toEqual([]);
+  });
+
   it('opisuje zmiany parametrów jak w podsumowaniu decyzji', () => {
     const result = summarizeChanges(base, { ...base, sets: 3, reps: 12, restSets: 60, side: 'both' }, 0);
 
