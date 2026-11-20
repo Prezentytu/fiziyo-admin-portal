@@ -18,6 +18,14 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 
 ## Wpisy
 
+### 2026-11-20 - Weryfikator FiziYo nie widział „Zgłoś do poprawki”
+
+- **Kategoria**: `UI/UX`
+- **Problem**: Na koncie ContentManagera/SiteSuperAdmina przy ćwiczeniu z bazy FiziYo nie było „Zgłoś do poprawki”, choć zwykły fizjoterapeuta je widział.
+- **Przyczyna**: `canReportExerciseIssue` chowało zgłoszenie przy `canReviewExercises`, zakładając, że weryfikator zawsze poprawi od razu w weryfikacji.
+- **Rozwiązanie**: Widoczność zależy tylko od `scope === 'GLOBAL'`; weryfikator ma zgłoszenie obok „Popraw w weryfikacji”.
+- **Reguła**: Uprawnienie do poprawki nie odbiera zwykłej akcji zgłoszenia; dodatkowa rola dokłada drogę, nie zabiera. [egzekwowane: src/features/exercises/utils/__tests__/exerciseReportRouting.test.ts]
+
 ### 2026-11-18 - Allowlista testid z numerem linii czerwieniła CI bez nowego elementu
 
 - **Kategoria**: `Build/Tooling`

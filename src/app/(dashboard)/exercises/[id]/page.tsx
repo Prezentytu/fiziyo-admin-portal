@@ -128,7 +128,7 @@ interface ExerciseDetailPageProps {
 export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) {
   const { id } = use(params);
   const router = useRouter();
-  const { canReviewExercises, isSiteAdmin, isSiteSuperAdmin, isLoading: isRoleLoading } = useSystemRole();
+  const { canReviewExercises, isSiteAdmin, isSiteSuperAdmin } = useSystemRole();
   const { currentOrganization } = useOrganization();
   const [isEditMode, setIsEditMode] = useState(false);
   // Pasek zapisu w edycji zabiera dół okna; kolumna mediów ma się zmieścić nad nim.
@@ -548,8 +548,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const isPendingOrganizationReview = exercise.organizationVerificationStatus === 'PENDING_ORG_REVIEW';
   const isLocked = isGlobalExercise || isPendingReview || isPendingOrganizationReview;
   const isEditing = isEditMode && !isLocked;
-  // Jedna droga zgłaszania: zgłoszenie tylko dla ćwiczenia FiziYo, którego nie poprawisz sam (Skrzynka #26).
-  const canReportIssue = canReportExerciseIssue({ scope: exercise.scope, canReviewExercises, isRoleLoading });
+  const canReportIssue = canReportExerciseIssue({ scope: exercise.scope });
   const hasSecondaryHeroAction = canReportIssue || !isLocked;
   const canEditMedia = isEditing;
 

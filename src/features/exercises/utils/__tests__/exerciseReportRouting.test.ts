@@ -26,21 +26,13 @@ describe('resolveExerciseReportRoutingTarget', () => {
 });
 
 describe('canReportExerciseIssue', () => {
-  it('pozwala fizjoterapeucie zgłosić błąd w ćwiczeniu z bazy FiziYo', () => {
-    expect(canReportExerciseIssue({ scope: 'GLOBAL', canReviewExercises: false })).toBe(true);
+  it('pozwala każdemu, także weryfikatorowi FiziYo, zgłosić błąd w ćwiczeniu z bazy FiziYo', () => {
+    expect(canReportExerciseIssue({ scope: 'GLOBAL' })).toBe(true);
   });
 
   it('nie pokazuje zgłoszenia przy własnym ćwiczeniu gabinetu: poprawia się je edycją albo w weryfikacji organizacji', () => {
-    expect(canReportExerciseIssue({ scope: 'ORGANIZATION', canReviewExercises: false })).toBe(false);
-    expect(canReportExerciseIssue({ scope: 'PERSONAL', canReviewExercises: false })).toBe(false);
-    expect(canReportExerciseIssue({ scope: undefined, canReviewExercises: false })).toBe(false);
-  });
-
-  it('nie pokazuje zgłoszenia weryfikatorowi FiziYo: ma „Popraw w weryfikacji” zamiast zgłoszenia do samego siebie', () => {
-    expect(canReportExerciseIssue({ scope: 'GLOBAL', canReviewExercises: true })).toBe(false);
-  });
-
-  it('nie pokazuje zgłoszenia, dopóki rola systemowa się ładuje (bez mignięcia u weryfikatora)', () => {
-    expect(canReportExerciseIssue({ scope: 'GLOBAL', canReviewExercises: false, isRoleLoading: true })).toBe(false);
+    expect(canReportExerciseIssue({ scope: 'ORGANIZATION' })).toBe(false);
+    expect(canReportExerciseIssue({ scope: 'PERSONAL' })).toBe(false);
+    expect(canReportExerciseIssue({ scope: undefined })).toBe(false);
   });
 });
