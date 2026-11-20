@@ -13,6 +13,7 @@ import {
   proposeDraftName,
   itemsToDoses,
   applyDose,
+  MAX_SET_DESCRIPTION_LENGTH,
   proposeDraftDescription,
   type DraftItem,
 } from '../setDraft';
@@ -96,6 +97,18 @@ describe('proposeDraftName', () => {
 });
 
 describe('proposeDraftDescription', () => {
+  it('keeps within the 300-character column when exercise names are long', () => {
+    const long = 'Zginanie czubka palca z przytrzymaniem palca drugą ręką (zginanie w ostatnim stawie)';
+    const text = proposeDraftDescription({
+      topic: 'Ból kolana po skręceniu',
+      exerciseNames: [long, long, long, long, long],
+      minutes: 17,
+      today: new Date(2026, 10, 20),
+    });
+    expect(text.length).toBeLessThanOrEqual(MAX_SET_DESCRIPTION_LENGTH);
+    expect(text).toMatch(/i \d więcej\. Ok\. 17 min dziennie\. Ułożony w czacie 20\.11\.2026\.$/);
+  });
+
   it('says what the set is for, what is in it and when it was made', () => {
     expect(
       proposeDraftDescription({
