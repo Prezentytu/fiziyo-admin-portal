@@ -16,7 +16,7 @@ const upcomingFeatures = [
   {
     icon: Clock,
     title: 'Planowanie wizyt',
-    description: 'Twórz i zarządzaj wizytami z wyborem pacjenta, gabinetu i godziny',
+    description: 'Twórz i zarządzaj wizytami z wyborem pacjenta, placówki i godziny',
   },
   {
     icon: Bell,

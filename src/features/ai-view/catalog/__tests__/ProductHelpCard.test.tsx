@@ -48,8 +48,8 @@ describe('product help cards', () => {
     expect(screen.queryByRole('link')).toBeNull();
     state.manage = true;
     rerender(<ProductHelpCard {...props} />);
-    expect(screen.getByText(/Menu konta → Organizacja → Gabinety → Dodaj gabinet/)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Otwórz Gabinety' })).toHaveAttribute('href', '/organization?tab=clinics');
+    expect(screen.getByText(/Menu konta → Organizacja → Placówki → Dodaj placówkę/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Otwórz Placówki' })).toHaveAttribute('href', '/organization?tab=clinics');
   });
 
   it('respects the referrals flag independently of team management', () => {

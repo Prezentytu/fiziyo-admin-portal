@@ -158,12 +158,12 @@ export function AssignToClinicDialog({
       }
 
       const totalAssigned = selectedTherapistIds.length + selectedPatientIds.length;
-      toast.success(`Przypisano ${totalAssigned} osób do gabinetu`);
+      toast.success(`Przypisano ${totalAssigned} osób do placówki`);
       handleOpenChange(false);
       onSuccess?.();
     } catch (error) {
       console.error('Błąd podczas przypisywania:', error);
-      toast.error('Nie udało się przypisać osób do gabinetu');
+      toast.error('Nie udało się przypisać osób do placówki');
     }
   };
 
@@ -246,10 +246,10 @@ export function AssignToClinicDialog({
         data-testid="org-assign-clinic-dialog"
       >
         <DialogHeader>
-          <DialogTitle>Przypisz osoby do gabinetu</DialogTitle>
+          <DialogTitle>Przypisz osoby do placówki</DialogTitle>
           <DialogDescription>
             {clinic?.name
-              ? `Wybierz terapeutów i pacjentów do przypisania do gabinetu "${clinic.name}"`
+              ? `Wybierz terapeutów i pacjentów do przypisania do placówki "${clinic.name}"`
               : 'Wybierz osoby do przypisania'}
           </DialogDescription>
         </DialogHeader>

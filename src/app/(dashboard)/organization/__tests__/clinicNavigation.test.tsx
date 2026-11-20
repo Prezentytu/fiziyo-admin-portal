@@ -50,9 +50,9 @@ describe('clinic navigation', () => {
     state.href = screen.getByRole('link').getAttribute('href')!;
     unmount();
     render(<OrganizationPage />);
-    expect(screen.getByRole('tab', { name: /Gabinety/ })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: /Placówki/ })).toHaveAttribute('aria-selected', 'true');
     fireEvent.click(screen.getByTestId('org-clinics-add-btn'));
-    expect(await screen.findByRole('dialog', { name: 'Nowy gabinet' })).toBeInTheDocument();
+    expect(await screen.findByRole('dialog', { name: 'Nowa placówka' })).toBeInTheDocument();
     expect(state.mutate).not.toHaveBeenCalled();
   });
 

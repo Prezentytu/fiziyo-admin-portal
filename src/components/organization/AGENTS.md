@@ -1,8 +1,8 @@
-# AGENTS.md — Organizacja i gabinety
+# AGENTS.md — Organizacja i placówki
 
 ## Zakres
 
-Użyj tego katalogu do członków, zaproszeń, klinik, widoczności katalogu
+Użyj tego katalogu do członków, zaproszeń, placówek, widoczności katalogu
 i importu JSON. Strony: `app/(dashboard)/organization/`.
 Ustawienia konta zostaw w `src/components/settings/`.
 
@@ -21,7 +21,7 @@ Ustawienia konta zostaw w `src/components/settings/`.
 
 - Strona organizacji: `TeamSection`, `ClinicsSection`, `InvitationsSection`; `SettingsTab` używa strona `/settings`.
 - Zaproszenie: `InviteMemberDialog` + `InvitationsSection`.
-- Kliniki: `ClinicDialog`, `ClinicExpandableCard`, `AssignToClinicDialog`.
+- Placówki: `ClinicDialog`, `ClinicExpandableCard`, `AssignToClinicDialog`.
 - Katalog: `CatalogBundleImportCard`, `ExerciseVisibilitySettings`.
 - Logika listy zespołu: `teamSectionUtils.ts` + test obok.
 

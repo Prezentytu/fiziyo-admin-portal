@@ -85,7 +85,7 @@ Draft → PendingReview → Approved → Published
 > fizjoterapeuci NIE płacą subskrypcji. Jedyny model to Revenue Share (poniżej).
 > Plany mogą być uruchomione w przyszłości jako dodatkowe źródło przychodu.
 
-| Plan           | Cena    | Pacjenci | Fizjo | Gabinety | Kredyty AI/mies. |
+| Plan           | Cena    | Pacjenci | Fizjo | Placówki | Kredyty AI/mies. |
 | -------------- | ------- | -------- | ----- | -------- | ---------------- |
 | `Starter` (0)  | 0 PLN   | 5        | 1     | 1        | 50               |
 | `Solo` (1)     | 99 PLN  | 50       | 1     | 1        | 200              |

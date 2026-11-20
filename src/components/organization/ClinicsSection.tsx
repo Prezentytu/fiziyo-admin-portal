@@ -80,12 +80,12 @@ export function ClinicsSection({
       await deleteClinic({
         variables: { id: deletingClinic.id },
       });
-      toast.success('Gabinet został usunięty');
+      toast.success('Placówka została usunięta');
       setDeletingClinic(null);
       onRefresh?.();
     } catch (err) {
       console.error('Błąd podczas usuwania:', err);
-      toast.error('Nie udało się usunąć gabinetu');
+      toast.error('Nie udało się usunąć placówki');
     }
   };
 
@@ -114,16 +114,16 @@ export function ClinicsSection({
             <MapPin className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-foreground">Twoje Gabinety</h3>
+            <h3 className="text-lg font-semibold text-foreground">Twoje placówki</h3>
             <p className="text-sm text-muted-foreground">
-              {clinics.length} {polishPlural(clinics.length, 'lokalizacja', 'lokalizacje', 'lokalizacji')} w organizacji
+              {clinics.length} {polishPlural(clinics.length, 'placówka', 'placówki', 'placówek')} w organizacji
             </p>
           </div>
         </div>
         {canEdit && (
           <Button onClick={onAddClick} className="gap-2 shadow-lg shadow-primary/20" data-testid="org-clinics-add-btn">
             <Plus className="h-4 w-4" />
-            Dodaj gabinet
+            Dodaj placówkę
           </Button>
         )}
       </div>
@@ -134,7 +134,7 @@ export function ClinicsSection({
           <div className="relative w-full md:w-72">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Szukaj gabinetu..."
+              placeholder="Szukaj placówki..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 h-10 bg-background border-input hover:border-primary/50 focus:ring-primary rounded-xl transition-all"
@@ -155,11 +155,11 @@ export function ClinicsSection({
         {sortedClinics.length === 0 ? (
           <EmptyState
             icon={MapPin}
-            title={searchQuery ? 'Nie znaleziono gabinetów' : 'Brak gabinetów'}
+            title={searchQuery ? 'Nie znaleziono placówek' : 'Brak placówek'}
             description={
-              searchQuery ? 'Spróbuj zmienić kryteria wyszukiwania' : 'Dodaj pierwszy gabinet do organizacji'
+              searchQuery ? 'Spróbuj zmienić kryteria wyszukiwania' : 'Dodaj pierwszą placówkę do organizacji'
             }
-            actionLabel={!searchQuery && canEdit ? 'Dodaj gabinet' : undefined}
+            actionLabel={!searchQuery && canEdit ? 'Dodaj placówkę' : undefined}
             onAction={!searchQuery && canEdit ? onAddClick : undefined}
           />
         ) : (
@@ -250,7 +250,7 @@ export function ClinicsSection({
                           data-testid={`org-clinics-delete-${clinic.id}`}
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
-                          Usuń gabinet
+                          Usuń placówkę
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -266,8 +266,8 @@ export function ClinicsSection({
       <ConfirmDialog
         open={!!deletingClinic}
         onOpenChange={(open) => !open && setDeletingClinic(null)}
-        title="Usuń gabinet"
-        description={`Czy na pewno chcesz usunąć gabinet "${deletingClinic?.name}"? Ta operacja jest nieodwracalna.`}
+        title="Usuń placówkę"
+        description={`Czy na pewno chcesz usunąć placówkę "${deletingClinic?.name}"? Ta operacja jest nieodwracalna.`}
         confirmText="Usuń"
         variant="destructive"
         onConfirm={handleDelete}
