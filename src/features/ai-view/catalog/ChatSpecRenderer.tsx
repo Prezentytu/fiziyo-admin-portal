@@ -8,6 +8,7 @@ import { DocumentResultCard } from './DocumentResultCard';
 import { CatalogCountsCard } from './CatalogCountsCard';
 import { ExerciseIdeasCard } from './ExerciseIdeas';
 import { ExerciseResultsCard } from './ExerciseResultsCard';
+import { ProductHelpCard } from './ProductHelpCard';
 import { NavigateCard } from './NavigateCard';
 import { PatientPeekCard } from './PatientPeekCard';
 import { PickPatientCard } from './PickPatientCard';
@@ -47,6 +48,8 @@ export function ChatSpecRenderer({ spec, testId, messageId, chosen, request }: C
       return <ExerciseResultsCard spec={spec} testId={`${testId}-exercise-results`} request={request} {...common} />;
     case 'PatientPeek':
       return <PatientPeekCard spec={spec} testId={`${testId}-patient-peek`} {...common} />;
+    case 'ProductHelp':
+      return <ProductHelpCard spec={spec} testId={`${testId}-product-help`} {...common} />;
     case 'Navigate':
       if (spec.route === 'patient-new') {
         return <AddPatientCard spec={{ component: 'AddPatient' }} testId={`${testId}-add-patient`} {...common} />;

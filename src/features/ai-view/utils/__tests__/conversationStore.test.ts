@@ -36,6 +36,24 @@ describe('conversationStorageKey', () => {
 });
 
 describe('parseConversations', () => {
+  it('restores a sent help report without reopening it and skips malformed help cards', () => {
+    const request = userMessage('m1', 'Zgłoś błąd');
+    const sent = {
+      ...ASSISTANT,
+      spec: { component: 'ProductHelp', topic: 'report', description: 'Problem z dźwiękiem' },
+      chosen: 'sent',
+    };
+    const messages = [
+      request,
+      { ...sent, spec: { component: 'ProductHelp', topic: 'unknown-topic' } },
+      { ...sent, spec: { component: 'ProductHelp', topic: 'report', description: 12 } },
+      sent,
+    ];
+    const saved = JSON.stringify([{ id: 'chat', title: 'Zgłoszenie', updatedAt: 3, messages }]);
+
+    expect(parseConversations(saved)[0].messages).toEqual([request, sent]);
+  });
+
   it('keeps the other-therapist notice of a stored reply and drops an unknown one without losing the message', () => {
     const reply = {
       id: 'a2',

@@ -115,6 +115,11 @@ Błędy: `400 invalid_message`, `400 insufficient_credits`, `403 forbidden`, `50
 
 ## Changelog
 
+### 2026-11-20
+
+- Pomoc produktowa uruchamia się lokalnie przed dispatcherem. Historia przechowuje temat karty, a w przypadku zgłoszenia wyłącznie szkic z bieżącej wiadomości lub standardowy opis problemu z dostępem do zestawu. Karta odczytuje bieżące uprawnienia przy wyświetleniu.
+- Zakres pierwszej wersji obejmuje gabinety, zespół, polecenia, widoczność pacjentów, dostęp do planu na telefonie, materiały FiziYo i opublikowane nowości portalu. Formularz zgłoszenia otwiera się z edytowalnym opisem. Potwierdzenie w rozmowie pojawia się po sukcesie istniejącej usługi zgłoszeń.
+
 ### 2026-11-18
 
 - Płynność po demo u fizjoterapeuty: „dodaj pacjenta …” (także „stwórz/utwórz/załóż”, sam e-mail albo telefon) otwiera formularz lokalnie, bez modelu, z danymi z wiadomości i z wcześniejszych wiadomości tej wymiany; osoba już obecna na liście pokazuje się zamiast formularza (`utils/newPatientDetails.ts`).
