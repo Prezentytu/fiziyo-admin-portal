@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   setDefaultOrganization: vi.fn(),
   toastError: vi.fn(),
   toastSuccess: vi.fn(),
+  refetchOrganizations: vi.fn(),
 }));
 
 vi.mock('@apollo/client/react', () => ({
@@ -23,7 +24,7 @@ vi.mock('@apollo/client/react', () => ({
     },
     loading: false,
     error: undefined,
-    refetch: vi.fn(),
+    refetch: mocks.refetchOrganizations,
   }),
   useMutation: () => [mocks.setDefaultOrganization],
   useApolloClient: () => ({ resetStore: mocks.resetStore }),
@@ -62,6 +63,7 @@ describe('enterOrganization', () => {
     localStorage.clear();
     mocks.setDefaultOrganization.mockResolvedValue({});
     mocks.resetStore.mockResolvedValue([]);
+    mocks.refetchOrganizations.mockResolvedValue({});
   });
 
   it('enters an organization that is not in the cached list yet', async () => {
@@ -86,6 +88,7 @@ describe('enterOrganization', () => {
 
     expect(mocks.saveBackendToken).toHaveBeenCalledWith('new-token');
     expect(mocks.clearBackendToken).not.toHaveBeenCalled();
+    expect(mocks.refetchOrganizations).toHaveBeenCalledTimes(1);
   });
 
   it('rethrows a failed token exchange and drops a rejected token', async () => {
@@ -106,6 +109,7 @@ describe('switchOrganization', () => {
     localStorage.clear();
     mocks.setDefaultOrganization.mockResolvedValue({});
     mocks.resetStore.mockResolvedValue([]);
+    mocks.refetchOrganizations.mockResolvedValue({});
   });
 
   it('switches to a listed organization through the shared entry path', async () => {

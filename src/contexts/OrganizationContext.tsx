@@ -180,9 +180,11 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
       // The switch is done once the token is saved; a query that fails to refetch is not a failed switch.
       await apolloClient.resetStore().catch((err: unknown) => {
         console.warn('[OrganizationContext] Refetch after organization change failed:', err);
+        // Without the new organization in the list the context stays loading; retry just the list.
+        refetch().catch(() => undefined);
       });
     },
-    [apolloClient, setDefaultOrganization]
+    [apolloClient, setDefaultOrganization, refetch]
   );
 
   const switchOrganization = useCallback(
