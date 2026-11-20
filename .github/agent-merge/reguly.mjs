@@ -223,3 +223,36 @@ export function skrocPowody(powody, { ile = 5 } = {}) {
   });
   return [...inne, ...plikowe];
 }
+
+// Podpowiedź dla autora (człowieka albo sesji agenta, która subskrybuje PR): co w jego zasięgu sprawi, że PR
+// albo jego część przejdzie sama. Nie zmienia oceny, tylko komentarz. Bez kroków dla powodów, które naprawia
+// pętla `napraw-pr` (CI, FAIL review) albo które są decyzją człowieka (main czerwony, etykiety).
+const PLIK_U_CZLOWIEKA = /^plik (?:poza zasięgiem agenta|spoza listy dozwolonych): `(.+)`$/;
+export function jakPrzejsc(powody, { pliki = [], ile = 5 } = {}) {
+  const kroki = [];
+  // Liczymy pliki, nie ścieżki: rename ma dwie ścieżki i dwa powody, a to jeden plik.
+  const sciezki = new Set(powody.map((p) => p.match(PLIK_U_CZLOWIEKA)?.[1]).filter(Boolean));
+  const u = pliki
+    .filter((p) => sciezki.has(p.filename) || (p.previous_filename && sciezki.has(p.previous_filename)))
+    .map((p) => p.filename);
+  const plikow = pliki.length;
+  if (u.length && u.length < plikow) {
+    const pokaz = u
+      .slice(0, ile)
+      .map((s) => `\`${s}\``)
+      .join(', ');
+    const reszta = u.length > ile ? ` i ${u.length - ile} innych` : '';
+    kroki.push(
+      `wydziel pliki u człowieka (${pokaz}${reszta}) do osobnego PR, jeśli reszta działa bez nich: resztę (${plikow - u.length} z ${plikow} plików) sędzia może wtedy zmergować sam`
+    );
+  }
+  if (powody.some((p) => p.startsWith('opis PR nie ma zaznaczonych')))
+    kroki.push(
+      'jeśli zmiana jest dwukierunkowa, dopisz w opisie sekcję `## Drzwi` z linią `- [x] Dwukierunkowe: …` (szablon `.github/PULL_REQUEST_TEMPLATE.md`)'
+    );
+  if (powody.some((p) => p.startsWith('za duży:') || p.startsWith('za dużo plików:')))
+    kroki.push('podziel PR na mniejsze, każdy z własnym testem');
+  if (powody.some((p) => p.startsWith('nierozwiązane wątki review')))
+    kroki.push('odpowiedz w wątkach review i rozwiąż je po poprawce');
+  return kroki;
+}
