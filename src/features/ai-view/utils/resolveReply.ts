@@ -108,7 +108,7 @@ export async function resolveReply(
     );
   if (options.useAi) {
     try {
-      const exercise = singleExerciseRequest(text);
+      const exercise = singleExerciseRequest(text, options.context.patients);
       const command = exercise
         ? `Utwórz jedno ćwiczenie do katalogu gabinetu. Jeśli podano tylko cel, zaproponuj konkretny ruch. Podaj jego nazwę i opis wykonania. Prośba: ${text}`
         : text;

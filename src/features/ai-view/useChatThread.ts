@@ -303,7 +303,7 @@ export function useChatThread({
       const openDraft = openSetDraft(messagesRef.current);
       const liveDraft = openDraft ? getLiveDraft?.(openDraft.messageId) : undefined;
       // „Dodaj” next to an open set edits it. Creating an exercise on its own offers the set after save.
-      const standalone = singleExerciseRequest(trimmed) && !/^(?:prosz[ęe]\s+)?dodaj\b/i.test(trimmed);
+      const standalone = singleExerciseRequest(trimmed, context.patients) &&!/^(?:prosz[ęe]\s+)?dodaj\b/i.test(trimmed);
       const addition =
         openDraft && liveDraft && !standalone
           ? addToDraftReply(trimmed, liveDraft.draft, liveDraft.catalog, context.patients)
@@ -343,6 +343,8 @@ export function useChatThread({
         // Nowe ćwiczenie, o które poproszono przy otwartej propozycji zestawu, wraca do tej propozycji.
         if (openDraft && liveDraft && reply.spec?.component === 'CreateExercise' && standalone) {
           reply = { ...reply, spec: { ...reply.spec, offerForSet: liveDraft.draft } };
+          // The offer carries this copy, so the card is locked: a later edit there would be lost on „Dodaj do zestawu”.
+          markChosen(openDraft.messageId, 'create-exercise');
         } else if (openDraft && liveDraft && reply.spec?.component === 'CreateExercise' && draftRequest(trimmed)) {
           reply = { ...reply, spec: { ...reply.spec, addToSet: liveDraft.draft } };
           markChosen(openDraft.messageId, 'create-exercise');

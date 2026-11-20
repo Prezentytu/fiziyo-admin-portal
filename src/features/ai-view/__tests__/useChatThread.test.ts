@@ -273,6 +273,8 @@ describe('useChatThread', () => {
         spec: { component: 'CreateExercise', name: 'Ćwiczenie na stopę', offerForSet: draft },
       });
       expect(result.current.messages.at(-1)).not.toHaveProperty('spec.addToSet');
+      // The offer holds a copy of the proposal, so the proposal cannot be edited behind it.
+      expect(result.current.messages.at(-3)).toMatchObject({ chosen: 'create-exercise' });
       act(() =>
         result.current.appendAssistant({
           spec: { component: 'ExerciseCreated', exerciseId: 'new', name: 'Test', addToSet: draft },

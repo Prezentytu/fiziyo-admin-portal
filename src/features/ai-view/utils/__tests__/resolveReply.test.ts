@@ -32,6 +32,15 @@ describe('resolveReply', () => {
     expect(reply.spec).toEqual(spec);
   });
 
+  it('keeps the model card for the patient the exercise request names', async () => {
+    const spec = { component: 'ExerciseResults' as const, query: 'kolano', exerciseIds: ['e1'], patientId: 'p-jan' };
+    const dispatch = vi.fn<Dispatcher>(async () => ({ sessionId: 's', spec, creditsUsed: 1 }));
+    const message = 'Zaproponuj ćwiczenie na kolano dla Jana Kowalskiego';
+    const reply = await resolveReply(message, { useAi: true, context: CONTEXT, dispatch });
+    expect(dispatch).toHaveBeenCalledWith(message, undefined, undefined);
+    expect(reply.spec).toEqual(spec);
+  });
+
   it.each(['Zróbmy zestaw ćwiczeń na stopę', 'Zróbmy ćwiczenia na stopę', 'Dodaj ćwiczenie do zestawu'])(
     'keeps a requested set or multiple exercises (%s)',
     async (message) => {

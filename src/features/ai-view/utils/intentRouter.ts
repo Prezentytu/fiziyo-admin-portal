@@ -187,7 +187,7 @@ function routeCommand(
   if (NO_PATIENT_PATTERN.test(normalized)) return { component: 'SetDraft', exerciseIds: [] };
   if (INACTIVE_PATTERN.test(normalized)) return { component: 'PatientPeek', filter: 'inactive' };
   if (ADD_PATIENT_PATTERN.test(normalized)) return { component: 'AddPatient', name: parseNewPatientDetails(text).name };
-  const exercise = singleExerciseRequest(text);
+  const exercise = singleExerciseRequest(text, context.patients);
   if (exercise) return exercise;
 
   const target = navigateTarget(normalized);
@@ -232,10 +232,18 @@ function routeCommand(
   return UNSUPPORTED_SPEC;
 }
 
-export function singleExerciseRequest(text: string): Extract<ChatViewSpec, { component: 'CreateExercise' }> | null {
+/**
+ * A request about a patient is not a catalog exercise: it keeps its patient flow, and a patient's name
+ * never becomes the name of an exercise the whole organization sees.
+ */
+export function singleExerciseRequest(
+  text: string,
+  patients: readonly MatchablePatient[]
+): Extract<ChatViewSpec, { component: 'CreateExercise' }> | null {
   const original = text.trim().normalize('NFC');
   const normalized = normalizeSearchText(original);
-  if (MENTIONS_SET.test(normalized)) return null;
+  if (MENTIONS_SET.test(normalized) || /pacjent/.test(normalized)) return null;
+  if (matchPatients(original, patients).kind !== 'none') return null;
   const verb = normalized.match(CREATE_VERB)?.[0] ?? '';
   const object = normalized.slice(verb.length);
   // Bare „ćwiczenie nie działa” describes a problem. „Ćwiczenie na stopę” requests one.
