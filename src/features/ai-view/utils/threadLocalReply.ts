@@ -4,6 +4,8 @@ import { normalizeSearchText } from '@/features/exercises/utils/exerciseSearch';
 import { confirmPatientSpec, patientConfirmation } from './clarifyChoice';
 import { matchPatients, type MatchablePatient } from './patientMatch';
 import { pickPatientAnswer } from './pickPatientAnswer';
+import { UNSUPPORTED_SPEC, type ChatViewSpec } from './viewSpec';
+import { newExerciseForSet } from './exerciseIdeas';
 import { thinkingTopic } from './replyMotion';
 import { formatPlanDate, parseSchedulePlan, sendSummaryText } from './schedulePlan';
 import { scheduleQuestion, type SetDraftPayload } from './setDraft';
@@ -38,6 +40,15 @@ export function localReplyTo(
 ): LocalReply | null {
   const last = messages.findLast((message) => message.role === 'assistant');
   if (last?.role !== 'assistant' || last.chosen !== undefined) return null;
+  if (
+    (last.spec?.component === 'ExerciseResults' || last.spec?.component === 'ExerciseIdeas') &&
+    last.spec.forSet &&
+    /^(?:tak[, ]+)?(?:utworz|stworz|stworzmy|zrob|zrobmy|przygotuj) (?:nowe |wlasne )?cwiczenie(?: z (?:asystentem|ai))?[.!]?$/.test(
+      normalizeSearchText(text.trim())
+    )
+  ) {
+    return { answeredMessageId: last.id, chosen: text, reply: newExerciseForSet(last.spec.query, last.spec.forSet) };
+  }
   if (last.spec?.component === 'Schedule') {
     const trimmed = text.trim();
     const parsed = NOT_A_SCHEDULE.test(normalizeSearchText(trimmed)) ? null : parseSchedulePlan(trimmed);
@@ -180,6 +191,52 @@ export function withExerciseIdeas<T extends { text?: string; spec?: ChatCardSpec
   const query = exerciseIdeaQuery(question);
   if (!isExerciseTopic(query)) return reply;
   return { ...reply, spec: { component: 'ExerciseIdeas', query } };
+}
+
+/** A set requested by topic has no usable matches from the dispatcher. Check the actual library before offering creation. */
+export function setCatalogFallback(
+  message: string,
+  previousRequest: string | undefined,
+  spec: ChatViewSpec | undefined,
+  patients: readonly MatchablePatient[]
+): Extract<ChatViewSpec, { component: 'ExerciseResults' }> | undefined {
+  const setRequest = /\bzestaw(?:u|em)?\b/i;
+  const fromCatalog =
+    /^(?:dobierz|wybierz|wyszukaj|znajd[źz])\s+(?:[ćc]wiczeni[ae]\s+)?z katalogu\s+(?:na |dla |pod )?(.+)$/iu.exec(
+      message
+    );
+  const direct =
+    /^(?:(?:prosz[ęe][, ]+)?(?:stw[óo]rz(?:my)?|stworzymy|utw[óo]rz|zr[óo]b(?:my)?|u[łl][óo][żz]|przygotuj)\s+(?:mi )?)?zestaw\s+(?:[ćc]wicze[ńn]\s+)?(?:na|pod)\s+(.+)$/iu.exec(
+      message
+    );
+  const topic = (direct?.[1] ?? (setRequest.test(previousRequest ?? '') ? fromCatalog?.[1] : undefined))
+    ?.trim()
+    .replace(/[.!?]+$/, '');
+  if (
+    !topic ||
+    !isExerciseTopic(topic) ||
+    /https?:|pacjent/i.test(topic) ||
+    matchPatients(topic, patients).kind !== 'none'
+  )
+    return;
+  const emptyResults = spec?.component === 'ExerciseResults' && !spec.exerciseIds.length;
+  const emptyDraft = spec?.component === 'SetDraft' && !spec.setId && !spec.exerciseIds.length && !spec.items?.length;
+  if (
+    spec &&
+    spec !== UNSUPPORTED_SPEC &&
+    !(spec.component === 'Navigate' && spec.route === 'exercises') &&
+    !emptyResults &&
+    !emptyDraft
+  )
+    return;
+  const patientId = spec && 'patientId' in spec ? spec.patientId : undefined;
+  return {
+    component: 'ExerciseResults',
+    query: topic,
+    exerciseIds: [],
+    patientId,
+    forSet: { exerciseIds: [], note: topic, ...(patientId && { patientId }) },
+  };
 }
 
 export type CountFocus = 'patients' | 'exercises' | 'sets';

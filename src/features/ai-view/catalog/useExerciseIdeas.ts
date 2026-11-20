@@ -11,7 +11,9 @@ type IdeasState = { status: 'idle' | 'loading' | 'failed' } | { status: 'ready';
 function readStored(messageId: string): AiExerciseVariant[] | null {
   try {
     const raw = window.localStorage.getItem(STORAGE_PREFIX + messageId);
-    return raw ? normalizeAiExerciseVariants(JSON.parse(raw)) : null;
+    if (!raw) return null;
+    const ideas = normalizeAiExerciseVariants({ variants: JSON.parse(raw) });
+    return ideas.length ? ideas : null;
   } catch {
     return null;
   }

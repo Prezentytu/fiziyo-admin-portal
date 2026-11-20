@@ -8,9 +8,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ExerciseThumbnail } from '@/components/shared/exercise/ExerciseThumbnail';
 import { buildExerciseImageUrls } from '@/components/shared/exercise/adapters';
 import { cn } from '@/lib/utils';
+import { useExercisePickerPages } from '@/hooks/useExercisePickerPages';
+import { tokenizeWords, wordStems } from '../utils/textMatch';
 import { useChatActions } from '../ChatSessionContext';
-import { useAvailableExercises } from '../useAvailableExercises';
+import { useAvailableExercises, type ChatCatalogExercise } from '../useAvailableExercises';
 import { pickExercisesById, searchExercises } from '../utils/exerciseLookup';
+import { newExerciseForSet } from '../utils/exerciseIdeas';
 import { isExerciseTopic } from '../utils/threadLocalReply';
 import type { CardProps } from './cardProps';
 import { ChatCard, ChatCardEmpty } from './ChatCard';
@@ -19,13 +22,29 @@ import { ExerciseIdeasList } from './ExerciseIdeas';
 import { exerciseClarifyQuestions } from '../utils/clarifyQuestions';
 
 /** Search tiles: pick what fits and compose a set from it; when nothing fits, ideas for new exercises. */
-export function ExerciseResultsCard({ spec, testId, messageId, chosen, request }: CardProps<'ExerciseResults'>) {
-  const { organizationId, patients, appendExchange, markChosen } = useChatActions();
-  // Model proponuje ćwiczenia z całego katalogu; te spoza pierwszej strony dociągają się po id (P-4).
-  const { exercises, loading } = useAvailableExercises(organizationId, true, spec.exerciseIds);
-  const patient = spec.patientId ? patients.find((candidate) => candidate.id === spec.patientId) : undefined;
-  const [selectedIds, setSelectedIds] = useState<string[] | null>(null);
+export function ExerciseResultsCard(props: CardProps<'ExerciseResults'>) {
+  return props.spec.forSet ? <SetCatalogResults {...props} /> : <CatalogResults {...props} />;
+}
 
+function SetCatalogResults(props: CardProps<'ExerciseResults'>) {
+  const { organizationId } = useChatActions();
+  const words = tokenizeWords(props.spec.query).filter((word) => word.length >= 3 && !/^zdrow[aye]$/.test(word));
+  const search = words.map((word) => wordStems(word)[0]).join(' ') || props.spec.query;
+  const page = useExercisePickerPages<ChatCatalogExercise>({ organizationId, search, sourceFilter: 'all' });
+  if ((page.error && !page.items.length) || !organizationId) {
+    return (
+      <ChatCard testId={props.testId} title="Nie udało się sprawdzić katalogu">
+        <ChatCardEmpty>Napisz ponownie, żeby wyszukać ćwiczenia do zestawu.</ChatCardEmpty>
+      </ChatCard>
+    );
+  }
+  return <Results {...props} results={page.items.slice(0, 8)} exercises={page.items} loading={page.loading} />;
+}
+
+function CatalogResults(props: CardProps<'ExerciseResults'>) {
+  const { organizationId } = useChatActions();
+  const { spec } = props;
+  const { exercises, loading } = useAvailableExercises(organizationId, true, spec.exerciseIds);
   const results = useMemo(
     () =>
       spec.exerciseIds.length > 0
@@ -33,6 +52,26 @@ export function ExerciseResultsCard({ spec, testId, messageId, chosen, request }
         : searchExercises(exercises, spec.query),
     [exercises, spec.exerciseIds, spec.query]
   );
+  return <Results {...props} results={results} exercises={exercises} loading={loading} />;
+}
+
+function Results({
+  spec,
+  testId,
+  messageId,
+  chosen,
+  request,
+  results,
+  exercises,
+  loading,
+}: CardProps<'ExerciseResults'> & {
+  results: ChatCatalogExercise[];
+  exercises: readonly ChatCatalogExercise[];
+  loading: boolean;
+}) {
+  const { patients, appendExchange, markChosen } = useChatActions();
+  const patient = spec.patientId ? patients.find((candidate) => candidate.id === spec.patientId) : undefined;
+  const [selectedIds, setSelectedIds] = useState<string[] | null>(null);
   const selected = selectedIds ?? results.map((exercise) => exercise.id);
   const locked = chosen !== undefined;
 
@@ -45,16 +84,23 @@ export function ExerciseResultsCard({ spec, testId, messageId, chosen, request }
 
   // Zapytanie, które jest zdaniem albo pytaniem, nie staje się nazwą ćwiczenia.
   const ownName = isExerciseTopic(spec.query) ? spec.query : undefined;
-  const askForNew = () =>
-    appendExchange(ownName ? `Utwórz ćwiczenie: ${ownName}` : 'Utwórz ćwiczenie', {
-      text: 'Opisz ćwiczenie i ustaw podstawowe parametry, a dodam je do katalogu gabinetu.',
-      spec: { component: 'CreateExercise', name: ownName },
-    });
+  const askForNew = () => {
+    if (spec.forSet) markChosen(messageId, 'create-exercise');
+    appendExchange(
+      ownName ? `Utwórz ćwiczenie: ${ownName}` : 'Utwórz ćwiczenie',
+      spec.forSet
+        ? newExerciseForSet(ownName, spec.forSet)
+        : {
+            text: 'Opisz ćwiczenie i ustaw podstawowe parametry, a dodam je do katalogu gabinetu.',
+            spec: { component: 'CreateExercise', name: ownName },
+          }
+    );
+  };
 
   const askForIdeas = () =>
     appendExchange(`Pomysły na nowe ćwiczenia: ${spec.query}`, {
-      text: 'Tych ćwiczeń nie ma w katalogu. Wybierz pomysł, a przygotuję ćwiczenie do sprawdzenia.',
-      spec: { component: 'ExerciseIdeas', query: spec.query, patientId: spec.patientId },
+      text: 'Wybierz pomysł, a przygotuję nowe ćwiczenie do sprawdzenia.',
+      spec: { component: 'ExerciseIdeas', query: spec.query, patientId: spec.patientId, forSet: spec.forSet },
     });
 
   if (loading) {
@@ -77,7 +123,7 @@ export function ExerciseResultsCard({ spec, testId, messageId, chosen, request }
         footer={
           <>
             <span className="text-[13px] text-label-secondary">Albo dodaj ćwiczenie pod własną nazwą</span>
-            <Button variant="outline" onClick={askForNew} data-testid={`${testId}-create-btn`}>
+            <Button variant="outline" onClick={askForNew} disabled={locked} data-testid={`${testId}-create-btn`}>
               <Plus aria-hidden="true" />
               Utwórz ćwiczenie
             </Button>
@@ -91,6 +137,8 @@ export function ExerciseResultsCard({ spec, testId, messageId, chosen, request }
           testId={`${testId}-ideas`}
           catalogNames={catalogNames}
           offerOwn={false}
+          forSet={spec.forSet}
+          disabled={locked}
         />
       </ChatCard>
     );

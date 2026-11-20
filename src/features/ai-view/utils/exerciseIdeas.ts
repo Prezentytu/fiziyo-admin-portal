@@ -1,3 +1,4 @@
+import type { SetDraftReturn } from './setDraft';
 import { normalizeSearchText } from '@/features/exercises/utils/exerciseSearch';
 import type { AiExerciseVariant } from '@/features/exercises/utils/aiFullExercise';
 
@@ -11,4 +12,12 @@ export function freshIdeas(ideas: readonly AiExerciseVariant[], catalogNames: re
     seen.add(key);
     return true;
   });
+}
+
+/** The form keeps the destination draft until the regular catalog save returns its exercise ID. */
+export function newExerciseForSet(name: string | undefined, addToSet: SetDraftReturn) {
+  return {
+    text: 'Sprawdź nazwę i przygotuj opis oraz parametry ćwiczenia. Po zapisaniu ćwiczenie pojawi się w szkicu zestawu.',
+    spec: { component: 'CreateExercise' as const, name, addToSet },
+  };
 }
