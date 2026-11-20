@@ -10,7 +10,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { ocen, skrocPowody, stanCheckow, wzorce } from './reguly.mjs';
+import { jakPrzejsc, ocen, skrocPowody, stanCheckow, wzorce } from './reguly.mjs';
 
 const tu = dirname(fileURLToPath(import.meta.url));
 const cfg = JSON.parse(readFileSync(join(tu, 'config.json'), 'utf8'));
@@ -141,6 +141,13 @@ async function tokenAplikacji(appId, klucz) {
   ).token;
 }
 
+const kroki = (powody, plikow) => {
+  const k = jakPrzejsc(powody, { plikow });
+  return k.length
+    ? `\n\n**Co może zrobić autor, żeby PR (albo jego część) przeszedł sam:**\n\n${k.map((x) => `- ${x}`).join('\n')}`
+    : '';
+};
+
 async function main() {
   if ((process.env.AGENT_MERGE || '').toLowerCase() === 'off') {
     log('AGENT_MERGE=off: sędzia wyłączony');
@@ -201,7 +208,7 @@ async function main() {
             .map((x) => `- ${x}`)
             .join(
               '\n'
-            )}\n\nNowy commit albo zmiana stanu uruchamia ocenę ponownie. Polityka: [auto-merge](https://github.com/Prezentytu/baza-wiedzy/blob/main/praca-z-agentami/model-pracy/auto-merge-2026-11-19.md).`
+            )}${kroki(wynik.powody, pliki.length)}\n\nNowy commit albo zmiana stanu uruchamia ocenę ponownie. Polityka: [auto-merge](https://github.com/Prezentytu/baza-wiedzy/blob/main/praca-z-agentami/model-pracy/auto-merge-2026-11-19.md).`
         );
       continue;
     }

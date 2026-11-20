@@ -3,6 +3,7 @@ import { test } from 'node:test';
 
 import {
   drzwiZOpisu,
+  jakPrzejsc,
   ocen,
   ocenPliki,
   otwarteWatki,
@@ -459,4 +460,18 @@ test('komentarz sędziego: pliki zgrupowane, reszta policzona z katalogami', () 
   assert.match(wynik[1], /^7 plików poza zasięgiem agenta: `backend\/a.cs`/);
   assert.match(wynik[1], /i 2 innych \(`backend\/`, `app\/`\)$/);
   assert.equal(wynik[2], 'plik spoza listy dozwolonych: `utils/a.ts`');
+});
+
+test('jakPrzejsc: podział PR, drzwi, rozmiar i wątki; bez kroku, gdy wszystkie pliki są u człowieka', () => {
+  const powody = [
+    'plik poza zasięgiem agenta: `src/features/exercise-sets/AGENTS.md`',
+    'opis PR nie ma zaznaczonych wyłącznie drzwi dwukierunkowych',
+    'za duży: 1700 linii (limit 1500)',
+    'nierozwiązane wątki review: 2',
+  ];
+  const kroki = jakPrzejsc(powody, { plikow: 9 });
+  assert.equal(kroki.length, 4);
+  assert.match(kroki[0], /`src\/features\/exercise-sets\/AGENTS\.md`.*8 z 9 plików/);
+  assert.deepEqual(jakPrzejsc(['plik poza zasięgiem agenta: `AGENTS.md`'], { plikow: 1 }), []);
+  assert.deepEqual(jakPrzejsc(['check `gate`: failure'], { plikow: 3 }), []);
 });
