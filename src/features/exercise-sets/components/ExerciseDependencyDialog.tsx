@@ -52,7 +52,7 @@ interface ExerciseDependencyDialogProps {
 export function ExerciseDependencyDialog({ target, positions, saving, onClose, onSave }: ExerciseDependencyDialogProps) {
   return (
     <Dialog open={target !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-lg" data-testid="set-dependency-dialog">
+      <DialogContent className="grid-cols-[minmax(0,1fr)] sm:max-w-lg" data-testid="set-dependency-dialog">
         {target && (
           <DependencyEditor key={target.id} target={target} positions={positions} saving={saving} onClose={onClose} onSave={onSave} />
         )}
@@ -91,14 +91,16 @@ function DependencyEditor({ target, positions, saving, onClose, onSave }: Depend
 
   return (
     <>
-      <DialogHeader>
-        <DialogTitle>Kolejność: {target.name}</DialogTitle>
+      <DialogHeader className="min-w-0">
+        <DialogTitle className="line-clamp-2 break-words" title={target.name}>
+          Kolejność: {target.name}
+        </DialogTitle>
         <DialogDescription>Co pacjent robi przed tym ćwiczeniem.</DialogDescription>
       </DialogHeader>
 
       <div className="space-y-5 py-2">
         <div className="flex items-start justify-between gap-4 rounded-control bg-grouped-tertiary p-3.5">
-          <div className="space-y-0.5">
+          <div className="min-w-0 space-y-0.5">
             <Label htmlFor="set-dependency-warmup-switch" className="flex items-center gap-1.5">
               <Flame className="h-4 w-4 text-status-warning" aria-hidden="true" />
               Rozgrzewka
@@ -123,17 +125,23 @@ function DependencyEditor({ target, positions, saving, onClose, onSave }: Depend
             {showsWarmupRequirement && (
               <li className="flex items-center gap-2 rounded-control bg-fill-quaternary px-3 py-2 text-[14px]">
                 <Flame className="h-4 w-4 shrink-0 text-status-warning" aria-hidden="true" />
-                <span className="flex-1">Rozgrzewka</span>
-                <span className="text-[12px] text-label-secondary">zawsze przed</span>
+                <span className="min-w-0 flex-1">Rozgrzewka</span>
+                <span className="shrink-0 text-[12px] text-label-secondary">zawsze przed</span>
               </li>
             )}
             {requires.map((id) => (
               <li key={id} className="flex items-center gap-2 rounded-control bg-fill-quaternary px-3 py-2 text-[14px]">
-                <span className="flex-1 truncate">{names.get(id)}</span>
+                <span
+                  className="min-w-0 flex-1 break-words line-clamp-2"
+                  title={names.get(id)}
+                  data-testid={`set-dependency-requires-name-${id}`}
+                >
+                  {names.get(id)}
+                </span>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7"
+                  className="h-7 w-7 shrink-0"
                   aria-label={`Usuń wymaganie: ${names.get(id) ?? ''}`}
                   onClick={() =>
                     setDraft((prev) => ({ ...prev, requiresMappingIds: prev.requiresMappingIds.filter((entry) => entry !== id) }))
@@ -222,7 +230,7 @@ const BLOCK_HINT: Record<NonNullable<RequirementOption['blockedBy']>, string> = 
 function RequirementPickerDialog({ open, options, selected, onClose, onConfirm }: RequirementPickerDialogProps) {
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="sm:max-w-md" data-testid="set-dependency-picker-dialog">
+      <DialogContent className="grid-cols-[minmax(0,1fr)] sm:max-w-md" data-testid="set-dependency-picker-dialog">
         {open && <RequirementPicker options={options} selected={selected} onClose={onClose} onConfirm={onConfirm} />}
       </DialogContent>
     </Dialog>
@@ -243,7 +251,7 @@ function RequirementPicker({ options, selected, onClose, onConfirm }: Omit<Requi
         <DialogDescription>Zaznacz ćwiczenia z tego zestawu, które pacjent robi wcześniej.</DialogDescription>
       </DialogHeader>
 
-      <ul className="max-h-[50vh] space-y-1 overflow-y-auto py-2" data-testid="set-dependency-picker-list">
+      <ul className="max-h-[50vh] min-w-0 space-y-1 overflow-y-auto overflow-x-hidden py-2" data-testid="set-dependency-picker-list">
         {options.length === 0 && <li className="text-[13px] text-label-secondary">Zestaw nie ma innych ćwiczeń.</li>}
         {options.map((option) => {
           const isChecked = checked.includes(option.id);
@@ -260,9 +268,15 @@ function RequirementPicker({ options, selected, onClose, onConfirm }: Omit<Requi
               />
               <Label
                 htmlFor={inputId}
-                className={disabled ? 'flex flex-1 flex-col text-label-tertiary' : 'flex flex-1 flex-col'}
+                className={disabled ? 'flex min-w-0 flex-1 flex-col text-label-tertiary' : 'flex min-w-0 flex-1 flex-col'}
               >
-                <span className="truncate">{option.name}</span>
+                <span
+                  className="break-words line-clamp-2"
+                  title={option.name}
+                  data-testid={`set-dependency-picker-name-${option.id}`}
+                >
+                  {option.name}
+                </span>
                 {option.blockedBy && (
                   <span className="text-[12px] font-normal text-label-secondary">{BLOCK_HINT[option.blockedBy]}</span>
                 )}
