@@ -1,6 +1,6 @@
 'use client';
 
-import { Archive, Check, X } from 'lucide-react';
+import { Archive, Check, UserMinus, UserPlus, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -14,6 +14,11 @@ interface VerificationSelectionToolbarProps {
   onToggleVisible: () => void;
   onClear: () => void;
   onArchive: () => void;
+  /** Off where the queue has nothing to archive (only published exercises can be withdrawn). */
+  canArchive?: boolean;
+  /** Take the selected exercises (true) or release them (false); hidden when not provided. */
+  onAssign?: (assign: boolean) => void;
+  isAssigning?: boolean;
   disabled?: boolean;
   isArchiving?: boolean;
   className?: string;
@@ -27,6 +32,9 @@ export function VerificationSelectionToolbar({
   onToggleVisible,
   onClear,
   onArchive,
+  canArchive = true,
+  onAssign,
+  isAssigning = false,
   disabled = false,
   isArchiving = false,
   className,
@@ -73,17 +81,44 @@ export function VerificationSelectionToolbar({
           <X className="h-4 w-4" />
           Wyczyść
         </Button>
-        <Button
-          variant="destructive"
-          size="sm"
-          onClick={onArchive}
-          disabled={disabled || isArchiving}
-          className="gap-2"
-          data-testid="verification-selection-archive-btn"
-        >
-          {isArchiving ? <Check className="h-4 w-4 animate-pulse" /> : <Archive className="h-4 w-4" />}
-          {isArchiving ? 'Archiwizowanie…' : 'Archiwizuj zaznaczone'}
-        </Button>
+        {onAssign && (
+          <>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onAssign(false)}
+              disabled={disabled || isAssigning}
+              className="gap-2"
+              data-testid="verification-selection-unassign-btn"
+            >
+              <UserMinus className="h-4 w-4" />
+              Zdejmij ze mnie
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => onAssign(true)}
+              disabled={disabled || isAssigning}
+              className="gap-2"
+              data-testid="verification-selection-assign-btn"
+            >
+              <UserPlus className="h-4 w-4" />
+              Przypisz do mnie
+            </Button>
+          </>
+        )}
+        {canArchive && (
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={onArchive}
+            disabled={disabled || isArchiving}
+            className="gap-2"
+            data-testid="verification-selection-archive-btn"
+          >
+            {isArchiving ? <Check className="h-4 w-4 animate-pulse" /> : <Archive className="h-4 w-4" />}
+            {isArchiving ? 'Archiwizowanie…' : 'Archiwizuj zaznaczone'}
+          </Button>
+        )}
       </div>
     </div>
   );

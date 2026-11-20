@@ -16,6 +16,7 @@ import { HIDE_EXERCISE_TAGS } from '@/components/shared/exercise';
 import type { AdminExercise } from '@/graphql/types/adminExercise.types';
 import { formatRelativeTime } from '@/utils/dateUtils';
 import { getVerificationStatusBadge, type VerificationTrack } from '@/features/verification/utils/statusBadge';
+import { ReviewWorkflowBadges } from '@/features/verification/ReviewWorkflowBadges';
 
 interface VerificationTaskCardProps {
   exercise: AdminExercise;
@@ -262,6 +263,11 @@ export function VerificationTaskCard({
                   <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{exercise.description}</p>
                 )}
               </div>
+
+              <ReviewWorkflowBadges
+                workflow={exercise.reviewWorkflow}
+                testIdPrefix={`verification-card-${exercise.id}`}
+              />
 
               {/* Meta info */}
               <div className="flex items-center justify-between text-xs text-muted-foreground">
