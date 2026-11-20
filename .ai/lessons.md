@@ -21,9 +21,9 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 ### 2026-11-20 - Przyjęcie zaproszenia nie przełączało organizacji
 
 - **Kategoria**: `React`
-- **Problem**: Po ekranie powitalnym portal otwierał dotychczasowy gabinet.
-- **Przyczyna**: Akceptacja zapisywała członkostwo, a przekierowanie korzystało ze starego kontekstu.
-- **Rozwiązanie**: Przed pokazaniem sukcesu obie ścieżki aktywują organizację z odpowiedzi mutacji.
+- **Problem**: Portal po powitaniu otwierał stary gabinet.
+- **Przyczyna**: Akceptacja zapisywała członkostwo, przekierowanie brało stary kontekst.
+- **Rozwiązanie**: Obie ścieżki aktywują organizację z mutacji przed sukcesem.
 - **Reguła**: Po zapisaniu członkostwa błąd przełączenia ponawiaj samym przełączeniem. [egzekwowane: src/components/organization/__tests__/joinOrganizationFlow.test.tsx]
 
 ### 2026-11-20 - Weryfikator FiziYo nie widział „Zgłoś do poprawki”
