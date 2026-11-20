@@ -7,6 +7,7 @@ import { MobileSidebar } from '@/components/layout/MobileSidebar';
 import { Header } from '@/components/layout/Header';
 import { OrganizationGuard } from '@/components/layout/OrganizationGuard';
 import { OrganizationProvider } from '@/contexts/OrganizationContext';
+import { CreateOrganizationDialogProvider } from '@/components/organization/CreateOrganizationDialogProvider';
 import { ExerciseBuilderProvider } from '@/contexts/ExerciseBuilderContext';
 import { DemoPoolProvider } from '@/features/exercises/demoPool';
 import { useSidebarState } from '@/hooks/useSidebarState';
@@ -54,40 +55,42 @@ export default function DashboardLayout({ children }: Readonly<{ children: React
         <TelemetryIdentity />
         <TelemetryConsentPrompt />
         <AiCreditsRequestHost />
-        <DemoPoolProvider>
-          <ExerciseBuilderProvider>
-            {preference.enabled ? (
-              <ChatShell
-                isCollapsed={isHydrated && isCollapsed}
-                isMobileOpen={isMobileOpen}
-                toggleCollapsed={toggleCollapsed}
-                toggleMobile={toggleMobile}
-                closeMobile={closeMobile}
-              >
-                {content}
-              </ChatShell>
-            ) : (
-              <div className="flex h-dvh bg-grouped">
-                {/* Desktop Sidebar */}
-                <Sidebar isCollapsed={isHydrated ? isCollapsed : false} onToggleCollapse={toggleCollapsed} />
+        <CreateOrganizationDialogProvider>
+          <DemoPoolProvider>
+            <ExerciseBuilderProvider>
+              {preference.enabled ? (
+                <ChatShell
+                  isCollapsed={isHydrated && isCollapsed}
+                  isMobileOpen={isMobileOpen}
+                  toggleCollapsed={toggleCollapsed}
+                  toggleMobile={toggleMobile}
+                  closeMobile={closeMobile}
+                >
+                  {content}
+                </ChatShell>
+              ) : (
+                <div className="flex h-dvh bg-grouped">
+                  {/* Desktop Sidebar */}
+                  <Sidebar isCollapsed={isHydrated ? isCollapsed : false} onToggleCollapse={toggleCollapsed} />
 
-                {/* Mobile Sidebar */}
-                <MobileSidebar isOpen={isMobileOpen} onClose={closeMobile} />
+                  {/* Mobile Sidebar */}
+                  <MobileSidebar isOpen={isMobileOpen} onClose={closeMobile} />
 
-                {/* Main content area */}
-                <div className="flex flex-1 flex-col overflow-hidden min-h-0">
-                  <Header onMobileMenuToggle={toggleMobile} />
-                  <main
-                    className="flex flex-1 flex-col overflow-y-auto min-h-0 bg-grouped p-4 lg:p-6 2xl:p-8"
-                    style={{ scrollbarGutter: 'stable' }}
-                  >
-                    {content}
-                  </main>
+                  {/* Main content area */}
+                  <div className="flex flex-1 flex-col overflow-hidden min-h-0">
+                    <Header onMobileMenuToggle={toggleMobile} />
+                    <main
+                      className="flex flex-1 flex-col overflow-y-auto min-h-0 bg-grouped p-4 lg:p-6 2xl:p-8"
+                      style={{ scrollbarGutter: 'stable' }}
+                    >
+                      {content}
+                    </main>
+                  </div>
                 </div>
-              </div>
-            )}
-          </ExerciseBuilderProvider>
-        </DemoPoolProvider>
+              )}
+            </ExerciseBuilderProvider>
+          </DemoPoolProvider>
+        </CreateOrganizationDialogProvider>
       </OrganizationProvider>
     </OrganizationGuard>
   );

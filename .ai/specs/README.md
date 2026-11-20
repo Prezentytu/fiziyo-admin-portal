@@ -114,6 +114,7 @@ Każda specyfikacja powinna mieć sekcję Changelog na końcu:
 | 037 | [Verification content v3.3](SPEC-037-2026-11-11-verification-content-v33.md)                          | Centrum weryfikacji czyta i zapisuje ćwiczenie w kontrakcie v3.3 | in-progress |
 | 038 | [Exercise edit v3.3](SPEC-038-2026-11-11-exercise-edit-v33.md)                                        | Edycja ćwiczenia 3.3 bez utraty kluczy i bez pól wycofanych      | in-progress |
 | 039 | [Patient attention signal](SPEC-039-2026-11-15-patient-attention-signal.md)                           | Ból, „za trudne” i notatka pacjenta w liście i dzwonku           | in-progress |
+| 040 | [Create organization](SPEC-040-2026-11-20-create-organization.md)                                     | Zakładanie organizacji z przełącznika, czatu i ustawień          | in-progress |
 
 ## Numery bez specu
 

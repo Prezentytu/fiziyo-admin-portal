@@ -12,6 +12,7 @@ import {
   LayoutGrid,
   LogOut,
   MoreHorizontal,
+  Plus,
   PanelLeftClose,
   Settings,
   SquarePen,
@@ -35,6 +36,7 @@ import { AiCreditsDetailsPopover } from '@/features/ai-credits/AiCreditsDetailsP
 import { AiCreditsNotice } from '@/features/ai-credits/AiCreditsNotice';
 import { NavCountBadge } from '@/components/layout/NavCountBadge';
 import { OrganizationSwitchMenuItems } from '@/components/layout/OrganizationSwitchMenuItems';
+import { useOpenCreateOrganization } from '@/components/organization/CreateOrganizationDialogProvider';
 import { verificationItem } from '@/components/layout/navigationConfig';
 import { useCurrentUserDisplay } from '@/components/layout/useCurrentUserDisplay';
 import { useOrganizationVerificationRealtime } from '@/hooks/useOrganizationVerificationRealtime';
@@ -90,6 +92,7 @@ function SidebarBody({
   const account = useCurrentUserDisplay();
   const signOut = useAppSignOut();
   const { update } = useChatMode();
+  const openCreateOrganization = useOpenCreateOrganization();
   const {
     isReady,
     inactiveCount,
@@ -315,6 +318,14 @@ function SidebarBody({
               <Building2 className={MENU_ICON_CLASS} aria-hidden="true" />
               Organizacja
             </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="gap-2.5"
+            onSelect={openCreateOrganization}
+            data-testid="nav-chat-create-organization-btn"
+          >
+            <Plus className={MENU_ICON_CLASS} aria-hidden="true" />
+            Utwórz organizację
           </DropdownMenuItem>
           <DropdownMenuItem
             className="gap-2.5"

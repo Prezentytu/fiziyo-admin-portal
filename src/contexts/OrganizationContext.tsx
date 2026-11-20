@@ -24,6 +24,11 @@ interface OrganizationContextValue {
   isSwitching: boolean;
   /** Switch to a different organization */
   switchOrganization: (organizationId: string) => Promise<void>;
+  /**
+   * Make a just-created organization active. Unlike `switchOrganization` it does not need the
+   * organization in `organizations` yet, shows no toast and rethrows, so the caller reports failure.
+   */
+  enterOrganization: (organizationId: string) => Promise<void>;
   /** Refresh organizations list */
   refreshOrganizations: () => void;
   /** Whether user has multiple organizations */
@@ -145,13 +150,47 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
     [organizations, currentOrgId]
   );
 
-  // Switch organization function
+  const enterOrganization = useCallback(
+    async (organizationId: string) => {
+      const currentToken = getBackendToken();
+      if (!currentToken) {
+        throw new Error('Brak tokenu autoryzacji');
+      }
+
+      try {
+        const response = await tokenExchangeService.changeOrganization(currentToken, organizationId);
+        saveBackendToken(response.access_token);
+      } catch (error) {
+        if (error instanceof Error && (error.message.includes('401') || error.message.includes('403'))) {
+          clearBackendToken();
+        }
+        throw error;
+      }
+
+      setDefaultOrganization({
+        variables: { organizationId },
+      }).catch((err) => {
+        console.warn('[OrganizationContext] Failed to update default org:', err);
+      });
+
+      setCurrentOrgId(organizationId);
+      setLastOrganizationId(organizationId);
+
+      // Refetches every active query, `GetUserOrganizations` included, under the new organization.
+      // The switch is done once the token is saved; a query that fails to refetch is not a failed switch.
+      await apolloClient.resetStore().catch((err: unknown) => {
+        console.warn('[OrganizationContext] Refetch after organization change failed:', err);
+        // Without the new organization in the list the context stays loading; retry just the list.
+        refetch().catch(() => undefined);
+      });
+    },
+    [apolloClient, setDefaultOrganization, refetch]
+  );
+
   const switchOrganization = useCallback(
     async (organizationId: string) => {
-      // Don't switch to the same organization
       if (organizationId === currentOrgId) return;
 
-      // Find the target organization
       const targetOrg = organizations.find((o) => o.organizationId === organizationId);
       if (!targetOrg) {
         toast.error('Nie znaleziono organizacji');
@@ -161,33 +200,7 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
       setIsSwitching(true);
 
       try {
-        // Get current token
-        const currentToken = getBackendToken();
-        if (!currentToken) {
-          throw new Error('Brak tokenu autoryzacji');
-        }
-
-        // Exchange token for new organization
-        const response = await tokenExchangeService.changeOrganization(currentToken, organizationId);
-
-        // Save new token
-        saveBackendToken(response.access_token);
-
-        // Update default organization in backend (fire and forget)
-        setDefaultOrganization({
-          variables: { organizationId },
-        }).catch((err) => {
-          console.warn('[OrganizationContext] Failed to update default org:', err);
-        });
-
-        // Update local state
-        setCurrentOrgId(organizationId);
-        setLastOrganizationId(organizationId);
-
-        // Reset Apollo cache to refetch all data with new organization context
-        await apolloClient.resetStore();
-
-        // Show success toast
+        await enterOrganization(organizationId);
         toast.success(`Przełączono na ${targetOrg.organizationName}`, {
           description: getRoleLabel(targetOrg.role),
           duration: 3000,
@@ -197,16 +210,11 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
         toast.error('Nie udało się przełączyć organizacji', {
           description: error instanceof Error ? error.message : 'Spróbuj ponownie',
         });
-
-        // Clear token on auth errors
-        if (error instanceof Error && (error.message.includes('401') || error.message.includes('403'))) {
-          clearBackendToken();
-        }
       } finally {
         setIsSwitching(false);
       }
     },
-    [currentOrgId, organizations, apolloClient, setDefaultOrganization]
+    [currentOrgId, organizations, enterOrganization]
   );
 
   const refreshOrganizations = useCallback(() => {
@@ -220,6 +228,7 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
       isLoading: isOrganizationContextLoading(isLoading, organizations.length, currentOrganization !== null),
       isSwitching,
       switchOrganization,
+      enterOrganization,
       refreshOrganizations,
       hasMultipleOrganizations,
     }),
@@ -229,6 +238,7 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
       isLoading,
       isSwitching,
       switchOrganization,
+      enterOrganization,
       refreshOrganizations,
       hasMultipleOrganizations,
     ]

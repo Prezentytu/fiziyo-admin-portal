@@ -2,13 +2,14 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { Building2, Shield, ShieldCheck, User, Star, UserPlus, ArrowRight, Check, Loader2 } from 'lucide-react';
+import { Building2, Shield, ShieldCheck, User, Star, UserPlus, ArrowRight, Check, Loader2, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { JoinOrganizationDialog } from '@/components/settings/JoinOrganizationDialog';
+import { useOpenCreateOrganization } from '@/components/organization/CreateOrganizationDialogProvider';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { cn } from '@/lib/utils';
 
@@ -41,6 +42,25 @@ const roleIcons: Record<string, React.ReactNode> = {
   STAFF: <User className="h-3 w-3" />,
 };
 
+function CreateOrganizationTile({ onClick }: Readonly<{ onClick: () => void }>) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group flex w-full items-center gap-4 rounded-2xl border border-dashed border-border p-4 text-left transition-colors duration-200 hover:border-primary/40 hover:bg-fill-quaternary cursor-pointer"
+      data-testid="settings-orgs-create-btn"
+    >
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+        <Plus className="h-5 w-5 text-primary" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <h3 className="text-sm font-semibold text-foreground">Utwórz organizację</h3>
+        <p className="text-sm text-muted-foreground">Osobni pacjenci, katalog i zespół. Zostaniesz właścicielem.</p>
+      </div>
+    </button>
+  );
+}
+
 export function OrganizationsList({
   organizations,
   defaultOrganizationId,
@@ -49,6 +69,7 @@ export function OrganizationsList({
 }: OrganizationsListProps) {
   const { currentOrganization, switchOrganization, isSwitching } = useOrganization();
   const [showJoinDialog, setShowJoinDialog] = useState(false);
+  const openCreateOrganization = useOpenCreateOrganization();
 
   const handleJoinSuccess = () => {
     onOrganizationsChange?.();
@@ -84,6 +105,8 @@ export function OrganizationsList({
             <ArrowRight className="h-5 w-5 text-on-tint/60 group-hover:text-on-tint group-hover:translate-x-1 transition-all duration-300 shrink-0" />
           </div>
         </button>
+
+        <CreateOrganizationTile onClick={openCreateOrganization} />
 
         <Card className="border-border/60">
           <CardContent className="py-8 text-center">
@@ -139,6 +162,8 @@ export function OrganizationsList({
           </CardContent>
         </Card>
       </div>
+
+      <CreateOrganizationTile onClick={openCreateOrganization} />
 
       {/* Organizations List - Compact with Switch Action */}
       <Card>
