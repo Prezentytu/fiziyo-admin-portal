@@ -7,7 +7,7 @@
 ## Auth i sesja
 
 - `enterOrganization` przyjmuje dowolne `organizationId`, bez sprawdzania listy w pamięci. Nie jest to obejście, bo listę z pamięci sprawdzał tylko UI. Backend wydaje token wyłącznie przy aktywnym członkostwie w bazie (`SwitchOrganizationTokenForUserByEmail`, `fizjo-app/backend/FizjoApp.Api/Services/TokenExchangeService.cs`) i w przeciwnym razie zwraca 403. Test: `src/contexts/__tests__/enterOrganization.test.tsx`.
-- Czyszczenie tokenu przy 401/403 zostało i jest pokryte testem. Nowy token zapisuje się dopiero po udanej wymianie.
+- Czyszczenie tokenu przy 401/403 zostało, ale obejmuje teraz tylko odpowiedź wymiany tokenu. Wcześniej obejmowało też błąd refetchu w `resetStore`, więc pojedyncze zapytanie z 401 kasowało nowy, ważny token. Obie ścieżki mają test (`src/contexts/__tests__/enterOrganization.test.tsx`). Nowy token zapisuje się dopiero po udanej wymianie.
 - Do GraphQL nadal idzie wyłącznie JWT backendu, nigdy token Clerka.
 
 ## Dane i granice tenantu

@@ -22,7 +22,7 @@ Ustawienia konta zostaw w `src/components/settings/`.
 - Strona organizacji: `TeamSection`, `ClinicsSection`, `InvitationsSection`; `SettingsTab` używa strona `/settings`.
 - Zaproszenie: `InviteMemberDialog` + `InvitationsSection`.
 - Kliniki: `ClinicDialog`, `ClinicExpandableCard`, `AssignToClinicDialog`.
-- Nowa organizacja: `CreateOrganizationDialog` (`useCreateOrganization`, schemat `createOrganizationForm.ts`), jedno wejście dla przełącznika, menu czatu i ustawień; SPEC-040.
+- Nowa organizacja: jeden `CreateOrganizationDialog` w `CreateOrganizationDialogProvider` (layout dashboardu); wejścia wołają `useOpenCreateOrganization`, nie montują własnego dialogu; SPEC-040.
 - Katalog: `CatalogBundleImportCard`, `ExerciseVisibilitySettings`.
 - Logika listy zespołu: `teamSectionUtils.ts` + test obok.
 
