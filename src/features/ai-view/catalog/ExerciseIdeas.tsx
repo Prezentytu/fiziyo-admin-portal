@@ -9,8 +9,9 @@ import { aiVariantAttributes } from '@/features/exercises/utils/aiFullExercise';
 import { useChatActions } from '../ChatSessionContext';
 import { useAvailableExercises } from '../useAvailableExercises';
 import { useChatMode } from '../useChatMode';
-import { freshIdeas } from '../utils/exerciseIdeas';
+import { freshIdeas, newExerciseForSet } from '../utils/exerciseIdeas';
 import { isExerciseTopic } from '../utils/threadLocalReply';
+import type { SetDraftReturn } from '../utils/setDraft';
 import type { CardProps } from './cardProps';
 import { ChatCard, ChatCardNote } from './ChatCard';
 import { useExerciseIdeas } from './useExerciseIdeas';
@@ -27,6 +28,8 @@ export function ExerciseIdeasList({
   disabled = false,
   offerOwn = true,
   showHeading = true,
+  forSet,
+  onCreate,
 }: {
   readonly query: string;
   readonly messageId: string;
@@ -37,8 +40,10 @@ export function ExerciseIdeasList({
   readonly offerOwn?: boolean;
   /** Off in the ideas card, whose title already says it. */
   readonly showHeading?: boolean;
+  readonly forSet?: SetDraftReturn;
+  readonly onCreate?: (name: string) => void;
 }) {
-  const { appendExchange } = useChatActions();
+  const { appendExchange, markChosen } = useChatActions();
   const { preference } = useChatMode();
   const state = useExerciseIdeas({ messageId, query, enabled: preference.useAi && !disabled });
   const ideas = useMemo(
@@ -46,11 +51,19 @@ export function ExerciseIdeasList({
     [state, catalogNames]
   );
 
-  const create = (name: string) =>
-    appendExchange(`Utwórz ćwiczenie: ${name}`, {
-      text: 'Sprawdź propozycję, popraw, co trzeba, i dodaj ćwiczenie do katalogu gabinetu.',
-      spec: { component: 'CreateExercise', name },
-    });
+  const create = (name: string) => {
+    if (onCreate) return onCreate(name);
+    if (forSet) markChosen(messageId, name);
+    appendExchange(
+      `Utwórz ćwiczenie: ${name}`,
+      forSet
+        ? newExerciseForSet(name, forSet)
+        : {
+            text: 'Sprawdź propozycję, popraw, co trzeba, i dodaj ćwiczenie do katalogu gabinetu.',
+            spec: { component: 'CreateExercise', name },
+          }
+    );
+  };
 
   if (state.status === 'loading') {
     return (
@@ -111,7 +124,7 @@ export function ExerciseIdeasList({
 }
 
 /** A local card: ideas for new exercises asked for from search results that do not fit. */
-export function ExerciseIdeasCard({ spec, testId, messageId }: CardProps<'ExerciseIdeas'>) {
+export function ExerciseIdeasCard({ spec, testId, messageId, chosen }: CardProps<'ExerciseIdeas'>) {
   const { organizationId } = useChatActions();
   const { exercises } = useAvailableExercises(organizationId, true);
   const catalogNames = useMemo(() => exercises.map((exercise) => exercise.name), [exercises]);
@@ -123,6 +136,8 @@ export function ExerciseIdeasCard({ spec, testId, messageId }: CardProps<'Exerci
         testId={`${testId}-ideas`}
         catalogNames={catalogNames}
         showHeading={false}
+        forSet={spec.forSet}
+        disabled={chosen !== undefined}
       />
     </ChatCard>
   );

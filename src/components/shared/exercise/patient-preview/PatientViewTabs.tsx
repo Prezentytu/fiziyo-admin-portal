@@ -37,7 +37,7 @@ export function PatientViewTabContent({
 }: Readonly<{ exercise: ExerciseExecutionCardData; view: ExercisePreviewView; testIdPrefix: string }>) {
   const imageUrl = useMemo(() => buildPreviewGallery(exercise)[0] ?? null, [exercise]);
   return (
-    <TabsContent value="patient" className="mt-0 min-h-0 flex-1 overflow-y-auto overscroll-contain">
+    <TabsContent value="patient" className="mt-0 flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
       {view === 'patient' ? (
         <PatientPreviewTab exercise={exercise} imageUrl={imageUrl} testIdPrefix={testIdPrefix} />
       ) : null}

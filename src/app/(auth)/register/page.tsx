@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, type ComponentProps } from 'react';
 import { useSignUp } from '@clerk/nextjs/legacy';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, Loader2, Mail, Lock, User, Building2, Check, Pencil } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Loader2, Mail, Lock, User, Building2, Check, Pencil, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/phone-input';
@@ -91,6 +91,50 @@ function PracticeNamePreview({ name, onEdit }: PracticeNamePreviewProps) {
         <span className="text-xs text-muted-foreground">Edytuj</span>
       </div>
     </button>
+  );
+}
+
+type RegistrationPasswordInputProps = Pick<
+  ComponentProps<typeof Input>,
+  'id' | 'placeholder' | 'value' | 'onChange' | 'autoFocus'
+> & {
+  'data-testid': string;
+  toggleTestId: string;
+  visibilityLabel: string;
+};
+
+function RegistrationPasswordInput({
+  'data-testid': testId,
+  toggleTestId,
+  visibilityLabel,
+  ...inputProps
+}: RegistrationPasswordInputProps) {
+  const [visible, setVisible] = useState(false);
+  const VisibilityIcon = visible ? EyeOff : Eye;
+
+  return (
+    <div className="relative">
+      <Lock
+        aria-hidden="true"
+        className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+      />
+      <Input
+        {...inputProps}
+        type={visible ? 'text' : 'password'}
+        className="h-11 pl-10 pr-12"
+        autoComplete="new-password"
+        data-testid={testId}
+      />
+      <button
+        type="button"
+        onClick={() => setVisible((previous) => !previous)}
+        data-testid={toggleTestId}
+        aria-label={`${visible ? 'Ukryj' : 'Pokaż'} ${visibilityLabel}`}
+        className="absolute right-1 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-surface-light hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+      >
+        <VisibilityIcon aria-hidden="true" className="h-4 w-4" />
+      </button>
+    </div>
   );
 }
 
@@ -344,37 +388,29 @@ export default function RegisterPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Hasło</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Minimum 8 znaków"
-                  value={formData.password}
-                  onChange={(e) => handleInputChange('password', e.target.value)}
-                  className="h-11 pl-10"
-                  autoComplete="new-password"
-                  autoFocus
-                  data-testid="auth-register-password-input"
-                />
-              </div>
+              <RegistrationPasswordInput
+                id="password"
+                placeholder="Minimum 8 znaków"
+                value={formData.password}
+                onChange={(e) => handleInputChange('password', e.target.value)}
+                autoFocus
+                data-testid="auth-register-password-input"
+                toggleTestId="auth-register-show-password-btn"
+                visibilityLabel="hasło"
+              />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Potwierdź hasło</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="Powtórz hasło"
-                  value={formData.confirmPassword}
-                  onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                  className="h-11 pl-10"
-                  autoComplete="new-password"
-                  data-testid="auth-register-password-confirm-input"
-                />
-              </div>
+              <RegistrationPasswordInput
+                id="confirmPassword"
+                placeholder="Powtórz hasło"
+                value={formData.confirmPassword}
+                onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                data-testid="auth-register-password-confirm-input"
+                toggleTestId="auth-register-show-confirm-btn"
+                visibilityLabel="potwierdzenie hasła"
+              />
             </div>
           </div>
         )}

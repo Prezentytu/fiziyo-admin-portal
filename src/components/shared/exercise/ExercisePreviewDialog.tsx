@@ -158,7 +158,7 @@ export function ExercisePreviewDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className={`${view === 'patient' ? PATIENT_VIEW_DIALOG_WIDTH : 'max-w-3xl'} max-h-[95vh] overflow-hidden p-0 flex flex-col`}
+        className={`${view === 'patient' ? `${PATIENT_VIEW_DIALOG_WIDTH} max-h-[95dvh]` : 'max-w-3xl max-h-[95vh]'} overflow-hidden p-0 flex flex-col`}
         data-testid={`${testIdPrefix}-dialog`}
       >
         <Tabs

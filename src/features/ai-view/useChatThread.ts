@@ -19,7 +19,14 @@ import { routeForPatient, singleExerciseRequest, type IntentContext } from './ut
 import { threadNewPatientDetails } from './utils/newPatientDetails';
 import { replyText, resolveForPatient, resolveReply, type HeldReply } from './utils/resolveReply';
 import { scheduleQuestion, type SetDraftPayload } from './utils/setDraft';
-import { accountQuestionReply, countQuestion, localReplyTo, withExerciseIdeas } from './utils/threadLocalReply';
+import { exerciseFormFromDiscussion, opensExerciseForm } from './utils/exerciseDiscussion';
+import {
+  accountQuestionReply,
+  countQuestion,
+  localReplyTo,
+  setCatalogFallback,
+  withExerciseIdeas,
+} from './utils/threadLocalReply';
 import { productHelpFor } from './utils/productHelp';
 import { UNSUPPORTED_SPEC } from './utils/viewSpec';
 
@@ -245,6 +252,14 @@ export function useChatThread({
           return;
         }
       }
+      const previousExercise =
+        isOpen && asked.spec?.component === 'CreateExercise' && asked.spec.discussion ? asked.spec : undefined;
+      if (asked && previousExercise && opensExerciseForm(trimmed)) {
+        markChosen(asked.id, trimmed);
+        pushUser(trimmed);
+        appendAssistant({ spec: exerciseFormFromDiscussion(previousExercise) });
+        return;
+      }
       const confirmation = isOpen ? patientConfirmation(asked.spec) : null;
       const answer = confirmation ? confirmAnswer(trimmed, confirmation.patientId, context.patients) : null;
       if (asked && confirmation && answer === 'yes') {
@@ -303,7 +318,8 @@ export function useChatThread({
       const openDraft = openSetDraft(messagesRef.current);
       const liveDraft = openDraft ? getLiveDraft?.(openDraft.messageId) : undefined;
       // „Dodaj” next to an open set edits it. Creating an exercise on its own offers the set after save.
-      const standalone = singleExerciseRequest(trimmed, context.patients) &&!/^(?:prosz[ęe]\s+)?dodaj\b/i.test(trimmed);
+      const standalone =
+        singleExerciseRequest(trimmed, context.patients) && !/^(?:prosz[ęe]\s+)?dodaj\b/i.test(trimmed);
       const addition =
         openDraft && liveDraft && !standalone
           ? addToDraftReply(trimmed, liveDraft.draft, liveDraft.catalog, context.patients)
@@ -318,6 +334,11 @@ export function useChatThread({
         appendAssistant(addition.reply);
         return;
       }
+      const catalogContext =
+        pendingCommandRef.current ??
+        (asked?.spec?.component === 'Clarify'
+          ? messagesRef.current.findLast((message) => message.role === 'user')?.text
+          : undefined);
       inFlightRef.current = true;
       pushUser(trimmed);
       setIsBusy(true);
@@ -331,6 +352,7 @@ export function useChatThread({
           sessionId: sessionRef.current?.scopeKey === scopeKey ? sessionRef.current.id : undefined,
           context,
           dispatch: dispatchChatMessage,
+          previousExercise,
           pendingCommand: pendingCommandRef.current,
           contextPatientId,
           knownPatientIds,
@@ -338,7 +360,16 @@ export function useChatThread({
         });
         // Pytanie o ćwiczenia bez karty w odpowiedzi (nic nie pasuje): pomysły na nowe dla tej potrzeby.
         // A refusal about a patient gets no card, so no exercise ideas either.
-        let reply = resolved.notice ? resolved : withExerciseIdeas(trimmed, resolved);
+        const search = !resolved.notice && setCatalogFallback(trimmed, catalogContext, resolved.spec, context.patients);
+        let reply = search
+          ? {
+              ...resolved,
+              spec: search,
+              text: 'Sprawdźmy katalog. Jeśli brakuje pasującego ruchu, możesz przygotować nowe ćwiczenie z asystentem.',
+            }
+          : resolved.notice
+            ? resolved
+            : withExerciseIdeas(trimmed, resolved);
         if (threadEpochRef.current !== epoch) return;
         // Nowe ćwiczenie, o które poproszono przy otwartej propozycji zestawu, wraca do tej propozycji.
         if (openDraft && liveDraft && reply.spec?.component === 'CreateExercise' && standalone) {
@@ -348,6 +379,9 @@ export function useChatThread({
         } else if (openDraft && liveDraft && reply.spec?.component === 'CreateExercise' && draftRequest(trimmed)) {
           reply = { ...reply, spec: { ...reply.spec, addToSet: liveDraft.draft } };
           markChosen(openDraft.messageId, 'create-exercise');
+        }
+        if (previousExercise && asked && reply.spec?.component === 'CreateExercise' && reply.spec.discussion) {
+          markChosen(asked.id, trimmed);
         }
         // AI questions count too: if the next dispatch fails, rules finish the command.
         const isUnsupported = reply.spec === UNSUPPORTED_SPEC;

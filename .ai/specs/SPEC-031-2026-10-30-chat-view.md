@@ -94,7 +94,7 @@ Błędy: `400 invalid_message`, `400 insufficient_credits`, `403 forbidden`, `50
 
 ## Data-testid
 
-- Powłoka: `nav-chat-sidebar`, `nav-chat-mobile-sidebar`, `nav-chat-sidebar-collapse-btn`, `nav-chat-new-btn`, `nav-chat-{patients,sets,exercises}-link`, `nav-chat-inactive-count`, `nav-chat-scan-btn`, `nav-chat-recent-list`, `nav-chat-recent-item-<id>`, `nav-chat-recent-delete-btn-<id>`, `nav-chat-credits`, `nav-chat-user-menu-btn`, `nav-chat-{settings,organization}-link`, `nav-chat-classic-btn`, `nav-chat-sign-out-btn`.
+- Powłoka: `nav-chat-sidebar`, `nav-chat-mobile-sidebar`, `nav-chat-sidebar-collapse-btn`, `nav-chat-new-btn`, `nav-chat-{patients,sets,exercises}-link`, `nav-chat-inactive-count`, `nav-chat-scan-btn`, `nav-chat-recent-list`, `nav-chat-recent-item-<id>`, `nav-chat-recent-delete-btn-<id>`, `nav-chat-credits`, `nav-chat-user-menu-btn`, `nav-chat-{settings,organization}-link`, `nav-chat-create-organization-btn`, `nav-chat-classic-btn`, `nav-chat-sign-out-btn`.
 - Widok: `common-chat-view`, `common-chat-thread`, `common-chat-thinking`, `common-chat-menu-btn`, `common-chat-sidebar-expand-btn`, `common-chat-ai-toggle-btn`, `common-chat-context-chip-btn`, `common-chat-new-btn`, `common-chat-shortcut-{set,patient,scan}-btn`, `common-chat-today-{btn,list,visit,inactive,ending}`, `common-chat-composer`, `common-chat-composer-{input,send-btn,stop-btn,attach-btn,file-input,mic-btn,dictation-cancel-btn}`, `common-chat-scroll-bottom-btn`, `common-chat-drop-overlay`, `common-chat-message-<id>-{edit,copy}-btn`, `common-chat-reply-<id>-copy-btn`, `common-chat-context-{panel,close-btn,reason,week,pain,set,visit,set-btn,open-link}`.
 - Odpowiedź: `common-chat-reply-<id>-<karta>` z elementami `-primary-btn`, `-option-<n>-btn`, `-confirm-<n>-btn` (skan: „Tak” przy niepewnym dopasowaniu), `-item-<exerciseId>`, `-remove-<exerciseId>-btn`, `-undo-btn`, `-form`, `-<pole>-input`, `-submit-btn`, `-open-link` i innymi w kartach.
 - Ustawienia: `nav-chat-mode-toggle-btn`, `settings-chat-mode-card`, `settings-chat-mode-switch`, `settings-chat-ai-switch`.
@@ -117,11 +117,13 @@ Błędy: `400 invalid_message`, `400 insufficient_credits`, `403 forbidden`, `50
 
 ### 2026-11-20
 
+- Pusty wynik doboru ćwiczeń do zestawu prowadzi do propozycji nazw i tworzenia ćwiczenia z asystentem. Powrót do szkicu następuje po potwierdzonym zapisie ćwiczenia.
+
 - Karta dodawania placówki prowadzi przyciskiem „Otwórz Placówki” do zakładki `/organization?tab=clinics`. W menu konta czatu ten ekran jest pod „Organizacja”, a w menu klasycznym pod „Zespół”.
 
 - Pomoc produktowa uruchamia się lokalnie przed dispatcherem. Historia przechowuje temat karty, a w przypadku zgłoszenia wyłącznie szkic z bieżącej wiadomości lub standardowy opis problemu z dostępem do zestawu. Karta odczytuje bieżące uprawnienia przy wyświetleniu.
 - Zakres pierwszej wersji obejmuje placówki, zespół, polecenia, widoczność pacjentów, dostęp do planu na telefonie, materiały FiziYo i opublikowane nowości portalu. Formularz zgłoszenia otwiera się z edytowalnym opisem. Potwierdzenie w rozmowie pojawia się po sukcesie istniejącej usługi zgłoszeń.
-- Prośba o utworzenie jednego ćwiczenia otwiera kartę „Nowe ćwiczenie”. Po udanym zapisie czat pyta „Czy dodać to ćwiczenie do zestawu?”. Odpowiedź można kliknąć lub wpisać.
+- Prośba o jedno ćwiczenie rozpoczyna rozmowę z listą pasujących pozycji z widocznego katalogu. Kolejne wiadomości doprecyzowują wybór. Formularz otwiera przycisk lub wiadomość „Utwórz własne ćwiczenie”. Po udanym zapisie czat pyta „Czy dodać to ćwiczenie do zestawu?”. Odpowiedź można kliknąć lub wpisać.
 
 ### 2026-11-18
 

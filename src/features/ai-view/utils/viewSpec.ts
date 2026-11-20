@@ -1,3 +1,4 @@
+import type { ExerciseDiscussion } from './exerciseDiscussion';
 import type { SetDraftReturn } from './setDraft';
 import { z } from 'zod';
 
@@ -41,7 +42,7 @@ export type ChatViewSpec =
       warmupExerciseIds?: string[];
     }
   | { component: 'AssignSummary'; patientId: string; setId: string }
-  | { component: 'ExerciseResults'; query: string; exerciseIds: string[]; patientId?: string }
+  | { component: 'ExerciseResults'; query: string; exerciseIds: string[]; patientId?: string; forSet?: SetDraftReturn }
   | { component: 'PatientPeek'; patientId?: string; filter?: 'inactive' }
   | { component: 'Navigate'; route: NavigateRoute }
   | {
@@ -63,6 +64,8 @@ export type ChatViewSpec =
     }
   | {
       component: 'CreateExercise';
+      /** Local conversation before the therapist chooses to open the form. */
+      discussion?: ExerciseDiscussion;
       name?: string;
       description?: string;
       /**

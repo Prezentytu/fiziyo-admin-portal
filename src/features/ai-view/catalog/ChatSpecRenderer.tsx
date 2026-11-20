@@ -3,6 +3,7 @@
 import type { ChatCardSpec } from '../utils/chatCards';
 import { AddPatientCard } from './AddPatientCard';
 import { ClarifyCard } from './ClarifyCard';
+import { ExerciseDiscussionCard } from './ExerciseDiscussionCard';
 import { CreateExerciseCard } from './CreateExerciseCard';
 import { DocumentResultCard } from './DocumentResultCard';
 import { CatalogCountsCard } from './CatalogCountsCard';
@@ -60,6 +61,15 @@ export function ChatSpecRenderer({ spec, testId, messageId, chosen, request }: C
     case 'AddPatient':
       return <AddPatientCard spec={spec} testId={`${testId}-add-patient`} {...common} />;
     case 'CreateExercise':
+      if (spec.discussion)
+        return (
+          <ExerciseDiscussionCard
+            spec={spec}
+            discussion={spec.discussion}
+            testId={`${testId}-exercise-discussion`}
+            {...common}
+          />
+        );
       return <CreateExerciseCard spec={spec} testId={`${testId}-create-exercise`} {...common} />;
     case 'PickPatient':
       return <PickPatientCard spec={spec} testId={`${testId}-pick-patient`} {...common} />;

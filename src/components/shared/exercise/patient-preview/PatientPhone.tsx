@@ -32,7 +32,11 @@ export type PatientPhoneTheme = 'light' | 'dark';
 export type PatientPhoneProgress = 'tiles' | 'bar';
 export type PatientPhoneButtons = 'pause' | 'all';
 
+export const PATIENT_PHONE_WIDTH = 400;
+export const PATIENT_PHONE_HEIGHT = 780;
+
 interface PatientPhoneProps {
+  readonly scale: number;
   readonly frame: PatientPreviewFrame;
   readonly exerciseName: string;
   readonly imageUrl: string | null;
@@ -205,6 +209,7 @@ function PhaseCard({
 }
 
 export function PatientPhone({
+  scale,
   frame,
   exerciseName,
   imageUrl,
@@ -221,7 +226,8 @@ export function PatientPhone({
 }: Readonly<PatientPhoneProps>) {
   return (
     <div
-      className="patient-phone h-[780px] w-[400px] shrink-0 rounded-[58px] bg-[var(--pp-frame)] p-2.5 shadow-[0_18px_40px_rgba(15,23,42,0.25)]"
+      className="patient-phone shrink-0 rounded-[58px] bg-[var(--pp-frame)] p-2.5 shadow-[0_18px_40px_rgba(15,23,42,0.25)]"
+      style={{ width: PATIENT_PHONE_WIDTH, height: PATIENT_PHONE_HEIGHT, zoom: scale }}
       data-phone-theme={theme}
       data-phase={frame.tone}
       data-testid={`${testIdPrefix}-phone`}

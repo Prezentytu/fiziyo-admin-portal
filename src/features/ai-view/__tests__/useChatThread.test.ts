@@ -31,10 +31,75 @@ describe('useChatThread', () => {
     ]) {
       await act(() => result.current.send(message));
       expect(result.current.messages.at(-1)).toMatchObject({
-        spec: { component: 'ProductHelp', topic }, source: 'local', creditsUsed: 0,
+        spec: { component: 'ProductHelp', topic },
+        source: 'local',
+        creditsUsed: 0,
       });
     }
     expect(dispatchMock).not.toHaveBeenCalled();
+  });
+
+  it('continues discussing catalog matches and opens the form only on request', async () => {
+    const { result } = renderHook(() =>
+      useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org-a' })
+    );
+    dispatchMock.mockResolvedValueOnce({
+      sessionId: 'foot',
+      creditsUsed: 1,
+      spec: { component: 'ExerciseResults', exerciseIds: ['e1', 'e2'], query: 'stopa' },
+    });
+    await act(() => result.current.send('Jakie mamy ćwiczenia na stopę?'));
+    expect(result.current.messages.at(-1)).toMatchObject({
+      spec: { discussion: { ids: ['e1', 'e2'], search: 'stop' } },
+    });
+    dispatchMock.mockResolvedValueOnce({
+      sessionId: 'foot',
+      creditsUsed: 1,
+      text: 'Pierwsze wykonuje się w siadzie, drugie w staniu.',
+    });
+    await act(() => result.current.send('Czym się różnią?'));
+    expect(result.current.messages.at(-1)).toMatchObject({
+      text: 'Pierwsze wykonuje się w siadzie, drugie w staniu.',
+      spec: { discussion: { ids: ['e1', 'e2'] } },
+    });
+    expect(dispatchMock.mock.calls[1][0]).toContain('Czym się różnią?');
+    await act(() => result.current.send('Utwórz własne ćwiczenie'));
+    expect(result.current.messages.at(-1)).toMatchObject({ spec: { component: 'CreateExercise' } });
+    expect(result.current.messages.at(-1)).not.toHaveProperty('spec.discussion');
+    expect(dispatchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps the set request when the catalog choice gives only a link to exercises', async () => {
+    const choice = 'Dobierz z katalogu na zdrowe plecy';
+    dispatchMock.mockResolvedValueOnce({
+      sessionId: 's',
+      spec: { component: 'Clarify', question: 'Skąd mam wziąć ćwiczenia do zestawu?', options: [choice] },
+      creditsUsed: 1,
+    });
+    dispatchMock.mockResolvedValueOnce({
+      sessionId: 's',
+      spec: { component: 'Navigate', route: 'exercises' },
+      text: 'Nie znalazłem ćwiczeń. Podaj nazwy.',
+      creditsUsed: 1,
+    });
+    const { result } = renderHook(() => useChatThread({ useAi: true, context: CONTEXT, ready: true, scopeKey: 'org' }));
+    await act(() =>
+      result.current.send('Stworzymy zestaw bazujący na https://blog.fiziyo.pl/kurs/zdrowe-plecy-7-dni/')
+    );
+    await act(() => result.current.send(choice));
+    expect(result.current.messages.at(-1)).toMatchObject({
+      spec: {
+        component: 'ExerciseResults',
+        query: 'zdrowe plecy',
+        exerciseIds: [],
+        forSet: { exerciseIds: [], note: 'zdrowe plecy' },
+      },
+    });
+    await act(() => result.current.send('Tak, zróbmy ćwiczenie z asystentem'));
+    expect(result.current.messages.at(-1)).toMatchObject({
+      spec: { component: 'CreateExercise', addToSet: { note: 'zdrowe plecy' } },
+    });
+    expect(dispatchMock).toHaveBeenCalledTimes(2);
   });
 
   it('sends a full name that is not on the visible list to the server and shows its notice without a card', async () => {
@@ -283,7 +348,9 @@ describe('useChatThread', () => {
       await act(() => result.current.send(answer));
       const reply = result.current.messages.at(-1);
       if (answer === 'tak') {
-        expect(reply).toMatchObject({ spec: { component: 'SetDraft', exerciseIds: ['e-clam', 'new'], doses: draft.doses } });
+        expect(reply).toMatchObject({
+          spec: { component: 'SetDraft', exerciseIds: ['e-clam', 'new'], doses: draft.doses },
+        });
       } else {
         expect(reply).toMatchObject({ role: 'assistant' });
         expect(reply?.role === 'assistant' && reply.spec).toBeUndefined();
