@@ -55,6 +55,8 @@ interface ChatSidebarProps {
   readonly onToggleCollapse?: () => void;
   readonly isMobileOpen: boolean;
   readonly onMobileClose: () => void;
+  readonly showTourSidebar?: boolean;
+  readonly tourAccountMenu?: { canManageOrganization: boolean };
 }
 
 interface NavRow {
@@ -76,6 +78,8 @@ const NAV_ROWS: readonly NavRow[] = [
 const RECENT_SKELETON_WIDTHS = ['72%', '54%', '80%', '46%', '64%'] as const;
 
 const MENU_ICON_CLASS = 'size-[18px] shrink-0 text-label-secondary';
+const SETTINGS_LABEL = 'Ustawienia';
+const ORGANIZATION_LABEL = 'Organizacja';
 
 const ROW_CLASS =
   'flex h-9 w-full items-center gap-2.5 rounded-[10px] px-2.5 text-left text-[14px] font-medium text-foreground transition-colors hover:bg-fill-quaternary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40 [&_svg]:size-[18px] [&_svg]:shrink-0 [&_svg]:text-label-secondary';
@@ -83,9 +87,11 @@ const ROW_CLASS =
 function SidebarBody({
   onNavigate,
   onCollapse,
+  tourAccountMenu,
 }: {
   readonly onNavigate: () => void;
   readonly onCollapse?: () => void;
+  readonly tourAccountMenu?: { canManageOrganization: boolean };
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -170,6 +176,7 @@ function SidebarBody({
               href={row.href}
               onClick={onNavigate}
               data-testid={row.testId}
+              data-chat-tour-target={NAV_ROWS.includes(row) ? 'workspace' : undefined}
               aria-current={isActive ? 'page' : undefined}
               className={cn(ROW_CLASS, isActive && 'bg-fill-tertiary')}
             >
@@ -284,39 +291,55 @@ function SidebarBody({
       )}
 
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button type="button" className={cn(ROW_CLASS, 'h-11')} data-testid="nav-chat-user-menu-btn">
-            <span className="relative shrink-0">
-              <Avatar className="h-7 w-7">
-                <AvatarImage src={account.avatarUrl} alt="" />
-                <AvatarFallback className="bg-avatar text-[11px] font-semibold text-avatar-label">
-                  {account.initials}
-                </AvatarFallback>
-              </Avatar>
-              <WhatsNewDot
-                testId="nav-chat-user-menu-whats-new-dot"
-                className="absolute -top-0.5 -right-0.5 ring-2 ring-grouped"
-              />
-            </span>
-            <span className="min-w-0 flex-1 truncate" title={account.displayName}>
-              {account.compactDisplayName}
-            </span>
-            <MoreHorizontal aria-hidden="true" />
-          </button>
-        </DropdownMenuTrigger>
+        <div data-chat-tour-target="organization">
+          {tourAccountMenu && (
+            <div aria-hidden="true" className="mb-1 rounded-control border border-hairline bg-popover p-1 shadow-floating">
+              <div className={cn(ROW_CLASS, !tourAccountMenu.canManageOrganization && 'bg-tint-muted')}>
+                <Settings aria-hidden="true" />
+                {SETTINGS_LABEL}
+              </div>
+              {tourAccountMenu.canManageOrganization && (
+                <div className={cn(ROW_CLASS, 'bg-tint-muted')}>
+                  <Building2 aria-hidden="true" />
+                  {ORGANIZATION_LABEL}
+                </div>
+              )}
+            </div>
+          )}
+          <DropdownMenuTrigger asChild>
+            <button type="button" className={cn(ROW_CLASS, 'h-11')} data-testid="nav-chat-user-menu-btn">
+              <span className="relative shrink-0">
+                <Avatar className="h-7 w-7">
+                  <AvatarImage src={account.avatarUrl} alt="" />
+                  <AvatarFallback className="bg-avatar text-[11px] font-semibold text-avatar-label">
+                    {account.initials}
+                  </AvatarFallback>
+                </Avatar>
+                <WhatsNewDot
+                  testId="nav-chat-user-menu-whats-new-dot"
+                  className="absolute -top-0.5 -right-0.5 ring-2 ring-grouped"
+                />
+              </span>
+              <span className="min-w-0 flex-1 truncate" title={account.displayName}>
+                {account.compactDisplayName}
+              </span>
+              <MoreHorizontal aria-hidden="true" />
+            </button>
+          </DropdownMenuTrigger>
+        </div>
         <DropdownMenuContent side="top" align="start" className="w-64">
           <OrganizationSwitchMenuItems testIdPrefix="nav-chat-org" onSwitch={onNavigate} />
           <DropdownMenuItem asChild className="gap-2.5" data-testid="nav-chat-settings-link">
             <Link href="/settings" onClick={onNavigate}>
               <Settings className={MENU_ICON_CLASS} aria-hidden="true" />
-              Ustawienia
+              {SETTINGS_LABEL}
               <WhatsNewDot testId="nav-chat-settings-whats-new-dot" className="ml-auto" />
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild className="gap-2.5" data-testid="nav-chat-organization-link">
             <Link href="/organization" onClick={onNavigate}>
               <Building2 className={MENU_ICON_CLASS} aria-hidden="true" />
-              Organizacja
+              {ORGANIZATION_LABEL}
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem
@@ -351,19 +374,29 @@ function SidebarBody({
 }
 
 /** Quiet sidebar of the chat shell (design "Czat v2"): conversations first, the rest of the panel one click away. */
-export function ChatSidebar({ isCollapsed, onToggleCollapse, isMobileOpen, onMobileClose }: ChatSidebarProps) {
+export function ChatSidebar({
+  isCollapsed,
+  onToggleCollapse,
+  isMobileOpen,
+  onMobileClose,
+  showTourSidebar,
+  tourAccountMenu,
+}: ChatSidebarProps) {
   useOrganizationVerificationRealtime();
   useVerificationQueuesRealtime();
 
   return (
     <>
-      {!isCollapsed && (
+      {(!isCollapsed || showTourSidebar) && (
         <aside
           aria-label="Menu czatu"
           data-testid="nav-chat-sidebar"
-          className="hidden w-[260px] shrink-0 border-r-[0.5px] border-hairline bg-grouped lg:block"
+          className={cn(
+            'w-[260px] max-w-[calc(100vw-1.5rem)] shrink-0 border-r-[0.5px] border-hairline bg-grouped lg:block',
+            showTourSidebar ? 'fixed inset-y-0 left-0 z-[55] overflow-y-auto lg:static' : 'hidden'
+          )}
         >
-          <SidebarBody onNavigate={() => undefined} onCollapse={onToggleCollapse} />
+          <SidebarBody onNavigate={() => undefined} onCollapse={onToggleCollapse} tourAccountMenu={tourAccountMenu} />
         </aside>
       )}
       <Sheet open={isMobileOpen} onOpenChange={(open) => !open && onMobileClose()}>

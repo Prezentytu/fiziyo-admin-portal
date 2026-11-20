@@ -249,6 +249,7 @@ export function ChatComposer({
     <form
       onSubmit={handleSubmit}
       data-testid="common-chat-composer"
+      data-chat-tour-target={large ? 'assistant' : undefined}
       className={cn(
         'group/composer relative flex cursor-text flex-col gap-1 border-[0.5px] border-separator bg-card shadow-raised transition-[border-color,box-shadow] duration-200',
         'focus-within:border-tint/35 focus-within:shadow-[0_0_0_4px_var(--tint-muted),var(--elevation-raised)]',
