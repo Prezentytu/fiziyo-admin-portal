@@ -43,6 +43,8 @@ import type { ExerciseTagsResponse, TagCategoriesResponse, OrganizationExerciseS
 import type { PatientClinicalNotesQueryData } from '@/graphql/types/operation-responses';
 import { getCatalogZeroableDose, getExerciseDefaultParams } from '@/features/exercise-sets/utils/exerciseDefaults';
 import { submitCreateTemplateSet } from '@/features/exercise-sets/utils/createSetSubmit';
+import { orderWarmupFirst } from '@/features/exercise-sets/utils/exerciseDependencies';
+import { useMarkWarmupPositions } from '@/features/exercise-sets/hooks/useMarkWarmupPositions';
 import { defaultSetName } from '@/features/exercise-sets/utils/defaultSetName';
 import { countExerciseUsage } from '@/features/exercise-sets/utils/builderExercises';
 import { buildMappingOverridesFromParams } from '@/features/exercise-sets/utils/buildMappingOverridesFromParams';
@@ -58,6 +60,8 @@ interface CreateSetWizardProps {
   initialExerciseIds?: string[];
   /** Nazwa, z którą kreator się otwiera (np. nazwa propozycji z czatu); bez niej nazwa domyślna. */
   initialName?: string;
+  /** SPEC-061: ćwiczenia z `initialExerciseIds` oznaczone na start jako rozgrzewka (propozycja z czatu). */
+  initialWarmupExerciseIds?: string[];
   /**
    * Po zapisie pokaż okno „co dalej” (przypisz / zobacz / wróć). Domyślnie tak;
    * wyłącza je tylko ścieżka, która sama prowadzi dalej (czat z kartą przypisania).
@@ -83,6 +87,7 @@ export function CreateSetWizard({
   patientName,
   initialExerciseIds,
   initialName,
+  initialWarmupExerciseIds,
   showNextSteps = true,
   nextStepsBackLabel,
 }: CreateSetWizardProps) {
@@ -205,6 +210,7 @@ export function CreateSetWizard({
 
   const [createSet, { loading: creatingSet }] = useMutation(CREATE_EXERCISE_SET_MUTATION);
   const [addExercise, { loading: addingExercises }] = useMutation(ADD_EXERCISE_TO_EXERCISE_SET_MUTATION);
+  const markWarmup = useMarkWarmupPositions();
 
   const tags = useMemo(() => (tagsData as ExerciseTagsResponse)?.exerciseTags || [], [tagsData]);
   const categories = useMemo(
@@ -248,7 +254,11 @@ export function CreateSetWizard({
 
       const instanceId = `${matchedExercise.id}-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
       newInstances.push({ instanceId, exerciseId: matchedExercise.id });
-      newParams.set(instanceId, getDefaultParams(matchedExercise));
+      const defaults = getDefaultParams(matchedExercise);
+      newParams.set(
+        instanceId,
+        initialWarmupExerciseIds?.includes(matchedExercise.id) ? { ...defaults, isWarmup: true } : defaults
+      );
     }
 
     if (newInstances.length > 0) {
@@ -264,7 +274,7 @@ export function CreateSetWizard({
 
     initializedFromInitialRef.current = true;
     setAwaitingInitialExercises(false);
-  }, [open, initialExerciseIds, exercises, detailsPending, getDefaultParams]);
+  }, [open, initialExerciseIds, initialWarmupExerciseIds, exercises, detailsPending, getDefaultParams]);
 
   const handlePreviewExercise = useCallback(
     (exercise: BuilderExercise, params?: ExerciseParams) => {
@@ -325,13 +335,17 @@ export function CreateSetWizard({
 
     try {
       const sanitizedName = name.trim();
-      const mappings = selectedInstances
+      const mappings = orderWarmupFirst(
+        selectedInstances,
+        (instance) => exerciseParams.get(instance.instanceId)?.isWarmup === true
+      )
         .map(({ instanceId, exerciseId }) => {
           const exercise = exercises.find((item) => item.id === exerciseId);
           if (!exercise) return null;
           const params = exerciseParams.get(instanceId) || getDefaultParams(exercise);
           const overridesJson = buildMappingOverridesFromParams(exercise, params);
           return {
+            isWarmup: params.isWarmup === true,
             exerciseId,
             sets: params.sets,
             reps: params.reps,
@@ -363,6 +377,10 @@ export function CreateSetWizard({
           description,
         },
         mappings
+      );
+      await markWarmup(
+        newSetId,
+        mappings.map((mapping) => mapping.isWarmup)
       );
 
       await apolloClient.refetchQueries({
@@ -475,6 +493,7 @@ export function CreateSetWizard({
               hideNameSection
               onPreviewExercise={handlePreviewExercise}
               testIdPrefix="set-create-wizard"
+              showWarmupToggle
             />
           </div>
 

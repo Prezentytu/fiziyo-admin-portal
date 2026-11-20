@@ -12,6 +12,7 @@ import {
   Sparkles,
   Timer,
   Pencil,
+  Flame,
 } from 'lucide-react';
 import {
   DndContext,
@@ -52,6 +53,7 @@ import { ColorBadge } from '@/components/shared/ColorBadge';
 import { formatExerciseDuration } from '@/utils/exerciseTime';
 import { buildExerciseLoadParamFields } from '@/utils/exerciseLoadMutation';
 import { cn } from '@/lib/utils';
+import { orderWarmupFirst } from '@/features/exercise-sets/utils/exerciseDependencies';
 import { EMPTY_EXERCISE_PARAMS, getExerciseDefaultParams } from '@/features/exercise-sets/utils/exerciseDefaults';
 import type { ExercisePickerLibraryView } from '@/hooks/useExercisePickerLibrary';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
@@ -143,6 +145,8 @@ export interface ExerciseParams {
    * `undefined` = nie ruszone, `0` = bez odpoczynku.
    */
   restAfterExercise?: number | null;
+  /** SPEC-061: pozycja rozgrzewki; zapisywana po utworzeniu zestawu przez `updateExerciseSetDependencies`. */
+  isWarmup?: boolean;
   customImages?: string[];
   /**
    * Effective enrichment draft for personalization (SPEC-024).
@@ -219,6 +223,11 @@ export interface ExerciseSetBuilderProps {
   createExerciseLabel?: string;
   createExerciseDescription?: string;
   createExerciseTestId?: string;
+  /**
+   * SPEC-061: przełącznik „Rozgrzewka” przy ćwiczeniach; oznaczone idą na początek listy. Tylko tam, gdzie zapis
+   * po utworzeniu zestawu wysyła flagę (kreator zestawu, kreator przypisania).
+   */
+  showWarmupToggle?: boolean;
 }
 
 // ============================================================
@@ -427,6 +436,7 @@ function SortableExerciseCard({
   isReadonly,
   isContentLoading = false,
   cardSurface = 'mapping',
+  onToggleWarmup,
 }: {
   instanceId: string;
   exercise: BuilderExercise;
@@ -440,6 +450,8 @@ function SortableExerciseCard({
   /** Patient content (enrichment) of this exercise is still loading; editing it now would start from blank. */
   isContentLoading?: boolean;
   cardSurface?: 'mapping' | 'patientPlan';
+  /** Set = przełącznik „Rozgrzewka” nad kartą (SPEC-061). */
+  onToggleWarmup?: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: instanceId,
@@ -488,6 +500,21 @@ function SortableExerciseCard({
       )}
       data-testid={testIdPrefix ? `${testIdPrefix}-exercise-${exercise.id}` : undefined}
     >
+      {onToggleWarmup && !isReadonly && (
+        <div className="mb-1.5 flex justify-end">
+          <Button
+            type="button"
+            size="sm"
+            variant={params.isWarmup ? 'tinted' : 'ghost'}
+            aria-pressed={params.isWarmup === true}
+            onClick={onToggleWarmup}
+            data-testid={`${testIdPrefix ?? 'set-builder'}-warmup-toggle-${exercise.id}`}
+          >
+            <Flame className="mr-1.5 h-4 w-4" aria-hidden="true" />
+            Rozgrzewka
+          </Button>
+        </div>
+      )}
       <ExerciseExecutionCard
         mode={isReadonly || isContentLoading ? 'view' : 'edit'}
         surface={cardSurface}
@@ -537,6 +564,7 @@ export function ExerciseSetBuilder({
   createExerciseLabel = 'Utwórz nowe ćwiczenie',
   createExerciseDescription = 'Dodaj ćwiczenie i od razu wstaw je do planu',
   createExerciseTestId = 'assignment-create-exercise-tile-btn',
+  showWarmupToggle = false,
 }: Readonly<ExerciseSetBuilderProps>) {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [instanceToRemove, setInstanceToRemove] = useState<string | null>(null);
@@ -606,6 +634,19 @@ export function ExerciseSetBuilder({
       onExerciseParamsChange(next);
     },
     [exerciseById, resolveInstanceParams, selectedInstances, exerciseParams, onExerciseParamsChange]
+  );
+
+  const toggleWarmup = useCallback(
+    (instanceId: string, exercise: BuilderExercise) => {
+      const current = resolveInstanceParams(instanceId, exercise);
+      const next = new Map(exerciseParams);
+      next.set(instanceId, { ...current, isWarmup: !current.isWarmup });
+      onExerciseParamsChange(next);
+      onSelectedInstancesChange(
+        orderWarmupFirst(selectedInstances, (instance) => next.get(instance.instanceId)?.isWarmup === true)
+      );
+    },
+    [exerciseParams, onExerciseParamsChange, onSelectedInstancesChange, resolveInstanceParams, selectedInstances]
   );
 
   const addExerciseToSet = useCallback(
@@ -965,6 +1006,9 @@ export function ExerciseSetBuilder({
                         isReadonly={readonlyInstanceIds?.has(data.instanceId) ?? false}
                         isContentLoading={data.exercise.enrichmentData === undefined}
                         cardSurface={cardSurface}
+                        onToggleWarmup={
+                          showWarmupToggle ? () => toggleWarmup(data.instanceId, data.exercise) : undefined
+                        }
                       />
                     ))}
                   </div>

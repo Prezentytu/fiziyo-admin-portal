@@ -226,3 +226,29 @@ export function buildWarmupDependencyItems(
     .filter((_, index) => warmupFlags[index])
     .map((mapping) => buildDependencyItem(mapping.id, { isWarmup: true, requiresMappingIds: [], dependencyMode: 'block' }));
 }
+
+/** Rozgrzewka na początku zestawu (pacjent zaczyna od niej); poza tym kolejność bez zmian. */
+export function orderWarmupFirst<T>(items: readonly T[], isWarmup: (item: T) => boolean): T[] {
+  return [...items.filter(isWarmup), ...items.filter((item) => !isWarmup(item))];
+}
+
+/**
+ * Kreator przypisania kopiuje zestaw pozycja po pozycji (`existing-{mappingId}`), więc rozgrzewkę źródła trzeba
+ * przenieść do jego stanu. Rusza tylko pozycje bez decyzji terapeuty (`isWarmup` nieustawione); null = bez zmian.
+ */
+export function seedSourceWarmup<P extends { isWarmup?: boolean }>(
+  instances: readonly { instanceId: string }[],
+  params: ReadonlyMap<string, P>,
+  warmupMappingIds: readonly string[]
+): Map<string, P> | null {
+  const warmupInstanceIds = new Set(warmupMappingIds.map((id) => `existing-${id}`));
+  let changed = false;
+  const next = new Map(params);
+  for (const { instanceId } of instances) {
+    const current = next.get(instanceId);
+    if (!current || current.isWarmup !== undefined || !warmupInstanceIds.has(instanceId)) continue;
+    next.set(instanceId, { ...current, isWarmup: true });
+    changed = true;
+  }
+  return changed ? next : null;
+}

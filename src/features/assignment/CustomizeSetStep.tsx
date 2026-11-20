@@ -72,6 +72,9 @@ interface CustomizeSetStepProps {
   // When true, name is rendered in parent (e.g. wizard toolbar); builder omits Name Section.
   hideNameSection?: boolean;
 
+  /** SPEC-061: przełącznik „Rozgrzewka” przy ćwiczeniach (tylko nowy plan, nie edycja). */
+  showWarmupToggle?: boolean;
+
   // Preview exercise callback
   onPreviewExercise?: (exercise: BuilderExercise, params?: ExerciseParams) => void;
   // Quick action - create exercise without leaving wizard
@@ -98,6 +101,7 @@ export function CustomizeSetStep({
   onPreviewExercise,
   onCreateExercise,
   isCreatingExercise = false,
+  showWarmupToggle = false,
 }: CustomizeSetStepProps) {
   const [previewExercise, setPreviewExercise] = useState<ExerciseExecutionCardData | null>(null);
   // Load tags for filtering
@@ -187,6 +191,7 @@ export function CustomizeSetStep({
         createExerciseTestId="assignment-create-exercise-tile-btn"
         testIdPrefix={testIdPrefix}
         cardSurface="patientPlan"
+        showWarmupToggle={showWarmupToggle}
       />
       {!onPreviewExercise && (
         <ExercisePreviewDialog
