@@ -1,4 +1,5 @@
 import { normalizeSearchText } from '@/features/exercises/utils/exerciseSearch';
+import { withoutDeclinedSet } from './exerciseDiscussion';
 import { confirmPatientSpec } from './clarifyChoice';
 import { parseNewPatientDetails } from './newPatientDetails';
 import { matchPatients, patientChoiceLabels, type MatchablePatient } from './patientMatch';
@@ -240,10 +241,20 @@ export function singleExerciseRequest(
   text: string,
   patients: readonly MatchablePatient[]
 ): Extract<ChatViewSpec, { component: 'CreateExercise' }> | null {
-  const original = text.trim().normalize('NFC');
+  const original = withoutDeclinedSet(text.normalize('NFC'));
   const normalized = normalizeSearchText(original);
   if (MENTIONS_SET.test(normalized) || /pacjent/.test(normalized)) return null;
   if (matchPatients(original, patients).kind !== 'none') return null;
+  const lookup = /^(?:jakie (?:mamy|sa dostepne) (?:juz )?cwiczeni[ae]|jakie cwiczenia mamy)(?: w katalogu)?\b/.exec(
+    normalized
+  );
+  if (lookup) {
+    const subject = original
+      .slice(lookup[0].length)
+      .replace(/^\s*(?:na |przy )?|[?.!]+$/g, '')
+      .trim();
+    return { component: 'CreateExercise', name: subject || undefined };
+  }
   const verb = normalized.match(CREATE_VERB)?.[0] ?? '';
   const object = normalized.slice(verb.length);
   // Bare „ćwiczenie nie działa” describes a problem. „Ćwiczenie na stopę” requests one.

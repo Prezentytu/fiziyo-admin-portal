@@ -1,3 +1,4 @@
+import type { ExerciseDiscussion } from './exerciseDiscussion';
 import type { SetDraftReturn } from './setDraft';
 import { z } from 'zod';
 
@@ -63,6 +64,8 @@ export type ChatViewSpec =
     }
   | {
       component: 'CreateExercise';
+      /** Local conversation before the therapist chooses to open the form. */
+      discussion?: ExerciseDiscussion;
       name?: string;
       description?: string;
       /**

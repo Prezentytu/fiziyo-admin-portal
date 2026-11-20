@@ -20,16 +20,27 @@ describe('resolveReply', () => {
       creditsUsed: 1,
     }));
     const reply = await resolveReply('Zróbmy cwiczenie na bolącą stopę', { useAi, context: CONTEXT, dispatch });
-    expect(reply.spec).toEqual({ component: 'CreateExercise', name: 'Ćwiczenie na bolącą stopę' });
+    expect(reply.spec).toMatchObject({ component: 'CreateExercise', discussion: { search: 'stop' } });
+    expect(reply.spec).toMatchObject({ discussion: { ids: [] } });
     expect(reply.text).not.toContain('zestaw');
     expect(reply.creditsUsed).toBe(useAi ? 1 : 0);
+  });
+
+  it('keeps an explicit exclusion of a set in the conversation', async () => {
+    const dispatch = vi.fn<Dispatcher>();
+    const reply = await resolveReply('Zróbmy ćwiczenie na stopę, bez zestawu', {
+      useAi: false,
+      context: CONTEXT,
+      dispatch,
+    });
+    expect(reply.spec).toMatchObject({ component: 'CreateExercise', discussion: { search: 'stop' } });
   });
 
   it('uses the name and description when the model proposes a single exercise', async () => {
     const spec = { component: 'CreateExercise' as const, name: 'Przykładowy ruch', description: 'Opis testowy' };
     const dispatch: Dispatcher = async () => ({ sessionId: 's', spec, creditsUsed: 1 });
     const reply = await resolveReply('Proszę o jedno ćwiczenie na stopę', { useAi: true, context: CONTEXT, dispatch });
-    expect(reply.spec).toEqual(spec);
+    expect(reply.spec).toMatchObject({ ...spec, discussion: { search: 'stop' } });
   });
 
   it('keeps the model card for the patient the exercise request names', async () => {

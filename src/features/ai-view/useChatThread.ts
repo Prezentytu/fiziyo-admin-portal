@@ -20,6 +20,7 @@ import { threadNewPatientDetails } from './utils/newPatientDetails';
 import { replyText, resolveForPatient, resolveReply, type HeldReply } from './utils/resolveReply';
 import { scheduleQuestion, type SetDraftPayload } from './utils/setDraft';
 import { accountQuestionReply, countQuestion, localReplyTo, withExerciseIdeas } from './utils/threadLocalReply';
+import { exerciseFormFromDiscussion, opensExerciseForm } from './utils/exerciseDiscussion';
 import { productHelpFor } from './utils/productHelp';
 import { UNSUPPORTED_SPEC } from './utils/viewSpec';
 
@@ -245,6 +246,14 @@ export function useChatThread({
           return;
         }
       }
+      const previousExercise =
+        isOpen && asked.spec?.component === 'CreateExercise' && asked.spec.discussion ? asked.spec : undefined;
+      if (asked && previousExercise && opensExerciseForm(trimmed)) {
+        markChosen(asked.id, trimmed);
+        pushUser(trimmed);
+        appendAssistant({ spec: exerciseFormFromDiscussion(previousExercise) });
+        return;
+      }
       const confirmation = isOpen ? patientConfirmation(asked.spec) : null;
       const answer = confirmation ? confirmAnswer(trimmed, confirmation.patientId, context.patients) : null;
       if (asked && confirmation && answer === 'yes') {
@@ -303,7 +312,8 @@ export function useChatThread({
       const openDraft = openSetDraft(messagesRef.current);
       const liveDraft = openDraft ? getLiveDraft?.(openDraft.messageId) : undefined;
       // „Dodaj” next to an open set edits it. Creating an exercise on its own offers the set after save.
-      const standalone = singleExerciseRequest(trimmed, context.patients) &&!/^(?:prosz[ęe]\s+)?dodaj\b/i.test(trimmed);
+      const standalone =
+        singleExerciseRequest(trimmed, context.patients) && !/^(?:prosz[ęe]\s+)?dodaj\b/i.test(trimmed);
       const addition =
         openDraft && liveDraft && !standalone
           ? addToDraftReply(trimmed, liveDraft.draft, liveDraft.catalog, context.patients)
@@ -331,6 +341,7 @@ export function useChatThread({
           sessionId: sessionRef.current?.scopeKey === scopeKey ? sessionRef.current.id : undefined,
           context,
           dispatch: dispatchChatMessage,
+          previousExercise,
           pendingCommand: pendingCommandRef.current,
           contextPatientId,
           knownPatientIds,
@@ -348,6 +359,9 @@ export function useChatThread({
         } else if (openDraft && liveDraft && reply.spec?.component === 'CreateExercise' && draftRequest(trimmed)) {
           reply = { ...reply, spec: { ...reply.spec, addToSet: liveDraft.draft } };
           markChosen(openDraft.messageId, 'create-exercise');
+        }
+        if (previousExercise && asked && reply.spec?.component === 'CreateExercise' && reply.spec.discussion) {
+          markChosen(asked.id, trimmed);
         }
         // AI questions count too: if the next dispatch fails, rules finish the command.
         const isUnsupported = reply.spec === UNSUPPORTED_SPEC;
