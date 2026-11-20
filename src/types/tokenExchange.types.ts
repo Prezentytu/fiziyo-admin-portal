@@ -4,21 +4,16 @@
 
 /**
  * Odpowiedź z backendu po wymianie tokenu Clerk na JWT backendu
+ * (fizjo-app `backend/FizjoApp.Api/Models/TokenExchange/TokenExchangeResponse.cs`).
+ * `expiration` to czas życia w sekundach.
  */
 export interface TokenExchangeResponse {
   access_token: string;
-  token_type: string;
-  expires_in: number;
+  expiration: number;
 }
 
-/**
- * Odpowiedź z backendu po zmianie organizacji
- */
-export interface ChangeOrganizationResponse {
-  access_token: string;
-  token_type: string;
-  expires_in: number;
-}
+/** Odpowiedź z backendu po zmianie organizacji: ten sam kształt co wymiana tokenu. */
+export type ChangeOrganizationResponse = TokenExchangeResponse;
 
 /**
  * Request do wymiany tokenu Clerk
