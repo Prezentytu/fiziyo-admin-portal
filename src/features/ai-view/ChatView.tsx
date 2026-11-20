@@ -393,10 +393,12 @@ function ChatHome({
             <UserPlus aria-hidden="true" />
             Dodaj pacjenta
           </ChoiceChip>
-          <ChoiceChip onClick={shortcuts.scanVisit} disabled={!isReady} data-testid="common-chat-shortcut-scan-btn">
-            <FileText aria-hidden="true" />
-            Skanuj wizytę
-          </ChoiceChip>
+          {shortcuts.scanVisitEnabled && (
+            <ChoiceChip onClick={shortcuts.scanVisit} disabled={!isReady} data-testid="common-chat-shortcut-scan-btn">
+              <FileText aria-hidden="true" />
+              Skanuj wizytę
+            </ChoiceChip>
+          )}
         </div>
         <TodayAgenda />
       </div>

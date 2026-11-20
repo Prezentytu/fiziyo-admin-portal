@@ -185,16 +185,18 @@ function SidebarBody({
             </Link>
           );
         })}
-        <button
-          type="button"
-          className={ROW_CLASS}
-          onClick={run(shortcuts.scanVisit)}
-          disabled={!isReady}
-          data-testid="nav-chat-scan-btn"
-        >
-          <FileText aria-hidden="true" />
-          <span className="flex-1">Skanuj wizytę</span>
-        </button>
+        {shortcuts.scanVisitEnabled && (
+          <button
+            type="button"
+            className={ROW_CLASS}
+            onClick={run(shortcuts.scanVisit)}
+            disabled={!isReady}
+            data-testid="nav-chat-scan-btn"
+          >
+            <FileText aria-hidden="true" />
+            <span className="flex-1">Skanuj wizytę</span>
+          </button>
+        )}
       </nav>
 
       <section aria-label="Ostatnie rozmowy" className="mt-4 flex min-h-0 flex-1 flex-col">

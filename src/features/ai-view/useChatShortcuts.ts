@@ -2,7 +2,12 @@
 
 import { useCallback } from 'react';
 
+import { useMeFeature } from '@/hooks/useMeFeature';
+
 import { useChatSession } from './ChatSessionContext';
+
+/** SPEC-052 flag from Ops; off hides every „Skanuj wizytę” entry point. */
+export const SCAN_VISIT_FEATURE_FLAG = 'scanVisit';
 
 /**
  * The three shortcuts of the design (BW-FZ-45): create a set, add a patient, scan a visit. Each
@@ -10,6 +15,7 @@ import { useChatSession } from './ChatSessionContext';
  */
 export function useChatShortcuts() {
   const { appendExchange, isReady, goHome } = useChatSession();
+  const scanVisitEnabled = useMeFeature(SCAN_VISIT_FEATURE_FLAG);
 
   const createSet = useCallback(() => {
     appendExchange('Utwórz zestaw', {
@@ -32,5 +38,5 @@ export function useChatShortcuts() {
     goHome();
   }, [appendExchange, goHome]);
 
-  return { createSet, addPatient, scanVisit, isReady };
+  return { createSet, addPatient, scanVisit, scanVisitEnabled, isReady };
 }
