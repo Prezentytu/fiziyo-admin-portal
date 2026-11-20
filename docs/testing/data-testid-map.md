@@ -776,6 +776,11 @@ Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu r
 | `onboarding-getting-started-card`      | Karta rozpoczęcia | `GettingStartedCard.tsx` |
 | `onboarding-getting-started-step-{id}` | Krok w karcie     | `GettingStartedCard.tsx` |
 | `onboarding-dismiss-btn`               | Ukryj kartę       | `GettingStartedCard.tsx` |
+| `onboarding-chat-tour`                 | Dialog samouczka  | `ChatFirstRunTour.tsx`   |
+| `onboarding-chat-tour-spotlight`       | Podświetlenie     | `ChatFirstRunTour.tsx`   |
+| `onboarding-chat-tour-skip-btn`        | Pomiń samouczek   | `ChatFirstRunTour.tsx`   |
+| `onboarding-chat-tour-back-btn`        | Poprzedni krok    | `ChatFirstRunTour.tsx`   |
+| `onboarding-chat-tour-next-btn`        | Dalej lub Gotowe  | `ChatFirstRunTour.tsx`   |
 
 ### 14. Moduł kliniczny (clinical-) - na ten moment beta funkcjonalność, na demo chcemy zebrać feedback i rozwijać/usunąć ten element
 

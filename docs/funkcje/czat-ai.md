@@ -10,6 +10,7 @@ Pomoc produktowa działa również bez kredytów. Czat pokazuje ścieżki dodani
 
 - Konto `fizjoterapeuta-bot` (tenant A); do granicy tenantu `fizjoterapeuta-bot-b`. Tylko dane syntetyczne.
 - Pulpit `src/app/(dashboard)/page.tsx` pokazuje `src/features/ai-view/ChatView.tsx`, gdy tryb czatu jest włączony (`src/features/ai-view/useChatMode.ts`), inaczej klasyczny pulpit.
+- Przy pierwszej sesji nowego konta pulpit pokazuje trzy podpowiedzi na polu czatu, menu pracy i menu konta. Pomiń i Gotowe zapisują decyzję dla użytkownika. Kryteria startu i scenariusze testowe opisuje [SPEC-031](../../.ai/specs/SPEC-031-2026-10-30-chat-view.md#samouczek-pierwszego-logowania).
 - Backend to REST, nie GraphQL: `src/features/ai-view/chatDispatchClient.ts` woła `POST /api/chat/dispatch` w `fizjo-app:backend/FizjoApp.Api/Controllers/ChatDispatchController.cs`. Karty w `src/features/ai-view/catalog/` czytają dane przez GraphQL panelu, a zapisują w `src/features/ai-view/catalog/useChatWrites.ts`.
 - Kredyty: `src/features/ai-credits/` (prośba o kredyty, szczegóły puli), progi w `src/features/ai-credits/utils/creditsRequest.ts`.
 - Druga połowa: `fizjo-app:docs/funkcje/asystent-ai.md`.

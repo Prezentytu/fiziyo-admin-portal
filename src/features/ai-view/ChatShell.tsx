@@ -1,11 +1,14 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import { useRef } from 'react';
 
 import { Header } from '@/components/layout/Header';
+import { ChatFirstRunTour } from './ChatFirstRunTour';
 import { ChatSessionProvider } from './ChatSessionContext';
 import { ChatShellControlsContext } from './ChatShellControls';
 import { ChatSidebar } from './ChatSidebar';
+import { useChatFirstRun } from './useChatFirstRun';
 
 interface ChatShellProps {
   readonly children: React.ReactNode;
@@ -27,18 +30,23 @@ export function ChatShell({
 }: ChatShellProps) {
   const isChatHome = usePathname() === '/';
   const collapsed = isCollapsed;
+  const scopeRef = useRef<HTMLDivElement>(null);
+  const tour = useChatFirstRun(isChatHome && !isMobileOpen);
+  const showTourSidebar = tour.step === 1 || tour.step === 2;
 
   return (
     <ChatSessionProvider>
       <ChatShellControlsContext.Provider
         value={{ isSidebarCollapsed: collapsed, toggleSidebar: toggleCollapsed, openMobileSidebar: toggleMobile }}
       >
-        <div className="flex h-dvh bg-grouped">
+        <div ref={scopeRef} className="flex h-dvh bg-grouped">
           <ChatSidebar
             isCollapsed={collapsed}
             onToggleCollapse={toggleCollapsed}
             isMobileOpen={isMobileOpen}
             onMobileClose={closeMobile}
+            showTourSidebar={showTourSidebar}
+            tourAccountMenu={tour.step === 2 ? { canManageOrganization: tour.canManageOrganization } : undefined}
           />
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
             {isChatHome ? (
@@ -56,6 +64,15 @@ export function ChatShell({
             )}
           </div>
         </div>
+        {tour.step !== null && (
+          <ChatFirstRunTour
+            scopeRef={scopeRef}
+            step={tour.step}
+            canManageOrganization={tour.canManageOrganization}
+            onStep={tour.goToStep}
+            onDismiss={tour.dismiss}
+          />
+        )}
       </ChatShellControlsContext.Provider>
     </ChatSessionProvider>
   );

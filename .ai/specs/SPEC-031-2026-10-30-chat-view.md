@@ -90,10 +90,17 @@ Błędy: `400 invalid_message`, `400 insufficient_credits`, `403 forbidden`, `50
 
 ## Komponenty UI
 
+### Samouczek pierwszego logowania
+
+Na pulpicie czatu po załadowaniu roli krótki samouczek wskazuje pole Asystenta, linki Pacjenci/Zestawy/Ćwiczenia i menu konta. Ostatni krok prowadzi właściciela i administratora do Organizacji oraz Profilu firmy, a pozostałe role do Ustawień i zakładki Organizacje. Na wąskim ekranie menu otwiera się na czas dwóch ostatnich kroków. Każdy krok ma jedno zdanie, przycisk Pomiń i obsługę Escape.
+
+Samouczek uruchamia się w sesji utworzonej przy założeniu konta Clerk (do 5 minut od utworzenia konta, dla konta z ostatnich 24 godzin), gdy portal zna rolę użytkownika. Portal zapisuje pominięcie lub ukończenie pod kluczem użytkownika w przeglądarce i w osobnym polu metadanych Clerk. Nie ma migracji dotychczasowych kont ani nowej operacji backendu.
+
 `src/features/ai-view/`: `ChatSidebar`, `ChatView` (górny pasek 52 px, ekran startowy z powitaniem, skrótami i „Dziś”, wątek), `ChatComposer` (spinacz, wklejenie albo upuszczenie dokumentu na wątek; dyktowanie wypełnia pole: w trakcie pasek z falą mikrofonu na żywo (`useMicLevels`, `utils/micLevels.ts`, nic nie jest nagrywane), licznikiem, Anuluj (wraca tekst sprzed dyktowania) i Gotowe, a rozpoznawane słowa pojawiają się w polu; Enter wysyła, Shift+Enter nowa linia, strzałka w górę w pustym polu przywraca ostatnie pytanie, Escape zatrzymuje dyktowanie albo odpowiedź, potem czyści; w trakcie odpowiedzi wysyłanie zamienia się w Stop). Nowa odpowiedź wchodzi słowo po słowie (`utils/replyMotion.ts`, tylko odpowiedzi z bieżącej wizyty w widoku), status „myślenia” zmienia się z czasem, wątek trzyma się dołu tylko wtedy, gdy terapeuta jest na dole, a wyżej pokazuje przycisk powrotu. Wiadomość terapeuty ma Edytuj i Kopiuj, odpowiedź Kopiuj. Pisanie w dowolnym miejscu widoku trafia do pola. Sidebar grupuje rozmowy według dni, a usunięcie rozmowy da się cofnąć z toasta, `PatientContextPanel` (340 px od 1280 px, niżej arkusz), `ChatSessionContext`, `ChatModeToggle`, `ChatModeSettings`, `catalog/*Card` + `ChatSpecRenderer`. Formularze w kartach (`NewPatientForm`, `CreateExerciseCard`) to react-hook-form + zod, `Cmd/Ctrl+Enter` zapisuje. Prymitywy: `components/ui/choice-chip.tsx` (pigułki), `components/ui/segmented-control.tsx`.
 
 ## Data-testid
 
+- Samouczek: `onboarding-chat-tour`, `onboarding-chat-tour-spotlight`, `onboarding-chat-tour-{skip,back,next}-btn`.
 - Powłoka: `nav-chat-sidebar`, `nav-chat-mobile-sidebar`, `nav-chat-sidebar-collapse-btn`, `nav-chat-new-btn`, `nav-chat-{patients,sets,exercises}-link`, `nav-chat-inactive-count`, `nav-chat-scan-btn`, `nav-chat-recent-list`, `nav-chat-recent-item-<id>`, `nav-chat-recent-delete-btn-<id>`, `nav-chat-credits`, `nav-chat-user-menu-btn`, `nav-chat-{settings,organization}-link`, `nav-chat-create-organization-btn`, `nav-chat-classic-btn`, `nav-chat-sign-out-btn`.
 - Widok: `common-chat-view`, `common-chat-thread`, `common-chat-thinking`, `common-chat-menu-btn`, `common-chat-sidebar-expand-btn`, `common-chat-ai-toggle-btn`, `common-chat-context-chip-btn`, `common-chat-new-btn`, `common-chat-shortcut-{set,patient,scan}-btn`, `common-chat-today-{btn,list,visit,inactive,ending}`, `common-chat-composer`, `common-chat-composer-{input,send-btn,stop-btn,attach-btn,file-input,mic-btn,dictation-cancel-btn}`, `common-chat-scroll-bottom-btn`, `common-chat-drop-overlay`, `common-chat-message-<id>-{edit,copy}-btn`, `common-chat-reply-<id>-copy-btn`, `common-chat-context-{panel,close-btn,reason,week,pain,set,visit,set-btn,open-link}`.
 - Odpowiedź: `common-chat-reply-<id>-<karta>` z elementami `-primary-btn`, `-option-<n>-btn`, `-confirm-<n>-btn` (skan: „Tak” przy niepewnym dopasowaniu), `-item-<exerciseId>`, `-remove-<exerciseId>-btn`, `-undo-btn`, `-form`, `-<pole>-input`, `-submit-btn`, `-open-link` i innymi w kartach.
@@ -102,6 +109,7 @@ Błędy: `400 invalid_message`, `400 insufficient_credits`, `403 forbidden`, `50
 
 ## Verification plan
 
+- Samouczek: nowe konto na pulpicie czatu widzi trzy kroki, może się cofnąć lub pominąć na każdym kroku, a po odświeżeniu widzi pulpit. Sprawdzić desktop i telefon, jasny i ciemny motyw oraz copy dla obu poziomów dostępu. Stałe konto E2E zachowuje zwykły start portalu.
 - Unit (Vitest): `src/features/ai-view/utils/__tests__/` i `src/features/ai-view/__tests__/`.
 - Backend (xUnit): `fizjo-app/backend/FizjoApp.Api.Tests/Chat/Dispatch/` (aliasy, tekst odpowiedzi bez aliasów, nowe karty, obce ID) i testy `sendExerciseReminders` (rola, obca organizacja, limit dobowy).
 - E2E: po merge'u na DEV ręcznie: włącz czat, „ułóż zestaw na kolano dla <pacjent>” → zmień parametr → Dalej: harmonogram → Pasuje → Wyślij pacjentowi; „dodaj pacjenta Anna Nowak”; „kto nie ćwiczy” → Przypomnij; „utwórz ćwiczenie mostek na jednej nodze”; spinacz z PDF zaleceń. Wyłączone AI daje te same karty. Scenariusze do `fiziyo-tests` po stabilizacji eksperymentu.
@@ -116,6 +124,8 @@ Błędy: `400 invalid_message`, `400 insufficient_credits`, `403 forbidden`, `50
 ## Changelog
 
 ### 2026-11-20
+
+- Trzy kroki przy pierwszym wejściu nowego konta do pulpitu czatu, podświetlenia na rzeczywistych elementach i pominięcie zapisywane per użytkownik.
 
 - Pusty wynik doboru ćwiczeń do zestawu prowadzi do propozycji nazw i tworzenia ćwiczenia z asystentem. Powrót do szkicu następuje po potwierdzonym zapisie ćwiczenia.
 
