@@ -26,6 +26,7 @@ import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { polishPlural } from '@/utils/polishPlural';
 import { ChatComposer, type ChatComposerHandle } from './ChatComposer';
+import { ChatMark } from './ChatMark';
 import { ComposerDraftContext } from './ComposerDraftContext';
 import { FloatingMark } from './FloatingMark';
 import { useChatSession } from './ChatSessionContext';
@@ -366,9 +367,7 @@ function ChatHome({
   return (
     <div className="flex flex-col gap-7 [&>*]:animate-chat-rise [&>*:nth-child(2)]:[animation-delay:60ms] [&>*:nth-child(3)]:[animation-delay:120ms]">
       <div className="flex flex-col items-center gap-3.5 text-center">
-        <span className="chat-breathe relative flex h-11 w-11 items-center justify-center rounded-[14px] bg-tint-fill text-on-tint">
-          <Sparkles className="h-[22px] w-[22px]" aria-hidden="true" />
-        </span>
+        <ChatMark className="chat-breathe size-11 rounded-[14px]" />
         <h1 className="text-[26px] font-bold leading-8 tracking-tight text-foreground sm:text-[32px] sm:leading-[38px]">
           {firstName ? `${greeting(now)}, ${firstName}` : greeting(now)}
         </h1>
