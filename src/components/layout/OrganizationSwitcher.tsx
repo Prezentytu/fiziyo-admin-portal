@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { getInitialsFromName } from '@/utils/textUtils';
-import { CreateOrganizationDialog } from '@/components/organization/CreateOrganizationDialog';
+import { useOpenCreateOrganization } from '@/components/organization/CreateOrganizationDialogProvider';
 
 // ========================================
 // Types
@@ -63,12 +63,14 @@ export function OrganizationSwitcher({ isCollapsed = false }: OrganizationSwitch
     useOrganization();
 
   const [isOpen, setIsOpen] = useState(false);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const openCreateOrganization = useOpenCreateOrganization();
 
   // Keyboard shortcut: Cmd+O / Ctrl+O
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'o') {
+        // Inside an open dialog (e.g. "Nowa organizacja") the shortcut belongs to that dialog.
+        if (e.target instanceof Element && e.target.closest('[role="dialog"]')) return;
         e.preventDefault();
         setIsOpen((prev) => !prev);
       }
@@ -243,7 +245,7 @@ export function OrganizationSwitcher({ isCollapsed = false }: OrganizationSwitch
 
         <DropdownMenuItem
           data-testid="nav-org-switcher-create"
-          onSelect={() => setIsCreateOpen(true)}
+          onSelect={openCreateOrganization}
           className="flex items-center gap-3 p-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
         >
           <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-dashed border-border">
@@ -269,15 +271,9 @@ export function OrganizationSwitcher({ isCollapsed = false }: OrganizationSwitch
             </div>
           </TooltipContent>
         </Tooltip>
-        <CreateOrganizationDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} />
       </div>
     );
   }
 
-  return (
-    <div className="px-3 py-2">
-      {dropdownContent}
-      <CreateOrganizationDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} />
-    </div>
-  );
+  return <div className="px-3 py-2">{dropdownContent}</div>;
 }

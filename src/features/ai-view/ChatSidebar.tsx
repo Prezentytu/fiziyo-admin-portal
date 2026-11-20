@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import {
@@ -36,7 +36,7 @@ import { AiCreditsDetailsPopover } from '@/features/ai-credits/AiCreditsDetailsP
 import { AiCreditsNotice } from '@/features/ai-credits/AiCreditsNotice';
 import { NavCountBadge } from '@/components/layout/NavCountBadge';
 import { OrganizationSwitchMenuItems } from '@/components/layout/OrganizationSwitchMenuItems';
-import { CreateOrganizationDialog } from '@/components/organization/CreateOrganizationDialog';
+import { useOpenCreateOrganization } from '@/components/organization/CreateOrganizationDialogProvider';
 import { verificationItem } from '@/components/layout/navigationConfig';
 import { useCurrentUserDisplay } from '@/components/layout/useCurrentUserDisplay';
 import { useOrganizationVerificationRealtime } from '@/hooks/useOrganizationVerificationRealtime';
@@ -92,7 +92,7 @@ function SidebarBody({
   const account = useCurrentUserDisplay();
   const signOut = useAppSignOut();
   const { update } = useChatMode();
-  const [isCreateOrganizationOpen, setIsCreateOrganizationOpen] = useState(false);
+  const openCreateOrganization = useOpenCreateOrganization();
   const {
     isReady,
     inactiveCount,
@@ -321,7 +321,7 @@ function SidebarBody({
           </DropdownMenuItem>
           <DropdownMenuItem
             className="gap-2.5"
-            onSelect={() => setIsCreateOrganizationOpen(true)}
+            onSelect={openCreateOrganization}
             data-testid="nav-chat-create-organization-btn"
           >
             <Plus className={MENU_ICON_CLASS} aria-hidden="true" />
@@ -346,7 +346,6 @@ function SidebarBody({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <CreateOrganizationDialog open={isCreateOrganizationOpen} onOpenChange={setIsCreateOrganizationOpen} />
     </div>
   );
 }

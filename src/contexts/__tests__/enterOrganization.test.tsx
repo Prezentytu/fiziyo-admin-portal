@@ -10,12 +10,16 @@ const mocks = vi.hoisted(() => ({
   resetStore: vi.fn(),
   setDefaultOrganization: vi.fn(),
   toastError: vi.fn(),
+  toastSuccess: vi.fn(),
 }));
 
 vi.mock('@apollo/client/react', () => ({
   useQuery: () => ({
     data: {
-      userOrganizations: [{ organizationId: 'org-old', organizationName: 'Stara', role: 'owner', joinedAt: '' }],
+      userOrganizations: [
+        { organizationId: 'org-old', organizationName: 'Stara', role: 'owner', joinedAt: '' },
+        { organizationId: 'org-other', organizationName: 'Druga', role: 'therapist', joinedAt: '' },
+      ],
     },
     loading: false,
     error: undefined,
@@ -35,7 +39,7 @@ vi.mock('@/lib/tokenCache', () => ({
   clearBackendToken: mocks.clearBackendToken,
 }));
 
-vi.mock('sonner', () => ({ toast: { error: mocks.toastError, success: vi.fn() } }));
+vi.mock('sonner', () => ({ toast: { error: mocks.toastError, success: mocks.toastSuccess } }));
 
 function renderProvider() {
   const context: { current: ReturnType<typeof useOrganization> | null } = { current: null };
@@ -55,6 +59,7 @@ function renderProvider() {
 describe('enterOrganization', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
     mocks.setDefaultOrganization.mockResolvedValue({});
     mocks.resetStore.mockResolvedValue([]);
   });
@@ -72,6 +77,17 @@ describe('enterOrganization', () => {
     expect(mocks.toastError).not.toHaveBeenCalled();
   });
 
+  it('treats a failed refetch after a successful token exchange as entered', async () => {
+    mocks.changeOrganization.mockResolvedValueOnce({ access_token: 'new-token' });
+    mocks.resetStore.mockRejectedValueOnce(new Error('Response not successful: 403'));
+    const context = renderProvider();
+
+    await expect(act(() => context.current.enterOrganization('org-new'))).resolves.toBeUndefined();
+
+    expect(mocks.saveBackendToken).toHaveBeenCalledWith('new-token');
+    expect(mocks.clearBackendToken).not.toHaveBeenCalled();
+  });
+
   it('rethrows a failed token exchange and drops a rejected token', async () => {
     mocks.changeOrganization.mockRejectedValueOnce(new Error('Change organization failed: 403 Forbidden'));
     const context = renderProvider();
@@ -81,5 +97,46 @@ describe('enterOrganization', () => {
     expect(mocks.clearBackendToken).toHaveBeenCalled();
     expect(mocks.saveBackendToken).not.toHaveBeenCalled();
     expect(mocks.resetStore).not.toHaveBeenCalled();
+  });
+});
+
+describe('switchOrganization', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    mocks.setDefaultOrganization.mockResolvedValue({});
+    mocks.resetStore.mockResolvedValue([]);
+  });
+
+  it('switches to a listed organization through the shared entry path', async () => {
+    mocks.changeOrganization.mockResolvedValueOnce({ access_token: 'new-token' });
+    const context = renderProvider();
+
+    await act(() => context.current.switchOrganization('org-other'));
+
+    expect(mocks.changeOrganization).toHaveBeenCalledWith('backend-token', 'org-other');
+    expect(mocks.saveBackendToken).toHaveBeenCalledWith('new-token');
+    expect(mocks.toastSuccess).toHaveBeenCalledWith('Przełączono na Druga', expect.any(Object));
+    expect(context.current.isSwitching).toBe(false);
+  });
+
+  it('refuses an organization missing from the list without exchanging the token', async () => {
+    const context = renderProvider();
+
+    await act(() => context.current.switchOrganization('org-unknown'));
+
+    expect(mocks.toastError).toHaveBeenCalledWith('Nie znaleziono organizacji');
+    expect(mocks.changeOrganization).not.toHaveBeenCalled();
+  });
+
+  it('reports a failed token exchange as a failed switch', async () => {
+    mocks.changeOrganization.mockRejectedValueOnce(new Error('Change organization failed: 403 Forbidden'));
+    const context = renderProvider();
+
+    await act(() => context.current.switchOrganization('org-other'));
+
+    expect(mocks.toastError).toHaveBeenCalledWith('Nie udało się przełączyć organizacji', expect.any(Object));
+    expect(mocks.clearBackendToken).toHaveBeenCalled();
+    expect(context.current.isSwitching).toBe(false);
   });
 });

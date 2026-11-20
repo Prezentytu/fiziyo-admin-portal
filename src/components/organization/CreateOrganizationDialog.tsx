@@ -20,6 +20,7 @@ import {
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import {
   createOrganizationFormSchema,
+  ORGANIZATION_DESCRIPTION_MAX_LENGTH,
   ORGANIZATION_NAME_MAX_LENGTH,
   toCreateOrganizationVariables,
   type CreateOrganizationFormValues,
@@ -139,6 +140,7 @@ export function CreateOrganizationDialog({ open, onOpenChange }: CreateOrganizat
                     <Textarea
                       placeholder="np. Gabinet rehabilitacji sportowej w Krakowie"
                       className="min-h-[80px] resize-none"
+                      maxLength={ORGANIZATION_DESCRIPTION_MAX_LENGTH}
                       data-testid="org-create-description-input"
                       {...field}
                     />

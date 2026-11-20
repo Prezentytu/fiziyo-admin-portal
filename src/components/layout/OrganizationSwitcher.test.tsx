@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { CreateOrganizationDialogProvider } from '@/components/organization/CreateOrganizationDialogProvider';
 import { OrganizationSwitcher } from './OrganizationSwitcher';
 
 const organizationState = vi.hoisted(() => ({
@@ -22,7 +23,11 @@ vi.mock('@/contexts/OrganizationContext', () => ({
 
 vi.mock('@/components/organization/CreateOrganizationDialog', () => ({
   CreateOrganizationDialog: ({ open }: { open: boolean }) =>
-    open ? <div role="dialog" data-testid="org-create-dialog" /> : null,
+    open ? (
+      <div role="dialog" data-testid="org-create-dialog">
+        <input data-testid="org-create-name-input" />
+      </div>
+    ) : null,
 }));
 
 const ownOrganization = { organizationId: 'org-1', organizationName: 'Fizjo Kraków', role: 'owner', joinedAt: '' };
@@ -35,9 +40,11 @@ const otherOrganization = {
 
 function renderSwitcher(isCollapsed = false) {
   render(
-    <TooltipProvider>
-      <OrganizationSwitcher isCollapsed={isCollapsed} />
-    </TooltipProvider>
+    <CreateOrganizationDialogProvider>
+      <TooltipProvider>
+        <OrganizationSwitcher isCollapsed={isCollapsed} />
+      </TooltipProvider>
+    </CreateOrganizationDialogProvider>
   );
   return userEvent.setup();
 }
@@ -67,5 +74,16 @@ describe('OrganizationSwitcher', () => {
     expect(screen.getByTestId('nav-org-switcher-item-org-2')).toBeInTheDocument();
     await user.click(createItem);
     expect(screen.getByTestId('org-create-dialog')).toBeInTheDocument();
+  });
+
+  it('leaves Cmd+O alone while typing in the create dialog', async () => {
+    const user = renderSwitcher();
+    await user.click(screen.getByTestId('nav-org-switcher-trigger'));
+    await user.click(await screen.findByTestId('nav-org-switcher-create'));
+
+    await user.click(screen.getByTestId('org-create-name-input'));
+    await user.keyboard('{Meta>}o{/Meta}');
+
+    expect(screen.queryByTestId('nav-org-switcher-create')).not.toBeInTheDocument();
   });
 });

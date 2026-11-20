@@ -177,7 +177,10 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
       setLastOrganizationId(organizationId);
 
       // Refetches every active query, `GetUserOrganizations` included, under the new organization.
-      await apolloClient.resetStore();
+      // The switch is done once the token is saved; a query that fails to refetch is not a failed switch.
+      await apolloClient.resetStore().catch((err: unknown) => {
+        console.warn('[OrganizationContext] Refetch after organization change failed:', err);
+      });
     },
     [apolloClient, setDefaultOrganization]
   );
