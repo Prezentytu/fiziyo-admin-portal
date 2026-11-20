@@ -298,12 +298,4 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 - **Rozwiązanie**: `agent-guard` dzieli po `&&` / `||` / `;` i ocenia segmenty.
 - **Reguła**: Jeśli hook szuka `git push` + `main`, klasyfikuj segment, nie cały string. [egzekwowane: scripts/agent-guard.test.mjs]
 
-### 2026-07-28 - Jeden kontrakt pól na byt domenowy — powierzchnia derywuje podzbiór, nigdy semantykę
-
-- **Kategoria**: `UI/UX` | `React`
-- **Problem**: Create wizard, dialog edycji (`ExerciseForm`) i detal (`ExerciseEditor`) miały różne zestawy pól i etykiet (`Czas powtórzenia` vs `Czas 1 powtórzenia`); mapping/override też dryfowały.
-- **Przyczyna**: Trzy niezależne artefakty formularza z lokalnymi listami pól zamiast jednego field-setu z intencją (Salesforce page-layout tax).
-- **Rozwiązanie**: `fieldContract.ts` jako SSOT (tier, surfaces, zod, options) + etykiety z `displayRegistry`; `ExerciseParametersEditor` / `ExerciseEditor` współdzielone; create = lean subset; usunięto `ExerciseForm` i martwe legacy edytory.
-- **Reguła**: Dla danych domenowych edytowanych w wielu miejscach utrzymuj jeden kontrakt pól. Powierzchnia może różnić layout i podzbiór (create-as-prefix), nigdy etykietę, walidację ani mapowanie na mutację. Guardrail: test kompletności kontraktu + integralność testid. [egzekwowane: src/components/shared/exercise/__tests__/fieldContract.test.ts]
-
 <!-- Nowe wpisy dodawaj na górze sekcji Wpisy, nie tutaj. -->
