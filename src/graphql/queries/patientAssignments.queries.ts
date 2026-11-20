@@ -200,3 +200,16 @@ export const GET_ASSIGNMENT_EXERCISE_OVERRIDES_QUERY = gql`
     }
   }
 `;
+
+/**
+ * SPEC-061 „zestaw po zestawie”: osobne zapytanie z errorPolicy all, żeby API bez `requiresAssignmentId`
+ * gasiło tylko wybór wymaganego zestawu, a nie listę planów pacjenta.
+ */
+export const GET_PATIENT_ASSIGNMENT_PREREQUISITES_QUERY = gql`
+  query GetPatientAssignmentPrerequisites($userId: String!) {
+    patientAssignments(where: { userId: { eq: $userId } }) {
+      id
+      requiresAssignmentId
+    }
+  }
+`;

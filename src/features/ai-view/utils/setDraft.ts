@@ -29,6 +29,8 @@ export interface DraftItem {
   alternatingPerSide?: boolean;
   /** Wartości katalogu, z którymi zapis porównuje wpisane 0 (#218). Brak w starszych szkicach rozmowy. */
   catalog?: CatalogZeroableDose;
+  /** SPEC-061: rozgrzewka zaproponowana przez asystenta; po zapisie idzie do `updateExerciseSetDependencies`. */
+  isWarmup?: boolean;
 }
 
 /** Numbers a source wrote for an exercise (a visit note's "3×15"); they win over the catalog defaults. */

@@ -29,4 +29,5 @@ export type {
 export * from './aiCredits.types';
 export * from './releaseNote.types';
 export * from './support.types';
+export * from './exerciseDependencies.types';
 export * from './referral.types';

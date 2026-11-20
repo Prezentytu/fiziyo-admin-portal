@@ -22,6 +22,16 @@ describe('toChatViewSpec', () => {
     });
   });
 
+  it('keeps the proposed warm-up only among the card exercises (SPEC-061), and none from an older API', () => {
+    expect(
+      toChatViewSpec({ component: 'SetDraft', exerciseIds: ['ex-1', 'ex-2'], warmupExerciseIds: ['ex-1', 'ex-9'] })
+    ).toMatchObject({ component: 'SetDraft', warmupExerciseIds: ['ex-1'] });
+    expect(toChatViewSpec({ component: 'SetDraft', exerciseIds: ['ex-1'] })).not.toHaveProperty('warmupExerciseIds');
+    expect(
+      toChatViewSpec({ component: 'SetDraft', exerciseIds: ['ex-1'], warmupExerciseIds: null })
+    ).not.toHaveProperty('warmupExerciseIds');
+  });
+
   it('degrades a card that misses its data to the closest useful one', () => {
     expect(toChatViewSpec({ component: 'SetDraft', patientId: 'p-1', exerciseIds: [] })).toEqual({
       component: 'PatientPeek',

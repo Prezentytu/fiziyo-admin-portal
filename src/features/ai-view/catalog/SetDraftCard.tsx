@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, Repeat2, SlidersHorizontal, Sparkles, Trash2, Undo2 } from 'lucide-react';
+import { Flame, Plus, Repeat2, SlidersHorizontal, Sparkles, Trash2, Undo2, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';
@@ -71,6 +71,7 @@ interface RowProps {
   readonly onRemove: () => void;
   readonly onSwap: (exercise: ChatCatalogExercise) => void;
   readonly onChange: (patch: Partial<ExerciseParameterValues>) => void;
+  readonly onClearWarmup: () => void;
 }
 
 function DraftRow({
@@ -84,6 +85,7 @@ function DraftRow({
   onRemove,
   onSwap,
   onChange,
+  onClearWarmup,
 }: RowProps) {
   const [panel, setPanel] = useState<'none' | 'swap' | 'edit'>('none');
   const name = exercise?.name ?? 'Ćwiczenie';
@@ -107,6 +109,23 @@ function DraftRow({
             {added && (
               <Badge className="shrink-0" data-testid={`${testId}-new-${item.exerciseId}`}>
                 nowe
+              </Badge>
+            )}
+            {item.isWarmup && (
+              <Badge variant="warning" className="shrink-0" data-testid={`${testId}-warmup-${item.exerciseId}`}>
+                <Flame className="h-3 w-3" aria-hidden="true" />
+                Rozgrzewka
+                {!locked && (
+                  <button
+                    type="button"
+                    onClick={onClearWarmup}
+                    aria-label={`Nie rozgrzewka: ${name}`}
+                    className="-mr-1 ml-0.5 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    data-testid={`${testId}-warmup-${item.exerciseId}-clear-btn`}
+                  >
+                    <X className="h-3 w-3" aria-hidden="true" />
+                  </button>
+                )}
               </Badge>
             )}
           </p>
@@ -244,6 +263,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
       exerciseIds: spec.exerciseIds,
       doses: spec.doses,
       items: spec.items,
+      warmupExerciseIds: spec.warmupExerciseIds,
       sets: organizationSets,
       setsReady,
       exercises,
@@ -441,6 +461,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
                 testId={testId}
                 onRemove={() => removeItem(index)}
                 onSwap={(alternative) => updateItem(index, draftItemFromExercise(alternative))}
+                onClearWarmup={() => updateItem(index, { isWarmup: false })}
                 onChange={(patch) =>
                   setItems((current) =>
                     (current ?? []).map((entry, position) =>

@@ -37,6 +37,8 @@ export type ChatViewSpec =
       items?: DraftItem[];
       /** Only from the thread itself: the exercise added in this step, shown with the „nowe” mark. */
       addedExerciseId?: string;
+      /** SPEC-061: proposed warm-up, a subset of `exerciseIds`; the therapist can clear it before saving. */
+      warmupExerciseIds?: string[];
     }
   | { component: 'AssignSummary'; patientId: string; setId: string }
   | { component: 'ExerciseResults'; query: string; exerciseIds: string[]; patientId?: string }
@@ -96,6 +98,7 @@ const RAW_SPEC_SCHEMA = z.object({
   patientId: optionalText,
   setId: optionalText,
   exerciseIds: idList,
+  warmupExerciseIds: idList,
   query: optionalText,
   filter: optionalText,
   route: optionalText,
@@ -116,6 +119,12 @@ export const UNSUPPORTED_SPEC: ChatViewSpec = {
     'Tego jeszcze nie umiem. Mogę ułożyć i wysłać zestaw, dodać pacjenta, utworzyć ćwiczenie, znaleźć ćwiczenia albo pokazać, kto nie ćwiczy.',
   options: ['Utwórz zestaw', 'Pokaż, kto nie ćwiczy', 'Dodaj pacjenta'],
 };
+
+/** Warm-up only among the card's own exercises; older APIs send none. */
+function warmupOf(exerciseIds: readonly string[], warmupIds: readonly string[]): { warmupExerciseIds?: string[] } {
+  const kept = warmupIds.filter((id) => exerciseIds.includes(id));
+  return kept.length > 0 ? { warmupExerciseIds: kept } : {};
+}
 
 function cleanOptions(options: readonly string[] | null | undefined, limit: number): string[] {
   return (options ?? [])
@@ -144,6 +153,7 @@ export function toChatViewSpec(input: unknown): ChatViewSpec {
         setId: raw.setId,
         exerciseIds: raw.exerciseIds,
         note: raw.note,
+        ...warmupOf(raw.exerciseIds, raw.warmupExerciseIds),
       };
     case 'AssignSummary':
       if (raw.patientId && raw.setId) return { component: 'AssignSummary', patientId: raw.patientId, setId: raw.setId };

@@ -173,3 +173,22 @@ export const GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY = gql`
   }
   ${EXERCISE_SET_WITH_EXERCISES_FRAGMENT}
 `;
+
+/**
+ * SPEC-061: rozgrzewka i „Wymaga wcześniej” na pozycjach zestawu. Osobne zapytanie z errorPolicy all, żeby API
+ * bez tych pól (przed wdrożeniem fizjo-app#682) gasiło tylko edycję zależności, a nie cały ekran zestawu.
+ */
+export const GET_EXERCISE_SET_DEPENDENCIES_QUERY = gql`
+  query GetExerciseSetDependencies($exerciseSetId: String!) {
+    exerciseSetById(id: $exerciseSetId) {
+      id
+      exerciseMappings {
+        id
+        order
+        isWarmup
+        requiresMappingIds
+        dependencyMode
+      }
+    }
+  }
+`;

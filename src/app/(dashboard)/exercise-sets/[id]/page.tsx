@@ -21,6 +21,7 @@ import {
   Wrench,
   UserPlus,
   FileDown,
+  ListOrdered,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -81,6 +82,10 @@ import { isTemplateSet } from '@/features/exercise-sets/utils/setKind';
 import { buildSetHrefWithoutAssign, shouldOpenAssignOnLoad } from '@/features/exercise-sets/utils/setAssignHref';
 import { PageSheet } from '@/components/shared/page';
 import { normalizeExerciseSide } from '@/utils/exerciseEnums';
+import { useExerciseSetDependencies } from '@/features/exercise-sets/hooks/useExerciseSetDependencies';
+import { ExerciseDependencyChips } from '@/features/exercise-sets/components/ExerciseDependencyChips';
+import { ExerciseDependencyDialog } from '@/features/exercise-sets/components/ExerciseDependencyDialog';
+import { describeDependencyChips, splitWarmupSection } from '@/features/exercise-sets/utils/exerciseDependencies';
 
 interface SetDetailPageProps {
   params: Promise<{ id: string }>;
@@ -140,6 +145,12 @@ interface ExerciseMapping {
     loadUnit?: string;
     loadText?: string;
   };
+}
+
+const EMPTY_MAPPINGS: ExerciseMapping[] = [];
+
+function mappingDisplayName(mapping: ExerciseMapping): string {
+  return mapping.customName?.trim() || mapping.exercise?.name || 'Ćwiczenie';
 }
 
 interface PatientAssignmentInSet {
@@ -211,6 +222,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
   const [removingExerciseId, setRemovingExerciseId] = useState<string | null>(null);
   const [removingAssignment, setRemovingAssignment] = useState<PatientAssignmentInSet | null>(null);
   const [localExercisePatches, setLocalExercisePatches] = useState<Record<string, Partial<ExerciseMapping>>>({});
+  const [dependencyTargetId, setDependencyTargetId] = useState<string | null>(null);
 
   // Get organization ID from context (changes when user switches organization)
   const organizationId = currentOrganization?.organizationId;
@@ -260,6 +272,11 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
     }
   );
   const exerciseSet = (data as ExerciseSetData | undefined)?.exerciseSetById;
+  const dependencies = useExerciseSetDependencies(
+    id,
+    exerciseSet?.exerciseMappings ?? EMPTY_MAPPINGS,
+    mappingDisplayName
+  );
   const backToListHref = searchParams.get('from') === 'patient-plans' ? '/exercise-sets?filter=patient-plans' : '/exercise-sets';
   const shouldOpenAssign = shouldOpenAssignOnLoad(searchParams);
   const canAssign = Boolean(organizationId && therapistId && exerciseSet);
@@ -534,6 +551,62 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
     ? []
     : (exerciseSet?.patientAssignments || []).filter((a) => !isRemovedAssignment(a.status));
 
+  const dependencyById = new Map(dependencies.positions.map((position) => [position.id, position]));
+  const { warmup: warmupMappings, main: mainMappings } = splitWarmupSection(
+    exercises,
+    (mapping) => dependencyById.get(mapping.id)?.isWarmup ?? false
+  );
+  const exerciseSections =
+    dependencies.supported && warmupMappings.length > 0
+      ? [
+          { key: 'warmup', title: 'Rozgrzewka', mappings: warmupMappings },
+          { key: 'main', title: 'Ćwiczenia główne', mappings: mainMappings },
+        ]
+      : [{ key: 'all', title: null, mappings: [...warmupMappings, ...mainMappings] }];
+  const dependencyTarget = dependencyTargetId ? (dependencyById.get(dependencyTargetId) ?? null) : null;
+
+  const renderExerciseRow = (mapping: ExerciseMapping) => {
+    const patchedMapping: ExerciseMapping = {
+      ...mapping,
+      ...(localExercisePatches[mapping.id] ?? {}),
+    };
+    const cardData = fromExerciseMapping(patchedMapping as AssignmentExerciseMapping);
+    const dependencyPosition = dependencyById.get(mapping.id);
+    return (
+      <div key={mapping.id} className="space-y-1.5" data-testid={`set-detail-exercise-row-${mapping.id}`}>
+        {dependencies.supported && dependencyPosition && (
+          <div className="flex items-center justify-between gap-2 px-1">
+            <ExerciseDependencyChips
+              chips={describeDependencyChips(dependencyPosition, dependencies.positions)}
+              testId={`set-detail-dependency-chips-${mapping.id}`}
+            />
+            <Button
+              variant="plain"
+              size="sm"
+              className="ml-auto shrink-0"
+              onClick={() => setDependencyTargetId(mapping.id)}
+              aria-label={`Kolejność: ${mappingDisplayName(mapping)}`}
+              data-testid={`set-detail-dependency-btn-${mapping.id}`}
+            >
+              <ListOrdered className="mr-1.5 h-4 w-4" />
+              Kolejność
+            </Button>
+          </div>
+        )}
+        <ExerciseExecutionCard
+          mode="edit"
+          exercise={cardData}
+          hideTimerBadge
+          onChange={(patch: Partial<ExerciseExecutionCardData>) => handleQuickExerciseUpdate(mapping, patch)}
+          onExpand={() => setEditingExercise(patchedMapping)}
+          onRemove={() => setRemovingExerciseId(mapping.exerciseId)}
+          className="transition-all duration-200 hover:border-primary/30 hover:bg-surface-light"
+          testIdPrefix="set-detail-exercise-row"
+        />
+      </div>
+    );
+  };
+
   return (
     <PageSheet contentClassName="gap-6">
       <div className="-mb-2 flex items-center justify-between gap-3">
@@ -649,32 +722,22 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
             />
           </div>
         ) : (
-          <div className="space-y-2 animate-stagger">
-            {[...exercises]
-              .sort((a, b) => (a.order || 0) - (b.order || 0))
-              .map((mapping) => {
-                const patchedMapping: ExerciseMapping = {
-                  ...mapping,
-                  ...(localExercisePatches[mapping.id] ?? {}),
-                };
-                const cardData = fromExerciseMapping(patchedMapping as AssignmentExerciseMapping);
-                return (
-                  <div key={mapping.id} data-testid={`set-detail-exercise-row-${mapping.id}`}>
-                    <ExerciseExecutionCard
-                      mode="edit"
-                      exercise={cardData}
-                      hideTimerBadge
-                      onChange={(patch: Partial<ExerciseExecutionCardData>) =>
-                        handleQuickExerciseUpdate(mapping, patch)
-                      }
-                      onExpand={() => setEditingExercise(patchedMapping)}
-                      onRemove={() => setRemovingExerciseId(mapping.exerciseId)}
-                      className="transition-all duration-200 hover:border-primary/30 hover:bg-surface-light"
-                      testIdPrefix="set-detail-exercise-row"
-                    />
-                  </div>
-                );
-              })}
+          <div className="space-y-5">
+            {exerciseSections.map((section) => (
+              <section
+                key={section.key}
+                className="space-y-2"
+                aria-label={section.title ?? undefined}
+                data-testid={`set-detail-section-${section.key}`}
+              >
+                {section.title && (
+                  <h3 className="text-[13px] font-semibold uppercase tracking-wide text-label-secondary">
+                    {section.title}
+                  </h3>
+                )}
+                <div className="space-y-2 animate-stagger">{section.mappings.map(renderExerciseRow)}</div>
+              </section>
+            ))}
           </div>
         )}
       </div>
@@ -850,6 +913,14 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
         variant="destructive"
         onConfirm={handleRemoveExercise}
         isLoading={removingExercise}
+      />
+
+      <ExerciseDependencyDialog
+        target={dependencyTarget}
+        positions={dependencies.positions}
+        saving={dependencies.saving}
+        onClose={() => setDependencyTargetId(null)}
+        onSave={dependencies.save}
       />
 
       {/* Edit Exercise Dialog (inline expand) */}

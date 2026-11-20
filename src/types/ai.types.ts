@@ -119,6 +119,8 @@ export interface GeneratedExercise {
   sets: number;
   reps: number | null;
   duration: number | null;
+  /** SPEC-061: pozycja rozgrzewki; brak w starszym API = nie jest rozgrzewką. */
+  warmup?: boolean;
   reasoning: string;
 }
 

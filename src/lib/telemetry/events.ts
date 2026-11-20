@@ -9,6 +9,7 @@ export type TelemetryEventName =
   | 'assignment_wizard:abandon'
   | 'patient:search'
   | 'exercise_catalog:search'
+  | 'exercise_set:dependencies_save'
   | 'telemetry:consent_change';
 
 export type TelemetryPropertyValue = string | number | boolean | null;

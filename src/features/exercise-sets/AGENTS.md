@@ -46,6 +46,7 @@ Mapowanie ćwiczenia do zestawu. Pola NULL = wartość z Exercise.
 - `ExerciseSetBuilder.tsx` — builder współdzielony (shared)
 - `EditExerciseInSetDialog.tsx` — edycja ćwiczenia w zestawie
 - Assignment customize: `CustomizeSetStep` + `ExerciseSetBuilder` / `ExerciseExecutionCard` (nie legacy CustomizeExercisesStep)
+- Zależności (SPEC-061, kanon w `fizjo-app/.ai/specs/SPEC-061-2026-11-19-zaleznosci-cwiczen.md`): `hooks/useExerciseSetDependencies.ts` + `components/ExerciseDependencyDialog.tsx` (rozgrzewka, „Wymaga wcześniej”, Blokuje/Przypomina), reguły w `utils/exerciseDependencies.ts`. Pola czyta osobne zapytanie z `errorPolicy: 'all'`, więc API bez nich chowa tylko edycję zależności
 
 ## Tworzenie zestawu (kanoniczny kontrakt)
 

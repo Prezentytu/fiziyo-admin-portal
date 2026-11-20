@@ -13,6 +13,8 @@ interface SeedInput {
   doses?: Readonly<Record<string, DraftDose>>;
   /** Rows of the proposal this one continues, as the therapist left them; they win over defaults and doses. */
   items?: readonly DraftItem[];
+  /** SPEC-061: proposed warm-up among `exerciseIds`; rows the therapist already left keep their own flag. */
+  warmupExerciseIds?: readonly string[];
   sets: ReadonlyArray<{ id: string; exerciseMappings?: readonly SeedMapping[] | null }>;
   setsReady: boolean;
   exercises: readonly SeedExercise[];
@@ -34,9 +36,14 @@ export function seedDraftItems(input: SeedInput): { items: DraftItem[]; missingS
     const known = new Set(input.exercises.map((exercise) => exercise.id));
     if (!input.missingSettled && input.exerciseIds.some((exerciseId) => !known.has(exerciseId))) return null;
     const kept = new Map((input.items ?? []).map((item) => [item.exerciseId, item]));
+    const warmup = new Set(input.warmupExerciseIds ?? []);
+    const fresh = (exercise: SeedExercise): DraftItem => {
+      const item = applyDose(draftItemFromExercise(exercise), input.doses?.[exercise.id]);
+      return warmup.has(exercise.id) ? { ...item, isWarmup: true } : item;
+    };
     return {
       items: pickExercisesById(input.exercises, input.exerciseIds).map(
-        (exercise) => kept.get(exercise.id) ?? applyDose(draftItemFromExercise(exercise), input.doses?.[exercise.id])
+        (exercise) => kept.get(exercise.id) ?? fresh(exercise)
       ),
       missingSet: false,
     };
