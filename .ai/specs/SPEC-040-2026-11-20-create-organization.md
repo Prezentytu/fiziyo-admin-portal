@@ -2,7 +2,7 @@
 spec: SPEC-040
 repo: fiziyo-admin-portal
 issues: []
-prs: []
+prs: [335]
 board: # zlecenie Adama 20.11.2026
 ---
 
@@ -74,4 +74,4 @@ Typ odpowiedzi: `CreateOrganizationResponse` w `src/graphql/types/organization.t
 
 ### 2026-11-20
 
-- Utworzenie specyfikacji razem z implementacją.
+- Utworzenie specyfikacji razem z implementacją (PR #335).
