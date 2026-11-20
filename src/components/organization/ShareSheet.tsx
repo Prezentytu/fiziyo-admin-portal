@@ -185,44 +185,43 @@ export function ShareSheet({ url, organizationName, role, expiresAt, className }
         </div>
       </div>
 
-      {/* Main content - side by side on desktop */}
-      <div className="p-5">
-        <div className="flex flex-col sm:flex-row gap-6">
+      <div className="@container p-5">
+        <div className="flex flex-col gap-6 @min-[30rem]:flex-row">
           {/* Left side - QR Code */}
-          <div className="flex flex-col items-center sm:items-start">
+          <div className="flex shrink-0 flex-col items-center @min-[30rem]:items-start">
             <div
               className={cn(
-                'p-4 rounded-2xl bg-white shadow-lg ring-1 ring-black/5',
+                'max-w-full p-4 rounded-2xl bg-white shadow-lg ring-1 ring-black/5',
                 'transition-all duration-500 delay-100',
                 isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
               )}
               data-testid="org-share-qr"
             >
               {url.trim() ? (
-                <QRCodeSVG value={url} size={160} level="M" bgColor="#ffffff" fgColor="#000000" />
+                <QRCodeSVG className="h-auto max-w-full" value={url} size={160} level="M" bgColor="#ffffff" fgColor="#000000" />
               ) : (
                 <div
-                  className="flex h-[160px] w-[160px] items-center justify-center rounded-md bg-muted"
+                  className="aspect-square w-[160px] max-w-full rounded-md bg-muted"
                   data-testid="org-share-qr-loading"
                 />
               )}
             </div>
-            <p className="text-xs text-muted-foreground mt-3 text-center sm:text-left">Zeskanuj kod QR telefonem</p>
+            <p className="text-xs text-muted-foreground mt-3 text-center @min-[30rem]:text-left">Zeskanuj kod QR telefonem</p>
           </div>
 
           {/* Right side - Share options */}
-          <div className="flex-1 flex flex-col">
+          <div className="flex min-w-0 flex-1 flex-col">
             <p className="text-sm text-muted-foreground mb-4">Lub wybierz sposób udostępnienia:</p>
 
             {/* Share options grid */}
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2 @min-[22rem]:grid-cols-3">
               {shareOptions.map((option, index) => (
                 <button
                   key={option.name}
                   data-testid={`org-share-${option.name.toLowerCase()}-btn`}
                   onClick={() => handleShareOption(option)}
                   className={cn(
-                    'flex flex-col items-center justify-center gap-2 p-4 rounded-xl',
+                    'flex flex-col items-center justify-center gap-2 px-2 py-4 rounded-xl',
                     'bg-gradient-to-br text-white',
                     'transition-all duration-200 hover:scale-105 hover:shadow-lg',
                     'active:scale-95',
@@ -233,7 +232,7 @@ export function ShareSheet({ url, organizationName, role, expiresAt, className }
                   style={{ transitionDelay: `${100 + index * 40}ms` }}
                 >
                   <option.icon className="h-6 w-6" />
-                  <span className="text-xs font-medium">{option.name}</span>
+                  <span className="wrap-anywhere text-center text-xs font-medium">{option.name}</span>
                 </button>
               ))}
 
@@ -242,7 +241,7 @@ export function ShareSheet({ url, organizationName, role, expiresAt, className }
                 data-testid="org-share-copy-btn"
                 onClick={handleCopyLink}
                 className={cn(
-                  'flex flex-col items-center justify-center gap-2 p-4 rounded-xl',
+                  'flex flex-col items-center justify-center gap-2 px-2 py-4 rounded-xl',
                   'bg-gradient-to-br text-white',
                   'transition-all duration-200 hover:scale-105 hover:shadow-lg',
                   'active:scale-95',
@@ -254,7 +253,9 @@ export function ShareSheet({ url, organizationName, role, expiresAt, className }
                 style={{ transitionDelay: `${100 + shareOptions.length * 40}ms` }}
               >
                 {copied ? <Check className="h-6 w-6" /> : <Copy className="h-6 w-6" />}
-                <span className="text-xs font-medium">{copied ? 'Skopiowano!' : 'Kopiuj link'}</span>
+                <span className="wrap-anywhere text-center text-xs font-medium">
+                  {copied ? 'Skopiowano!' : 'Kopiuj link'}
+                </span>
               </button>
             </div>
 
@@ -287,7 +288,7 @@ export function ShareSheet({ url, organizationName, role, expiresAt, className }
             isVisible ? 'opacity-100' : 'opacity-0'
           )}
         >
-          <code className="flex-1 text-xs text-muted-foreground truncate font-mono">{url}</code>
+          <code className="min-w-0 flex-1 text-xs text-muted-foreground truncate font-mono">{url}</code>
           <button
             data-testid="org-share-copy-url-btn"
             onClick={handleCopyLink}

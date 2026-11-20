@@ -39,13 +39,36 @@ vi.mock('sonner', () => ({
   },
 }));
 
-describe('InviteMemberDialog error handling', () => {
+describe('InviteMemberDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     isCombinedGraphQLErrorMock.mockImplementation((error: unknown) => {
       const combinedError = error as { isCombinedGraphQLError?: boolean };
       return combinedError?.isCombinedGraphQLError === true;
     });
+  });
+
+  it('kopiuje pełny adres długiego zaproszenia z podglądu linku', async () => {
+    const user = userEvent.setup();
+    const token = 'testowy-token-'.repeat(20);
+    const url = `${window.location.origin}/invite?token=${token}`;
+    generateInviteLinkMock.mockResolvedValueOnce({
+      data: {
+        generateInviteLink: {
+          invitationToken: token,
+          role: 'ADMIN',
+          expiresAt: '2026-11-27T12:00:00Z',
+        },
+      },
+    });
+
+    render(<InviteMemberDialog open onOpenChange={vi.fn()} organizationId="org-1" />);
+
+    await user.click(screen.getByTestId('org-invite-tab-link'));
+    await user.click(screen.getByTestId('org-invite-generate-link-btn'));
+    await user.click(await screen.findByTestId('org-share-copy-url-btn'));
+
+    expect(await navigator.clipboard.readText()).toBe(url);
   });
 
   it('nie pokazuje juz dialogu LimitReached dla bledow GraphQL (model pay-as-you-go)', async () => {

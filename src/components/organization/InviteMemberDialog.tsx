@@ -188,7 +188,7 @@ export function InviteMemberDialog({
   return (
     <Dialog open={open} onOpenChange={() => handleCloseAttempt()}>
       <DialogContent
-        className="max-w-[95vw] sm:max-w-xl md:max-w-2xl"
+        className="max-w-[95vw] grid-cols-1 sm:max-w-xl md:max-w-2xl"
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => {
           e.preventDefault();
