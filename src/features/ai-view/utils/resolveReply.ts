@@ -109,7 +109,9 @@ export async function resolveReply(
   if (options.useAi) {
     try {
       const exercise = singleExerciseRequest(text);
-      const command = exercise ? `Utwórz jedno ćwiczenie do katalogu gabinetu. Prośba: ${text}` : text;
+      const command = exercise
+        ? `Utwórz jedno ćwiczenie do katalogu gabinetu. Jeśli podano tylko cel, zaproponuj konkretny ruch. Podaj jego nazwę i opis wykonania. Prośba: ${text}`
+        : text;
       const result = await options.dispatch(command, options.sessionId, options.signal);
       // Keep the server refusal and any clarifying question. A proposed plan or search cannot fulfil this request.
       if (
