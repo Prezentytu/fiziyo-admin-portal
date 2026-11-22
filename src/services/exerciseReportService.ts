@@ -1,3 +1,4 @@
+import { getBackendAuthHeaders } from '@/graphql/providers/activeBackendToken';
 import type {
   CreateExerciseReportInput,
   ExerciseReport,
@@ -155,6 +156,8 @@ export async function getExerciseReports(params?: {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        // Listing and resolving reports is for reviewers only; the route asks the backend for the role with this token.
+        ...(await getBackendAuthHeaders()),
       },
       cache: 'no-store',
     });
@@ -193,6 +196,8 @@ export async function getExerciseReportsPage(params?: {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        // Listing and resolving reports is for reviewers only; the route asks the backend for the role with this token.
+        ...(await getBackendAuthHeaders()),
       },
       cache: 'no-store',
     });
@@ -230,6 +235,8 @@ export async function resolveExerciseReports(payload: ResolveExerciseReportPaylo
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
+        // Listing and resolving reports is for reviewers only; the route asks the backend for the role with this token.
+        ...(await getBackendAuthHeaders()),
       },
       body: JSON.stringify(payload),
     });

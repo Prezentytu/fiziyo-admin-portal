@@ -5,6 +5,7 @@ import { useUser } from '@clerk/nextjs';
 import { useQuery } from '@apollo/client/react';
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import type { UserByClerkIdResponse } from '@/types/apollo';
+import { canReviewExercises as canReview, normalizeSystemRole, type SystemRole } from '@/lib/auth/systemRole';
 
 // ========================================
 // Types
@@ -14,7 +15,7 @@ import type { UserByClerkIdResponse } from '@/types/apollo';
  * System-level roles (global, not per-organization)
  * Matches backend SystemRole enum (case-insensitive)
  */
-export type SystemRole = 'SiteSuperAdmin' | 'SiteAdmin' | 'ContentManager';
+export type { SystemRole } from '@/lib/auth/systemRole';
 
 export interface SystemRoleResult {
   /** Current user's system role (global) */
@@ -68,15 +69,7 @@ export function useSystemRole(): SystemRoleResult {
   return useMemo(() => {
     const rawRole = data?.userByClerkId?.systemRole;
 
-    // Normalize role to match our SystemRole type (case-insensitive comparison)
-    // Backend returns SCREAMING_SNAKE_CASE (e.g., "CONTENT_MANAGER")
-    let systemRole: SystemRole | null = null;
-    if (rawRole) {
-      const normalizedRole = rawRole.toLowerCase().replace(/_/g, '');
-      if (normalizedRole === 'sitesuperadmin') systemRole = 'SiteSuperAdmin';
-      else if (normalizedRole === 'siteadmin') systemRole = 'SiteAdmin';
-      else if (normalizedRole === 'contentmanager') systemRole = 'ContentManager';
-    }
+    const systemRole: SystemRole | null = normalizeSystemRole(rawRole);
 
     const isSiteSuperAdmin = systemRole === 'SiteSuperAdmin';
     const isSiteAdmin = systemRole === 'SiteAdmin';
@@ -85,7 +78,7 @@ export function useSystemRole(): SystemRoleResult {
     // Permission checks based on backend PermissionService logic:
     // - SiteSuperAdmin has all permissions
     // - ContentManager has ReviewExercises and ManageGlobalTags
-    const canReviewExercises = isSiteSuperAdmin || isContentManager;
+    const canReviewExercises = canReview(systemRole);
     const canManageGlobalTags = isSiteSuperAdmin || isContentManager;
 
     return {
