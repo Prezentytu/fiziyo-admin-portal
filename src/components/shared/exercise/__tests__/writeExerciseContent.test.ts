@@ -589,7 +589,7 @@ describe('lista ścieżek edytowalnych (zapadka)', () => {
     'therapist.checkpoints': [{ text: 'Zmieniony punkt.' }],
     equipment_items: [{ label: 'zmieniony sprzęt' }],
     'ai.keywords': ['zmienione'],
-    side: { mode: 'alternating', per_side_dose: true, start: 'right', shown_in_media: 'right' },
+    side: { mode: 'alternating', per_side_dose: true, shown_in_media: 'right' },
     prescription: { goal: 'strength', params: { sets: { default: 3, min: 2, max: 4 } } },
   };
 

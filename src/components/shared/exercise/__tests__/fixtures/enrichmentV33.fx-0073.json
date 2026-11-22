@@ -162,7 +162,6 @@
   "side": {
     "mode": "each_side",
     "per_side_dose": true,
-    "start": "left",
     "shown_in_media": "right"
   },
   "equipment_items": [
