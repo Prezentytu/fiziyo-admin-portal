@@ -38,6 +38,15 @@ const ruleOverrides = {
   // Apollo 4 throws CombinedGraphQLErrors; the Apollo 3 `graphQLErrors` field is always undefined.
   "no-restricted-syntax": [
     "error",
+    // A raw signOut leaves the backend token, Apollo cache and clinic data to the next user of the tab.
+    ...[
+      "VariableDeclarator[init.callee.name=/^use(Clerk|Auth)$/] > ObjectPattern > Property[key.name='signOut']",
+      "CallExpression[callee.type='MemberExpression'][callee.property.name='signOut']",
+      "ImportSpecifier[imported.name='SignOutButton']",
+    ].map((selector) => ({
+      selector,
+      message: "Wyloguj przez useAppSignOut z src/lib/auth/useAppSignOut.ts; czyści token, cache Apollo i localStorage.",
+    })),
     ...["MemberExpression[property.name='graphQLErrors']", "TSPropertySignature[key.name='graphQLErrors']"].map(
       (selector) => ({
         selector,

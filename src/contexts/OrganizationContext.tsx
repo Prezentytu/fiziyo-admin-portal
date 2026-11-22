@@ -1,12 +1,15 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useApolloClient } from '@apollo/client/react';
 import { toast } from 'sonner';
 import { GET_USER_ORGANIZATIONS_QUERY } from '@/graphql/queries/users.queries';
 import { SET_DEFAULT_ORGANIZATION_MUTATION } from '@/graphql/mutations/users.mutations';
 import { tokenExchangeService } from '@/services/tokenExchangeService';
 import { getBackendToken, saveBackendToken, clearBackendToken } from '@/lib/tokenCache';
+import { LAST_ORGANIZATION_KEY } from '@/lib/auth/userBrowserState';
+import { decodeJwtPayload } from '@/lib/auth/jwtClaims';
+import { restartSubscriptionConnection } from '@/graphql/links/wsLink';
 import type { UserOrganizationWithRole, UserOrganizationsResponse } from '@/types/apollo';
 
 // ========================================
@@ -37,11 +40,18 @@ interface OrganizationContextValue {
 
 const OrganizationContext = createContext<OrganizationContextValue | null>(null);
 
+function organizationIdFromToken(token: string | null): string | null {
+  if (!token) return null;
+  const payload = decodeJwtPayload(token);
+  const organizationId = payload?.organization_id ?? payload?.OrganizationId;
+  return typeof organizationId === 'string' && organizationId ? organizationId : null;
+}
+
 // ========================================
 // Local Storage Keys
 // ========================================
 
-const LAST_ORG_KEY = 'fizyo_last_organization_id';
+const LAST_ORG_KEY = LAST_ORGANIZATION_KEY;
 
 function getLastOrganizationId(): string | null {
   if (typeof window === 'undefined') return null;
@@ -118,19 +128,11 @@ export function OrganizationProvider({ children, skipOrganizationsQuery = false 
     if (organizations.length === 0) return;
 
     // Try to get organization from cached token
-    const cachedToken = getBackendToken();
-    if (cachedToken) {
-      try {
-        const payload = JSON.parse(atob(cachedToken.split('.')[1]));
-        const tokenOrgId = payload.organization_id || payload.OrganizationId;
-        if (tokenOrgId && organizations.some((o) => o.organizationId === tokenOrgId)) {
-          setCurrentOrgId(tokenOrgId);
-          setLastOrganizationId(tokenOrgId);
-          return;
-        }
-      } catch {
-        // Ignore decode errors
-      }
+    const tokenOrgId = organizationIdFromToken(getBackendToken());
+    if (tokenOrgId && organizations.some((o) => o.organizationId === tokenOrgId)) {
+      setCurrentOrgId(tokenOrgId);
+      setLastOrganizationId(tokenOrgId);
+      return;
     }
 
     // Try localStorage
@@ -162,6 +164,8 @@ export function OrganizationProvider({ children, skipOrganizationsQuery = false 
       try {
         const response = await tokenExchangeService.changeOrganization(currentToken, organizationId);
         saveBackendToken(response.access_token);
+        // The subscription socket is still authenticated with the previous organization's token.
+        restartSubscriptionConnection();
       } catch (error) {
         if (error instanceof Error && (error.message.includes('401') || error.message.includes('403'))) {
           clearBackendToken();
@@ -188,6 +192,20 @@ export function OrganizationProvider({ children, skipOrganizationsQuery = false 
     },
     [apolloClient, setDefaultOrganization, refetch]
   );
+
+  // The screen must not show an organization other than the one the backend token was issued for:
+  // falling back to the last or first organization exchanges the token for it.
+  // One attempt per organization so a failing exchange cannot loop.
+  const realignedOrgIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!currentOrgId || realignedOrgIdRef.current === currentOrgId) return;
+    const tokenOrgId = organizationIdFromToken(getBackendToken());
+    if (!tokenOrgId || tokenOrgId === currentOrgId) return;
+    realignedOrgIdRef.current = currentOrgId;
+    enterOrganization(currentOrgId).catch((err: unknown) => {
+      console.warn('[OrganizationContext] Token does not match the selected organization:', err);
+    });
+  }, [currentOrgId, enterOrganization]);
 
   const switchOrganization = useCallback(
     async (organizationId: string) => {

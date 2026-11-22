@@ -1,3 +1,4 @@
+import { unstable_doesMiddlewareMatch } from 'next/experimental/testing/server';
 import { NextRequest } from 'next/server';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -7,7 +8,7 @@ vi.mock('@clerk/nextjs/server', async (importOriginal) => {
   return { ...original, clerkMiddleware: (callback: unknown) => callback };
 });
 
-import proxy from '../../../proxy';
+import proxy, { config } from '../../../proxy';
 
 const policy = proxy as unknown as (
   auth: { protect: () => Promise<void> },
@@ -33,4 +34,16 @@ describe('proxy policy with real Clerk route matcher', () => {
     const protect = vi.fn(async () => { throw new Error('Denied'); });
     await expect(policy({ protect }, new NextRequest('https://portal.fiziyo.pl/patients'))).rejects.toThrow('Denied');
   });
+
+  // The dot before the extension must be literal; otherwise a path ending in "ico" or "zip" skips Clerk.
+  it.each(['/patients', '/patients/abcico', '/exercises/plan-css', '/settings/zip', '/organizationpng', '/api/feedback'])(
+    'runs proxy for app route %s', (url) => {
+      expect(unstable_doesMiddlewareMatch({ config, url })).toBe(true);
+    },
+  );
+  it.each(['/favicon.ico', '/_next/static/chunk.js', '/fonts/inter.woff2'])(
+    'skips static asset %s', (url) => {
+      expect(unstable_doesMiddlewareMatch({ config, url })).toBe(false);
+    },
+  );
 });

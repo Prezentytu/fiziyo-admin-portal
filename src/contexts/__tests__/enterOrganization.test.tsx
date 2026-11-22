@@ -12,7 +12,11 @@ const mocks = vi.hoisted(() => ({
   toastError: vi.fn(),
   toastSuccess: vi.fn(),
   refetchOrganizations: vi.fn(),
+  backendToken: 'backend-token',
+  restartSubscriptionConnection: vi.fn(),
 }));
+
+vi.mock('@/graphql/links/wsLink', () => ({ restartSubscriptionConnection: mocks.restartSubscriptionConnection }));
 
 vi.mock('@apollo/client/react', () => ({
   useQuery: () => ({
@@ -35,12 +39,19 @@ vi.mock('@/services/tokenExchangeService', () => ({
 }));
 
 vi.mock('@/lib/tokenCache', () => ({
-  getBackendToken: () => 'backend-token',
+  getBackendToken: () => mocks.backendToken,
   saveBackendToken: mocks.saveBackendToken,
   clearBackendToken: mocks.clearBackendToken,
 }));
 
 vi.mock('sonner', () => ({ toast: { error: mocks.toastError, success: mocks.toastSuccess } }));
+
+function tokenForOrganization(organizationId: string): string {
+  const payload = Buffer.from(JSON.stringify({ clerk_id: 'user_a', organization_id: organizationId })).toString(
+    'base64url'
+  );
+  return `header.${payload}.sig`;
+}
 
 function renderProvider() {
   const context: { current: ReturnType<typeof useOrganization> | null } = { current: null };
@@ -60,6 +71,7 @@ function renderProvider() {
 describe('enterOrganization', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.backendToken = 'backend-token';
     localStorage.clear();
     mocks.setDefaultOrganization.mockResolvedValue({});
     mocks.resetStore.mockResolvedValue([]);
@@ -106,6 +118,7 @@ describe('enterOrganization', () => {
 describe('switchOrganization', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.backendToken = 'backend-token';
     localStorage.clear();
     mocks.setDefaultOrganization.mockResolvedValue({});
     mocks.resetStore.mockResolvedValue([]);
@@ -142,5 +155,60 @@ describe('switchOrganization', () => {
     expect(mocks.toastError).toHaveBeenCalledWith('Nie udało się przełączyć organizacji', expect.any(Object));
     expect(mocks.clearBackendToken).toHaveBeenCalled();
     expect(context.current.isSwitching).toBe(false);
+  });
+});
+
+describe('organization chosen without the token', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    mocks.setDefaultOrganization.mockResolvedValue({});
+    mocks.resetStore.mockResolvedValue([]);
+    mocks.refetchOrganizations.mockResolvedValue({});
+  });
+
+  it('exchanges the token when the screen falls back to an organization the token is not for', async () => {
+    // The token points to an organization outside the list; fall back to the last chosen one.
+    mocks.backendToken = tokenForOrganization('org-removed');
+    localStorage.setItem('fizyo_last_organization_id', 'org-other');
+    mocks.changeOrganization.mockResolvedValue({ access_token: tokenForOrganization('org-other') });
+
+    const context = renderProvider();
+    await act(async () => undefined);
+
+    expect(context.current.currentOrganization?.organizationId).toBe('org-other');
+    expect(mocks.changeOrganization).toHaveBeenCalledExactlyOnceWith(mocks.backendToken, 'org-other');
+    // The subscription socket must reconnect with the new organization's token.
+    expect(mocks.restartSubscriptionConnection).toHaveBeenCalled();
+  });
+
+  it('tries the exchange once when it fails instead of looping', async () => {
+    mocks.backendToken = tokenForOrganization('org-removed');
+    localStorage.setItem('fizyo_last_organization_id', 'org-other');
+    mocks.changeOrganization.mockRejectedValue(new Error('exchange failed'));
+
+    // A fresh element each time, so React re-renders the provider instead of bailing out.
+    const tree = () => (
+      <OrganizationProvider>
+        <span />
+      </OrganizationProvider>
+    );
+    const { rerender } = render(tree());
+    for (let i = 0; i < 5; i += 1) {
+      await act(async () => rerender(tree()));
+    }
+
+    expect(mocks.changeOrganization).toHaveBeenCalledOnce();
+  });
+
+  it('keeps the token organization when it is on the list', async () => {
+    mocks.backendToken = tokenForOrganization('org-old');
+    localStorage.setItem('fizyo_last_organization_id', 'org-other');
+
+    const context = renderProvider();
+    await act(async () => undefined);
+
+    expect(context.current.currentOrganization?.organizationId).toBe('org-old');
+    expect(mocks.changeOrganization).not.toHaveBeenCalled();
   });
 });

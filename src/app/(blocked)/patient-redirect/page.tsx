@@ -1,14 +1,12 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
-import { useRouter } from 'next/navigation';
-import { useClerk } from '@clerk/nextjs';
 import { QRCodeSVG } from 'qrcode.react';
 import { Smartphone, LogOut, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ANDROID_PLAY_STORE_URL, detectMobilePlatform, IOS_APP_STORE_URL, type MobilePlatform } from '@/lib/mobileApp';
-import { clearBackendToken } from '@/lib/tokenCache';
+import { useAppSignOut } from '@/lib/auth/useAppSignOut';
 
 const SUPPORT_MAILTO_URL = 'mailto:kontakt@fiziyo.pl?subject=Problem%20z%20logowaniem%20do%20panelu';
 
@@ -23,15 +21,12 @@ const readClientPlatform = (): MobilePlatform => detectMobilePlatform(navigator.
 const readServerPlatform = (): MobilePlatform => 'desktop';
 
 export default function PatientRedirectPage() {
-  const router = useRouter();
-  const { signOut } = useClerk();
+  const signOut = useAppSignOut();
 
   const deviceType = useSyncExternalStore(subscribeToPlatform, readClientPlatform, readServerPlatform);
 
   const handleSignOut = async () => {
-    clearBackendToken();
-    await signOut();
-    router.replace('/login');
+    await signOut('/login');
   };
 
   const showBothStoreButtons = deviceType === 'desktop';

@@ -28,6 +28,7 @@ import { OrganizationProvider } from '@/contexts/OrganizationContext';
 import { GET_INVITATION_BY_TOKEN_QUERY } from '@/graphql/queries/organizations.queries';
 import type { OrganizationInvitation } from '@/types/apollo';
 import { cn } from '@/lib/utils';
+import { useAppSignOut } from '@/lib/auth/useAppSignOut';
 
 // ========================================
 // Types
@@ -45,7 +46,7 @@ function InvitePageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user, isLoaded: userLoaded, isSignedIn } = useUser();
-  const { signOut } = useAuth();
+  const signOut = useAppSignOut();
   const token = searchParams.get('token');
 
   const [acceptedInvitation, setAcceptedInvitation] = useState<OrganizationInvitation | null>(null);
@@ -330,7 +331,7 @@ function InvitePageContent() {
 
             <div className="space-y-3">
               <Button
-                onClick={() => signOut({ redirectUrl: `/invite?token=${token}` })}
+                onClick={() => signOut(`/invite?token=${encodeURIComponent(token ?? '')}`)}
                 variant="outline"
                 className="w-full gap-2"
               >
