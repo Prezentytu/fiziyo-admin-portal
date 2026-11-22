@@ -10,7 +10,14 @@ import type { ExerciseEnrichmentData } from './exerciseEnrichment.types';
 export type ExerciseType = 'REPS' | 'TIME';
 export type ExerciseSide = 'NONE' | 'LEFT' | 'RIGHT' | 'BOTH' | 'ALTERNATING';
 export type ExerciseScope = 'PERSONAL' | 'ORGANIZATION' | 'GLOBAL';
-export type ContentStatus = 'DRAFT' | 'PENDING_REVIEW' | 'CHANGES_REQUESTED' | 'APPROVED' | 'PUBLISHED';
+export type ContentStatus =
+  | 'DRAFT'
+  | 'PENDING_REVIEW'
+  | 'CHANGES_REQUESTED'
+  | 'APPROVED'
+  | 'PUBLISHED'
+  | 'ARCHIVED_GLOBAL'
+  | 'UPDATE_PENDING';
 export type OrganizationVerificationStatus =
   'NOT_SUBMITTED' | 'PENDING_ORG_REVIEW' | 'ORG_VERIFIED' | 'ORG_CHANGES_REQUESTED' | 'ORG_ARCHIVED';
 export type MediaType = 'VIDEO' | 'IMAGE' | 'AUDIO';
@@ -42,6 +49,21 @@ export interface ExerciseMedia {
   order: number;
   caption?: string;
   createdAt?: string;
+}
+
+interface GlobalSubmissionReview {
+  id: string;
+  sourceOrganizationExerciseId: string | null;
+  adminReviewNotes: string | null;
+}
+
+export interface GlobalSubmissionReviewResponse {
+  exerciseById: (GlobalSubmissionReview & { status: ContentStatus }) | null;
+}
+
+export interface DuplicateSubmissionNoticesResponse {
+  originals: { id: string; name: string; globalSubmissionId: string | null }[];
+  duplicates: GlobalSubmissionReview[];
 }
 
 // ============================================

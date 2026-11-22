@@ -139,7 +139,8 @@ export function DuplicateDialog({
         <DialogHeader className="pr-8 text-left">
           <DialogTitle>Wybierz oryginał z bazy</DialogTitle>
           <DialogDescription>
-            Po potwierdzeniu weryfikowane ćwiczenie zniknie z kolejki. Autor dostanie informację, gdzie znaleźć oryginał.
+            Zgłoszenie trafi do „Wycofanych”. Osoba, która je zgłosiła, dostanie powiadomienie z nazwą oryginału.
+            Ćwiczenie pozostanie dostępne w jej organizacji.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-1 rounded-lg bg-fill-quaternary p-3">
