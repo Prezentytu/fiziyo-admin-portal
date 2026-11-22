@@ -181,19 +181,20 @@ Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu r
 
 #### Header (kontekst "tu i teraz")
 
-| data-testid                          | Element                                           | Plik                    |
-| ------------------------------------ | ------------------------------------------------- | ----------------------- |
-| `nav-header`                         | Główny header                                     | `Header.tsx`            |
-| `nav-mobile-menu-btn`                | Menu mobilne                                      | `Header.tsx`            |
-| `nav-breadcrumbs`                    | Breadcrumbs                                       | `Header.tsx`            |
-| `nav-breadcrumb-home`                | Home link                                         | `Header.tsx`            |
-| `nav-breadcrumb-item-{n}`            | Element breadcrumb                                | `Header.tsx`            |
-| `nav-notifications-btn`              | Przycisk powiadomień (dzwoneczek)                 | `NotificationsBell.tsx` |
-| `nav-notifications-count`            | Licznik pacjentów ze zgłoszeniem                  | `NotificationsBell.tsx` |
-| `nav-notifications-panel`            | Lista zgłoszeń pacjentów                          | `NotificationsBell.tsx` |
-| `nav-notifications-empty`            | Brak zgłoszeń                                     | `NotificationsBell.tsx` |
-| `nav-notifications-unavailable`      | Zgłoszenia się wczytują albo nie dało się wczytać | `NotificationsBell.tsx` |
-| `nav-notifications-item-{patientId}` | Pacjent ze zgłoszeniem (`-link`, `-reviewed-btn`) | `NotificationsBell.tsx` |
+| data-testid                             | Element                                                | Plik                    |
+| --------------------------------------- | ------------------------------------------------------ | ----------------------- |
+| `nav-header`                            | Główny header                                          | `Header.tsx`            |
+| `nav-mobile-menu-btn`                   | Menu mobilne                                           | `Header.tsx`            |
+| `nav-breadcrumbs`                       | Breadcrumbs                                            | `Header.tsx`            |
+| `nav-breadcrumb-home`                   | Home link                                              | `Header.tsx`            |
+| `nav-breadcrumb-item-{n}`               | Element breadcrumb                                     | `Header.tsx`            |
+| `nav-notifications-btn`                 | Przycisk powiadomień (dzwoneczek)                      | `NotificationsBell.tsx` |
+| `nav-notifications-count`               | Licznik zgłoszeń pacjentów i decyzji FiziYo            | `NotificationsBell.tsx` |
+| `nav-notifications-panel`               | Zgłoszenia pacjentów i decyzje o zgłoszeniach ćwiczeń  | `NotificationsBell.tsx` |
+| `nav-notifications-empty`               | Brak zgłoszeń                                          | `NotificationsBell.tsx` |
+| `nav-notifications-unavailable`         | Zgłoszenia się wczytują albo nie dało się wczytać      | `NotificationsBell.tsx` |
+| `nav-notifications-item-{patientId}`    | Pacjent ze zgłoszeniem (`-link`, `-reviewed-btn`)      | `NotificationsBell.tsx` |
+| `nav-notifications-duplicate-{id}-link` | Decyzja o duplikacie i link do ćwiczenia w organizacji | `NotificationsBell.tsx` |
 
 > **Uwaga:** UserMenu został usunięty z Headera. Wszystkie funkcje profilu są teraz w `UserProfileFooter` (lewy dolny róg sidebara) - wzorzec Linear/Slack.
 
@@ -266,6 +267,7 @@ Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu r
 | `exercise-card-{id}-edit-btn`               | Edytuj                                | `ExerciseCard.tsx`               |
 | `exercise-card-{id}-add-to-set-btn`         | Dodaj do zestawu                      | `ExerciseCard.tsx`               |
 | `exercise-card-{id}-delete-btn`             | Usuń                                  | `ExerciseCard.tsx`               |
+| `exercise-global-withdrawal-notice`         | Powód wycofania zgłoszenia do FiziYo  | `exercises/[id]/page.tsx`        |
 | `exercise-dialog-save-btn`                  | Zapisz w dialogu edycji               | `ExerciseDialog.tsx`             |
 | `exercise-dialog-cancel-btn`                | Anuluj w dialogu edycji               | `ExerciseDialog.tsx`             |
 | `exercise-editor-name-input`                | Nazwa w ExerciseEditor                | `ExerciseEditor.tsx`             |
@@ -904,7 +906,7 @@ Ekran globalny publikuje z paska, a jedyne wyjście bez publikacji to „To dupl
 | `verification-param-side-sync-btn`                                                                                                                                                                                                                                                               | v3.3: zapisuje w `side.mode` stronę wybraną w kafelku                                                                                                                                                                                                                         | `ParametersStage.tsx`                              |
 | `verification-param-suggestions-bar`, `verification-param-accept-all-btn`                                                                                                                                                                                                                        | Sugestie parametrów i ich akceptacja naraz                                                                                                                                                                                                                                    | `ParametersStage.tsx`                              |
 | `verification-decision-{etap}-accept-btn`, `verification-bar-accept-suggestions-btn`                                                                                                                                                                                                             | Akceptacja sugestii w Decyzji i na pasku                                                                                                                                                                                                                                      | `DecisionStage.tsx`, `VerificationFloatingBar.tsx` |
-| `verification-param-content`, `verification-param-{side-start\|goal}-select`, `verification-param-equipment-items-*`, `verification-param-range-{klucz}-{min\|max}-input`, `verification-param-{progression\|regression}-criterion-input`, `verification-param-{progression\|regression}-next-*` | v3.3: strona startowa, cel, sprzęt, zakresy dawki, progresja i regresja                                                                                                                                                                                                       | `V33ParameterContent.tsx`                          |
+| `verification-param-content`, `verification-param-goal-select`, `verification-param-equipment-items-*`, `verification-param-range-{klucz}-{min\|max}-input`, `verification-param-{progression\|regression}-criterion-input`, `verification-param-{progression\|regression}-next-*`               | v3.3: cel, sprzęt, zakresy dawki, progresja i regresja                                                                                                                                                                                                                        | `V33ParameterContent.tsx`                          |
 | `verification-duplicate-dialog` / `-confirm-btn`                                                                                                                                                                                                                                                 | Oznacz weryfikowane ćwiczenie jako duplikat                                                                                                                                                                                                                                   | `DuplicateDialog.tsx`                              |
 | `verification-duplicate-preview-btn` / `verification-duplicate-original-preview-dialog`                                                                                                                                                                                                          | Przycisk podglądu i okno oryginału                                                                                                                                                                                                                                            | `DuplicateDialog.tsx`                              |
 

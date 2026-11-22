@@ -17,6 +17,24 @@ const baseExercise: Exercise = {
 };
 
 describe('ExerciseCard menu actions', () => {
+  it.each([true, false])('pokazuje wycofanie zgłoszenia i zachowuje edycję ćwiczenia (compact=%s)', async (compact) => {
+    const user = userEvent.setup();
+    const onEdit = vi.fn();
+    const exercise: Exercise = {
+      ...baseExercise,
+      globalSubmissionId: 'global-submission-1',
+      globalSubmissionStatus: 'ARCHIVED_GLOBAL',
+    };
+
+    render(<ExerciseCard exercise={exercise} compact={compact} onEdit={onEdit} />);
+
+    expect(screen.getByText('Wycofane z FiziYo')).toBeInTheDocument();
+    expect(screen.queryByText('W FiziYo')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Więcej opcji/ }));
+    await user.click(screen.getByRole('menuitem', { name: 'Edytuj' }));
+    expect(onEdit).toHaveBeenCalledWith(exercise);
+  });
+
   it('przy własnym ćwiczeniu gabinetu pokazuje zgłoszenie do weryfikacji, a nie „Zgłoś do poprawki”', async () => {
     const user = userEvent.setup();
     const onSubmitToGlobal = vi.fn();

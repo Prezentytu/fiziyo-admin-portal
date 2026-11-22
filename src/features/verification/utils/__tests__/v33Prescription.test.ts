@@ -9,7 +9,6 @@ import {
   prescriptionWithStep,
   readStep,
   sideForColumn,
-  sideWithStart,
 } from '../v33Prescription';
 
 const prescription = {
@@ -26,22 +25,18 @@ const prescription = {
 };
 
 describe('strona: kolumna i side.mode zmieniają się razem', () => {
-  it('na każdą stronę to each_side z dawką na stronę, start i strona w mediach zostają', () => {
+  it('na każdą stronę to each_side z dawką na stronę, strona w mediach zostaje', () => {
     expect(
-      sideForColumn({ mode: 'none', per_side_dose: false, start: 'right', shown_in_media: 'left' }, 'both')
-    ).toEqual({ mode: 'each_side', per_side_dose: true, start: 'right', shown_in_media: 'left' });
+      sideForColumn({ mode: 'none', per_side_dose: false, shown_in_media: 'left' }, 'both')
+    ).toEqual({ mode: 'each_side', per_side_dose: true, shown_in_media: 'left' });
   });
 
-  it('naprzemiennie bez strony startowej dostaje lewą, tylko prawa nie liczy na stronę', () => {
-    expect(sideForColumn(null, 'alternating')).toEqual({ mode: 'alternating', per_side_dose: true, start: 'left' });
+  it('naprzemiennie liczy na stronę, tylko prawa nie liczy na stronę', () => {
+    expect(sideForColumn(null, 'alternating')).toEqual({ mode: 'alternating', per_side_dose: true });
     expect(sideForColumn({ mode: 'each_side', per_side_dose: true }, 'right')).toEqual({
       mode: 'right',
       per_side_dose: false,
     });
-  });
-
-  it('strona startowa nie rusza trybu', () => {
-    expect(sideWithStart({ mode: 'each_side', start: 'left' }, 'right')).toEqual({ mode: 'each_side', start: 'right' });
   });
 });
 

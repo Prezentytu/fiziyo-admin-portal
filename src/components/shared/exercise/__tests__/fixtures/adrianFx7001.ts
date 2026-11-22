@@ -31,7 +31,7 @@ const fx7001Document: ExerciseEnrichmentData = {
     ],
   },
   breathing: { pattern: null, text: FX_7001_BREATHING },
-  side: { mode: 'alternating', per_side_dose: true, start: 'left', shown_in_media: 'left' },
+  side: { mode: 'alternating', per_side_dose: true, shown_in_media: 'left' },
   equipment_items: [{ code: 'chair', label: 'krzesło', qty: 1, required: true, substitutes: [] }],
 } as ExerciseEnrichmentData;
 

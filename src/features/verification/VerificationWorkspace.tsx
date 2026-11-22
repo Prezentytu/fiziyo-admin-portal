@@ -881,17 +881,24 @@ export function VerificationWorkspace({
       const notes = `To ćwiczenie jest już w bazie jako „${target.name}” (ID: ${target.id}).`;
       try {
         await flushBeforeDecision();
-        await rejectExercise({
+        const { data } = await rejectExercise({
           variables: { exerciseId: exercise.id, rejectionReason: 'POTENTIAL_DUPLICATE', notes },
         });
-        toast.success('Oznaczono weryfikowane ćwiczenie jako duplikat');
+        if (data?.rejectExercise?.status !== 'ARCHIVED_GLOBAL') {
+          toast.error('Serwer nie potwierdził wycofania zgłoszenia. Spróbuj ponownie.');
+          setIsLeaving(false);
+          return;
+        }
+        toast.success('Wycofano zgłoszenie do FiziYo jako duplikat');
         void resolveReports(notes);
         setIsDuplicateOpen(false);
         leaveToNext();
       } catch (error) {
         console.error('Błąd oznaczania duplikatu:', error);
         const originalError = CombinedGraphQLErrors.is(error) && error.errors.find(({ extensions }) =>
-          extensions?.code === 'DUPLICATE_ORIGINAL_UNAVAILABLE' || extensions?.code === 'DUPLICATE_ORIGINAL_NOTES_FULL'
+          extensions?.code === 'DUPLICATE_ORIGINAL_UNAVAILABLE' ||
+          extensions?.code === 'DUPLICATE_ORIGINAL_NOTES_FULL' ||
+          extensions?.code === 'DUPLICATE_SUBMISSION_UNAVAILABLE'
         );
         toast.error(originalError ? originalError.message : actionErrorMessage(error, 'Nie udało się oznaczyć duplikatu'));
         setIsLeaving(false);

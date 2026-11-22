@@ -9,14 +9,12 @@ import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.
 import {
   PRESCRIPTION_GOALS,
   RANGE_KEYS,
-  SIDE_START_OPTIONS,
   prescriptionWithBound,
   prescriptionWithGoal,
   prescriptionWithStep,
   readRange,
   readStep,
   romLabel,
-  sideWithStart,
 } from '../utils/v33Prescription';
 import { ChipListEditor } from './ChipListEditor';
 import { StageSection } from './StageSection';
@@ -79,50 +77,26 @@ function StepEditor({
 }
 
 /**
- * Strona startowa, sprzęt, cel, zakresy dawki, progresja i regresja rekordu 3.3, edytowane w miejscu.
+ * Sprzęt, cel, zakresy dawki, progresja i regresja rekordu 3.3, edytowane w miejscu.
  * Tryb strony zmienia wybór „Strona ciała” wyżej, razem z kolumną. Tempo i zakres ruchu mają pola w sekcji
  * „Tempo, obciążenie…”; wartość z paczki pokazujemy tu tylko jako punkt odniesienia.
  */
 export function V33ParameterContent({ enrichment, onEnrichmentPathChange }: V33ParameterContentProps) {
-  const side = enrichment.side ?? null;
   const prescription = enrichment.prescription ?? null;
   const setPrescription = (value: unknown) => onEnrichmentPathChange('prescription', value);
   const goal = typeof prescription?.goal === 'string' ? prescription.goal : null;
   const isKnownGoal = PRESCRIPTION_GOALS.some((option) => option.code === goal);
-  const hasSides = side?.mode === 'each_side' || side?.mode === 'alternating';
   const params = (prescription?.params ?? {}) as Record<string, { default?: unknown } | undefined>;
   const packageTempo = params.tempo?.default != null ? String(params.tempo.default) : null;
   const packageRom = typeof params.rom?.default === 'string' ? params.rom.default : null;
 
   return (
     <StageSection
-      title="Strona, sprzęt, cel i zakresy"
+      title="Sprzęt, cel i zakresy"
       hint="Zmiany zapisują się w treści ćwiczenia razem z resztą weryfikacji."
       data-testid="verification-param-content"
     >
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="verification-param-side-start" className="text-[13px] text-label-secondary">
-            Strona startowa
-          </Label>
-          <Select
-            data-testid="verification-param-side-start-select"
-            value={typeof side?.start === 'string' ? side.start : undefined}
-            onValueChange={(value) => onEnrichmentPathChange('side', sideWithStart(side, value))}
-            disabled={!hasSides}
-          >
-            <SelectTrigger id="verification-param-side-start" data-testid="verification-param-side-start-select">
-              <SelectValue placeholder={hasSides ? 'Wybierz stronę' : 'Tylko przy obu stronach'} />
-            </SelectTrigger>
-            <SelectContent>
-              {SIDE_START_OPTIONS.map((option) => (
-                <SelectItem key={option.code} value={option.code}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="verification-param-goal" className="text-[13px] text-label-secondary">
             Cel ćwiczenia

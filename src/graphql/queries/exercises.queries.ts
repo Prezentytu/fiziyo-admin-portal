@@ -172,6 +172,48 @@ export const GET_EXERCISE_BY_ID_QUERY = gql`
   ${EXERCISE_FULL_FRAGMENT}
 `;
 
+export const GET_GLOBAL_SUBMISSION_REVIEW_QUERY = gql`
+  query GetGlobalSubmissionReview($id: String!) {
+    exerciseById(id: $id) {
+      id
+      sourceOrganizationExerciseId
+      status
+      adminReviewNotes
+    }
+  }
+`;
+
+export const GET_DUPLICATE_SUBMISSION_NOTICES_QUERY = gql`
+  query GetDuplicateSubmissionNotices($organizationId: String!, $userId: String!, $notesPrefix: String!) {
+    originals: exercises(
+      where: {
+        organizationId: { eq: $organizationId }
+        scope: { eq: ORGANIZATION }
+        globalSubmissionId: { neq: null }
+      }
+    ) {
+      id
+      name
+      globalSubmissionId
+    }
+    duplicates: exercises(
+      where: {
+        createdById: { eq: $userId }
+        scope: { eq: GLOBAL }
+        status: { eq: ARCHIVED_GLOBAL }
+        isSystem: { eq: true }
+        sourceOrganizationExerciseId: { neq: null }
+        adminReviewNotes: { startsWith: $notesPrefix }
+      }
+      order: [{ archivedAt: DESC }, { id: ASC }]
+    ) {
+      id
+      sourceOrganizationExerciseId
+      adminReviewNotes
+    }
+  }
+`;
+
 // Dostępność ćwiczenia (pula demo, fizjo-app#388). Osobny dokument pytany z errorPolicy 'ignore':
 // API bez pola `availability` odrzuca tylko to zapytanie, a widok ćwiczenia ładuje się jak dotąd.
 // Nie dopisuj tego pola do ExerciseFullFragment, dopóki backend z #388 nie jest na każdym środowisku.
