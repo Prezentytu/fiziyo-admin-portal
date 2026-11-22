@@ -197,6 +197,7 @@ export const GET_ASSIGNMENT_EXERCISE_OVERRIDES_QUERY = gql`
     patientAssignmentById(id: $id) {
       id
       exerciseOverrides
+      exerciseOverridesVersion
     }
   }
 `;

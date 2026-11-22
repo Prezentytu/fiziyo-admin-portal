@@ -52,7 +52,12 @@ import {
   buildBuilderStateFromMappings,
   seedBuilderParamsFromMapping,
 } from './utils/seedBuilderParamsFromMapping';
-import { fetchCurrentAssignmentOverrides } from '@/features/patients/utils/currentAssignmentOverrides';
+import {
+  EXERCISE_OVERRIDES_CONFLICT_MESSAGE,
+  fetchCurrentAssignmentOverrides,
+  isExerciseOverridesConflictError,
+  overridesVersionVariables,
+} from '@/features/patients/utils/currentAssignmentOverrides';
 import { mergeAssignmentOverridesOnEdit } from './utils/mergeAssignmentOverridesOnEdit';
 import { saveAssignmentOverridesOrRollback } from './utils/saveAssignmentOverridesOrRollback';
 import {
@@ -1381,7 +1386,8 @@ function AssignmentWizardContent({
       try {
         // Baza scalenia to dokument czytany tuż przed zapisem, nie stan z otwarcia kreatora: zmiana innej pozycji
         // zapisana w międzyczasie (ukrycie, uwaga, druga karta) zostaje (#244).
-        const currentOverridesJson = await fetchCurrentAssignmentOverrides(apolloClient, initialAssignment.id);
+        const currentOverrides = await fetchCurrentAssignmentOverrides(apolloClient, initialAssignment.id);
+        const currentOverridesJson = currentOverrides.json;
         const exerciseOverridesJson = mergeAssignmentOverridesOnEdit({
           existingJson: currentOverridesJson,
           clinicalByMappingId,
@@ -1393,12 +1399,18 @@ function AssignmentWizardContent({
             variables: {
               assignmentId: initialAssignment.id,
               exerciseOverrides: exerciseOverridesJson,
+              ...overridesVersionVariables(currentOverrides),
             },
           });
         }
       } catch (overrideError) {
         console.error('Błąd zapisu personalizacji przy edycji planu:', overrideError);
-        toast.warning('Plan zaktualizowany, ale nie udało się zapisać pełnej personalizacji parametrów');
+        // Zestaw i harmonogram są zapisane; odmowę ze starej wersji (fizjo-app#509) dostała tylko personalizacja.
+        toast.warning(
+          isExerciseOverridesConflictError(overrideError)
+            ? `Plan zaktualizowany, ale bez personalizacji parametrów. ${EXERCISE_OVERRIDES_CONFLICT_MESSAGE}`
+            : 'Plan zaktualizowany, ale nie udało się zapisać pełnej personalizacji parametrów'
+        );
       }
 
       // Final refetch po petli - gwarantuje, ze admin UI widzi spojny stan

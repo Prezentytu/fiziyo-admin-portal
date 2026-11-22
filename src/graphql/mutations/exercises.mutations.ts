@@ -541,14 +541,25 @@ export const UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION = gql`
 /**
  * Mutacja do aktualizacji nadpisań parametrów ćwiczeń per-pacjent
  * Format exerciseOverrides: JSON { "mappingId": { "sets": 5, "reps": 12, "duration": null, "hidden": false }, ... }
+ * `expectedExerciseOverridesVersion`: wersja z odczytu przed zapisem; inna w bazie kończy się odmową
+ * `EXERCISE_OVERRIDES_CONFLICT` i niczego nie zapisuje (fizjo-app#509). Bez niej zapis wygrywa jak dotąd.
  */
 export const UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION = gql`
-  mutation UpdatePatientExerciseOverrides($assignmentId: String!, $exerciseOverrides: String!) {
-    updatePatientExerciseOverrides(assignmentId: $assignmentId, exerciseOverrides: $exerciseOverrides) {
+  mutation UpdatePatientExerciseOverrides(
+    $assignmentId: String!
+    $exerciseOverrides: String!
+    $expectedExerciseOverridesVersion: Int
+  ) {
+    updatePatientExerciseOverrides(
+      assignmentId: $assignmentId
+      exerciseOverrides: $exerciseOverrides
+      expectedExerciseOverridesVersion: $expectedExerciseOverridesVersion
+    ) {
       id
       userId
       exerciseSetId
       exerciseOverrides
+      exerciseOverridesVersion
       status
     }
   }
