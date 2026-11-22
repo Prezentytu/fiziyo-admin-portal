@@ -51,4 +51,24 @@ describe('ExerciseVideosField', () => {
     expect(screen.getByTestId(`${TEST_ID}-error-3`)).toHaveTextContent('https://');
     expect(screen.getByTestId(`${TEST_ID}-3`)).toHaveAttribute('aria-invalid', 'true');
   });
+
+  it('Enter w polu woła onSubmit, a Enter z Cmd/Ctrl nie', () => {
+    const onSubmit = vi.fn();
+    render(
+      <ExerciseVideosField
+        value={[FIRST, SECOND]}
+        dirty={false}
+        disabled={false}
+        onChange={vi.fn()}
+        onSubmit={onSubmit}
+      />
+    );
+
+    fireEvent.keyDown(screen.getByTestId(`${TEST_ID}-1`), { key: 'Enter', metaKey: true });
+    fireEvent.keyDown(screen.getByTestId(`${TEST_ID}-1`), { key: 'Enter', ctrlKey: true });
+    expect(onSubmit).not.toHaveBeenCalled();
+
+    fireEvent.keyDown(screen.getByTestId(`${TEST_ID}-1`), { key: 'Enter' });
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+  });
 });

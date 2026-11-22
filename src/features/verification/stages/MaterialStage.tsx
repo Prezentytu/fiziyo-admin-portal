@@ -100,6 +100,7 @@ function VideoCard({
           onChange={onVideosChange}
           inputId="verification-material-video-url"
           testId="verification-material-video-url-input"
+          onSubmit={() => setIsEditing(false)}
         />
       )}
     </section>

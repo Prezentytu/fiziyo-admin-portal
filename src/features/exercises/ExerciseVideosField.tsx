@@ -28,6 +28,8 @@ interface ExerciseVideosFieldProps {
   /** Test id of the first input; further rows and buttons derive theirs from it. */
   testId?: string;
   autoFocus?: boolean;
+  /** Called on plain Enter in any row (Cmd/Ctrl+Enter is left to the surrounding view). */
+  onSubmit?: () => void;
 }
 
 export function ExerciseVideosField({
@@ -38,6 +40,7 @@ export function ExerciseVideosField({
   inputId = 'exercise-detail-video-url',
   testId = 'exercise-detail-video-url-input',
   autoFocus = false,
+  onSubmit,
 }: Readonly<ExerciseVideosFieldProps>) {
   const rows = value.length === 0 ? [''] : value;
   const hasManyRows = rows.length > 1;
@@ -81,6 +84,9 @@ export function ExerciseVideosField({
                   aria-describedby={error ? errorId : undefined}
                   placeholder="https://vimeo.com/… lub https://youtu.be/…"
                   onChange={(event) => onChange(setVideoAt(value, index, event.target.value))}
+                  onKeyDown={(event) => {
+                    if (onSubmit && event.key === 'Enter' && !event.metaKey && !event.ctrlKey) onSubmit();
+                  }}
                   disabled={disabled}
                   className={cn(
                     'h-9 min-w-0 flex-1 text-sm transition-colors',
