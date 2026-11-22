@@ -28,6 +28,7 @@ vi.mock('next/navigation', () => ({
 vi.mock('@clerk/nextjs', () => ({
   useAuth: () => ({ isSignedIn: true }),
   useUser: () => ({ isLoaded: true, isSignedIn: true, user: {} }),
+  useClerk: () => ({ signOut: vi.fn() }),
 }));
 
 vi.mock('@/components/organization/CreateOrganizationDialogProvider', () => ({

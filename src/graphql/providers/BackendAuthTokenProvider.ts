@@ -3,6 +3,7 @@ import { tokenExchangeService, type TokenExchangeError } from '@/services/tokenE
 import { getBackendToken, saveBackendToken, clearBackendToken } from '@/lib/tokenCache';
 import { getUserRoleFromToken } from '@/lib/auth/jwtClaims';
 import { BackendTokenUnavailableError, isTransientTokenExchangeError, withTimeout } from './tokenExchangeRetry';
+import { decodeJwtPayload } from '@/lib/auth/jwtClaims';
 
 const isDev = process.env.NODE_ENV === 'development';
 const PATIENT_ROLE = 'patient';
@@ -57,18 +58,7 @@ export class BackendAuthTokenProvider implements IAuthTokenProvider {
    * @returns payload object lub null przy błędzie
    */
   private decodeTokenPayload(token: string): Record<string, unknown> | null {
-    try {
-      const parts = token.split('.');
-      if (parts.length !== 3) {
-        return null;
-      }
-      return JSON.parse(atob(parts[1]));
-    } catch (error) {
-      if (isDev) {
-        console.error('[BackendAuthTokenProvider] Błąd dekodowania tokena:', error);
-      }
-      return null;
-    }
+    return decodeJwtPayload(token);
   }
 
   /**

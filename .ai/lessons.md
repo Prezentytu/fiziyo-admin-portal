@@ -18,6 +18,14 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 
 ## Wpisy
 
+### 2026-11-20 - Route handler ufał body, dane osoby przeżywały wylogowanie
+
+- **Kategoria**: `Security`
+- **Problem**: `/api/exercise-reports` oddawał zgłoszenia wszystkich organizacji; po zmianie osoby w karcie zostawał cache Apollo i localStorage gabinetu.
+- **Przyczyna**: Handlery polegały na samym `auth.protect()` i brały osobę z body; Clerk zmienia użytkownika bez przeładowania.
+- **Rozwiązanie**: `src/lib/server/requestIdentity.ts`; reset w `ApolloWrapper` przy zmianie `userId`.
+- **Reguła**: Osoba i rola z sesji i backendu, nie z body; wylogowanie tylko przez `useAppSignOut`. [egzekwowane: eslint.config.mjs]
+
 ### 2026-11-20 - Draft ćwiczenia w czacie znikał po zmianie zakładki
 
 - **Kategoria**: `React`

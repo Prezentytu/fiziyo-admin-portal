@@ -1,6 +1,17 @@
 import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
 import { createClient, Client } from 'graphql-ws';
 
+let activeClient: Client | null = null;
+
+/**
+ * `connectionParams` are read only when the connection opens. After the token changes
+ * (organization switch, sign-out) we close the socket; active subscriptions reconnect
+ * with the new token, and after sign-out nobody inherits the old connection.
+ */
+export function restartSubscriptionConnection(): void {
+  activeClient?.terminate();
+}
+
 /**
  * Factory do tworzenia WebSocket link dla Apollo Client
  * Używa graphql-ws protocol dla GraphQL Subscriptions
@@ -57,6 +68,7 @@ export class WsLinkFactory {
       // Keep-alive ping co 30 sekund
       keepAlive: 30000,
     });
+    activeClient = this.client;
 
     return new GraphQLWsLink(this.client);
   }
@@ -67,6 +79,7 @@ export class WsLinkFactory {
   dispose(): void {
     if (this.client) {
       this.client.dispose();
+      if (activeClient === this.client) activeClient = null;
       this.client = null;
     }
   }
