@@ -27,6 +27,8 @@ import { describeEquipmentItem } from '@/features/exercises/utils/equipmentItemT
 import { cn } from '@/lib/utils';
 import type { ExerciseContentVersion } from '@/components/shared/exercise/readExerciseContent';
 import type { EnrichmentPatientMistakeV3, ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
+import { normalizeVideoList } from '@/utils/exerciseVideos';
+import { ExerciseVideosField } from './ExerciseVideosField';
 import { EquipmentItemsEditor, TextItemsEditor, TherapistNoteField } from './ExerciseV33Editors';
 
 /**
@@ -777,14 +779,14 @@ export function TherapistSection({
 
 interface MetadataSectionProps {
   data: ExerciseEnrichmentData;
-  videoUrl: string;
+  videos: string[];
   notes: string;
   editable: boolean;
   disabled?: boolean;
-  videoUrlDirty: boolean;
+  videosDirty: boolean;
   notesDirty: boolean;
   isPathDirty: IsPathDirty;
-  onVideoUrlChange: (value: string) => void;
+  onVideosChange: (value: string[]) => void;
   onNotesChange: (value: string) => void;
   setPath: (path: string, value: unknown) => void;
   /** `3.3` keeps the video link and edits `equipment_items`; retired and team-only fields are not rendered (edit mode). */
@@ -808,46 +810,6 @@ function ReadChips({ label, items }: Readonly<{ label: string; items: string[] }
           </span>
         ))}
       </div>
-    </div>
-  );
-}
-
-export function VideoUrlField({
-  value,
-  dirty,
-  disabled,
-  onChange,
-  inputId = 'exercise-detail-video-url',
-  testId = 'exercise-detail-video-url-input',
-}: Readonly<{
-  value: string;
-  dirty: boolean;
-  disabled: boolean;
-  onChange: (value: string) => void;
-  inputId?: string;
-  testId?: string;
-}>) {
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center gap-1">
-        <Label className="text-xs text-muted-foreground" htmlFor={inputId}>
-          Link do filmu
-        </Label>
-        <DirtyDot active={dirty} />
-      </div>
-      <Input
-        data-testid={testId}
-        id={inputId}
-        inputMode="url"
-        value={value}
-        placeholder="https://vimeo.com/… lub https://youtu.be/…"
-        onChange={(event) => onChange(event.target.value)}
-        disabled={disabled}
-        className={cn(
-          'h-9 text-sm transition-colors',
-          dirty && 'border-status-warning/70 bg-status-warning-muted dark:border-status-warning/40'
-        )}
-      />
     </div>
   );
 }
@@ -888,14 +850,14 @@ function ReadEquipmentItems({ items }: Readonly<{ items: ExerciseContentEquipmen
 
 export function MetadataSection({
   data,
-  videoUrl,
+  videos,
   notes,
   editable,
   disabled = false,
-  videoUrlDirty,
+  videosDirty,
   notesDirty,
   isPathDirty,
-  onVideoUrlChange,
+  onVideosChange,
   onNotesChange,
   setPath,
   contentVersion = 'legacy',
@@ -913,8 +875,9 @@ export function MetadataSection({
   // Kontrakt v3.3 §2 wycofał kolumnę notatek i `ai.problems`: rekord 3.3 ich nie pokazuje.
   const readNotes = content.notes;
   const readProblems = content.version === 'legacy' ? problems : [];
+  const readVideos = normalizeVideoList(videos);
   const hasReadContent =
-    hasText(videoUrl) ||
+    readVideos.length > 0 ||
     hasText(readNotes) ||
     content.equipment.length > 0 ||
     hasListItems(keywords) ||
@@ -933,7 +896,7 @@ export function MetadataSection({
       {isV33Edit ? (
         <div className="space-y-4">
           {showVideoUrl && (
-            <VideoUrlField value={videoUrl} dirty={videoUrlDirty} disabled={disabled} onChange={onVideoUrlChange} />
+            <ExerciseVideosField value={videos} dirty={videosDirty} disabled={disabled} onChange={onVideosChange} />
           )}
           <EquipmentItemsEditor
             items={data.equipment_items ?? []}
@@ -945,7 +908,7 @@ export function MetadataSection({
       ) : editable ? (
         <div className="space-y-4">
           {showVideoUrl && (
-            <VideoUrlField value={videoUrl} dirty={videoUrlDirty} disabled={disabled} onChange={onVideoUrlChange} />
+            <ExerciseVideosField value={videos} dirty={videosDirty} disabled={disabled} onChange={onVideosChange} />
           )}
           <EditableTextBlock
             label={LABELS.notes}
@@ -1012,11 +975,14 @@ export function MetadataSection({
         </div>
       ) : (
         <div className="space-y-3">
-          {hasText(videoUrl) && (
-            <p className="truncate text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">Film:</span> {videoUrl}
+          {readVideos.map((video, index) => (
+            <p key={video} className="truncate text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">
+                {readVideos.length > 1 ? `Film ${index + 1}:` : 'Film:'}
+              </span>{' '}
+              {video}
             </p>
-          )}
+          ))}
           {hasText(readNotes) && (
             <p className="whitespace-pre-wrap text-sm text-muted-foreground">
               <span className="font-medium text-foreground">{LABELS.notes}:</span> {readNotes}

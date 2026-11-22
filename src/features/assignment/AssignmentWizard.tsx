@@ -648,6 +648,7 @@ function AssignmentWizardContent({
         customName: m.customName,
         customDescription: m.customDescription,
         videoUrl: m.videoUrl,
+        videos: m.videos,
         imageUrl: m.imageUrl,
         images: m.images,
         // Exercise data with all fields (support both new and legacy names)
@@ -671,6 +672,7 @@ function AssignmentWizardContent({
               images: m.exercise.images,
               gifUrl: m.exercise.gifUrl,
               videoUrl: m.exercise.videoUrl,
+              videos: m.exercise.videos,
               notes: m.exercise.notes,
               // GraphQL Exercise ma tylko pola default*; kopie pod starymi nazwami dla czytników legacy.
               sets: m.exercise.defaultSets,

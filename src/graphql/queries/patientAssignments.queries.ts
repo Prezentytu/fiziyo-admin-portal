@@ -96,6 +96,7 @@ export const PATIENT_ASSIGNMENT_FULL_FRAGMENT = gql`
           audioCue
           notes
           videoUrl
+          videos
           preparationTime
           rangeOfMotion
           resistance
@@ -125,6 +126,7 @@ export const PATIENT_ASSIGNMENT_FULL_FRAGMENT = gql`
       audioCue
       notes
       videoUrl
+      videos
       preparationTime
       enrichmentData
       defaultExecutionTime

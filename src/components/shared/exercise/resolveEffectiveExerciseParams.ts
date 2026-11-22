@@ -1,6 +1,7 @@
 import { resolveLoadKg } from '@/utils/exerciseLoadMutation';
 import { calculateEstimatedTime } from '@/utils/exerciseTime';
 import { isV33ExerciseRecord } from '@/utils/exerciseRecordVersion';
+import { getMappingVideos } from '@/utils/exerciseVideos';
 import { normalizeExerciseSide, normalizeExerciseType } from '@/utils/exerciseEnums';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import type { ExerciseOverrideFields } from './exerciseOverride';
@@ -38,6 +39,7 @@ export interface EffectiveTemplateSource {
   imageUrl?: string;
   images?: unknown;
   videoUrl?: string;
+  videos?: string[] | null;
   mainTags?: string[];
   additionalTags?: string[];
   type?: string;
@@ -73,6 +75,7 @@ export interface EffectiveMappingSource {
   /** Template-set personalization JSON (SPEC-023). */
   overridesJson?: string | ExerciseOverrideFields | null;
   videoUrl?: string;
+  videos?: string[] | null;
   load?: {
     loadWeightKg?: number | null;
     loadSource?: string | null;
@@ -129,6 +132,7 @@ export interface EffectiveExerciseParams {
   thumbnailUrl?: string;
   imageUrls?: string[];
   videoUrl?: string;
+  videos?: string[] | null;
   customImages?: string[];
   hidden: boolean;
   isTimeBased: boolean;
@@ -312,6 +316,7 @@ export function resolveEffectiveExerciseParams(
     additionalTags: exercise?.additionalTags,
     thumbnailUrl: exercise?.thumbnailUrl ?? exercise?.imageUrl,
     videoUrl: mapping.videoUrl ?? exercise?.videoUrl,
+    videos: getMappingVideos(mapping),
     customImages: layered?.customImages,
     hidden: layered?.hidden ?? false,
     isTimeBased,

@@ -1,3 +1,4 @@
+import { isSameVideoList, normalizeVideoList } from '@/utils/exerciseVideos';
 import { formatExerciseSideLabel } from '@/utils/exerciseSideLabels';
 import { isMistakeRowEmpty } from '@/components/shared/enrichment/canRemovePlaceholderRow';
 import type { EnrichmentPatientMistakeV3, ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
@@ -13,7 +14,7 @@ export interface ChangeSnapshot {
   executionTime: number | null;
   restSets: number | null;
   side: string;
-  videoUrl: string;
+  videos: string[];
   imageCount: number;
   enrichment: ExerciseEnrichmentData;
   /** `'3.3'`: changes are described in contract places and the retired description columns are ignored. */
@@ -29,7 +30,7 @@ interface ChangeSnapshotSource {
   executionTime: number | null;
   restSets: number | null;
   side: string;
-  videoUrl: string;
+  videos: string[];
 }
 
 export function toChangeSnapshot(
@@ -47,7 +48,7 @@ export function toChangeSnapshot(
     executionTime: core.executionTime,
     restSets: core.restSets,
     side: core.side,
-    videoUrl: core.videoUrl,
+    videos: normalizeVideoList(core.videos),
     imageCount,
     enrichment,
     contentVersion,
@@ -156,8 +157,8 @@ export function summarizeChanges(
   replacedPhotoCount: number
 ): Record<ChangeStage, string[]> {
   const material: string[] = [];
-  if (!initial.videoUrl && current.videoUrl) material.push('dodane nagranie');
-  else if (initial.videoUrl !== current.videoUrl) material.push('wymienione nagranie');
+  if (initial.videos.length === 0 && current.videos.length > 0) material.push('dodane nagranie');
+  else if (!isSameVideoList(initial.videos, current.videos)) material.push('zmienione nagrania');
   if (replacedPhotoCount > 0) material.push(`wymienione zdjęcia: ${replacedPhotoCount}`);
   if (current.imageCount > initial.imageCount)
     material.push(`dodane zdjęcia: ${current.imageCount - initial.imageCount}`);

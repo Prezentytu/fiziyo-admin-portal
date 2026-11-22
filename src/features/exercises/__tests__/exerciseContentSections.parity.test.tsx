@@ -22,13 +22,13 @@ describe('ExerciseContentSections parity', () => {
         patientDescription=""
         clinicalDescription=""
         audioCue=""
-        videoUrl=""
+        videos={[]}
         notes=""
         isPathDirty={() => false}
         onPatientDescriptionChange={vi.fn()}
         onClinicalDescriptionChange={vi.fn()}
         onAudioCueChange={vi.fn()}
-        onVideoUrlChange={vi.fn()}
+        onVideosChange={vi.fn()}
         onNotesChange={vi.fn()}
         setPath={vi.fn()}
       />
@@ -46,14 +46,14 @@ describe('ExerciseContentSections parity', () => {
         patientDescription=""
         clinicalDescription=""
         audioCue=""
-        videoUrl=""
+        videos={[]}
         notes=""
         showPatientLead={false}
         isPathDirty={() => false}
         onPatientDescriptionChange={vi.fn()}
         onClinicalDescriptionChange={vi.fn()}
         onAudioCueChange={vi.fn()}
-        onVideoUrlChange={vi.fn()}
+        onVideosChange={vi.fn()}
         onNotesChange={vi.fn()}
         setPath={vi.fn()}
       />
@@ -74,13 +74,13 @@ describe('ExerciseContentSections parity', () => {
       patientDescription: '',
       clinicalDescription: '',
       audioCue: '',
-      videoUrl: 'https://vimeo.com/1',
+      videos: ['https://vimeo.com/1'],
       notes: '',
       isPathDirty: () => false,
       onPatientDescriptionChange: vi.fn(),
       onClinicalDescriptionChange: vi.fn(),
       onAudioCueChange: vi.fn(),
-      onVideoUrlChange: vi.fn(),
+      onVideosChange: vi.fn(),
       onNotesChange: vi.fn(),
       setPath: vi.fn(),
     };

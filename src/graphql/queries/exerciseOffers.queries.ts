@@ -27,6 +27,7 @@ export const EXERCISE_OFFER_FIELDS_FRAGMENT = gql`
       additionalTags
       images
       videoUrl
+      videos
       preparationTime
       defaultSets
       defaultReps

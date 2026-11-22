@@ -1,7 +1,8 @@
 import { fromExerciseMapping } from '@/components/shared/exercise';
 import { resolvePatientInstruction } from '@/components/shared/exercise/patientInstruction';
 import { formatLoad } from '@/utils/loadParser';
-import { getMediaUrl } from '@/utils/mediaUrl';
+import { getMappingVideos } from '@/utils/exerciseVideos';
+import { getMediaUrls } from '@/utils/mediaUrl';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import type { ExerciseMapping } from './types';
 
@@ -16,6 +17,8 @@ export interface ExerciseDetailsViewModel {
   audioCue?: string;
   imageUrls: string[];
   videoUrl?: string;
+  /** All videos, main first; `videoUrl` is the first of them. */
+  videos: string[];
   sets: number;
   reps: number;
   duration?: number;
@@ -86,9 +89,8 @@ function pickLoadText(mapping: ExerciseMapping, fallbackLoadText?: string): stri
   return exerciseLoadText || undefined;
 }
 
-function pickVideoUrl(mapping: ExerciseMapping): string | undefined {
-  const mediaUrl = getMediaUrl(mapping.videoUrl ?? mapping.exercise?.videoUrl);
-  return mediaUrl ?? undefined;
+function pickVideos(mapping: ExerciseMapping): string[] {
+  return getMediaUrls(getMappingVideos(mapping));
 }
 
 export function buildExerciseDetailsViewModel(mapping: ExerciseMapping): ExerciseDetailsViewModel {
@@ -97,6 +99,7 @@ export function buildExerciseDetailsViewModel(mapping: ExerciseMapping): Exercis
   const normalizedNotes = cardData.notes?.trim();
   const clinicalDescription = pickClinicalDescription(mapping);
   const audioCue = pickAudioCue(mapping);
+  const videos = pickVideos(mapping);
 
   return {
     id: mapping.id,
@@ -106,7 +109,8 @@ export function buildExerciseDetailsViewModel(mapping: ExerciseMapping): Exercis
     clinicalDescription,
     audioCue,
     imageUrls: cardData.imageUrls ?? [],
-    videoUrl: pickVideoUrl(mapping),
+    videoUrl: videos[0],
+    videos,
     sets: cardData.sets,
     reps: cardData.reps,
     duration: cardData.duration,

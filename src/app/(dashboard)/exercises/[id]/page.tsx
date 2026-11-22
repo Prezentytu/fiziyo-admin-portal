@@ -43,9 +43,9 @@ import {
   SafetySection,
   TherapistSection,
   MetadataSection,
-  VideoUrlField,
   readViewDocument,
 } from '@/features/exercises/ExerciseDetailSections';
+import { ExerciseVideosField } from '@/features/exercises/ExerciseVideosField';
 import { CreateSetWizard } from '@/features/exercise-sets';
 import { SubmitToGlobalDialog } from '@/features/exercises/SubmitToGlobalDialog';
 import { SubmitToOrganizationDialog } from '@/features/exercises/SubmitToOrganizationDialog';
@@ -504,6 +504,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
     imageUrl: exercise.imageUrl,
     images: exercise.images,
     videoUrl: exercise.videoUrl,
+    videos: exercise.videos,
     gifUrl: exercise.gifUrl,
     title: exercise.name,
   });
@@ -907,11 +908,11 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
           )}
 
           {isEditing && (
-            <VideoUrlField
-              value={core.videoUrl}
-              dirty={isCoreFieldDirty('videoUrl')}
+            <ExerciseVideosField
+              value={core.videos}
+              dirty={isCoreFieldDirty('videos')}
               disabled={false}
-              onChange={(value) => setCoreField('videoUrl', value)}
+              onChange={(value) => setCoreField('videos', value)}
             />
           )}
 
@@ -1010,13 +1011,13 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
               {/* 5. Metadane */}
               <MetadataSection
                 data={readEnrichment}
-                videoUrl={core.videoUrl}
+                videos={core.videos}
                 notes={core.notes}
                 editable={false}
-                videoUrlDirty={isCoreFieldDirty('videoUrl')}
+                videosDirty={isCoreFieldDirty('videos')}
                 notesDirty={isCoreFieldDirty('notes')}
                 isPathDirty={isPathDirty}
-                onVideoUrlChange={(value) => setCoreField('videoUrl', value)}
+                onVideosChange={(value) => setCoreField('videos', value)}
                 onNotesChange={(value) => setCoreField('notes', value)}
                 setPath={setEnrichmentPath}
               />

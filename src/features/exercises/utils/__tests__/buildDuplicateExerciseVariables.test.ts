@@ -152,6 +152,13 @@ describe('buildDuplicateExerciseVariables', () => {
     expect(duplicate({ ...columnsOnly, enrichmentData: null })).toEqual(expected);
   });
 
+  it('kopia niesie wszystkie filmy w kolejności źródła, a przy starym rekordzie sam videoUrl', () => {
+    const videos = ['https://vimeo.com/1', 'https://vimeo.com/2'];
+    expect(duplicate({ ...columnsOnly, videos }).videos).toEqual(videos);
+    expect(duplicate({ ...columnsOnly, videos: null }).videos).toEqual(['https://vimeo.com/1']);
+    expect(duplicate({ ...columnsOnly, videos })).not.toHaveProperty('videoUrl');
+  });
+
   it('kopia niesie też pojedyncze adresy obrazu i animacji, nie tylko listę zdjęć', () => {
     const variables = duplicate({
       ...columnsOnly,
