@@ -56,7 +56,12 @@ import { cn } from '@/lib/utils';
 import { toGqlStatus } from '@/utils/statusUtils';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { resolveAssignmentDisplayStatus } from '@/features/patients/utils/assignmentDisplayStatus';
-import { fetchCurrentAssignmentOverrides } from '@/features/patients/utils/currentAssignmentOverrides';
+import {
+  EXERCISE_OVERRIDES_CONFLICT_MESSAGE,
+  fetchCurrentAssignmentOverrides,
+  isExerciseOverridesConflictError,
+  overridesVersionVariables,
+} from '@/features/patients/utils/currentAssignmentOverrides';
 
 import {
   UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION,
@@ -312,6 +317,15 @@ export function PatientAssignmentCard({
     }
   };
 
+  /** Odmowa zapisu ze starej wersji (fizjo-app#509): komunikat i odświeżony plan zamiast ponowienia na ślepo. */
+  const handleOverridesConflict = async (error: unknown): Promise<boolean> => {
+    if (!isExerciseOverridesConflictError(error)) return false;
+    toast.error(EXERCISE_OVERRIDES_CONFLICT_MESSAGE);
+    await apolloClient.refetchQueries({ include: [GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY] });
+    onRefresh?.();
+    return true;
+  };
+
   /** Jeden zapis dla wszystkich ukrytych: osobne zapisy całego dokumentu nadpisywałyby się nawzajem. */
   const handleShowAllExercises = async () => {
     const hiddenIds = exercises.filter((m) => exerciseOverrides[m.id]?.hidden).map((m) => m.id);
@@ -324,8 +338,9 @@ export function PatientAssignmentCard({
           assignmentId: assignment.id,
           exerciseOverrides: hiddenIds.reduce<string | null>(
             (json, mappingId) => mergeOverrideMap(json, mappingId, { hidden: false }),
-            current
+            current.json
           ),
+          ...overridesVersionVariables(current),
         },
         refetchQueries: [{ query: GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY, variables: { userId: patientId } }],
       });
@@ -333,6 +348,7 @@ export function PatientAssignmentCard({
       onRefresh?.();
     } catch (error) {
       console.error('Błąd zmiany widoczności:', error);
+      if (await handleOverridesConflict(error)) return;
       toast.error('Nie udało się zmienić widoczności ćwiczeń');
     }
   };
@@ -341,14 +357,12 @@ export function PatientAssignmentCard({
     if (!removingExerciseId) return;
 
     try {
+      const current = await fetchCurrentAssignmentOverrides(apolloClient, assignment.id);
       await updateOverrides({
         variables: {
           assignmentId: assignment.id,
-          exerciseOverrides: mergeOverrideMap(
-            await fetchCurrentAssignmentOverrides(apolloClient, assignment.id),
-            removingExerciseId,
-            { hidden: true }
-          ),
+          exerciseOverrides: mergeOverrideMap(current.json, removingExerciseId, { hidden: true }),
+          ...overridesVersionVariables(current),
         },
         refetchQueries: [{ query: GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY, variables: { userId: patientId } }],
       });
@@ -358,6 +372,11 @@ export function PatientAssignmentCard({
       onRefresh?.();
     } catch (error) {
       console.error('Błąd usuwania ćwiczenia:', error);
+      if (await handleOverridesConflict(error)) {
+        setRemovingExerciseId(null);
+        setRemovingExerciseName('');
+        return;
+      }
       toast.error('Nie udało się usunąć ćwiczenia');
     }
   };

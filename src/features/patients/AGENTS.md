@@ -39,7 +39,7 @@ Ze strony pacjenta: przycisk "Przypisz zestaw" otwiera wizard z predefiniowanym 
 
 - Edycja / dodawanie ćwiczenia do planu: `EditExerciseOverrideDialog`, `AddExerciseToPatientDialog` — UI parametrów wyłącznie przez `ExerciseParametersFields` (`surface="patientOverride"`), nie lokalne siatki `+/-`.
 - Write path: `exercisePersonalizationWriter` / `buildOverrideDelta` (bez zmian przy refaktorze UI).
-- `exerciseOverrides` to jeden dokument na całe przypisanie. Zapis nakłada zmianę na `fetchCurrentAssignmentOverrides` (odczyt tuż przed zapisem, `no-cache`), nigdy na `assignment.exerciseOverrides` z otwarcia ekranu, i idzie jednym zapisem na akcję (#244). Okno odczyt-zapis zamknie dopiero warunek wersji w backendzie.
+- `exerciseOverrides` to jeden dokument na całe przypisanie. Zapis nakłada zmianę na `fetchCurrentAssignmentOverrides` (odczyt tuż przed zapisem, `no-cache`), nigdy na `assignment.exerciseOverrides` z otwarcia ekranu, i idzie jednym zapisem na akcję (#244). Zapis wysyła wersję z tego odczytu (`overridesVersionVariables`); backend odmawia kodem `EXERCISE_OVERRIDES_CONFLICT`, gdy ktoś zapisał w międzyczasie, a ekran pokazuje `EXERCISE_OVERRIDES_CONFLICT_MESSAGE` i odświeża plan zamiast ponawiać (fizjo-app#509).
 - Spec unifikacji UI: `.ai/specs/SPEC-022-2026-07-28-unified-exercise-parameters.md`
 
 ## Komponenty

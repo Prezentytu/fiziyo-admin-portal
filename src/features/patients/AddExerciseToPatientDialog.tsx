@@ -38,7 +38,12 @@ import {
   UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
-import { fetchCurrentAssignmentOverrides } from './utils/currentAssignmentOverrides';
+import {
+  EXERCISE_OVERRIDES_CONFLICT_MESSAGE,
+  fetchCurrentAssignmentOverrides,
+  isExerciseOverridesConflictError,
+  overridesVersionVariables,
+} from './utils/currentAssignmentOverrides';
 import type { PatientAssignment } from './PatientAssignmentCard';
 import { normalizeExerciseType } from '@/utils/exerciseEnums';
 
@@ -481,15 +486,13 @@ function AddExerciseToPatientDialogContent({
         );
         if (Object.keys(clinicalDelta).length > 0) {
           // Delta nakładana na dokument czytany tuż przed zapisem, nie na stan z otwarcia okna (#244).
-          const exerciseOverrides = mergeOverrideMap(
-            await fetchCurrentAssignmentOverrides(apolloClient, assignment.id),
-            mappingId,
-            clinicalDelta
-          );
+          const current = await fetchCurrentAssignmentOverrides(apolloClient, assignment.id);
+          const exerciseOverrides = mergeOverrideMap(current.json, mappingId, clinicalDelta);
           await updateOverrides({
             variables: {
               assignmentId: assignment.id,
               exerciseOverrides,
+              ...overridesVersionVariables(current),
             },
           });
         }
@@ -500,6 +503,14 @@ function AddExerciseToPatientDialogContent({
       onSuccess?.();
     } catch (error) {
       console.error('Błąd dodawania ćwiczenia:', error);
+      if (isExerciseOverridesConflictError(error)) {
+        // Ćwiczenie jest już w planie; odmowę dostały tylko jego parametry pacjenta (fizjo-app#509).
+        toast.error(`Ćwiczenie "${selectedExercise.name}" jest w planie. ${EXERCISE_OVERRIDES_CONFLICT_MESSAGE}`);
+        await apolloClient.refetchQueries({ include: [GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY] });
+        onOpenChange(false);
+        onSuccess?.();
+        return;
+      }
       toast.error('Nie udało się dodać ćwiczenia');
     }
   };
