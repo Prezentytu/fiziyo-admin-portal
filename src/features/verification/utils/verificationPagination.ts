@@ -1,11 +1,14 @@
 import { appendQueueOrderingParams, type VerificationQueueOrdering } from './queueOrdering';
+import { parseReviewAssigneeFilter, type ReviewAssigneeFilter } from './reviewNotes';
 
-export type VerificationFilter = 'pending' | 'changes' | 'published' | 'archived' | 'reported';
+export type VerificationFilter = 'pending' | 'internal' | 'changes' | 'published' | 'archived' | 'reported';
 export type VerificationViewMode = 'grid' | 'list';
 
 export interface VerificationListState {
   /** Sortowanie i zakres dat (T-0024); brak = domyślna kolejka. */
   ordering?: VerificationQueueOrdering;
+  /** Czyje ćwiczenia pokazuje kolejka; brak = wszystkie. */
+  assignee?: ReviewAssigneeFilter;
   filter: VerificationFilter;
   search: string;
   page: number;
@@ -14,7 +17,13 @@ export interface VerificationListState {
 }
 
 export function parseVerificationFilter(value: string | null): VerificationFilter {
-  if (value === 'changes' || value === 'published' || value === 'archived' || value === 'reported') {
+  if (
+    value === 'internal' ||
+    value === 'changes' ||
+    value === 'published' ||
+    value === 'archived' ||
+    value === 'reported'
+  ) {
     return value;
   }
   return 'pending';
@@ -48,6 +57,8 @@ export function buildVerificationSearchParams(state: VerificationListState): URL
   params.set('page', String(Math.max(state.page, 1)));
   params.set('pageSize', String(clampVerificationPageSize(state.pageSize)));
   params.set('view', state.view);
+  const assignee = parseReviewAssigneeFilter(state.assignee);
+  if (assignee !== 'all') params.set('assignee', assignee);
   return appendQueueOrderingParams(params, state.ordering);
 }
 

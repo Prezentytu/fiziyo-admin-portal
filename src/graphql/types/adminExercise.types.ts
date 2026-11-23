@@ -59,6 +59,8 @@ export type RejectionReason =
 
 export interface VerificationStats {
   pendingReview: number;
+  /** Poprawki wewnętrzne: czekają na poprawki albo poprawione do sprawdzenia. */
+  internalFixes?: number;
   changesRequested: number;
   approved: number;
   published: number;
@@ -79,9 +81,21 @@ export interface OrganizationVerificationStats {
 // Admin Exercise (extended with verification fields)
 // ============================================
 
+export type InternalFixStatus = 'NONE' | 'WAITING' | 'FIXED';
+
+/** Stan pracy weryfikatorów; backend zwraca go tylko zespołowi FiziYo, każdemu innemu null. */
+export interface ExerciseReviewWorkflow {
+  assigneeId: string | null;
+  assigneeName: string | null;
+  assignedToMe: boolean;
+  internalFixStatus: InternalFixStatus;
+  openNoteCount: number;
+}
+
 export interface AdminExercise {
   id: string;
   name: string;
+  reviewWorkflow?: ExerciseReviewWorkflow | null;
   description?: string;
   patientDescription?: string;
   clinicalDescription?: string;
@@ -300,6 +314,8 @@ export interface GetVerificationQueuePageVariables extends VerificationQueueOrde
   search?: string | null;
   page: number;
   pageSize: number;
+  /** `mine`, `unassigned` albo brak (wszystkie); tylko kolejka katalogu. */
+  assignee?: string | null;
 }
 
 export interface GetVerificationQueuePageResponse {
@@ -314,6 +330,7 @@ export interface GetVerificationQueueNavigatorVariables extends VerificationQueu
   currentExerciseId: string;
   filter: string;
   search?: string | null;
+  assignee?: string | null;
 }
 
 export interface GetVerificationQueueNavigatorResponse {

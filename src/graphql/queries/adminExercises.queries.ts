@@ -107,6 +107,13 @@ export const VERIFICATION_QUEUE_ITEM_FRAGMENT = gql`
     submittedForOrgReviewAt
     orgReviewedAt
     orgReviewNotes
+    reviewWorkflow {
+      assigneeId
+      assigneeName
+      assignedToMe
+      internalFixStatus
+      openNoteCount
+    }
     createdBy {
       id
       fullname
@@ -146,6 +153,7 @@ export const GET_VERIFICATION_STATS_QUERY = gql`
   query GetVerificationStats {
     verificationStats {
       pendingReview
+      internalFixes
       changesRequested
       approved
       published
@@ -164,6 +172,7 @@ export const GET_VERIFICATION_QUEUE_PAGE_QUERY = gql`
     $sort: VerificationQueueSort
     $dateFrom: DateTime
     $dateTo: DateTime
+    $assignee: String
   ) {
     verificationQueuePage(
       filter: $filter
@@ -173,6 +182,7 @@ export const GET_VERIFICATION_QUEUE_PAGE_QUERY = gql`
       sort: $sort
       dateFrom: $dateFrom
       dateTo: $dateTo
+      assignee: $assignee
     ) {
       items {
         ...VerificationQueueItemFragment
@@ -198,6 +208,7 @@ export const GET_VERIFICATION_QUEUE_NAVIGATOR_QUERY = gql`
     $sort: VerificationQueueSort
     $dateFrom: DateTime
     $dateTo: DateTime
+    $assignee: String
   ) {
     verificationQueueNavigator(
       currentExerciseId: $currentExerciseId
@@ -206,6 +217,7 @@ export const GET_VERIFICATION_QUEUE_NAVIGATOR_QUERY = gql`
       sort: $sort
       dateFrom: $dateFrom
       dateTo: $dateTo
+      assignee: $assignee
     ) {
       currentExerciseId
       positionInQueue

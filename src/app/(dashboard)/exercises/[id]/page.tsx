@@ -52,6 +52,7 @@ import { SubmitToOrganizationDialog } from '@/features/exercises/SubmitToOrganiz
 import { FeedbackBanner } from '@/features/exercises/FeedbackBanner';
 import { resolveExerciseReviewFeedback } from '@/features/exercises/utils/resolveExerciseReviewFeedback';
 import { duplicateReviewReason } from '@/features/exercises/utils/duplicateReviewReason';
+import { ExerciseReviewThread } from '@/features/exercises/ExerciseReviewThread';
 import { ReportExerciseDialog } from '@/features/exercises/ReportExerciseDialog';
 import { InternalNotesPanel } from '@/features/exercises/InternalNotesPanel';
 import { ContentGapsNotice, listExerciseContentGaps } from '@/features/exercises/ContentGapsNotice';
@@ -797,6 +798,8 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
       {reviewFeedback && (
         <FeedbackBanner adminReviewNotes={reviewFeedback.notes} updatedAt={reviewFeedback.updatedAt} />
       )}
+
+      <ExerciseReviewThread exerciseId={exercise.id} />
 
       {/* Hero Actions */}
       <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12">

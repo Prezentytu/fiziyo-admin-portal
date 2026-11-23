@@ -1,5 +1,6 @@
 'use client';
 
+import { parseReviewAssigneeFilter } from '@/features/verification/utils/reviewNotes';
 import { use, useCallback, useEffect, useMemo, useState } from 'react';
 import { useApolloClient, useQuery } from '@apollo/client/react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -63,6 +64,7 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
   }, [searchParams]);
   const queueSearch = useMemo(() => searchParams.get('search') || null, [searchParams]);
   const queueOrdering = useMemo(() => parseQueueOrdering(searchParams), [searchParams]);
+  const queueAssignee = useMemo(() => parseReviewAssigneeFilter(searchParams.get('assignee')), [searchParams]);
   const listQueryString = useMemo(() => searchParams.toString(), [searchParams]);
   const listUrl = useMemo(() => {
     if (!listQueryString) {
@@ -78,6 +80,7 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
       pageSize: Number(params.get('pageSize') ?? '20'),
       view: params.get('view') === 'list' ? 'list' : 'grid',
       ordering: parseQueueOrdering(params),
+      assignee: parseReviewAssigneeFilter(params.get('assignee')),
     });
   }, [listQueryString]);
   const buildDetailUrl = useCallback(
@@ -90,24 +93,26 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
             pageSize: Number(searchParams.get('pageSize') ?? '20'),
             view: searchParams.get('view') === 'list' ? 'list' : 'grid',
             ordering: queueOrdering,
+            assignee: queueAssignee,
           })
         : `/verification/${exerciseId}`,
-    [listQueryString, queueFilter, searchParams, queueOrdering]
+    [listQueryString, queueFilter, searchParams, queueOrdering, queueAssignee]
   );
 
-  const { data: queueNavigatorData } = useQuery<GetVerificationQueueNavigatorResponse, GetVerificationQueueNavigatorVariables>(
-    GET_VERIFICATION_QUEUE_NAVIGATOR_QUERY,
-    {
-      variables: {
-        currentExerciseId: id,
-        filter: queueFilter,
-        search: queueSearch,
-        ...queueOrderingVariables(queueOrdering),
-      },
-      skip: !canReviewExercises || !id,
-      fetchPolicy: 'cache-and-network',
-    }
-  );
+  const { data: queueNavigatorData } = useQuery<
+    GetVerificationQueueNavigatorResponse,
+    GetVerificationQueueNavigatorVariables
+  >(GET_VERIFICATION_QUEUE_NAVIGATOR_QUERY, {
+    variables: {
+      currentExerciseId: id,
+      filter: queueFilter,
+      search: queueSearch,
+      ...queueOrderingVariables(queueOrdering),
+      assignee: queueAssignee === 'all' ? null : queueAssignee,
+    },
+    skip: !canReviewExercises || !id,
+    fetchPolicy: 'cache-and-network',
+  });
 
   const { data: statsData } = useQuery<GetVerificationStatsResponse>(GET_VERIFICATION_STATS_QUERY);
 

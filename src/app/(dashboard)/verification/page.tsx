@@ -2,6 +2,11 @@
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useSubscription } from '@apollo/client/react';
+import { ReviewWorkflowBadges } from '@/features/verification/ReviewWorkflowBadges';
+import { parseReviewAssigneeFilter, type ReviewAssigneeFilter } from '@/features/verification/utils/reviewNotes';
+import { ASSIGN_EXERCISES_FOR_REVIEW_MUTATION } from '@/graphql/mutations/exerciseReviewNotes.mutations';
+import type { AssignExercisesForReviewResponse } from '@/graphql/types/exerciseReviewNote.types';
+import { segmentedSegmentVariants, segmentedTrackVariants } from '@/components/ui/segmented-control';
 import { useUser } from '@clerk/nextjs';
 import { ShieldCheck, Search, RefreshCw, LayoutGrid, List, Clock, User, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
@@ -72,7 +77,13 @@ import { useVerificationSelection } from '@/features/verification/utils/verifica
 import { formatRelativeTime } from '@/utils/dateUtils';
 import { PageSheet } from '@/components/shared/page';
 
-type GlobalVerificationFilter = 'pending' | 'changes' | 'published' | 'archived' | 'reported';
+type GlobalVerificationFilter = 'pending' | 'internal' | 'changes' | 'published' | 'archived' | 'reported';
+
+const ASSIGNEE_OPTIONS: { value: ReviewAssigneeFilter; label: string }[] = [
+  { value: 'all', label: 'Wszystkie' },
+  { value: 'mine', label: 'Moje' },
+  { value: 'unassigned', label: 'Nieprzypisane' },
+];
 type VerificationStatsFilter = GlobalVerificationFilter | 'verified';
 
 // Inline List Row Component
@@ -171,6 +182,7 @@ function VerificationTaskRow({
                 </span>
               )}
             </div>
+            <ReviewWorkflowBadges workflow={exercise.reviewWorkflow} testIdPrefix={`verification-row-${exercise.id}`} />
             {exercise.latestReport && (
               <p
                 className="mt-1 text-[11px] text-status-warning line-clamp-1"
@@ -255,6 +267,9 @@ export default function VerificationPage() {
   const [page, setPage] = useState(initialPage);
   const [pageSize, setPageSize] = useState(initialPageSize);
   const [ordering, setOrdering] = useState<VerificationQueueOrdering>(() => parseQueueOrdering(searchParams));
+  const [assignee, setAssignee] = useState<ReviewAssigneeFilter>(() =>
+    parseReviewAssigneeFilter(searchParams.get('assignee'))
+  );
   const [pageOpenReports, setPageOpenReports] = useState<ExerciseReport[]>([]);
   const [pageReportsLoading, setPageReportsLoading] = useState(false);
   const [reportedExercises, setReportedExercises] = useState<AdminExercise[]>([]);
@@ -278,6 +293,7 @@ export default function VerificationPage() {
       pageSize?: number;
       view?: 'grid' | 'list';
       ordering?: VerificationQueueOrdering;
+      assignee?: ReviewAssigneeFilter;
     }) => {
       const nextFilter = nextState.filter ?? activeFilter;
       const nextSearch = nextState.search ?? searchQuery;
@@ -292,11 +308,12 @@ export default function VerificationPage() {
         pageSize: nextPageSize,
         view: nextView,
         ordering: nextState.ordering ?? ordering,
+        assignee: nextState.assignee ?? assignee,
       });
 
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     },
-    [activeFilter, searchQuery, page, pageSize, viewMode, ordering, router, pathname]
+    [activeFilter, searchQuery, page, pageSize, viewMode, ordering, assignee, router, pathname]
   );
 
   useEffect(() => {
@@ -331,8 +348,9 @@ export default function VerificationPage() {
       page,
       pageSize,
       ...queueOrderingVariables(ordering),
+      assignee: assignee === 'all' ? null : assignee,
     }),
-    [activeFilter, debouncedSearch, page, pageSize, ordering]
+    [activeFilter, debouncedSearch, page, pageSize, ordering, assignee]
   );
 
   const {
@@ -447,6 +465,11 @@ export default function VerificationPage() {
   );
   const [archiving, setArchiving] = useState(false);
   const canArchive = activeFilter === 'published';
+  // Zgłoszenia mają własną listę bez stanu weryfikatorów; w pozostałych zakładkach ćwiczenia można brać do siebie.
+  const canSelect = activeFilter !== 'reported';
+  const [assignExercises, { loading: assigning }] = useMutation<AssignExercisesForReviewResponse>(
+    ASSIGN_EXERCISES_FOR_REVIEW_MUTATION
+  );
 
   useEffect(() => {
     if (!canReviewExercises) {
@@ -636,8 +659,9 @@ export default function VerificationPage() {
     params.set('pageSize', String(pageMeta.pageSize));
     params.set('view', viewMode);
     // Reported nie jest kolejką backendu, więc nie niesie sortowania (detal i tak wraca do `pending`).
+    if (activeFilter !== 'reported' && assignee !== 'all') params.set('assignee', assignee);
     return (activeFilter === 'reported' ? params : appendQueueOrderingParams(params, ordering)).toString();
-  }, [activeFilter, debouncedSearch, pageMeta.page, pageMeta.pageSize, viewMode, ordering]);
+  }, [activeFilter, debouncedSearch, pageMeta.page, pageMeta.pageSize, viewMode, ordering, assignee]);
 
   const handleRefresh = () => {
     refetchStats();
@@ -689,6 +713,31 @@ export default function VerificationPage() {
     setOrdering(nextOrdering);
     setPage(1);
     updateUrlState({ ordering: nextOrdering, page: 1 });
+  };
+
+  const handleAssigneeChange = (nextAssignee: ReviewAssigneeFilter) => {
+    selection.clear();
+    setAssignee(nextAssignee);
+    setPage(1);
+    updateUrlState({ assignee: nextAssignee, page: 1 });
+  };
+
+  const handleAssignSelected = async (assign: boolean) => {
+    const selectedIds = selection.selectedIds;
+    if (selectedIds.length === 0) return;
+    try {
+      const result = await assignExercises({ variables: { exerciseIds: selectedIds, assign } });
+      const changed = result.data?.assignExercisesForReview.changedExerciseIds.length ?? 0;
+      const skipped = result.data?.assignExercisesForReview.skippedExerciseIds.length ?? 0;
+      selection.clear();
+      const done = assign ? `Przypisano do Ciebie: ${changed}` : `Zdjęto z Ciebie: ${changed}`;
+      if (skipped > 0) toast.warning(`${done}. Pominięto ${skipped}, bo ma je inny weryfikator.`);
+      else toast.success(done);
+      await refetchQueue();
+    } catch (error) {
+      console.error('Błąd przypisania ćwiczeń:', error);
+      toast.error('Nie udało się zmienić przypisania');
+    }
   };
 
   const handleViewModeChange = (nextView: 'grid' | 'list') => {
@@ -855,6 +904,29 @@ export default function VerificationPage() {
       </div>
 
       {activeFilter !== 'reported' && (
+        <div
+          role="radiogroup"
+          aria-label="Przypisanie"
+          className={segmentedTrackVariants({ className: 'self-start' })}
+          data-testid="verification-assignee-filter"
+        >
+          {ASSIGNEE_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={assignee === option.value}
+              onClick={() => handleAssigneeChange(option.value)}
+              className={segmentedSegmentVariants({ active: assignee === option.value })}
+              data-testid={`verification-assignee-${option.value}`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {activeFilter !== 'reported' && (
         <VerificationQueueOrderingControls
           ordering={ordering}
           onChange={handleOrderingChange}
@@ -871,7 +943,10 @@ export default function VerificationPage() {
         onToggleVisible={selection.toggleVisible}
         onClear={selection.clear}
         onArchive={() => setArchiveDialogOpen(true)}
-        disabled={!canArchive || isLoading}
+        canArchive={canArchive}
+        onAssign={(assign) => void handleAssignSelected(assign)}
+        isAssigning={assigning}
+        disabled={!canSelect || isLoading}
         isArchiving={archiving}
       />
 
@@ -905,28 +980,36 @@ export default function VerificationPage() {
           title={
             searchQuery
               ? 'Brak wyników'
-              : activeFilter === 'pending'
-                ? 'Wszystko zweryfikowane!'
-                : activeFilter === 'changes'
-                  ? 'Brak ćwiczeń do poprawy'
-                  : activeFilter === 'reported'
-                    ? 'Brak aktywnych zgłoszeń'
-                    : activeFilter === 'archived'
-                      ? 'Brak wycofanych ćwiczeń'
-                      : 'Brak opublikowanych ćwiczeń'
+              : assignee !== 'all'
+                ? 'Brak ćwiczeń z tym przypisaniem'
+                : activeFilter === 'internal'
+                  ? 'Brak poprawek wewnętrznych'
+                  : activeFilter === 'pending'
+                    ? 'Wszystko zweryfikowane!'
+                    : activeFilter === 'changes'
+                      ? 'Brak ćwiczeń do poprawy'
+                      : activeFilter === 'reported'
+                        ? 'Brak aktywnych zgłoszeń'
+                        : activeFilter === 'archived'
+                          ? 'Brak wycofanych ćwiczeń'
+                          : 'Brak opublikowanych ćwiczeń'
           }
           description={
             searchQuery
               ? 'Spróbuj zmienić kryteria wyszukiwania'
-              : activeFilter === 'pending'
-                ? 'Nie ma ćwiczeń oczekujących na weryfikację. Świetna robota!'
-                : activeFilter === 'changes'
-                  ? 'Wszystkie ćwiczenia wymagające poprawek zostały zaktualizowane.'
-                  : activeFilter === 'reported'
-                    ? 'Nie ma zgłoszeń oczekujących na obsługę.'
-                    : activeFilter === 'archived'
-                      ? 'Żadne ćwiczenie nie zostało wycofane z bazy globalnej.'
-                      : "Zatwierdź ćwiczenia z karty 'Oczekujące' żeby je opublikować."
+              : assignee !== 'all'
+                ? 'Zmień filtr przypisania albo weź ćwiczenia do siebie z listy.'
+                : activeFilter === 'internal'
+                  ? 'Tu trafiają ćwiczenia, których uwagi wysłano do poprawek wewnętrznych.'
+                  : activeFilter === 'pending'
+                    ? 'Nie ma ćwiczeń oczekujących na weryfikację. Świetna robota!'
+                    : activeFilter === 'changes'
+                      ? 'Wszystkie ćwiczenia wymagające poprawek zostały zaktualizowane.'
+                      : activeFilter === 'reported'
+                        ? 'Nie ma zgłoszeń oczekujących na obsługę.'
+                        : activeFilter === 'archived'
+                          ? 'Żadne ćwiczenie nie zostało wycofane z bazy globalnej.'
+                          : "Zatwierdź ćwiczenia z karty 'Oczekujące' żeby je opublikować."
           }
         />
       ) : viewMode === 'grid' ? (
@@ -939,7 +1022,7 @@ export default function VerificationPage() {
               showStatus={activeFilter === 'reported'}
               onUnpublish={activeFilter === 'published' ? handleUnpublish : undefined}
               isUnpublishing={unpublishing}
-              selectable={canArchive}
+              selectable={canSelect}
               selected={selection.isSelected(exercise.id)}
               onSelectionChange={() => selection.toggle(exercise.id)}
               detailHref={`/verification/${exercise.id}?${detailQueryString}`}
@@ -955,7 +1038,7 @@ export default function VerificationPage() {
               exercise={exercise}
               onUnpublish={activeFilter === 'published' ? handleUnpublish : undefined}
               isUnpublishing={unpublishing}
-              selectable={canArchive}
+              selectable={canSelect}
               selected={selection.isSelected(exercise.id)}
               onSelectionChange={() => selection.toggle(exercise.id)}
               detailHref={`/verification/${exercise.id}?${detailQueryString}`}

@@ -4,7 +4,7 @@ import { segmentedSegmentVariants, segmentedTrackVariants } from '@/components/u
 import { Skeleton } from '@/components/ui/skeleton';
 import type { OrganizationVerificationStats, VerificationStats } from '@/graphql/types/adminExercise.types';
 
-type FilterType = 'pending' | 'changes' | 'published' | 'archived' | 'reported' | 'verified';
+type FilterType = 'pending' | 'internal' | 'changes' | 'published' | 'archived' | 'reported' | 'verified';
 
 interface VerificationStatsCardsProps {
   stats: VerificationStats | null;
@@ -40,6 +40,12 @@ function getOrganizationOptions(stats: OrganizationVerificationStats): StatusOpt
 function getGlobalOptions(stats: VerificationStats, reportedCount: number): StatusOption[] {
   return [
     { filter: 'pending', label: 'Oczekujące', value: stats.pendingReview, testId: 'verification-stats-pending' },
+    {
+      filter: 'internal',
+      label: 'Poprawki wewnętrzne',
+      value: stats.internalFixes ?? 0,
+      testId: 'verification-stats-internal',
+    },
     { filter: 'changes', label: 'Do poprawy', value: stats.changesRequested, testId: 'verification-stats-changes' },
     { filter: 'published', label: 'Opublikowane', value: stats.published, testId: 'verification-stats-published' },
     { filter: 'reported', label: 'Zgłoszone', value: reportedCount, testId: 'verification-stats-reported' },
