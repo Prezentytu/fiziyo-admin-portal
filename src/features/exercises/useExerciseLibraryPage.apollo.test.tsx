@@ -12,6 +12,7 @@ import { GET_DEMO_EXERCISE_IDS_QUERY } from '@/graphql/queries/demoPool.queries'
 import {
   GET_AVAILABLE_EXERCISES_DEMO_PAGE_QUERY,
   GET_AVAILABLE_EXERCISES_PAGE_QUERY,
+  GET_AVAILABLE_EXERCISES_REVIEW_PAGE_QUERY,
 } from '@/graphql/queries/exercises.queries';
 import { GET_ORGANIZATION_DEMO_POOL_QUERY } from '@/graphql/queries/organizations.queries';
 
@@ -20,6 +21,7 @@ import { HOTCHOCOLATE_RESPONSES } from '@/lib/graphql/hotChocolateResponses.fixt
 import { DemoPoolQueryProvider, ExerciseDemoBadge, useDemoPool } from './demoPool';
 import { useExerciseLibraryPage } from './useExerciseLibraryPage';
 import type { ExerciseLibraryDemoFilter } from './utils/exerciseLibraryUrlState';
+import type { ExerciseLibraryReviewStatus } from '@/types/apollo';
 
 // Prawdziwy klient Apollo: API sprzed fizjo-app#388 (bez pól puli demo) i API z pulą demo.
 // MockedProvider dopasowuje zmienne dokładnie, więc zapytanie o zwykłą listę z dodatkową zmienną by nie przeszło.
@@ -83,7 +85,11 @@ function demoList(outcome: Pick<MockLink.MockedResponse, 'result' | 'error'>): M
   };
 }
 
-function renderLibrary(mocks: MockLink.MockedResponse[], demo: ExerciseLibraryDemoFilter = 'all') {
+function renderLibrary(
+  mocks: MockLink.MockedResponse[],
+  demo: ExerciseLibraryDemoFilter = 'all',
+  reviewStatus: ExerciseLibraryReviewStatus | null = null
+) {
   const wrapper = ({ children }: { children: ReactNode }) => (
     <MockedProvider mocks={mocks}>
       <DemoPoolQueryProvider organizationId={ORG}>{children}</DemoPoolQueryProvider>
@@ -97,6 +103,7 @@ function renderLibrary(mocks: MockLink.MockedResponse[], demo: ExerciseLibraryDe
         search: null,
         region: null,
         demo,
+        reviewStatus,
         page: 1,
         pageSize: 24,
       }),
@@ -236,6 +243,74 @@ describe('biblioteka na API z pulą demo', () => {
 
     expect(result.current.demoFilter).toBe('all');
     expect(result.current.error).toBeUndefined();
+  });
+});
+
+function reviewList(
+  variables: Record<string, unknown>,
+  outcome: Pick<MockLink.MockedResponse, 'result' | 'error'>
+): MockLink.MockedResponse {
+  return {
+    request: { query: GET_AVAILABLE_EXERCISES_REVIEW_PAGE_QUERY, variables: { ...listVariables, ...variables } },
+    ...outcome,
+  };
+}
+
+describe('filtr statusu weryfikacji', () => {
+  it('zwykła lista i lista demo nie niosą argumentu reviewStatus', () => {
+    expect(print(GET_AVAILABLE_EXERCISES_PAGE_QUERY)).not.toMatch(/reviewStatus/);
+    expect(print(GET_AVAILABLE_EXERCISES_DEMO_PAGE_QUERY)).not.toMatch(/reviewStatus/);
+  });
+
+  it('wybrany status zawęża listę przez API', async () => {
+    const { result } = renderLibrary(
+      [plainList, poolOff, reviewList({ availability: null, reviewStatus: 'PENDING' }, { result: pageResult(3) })],
+      'all',
+      'PENDING'
+    );
+
+    await waitFor(() => expect(result.current.data?.availableExercisesPage.totalCount).toBe(3));
+
+    expect(result.current.reviewFilterAvailable).toBe(true);
+    expect(result.current.error).toBeUndefined();
+  });
+
+  it('status łączy się z filtrem demo w jednym zapytaniu', async () => {
+    const { result } = renderLibrary(
+      [plainList, poolOn, demoIds, reviewList({ availability: 'DEMO', reviewStatus: 'APPROVED' }, { result: pageResult(1) })],
+      'only',
+      'APPROVED'
+    );
+
+    await waitFor(() => expect(result.current.data?.availableExercisesPage.totalCount).toBe(1));
+    expect(result.current.demoFilter).toBe('only');
+  });
+
+  it('API bez argumentu reviewStatus: biblioteka wraca do zwykłej listy i chowa filtr', async () => {
+    const { result } = renderLibrary(
+      [
+        plainList,
+        poolOff,
+        reviewList({ availability: null, reviewStatus: 'PENDING' }, { result: { errors: realValidationErrors() } }),
+      ],
+      'all',
+      'PENDING'
+    );
+
+    await waitFor(() => expect(result.current.reviewFilterAvailable).toBe(false));
+    await waitFor(() => expect(result.current.data?.availableExercisesPage.totalCount).toBe(40));
+    expect(result.current.error).toBeUndefined();
+  });
+
+  it('błąd sieci nie chowa filtru statusu', async () => {
+    const { result } = renderLibrary(
+      [plainList, poolOff, reviewList({ availability: null, reviewStatus: 'PENDING' }, { error: new TypeError('Failed to fetch') })],
+      'all',
+      'PENDING'
+    );
+
+    await waitFor(() => expect(result.current.error).toBeDefined());
+    expect(result.current.reviewFilterAvailable).toBe(true);
   });
 });
 

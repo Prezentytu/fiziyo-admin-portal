@@ -43,8 +43,10 @@ import {
   buildExerciseLibraryQueryString,
   EXERCISE_LIBRARY_PAGE_SIZES,
   parseExerciseLibraryUrlState,
+  toExerciseLibraryReviewStatus,
   toExerciseLibraryTab,
   type ExerciseLibraryDemoFilter,
+  type ExerciseLibraryStatusFilter,
   type ExerciseLibraryUrlState,
 } from '@/features/exercises/utils/exerciseLibraryUrlState';
 import { useExerciseLibraryPage } from '@/features/exercises/useExerciseLibraryPage';
@@ -101,12 +103,14 @@ export default function ExercisesPage() {
   } = useUrlSearchInput(committedSearch, commitSearch);
 
   // One page of the library: tab, search, sorting and counts come from the API, not from 5k records in memory.
-  const { data, previousData, loading, error, demoFilter, demoFilterAvailable, demoExerciseIds } = useExerciseLibraryPage({
+  const reviewStatus = toExerciseLibraryReviewStatus(sourceFilter, listState.status);
+  const { data, previousData, loading, error, demoFilter, demoFilterAvailable, reviewFilterAvailable, demoExerciseIds } = useExerciseLibraryPage({
     organizationId,
     tab: toExerciseLibraryTab(sourceFilter),
     search: committedSearch || null,
     region: bodyRegion?.region ?? null,
     demo: listState.demo,
+    reviewStatus,
     page: listState.page,
     pageSize: listState.pageSize,
   });
@@ -177,7 +181,8 @@ export default function ExercisesPage() {
   const counts = libraryPage?.counts;
   const totalCount = counts?.all ?? 0;
   const isSearching = searchQuery.trim().length > 0;
-  const isFiltered = Boolean(committedSearch) || bodyRegion !== null || demoFilter !== 'all';
+  const statusFilter: ExerciseLibraryStatusFilter = reviewFilterAvailable && reviewStatus ? listState.status : 'all';
+  const isFiltered = Boolean(committedSearch) || bodyRegion !== null || demoFilter !== 'all' || statusFilter !== 'all';
   const isInitialLoading = loading && !libraryPage;
   useSearchTelemetry({
     event: 'exercise_catalog:search',
@@ -340,6 +345,33 @@ export default function ExercisesPage() {
             ))}
           </div>
 
+          {sourceFilter === 'organization' && reviewFilterAvailable && (
+            <div
+              role="group"
+              aria-label="Status weryfikacji"
+              className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1"
+              data-testid="exercise-status-filter"
+            >
+              {(
+                [
+                  { id: 'all', label: 'Wszystkie statusy' },
+                  { id: 'pending', label: 'Do weryfikacji' },
+                  { id: 'approved', label: 'Zatwierdzone' },
+                ] as const satisfies readonly { id: ExerciseLibraryStatusFilter; label: string }[]
+              ).map((option) => (
+                <ChoiceChip
+                  key={option.id}
+                  variant={statusFilter === option.id ? 'chosen' : 'default'}
+                  aria-pressed={statusFilter === option.id}
+                  onClick={() => updateListState({ status: option.id })}
+                  data-testid={`exercise-status-${option.id}`}
+                >
+                  {option.label}
+                </ChoiceChip>
+              ))}
+            </div>
+          )}
+
           <div
             role="group"
             aria-label="Region ciała"
@@ -395,7 +427,7 @@ export default function ExercisesPage() {
           )}
 
           {/* Results info */}
-          {(isSearching || bodyRegion) && (
+          {(isSearching || bodyRegion || statusFilter !== 'all') && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span>Wyniki:</span>
               <Badge variant="secondary" className="text-xs">
