@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import {
   Building2,
+  ChevronsUpDown,
   Dumbbell,
   FileText,
   FolderKanban,
@@ -293,20 +294,46 @@ function SidebarBody({
       )}
 
       {currentOrganization && (
-        <div
-          className="flex shrink-0 items-center gap-2.5 rounded-control bg-fill-quaternary px-2.5 py-2"
-          data-testid="nav-chat-active-org"
-        >
-          <span className="flex size-7 shrink-0 items-center justify-center">
-            <Building2 className={MENU_ICON_CLASS} aria-hidden="true" />
-          </span>
-          <div className="min-w-0">
-            <p className="text-xs text-label-secondary">Aktywna organizacja</p>
-            <p className="truncate text-sm font-medium text-foreground" title={currentOrganization.organizationName}>
-              {currentOrganization.organizationName}
-            </p>
-          </div>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="flex w-full shrink-0 items-center gap-2.5 rounded-control bg-fill-quaternary px-2.5 py-2 text-left transition-colors hover:bg-fill-tertiary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              data-testid="nav-chat-active-org"
+            >
+              <span className="flex size-7 shrink-0 items-center justify-center">
+                <Building2 className={MENU_ICON_CLASS} aria-hidden="true" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-xs text-label-secondary">Aktywna organizacja</span>
+                <span
+                  className="block truncate text-sm font-medium text-foreground"
+                  title={currentOrganization.organizationName}
+                >
+                  {currentOrganization.organizationName}
+                </span>
+              </span>
+              <ChevronsUpDown className={MENU_ICON_CLASS} aria-hidden="true" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent side="top" align="start" className="w-64">
+            <OrganizationSwitchMenuItems testIdPrefix="nav-chat-active-org-switch" onSwitch={onNavigate} />
+            <DropdownMenuItem asChild className="gap-2.5" data-testid="nav-chat-active-org-settings-link">
+              <Link href="/organization" onClick={onNavigate}>
+                <Building2 className={MENU_ICON_CLASS} aria-hidden="true" />
+                {ORGANIZATION_LABEL}
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="gap-2.5"
+              onSelect={openCreateOrganization}
+              data-testid="nav-chat-active-org-create-btn"
+            >
+              <Plus className={MENU_ICON_CLASS} aria-hidden="true" />
+              Utwórz organizację
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       )}
 
       <DropdownMenu>
