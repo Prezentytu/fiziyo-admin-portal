@@ -37,7 +37,8 @@
 
 - Backend: pełny `dotnet test` 3840/0 po przepisaniu (wcześniej 3837/0); `ExerciseReviewNoteTests` na PostgreSQL 17 16/16 ×3; mutacja (bez warunku) → oba testy równoległe czerwone; `rehearse-database.sh` EXIT=0 (lokalnie `PATH` postgresql@17, `LC_ALL=en_US.UTF-8`).
 - Panel: `npm run validate` exit 0 na B (384 pliki, 3788 testów, build); `GRAPHQL_SCHEMA_PATH=<fizjo-app-wez-n>/backend/schema.graphql node scripts/validate-graphql-documents.mjs --require-schema` → 233 dokumenty zgodne.
-- Reviewer: brak niezależnego; testy z tej samej sesji nie zamykają bramki.
+- `sec-report` #729 (agent, tylko odczyt): PASS z uwagami, bez P0/P1. F1–F4 poprawione w fizjo-app b2d2aafb (przydział tylko `IsSystem`, log przejęcia, `IsActive`, limit `assigneeId`); pełny `dotnet test` 3842/0, PostgreSQL 17 21/21 ×2, schemat bez zmian. Panel dedff29f: detal kolejki gabinetu bez wiersza przydziału.
+- Reviewer: brak niezależnego poza `sec-report`; testy z tej samej sesji nie zamykają bramki.
 
 ## Handoff
 
