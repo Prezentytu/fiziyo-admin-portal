@@ -47,6 +47,8 @@ interface ReviewNotesPanelProps {
   context: { key: string; label: string };
   /** The exercise waits for a decision, so it can go back to its author. */
   canSendToAuthor: boolean;
+  /** Przydział osobie istnieje tylko w kolejce globalnej; w kolejce gabinetu wiersz przydziału jest ukryty. */
+  canAssign: boolean;
   /** Saves pending edits; a rejection stops the send. */
   beforeSend: () => Promise<void>;
   onSent: (target: ExerciseReviewNotesTarget) => void;
@@ -116,6 +118,7 @@ export function ReviewNotesPanel({
   exerciseId,
   context,
   canSendToAuthor,
+  canAssign,
   beforeSend,
   onSent,
   onOpenChange,
@@ -276,7 +279,7 @@ export function ReviewNotesPanel({
             <X />
           </Button>
         </div>
-        {workflow && (
+        {canAssign && workflow && (
           <div className="flex items-center justify-between gap-2 text-[12px] text-label-secondary">
             <span data-testid="review-notes-assignee">
               {workflow.assigneeId

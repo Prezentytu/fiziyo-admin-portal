@@ -1378,6 +1378,7 @@ export function VerificationWorkspace({
           exerciseId={exercise.id}
           context={{ key: stage, label: STAGE_TITLES[stage] }}
           canSendToAuthor={isOrganization ? canRequestChanges : exercise.status === 'PENDING_REVIEW'}
+          canAssign={!isOrganization}
           beforeSend={flushBeforeDecision}
           onSent={leaveToNext}
           onOpenChange={setIsNotesPanelOpen}
