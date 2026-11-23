@@ -785,7 +785,8 @@ export default function VerificationPage() {
     updateUrlState({ filter, assignee: memberFilter, page: 1, search: searchQuery });
   };
 
-  // „Przydziel następne N” bierze wolne z kolejki w kolejności i wyszukiwaniu listy, a potem pokazuje listę tej osoby.
+  // „Przydziel następne N” bierze wolne z kolejki w kolejności i wyszukiwaniu listy. Sobie: od razu „Moje”.
+  // Koledze: tylko komunikat, bez przełączania i zapamiętywania jego listy jako mojego filtra.
   const handleClaimNext = async (count: number, member: VerificationTeamMember) => {
     setClaimingCount(count);
     try {
@@ -801,7 +802,7 @@ export default function VerificationPage() {
       const message = claimResultMessage(claimed, count, member);
       if (message.tone === 'success') toast.success(message.text);
       else toast.info(message.text);
-      if (claimed > 0) handleShowMember('pending', member);
+      if (claimed > 0 && member.isMe) handleShowMember('pending', member);
       await Promise.all([refetchTeam(), refetchQueue()]);
     } catch (error) {
       console.error('Błąd przydziału ćwiczeń:', error);
