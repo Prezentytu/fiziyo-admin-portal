@@ -13,7 +13,7 @@
 ## Repo i baseline
 
 - Panel: `main` = `fe875c17`; A `feat/weryfikacja-zapamietana-kolejka` (#360), B `feat/weryfikacja-wez-n` (#361, stos na A, worktree `fiziyo-admin-portal-wez-n`).
-- Backend: fizjo-app `main` = `89f63c0c`; `feat/weryfikacja-wez-n` (Prezentytu/fizjo-app#722, worktree `fizjo-app-wez-n`).
+- Backend: fizjo-app `main` = `89f63c0c`; `feat/weryfikacja-wez-n` (Prezentytu/fizjo-app#722, zmergowany 2026-11-23), potem `feat/weryfikacja-zespol` od `fac084f8` (Prezentytu/fizjo-app#729, worktree `fizjo-app-wez-n`).
 
 ## Progress
 
@@ -22,7 +22,7 @@
 - [x] Panel A: pamięć kolejki per użytkownik
 - [x] Przepisanie po korekcie: backend `assigneeId`, `takeOver`, `verificationTeam` (zamiast `verificationProgress`), filtr `user:<id>`, „Poprawki wewnętrzne” tylko `Waiting`
 - [x] Panel B: pasek zespołu, „Przypisz do…”, „Przejmij”, „Oznacz jako poprawione” w detalu i masowo
-- [ ] #722 na DEV, potem #361 gotowy do review i retarget na `main`
+- [ ] #729 na DEV (po `sec-report`), potem #361 gotowy do review i retarget na `main`
 - [ ] E2E w `fiziyo-tests` (dwa konta weryfikatorów)
 
 ## Decyzje
@@ -30,7 +30,7 @@
 - Postęp jako osobne zapytanie, nie pola `VerificationStats`: nieznane pole psuje cały dokument w panelu na starszym backendzie.
 - Zapis warunkowy `ExecuteUpdate` tylko na `ReviewAssigneeId`; dowód wyścigu deterministyczny (`RunBeforeFirstUpdate`), bo `Task.WhenAll` przechodził mimo mutacji.
 - Klucz pamięci kolejki z id użytkownika: dwóch weryfikatorów na jednym komputerze.
-- Osoba docelowa musi mieć `ReviewExercises` (sprawdza backend); zespół to aktywni z `SiteSuperAdmin` albo `ContentManager`. Nowe zapytanie z imionami personelu: `sec-report` przed merge'em #722.
+- Osoba docelowa musi mieć `ReviewExercises` (sprawdza backend); zespół to aktywni z `SiteSuperAdmin` albo `ContentManager`. Nowe zapytanie z imionami personelu: `sec-report` przed merge'em #729.
 - Bez nowych wartości `ContentStatus`; pętla poprawek na `InternalFixStatus`. Bez masowej publikacji (kontrole etapów są tylko w panelu).
 
 ## Dowody
@@ -41,7 +41,7 @@
 
 ## Handoff
 
-- Następny krok: Adam merguje #722, backend na DEV; potem #361 → ready, baza `main` po merge'u #360.
+- Następny krok: Adam merguje #729, backend na DEV; potem #361 → ready, baza `main` po merge'u #360. Bez #729 na backendzie dokument mutacji przydziału (z nowymi zmiennymi) jest odrzucany, także dla „Przypisz do mnie”.
 - Decyzje Adama: kto może przejmować (dziś każdy weryfikator z potwierdzeniem), publikacja ćwiczenia czekającego na poprawki.
 - Transfer kodu: gałęzie wypchnięte.
 - Źródło: zlecenie Adama 2026-11-23, SPEC-041

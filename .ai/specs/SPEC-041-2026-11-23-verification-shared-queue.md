@@ -2,7 +2,7 @@
 spec: SPEC-041
 repo: fiziyo-admin-portal
 issues: []
-prs: [360, 361, 'fizjo-app#722']
+prs: [360, 361, 'fizjo-app#722', 'fizjo-app#729']
 board: Trello 248 + zlecenie Adama 23.11.2026
 ---
 
@@ -42,7 +42,7 @@ Tylko kolejka globalna (`ContentManager`, `SiteSuperAdmin`). Kolejki organizacji
    - z `takeOver` (panel pyta o potwierdzenie): dowolne, także zdjęcie cudzego.
      Pominięte ćwiczenia wracają w `skippedExerciseIds`, panel proponuje „Przejmij N”.
 3. **„Przydziel następne N” (backend).** `claimNextExercisesForReview` bierze N niczyich z „Do sprawdzenia” w kolejności, wyszukiwaniu i datach listy, dla `assigneeId` (domyślnie pytający). Dwie osoby klikające naraz dostają rozłączne ćwiczenia; przegrane miejsca zastępują kolejne (do 3 prób).
-4. **Zespół (backend).** `verificationTeam`: każda aktywna osoba z `ReviewExercises` z `assignedPending`, `waitingFixes`, `decidedToday` (ostatnia decyzja albo archiwizacja od północy Europe/Warsaw) oraz `unassignedPending` kolejki. Zastępuje `verificationProgress` z pierwszej wersji #722 (niewydanej).
+4. **Zespół (backend).** `verificationTeam`: każda aktywna osoba z `ReviewExercises` z `assignedPending`, `waitingFixes`, `decidedToday` (ostatnia decyzja albo archiwizacja od północy Europe/Warsaw) oraz `unassignedPending` kolejki. Zastępuje `verificationProgress` z fizjo-app#722 (zmergowany); stare pole i `assignedToMe` zostają jako `@deprecated` do usunięcia po wydaniu panelu.
 5. **Filtr po osobie.** `assignee` w `verificationQueuePage` i `verificationQueueNavigator` przyjmuje też `user:<id>` obok `all | mine | unassigned | available`. Starszy backend traktuje nieznaną wartość jak „Wszystkie”.
 6. **Pętla poprawek.** Zakładka „Poprawki wewnętrzne” pokazuje tylko `Waiting` (wcześniej także `Fixed`, więc poprawione ćwiczenie było w dwóch zakładkach). „Oznacz jako poprawione” (`completeInternalExerciseFixes`, dotąd bez UI) w detalu i masowo w zakładce; ćwiczenie wraca do „Do sprawdzenia” z plakietką.
 
