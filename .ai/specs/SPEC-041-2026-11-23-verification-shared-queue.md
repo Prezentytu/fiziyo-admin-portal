@@ -37,7 +37,7 @@ Każde ćwiczenie w „Do sprawdzenia” i „Poprawkach wewnętrznych” ma naj
 Tylko kolejka globalna (`ContentManager`, `SiteSuperAdmin`). Kolejki organizacji nie mają przydziału: to zmiana polityki autoryzacji z `sec-report`, poza zakresem. Bez nowych wartości `ContentStatus` (enum czyta mobile); stany pętli poprawek to `InternalFixStatus` (`None` / `Waiting` / `Fixed`).
 
 1. **Pamięć listy (panel, bez API, PR #360).** `utils/queuePreferences.ts` trzyma w `localStorage` (`fizyo_verification_queue:<id użytkownika>`) kolejność i filtr przypisania z ostatniej zmiany. Link z jawnym `sort` albo `assignee` wygrywa. Zakres dat nie jest zapamiętywany.
-2. **Przydział do osoby (backend).** `assignExercisesForReview` dostaje `assigneeId` (domyślnie pytający) i `takeOver`. Osoba docelowa musi mieć `ReviewExercises`. Zapis warunkowy w jednym `UPDATE`:
+2. **Przydział do osoby (backend).** `assignExercisesForReview` dostaje `assigneeId` (domyślnie pytający) i `takeOver` i dotyka tylko ćwiczeń systemowych (ćwiczenie gabinetu wraca w pominiętych). Osoba docelowa musi być aktywna i mieć `ReviewExercises`; każdy przydział trafia do logu. Zapis warunkowy w jednym `UPDATE`:
    - bez `takeOver`: tylko wiersze niczyje, już tej osoby albo pytającego (oddaję swoje koledze); zdejmuję tylko swoje;
    - z `takeOver` (panel pyta o potwierdzenie): dowolne, także zdjęcie cudzego.
      Pominięte ćwiczenia wracają w `skippedExerciseIds`, panel proponuje „Przejmij N”.
@@ -50,7 +50,7 @@ Tylko kolejka globalna (`ContentManager`, `SiteSuperAdmin`). Kolejki organizacji
 
 - **Pasek zespołu** nad listą (zakładki „Do sprawdzenia” i „Poprawki wewnętrzne”): plakietka na osobę, „Ty” pierwszy, z liczbami „do sprawdzenia”, „w poprawkach” i „dziś”; kliknięcie liczby przełącza zakładkę i filtr na tę osobę. Pod spodem „Wolne: N” i „Przydziel następne dla [osoba] 10 | 25 | 50 | 100”; po przydziale lista pokazuje ćwiczenia tej osoby.
 - **Pasek zaznaczenia:** „Przypisz do mnie” i „Zdejmij ze mnie” bez zmian (lokatory E2E), obok „Przypisz do…” z listą kolegów. Gdy część zaznaczonych ma ktoś inny, panel pyta „Przejąć N ćwiczeń?” i ponawia tylko pominięte z `takeOver`. W „Poprawkach wewnętrznych” dodatkowo „Oznacz jako poprawione” z wynikiem per ćwiczenie.
-- **Detal:** „Przejmij” (z potwierdzeniem), gdy ćwiczenie sprawdza ktoś inny, i „Oznacz jako poprawione”, gdy czeka na poprawki.
+- **Detal:** „Przejmij” (z potwierdzeniem), gdy ćwiczenie sprawdza ktoś inny, i „Oznacz jako poprawione”, gdy czeka na poprawki. Wiersz przydziału tylko w torze globalnym.
 - **Filtr przypisania:** Wszystkie / Moje / Moje i wolne / Nieprzypisane / każda osoba z zespołu.
 
 ### Poza zakresem i decyzje otwarte
