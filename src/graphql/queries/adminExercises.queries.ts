@@ -164,15 +164,21 @@ export const GET_VERIFICATION_STATS_QUERY = gql`
 `;
 
 /**
- * Postęp weryfikatora w kolejce globalnej (SPEC-041). Osobne zapytanie: backend bez tego pola psuje tylko
- * pasek „Weź N”, nie karty statusów z `verificationStats`.
+ * Zespół weryfikacji globalnej z kolejkami każdej osoby (SPEC-041). Osobne zapytanie: backend bez tego pola
+ * psuje tylko pasek zespołu, nie karty statusów z `verificationStats`.
  */
-export const GET_VERIFICATION_PROGRESS_QUERY = gql`
-  query GetVerificationProgress {
-    verificationProgress {
-      assignedToMe
+export const GET_VERIFICATION_TEAM_QUERY = gql`
+  query GetVerificationTeam {
+    verificationTeam {
       unassignedPending
-      decidedTodayByMe
+      members {
+        userId
+        fullname
+        isMe
+        assignedPending
+        waitingFixes
+        decidedToday
+      }
     }
   }
 `;

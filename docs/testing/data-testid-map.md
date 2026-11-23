@@ -827,26 +827,35 @@ Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu r
 
 #### Widok pełny (z zadaniami)
 
-| data-testid                                                | Element                                                                      | Plik                         |
-| ---------------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------- |
-| `verification-scope-tabs`                                  | Pasek kolejek (gdy rola ma ≥2)                                               | `VerificationScopeTabs.tsx`  |
-| `nav-link-organization-verification`                       | Zakładka: nazwa organizacji (fallback „Moja organizacja”)                    | `VerificationScopeTabs.tsx`  |
-| `{zakładka}-count`                                         | Licznik oczekujących przy zakładce, np. `nav-link-verification-global-count` | `VerificationScopeTabs.tsx`  |
-| `verification-scope-tabs-moderation-label`                 | Podpis grupy „Moderacja FiziYo”                                              | `VerificationScopeTabs.tsx`  |
-| `nav-link-verification-global`                             | Zakładka: Katalog FiziYo                                                     | `VerificationScopeTabs.tsx`  |
-| `nav-link-verification-organizations`                      | Zakładka: Organizacje klientów                                               | `VerificationScopeTabs.tsx`  |
-| `verification-search-input`                                | Wyszukiwarka ćwiczeń                                                         | `verification/page.tsx`      |
-| `verification-stats-pending`                               | Status (przełącznik): Oczekujące                                             | `VerificationStatsCards.tsx` |
-| `verification-stats-changes`                               | Status (przełącznik): Do poprawy                                             | `VerificationStatsCards.tsx` |
-| `verification-stats-approved`                              | Status (przełącznik): Zatwierdzone                                           | `VerificationStatsCards.tsx` |
-| `verification-stats-published`                             | Status (przełącznik): Opublikowane                                           | `VerificationStatsCards.tsx` |
-| `verification-assignee-{all\|mine\|available\|unassigned}` | Filtr przypisania; `available` = moje i wolne (SPEC-041)                     | `verification/page.tsx`      |
-| `verification-claim-bar`                                   | Pasek mojej kolejki w „Do sprawdzenia” (SPEC-041)                            | `VerificationClaimBar.tsx`   |
-| `verification-progress-{mine\|free\|today}`                | Liczniki: moje (klik = filtr „Moje”), wolne, dziś zrobione                   | `VerificationClaimBar.tsx`   |
-| `verification-claim-{10\|25\|50\|100}`                     | „Weź N” z końca kolejki wybranego w sortowaniu                               | `VerificationClaimBar.tsx`   |
-| `verification-card-{id}`                                   | Karta zadania weryfikacji                                                    | `VerificationTaskCard.tsx`   |
-| `verification-card-{id}-start-btn`                         | Przycisk rozpoczęcia weryfikacji                                             | `VerificationTaskCard.tsx`   |
-| `verification-card-{id}-status-badge`                      | Status na karcie (w kolejkach organizacji: status organizacyjny)             | `VerificationTaskCard.tsx`   |
+| data-testid                                                | Element                                                                                  | Plik                               |
+| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------- |
+| `verification-scope-tabs`                                  | Pasek kolejek (gdy rola ma ≥2)                                                           | `VerificationScopeTabs.tsx`        |
+| `nav-link-organization-verification`                       | Zakładka: nazwa organizacji (fallback „Moja organizacja”)                                | `VerificationScopeTabs.tsx`        |
+| `{zakładka}-count`                                         | Licznik oczekujących przy zakładce, np. `nav-link-verification-global-count`             | `VerificationScopeTabs.tsx`        |
+| `verification-scope-tabs-moderation-label`                 | Podpis grupy „Moderacja FiziYo”                                                          | `VerificationScopeTabs.tsx`        |
+| `nav-link-verification-global`                             | Zakładka: Katalog FiziYo                                                                 | `VerificationScopeTabs.tsx`        |
+| `nav-link-verification-organizations`                      | Zakładka: Organizacje klientów                                                           | `VerificationScopeTabs.tsx`        |
+| `verification-search-input`                                | Wyszukiwarka ćwiczeń                                                                     | `verification/page.tsx`            |
+| `verification-stats-pending`                               | Status (przełącznik): Oczekujące                                                         | `VerificationStatsCards.tsx`       |
+| `verification-stats-changes`                               | Status (przełącznik): Do poprawy                                                         | `VerificationStatsCards.tsx`       |
+| `verification-stats-approved`                              | Status (przełącznik): Zatwierdzone                                                       | `VerificationStatsCards.tsx`       |
+| `verification-stats-published`                             | Status (przełącznik): Opublikowane                                                       | `VerificationStatsCards.tsx`       |
+| `verification-assignee-{all\|mine\|available\|unassigned}` | Filtr przypisania; `available` = moje i wolne (SPEC-041)                                 | `verification/page.tsx`            |
+| `verification-assignee-user:{userId}`                      | Filtr przypisania: ćwiczenia osoby z zespołu (SPEC-041)                                  | `verification/page.tsx`            |
+| `verification-team-bar`                                    | Pasek zespołu w „Do sprawdzenia” i „Poprawkach wewnętrznych” (SPEC-041)                  | `VerificationTeamBar.tsx`          |
+| `verification-team-member-{userId}`                        | Osoba: do sprawdzenia, w poprawkach (klik = jej lista), dziś zrobione                    | `VerificationTeamBar.tsx`          |
+| `verification-team-member-{userId}-{queue\|fixes}`         | Liczba do sprawdzenia albo w poprawkach: pokazuje listę tej osoby                        | `VerificationTeamBar.tsx`          |
+| `verification-team-free`                                   | Liczba wolnych ćwiczeń w „Do sprawdzenia”                                                | `VerificationTeamBar.tsx`          |
+| `verification-claim-assignee`                              | Komu przydzielić następne N                                                              | `VerificationTeamBar.tsx`          |
+| `verification-claim-{10\|25\|50\|100}`                     | „Przydziel następne N” wolnych w kolejności listy                                        | `VerificationTeamBar.tsx`          |
+| `verification-selection-assign-to`                         | Zaznaczone: „Przypisz do…” (lista zespołu)                                               | `VerificationSelectionToolbar.tsx` |
+| `verification-selection-assign-{userId}`                   | Pozycja osoby w „Przypisz do…”                                                           | `VerificationSelectionToolbar.tsx` |
+| `verification-selection-mark-fixed`                        | Zaznaczone w „Poprawkach wewnętrznych”: „Oznacz jako poprawione”                         | `VerificationSelectionToolbar.tsx` |
+| `review-notes-takeover-btn`                                | Detal: „Przejmij” ćwiczenie sprawdzane przez inną osobę (dialog `common-confirm-dialog`) | `ReviewNotesPanel.tsx`             |
+| `review-notes-mark-fixed-btn`                              | Detal: „Oznacz jako poprawione” przy czekających poprawkach                              | `ReviewNotesPanel.tsx`             |
+| `verification-card-{id}`                                   | Karta zadania weryfikacji                                                                | `VerificationTaskCard.tsx`         |
+| `verification-card-{id}-start-btn`                         | Przycisk rozpoczęcia weryfikacji                                                         | `VerificationTaskCard.tsx`         |
+| `verification-card-{id}-status-badge`                      | Status na karcie (w kolejkach organizacji: status organizacyjny)                         | `VerificationTaskCard.tsx`         |
 
 #### Etapy weryfikacji globalnej (`verification/[id]`, SPEC-030)
 

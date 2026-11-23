@@ -35,5 +35,5 @@ export interface AssignExercisesForReviewResponse {
 }
 
 export interface ClaimNextExercisesForReviewResponse {
-  claimNextExercisesForReview: { claimedExerciseIds: string[]; assignedToMe: number };
+  claimNextExercisesForReview: { claimedExerciseIds: string[]; assigneeTotal: number };
 }

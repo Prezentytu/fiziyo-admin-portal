@@ -60,8 +60,20 @@ export function formatReviewNoteTime(iso: string, now: Date = new Date()): strin
 }
 
 /** `available`: moje i niczyje, bez ćwiczeń wziętych przez innego weryfikatora (SPEC-041). */
-export type ReviewAssigneeFilter = 'all' | 'mine' | 'available' | 'unassigned';
+/** Filtr przydziału: wszystkie, moje, moje i wolne, niczyje albo jednej osoby z zespołu (`user:<id>`). */
+export type ReviewAssigneeFilter = 'all' | 'mine' | 'available' | 'unassigned' | `user:${string}`;
+
+const ASSIGNEE_USER_PREFIX = 'user:';
+const USER_ID_PATTERN = /^[\w-]{1,64}$/;
+
+export function assigneeFilterForUser(userId: string, isMe = false): ReviewAssigneeFilter {
+  return isMe ? 'mine' : `user:${userId}`;
+}
 
 export function parseReviewAssigneeFilter(value: string | null | undefined): ReviewAssigneeFilter {
-  return value === 'mine' || value === 'available' || value === 'unassigned' ? value : 'all';
+  if (value === 'mine' || value === 'available' || value === 'unassigned') return value;
+  if (value?.startsWith(ASSIGNEE_USER_PREFIX) && USER_ID_PATTERN.test(value.slice(ASSIGNEE_USER_PREFIX.length))) {
+    return value as ReviewAssigneeFilter;
+  }
+  return 'all';
 }

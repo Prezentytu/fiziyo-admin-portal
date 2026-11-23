@@ -44,10 +44,18 @@ export const COMPLETE_INTERNAL_EXERCISE_FIXES_MUTATION = gql`
   }
 `;
 
-/** Bierze ćwiczenia do siebie (`assign: true`) albo zdejmuje z siebie; cudzych przypisań nie rusza. */
+/**
+ * Przydziela ćwiczenia osobie z zespołu (`assigneeId`, domyślnie sobie) albo zdejmuje przydział (`assign: false`).
+ * Bez `takeOver` cudzych przydziałów nie rusza (wracają w `skippedExerciseIds`); z `takeOver` je przejmuje.
+ */
 export const ASSIGN_EXERCISES_FOR_REVIEW_MUTATION = gql`
-  mutation AssignExercisesForReview($exerciseIds: [String!]!, $assign: Boolean!) {
-    assignExercisesForReview(exerciseIds: $exerciseIds, assign: $assign) {
+  mutation AssignExercisesForReview(
+    $exerciseIds: [String!]!
+    $assign: Boolean!
+    $assigneeId: String
+    $takeOver: Boolean
+  ) {
+    assignExercisesForReview(exerciseIds: $exerciseIds, assign: $assign, assigneeId: $assigneeId, takeOver: $takeOver) {
       changedExerciseIds
       skippedExerciseIds
     }
@@ -55,8 +63,8 @@ export const ASSIGN_EXERCISES_FOR_REVIEW_MUTATION = gql`
 `;
 
 /**
- * „Weź N”: bierze do siebie następne niczyje ćwiczenia z „Do sprawdzenia” w kolejności listy.
- * Dwóch weryfikatorów klikających naraz dostaje rozłączne ćwiczenia (zapis warunkowy w backendzie).
+ * „Przydziel następne N”: daje osobie z zespołu (domyślnie sobie) następne niczyje ćwiczenia z „Do sprawdzenia”
+ * w kolejności listy. Dwie osoby klikające naraz dostają rozłączne ćwiczenia (zapis warunkowy w backendzie).
  */
 export const CLAIM_NEXT_EXERCISES_FOR_REVIEW_MUTATION = gql`
   mutation ClaimNextExercisesForReview(
@@ -65,10 +73,18 @@ export const CLAIM_NEXT_EXERCISES_FOR_REVIEW_MUTATION = gql`
     $search: String
     $dateFrom: DateTime
     $dateTo: DateTime
+    $assigneeId: String
   ) {
-    claimNextExercisesForReview(count: $count, sort: $sort, search: $search, dateFrom: $dateFrom, dateTo: $dateTo) {
+    claimNextExercisesForReview(
+      count: $count
+      sort: $sort
+      search: $search
+      dateFrom: $dateFrom
+      dateTo: $dateTo
+      assigneeId: $assigneeId
+    ) {
       claimedExerciseIds
-      assignedToMe
+      assigneeTotal
     }
   }
 `;

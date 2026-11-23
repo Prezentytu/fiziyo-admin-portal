@@ -64,18 +64,28 @@ export interface VerificationStats {
   total: number;
 }
 
-/** Postęp weryfikatora w kolejce globalnej (SPEC-041). */
-export interface VerificationProgress {
-  /** „Do sprawdzenia” wzięte przez pytającego. */
-  assignedToMe: number;
-  /** „Do sprawdzenia”, których nikt nie wziął. */
-  unassignedPending: number;
-  /** Ćwiczenia, o których pytający zdecydował dziś (od północy Europe/Warsaw). */
-  decidedTodayByMe: number;
+/** Osoba z zespołu weryfikacji globalnej i jej kolejki (SPEC-041). */
+export interface VerificationTeamMember {
+  userId: string;
+  fullname: string;
+  isMe: boolean;
+  /** „Do sprawdzenia” przydzielone tej osobie. */
+  assignedPending: number;
+  /** Jej ćwiczenia czekające na poprawki wewnętrzne. */
+  waitingFixes: number;
+  /** Decyzje tej osoby dziś (od północy Europe/Warsaw). */
+  decidedToday: number;
 }
 
-export interface GetVerificationProgressResponse {
-  verificationProgress: VerificationProgress;
+/** Zespół weryfikacji globalnej, pytający pierwszy. */
+export interface VerificationTeam {
+  members: VerificationTeamMember[];
+  /** „Do sprawdzenia”, których nikt nie wziął. */
+  unassignedPending: number;
+}
+
+export interface GetVerificationTeamResponse {
+  verificationTeam: VerificationTeam;
 }
 
 export interface OrganizationVerificationStats {

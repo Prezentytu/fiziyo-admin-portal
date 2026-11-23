@@ -1,9 +1,16 @@
 'use client';
 
-import { Archive, Check, UserMinus, UserPlus, X } from 'lucide-react';
+import { Archive, Check, CheckCheck, ChevronDown, UserMinus, UserPlus, Users, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import type { VerificationTeamMember } from '@/graphql/types/adminExercise.types';
 import { cn } from '@/lib/utils';
 
 interface VerificationSelectionToolbarProps {
@@ -18,7 +25,13 @@ interface VerificationSelectionToolbarProps {
   canArchive?: boolean;
   /** Take the selected exercises (true) or release them (false); hidden when not provided. */
   onAssign?: (assign: boolean) => void;
+  /** Koledzy, którym można przydzielić zaznaczone („Przypisz do…”); bez listy przycisk się nie pokazuje. */
+  colleagues?: VerificationTeamMember[];
+  onAssignTo?: (member: VerificationTeamMember) => void;
   isAssigning?: boolean;
+  /** „Oznacz jako poprawione” w zakładce poprawek wewnętrznych. */
+  onMarkFixed?: () => void;
+  isMarkingFixed?: boolean;
   disabled?: boolean;
   isArchiving?: boolean;
   className?: string;
@@ -34,7 +47,11 @@ export function VerificationSelectionToolbar({
   onArchive,
   canArchive = true,
   onAssign,
+  colleagues = [],
+  onAssignTo,
   isAssigning = false,
+  onMarkFixed,
+  isMarkingFixed = false,
   disabled = false,
   isArchiving = false,
   className,
@@ -104,7 +121,48 @@ export function VerificationSelectionToolbar({
               <UserPlus className="h-4 w-4" />
               Przypisz do mnie
             </Button>
+            {onAssignTo && colleagues.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={disabled || isAssigning}
+                    className="gap-2"
+                    data-testid="verification-selection-assign-to"
+                  >
+                    <Users className="h-4 w-4" />
+                    Przypisz do…
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {colleagues.map((member) => (
+                    <DropdownMenuItem
+                      key={member.userId}
+                      onSelect={() => onAssignTo(member)}
+                      data-testid={`verification-selection-assign-${member.userId}`}
+                    >
+                      {member.fullname}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </>
+        )}
+        {onMarkFixed && (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={onMarkFixed}
+            disabled={disabled || isMarkingFixed}
+            className="gap-2"
+            data-testid="verification-selection-mark-fixed"
+          >
+            <CheckCheck className="h-4 w-4" />
+            Oznacz jako poprawione
+          </Button>
         )}
         {canArchive && (
           <Button
