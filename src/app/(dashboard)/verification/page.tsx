@@ -27,6 +27,11 @@ import {
   queueOrderingVariables,
   type VerificationQueueOrdering,
 } from '@/features/verification/utils/queueOrdering';
+import {
+  preferencesToRestore,
+  readQueuePreferences,
+  writeQueuePreferences,
+} from '@/features/verification/utils/queuePreferences';
 import { VerificationTaskCard } from '@/features/verification/VerificationTaskCard';
 import { ReviewerAchievements } from '@/features/verification/ReviewerAchievements';
 import { VerificationIntro } from '@/features/verification/VerificationIntro';
@@ -313,6 +318,18 @@ export default function VerificationPage() {
     },
     [activeFilter, searchQuery, page, pageSize, viewMode, ordering, assignee, router, pathname]
   );
+
+  // Wejście bez `sort` i `assignee` w linku wraca do końca kolejki, na którym weryfikator ostatnio pracował.
+  useEffect(() => {
+    const restored = preferencesToRestore(searchParams, { sort: ordering.sort, assignee }, readQueuePreferences());
+    if (!restored) return;
+    const nextOrdering = { ...ordering, sort: restored.sort };
+    setOrdering(nextOrdering);
+    setAssignee(restored.assignee);
+    setPage(1);
+    updateUrlState({ ordering: nextOrdering, assignee: restored.assignee, page: 1 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- tylko przy wejściu na listę, nie po każdej zmianie
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -696,6 +713,7 @@ export default function VerificationPage() {
     selection.clear();
     setOrdering(nextOrdering);
     setPage(1);
+    writeQueuePreferences({ sort: nextOrdering.sort, assignee });
     updateUrlState({ ordering: nextOrdering, page: 1 });
   };
 
@@ -703,6 +721,7 @@ export default function VerificationPage() {
     selection.clear();
     setAssignee(nextAssignee);
     setPage(1);
+    writeQueuePreferences({ sort: ordering.sort, assignee: nextAssignee });
     updateUrlState({ assignee: nextAssignee, page: 1 });
   };
 
