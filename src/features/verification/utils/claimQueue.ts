@@ -8,21 +8,6 @@ import { formatExerciseCount } from '@/utils/polishPlural';
 /** Dzienne porcje: 10–100 ćwiczeń, jak dzielą pracę weryfikatorzy. Backend przyjmuje do 100. */
 export const CLAIM_BATCH_SIZES = [10, 25, 50, 100] as const;
 
-export interface MyQueueProgress {
-  assignedToMe: number;
-  unassignedPending: number;
-  decidedTodayByMe: number;
-}
-
-/** Liczniki z `verificationStats`; brak pola (starszy backend) to zero, nie błąd. */
-export function readMyQueueProgress(stats: Partial<MyQueueProgress> | null | undefined): MyQueueProgress {
-  return {
-    assignedToMe: stats?.assignedToMe ?? 0,
-    unassignedPending: stats?.unassignedPending ?? 0,
-    decidedTodayByMe: stats?.decidedTodayByMe ?? 0,
-  };
-}
-
 export function claimEndLabel(sort: VerificationQueueSort): string {
   return sort === 'OLDEST' ? 'od najstarszych' : 'od najnowszych';
 }

@@ -158,10 +158,21 @@ export const GET_VERIFICATION_STATS_QUERY = gql`
       approved
       published
       archivedGlobal
+      total
+    }
+  }
+`;
+
+/**
+ * Postęp weryfikatora w kolejce globalnej (SPEC-041). Osobne zapytanie: backend bez tego pola psuje tylko
+ * pasek „Weź N”, nie karty statusów z `verificationStats`.
+ */
+export const GET_VERIFICATION_PROGRESS_QUERY = gql`
+  query GetVerificationProgress {
+    verificationProgress {
       assignedToMe
       unassignedPending
       decidedTodayByMe
-      total
     }
   }
 `;

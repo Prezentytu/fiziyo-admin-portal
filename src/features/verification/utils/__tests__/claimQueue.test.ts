@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { claimResultMessage, readMyQueueProgress } from '../claimQueue';
+import { claimResultMessage } from '../claimQueue';
 
 describe('claimResultMessage', () => {
   it('pełna porcja to sukces z końcem kolejki', () => {
@@ -24,17 +24,6 @@ describe('claimResultMessage', () => {
     expect(claimResultMessage(0, 10, 'NEWEST')).toEqual({
       tone: 'info',
       text: 'Nie ma już wolnych ćwiczeń w tej kolejce.',
-    });
-  });
-});
-
-describe('readMyQueueProgress', () => {
-  it('brak pól ze starszego backendu daje zera', () => {
-    expect(readMyQueueProgress(undefined)).toEqual({ assignedToMe: 0, unassignedPending: 0, decidedTodayByMe: 0 });
-    expect(readMyQueueProgress({ assignedToMe: 3 })).toEqual({
-      assignedToMe: 3,
-      unassignedPending: 0,
-      decidedTodayByMe: 0,
     });
   });
 });

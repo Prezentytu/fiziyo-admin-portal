@@ -3,13 +3,13 @@
 import { Loader2, UserPlus } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import type { VerificationQueueSort } from '@/graphql/types/adminExercise.types';
+import type { VerificationProgress, VerificationQueueSort } from '@/graphql/types/adminExercise.types';
 import { cn } from '@/lib/utils';
 
-import { CLAIM_BATCH_SIZES, claimEndLabel, type MyQueueProgress } from './utils/claimQueue';
+import { CLAIM_BATCH_SIZES, claimEndLabel } from './utils/claimQueue';
 
 interface VerificationClaimBarProps {
-  readonly progress: MyQueueProgress;
+  readonly progress: VerificationProgress;
   readonly sort: VerificationQueueSort;
   readonly onClaim: (count: number) => void;
   readonly onShowMine: () => void;

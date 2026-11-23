@@ -9,7 +9,7 @@ import {
   CLAIM_NEXT_EXERCISES_FOR_REVIEW_MUTATION,
 } from '@/graphql/mutations/exerciseReviewNotes.mutations';
 import { VerificationClaimBar } from '@/features/verification/VerificationClaimBar';
-import { claimResultMessage, readMyQueueProgress } from '@/features/verification/utils/claimQueue';
+import { claimResultMessage } from '@/features/verification/utils/claimQueue';
 import type { ClaimNextExercisesForReviewResponse } from '@/graphql/types/exerciseReviewNote.types';
 import type { AssignExercisesForReviewResponse } from '@/graphql/types/exerciseReviewNote.types';
 import { segmentedSegmentVariants, segmentedTrackVariants } from '@/components/ui/segmented-control';
@@ -54,6 +54,7 @@ import {
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import {
   GET_VERIFICATION_STATS_QUERY,
+  GET_VERIFICATION_PROGRESS_QUERY,
   GET_VERIFICATION_QUEUE_PAGE_QUERY,
 } from '@/graphql/queries/adminExercises.queries';
 import {
@@ -74,6 +75,7 @@ import { VerificationPageHeader } from '@/features/verification/VerificationPage
 import type { UserByClerkIdResponse } from '@/types/apollo';
 import type {
   GetVerificationStatsResponse,
+  GetVerificationProgressResponse,
   GetVerificationQueuePageResponse,
   GetVerificationQueuePageVariables,
   UnpublishExerciseResponse,
@@ -371,6 +373,12 @@ export default function VerificationPage() {
     loading: statsLoading,
     refetch: refetchStats,
   } = useQuery<GetVerificationStatsResponse>(GET_VERIFICATION_STATS_QUERY, { skip: !canReviewExercises });
+  // Pasek „Weź N” znika, gdy backend nie zna jeszcze `verificationProgress`; karty statusów działają dalej.
+  const { data: progressData, refetch: refetchProgress } = useQuery<GetVerificationProgressResponse>(
+    GET_VERIFICATION_PROGRESS_QUERY,
+    // Decyzje zapadają w detalu, więc po powrocie na listę „Dziś zrobione” musi dociągnąć świeżą liczbę.
+    { skip: !canReviewExercises, fetchPolicy: 'cache-and-network' }
+  );
 
   const queueVariables = useMemo<GetVerificationQueuePageVariables>(
     () => ({
@@ -682,6 +690,7 @@ export default function VerificationPage() {
 
   const handleRefresh = () => {
     refetchStats();
+    refetchProgress();
     refetchQueue();
     getExerciseReportsPage({ status: 'OPEN', page: 1, pageSize: 1 }).then((response) => {
       setReportedCount(response.totalCount);
@@ -741,7 +750,9 @@ export default function VerificationPage() {
     updateUrlState({ assignee: nextAssignee, page: 1 });
   };
 
-  const [claimNextExercises] = useMutation<ClaimNextExercisesForReviewResponse>(CLAIM_NEXT_EXERCISES_FOR_REVIEW_MUTATION);
+  const [claimNextExercises] = useMutation<ClaimNextExercisesForReviewResponse>(
+    CLAIM_NEXT_EXERCISES_FOR_REVIEW_MUTATION
+  );
   const [claimingCount, setClaimingCount] = useState<number | null>(null);
 
   // „Weź N” bierze z kolejki w kolejności i wyszukiwaniu listy, a potem pokazuje „Moje”, żeby od razu zacząć.
@@ -756,7 +767,7 @@ export default function VerificationPage() {
       if (message.tone === 'success') toast.success(message.text);
       else toast.info(message.text);
       if (claimed > 0 && assignee !== 'mine') handleAssigneeChange('mine');
-      await Promise.all([refetchStats(), refetchQueue()]);
+      await Promise.all([refetchProgress(), refetchQueue()]);
     } catch (error) {
       console.error('Błąd brania ćwiczeń:', error);
       toast.error('Nie udało się wziąć ćwiczeń');
@@ -776,7 +787,7 @@ export default function VerificationPage() {
       const done = assign ? `Przypisano do Ciebie: ${changed}` : `Zdjęto z Ciebie: ${changed}`;
       if (skipped > 0) toast.warning(`${done}. Pominięto ${skipped}, bo ma je inny weryfikator.`);
       else toast.success(done);
-      await Promise.all([refetchStats(), refetchQueue()]);
+      await Promise.all([refetchProgress(), refetchQueue()]);
     } catch (error) {
       console.error('Błąd przypisania ćwiczeń:', error);
       toast.error('Nie udało się zmienić przypisania');
@@ -940,9 +951,9 @@ export default function VerificationPage() {
         </div>
       </div>
 
-      {activeFilter === 'pending' && (
+      {activeFilter === 'pending' && progressData?.verificationProgress && (
         <VerificationClaimBar
-          progress={readMyQueueProgress(statsData?.verificationStats)}
+          progress={progressData.verificationProgress}
           sort={ordering.sort}
           onClaim={handleClaimNext}
           onShowMine={() => handleAssigneeChange('mine')}
