@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   preferencesToRestore,
-  QUEUE_PREFERENCES_KEY,
+  queuePreferencesKey,
   readQueuePreferences,
   writeQueuePreferences,
 } from '../queuePreferences';
@@ -19,15 +19,27 @@ const DEFAULT = { sort: 'NEWEST', assignee: 'all' } as const;
 describe('queuePreferences', () => {
   it('zapisuje i odczytuje kolejność oraz przypisanie', () => {
     const storage = memoryStorage();
-    writeQueuePreferences({ sort: 'OLDEST', assignee: 'mine' }, storage);
-    expect(readQueuePreferences(storage)).toEqual({ sort: 'OLDEST', assignee: 'mine' });
+    writeQueuePreferences('adam', { sort: 'OLDEST', assignee: 'mine' }, storage);
+    expect(readQueuePreferences('adam', storage)).toEqual({ sort: 'OLDEST', assignee: 'mine' });
+  });
+
+  it('drugi weryfikator przy tym samym komputerze nie dziedziczy cudzego końca kolejki', () => {
+    const storage = memoryStorage();
+    writeQueuePreferences('adam', { sort: 'NEWEST', assignee: 'mine' }, storage);
+    writeQueuePreferences('kolega', { sort: 'OLDEST', assignee: 'mine' }, storage);
+    expect(readQueuePreferences('adam', storage)?.sort).toBe('NEWEST');
+    expect(readQueuePreferences('kolega', storage)?.sort).toBe('OLDEST');
+    expect(readQueuePreferences(null, storage)).toBeNull();
   });
 
   it('nieznane albo uszkodzone wartości dają domyślne zamiast błędu', () => {
-    expect(readQueuePreferences(memoryStorage())).toBeNull();
-    expect(readQueuePreferences(memoryStorage({ [QUEUE_PREFERENCES_KEY]: '{nie json' }))).toBeNull();
+    expect(readQueuePreferences('adam', memoryStorage())).toBeNull();
+    expect(readQueuePreferences('adam', memoryStorage({ [queuePreferencesKey('adam')]: '{nie json' }))).toBeNull();
     expect(
-      readQueuePreferences(memoryStorage({ [QUEUE_PREFERENCES_KEY]: JSON.stringify({ sort: 'X', assignee: 7 }) }))
+      readQueuePreferences(
+        'adam',
+        memoryStorage({ [queuePreferencesKey('adam')]: JSON.stringify({ sort: 'X', assignee: 7 }) })
+      )
     ).toEqual(DEFAULT);
   });
 
@@ -40,8 +52,8 @@ describe('queuePreferences', () => {
         throw new Error('blocked');
       },
     };
-    expect(readQueuePreferences(broken)).toBeNull();
-    expect(() => writeQueuePreferences({ sort: 'OLDEST', assignee: 'mine' }, broken)).not.toThrow();
+    expect(readQueuePreferences('adam', broken)).toBeNull();
+    expect(() => writeQueuePreferences('adam', { sort: 'OLDEST', assignee: 'mine' }, broken)).not.toThrow();
   });
 
   it('przywraca zapamiętany koniec kolejki przy wejściu bez parametrów', () => {

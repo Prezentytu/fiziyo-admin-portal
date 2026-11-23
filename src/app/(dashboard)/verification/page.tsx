@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useQuery, useMutation, useSubscription } from '@apollo/client/react';
 import { ReviewWorkflowBadges } from '@/features/verification/ReviewWorkflowBadges';
 import { parseReviewAssigneeFilter, type ReviewAssigneeFilter } from '@/features/verification/utils/reviewNotes';
@@ -319,9 +319,18 @@ export default function VerificationPage() {
     [activeFilter, searchQuery, page, pageSize, viewMode, ordering, assignee, router, pathname]
   );
 
-  // Wejście bez `sort` i `assignee` w linku wraca do końca kolejki, na którym weryfikator ostatnio pracował.
+  // Wejście bez `sort` i `assignee` w linku wraca do końca kolejki, na którym ten weryfikator ostatnio pracował.
+  // Raz na weryfikatora, gdy Clerk poda jego id.
+  const reviewerId = clerkUser?.id;
+  const restoredForReviewer = useRef<string | null>(null);
   useEffect(() => {
-    const restored = preferencesToRestore(searchParams, { sort: ordering.sort, assignee }, readQueuePreferences());
+    if (!reviewerId || restoredForReviewer.current === reviewerId) return;
+    restoredForReviewer.current = reviewerId;
+    const restored = preferencesToRestore(
+      searchParams,
+      { sort: ordering.sort, assignee },
+      readQueuePreferences(reviewerId)
+    );
     if (!restored) return;
     const nextOrdering = { ...ordering, sort: restored.sort };
     setOrdering(nextOrdering);
@@ -329,7 +338,7 @@ export default function VerificationPage() {
     setPage(1);
     updateUrlState({ ordering: nextOrdering, assignee: restored.assignee, page: 1 });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- tylko przy wejściu na listę, nie po każdej zmianie
-  }, []);
+  }, [reviewerId]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -713,7 +722,7 @@ export default function VerificationPage() {
     selection.clear();
     setOrdering(nextOrdering);
     setPage(1);
-    writeQueuePreferences({ sort: nextOrdering.sort, assignee });
+    writeQueuePreferences(reviewerId, { sort: nextOrdering.sort, assignee });
     updateUrlState({ ordering: nextOrdering, page: 1 });
   };
 
@@ -721,7 +730,7 @@ export default function VerificationPage() {
     selection.clear();
     setAssignee(nextAssignee);
     setPage(1);
-    writeQueuePreferences({ sort: ordering.sort, assignee: nextAssignee });
+    writeQueuePreferences(reviewerId, { sort: ordering.sort, assignee: nextAssignee });
     updateUrlState({ assignee: nextAssignee, page: 1 });
   };
 
