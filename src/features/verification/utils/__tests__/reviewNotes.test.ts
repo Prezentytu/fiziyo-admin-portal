@@ -65,6 +65,7 @@ describe('parseReviewAssigneeFilter', () => {
   it('nieznana wartość oznacza wszystkie', () => {
     expect(parseReviewAssigneeFilter('mine')).toBe('mine');
     expect(parseReviewAssigneeFilter('unassigned')).toBe('unassigned');
+    expect(parseReviewAssigneeFilter('available')).toBe('available');
     expect(parseReviewAssigneeFilter('ktos')).toBe('all');
     expect(parseReviewAssigneeFilter(null)).toBe('all');
   });

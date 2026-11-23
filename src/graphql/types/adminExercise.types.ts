@@ -65,6 +65,12 @@ export interface VerificationStats {
   approved: number;
   published: number;
   archivedGlobal: number; // ARCHIVED_GLOBAL count
+  /** „Do sprawdzenia” wzięte przez pytającego (SPEC-041). */
+  assignedToMe?: number;
+  /** „Do sprawdzenia”, których nikt nie wziął. */
+  unassignedPending?: number;
+  /** Ćwiczenia, o których pytający zdecydował dziś (od północy Europe/Warsaw). */
+  decidedTodayByMe?: number;
   total: number;
 }
 

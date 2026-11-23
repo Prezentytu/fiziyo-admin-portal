@@ -59,8 +59,9 @@ export function formatReviewNoteTime(iso: string, now: Date = new Date()): strin
   return sameDay ? time : `${date.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' })}, ${time}`;
 }
 
-export type ReviewAssigneeFilter = 'all' | 'mine' | 'unassigned';
+/** `available`: moje i niczyje, bez ćwiczeń wziętych przez innego weryfikatora (SPEC-041). */
+export type ReviewAssigneeFilter = 'all' | 'mine' | 'available' | 'unassigned';
 
 export function parseReviewAssigneeFilter(value: string | null | undefined): ReviewAssigneeFilter {
-  return value === 'mine' || value === 'unassigned' ? value : 'all';
+  return value === 'mine' || value === 'available' || value === 'unassigned' ? value : 'all';
 }

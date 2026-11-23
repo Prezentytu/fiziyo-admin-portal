@@ -4,7 +4,13 @@ import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useQuery, useMutation, useSubscription } from '@apollo/client/react';
 import { ReviewWorkflowBadges } from '@/features/verification/ReviewWorkflowBadges';
 import { parseReviewAssigneeFilter, type ReviewAssigneeFilter } from '@/features/verification/utils/reviewNotes';
-import { ASSIGN_EXERCISES_FOR_REVIEW_MUTATION } from '@/graphql/mutations/exerciseReviewNotes.mutations';
+import {
+  ASSIGN_EXERCISES_FOR_REVIEW_MUTATION,
+  CLAIM_NEXT_EXERCISES_FOR_REVIEW_MUTATION,
+} from '@/graphql/mutations/exerciseReviewNotes.mutations';
+import { VerificationClaimBar } from '@/features/verification/VerificationClaimBar';
+import { claimResultMessage, readMyQueueProgress } from '@/features/verification/utils/claimQueue';
+import type { ClaimNextExercisesForReviewResponse } from '@/graphql/types/exerciseReviewNote.types';
 import type { AssignExercisesForReviewResponse } from '@/graphql/types/exerciseReviewNote.types';
 import { segmentedSegmentVariants, segmentedTrackVariants } from '@/components/ui/segmented-control';
 import { useUser } from '@clerk/nextjs';
@@ -85,6 +91,7 @@ type GlobalVerificationFilter = 'pending' | 'internal' | 'changes' | 'published'
 const ASSIGNEE_OPTIONS: { value: ReviewAssigneeFilter; label: string }[] = [
   { value: 'all', label: 'Wszystkie' },
   { value: 'mine', label: 'Moje' },
+  { value: 'available', label: 'Moje i wolne' },
   { value: 'unassigned', label: 'Nieprzypisane' },
 ];
 type VerificationStatsFilter = GlobalVerificationFilter | 'verified';
@@ -734,6 +741,30 @@ export default function VerificationPage() {
     updateUrlState({ assignee: nextAssignee, page: 1 });
   };
 
+  const [claimNextExercises] = useMutation<ClaimNextExercisesForReviewResponse>(CLAIM_NEXT_EXERCISES_FOR_REVIEW_MUTATION);
+  const [claimingCount, setClaimingCount] = useState<number | null>(null);
+
+  // „Weź N” bierze z kolejki w kolejności i wyszukiwaniu listy, a potem pokazuje „Moje”, żeby od razu zacząć.
+  const handleClaimNext = async (count: number) => {
+    setClaimingCount(count);
+    try {
+      const result = await claimNextExercises({
+        variables: { count, search: debouncedSearch || null, ...queueOrderingVariables(ordering) },
+      });
+      const claimed = result.data?.claimNextExercisesForReview.claimedExerciseIds.length ?? 0;
+      const message = claimResultMessage(claimed, count, ordering.sort);
+      if (message.tone === 'success') toast.success(message.text);
+      else toast.info(message.text);
+      if (claimed > 0 && assignee !== 'mine') handleAssigneeChange('mine');
+      await Promise.all([refetchStats(), refetchQueue()]);
+    } catch (error) {
+      console.error('Błąd brania ćwiczeń:', error);
+      toast.error('Nie udało się wziąć ćwiczeń');
+    } finally {
+      setClaimingCount(null);
+    }
+  };
+
   const handleAssignSelected = async (assign: boolean) => {
     const selectedIds = selection.selectedIds;
     if (selectedIds.length === 0) return;
@@ -745,7 +776,7 @@ export default function VerificationPage() {
       const done = assign ? `Przypisano do Ciebie: ${changed}` : `Zdjęto z Ciebie: ${changed}`;
       if (skipped > 0) toast.warning(`${done}. Pominięto ${skipped}, bo ma je inny weryfikator.`);
       else toast.success(done);
-      await refetchQueue();
+      await Promise.all([refetchStats(), refetchQueue()]);
     } catch (error) {
       console.error('Błąd przypisania ćwiczeń:', error);
       toast.error('Nie udało się zmienić przypisania');
@@ -908,6 +939,16 @@ export default function VerificationPage() {
           </div>
         </div>
       </div>
+
+      {activeFilter === 'pending' && (
+        <VerificationClaimBar
+          progress={readMyQueueProgress(statsData?.verificationStats)}
+          sort={ordering.sort}
+          onClaim={handleClaimNext}
+          onShowMine={() => handleAssigneeChange('mine')}
+          claimingCount={claimingCount}
+        />
+      )}
 
       {activeFilter !== 'reported' && (
         <div

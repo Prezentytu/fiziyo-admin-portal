@@ -158,6 +158,9 @@ export const GET_VERIFICATION_STATS_QUERY = gql`
       approved
       published
       archivedGlobal
+      assignedToMe
+      unassignedPending
+      decidedTodayByMe
       total
     }
   }

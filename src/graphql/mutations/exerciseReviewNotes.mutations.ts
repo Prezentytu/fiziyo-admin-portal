@@ -53,3 +53,22 @@ export const ASSIGN_EXERCISES_FOR_REVIEW_MUTATION = gql`
     }
   }
 `;
+
+/**
+ * „Weź N”: bierze do siebie następne niczyje ćwiczenia z „Do sprawdzenia” w kolejności listy.
+ * Dwóch weryfikatorów klikających naraz dostaje rozłączne ćwiczenia (zapis warunkowy w backendzie).
+ */
+export const CLAIM_NEXT_EXERCISES_FOR_REVIEW_MUTATION = gql`
+  mutation ClaimNextExercisesForReview(
+    $count: Int!
+    $sort: VerificationQueueSort
+    $search: String
+    $dateFrom: DateTime
+    $dateTo: DateTime
+  ) {
+    claimNextExercisesForReview(count: $count, sort: $sort, search: $search, dateFrom: $dateFrom, dateTo: $dateTo) {
+      claimedExerciseIds
+      assignedToMe
+    }
+  }
+`;

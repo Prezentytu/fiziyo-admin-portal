@@ -33,3 +33,7 @@ export interface AddExerciseReviewNoteResponse {
 export interface AssignExercisesForReviewResponse {
   assignExercisesForReview: { changedExerciseIds: string[]; skippedExerciseIds: string[] };
 }
+
+export interface ClaimNextExercisesForReviewResponse {
+  claimNextExercisesForReview: { claimedExerciseIds: string[]; assignedToMe: number };
+}

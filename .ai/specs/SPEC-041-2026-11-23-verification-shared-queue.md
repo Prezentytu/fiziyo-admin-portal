@@ -69,7 +69,9 @@ type VerificationProgress {
 
 ## Data-testid
 
-Bez zmian w PR A. PR B dopisze swoje identyfikatory tutaj i w `docs/testing/data-testid-map.md`.
+- `verification-claim-bar`, `verification-claim-{10|25|50|100}`
+- `verification-progress-{mine|free|today}`
+- `verification-assignee-available` (obok istniejących `verification-assignee-{all|mine|unassigned}`)
 
 ## Verification plan
 
@@ -82,3 +84,4 @@ Bez zmian w PR A. PR B dopisze swoje identyfikatory tutaj i w `docs/testing/data
 ### 2026-11-23
 
 - Utworzenie specyfikacji; PR A: zapamiętana kolejka weryfikatora.
+- PR B: pasek „Moje / Wolne / Dziś zrobione” z „Weź 10/25/50/100”, filtr „Moje i wolne”, odświeżenie liczników po przypisaniu. Wymaga backendu z `claimNextExercisesForReview` na DEV.
