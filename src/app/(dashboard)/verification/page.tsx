@@ -33,7 +33,6 @@ import { VerificationIntro } from '@/features/verification/VerificationIntro';
 import { useSystemRole } from '@/hooks/useSystemRole';
 import { getExerciseReports, getExerciseReportsPage } from '@/services/exerciseReportService';
 import {
-  buildVerificationDetailHref,
   buildVerificationSearchParams,
   clampVerificationPageSize,
   parsePositiveInt,
@@ -61,7 +60,6 @@ import { VerificationSelectionToolbar } from '@/features/verification/Verificati
 import { VerificationArchiveDialog } from '@/features/verification/VerificationArchiveDialog';
 import { VerificationScopeTabs } from '@/features/verification/VerificationScopeTabs';
 import { VerificationPageHeader } from '@/features/verification/VerificationPageHeader';
-import { VerificationQueueHero } from '@/features/verification/VerificationQueueHero';
 import type { UserByClerkIdResponse } from '@/types/apollo';
 import type {
   GetVerificationStatsResponse,
@@ -357,26 +355,12 @@ export default function VerificationPage() {
     data: queueData,
     loading: queueLoading,
     error: queueError,
-    refetch: refetchQueuePage,
+    refetch: refetchQueue,
   } = useQuery<GetVerificationQueuePageResponse, GetVerificationQueuePageVariables>(GET_VERIFICATION_QUEUE_PAGE_QUERY, {
     variables: queueVariables,
     skip: !canReviewExercises || activeFilter === 'reported',
     fetchPolicy: 'cache-and-network',
   });
-
-  const { data: firstPendingData, refetch: refetchFirstPending } = useQuery<
-    GetVerificationQueuePageResponse,
-    GetVerificationQueuePageVariables
-  >(GET_VERIFICATION_QUEUE_PAGE_QUERY, {
-    variables: { filter: 'pending', search: null, page: 1, pageSize: 1 },
-    skip: !canReviewExercises,
-    fetchPolicy: 'cache-and-network',
-  });
-  const refetchQueue = () => Promise.all([refetchQueuePage(), refetchFirstPending()]);
-  const firstPendingId = firstPendingData?.verificationQueuePage.items[0]?.id;
-  const startHref = firstPendingId
-    ? buildVerificationDetailHref(firstPendingId, { filter: 'pending', search: '', page: 1, pageSize, view: viewMode })
-    : null;
 
   useSubscription<{ onExerciseSubmittedForGlobalReview: string }>(ON_EXERCISE_SUBMITTED_FOR_GLOBAL_REVIEW, {
     skip: !canReviewExercises,
@@ -849,12 +833,6 @@ export default function VerificationPage() {
             </Button>
           </>
         }
-      />
-
-      <VerificationQueueHero
-        pendingCount={statsLoading ? null : pendingCount}
-        startHref={startHref}
-        testIdPrefix="verification"
       />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">

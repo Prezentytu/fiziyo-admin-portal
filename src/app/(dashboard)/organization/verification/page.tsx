@@ -23,7 +23,6 @@ import { VerificationTaskCard } from '@/features/verification/VerificationTaskCa
 import { VerificationSelectionToolbar } from '@/features/verification/VerificationSelectionToolbar';
 import { VerificationArchiveDialog } from '@/features/verification/VerificationArchiveDialog';
 import { VerificationPageHeader } from '@/features/verification/VerificationPageHeader';
-import { VerificationQueueHero } from '@/features/verification/VerificationQueueHero';
 import { useVerificationSelection } from '@/features/verification/utils/verificationSelection';
 import { ExerciseOffersPanel } from '@/features/verification/offers/ExerciseOffersPanel';
 import {
@@ -91,25 +90,6 @@ export default function OrganizationVerificationPage() {
       fetchPolicy: 'cache-and-network',
     }
   );
-
-  const { data: firstPendingData } = useQuery<{ organizationVerificationQueuePage: VerificationQueuePage }>(
-    GET_ORGANIZATION_VERIFICATION_QUEUE_PAGE_QUERY,
-    {
-      variables: { organizationId: organizationId ?? '', filter: 'pending', search: null, page: 1, pageSize: 1 },
-      skip: !organizationId || !canManageOrganization,
-      fetchPolicy: 'cache-and-network',
-    }
-  );
-  const firstPendingId = firstPendingData?.organizationVerificationQueuePage.items[0]?.id;
-  const startHref = firstPendingId
-    ? buildOrganizationVerificationDetailHref(firstPendingId, {
-        filter: 'pending',
-        search: '',
-        page: 1,
-        pageSize,
-        view: 'grid',
-      })
-    : null;
 
   const visibleExerciseIds = useMemo(
     () => queueData?.organizationVerificationQueuePage.items.map((exercise) => exercise.id) ?? [],
@@ -196,12 +176,6 @@ export default function OrganizationVerificationPage() {
       <VerificationPageHeader />
 
       <ExerciseOffersPanel />
-
-      <VerificationQueueHero
-        pendingCount={statsData?.organizationVerificationStats.pendingOrgReview ?? null}
-        startHref={startHref}
-        testIdPrefix="org-verification"
-      />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <VerificationStatsCards

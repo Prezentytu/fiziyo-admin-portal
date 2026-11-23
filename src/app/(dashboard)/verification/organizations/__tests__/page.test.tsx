@@ -1,10 +1,7 @@
-import { act, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import CrossOrgVerificationPage from '../page';
-
-const firstPendingRefetch = vi.fn();
-let onSubmittedForReview: (() => void) | undefined;
 
 vi.mock('next/navigation', () => ({
   usePathname: () => '/verification/organizations',
@@ -23,7 +20,6 @@ vi.mock('@/features/verification/VerificationPageHeader', () => ({
 vi.mock('@apollo/client/react', () => ({
   useQuery: (
     queryDocument: { definitions?: Array<{ name?: { value?: string } }> },
-    options?: { variables?: { pageSize?: number } }
   ) => {
     const operationName = queryDocument.definitions?.[0]?.name?.value;
     if (operationName === 'GetCrossOrgVerificationStats') {
@@ -57,14 +53,11 @@ vi.mock('@apollo/client/react', () => ({
         },
       },
       loading: false,
-      refetch: options?.variables?.pageSize === 1 ? firstPendingRefetch : vi.fn(),
+      refetch: vi.fn(),
     };
   },
   useMutation: () => [vi.fn(), { loading: false }],
-  useSubscription: (_document: unknown, options?: { onData?: () => void }) => {
-    onSubmittedForReview = options?.onData;
-    return {};
-  },
+  useSubscription: () => ({}),
 }));
 
 describe('CrossOrgVerificationPage', () => {
@@ -75,23 +68,5 @@ describe('CrossOrgVerificationPage', () => {
     expect(screen.getByTestId('org-verification-stats-changes')).toHaveTextContent('2');
     expect(screen.getByTestId('org-verification-stats-verified')).toHaveTextContent('5');
     expect(screen.getByTestId('org-verification-stats-archived')).toHaveTextContent('1');
-  });
-
-  it('shows the pending count as the main action of the page', () => {
-    render(<CrossOrgVerificationPage />);
-
-    expect(screen.getByTestId('cross-org-verification-queue-hero')).toHaveTextContent(
-      '7 ćwiczeń czeka na Twoją decyzję'
-    );
-    expect(screen.queryByTestId('cross-org-verification-start-queue-btn')).not.toBeInTheDocument();
-  });
-
-  it('refreshes the first pending exercise together with the queue', () => {
-    render(<CrossOrgVerificationPage />);
-    firstPendingRefetch.mockClear();
-
-    act(() => onSubmittedForReview?.());
-
-    expect(firstPendingRefetch).toHaveBeenCalled();
   });
 });
