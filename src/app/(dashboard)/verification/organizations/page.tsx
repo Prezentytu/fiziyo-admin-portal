@@ -24,7 +24,6 @@ import { VerificationTaskCard } from '@/features/verification/VerificationTaskCa
 import { VerificationSelectionToolbar } from '@/features/verification/VerificationSelectionToolbar';
 import { VerificationArchiveDialog } from '@/features/verification/VerificationArchiveDialog';
 import { VerificationPageHeader } from '@/features/verification/VerificationPageHeader';
-import { VerificationQueueHero } from '@/features/verification/VerificationQueueHero';
 import { useVerificationSelection } from '@/features/verification/utils/verificationSelection';
 import {
   GET_CROSS_ORG_VERIFICATION_QUEUE_PAGE_QUERY,
@@ -77,7 +76,7 @@ export default function CrossOrgVerificationPage() {
   const {
     data: queueData,
     loading: queueLoading,
-    refetch: refetchQueuePage,
+    refetch: refetchQueue,
   } = useQuery<{ crossOrgVerificationQueuePage: CrossOrgVerificationQueuePage }>(
     GET_CROSS_ORG_VERIFICATION_QUEUE_PAGE_QUERY,
     {
@@ -94,21 +93,6 @@ export default function CrossOrgVerificationPage() {
       skipPollAttempt: () => document.hidden,
     }
   );
-
-  const { data: firstPendingData, refetch: refetchFirstPending } = useQuery<{
-    crossOrgVerificationQueuePage: CrossOrgVerificationQueuePage;
-  }>(GET_CROSS_ORG_VERIFICATION_QUEUE_PAGE_QUERY, {
-    variables: { filter: 'pending', search: null, page: 1, pageSize: 1 },
-    skip: !isSiteSuperAdmin,
-    fetchPolicy: 'cache-and-network',
-    pollInterval: 30_000,
-    skipPollAttempt: () => document.hidden,
-  });
-  const refetchQueue = () => Promise.all([refetchQueuePage(), refetchFirstPending()]);
-  const firstPendingId = firstPendingData?.crossOrgVerificationQueuePage.items[0]?.exercise.id;
-  const startHref = firstPendingId
-    ? `/verification/organizations/${firstPendingId}?filter=pending&page=1&pageSize=${pageSize}`
-    : null;
 
   const visibleQueueItems = useMemo(() => queueData?.crossOrgVerificationQueuePage.items ?? [], [queueData]);
   const visibleExerciseIds = useMemo(
@@ -203,12 +187,6 @@ export default function CrossOrgVerificationPage() {
   return (
     <PageSheet contentClassName="gap-6" data-testid="cross-org-verification-page">
       <VerificationPageHeader />
-
-      <VerificationQueueHero
-        pendingCount={statsData?.crossOrgVerificationStats.pendingOrgReview ?? null}
-        startHref={startHref}
-        testIdPrefix="cross-org-verification"
-      />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <VerificationStatsCards
