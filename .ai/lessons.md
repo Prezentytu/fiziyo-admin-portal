@@ -18,6 +18,14 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 
 ## Wpisy
 
+### 2026-11-23 - Przykład z polecenia potraktowany jak wymaganie
+
+- **Kategoria**: `Process`
+- **Problem**: Z „ja od najnowszych, kolega od najstarszych, 1000 ćwiczeń” zrobiłem funkcję „Weź N z końca kolejki”; Adam wyjaśnił, że podział był obejściem braku narzędzi.
+- **Przyczyna**: Przykład liczby i podziału pracy wzięty za specyfikację zamiast za opis bólu (brak przydziału osobie, brak widoku, kto co sprawdza, brak pętli poprawek).
+- **Rozwiązanie**: SPEC-041 przepisany na przydział osobie, pasek zespołu i pętlę poprawek; „Przydziel następne N” w kolejności listy.
+- **Reguła**: Liczby i obejścia z polecenia zapisz w specu jako kontekst, a cel nazwij jako problem; przed implementacją potwierdź, które z nich są wymaganiem.
+
 ### 2026-11-20 - Route handler ufał body, dane osoby przeżywały wylogowanie
 
 - **Kategoria**: `Security`
@@ -281,29 +289,3 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 - **Przyczyna**: Sidebar i `CreateSetWizard` dzielą `submitCreateTemplateSet`, ale dialog mapował tylko kolumny dawkowania.
 - **Rozwiązanie**: `buildBuilderExerciseMapping` zapisuje deltę strony względem katalogowego `side`; test blokuje powrót inline mapowania w dialogu.
 - **Reguła**: Jeśli karta zestawu edytuje `side`, zawsze wyślij deltę w `overridesJson` na tym samym write-path co wizard, nigdy samego dawkowania. [egzekwowane: src/components/exercise-builder/buildBuilderExerciseMapping.test.ts]
-
-### 2026-09-15 - Kosz przy placeholderze to no-op, nie akcja
-
-- **Kategoria**: `UI/UX`
-- **Problem**: W edycji ćwiczenia kosz przy pustych polach „Błąd” / „Jak poprawić” i wskazówkach wyglądał na aktywny, choć nie było treści do usunięcia.
-- **Przyczyna**: Listy enrichment zawsze renderują starterowy pusty wiersz (`items.length ? items : ['']`). Kosz był `disabled` tylko przy locku edycji, więc klik kasował `[]` i ten sam placeholder wracał.
-- **Rozwiązanie**: Wspólne `canRemovePlaceholderRow` — kosz aktywny, gdy wiersz ma treść albo jest więcej niż jeden. Pusty jedyny wiersz: `disabled` + stonowana ikona + `aria-label` „Brak treści do usunięcia”.
-- **Reguła**: Jeśli UI dokłada pusty wiersz-placeholder, przycisk usuwania musi zależeć od treści, nie od samego istnienia wiersza. `data-testid` dawaj jako pierwszy atrybut — skaner testid kończy tag na `=>` w `onClick`. [egzekwowane: src/components/shared/enrichment/__tests__/canRemovePlaceholderRow.test.ts]
-
-### 2026-09-15 - Import nie może przesuwać fałszywego braku testid
-
-- **Kategoria**: `Testing` | `Build/Tooling`
-- **Problem**: PR z importem i formatowaniem `hasParams` wywalił `check:testids` na `chat/ExerciseCard` Button, który już miał `data-testid`.
-- **Przyczyna**: Guard kończył opening tag na pierwszym `>` (`onClick={() =>}`), więc testid w kolejnej linii był niewidoczny; a ówczesna allowlista z numerem linii dała z +2 linii „nowy” wpis.
-- **Rozwiązanie**: `data-testid` jako pierwszy atrybut; parser pomija `>` wewnątrz `{...}`; regresja w `scripts/check-testid-coverage.test.mjs`.
-- **Reguła**: Guard ma widzieć testid mimo `=>`; trzymaj `data-testid` przed handlerami z `=>`. [egzekwowane: scripts/check-testid-coverage.test.mjs]
-
-### 2026-09-14 - Hook klasyfikuje każdy segment `&&` osobno
-
-- **Kategoria**: `Build/Tooling`
-- **Problem**: `git push && git log origin/main..HEAD` padało jako „push to main”.
-- **Przyczyna**: Jeden regex na całym łańcuchu poleceń.
-- **Rozwiązanie**: `agent-guard` dzieli po `&&` / `||` / `;` i ocenia segmenty.
-- **Reguła**: Jeśli hook szuka `git push` + `main`, klasyfikuj segment, nie cały string. [egzekwowane: scripts/agent-guard.test.mjs]
-
-<!-- Nowe wpisy dodawaj na górze sekcji Wpisy, nie tutaj. -->

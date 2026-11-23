@@ -2,86 +2,98 @@
 spec: SPEC-041
 repo: fiziyo-admin-portal
 issues: []
-prs: []
+prs: [360, 361, 'fizjo-app#722']
 board: Trello 248 + zlecenie Adama 23.11.2026
 ---
 
-# Wspólna kolejka weryfikacji dla dwóch weryfikatorów
+# Zespołowa weryfikacja katalogu: kto co sprawdza, przydział i pętla poprawek
 
 ## Cel biznesowy
 
-Adam i drugi weryfikator mają około 1000 ćwiczeń w kolejce globalnej. Dzielą ją z dwóch końców: Adam od najnowszych, kolega od najstarszych, po 10–100 ćwiczeń dziennie. Lista, zaznaczanie wielu ćwiczeń, „Przypisz do mnie” i filtr „Moje” już istnieją (Trello 248, PR #348). Brakowało czterech rzeczy:
+Zespół FiziYo (dziś 4 osoby z `ReviewExercises`) ma sprawnie przejrzeć, poprawić i zaakceptować setki zaimportowanych ćwiczeń kolejki globalnej (PROD 23.11.2026: 179 „Do sprawdzenia”, wszystkie systemowe, od dwóch autorów-importerów). Podział „jeden od najnowszych, drugi od najstarszych” był obejściem braku narzędzi, nie wymaganiem. Potrzebne są:
 
-- lista nie pamiętała, z którego końca weryfikator pracuje: każde wejście bez linku zaczynało od domyślnej kolejności;
-- branie dziennej porcji wymagało zaznaczania ćwiczeń jedno po drugim albo stronami, bez gwarancji, że dwie osoby nie wezmą tego samego;
-- „Następne” w detalu mogło trafić na ćwiczenie wzięte przez kolegę;
-- nie było widać, ile jest moich, ile jeszcze wolnych i ile zrobiłem dziś.
+1. **Przydział do konkretnej osoby, masowo.** Zaznaczam ćwiczenia (albo „następne N w kolejności listy”) i daję je sobie albo koledze.
+2. **Widać, kto co weryfikuje.** Na liście przy ćwiczeniu, w filtrze po osobie i w podsumowaniu zespołu: ile kto ma do sprawdzenia, ile czeka u niego na poprawki, ile zrobił dziś.
+3. **Czytelna pętla poprawek.** Ćwiczenie odesłane do poprawek wewnętrznych ma własne oznaczenie i zakładkę, a po poprawieniu wraca jednym kliknięciem do sprawdzenia z plakietką „Poprawione, sprawdź”.
+
+Miara: liczba kliknięć od „mam 100 ćwiczeń dla kolegi” do „kolega widzi je u siebie” (zaznacz stronę albo wybierz N, wybierz osobę, potwierdź) oraz brak ćwiczeń, które utknęły w poprawkach bez drogi powrotu.
+
+## Ścieżka
+
+```
+Do sprawdzenia ──(uwagi → „Do poprawek wewnętrznych”)──► Poprawki wewnętrzne („Czeka na poprawki”)
+      ▲                                                          │
+      └──────(„Oznacz jako poprawione” → plakietka „Poprawione, sprawdź”)┘
+      │
+      ├──► Opublikowane (etapy przechodzą)
+      ├──► Wycofane (duplikat)
+      └──► Do poprawy (odesłane do autora; dla importów rzadkie)
+```
+
+Każde ćwiczenie w „Do sprawdzenia” i „Poprawkach wewnętrznych” ma najwyżej jedną osobę („Weryfikuje: …”). Przydział nie zmienia statusu.
 
 ## Architektura
 
-Tylko kolejka globalna (`ContentManager`). Kolejki organizacji nie mają przypisań; dodanie ich zmienia politykę autoryzacji i wymaga `sec-report`, więc jest poza zakresem.
+Tylko kolejka globalna (`ContentManager`, `SiteSuperAdmin`). Kolejki organizacji nie mają przydziału: to zmiana polityki autoryzacji z `sec-report`, poza zakresem. Bez nowych wartości `ContentStatus` (enum czyta mobile); stany pętli poprawek to `InternalFixStatus` (`None` / `Waiting` / `Fixed`).
 
-1. **Zapamiętana kolejka (panel, bez API).** `src/features/verification/utils/queuePreferences.ts` trzyma w `localStorage` (`fizyo_verification_queue:<id użytkownika>`, osobno dla każdego weryfikatora) kolejność i filtr przypisania z ostatniej zmiany na liście. Wejście na `/verification` bez `sort` i `assignee` w linku przywraca je; link z jawnym parametrem wygrywa. Zakres dat nie jest zapamiętywany: zapomniany filtr dat chowałby resztę kolejki.
-2. **„Weź N” (backend + panel).** Mutacja `claimNextExercisesForReview` bierze następne N niczyich ćwiczeń z „Do sprawdzenia” w kolejności i wyszukiwaniu, które weryfikator widzi. Zapis jest warunkowy (`UPDATE … WHERE ReviewAssigneeId IS NULL`), więc dwie osoby klikające naraz dostają rozłączne ćwiczenia; przegrane miejsca zastępują kolejne ćwiczenia z kolejki (do 3 prób). Ten sam zapis warunkowy dostało `assignExercisesForReview`, które wcześniej czytało i zapisywało osobno.
-3. **Kolejka „Moje i wolne” (`assignee: "available"`).** Lista i nawigator pokazują ćwiczenia moje i niczyje, bez wziętych przez kolegę. Starszy backend traktuje nieznaną wartość jak „Wszystkie”.
-4. **Postęp dnia.** Osobne zapytanie `verificationProgress` z `assignedToMe`, `unassignedPending` i `decidedTodayByMe` (ostatnia decyzja albo archiwizacja pytającego od północy Europe/Warsaw; liczy ćwiczenia, nie kliknięcia). Osobne, a nie pola `VerificationStats`: panel na starszym backendzie traci wtedy tylko pasek, nie karty statusów.
+1. **Pamięć listy (panel, bez API, PR #360).** `utils/queuePreferences.ts` trzyma w `localStorage` (`fizyo_verification_queue:<id użytkownika>`) kolejność i filtr przypisania z ostatniej zmiany. Link z jawnym `sort` albo `assignee` wygrywa. Zakres dat nie jest zapamiętywany.
+2. **Przydział do osoby (backend).** `assignExercisesForReview` dostaje `assigneeId` (domyślnie pytający) i `takeOver`. Osoba docelowa musi mieć `ReviewExercises`. Zapis warunkowy w jednym `UPDATE`:
+   - bez `takeOver`: tylko wiersze niczyje, już tej osoby albo pytającego (oddaję swoje koledze); zdejmuję tylko swoje;
+   - z `takeOver` (panel pyta o potwierdzenie): dowolne, także zdjęcie cudzego.
+     Pominięte ćwiczenia wracają w `skippedExerciseIds`, panel proponuje „Przejmij N”.
+3. **„Przydziel następne N” (backend).** `claimNextExercisesForReview` bierze N niczyich z „Do sprawdzenia” w kolejności, wyszukiwaniu i datach listy, dla `assigneeId` (domyślnie pytający). Dwie osoby klikające naraz dostają rozłączne ćwiczenia; przegrane miejsca zastępują kolejne (do 3 prób).
+4. **Zespół (backend).** `verificationTeam`: każda aktywna osoba z `ReviewExercises` z `assignedPending`, `waitingFixes`, `decidedToday` (ostatnia decyzja albo archiwizacja od północy Europe/Warsaw) oraz `unassignedPending` kolejki. Zastępuje `verificationProgress` z pierwszej wersji #722 (niewydanej).
+5. **Filtr po osobie.** `assignee` w `verificationQueuePage` i `verificationQueueNavigator` przyjmuje też `user:<id>` obok `all | mine | unassigned | available`. Starszy backend traktuje nieznaną wartość jak „Wszystkie”.
+6. **Pętla poprawek.** Zakładka „Poprawki wewnętrzne” pokazuje tylko `Waiting` (wcześniej także `Fixed`, więc poprawione ćwiczenie było w dwóch zakładkach). „Oznacz jako poprawione” (`completeInternalExerciseFixes`, dotąd bez UI) w detalu i masowo w zakładce; ćwiczenie wraca do „Do sprawdzenia” z plakietką.
 
-### Kolejność wdrożenia
+### Panel
 
-- PR A (panel, punkt 1) nie zależy od API.
-- PR backendu w `fizjo-app` (punkty 2–4, additive).
-- PR B (panel, UI punktów 2–4) dopiero po wdrożeniu backendu na DEV: pole dodane w panelu musi istnieć we wdrożonym API.
+- **Pasek zespołu** nad listą (zakładki „Do sprawdzenia” i „Poprawki wewnętrzne”): plakietka na osobę, „Ty” pierwszy, z liczbami „do sprawdzenia”, „w poprawkach” i „dziś”; kliknięcie liczby przełącza zakładkę i filtr na tę osobę. Pod spodem „Wolne: N” i „Przydziel następne dla [osoba] 10 | 25 | 50 | 100”; po przydziale lista pokazuje ćwiczenia tej osoby.
+- **Pasek zaznaczenia:** „Przypisz do mnie” i „Zdejmij ze mnie” bez zmian (lokatory E2E), obok „Przypisz do…” z listą kolegów. Gdy część zaznaczonych ma ktoś inny, panel pyta „Przejąć N ćwiczeń?” i ponawia tylko pominięte z `takeOver`. W „Poprawkach wewnętrznych” dodatkowo „Oznacz jako poprawione” z wynikiem per ćwiczenie.
+- **Detal:** „Przejmij” (z potwierdzeniem), gdy ćwiczenie sprawdza ktoś inny, i „Oznacz jako poprawione”, gdy czeka na poprawki.
+- **Filtr przypisania:** Wszystkie / Moje / Moje i wolne / Nieprzypisane / każda osoba z zespołu.
 
 ### Poza zakresem i decyzje otwarte
 
-- **Zawieszone przypisania.** Nikt nie zdejmie cudzego przypisania; ćwiczenia wzięte przez osobę, która przestała pracować, zostają u niej. Decyzja Adama: limit trzymanych ćwiczeń, „Przejmij” z potwierdzeniem albo wygasanie po X dniach.
-- Automatyczne branie ćwiczenia przy otwarciu detalu: odrzucone, bo przeglądanie zabierałoby ćwiczenia z kolejki kolegi.
+- **Kto może przejmować.** Domyślnie każdy z `ReviewExercises`, zawsze z potwierdzeniem w panelu (odwracalne: przejęte można oddać). Alternatywa do decyzji Adama: tylko `SiteSuperAdmin`.
+- **Publikacja ćwiczenia czekającego na poprawki.** Dziś możliwa (`canDecide` nie patrzy na `InternalFixStatus`). Zostaje; do decyzji.
+- **Masowa publikacja.** Nie: kontrole etapów są tylko w panelu, backend ich nie zna.
+- Historia „kto przydzielił, kto poprawił” w detalu (`exerciseHistory` istnieje, panel go nie czyta) i powiadomienie autora ćwiczenia globalnego o „Do poprawy”: następny krok.
 
 ## Interfejsy
 
 ### GraphQL (fizjo-app, additive)
 
 ```graphql
-type ClaimNextExercisesForReviewResult {
-  claimedExerciseIds: [String!]!
-  assignedToMe: Int!
-}
+assignExercisesForReview(exerciseIds: [String!]! assign: Boolean! = true assigneeId: String takeOver: Boolean! = false): AssignExercisesForReviewResult!
+claimNextExercisesForReview(count: Int! sort: VerificationQueueSort! = NEWEST search: String dateFrom: DateTime dateTo: DateTime assigneeId: String): ClaimNextExercisesForReviewResult!
 
-claimNextExercisesForReview(count: Int! sort: VerificationQueueSort! = NEWEST search: String dateFrom: DateTime dateTo: DateTime): ClaimNextExercisesForReviewResult!
+type ClaimNextExercisesForReviewResult { claimedExerciseIds: [String!]!, assigneeTotal: Int! }
 
-verificationProgress: VerificationProgress!
-
-type VerificationProgress {
-  assignedToMe: Int!
-  unassignedPending: Int!
-  decidedTodayByMe: Int!
-}
+verificationTeam: VerificationTeam!
+type VerificationTeam { members: [VerificationTeamMember!]!, unassignedPending: Int! }
+type VerificationTeamMember { userId: String!, fullname: String!, isMe: Boolean!, assignedPending: Int!, waitingFixes: Int!, decidedToday: Int! }
 ```
 
-`count` od 1 do 100. Backend: Prezentytu/fizjo-app#722. `verificationQueuePage` i `verificationQueueNavigator` przyjmują `assignee: "available"`.
-
-### Komponenty
-
-| Komponent          | Lokalizacja                                           | Opis                                        |
-| ------------------ | ----------------------------------------------------- | ------------------------------------------- |
-| `queuePreferences` | `src/features/verification/utils/queuePreferences.ts` | odczyt, zapis i reguła przywrócenia kolejki |
-| Lista globalna     | `src/app/(dashboard)/verification/page.tsx`           | przywrócenie i zapis przy zmianie           |
+`count` od 1 do 100, przypisanie do 200 naraz. `assignee: "available" | "user:<id>"` w kolejce i nawigatorze.
 
 ## Data-testid
 
-- `verification-claim-bar`, `verification-claim-{10|25|50|100}`
-- `verification-progress-{mine|free|today}`
-- `verification-assignee-available` (obok istniejących `verification-assignee-{all|mine|unassigned}`)
+- `verification-team-bar`, `verification-team-member-{userId}`, `verification-team-member-{userId}-{queue|fixes}`, `verification-team-free`
+- `verification-claim-{10|25|50|100}`, `verification-claim-assignee`, `verification-claim-assignee-select`
+- `verification-selection-assign-to`, `verification-selection-assign-{userId}`, `verification-selection-mark-fixed`; bez zmian `verification-selection-assign-btn`, `verification-selection-unassign-btn`
+- `verification-assignee-available`, `verification-assignee-user:{userId}`
+- Detal: `review-notes-takeover-btn`, `review-notes-mark-fixed-btn`; potwierdzenie przejęcia to wspólny `common-confirm-dialog`.
 
 ## Verification plan
 
-- Vitest: `utils/__tests__/queuePreferences.test.ts` (zapis, uszkodzony zapis, niedostępna pamięć, pierwszeństwo linku).
-- Backend: `ExerciseReviewNoteTests` (dwa końce kolejki, „Moje i wolne”, liczniki dnia, północ Europe/Warsaw) oraz dwa testy na prawdziwym PostgreSQL z równoległymi żądaniami (`scripts/rehearse-database.sh`).
-- E2E (`fiziyo-tests`, po PR B): weryfikator A bierze 10 od najnowszych, B 10 od najstarszych, listy „Moje” są rozłączne.
+- Vitest: `queuePreferences`, `claimQueue` (komunikaty), `reviewNotes` (parse filtra z `user:`).
+- Backend `ExerciseReviewNoteTests`: przydział koledze, odmowa dla osoby bez `ReviewExercises`, bez `takeOver` cudze pominięte, z `takeOver` przejęte, „Przydziel następne” dla kolegi, filtr `user:<id>`, zespół i liczniki, „Poprawki wewnętrzne” bez `Fixed`. PostgreSQL (CI `migrations-postgres`): równoległe „Weź N” i przypisania.
+- E2E (`fiziyo-tests`, po wdrożeniu na DEV): A przydziela 10 koledze B, B widzi je w „Moje”; A odsyła do poprawek, B oznacza poprawione, A widzi „Poprawione, sprawdź”.
 
 ## Changelog
 
 ### 2026-11-23
 
-- Utworzenie specyfikacji; PR A: zapamiętana kolejka weryfikatora.
-- PR B: pasek „Moje / Wolne / Dziś zrobione” z „Weź 10/25/50/100”, filtr „Moje i wolne”, odświeżenie liczników po przypisaniu. Wymaga backendu z `claimNextExercisesForReview` na DEV.
+- Utworzenie; PR #360: pamięć listy per weryfikator.
+- Przepisanie po uwadze Adama: dwa końce kolejki były obejściem, nie wymaganiem. Cel to przydział do osoby, widoczność zespołu i pętla poprawek; „Weź N od najnowszych” zastąpione przez „Przydziel następne N → osoba” w kolejności listy.

@@ -124,6 +124,32 @@ Wpisy przeniesione z `.ai/lessons.md`: starsze niż 30 dni w chwili przeniesieni
 - **Rozwiązanie**: `team_` → `teamId`, inny poprawny identyfikator → `slug`. Błąd API zawiera `code` + `message`. Pin odpalaj z `main` / `workflow_dispatch`, nie Re-run Preview.
 - **Reguła**: Vercel `teamId` to tylko `team_…`. Slug zespołu idzie w `slug`. Nie rerunuj pinu z Preview PR.
 
+### 2026-09-15 - Kosz przy placeholderze to no-op, nie akcja
+
+- **Kategoria**: `UI/UX`
+- **Problem**: W edycji ćwiczenia kosz przy pustych polach „Błąd” / „Jak poprawić” i wskazówkach wyglądał na aktywny, choć nie było treści do usunięcia.
+- **Przyczyna**: Listy enrichment zawsze renderują starterowy pusty wiersz (`items.length ? items : ['']`). Kosz był `disabled` tylko przy locku edycji, więc klik kasował `[]` i ten sam placeholder wracał.
+- **Rozwiązanie**: Wspólne `canRemovePlaceholderRow` — kosz aktywny, gdy wiersz ma treść albo jest więcej niż jeden. Pusty jedyny wiersz: `disabled` + stonowana ikona + `aria-label` „Brak treści do usunięcia”.
+- **Reguła**: Jeśli UI dokłada pusty wiersz-placeholder, przycisk usuwania musi zależeć od treści, nie od samego istnienia wiersza. `data-testid` dawaj jako pierwszy atrybut — skaner testid kończy tag na `=>` w `onClick`. [egzekwowane: src/components/shared/enrichment/**tests**/canRemovePlaceholderRow.test.ts]
+
+### 2026-09-15 - Import nie może przesuwać fałszywego braku testid
+
+- **Kategoria**: `Testing` | `Build/Tooling`
+- **Problem**: PR z importem i formatowaniem `hasParams` wywalił `check:testids` na `chat/ExerciseCard` Button, który już miał `data-testid`.
+- **Przyczyna**: Guard kończył opening tag na pierwszym `>` (`onClick={() =>}`), więc testid w kolejnej linii był niewidoczny; a ówczesna allowlista z numerem linii dała z +2 linii „nowy” wpis.
+- **Rozwiązanie**: `data-testid` jako pierwszy atrybut; parser pomija `>` wewnątrz `{...}`; regresja w `scripts/check-testid-coverage.test.mjs`.
+- **Reguła**: Guard ma widzieć testid mimo `=>`; trzymaj `data-testid` przed handlerami z `=>`. [egzekwowane: scripts/check-testid-coverage.test.mjs]
+
+### 2026-09-14 - Hook klasyfikuje każdy segment `&&` osobno
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: `git push && git log origin/main..HEAD` padało jako „push to main”.
+- **Przyczyna**: Jeden regex na całym łańcuchu poleceń.
+- **Rozwiązanie**: `agent-guard` dzieli po `&&` / `||` / `;` i ocenia segmenty.
+- **Reguła**: Jeśli hook szuka `git push` + `main`, klasyfikuj segment, nie cały string. [egzekwowane: scripts/agent-guard.test.mjs]
+
+<!-- Nowe wpisy dodawaj na górze sekcji Wpisy, nie tutaj. -->
+
 ### 2026-09-15 - Hardening parsera karty idzie z kanonem
 
 - **Kategoria**: `Build/Tooling`
