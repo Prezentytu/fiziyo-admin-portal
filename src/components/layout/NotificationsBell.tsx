@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ActivityStatusLabel } from '@/components/shared/page';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { DUPLICATE_REVIEW_NOTES_PREFIX, duplicateReviewReason } from '@/features/exercises/utils/duplicateReviewReason';
 import {
   canMarkSignalsReviewed,
   PATIENT_SIGNALS_POLL_MS,
@@ -25,23 +26,55 @@ import {
   releaseNoteHref,
 } from '@/features/whats-new/utils/releaseNotes';
 import { MARK_PATIENT_SIGNALS_REVIEWED_MUTATION } from '@/graphql/mutations/therapists.mutations';
+import { GET_DUPLICATE_SUBMISSION_NOTICES_QUERY } from '@/graphql/queries/exercises.queries';
 import { GET_ORGANIZATION_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
+import type { DuplicateSubmissionNoticesResponse } from '@/graphql/types/exercise.types';
 import type { OrganizationPatientsResponse, UserByClerkIdResponse } from '@/types/apollo';
 
-/**
- * Dzwonek: pacjenci, którzy zgłosili ból, „za trudne” albo notatkę od ostatniego przejrzenia (SPEC-039),
- * a nad nimi wysłane, nieobejrzane wydanie portalu („Co nowego”).
- */
 export function NotificationsBell() {
   const { user } = useUser();
   const { currentOrganization } = useOrganization();
   const organizationId = currentOrganization?.organizationId;
+  const scope = JSON.stringify([user?.id, organizationId]);
+
+  return (
+    <ScopedNotificationsBell
+      key={scope}
+      storageKey={`fiziyo:seen-duplicate-submissions:${scope}`}
+      clerkId={user?.id}
+      organizationId={organizationId}
+      role={currentOrganization?.role}
+    />
+  );
+}
+
+function loadSeenDuplicateSubmissions(storageKey: string): string[] {
+  try {
+    const stored: unknown = JSON.parse(window.localStorage.getItem(storageKey) ?? '[]');
+    return Array.isArray(stored) ? stored.filter((id): id is string => typeof id === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function ScopedNotificationsBell({
+  storageKey,
+  clerkId,
+  organizationId,
+  role,
+}: {
+  storageKey: string;
+  clerkId?: string;
+  organizationId?: string;
+  role?: string | null;
+}) {
   const [open, setOpen] = useState(false);
+  const [seenDuplicateIds, setSeenDuplicateIds] = useState(() => loadSeenDuplicateSubmissions(storageKey));
 
   const { data: userData } = useQuery<UserByClerkIdResponse>(GET_USER_BY_CLERK_ID_QUERY, {
-    variables: { clerkId: user?.id },
-    skip: !user?.id,
+    variables: { clerkId },
+    skip: !clerkId,
   });
   const { data, error } = useQuery<OrganizationPatientsResponse>(GET_ORGANIZATION_PATIENTS_QUERY, {
     variables: { organizationId, filter: 'all' },
@@ -55,17 +88,47 @@ export function NotificationsBell() {
     refetchQueries: ['GetOrganizationPatients'],
     onError: () => toast.error('Nie udało się oznaczyć zgłoszenia jako przejrzane'),
   });
-  const canReview = canMarkSignalsReviewed(currentOrganization?.role);
+  const canReview = canMarkSignalsReviewed(role);
   const patients = data?.organizationPatients;
 
   const therapistId = userData?.userByClerkId?.id;
+  const { data: submissions, error: submissionsError } = useQuery<DuplicateSubmissionNoticesResponse>(
+    GET_DUPLICATE_SUBMISSION_NOTICES_QUERY,
+    {
+      variables: { organizationId, userId: therapistId, notesPrefix: DUPLICATE_REVIEW_NOTES_PREFIX },
+      skip: !organizationId || !therapistId,
+      fetchPolicy: 'no-cache',
+      pollInterval: PATIENT_SIGNALS_POLL_MS,
+      skipPollAttempt: () => document.hidden,
+    }
+  );
+  const originalsById = new Map(submissions?.originals.map((original) => [original.id, original]));
+  const duplicates = (submissions?.duplicates ?? []).flatMap((submission) => {
+    const original = submission.sourceOrganizationExerciseId && originalsById.get(submission.sourceOrganizationExerciseId);
+    const reason = duplicateReviewReason(submission.adminReviewNotes);
+    if (!original || original.globalSubmissionId !== submission.id || !reason || seenDuplicateIds.includes(submission.id)) {
+      return [];
+    }
+    return [{ id: submission.id, original, reason }];
+  });
   const signals = useMemo(() => selectPatientSignals(patients ?? [], therapistId), [patients, therapistId]);
   const releaseNote = useUnseenReleaseNote();
   const markReleaseSeen = useMarkReleaseNoteSeen();
   const sentRelease = releaseNote?.notified ? releaseNote : null;
   const supportCount = useSupportUnreadCount();
   const teamMessages = supportTabUnread(supportCount, 'CONVERSATIONS');
-  const count = notificationsBellCount(signals.length, releaseNote, teamMessages > 0);
+  const count = notificationsBellCount(signals.length, releaseNote, teamMessages > 0) + duplicates.length;
+
+  const openDuplicate = (submissionId: string) => {
+    const next = [...new Set([...loadSeenDuplicateSubmissions(storageKey), ...seenDuplicateIds, submissionId])];
+    setSeenDuplicateIds(next);
+    try {
+      window.localStorage.setItem(storageKey, JSON.stringify(next));
+    } catch {
+      // The in-memory acknowledgement also works when browser storage is blocked.
+    }
+    setOpen(false);
+  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -75,7 +138,7 @@ export function NotificationsBell() {
           size="icon"
           className="relative"
           data-testid="nav-notifications-btn"
-          aria-label={notificationsBellLabel(signals.length, sentRelease !== null, teamMessages > 0)}
+          aria-label={notificationsBellLabel(signals.length, sentRelease !== null, teamMessages > 0, duplicates.length)}
         >
           <Bell className="h-5 w-5 text-label-secondary" />
           {count > 0 && (
@@ -88,7 +151,7 @@ export function NotificationsBell() {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-80 overflow-hidden p-0" data-testid="nav-notifications-panel">
+      <PopoverContent align="end" className="max-h-[min(32rem,80vh)] w-80 overflow-y-auto p-0" data-testid="nav-notifications-panel">
         {sentRelease && (
           <Link
             href={releaseNoteHref(sentRelease.id)}
@@ -122,6 +185,34 @@ export function NotificationsBell() {
             </span>
           </Link>
         )}
+        {duplicates.length > 0 && (
+          <section aria-label="Zgłoszenia ćwiczeń do FiziYo">
+            <h2 className="border-b-[0.5px] border-hairline px-4 py-3 text-[15px] font-semibold text-foreground">
+              Zgłoszenia ćwiczeń do FiziYo
+            </h2>
+            <ul>
+              {duplicates.map(({ id, original, reason }) => (
+                <li key={id} className="border-b-[0.5px] border-hairline">
+                  <Link
+                    href={`/exercises/${encodeURIComponent(original.id)}`}
+                    onClick={() => openDuplicate(id)}
+                    className="block px-4 py-3 hover:bg-fill-tertiary"
+                    data-testid={`nav-notifications-duplicate-${id}-link`}
+                  >
+                    <b className="block break-words text-[14px] text-foreground">{original.name}</b>
+                    <p className="text-[13px] text-foreground">Wycofano zgłoszenie jako duplikat.</p>
+                    <p className="break-words text-[13px] text-label-secondary">{reason}</p>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+        {submissionsError && (
+          <p role="status" className="border-b-[0.5px] border-hairline px-4 py-3 text-[13px] text-label-secondary">
+            Nie udało się wczytać decyzji dotyczących zgłoszeń ćwiczeń.
+          </p>
+        )}
         <h2 className="border-b-[0.5px] border-hairline px-4 py-3 text-[15px] font-semibold text-foreground">
           Zgłoszenia pacjentów
         </h2>
@@ -134,7 +225,7 @@ export function NotificationsBell() {
             Nikt nie zgłosił bólu, trudności ani notatki od ostatniego przejrzenia.
           </p>
         ) : (
-          <ul className="flex max-h-96 flex-col overflow-y-auto">
+          <ul className="flex flex-col">
             {signals.map((item) => (
               <li
                 key={item.patientId}

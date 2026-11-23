@@ -19,6 +19,7 @@ export const CREATE_EXERCISE_MUTATION = gql`
     $preparationTime: Decimal
     $executionTime: Decimal
     $videoUrl: String
+    $videos: [String!]
     $gifUrl: String
     $imageUrl: String
     $images: [String!]
@@ -59,6 +60,7 @@ export const CREATE_EXERCISE_MUTATION = gql`
       preparationTime: $preparationTime
       executionTime: $executionTime
       videoUrl: $videoUrl
+      videos: $videos
       gifUrl: $gifUrl
       imageUrl: $imageUrl
       images: $images
@@ -97,6 +99,7 @@ export const CREATE_EXERCISE_MUTATION = gql`
       preparationTime
       defaultExecutionTime
       videoUrl
+      videos
       gifUrl
       imageUrl
       thumbnailUrl
@@ -152,6 +155,7 @@ export const UPDATE_EXERCISE_MUTATION = gql`
     $preparationTime: Decimal
     $executionTime: Decimal
     $videoUrl: String
+    $videos: [String!]
     $images: [String!]
     $notes: String
     $mainTags: [String!]
@@ -187,6 +191,7 @@ export const UPDATE_EXERCISE_MUTATION = gql`
       preparationTime: $preparationTime
       executionTime: $executionTime
       videoUrl: $videoUrl
+      videos: $videos
       images: $images
       notes: $notes
       mainTags: $mainTags
@@ -221,6 +226,7 @@ export const UPDATE_EXERCISE_MUTATION = gql`
       preparationTime
       defaultExecutionTime
       videoUrl
+      videos
       images
       notes
       tempo

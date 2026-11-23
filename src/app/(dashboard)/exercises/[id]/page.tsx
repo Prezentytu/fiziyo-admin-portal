@@ -43,14 +43,15 @@ import {
   SafetySection,
   TherapistSection,
   MetadataSection,
-  VideoUrlField,
   readViewDocument,
 } from '@/features/exercises/ExerciseDetailSections';
+import { ExerciseVideosField } from '@/features/exercises/ExerciseVideosField';
 import { CreateSetWizard } from '@/features/exercise-sets';
 import { SubmitToGlobalDialog } from '@/features/exercises/SubmitToGlobalDialog';
 import { SubmitToOrganizationDialog } from '@/features/exercises/SubmitToOrganizationDialog';
 import { FeedbackBanner } from '@/features/exercises/FeedbackBanner';
 import { resolveExerciseReviewFeedback } from '@/features/exercises/utils/resolveExerciseReviewFeedback';
+import { duplicateReviewReason } from '@/features/exercises/utils/duplicateReviewReason';
 import { ExerciseReviewThread } from '@/features/exercises/ExerciseReviewThread';
 import { ReportExerciseDialog } from '@/features/exercises/ReportExerciseDialog';
 import { InternalNotesPanel } from '@/features/exercises/InternalNotesPanel';
@@ -70,9 +71,11 @@ import { PatientPreviewDialog } from '@/components/shared/exercise/patient-previ
 
 import {
   GET_EXERCISE_BY_ID_QUERY,
+  GET_GLOBAL_SUBMISSION_REVIEW_QUERY,
   GET_ORGANIZATION_EXERCISES_QUERY,
   GET_ORGANIZATION_EXERCISE_NAMES_QUERY,
 } from '@/graphql/queries/exercises.queries';
+import type { GlobalSubmissionReviewResponse } from '@/graphql/types/exercise.types';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
 import {
@@ -155,6 +158,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
 
   const { data, loading, error } = useQuery(GET_EXERCISE_BY_ID_QUERY, {
     variables: { id },
+    fetchPolicy: 'cache-and-network',
   });
   // Rekord puli demo ma cudze media; kopia do gabinetu jest niedostępna dla demo i dopóki dostępność jest nieznana
   // (ładowanie, błąd sieci). API bez pola (sprzed fizjo-app#388) nie ma rekordów demo: kopia działa jak dotąd.
@@ -202,6 +206,14 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   });
 
   const rawExercise = (data as ExerciseByIdResponse)?.exerciseById;
+  const archivedSubmissionId =
+    rawExercise?.scope === 'ORGANIZATION' && rawExercise.globalSubmissionStatus === 'ARCHIVED_GLOBAL'
+      ? rawExercise.globalSubmissionId
+      : null;
+  const { data: submissionReviewData } = useQuery<GlobalSubmissionReviewResponse>(GET_GLOBAL_SUBMISSION_REVIEW_QUERY, {
+    variables: { id: archivedSubmissionId },
+    skip: !archivedSubmissionId,
+  });
   const organizationExerciseNames = (
     (organizationExercisesData as { organizationExercises?: { name?: string | null }[] } | undefined)
       ?.organizationExercises ?? []
@@ -461,7 +473,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
     }
   }, [exercise, id, uploadExerciseImage, fileToBase64, apolloClient, generateAiImage, imageStyle]);
 
-  if (loading) {
+  if (loading && !exercise) {
     return (
       <div className="space-y-6">
         <LoadingState type="text" count={3} />
@@ -493,6 +505,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
     imageUrl: exercise.imageUrl,
     images: exercise.images,
     videoUrl: exercise.videoUrl,
+    videos: exercise.videos,
     gifUrl: exercise.gifUrl,
     title: exercise.name,
   });
@@ -508,8 +521,17 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const hasGlobalSubmission = !!exercise.globalSubmissionId;
   const isPendingReview = exercise.status === 'PENDING_REVIEW';
   const isChangesRequested = exercise.status === 'CHANGES_REQUESTED';
-  const isSubmittedToGlobal = hasGlobalSubmission && exercise.scope === 'ORGANIZATION';
-  const canResubmit = isChangesRequested && hasGlobalSubmission;
+  const isGlobalSubmissionArchived = exercise.scope === 'ORGANIZATION' && exercise.globalSubmissionStatus === 'ARCHIVED_GLOBAL';
+  const isSubmittedToGlobal = hasGlobalSubmission && exercise.scope === 'ORGANIZATION' && !isGlobalSubmissionArchived;
+  const canResubmit = isChangesRequested && hasGlobalSubmission && !isGlobalSubmissionArchived;
+  const submissionReview = submissionReviewData?.exerciseById;
+  const withdrawalReason =
+    submissionReview &&
+    submissionReview.id === archivedSubmissionId &&
+    submissionReview.sourceOrganizationExerciseId === exercise.id &&
+    submissionReview.status === 'ARCHIVED_GLOBAL'
+      ? duplicateReviewReason(submissionReview.adminReviewNotes)
+      : null;
   const reviewFeedback = resolveExerciseReviewFeedback(exercise);
 
   const normalizedFields = normalizeExerciseFieldValues(exercise);
@@ -728,6 +750,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
               <Globe className="mr-1 h-3 w-3" />W FiziYo
             </Badge>
           )}
+          {isGlobalSubmissionArchived && <Badge variant="secondary">Wycofane z FiziYo</Badge>}
           {isPendingReview && (
             <Badge
               variant="outline"
@@ -763,6 +786,14 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
           </h1>
         )}
       </div>
+
+      {isGlobalSubmissionArchived && (
+        <div className="rounded-lg border bg-muted/40 p-4 text-sm" data-testid="exercise-global-withdrawal-notice">
+          <p className="font-semibold text-foreground">Zgłoszenie do katalogu FiziYo zostało wycofane</p>
+          {withdrawalReason && <p className="mt-1 text-foreground">{withdrawalReason}</p>}
+          <p className="mt-1 text-muted-foreground">Ćwiczenie jest nadal dostępne w Twojej organizacji.</p>
+        </div>
+      )}
 
       {reviewFeedback && (
         <FeedbackBanner adminReviewNotes={reviewFeedback.notes} updatedAt={reviewFeedback.updatedAt} />
@@ -880,11 +911,11 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
           )}
 
           {isEditing && (
-            <VideoUrlField
-              value={core.videoUrl}
-              dirty={isCoreFieldDirty('videoUrl')}
+            <ExerciseVideosField
+              value={core.videos}
+              dirty={isCoreFieldDirty('videos')}
               disabled={false}
-              onChange={(value) => setCoreField('videoUrl', value)}
+              onChange={(value) => setCoreField('videos', value)}
             />
           )}
 
@@ -983,13 +1014,13 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
               {/* 5. Metadane */}
               <MetadataSection
                 data={readEnrichment}
-                videoUrl={core.videoUrl}
+                videos={core.videos}
                 notes={core.notes}
                 editable={false}
-                videoUrlDirty={isCoreFieldDirty('videoUrl')}
+                videosDirty={isCoreFieldDirty('videos')}
                 notesDirty={isCoreFieldDirty('notes')}
                 isPathDirty={isPathDirty}
-                onVideoUrlChange={(value) => setCoreField('videoUrl', value)}
+                onVideosChange={(value) => setCoreField('videos', value)}
                 onNotesChange={(value) => setCoreField('notes', value)}
                 setPath={setEnrichmentPath}
               />

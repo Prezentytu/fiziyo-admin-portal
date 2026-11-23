@@ -1,49 +1,65 @@
 import { randomUUID } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 
 import { resolveExerciseReportRoutingTarget } from '@/features/exercises/utils/exerciseReportRouting';
-import type { CreateExerciseReportInput, ExerciseReport, ExerciseReportStatus } from '@/types/exercise-report.types';
+import { DISCORD_NO_MENTIONS, discordText } from '@/lib/server/discordText';
+import { requireExerciseReviewer, requireSessionAuthor } from '@/lib/server/requestIdentity';
+import type { ExerciseReport, ExerciseReportAuthor, ExerciseReportStatus } from '@/types/exercise-report.types';
 
-const DISCORD_WEBHOOK_URL = process.env.DISCORD_EXERCISE_REPORTS_WEBHOOK_URL;
 const ADMIN_BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://portal.fiziyo.pl';
+const discordWebhookUrl = () => process.env.DISCORD_EXERCISE_REPORTS_WEBHOOK_URL;
 
-interface LegacyExerciseInfo {
-  id: string;
-  name: string;
-  exerciseId?: string;
-}
+const MAX_STORED_REPORTS = 500;
+const id = z.string().trim().min(1).max(200);
+const label = z.string().trim().min(1).max(300);
+// A missing patient or exercise name must not reject the whole set report.
+const displayName = z.string().trim().max(300);
 
-interface LegacyPatientInfo {
-  id: string;
-  name: string;
-}
+// Optional fields come from GraphQL data, so they may be `null`.
+const optional = <T extends z.ZodType>(schema: T) => schema.nullish().transform((value) => value ?? undefined);
 
-interface LegacyExerciseReportRequest {
-  message: string;
-  exerciseSet: {
-    id: string;
-    name: string;
-    exercises: LegacyExerciseInfo[];
-  };
-  patients: LegacyPatientInfo[];
-  reporter: {
-    userId: string;
-    email: string;
-    name?: string;
-  };
-  organizationId: string;
-}
+const exerciseReportSchema = z.object({
+  type: z.literal('EXERCISE_REPORT'),
+  exerciseId: id,
+  exerciseName: label,
+  exerciseScope: optional(z.string().max(50)),
+  exerciseStatus: optional(z.string().max(50)),
+  organizationId: optional(id),
+  reasonCategory: z.enum([
+    'WRONG_DESCRIPTION',
+    'WRONG_MEDIA',
+    'CLINICAL_RISK',
+    'DUPLICATE',
+    'OUTDATED_CONTENT',
+    'NEEDS_IMPROVEMENT',
+    'OTHER',
+  ]),
+  description: z.string().trim().min(1).max(4000),
+  attachments: optional(
+    z.array(z.object({ name: z.string().max(255), size: z.number().nonnegative(), type: z.string().max(100) })).max(10)
+  ),
+});
 
-interface ExerciseReportRequest extends CreateExerciseReportInput {
-  type: 'EXERCISE_REPORT';
-}
+const legacySetReportSchema = z.object({
+  message: z.string().trim().min(1).max(4000),
+  exerciseSet: z.object({
+    id,
+    name: label,
+    exercises: z.array(z.object({ id, name: displayName, exerciseId: optional(id) })).max(100),
+  }),
+  patients: z.array(z.object({ id, name: displayName })).max(100),
+  organizationId: z.string().trim().max(200),
+});
 
-interface ResolveReportRequest {
-  exerciseId?: string;
-  reportId?: string;
-  resolvedByUserId: string;
-  resolutionNote?: string;
-}
+const resolveSchema = z
+  .object({ exerciseId: optional(id), reportId: optional(id), resolutionNote: optional(z.string().max(2000)) })
+  .refine((body) => body.exerciseId || body.reportId, 'exerciseId albo reportId jest wymagane');
+
+const badRequest = (error: string) => NextResponse.json({ success: false, error, message: error }, { status: 400 });
+
+type LegacyExerciseReportRequest = z.infer<typeof legacySetReportSchema>;
+type ExerciseReportRequest = z.infer<typeof exerciseReportSchema>;
 
 function getReportStore(): ExerciseReport[] {
   const globalStore = globalThis as typeof globalThis & {
@@ -58,6 +74,9 @@ function getReportStore(): ExerciseReport[] {
 }
 
 export async function GET(request: NextRequest) {
+  const reviewer = await requireExerciseReviewer(request);
+  if (!reviewer.ok) return reviewer.response;
+
   const searchParams = request.nextUrl.searchParams;
   const exerciseId = searchParams.get('exerciseId');
   const status = searchParams.get('status') as ExerciseReportStatus | null;
@@ -119,16 +138,23 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const session = await requireSessionAuthor();
+  if (!session.ok) return session.response;
+
   try {
-    const body = (await request.json()) as LegacyExerciseReportRequest | ExerciseReportRequest;
+    const body: unknown = await request.json();
 
     if (isExerciseReportRequest(body)) {
-      return handleExerciseReport(body);
+      const parsed = exerciseReportSchema.safeParse(body);
+      if (!parsed.success) return badRequest('Nieprawidłowe zgłoszenie ćwiczenia');
+      return handleExerciseReport(parsed.data, session.author);
     }
 
-    return handleLegacySetReport(body);
+    const parsed = legacySetReportSchema.safeParse(body);
+    if (!parsed.success) return badRequest('Nieprawidłowe zgłoszenie zestawu');
+    return handleLegacySetReport(parsed.data, session.author);
   } catch (error) {
-    console.error('[API/exercise-reports] Error:', error);
+    console.error('[API/exercise-reports] Error:', error instanceof Error ? error.message : 'unknown');
     return NextResponse.json(
       { success: false, message: 'Wystąpił błąd podczas wysyłania zgłoszenia' },
       { status: 500 }
@@ -137,11 +163,13 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
+  const reviewer = await requireExerciseReviewer(request);
+  if (!reviewer.ok) return reviewer.response;
+
   try {
-    const body = (await request.json()) as ResolveReportRequest;
-    if (!body.resolvedByUserId) {
-      return NextResponse.json({ success: false, error: 'resolvedByUserId jest wymagane' }, { status: 400 });
-    }
+    const parsed = resolveSchema.safeParse(await request.json());
+    if (!parsed.success) return badRequest('exerciseId albo reportId jest wymagane');
+    const body = parsed.data;
 
     const store = getReportStore();
     const now = new Date().toISOString();
@@ -153,7 +181,7 @@ export async function PATCH(request: NextRequest) {
       if ((matchesById || matchesByExercise) && report.status === 'OPEN') {
         report.status = 'RESOLVED';
         report.resolvedAt = now;
-        report.resolvedByUserId = body.resolvedByUserId;
+        report.resolvedByUserId = reviewer.clerkUserId;
         report.resolutionNote = body.resolutionNote;
         affectedCount += 1;
       }
@@ -169,11 +197,7 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
-async function handleExerciseReport(body: ExerciseReportRequest) {
-  if (!body.description?.trim()) {
-    return NextResponse.json({ success: false, error: 'Treść zgłoszenia jest wymagana' }, { status: 400 });
-  }
-
+async function handleExerciseReport(body: ExerciseReportRequest, author: ExerciseReportAuthor) {
   const report: ExerciseReport = {
     id: randomUUID(),
     exerciseId: body.exerciseId,
@@ -182,18 +206,20 @@ async function handleExerciseReport(body: ExerciseReportRequest) {
     exerciseStatus: body.exerciseStatus,
     organizationId: body.organizationId,
     reasonCategory: body.reasonCategory,
-    description: body.description.trim(),
+    description: body.description,
     attachments: body.attachments ?? [],
     status: 'OPEN',
     routingTarget: resolveExerciseReportRoutingTarget({
       status: body.exerciseStatus,
       scope: body.exerciseScope,
     }),
-    reportedBy: body.reportedBy,
+    reportedBy: author,
     createdAt: new Date().toISOString(),
   };
 
-  getReportStore().unshift(report);
+  const store = getReportStore();
+  store.unshift(report);
+  store.splice(MAX_STORED_REPORTS);
   await sendDiscordReportNotification(report);
 
   return NextResponse.json({
@@ -203,24 +229,22 @@ async function handleExerciseReport(body: ExerciseReportRequest) {
   });
 }
 
-async function handleLegacySetReport(body: LegacyExerciseReportRequest) {
-  if (!body.message?.trim()) {
-    return NextResponse.json({ success: false, message: 'Treść zgłoszenia jest wymagana' }, { status: 400 });
-  }
-
-  if (!DISCORD_WEBHOOK_URL) {
+async function handleLegacySetReport(body: LegacyExerciseReportRequest, reporter: ExerciseReportAuthor) {
+  const webhookUrl = discordWebhookUrl();
+  if (!webhookUrl) {
     console.error('[API/exercise-reports] No Discord webhook URL configured');
     return NextResponse.json({ success: false, message: 'Webhook nie jest skonfigurowany' }, { status: 503 });
   }
 
-  const embed = buildDiscordEmbedForSetReport(body);
+  const embed = buildDiscordEmbedForSetReport(body, reporter);
   const discordPayload = {
     username: 'FiziYo Exercise Reports',
     avatar_url: 'https://i.imgur.com/AfFp7pu.png',
+    allowed_mentions: DISCORD_NO_MENTIONS,
     embeds: [embed],
   };
 
-  const discordResponse = await fetch(DISCORD_WEBHOOK_URL, {
+  const discordResponse = await fetch(webhookUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(discordPayload),
@@ -233,8 +257,7 @@ async function handleLegacySetReport(body: LegacyExerciseReportRequest) {
     });
   }
 
-  const errorText = await discordResponse.text();
-  console.error('[API/exercise-reports] Discord error:', discordResponse.status, errorText);
+  console.error('[API/exercise-reports] Discord error:', discordResponse.status);
   return NextResponse.json({ success: false, message: `Błąd Discord: ${discordResponse.status}` }, { status: 500 });
 }
 
@@ -246,17 +269,20 @@ function isExerciseReportRequest(body: unknown): body is ExerciseReportRequest {
   return (body as { type?: string }).type === 'EXERCISE_REPORT';
 }
 
-function buildDiscordEmbedForSetReport(report: LegacyExerciseReportRequest) {
-  const setUrl = `${ADMIN_BASE_URL}/exercise-sets/${report.exerciseSet.id}`;
+function buildDiscordEmbedForSetReport(report: LegacyExerciseReportRequest, reporter: ExerciseReportAuthor) {
+  const setUrl = `${ADMIN_BASE_URL}/exercise-sets/${encodeURIComponent(report.exerciseSet.id)}`;
 
   const exercisesList = report.exerciseSet.exercises
     .map((exercise, index) => {
-      const exerciseUrl = `${ADMIN_BASE_URL}/exercises/${exercise.exerciseId || exercise.id}`;
-      return `${index + 1}. **${exercise.name}**\n   └ ID: \`${exercise.exerciseId || exercise.id}\` • [Edytuj](${exerciseUrl})`;
+      const exerciseId = exercise.exerciseId || exercise.id;
+      const exerciseUrl = `${ADMIN_BASE_URL}/exercises/${encodeURIComponent(exerciseId)}`;
+      return `${index + 1}. **${discordText(exercise.name, 200)}**\n   └ ID: ${discordText(exerciseId, 100)} • [Edytuj](${exerciseUrl})`;
     })
     .join('\n');
 
-  const patientsList = report.patients.map((patient) => `• ${patient.name} (\`${patient.id}\`)`).join('\n');
+  const patientsList = report.patients
+    .map((patient) => `• ${discordText(patient.name, 100)} (${discordText(patient.id, 100)})`)
+    .join('\n');
 
   return {
     title: '🚨 Raport błędu w ćwiczeniach',
@@ -266,32 +292,32 @@ function buildDiscordEmbedForSetReport(report: LegacyExerciseReportRequest) {
     fields: [
       {
         name: '📝 Treść zgłoszenia',
-        value: sanitizeText(report.message),
+        value: discordText(report.message),
         inline: false,
       },
       {
         name: '📋 Zestaw ćwiczeń',
-        value: `**${report.exerciseSet.name}**\nID: \`${report.exerciseSet.id}\`\n[🔗 Otwórz w adminie](${setUrl})`,
+        value: `**${discordText(report.exerciseSet.name, 300)}**\nID: ${discordText(report.exerciseSet.id, 100)}\n[🔗 Otwórz w adminie](${setUrl})`,
         inline: false,
       },
       {
         name: `🏋️ Ćwiczenia w zestawie (${report.exerciseSet.exercises.length})`,
-        value: exercisesList || 'Brak ćwiczeń',
+        value: (exercisesList || 'Brak ćwiczeń').slice(0, 1024),
         inline: false,
       },
       {
         name: `👤 Pacjenci (${report.patients.length})`,
-        value: patientsList || 'Brak pacjentów',
+        value: (patientsList || 'Brak pacjentów').slice(0, 1024),
         inline: true,
       },
       {
         name: '👨‍⚕️ Zgłaszający',
-        value: `${report.reporter.name || 'Terapeuta'}\n${report.reporter.email}\nUser ID: \`${report.reporter.userId}\``,
+        value: `${discordText(reporter.name || 'Terapeuta', 200)}\n${discordText(reporter.email, 200)}\nUser ID: ${discordText(reporter.userId, 100)}`,
         inline: true,
       },
       {
         name: '🏢 Organizacja',
-        value: `\`${report.organizationId}\``,
+        value: discordText(report.organizationId || 'brak', 200),
         inline: true,
       },
     ],
@@ -303,14 +329,16 @@ function buildDiscordEmbedForSetReport(report: LegacyExerciseReportRequest) {
 }
 
 async function sendDiscordReportNotification(report: ExerciseReport): Promise<void> {
-  if (!DISCORD_WEBHOOK_URL) {
+  const webhookUrl = discordWebhookUrl();
+  if (!webhookUrl) {
     return;
   }
 
-  const exerciseUrl = `${ADMIN_BASE_URL}/exercises/${report.exerciseId}`;
+  const exerciseUrl = `${ADMIN_BASE_URL}/exercises/${encodeURIComponent(report.exerciseId)}`;
   const payload = {
     username: 'FiziYo Exercise Reports',
     avatar_url: 'https://i.imgur.com/AfFp7pu.png',
+    allowed_mentions: DISCORD_NO_MENTIONS,
     embeds: [
       {
         title: '🛠️ Zgłoszenie ćwiczenia do poprawki',
@@ -318,7 +346,7 @@ async function sendDiscordReportNotification(report: ExerciseReport): Promise<vo
         fields: [
           {
             name: 'Ćwiczenie',
-            value: `**${report.exerciseName}**\nID: \`${report.exerciseId}\`\n[🔗 Otwórz ćwiczenie](${exerciseUrl})`,
+            value: `**${discordText(report.exerciseName, 300)}**\nID: ${discordText(report.exerciseId, 100)}\n[🔗 Otwórz ćwiczenie](${exerciseUrl})`,
             inline: false,
           },
           {
@@ -333,12 +361,12 @@ async function sendDiscordReportNotification(report: ExerciseReport): Promise<vo
           },
           {
             name: 'Zgłaszający',
-            value: `${report.reportedBy.name || 'Terapeuta'}\n${report.reportedBy.email}`,
+            value: `${discordText(report.reportedBy.name || 'Terapeuta', 200)}\n${discordText(report.reportedBy.email, 200)}`,
             inline: true,
           },
           {
             name: 'Opis',
-            value: sanitizeText(report.description),
+            value: discordText(report.description),
             inline: false,
           },
         ],
@@ -347,18 +375,9 @@ async function sendDiscordReportNotification(report: ExerciseReport): Promise<vo
     ],
   };
 
-  await fetch(DISCORD_WEBHOOK_URL, {
+  await fetch(webhookUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
-}
-
-function sanitizeText(text: string): string {
-  return text
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('@everyone', '@\u200beveryone')
-    .replaceAll('@here', '@\u200bhere')
-    .substring(0, 1000);
 }

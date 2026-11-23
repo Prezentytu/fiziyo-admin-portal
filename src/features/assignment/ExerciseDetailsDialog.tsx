@@ -154,26 +154,37 @@ export function ExerciseDetailsDialog({ open, mapping, onOpenChange }: Readonly<
                   </div>
                 )}
 
-                {viewModel?.videoUrl && (
-                  <div className="space-y-2" data-testid="assign-set-preview-exercise-details-video">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Film instruktażowy</p>
-                    {canOpenVideoOutsidePortal(viewModel.videoUrl) ? (
-                      <a
-                        href={viewModel.videoUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center text-sm text-primary hover:underline"
-                        data-testid="assign-set-preview-exercise-details-video-link"
-                      >
-                        Otwórz film
-                      </a>
-                    ) : (
-                      <div className="aspect-video w-full">
-                        <VideoEmbed url={viewModel.videoUrl} title={viewModel.displayName} />
-                      </div>
-                    )}
-                  </div>
-                )}
+                {viewModel?.videos.map((video, index) => {
+                  // The first video keeps the test ids used before an exercise could have more than one.
+                  const testIdSuffix = index === 0 ? '' : `-${index}`;
+                  const hasManyVideos = viewModel.videos.length > 1;
+                  return (
+                    <div
+                      key={video}
+                      className="space-y-2"
+                      data-testid={`assign-set-preview-exercise-details-video${testIdSuffix}`}
+                    >
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                        {hasManyVideos ? `Film instruktażowy ${index + 1} z ${viewModel.videos.length}` : 'Film instruktażowy'}
+                      </p>
+                      {canOpenVideoOutsidePortal(video) ? (
+                        <a
+                          href={video}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center text-sm text-primary hover:underline"
+                          data-testid={`assign-set-preview-exercise-details-video-link${testIdSuffix}`}
+                        >
+                          Otwórz film
+                        </a>
+                      ) : (
+                        <div className="aspect-video w-full">
+                          <VideoEmbed url={video} title={viewModel.displayName} />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
 
                 <div className="space-y-2">
                   <p className="text-xs uppercase tracking-wide text-muted-foreground">Opis</p>

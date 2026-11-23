@@ -2,6 +2,14 @@ export interface JwtPayload {
   [key: string]: unknown;
 }
 
+/** A JWT segment is unpadded base64url and claims may be UTF-8 (names); plain `atob` throws or garbles them. */
+function decodeBase64Url(segment: string): string {
+  const base64 = segment.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
+  const binary = atob(padded);
+  return new TextDecoder().decode(Uint8Array.from(binary, (char) => char.charCodeAt(0)));
+}
+
 export function decodeJwtPayload(token: string): JwtPayload | null {
   try {
     const parts = token.split('.');
@@ -14,7 +22,7 @@ export function decodeJwtPayload(token: string): JwtPayload | null {
       return null;
     }
 
-    return JSON.parse(atob(payload)) as JwtPayload;
+    return JSON.parse(decodeBase64Url(payload)) as JwtPayload;
   } catch {
     return null;
   }

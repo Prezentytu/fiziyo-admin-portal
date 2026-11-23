@@ -76,7 +76,7 @@ export function StripeConnectCard({ organizationId, className }: StripeConnectCa
   // Handle open Stripe dashboard
   const handleOpenDashboard = () => {
     // Stripe Express Dashboard URL
-    window.open('https://dashboard.stripe.com/', '_blank');
+    window.open('https://dashboard.stripe.com/', '_blank', 'noopener,noreferrer');
   };
 
   // Loading state

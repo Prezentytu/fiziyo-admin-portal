@@ -1,6 +1,8 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useOrganization } from '@/contexts/OrganizationContext';
+import { exerciseBuilderKey } from '@/lib/auth/userBrowserState';
 import { calculateExerciseTotalSeconds } from '@/utils/exerciseTime';
 
 // ========================================
@@ -82,25 +84,24 @@ const ExerciseBuilderContext = createContext<ExerciseBuilderContextValue | null>
 // Local Storage Keys
 // ========================================
 
-const BUILDER_STORAGE_KEY = 'fizyo_exercise_builder';
-
-function getStoredExercises(): BuilderExercise[] {
-  if (typeof window === 'undefined') return [];
+// The key depends on the organization: the cart holds its private exercises (userBrowserState.ts).
+function getStoredExercises(storageKey: string | null): BuilderExercise[] {
+  if (typeof window === 'undefined' || !storageKey) return [];
   try {
-    const stored = localStorage.getItem(BUILDER_STORAGE_KEY);
+    const stored = localStorage.getItem(storageKey);
     return stored ? JSON.parse(stored) : [];
   } catch {
     return [];
   }
 }
 
-function setStoredExercises(exercises: BuilderExercise[]): void {
-  if (typeof window === 'undefined') return;
+function setStoredExercises(storageKey: string | null, exercises: BuilderExercise[]): void {
+  if (typeof window === 'undefined' || !storageKey) return;
   try {
     if (exercises.length === 0) {
-      localStorage.removeItem(BUILDER_STORAGE_KEY);
+      localStorage.removeItem(storageKey);
     } else {
-      localStorage.setItem(BUILDER_STORAGE_KEY, JSON.stringify(exercises));
+      localStorage.setItem(storageKey, JSON.stringify(exercises));
     }
   } catch {
     // Ignore localStorage errors
@@ -116,13 +117,22 @@ interface ExerciseBuilderProviderProps {
 }
 
 export function ExerciseBuilderProvider({ children }: ExerciseBuilderProviderProps) {
-  const [selectedExercises, setSelectedExercises] = useState<BuilderExercise[]>(() => getStoredExercises());
+  const { currentOrganization } = useOrganization();
+  const storageKey = exerciseBuilderKey(currentOrganization?.organizationId);
+  const storageKeyRef = useRef(storageKey);
+  storageKeyRef.current = storageKey;
+  const [selectedExercises, setSelectedExercises] = useState<BuilderExercise[]>(() => getStoredExercises(storageKey));
+
+  // After switching organizations the previous organization's cart must not carry over.
+  useEffect(() => {
+    setSelectedExercises(getStoredExercises(storageKey));
+  }, [storageKey]);
   const [isChatOpen, setIsChatOpen] = useState(false);
 
   // Sync to localStorage whenever exercises change
   const updateExercises = useCallback((exercises: BuilderExercise[]) => {
     setSelectedExercises(exercises);
-    setStoredExercises(exercises);
+    setStoredExercises(storageKeyRef.current, exercises);
   }, []);
 
   const addExercise = useCallback((exercise: BuilderExercise) => {
@@ -132,7 +142,7 @@ export function ExerciseBuilderProvider({ children }: ExerciseBuilderProviderPro
         return prev;
       }
       const updated = [...prev, exercise];
-      setStoredExercises(updated);
+      setStoredExercises(storageKeyRef.current, updated);
       return updated;
     });
   }, []);
@@ -140,7 +150,7 @@ export function ExerciseBuilderProvider({ children }: ExerciseBuilderProviderPro
   const removeExercise = useCallback((exerciseId: string) => {
     setSelectedExercises((prev) => {
       const updated = prev.filter((e) => e.id !== exerciseId);
-      setStoredExercises(updated);
+      setStoredExercises(storageKeyRef.current, updated);
       return updated;
     });
   }, []);
@@ -148,7 +158,7 @@ export function ExerciseBuilderProvider({ children }: ExerciseBuilderProviderPro
   const updateExercise = useCallback((exerciseId: string, updates: Partial<BuilderExercise>) => {
     setSelectedExercises((prev) => {
       const updated = prev.map((e) => (e.id === exerciseId ? { ...e, ...updates } : e));
-      setStoredExercises(updated);
+      setStoredExercises(storageKeyRef.current, updated);
       return updated;
     });
   }, []);
@@ -158,7 +168,7 @@ export function ExerciseBuilderProvider({ children }: ExerciseBuilderProviderPro
       const updated = [...prev];
       const [removed] = updated.splice(fromIndex, 1);
       updated.splice(toIndex, 0, removed);
-      setStoredExercises(updated);
+      setStoredExercises(storageKeyRef.current, updated);
       return updated;
     });
   }, []);

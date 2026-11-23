@@ -25,7 +25,8 @@ import {
   type ExercisePreviewView,
 } from '@/components/shared/exercise/patient-preview/PatientViewTabs';
 import { resolvePatientInstruction } from '@/components/shared/exercise/patientInstruction';
-import { getMediaUrl } from '@/utils/mediaUrl';
+import { getExerciseVideos } from '@/utils/exerciseVideos';
+import { getMediaUrl, getMediaUrls } from '@/utils/mediaUrl';
 import type { ExerciseMapping, ExerciseOverride } from './PatientAssignmentCard';
 import type { ExerciseLoad, ExerciseMapping as AssignmentExerciseMapping } from '@/features/assignment/types';
 import { translateExerciseSidePolish } from '@/components/pdf/polishUtils';
@@ -65,9 +66,11 @@ type ExerciseMappingWithPreviewFields = ExerciseMapping & {
 export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, onEdit }: ExercisePreviewDrawerProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [view, setView] = useState<ExercisePreviewView>('details');
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
 
   useEffect(() => {
     setView('details');
+    setCurrentVideoIndex(0);
   }, [mapping?.id, open]);
 
   // Telefon „Jak u pacjenta” dostaje te same dane co karta planu: przypisanie > mapping > szablon.
@@ -82,7 +85,8 @@ export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, o
   const normalizedMapping = mapping as ExerciseMappingWithPreviewFields;
   const exercise = normalizedMapping.exercise as ExerciseWithPreviewFields | undefined;
   const normalizedOverride = override as ExerciseOverrideWithPreviewFields | undefined;
-  const videoUrl = getMediaUrl(exercise?.videoUrl);
+  const videoUrls = getMediaUrls(getExerciseVideos(exercise));
+  const videoUrl = videoUrls[currentVideoIndex] ?? videoUrls[0] ?? null;
 
   // Build array of all images (original + custom)
   const allImages: { url: string; isCustom: boolean }[] = [];
@@ -220,6 +224,7 @@ export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, o
                 <div className="relative aspect-video rounded-xl overflow-hidden bg-surface-light">
                   {videoUrl ? (
                     <video
+                      key={videoUrl}
                       src={videoUrl}
                       controls
                       className="w-full h-full object-contain"
@@ -297,6 +302,24 @@ export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, o
                     </div>
                   )}
                 </div>
+
+                {videoUrls.length > 1 && (
+                  <div className="flex flex-wrap gap-2" data-testid="patient-exercise-preview-videos">
+                    {videoUrls.map((video, index) => (
+                      <Button
+                        key={video}
+                        type="button"
+                        size="sm"
+                        variant={video === videoUrl ? 'tinted' : 'secondary'}
+                        aria-pressed={video === videoUrl}
+                        onClick={() => setCurrentVideoIndex(index)}
+                        data-testid={`patient-exercise-preview-video-btn-${index}`}
+                      >
+                        {index === 0 ? 'Film główny' : `Film ${index + 1}`}
+                      </Button>
+                    ))}
+                  </div>
+                )}
 
                 {/* Parameters */}
                 <div className="space-y-3">

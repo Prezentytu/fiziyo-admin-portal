@@ -12,6 +12,7 @@ import {
 } from './useEnrichmentDraft';
 import { shouldRehydrateExerciseEditorDraft } from './utils/shouldRehydrateExerciseEditorDraft';
 import { normalizeExerciseType } from '@/utils/exerciseEnums';
+import { getExerciseVideos, isSameVideoList, normalizeVideoList } from '@/utils/exerciseVideos';
 import { isV33ExerciseRecord } from '@/utils/exerciseRecordVersion';
 import type { ExerciseParametersTimingType } from '@/components/shared/exercise/ExerciseParametersFields';
 import { describeSavedNonKgLoad, readSavedLoadKg } from './utils/describeSavedLoad';
@@ -55,7 +56,8 @@ export interface ExerciseCoreDraft {
   equipment: string;
   side: string;
   difficultyLevel: string;
-  videoUrl: string;
+  /** Rows of the video list, main video first; may hold empty rows while edited. */
+  videos: string[];
   sets: number | null;
   reps: number | null;
   executionTime: number | null;
@@ -109,6 +111,7 @@ export interface ExerciseEditorSource {
   exerciseSide?: string | null;
   difficultyLevel?: string | null;
   videoUrl?: string | null;
+  videos?: string[] | null;
   defaultSets?: number | null;
   sets?: number | null;
   defaultReps?: number | null;
@@ -181,7 +184,7 @@ function deriveCoreDraft(source: ExerciseEditorSource | null | undefined): Exerc
     equipment: source?.equipment ?? '',
     side: (source?.side ?? source?.exerciseSide ?? 'none').toLowerCase(),
     difficultyLevel: (source?.difficultyLevel ?? 'UNKNOWN').toUpperCase(),
-    videoUrl: source?.videoUrl ?? '',
+    videos: getExerciseVideos(source),
     sets: firstNumber(source?.defaultSets, source?.sets),
     reps: firstNumber(source?.defaultReps, source?.reps),
     executionTime: firstNumber(source?.defaultExecutionTime, source?.executionTime),
@@ -247,7 +250,8 @@ export function buildChangedCoreVariables(
   // '' (nie null): backend czyści opór/sprzęt tylko pustym tekstem; null = bez zmian.
   if (current.resistance !== initial.resistance) variables.resistance = current.resistance.trim();
   if (current.equipment !== initial.equipment) variables.equipment = current.equipment.trim();
-  if (current.videoUrl !== initial.videoUrl) variables.videoUrl = asText(current.videoUrl);
+  // The whole list replaces the saved one and the backend derives `videoUrl` from it, so `videoUrl` is not sent.
+  if (!isSameVideoList(current.videos, initial.videos)) variables.videos = normalizeVideoList(current.videos);
   // UpdateExercise skips null/omitted exerciseSide. "none" must be sent as the
   // enum name so Razem (None) can replace Both/Left/Right instead of no-oping.
   if (current.side !== initial.side) variables.exerciseSide = current.side;
@@ -394,6 +398,7 @@ export function useExerciseEditorForm({
       if (typeof initialValue === 'string' && typeof currentValue === 'string') {
         return initialValue.trim() !== currentValue.trim();
       }
+      if (field === 'videos') return !isSameVideoList(initialCore.videos, core.videos);
       return initialValue !== currentValue;
     },
     [initialCore, core]

@@ -24,6 +24,7 @@ export interface ExerciseOfferExercise {
   additionalTags?: string[] | null;
   images?: string[] | null;
   videoUrl?: string | null;
+  videos?: string[] | null;
   preparationTime?: number | null;
   defaultSets?: number | null;
   defaultReps?: number | null;

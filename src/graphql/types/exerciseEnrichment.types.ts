@@ -168,7 +168,6 @@ export interface EnrichmentSideV33 {
   mode?: EnrichmentSideModeV33 | string;
   /** Dawka liczona na stronę. */
   per_side_dose?: boolean;
-  start?: string | null;
   /** Strona pokazana na zdjęciu i filmie. */
   shown_in_media?: string | null;
 }

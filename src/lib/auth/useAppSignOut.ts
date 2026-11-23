@@ -3,24 +3,25 @@
 import { useClerk } from '@clerk/nextjs';
 import { useCallback } from 'react';
 import { clearBackendToken } from '@/lib/tokenCache';
-import { clearStoredConversations } from '@/features/ai-view/utils/conversationStore';
+import { clearUserBrowserState } from '@/lib/auth/userBrowserState';
 import { setTelemetryUser } from '@/lib/telemetry/client';
 
 /**
- * Jedyny poprawny sposób wylogowania w panelu webowym.
+ * The only correct way to sign out in the web portal (lint blocks Clerk's raw `signOut`).
  *
- * Czyści backendowy JWT z cache PRZED wylogowaniem z Clerk. Bez tego token poprzedniego
- * użytkownika (np. fizjo) zostaje w sessionStorage i kolejny zalogowany użytkownik (np. pacjent)
- * dostaje powłokę UI poprzedniej roli, zanim Apollo zdąży wymienić token (privilege bleed).
- * Każdy przycisk "Wyloguj" MUSI używać tego hooka zamiast surowego `useClerk().signOut`.
+ * Before leaving we clear the backend JWT (otherwise the next user gets the previous role's shell)
+ * and localStorage with the chosen organization, builder cart and chat conversations.
+ * Tab memory (Apollo cache, subscription socket) is cleared by ApolloWrapper on `userId` change,
+ * because that change also arrives without this hook: session expiry, sign-out in another tab.
  */
 export function useAppSignOut() {
+  // eslint-disable-next-line no-restricted-syntax -- the only place that calls Clerk's signOut.
   const { signOut } = useClerk();
 
   return useCallback(
     async (redirectUrl: string = '/sign-in') => {
       clearBackendToken();
-      clearStoredConversations();
+      clearUserBrowserState();
       setTelemetryUser(null);
       await signOut({ redirectUrl });
     },

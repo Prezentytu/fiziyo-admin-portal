@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useUser, useClerk, useAuth } from '@clerk/nextjs';
-import { useRouter } from 'next/navigation';
+import { useUser, useAuth } from '@clerk/nextjs';
 import { Building2, RefreshCw, LogOut, Mail, Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { clearBackendToken } from '@/lib/tokenCache';
 import { tokenExchangeService } from '@/services/tokenExchangeService';
+import { useAppSignOut } from '@/lib/auth/useAppSignOut';
 
 type OnboardingStatus = 'checking' | 'success' | 'error' | 'waiting';
 
@@ -19,9 +19,8 @@ const GENERIC_ERROR_MESSAGE = 'Konfiguracja Twojego konta trwa dłużej niż zwy
  */
 export default function OnboardingPage() {
   const { user } = useUser();
-  const { signOut } = useClerk();
+  const signOut = useAppSignOut();
   const { getToken } = useAuth();
-  const router = useRouter();
 
   const [status, setStatus] = useState<OnboardingStatus>('checking');
   const [error, setError] = useState<string | null>(null);
@@ -85,9 +84,7 @@ export default function OnboardingPage() {
   };
 
   const handleSignOut = async () => {
-    clearBackendToken();
-    await signOut();
-    router.push('/sign-in');
+    await signOut('/sign-in');
   };
 
   // Status messages

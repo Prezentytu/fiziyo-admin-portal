@@ -47,12 +47,6 @@ export const PRESCRIPTION_ROM = [
   { code: 'end', label: 'Do końca zakresu, bez forsowania' },
 ] as const;
 
-/** `side.start`. */
-export const SIDE_START_OPTIONS = [
-  { code: 'left', label: 'Lewa' },
-  { code: 'right', label: 'Prawa' },
-] as const;
-
 export function goalLabel(code: string | null): string | null {
   if (!code) return null;
   return PRESCRIPTION_GOALS.find((goal) => goal.code === code)?.label ?? code;
@@ -76,19 +70,13 @@ const MODE_BY_COLUMN: Record<string, string> = {
 
 /**
  * Sekcja `side` po zmianie strony w kafelku. Przy stronach liczba jest zawsze na stronę (KONTRAKT-v3.3 §6.7),
- * więc `per_side_dose` idzie za trybem. Strona startowa i strona w mediach zostają.
+ * więc `per_side_dose` idzie za trybem. Strona w mediach zostaje.
  */
 export function sideForColumn(side: unknown, column: string): UnknownRecord {
   const mode = MODE_BY_COLUMN[column.trim().toLowerCase()] ?? 'none';
   const perSide = mode === 'each_side' || mode === 'alternating';
   const current = asRecord(side) ?? {};
-  const next: UnknownRecord = { ...current, mode, per_side_dose: perSide };
-  if (perSide && next.start == null) next.start = 'left';
-  return next;
-}
-
-export function sideWithStart(side: unknown, start: string): UnknownRecord {
-  return { ...(asRecord(side) ?? {}), start };
+  return { ...current, mode, per_side_dose: perSide };
 }
 
 // ---------- Zakresy dawki ----------

@@ -33,6 +33,35 @@ const ALLOWED_CONTENT_TYPES = [
 ];
 
 const FETCH_TIMEOUT_MS = 5000;
+// Exercise images in a PDF are far below this; the cap keeps a hostile upstream from filling function memory.
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+
+const tooLarge = () => NextResponse.json({ error: 'Image too large' }, { status: 413 });
+
+/** Reads the body with a byte cap that also holds for chunked responses without Content-Length. */
+async function readLimited(response: Response, maxBytes: number): Promise<Uint8Array<ArrayBuffer> | null> {
+  if (!response.body) return new Uint8Array();
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(value);
+  }
+  const body = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return body;
+}
 
 export async function GET(request: NextRequest) {
   const sourceUrl = request.nextUrl.searchParams.get('url');
@@ -66,6 +95,8 @@ export async function GET(request: NextRequest) {
     const upstream = await fetch(target, {
       signal: abortController.signal,
       headers: { Accept: ALLOWED_CONTENT_TYPES.join(', ') },
+      // A redirect could leave the allowlisted host for an internal or arbitrary address.
+      redirect: 'error',
     });
 
     if (!upstream.ok) {
@@ -80,7 +111,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unsupported content type', contentType }, { status: 415 });
     }
 
-    const body = await upstream.arrayBuffer();
+    if (Number(upstream.headers.get('content-length') ?? 0) > MAX_IMAGE_BYTES) return tooLarge();
+    const body = await readLimited(upstream, MAX_IMAGE_BYTES);
+    if (!body) return tooLarge();
 
     return new NextResponse(body, {
       status: 200,

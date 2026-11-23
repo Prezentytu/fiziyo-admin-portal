@@ -113,6 +113,7 @@ export interface AdminExercise {
   images?: string[];
   gifUrl?: string;
   videoUrl?: string;
+  videos?: string[] | null;
   enrichmentData?: ExerciseEnrichmentData | null;
   notes?: string;
   audioCue?: string;

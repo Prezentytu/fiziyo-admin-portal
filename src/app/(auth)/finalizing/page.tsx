@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useAuth, useClerk } from '@clerk/nextjs';
+import { useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { Loader2, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import {
 } from '@/lib/registrationAttempts';
 import { clearBackendToken } from '@/lib/tokenCache';
 import { tokenExchangeService } from '@/services/tokenExchangeService';
+import { useAppSignOut } from '@/lib/auth/useAppSignOut';
 
 const POLLING_INTERVAL_MS = 2000;
 // Po tylu próbach pokazujemy dyskretną pomoc, ale polling trwa dalej w tle.
@@ -44,7 +45,7 @@ function getStatusCode(error: unknown): number | null {
 export default function FinalizingRegistrationPage() {
   const router = useRouter();
   const { getToken, isLoaded, isSignedIn } = useAuth();
-  const { signOut } = useClerk();
+  const signOut = useAppSignOut();
 
   const [status, setStatus] = useState<FinalizingStatus>('loading');
   const [retryToken, setRetryToken] = useState(0);
@@ -179,9 +180,7 @@ export default function FinalizingRegistrationPage() {
   };
 
   const handleSignOut = async () => {
-    clearBackendToken();
-    await signOut();
-    router.replace('/login');
+    await signOut('/login');
   };
 
   return (

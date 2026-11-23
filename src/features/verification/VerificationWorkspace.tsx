@@ -36,6 +36,7 @@ import {
 } from '@/graphql/mutations/exercises.mutations';
 import { GET_VERIFICATION_STATS_QUERY } from '@/graphql/queries/adminExercises.queries';
 
+import { normalizeVideoList } from '@/utils/exerciseVideos';
 import { getMediaUrl, getMediaUrls } from '@/utils/mediaUrl';
 import type {
   AdminExercise,
@@ -381,8 +382,9 @@ export function VerificationWorkspace({
     () => getMediaUrls([exercise.thumbnailUrl, exercise.imageUrl, ...(exercise.images ?? [])]),
     [exercise.thumbnailUrl, exercise.imageUrl, exercise.images]
   );
-  const hasVideo = Boolean(core.videoUrl.trim() || exercise.gifUrl);
-  const patientHasVideo = hasPatientVideo({ videoUrl: core.videoUrl, gifUrl: exercise.gifUrl });
+  const draftVideos = useMemo(() => normalizeVideoList(core.videos), [core.videos]);
+  const hasVideo = Boolean(draftVideos.length > 0 || exercise.gifUrl);
+  const patientHasVideo = hasPatientVideo({ videoUrl: draftVideos[0], gifUrl: exercise.gifUrl });
 
   const mediaItems = useMemo(
     () =>
@@ -390,7 +392,8 @@ export function VerificationWorkspace({
         thumbnailUrl: exercise.thumbnailUrl,
         imageUrl: exercise.imageUrl,
         images: exercise.images,
-        videoUrl: core.videoUrl.trim() || exercise.videoUrl,
+        videoUrl: exercise.videoUrl,
+        videos: draftVideos.length > 0 ? draftVideos : exercise.videos,
         gifUrl: exercise.gifUrl,
         title: core.name,
       }),
@@ -399,8 +402,9 @@ export function VerificationWorkspace({
       exercise.imageUrl,
       exercise.images,
       exercise.videoUrl,
+      exercise.videos,
       exercise.gifUrl,
-      core.videoUrl,
+      draftVideos,
       core.name,
     ]
   );
@@ -879,10 +883,15 @@ export function VerificationWorkspace({
       const notes = `To ćwiczenie jest już w bazie jako „${target.name}” (ID: ${target.id}).`;
       try {
         await flushBeforeDecision();
-        await rejectExercise({
+        const { data } = await rejectExercise({
           variables: { exerciseId: exercise.id, rejectionReason: 'POTENTIAL_DUPLICATE', notes },
         });
-        toast.success('Oznaczono weryfikowane ćwiczenie jako duplikat');
+        if (data?.rejectExercise?.status !== 'ARCHIVED_GLOBAL') {
+          toast.error('Serwer nie potwierdził wycofania zgłoszenia. Spróbuj ponownie.');
+          setIsLeaving(false);
+          return;
+        }
+        toast.success('Wycofano zgłoszenie do FiziYo jako duplikat');
         void resolveReports(notes);
         setIsDuplicateOpen(false);
         leaveToNext();
@@ -893,7 +902,8 @@ export function VerificationWorkspace({
           error.errors.find(
             ({ extensions }) =>
               extensions?.code === 'DUPLICATE_ORIGINAL_UNAVAILABLE' ||
-              extensions?.code === 'DUPLICATE_ORIGINAL_NOTES_FULL'
+              extensions?.code === 'DUPLICATE_ORIGINAL_NOTES_FULL' ||
+              extensions?.code === 'DUPLICATE_SUBMISSION_UNAVAILABLE'
           );
         toast.error(
           originalError ? originalError.message : actionErrorMessage(error, 'Nie udało się oznaczyć duplikatu')
@@ -1234,7 +1244,7 @@ export function VerificationWorkspace({
         <div className="flex min-w-0 flex-col gap-4">
           {stage === 'material' && (
             <MaterialStage
-              videoUrl={core.videoUrl}
+              videos={core.videos}
               hasVideo={hasVideo}
               photos={photos}
               stepImages={patient.step_images}
@@ -1243,7 +1253,7 @@ export function VerificationWorkspace({
               generatingIndex={generatingIndex}
               isGenerating={imageGeneration.isGenerating}
               isSavingPhoto={isSavingPhoto}
-              onVideoUrlChange={(value) => setCoreField('videoUrl', value)}
+              onVideosChange={(value) => setCoreField('videos', value)}
               onPreviewPhoto={handlePreviewPhoto}
               onReplacePhoto={setPhotoDialogIndex}
               onDeletePhoto={(url) => void handleDeletePhoto(url)}

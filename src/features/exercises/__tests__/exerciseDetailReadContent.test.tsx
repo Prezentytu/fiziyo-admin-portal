@@ -55,13 +55,13 @@ function renderReadView(record: ReadViewRecord) {
       />
       <MetadataSection
         data={data}
-        videoUrl={record.videoUrl ?? ''}
+        videos={record.videoUrl ? [record.videoUrl] : []}
         notes={record.notes ?? ''}
         editable={false}
-        videoUrlDirty={false}
+        videosDirty={false}
         notesDirty={false}
         isPathDirty={isPathDirty}
-        onVideoUrlChange={vi.fn()}
+        onVideosChange={vi.fn()}
         onNotesChange={vi.fn()}
         setPath={setPath}
       />

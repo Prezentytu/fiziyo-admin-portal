@@ -67,7 +67,7 @@ vi.mock('./useExerciseEditorForm', () => ({
       rangeOfMotion: '',
       side: 'none',
       difficultyLevel: 'UNKNOWN',
-      videoUrl: '',
+      videos: [],
       sets: 3,
       reps: 10,
       executionTime: null,

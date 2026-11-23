@@ -38,6 +38,7 @@ import { EXERCISE_FIELD_METADATA, HIDE_EXERCISE_TAGS } from '@/components/shared
 import { verificationCopy } from '@/features/verification/verificationCopy';
 import { exerciseStatusBadgeVariant } from './utils/exerciseStatusBadgeVariant';
 import { canReportExerciseIssue } from './utils/exerciseReportRouting';
+import type { ContentStatus } from '@/graphql/types/exercise.types';
 
 export interface ExerciseTag {
   id: string;
@@ -81,6 +82,7 @@ export interface Exercise {
   adminReviewNotes?: string;
   // Global submission tracking (nowy model weryfikacji)
   globalSubmissionId?: string;
+  globalSubmissionStatus?: ContentStatus | null;
   sourceOrganizationExerciseId?: string;
   submittedToGlobalAt?: string;
   // Legacy aliasy
@@ -163,7 +165,9 @@ export function ExerciseCard({
   const isChangesRequested = exercise.status === 'CHANGES_REQUESTED';
 
   // For organization exercises with global submission, show as "submitted"
-  const isSubmittedToGlobal = hasGlobalSubmission && exercise.scope === 'ORGANIZATION';
+  const isGlobalSubmissionArchived =
+    exercise.scope === 'ORGANIZATION' && exercise.globalSubmissionStatus === 'ARCHIVED_GLOBAL';
+  const isSubmittedToGlobal = hasGlobalSubmission && exercise.scope === 'ORGANIZATION' && !isGlobalSubmissionArchived;
   const canSubmitToOrganization =
     onSubmitToOrganizationReview &&
     exercise.scope === 'ORGANIZATION' &&
@@ -305,6 +309,7 @@ export function ExerciseCard({
                   </TooltipContent>
                 </Tooltip>
               )}
+              {isGlobalSubmissionArchived && <Badge variant="secondary">Wycofane z FiziYo</Badge>}
               {isPendingReview && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -782,6 +787,7 @@ export function ExerciseCard({
                 {exercise.name}
               </button>
             </h3>
+            {isGlobalSubmissionArchived && <Badge variant="secondary" className="self-start">Wycofane z FiziYo</Badge>}
 
             {/* List/grid card should stay lightweight; full params are shown in detail views */}
           </div>

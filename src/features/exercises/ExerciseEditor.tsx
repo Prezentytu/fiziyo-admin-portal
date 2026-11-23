@@ -360,18 +360,18 @@ export function ExerciseEditor({
         patientDescription={core.patientDescription}
         clinicalDescription={core.clinicalDescription}
         audioCue={core.audioCue}
-        videoUrl={core.videoUrl}
+        videos={core.videos}
         notes={core.notes}
         disabled={disabled}
         patientDescriptionDirty={isCoreFieldDirty('patientDescription')}
         clinicalDescriptionDirty={isCoreFieldDirty('clinicalDescription')}
-        videoUrlDirty={isCoreFieldDirty('videoUrl')}
+        videosDirty={isCoreFieldDirty('videos')}
         notesDirty={isCoreFieldDirty('notes')}
         isPathDirty={isPathDirty}
         onPatientDescriptionChange={(value) => setCoreField('patientDescription', value)}
         onClinicalDescriptionChange={(value) => setCoreField('clinicalDescription', value)}
         onAudioCueChange={(value) => setCoreField('audioCue', value)}
-        onVideoUrlChange={(value) => setCoreField('videoUrl', value)}
+        onVideosChange={(value) => setCoreField('videos', value)}
         onNotesChange={(value) => setCoreField('notes', value)}
         setPath={setEnrichmentPath}
         contentVersion={contentVersion}
