@@ -126,6 +126,39 @@ describe('VerificationWorkspace – strzałka „Lista ćwiczeń” (F7)', () =>
     expect(push).not.toHaveBeenCalled();
   });
 
+  it('klik w nazwę w nagłówku pozwala ją zmienić i zapisuje nową nazwę przed wyjściem', async () => {
+    mutate.mockResolvedValue({ data: {} });
+    renderWorkspace(
+      v33Exercise(),
+      vi.fn(async () => structuredClone(golden))
+    );
+    const user = userEvent.setup();
+
+    await user.click(screen.getByTestId('verification-name-btn'));
+    const input = screen.getByTestId('verification-name-input');
+    await user.clear(input);
+    await user.type(input, 'Napinanie czworogłowego{Enter}');
+    expect(screen.getByTestId('verification-name-btn')).toHaveTextContent('Napinanie czworogłowego');
+
+    await user.click(screen.getByTestId('verification-back-btn'));
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/verification'));
+    expect(variablesOfCalls().some((variables) => variables.name === 'Napinanie czworogłowego')).toBe(true);
+  });
+
+  it('Escape w polu nazwy przywraca nazwę sprzed edycji', async () => {
+    renderWorkspace(
+      v33Exercise(),
+      vi.fn(async () => structuredClone(golden))
+    );
+    const user = userEvent.setup();
+
+    await user.click(screen.getByTestId('verification-name-btn'));
+    await user.type(screen.getByTestId('verification-name-input'), ' zmiana{Escape}');
+
+    expect(screen.getByTestId('verification-name-btn')).toHaveTextContent(v33Exercise().name);
+  });
+
   it('bez zmian wychodzi od razu', async () => {
     renderWorkspace(
       v33Exercise(),
