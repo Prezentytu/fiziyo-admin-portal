@@ -1257,7 +1257,7 @@ export function VerificationWorkspace({
               onReplacePhoto={setPhotoDialogIndex}
               onDeletePhoto={(url) => void handleDeletePhoto(url)}
               onAddPhotos={(files) => void handleAddPhotos(files)}
-              onGeneratePhoto={() => void generatePhoto(photos.length, [], '')}
+              onGeneratePhoto={() => setPhotoDialogIndex(photos.length)}
               onAcceptPending={() => {
                 if (!pendingPhoto) return;
                 if (pendingPhoto.index >= photos.length) void appendPhoto(pendingPhoto.previewUrl);
@@ -1398,7 +1398,10 @@ export function VerificationWorkspace({
       <PhotoReplaceDialog
         open={photoDialogIndex !== null}
         photoLabel={photoDialogIndex !== null ? `zdjęcie ${photoDialogIndex + 1}` : ''}
+        isNew={photoDialogIndex !== null && photoDialogIndex >= photos.length}
         isGenerating={imageGeneration.isGenerating}
+        imageStyle={imageGeneration.imageStyle}
+        onImageStyleChange={imageGeneration.setImageStyle}
         onOpenChange={(open) => {
           if (!open) setPhotoDialogIndex(null);
         }}
