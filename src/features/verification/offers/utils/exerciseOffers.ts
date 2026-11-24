@@ -1,5 +1,6 @@
 import { fromBuilderExercise } from '@/components/shared/exercise/adapters';
 import type { ExerciseExecutionCardData } from '@/components/shared/exercise/types';
+import { getExerciseVideos } from '@/utils/exerciseVideos';
 import type {
   ExerciseOffer,
   ExerciseOfferDecision,
@@ -44,7 +45,7 @@ export function toPendingOfferViews(offers: ReadonlyArray<ExerciseOffer> | null 
       exerciseName: offer.exercise?.name?.trim() || 'Ćwiczenie bez nazwy',
       description: offer.exercise?.patientDescription?.trim() || offer.exercise?.clinicalDescription?.trim() || null,
       imageUrl: offer.exercise?.images?.find((url) => Boolean(url?.trim())) ?? null,
-      hasVideo: Boolean(offer.exercise?.videoUrl?.trim()),
+      hasVideo: getExerciseVideos(offer.exercise).length > 0,
       message: offer.message?.trim() || null,
       offeredAt: offer.offeredAt,
       preview: toOfferPreview(offer.exercise),
@@ -77,6 +78,7 @@ export function toOfferPreview(exercise: ExerciseOfferExercise | null | undefine
       additionalTags: exercise.additionalTags ?? undefined,
       images: exercise.images,
       videoUrl: exercise.videoUrl ?? undefined,
+      videos: exercise.videos,
       preparationTime: exercise.preparationTime ?? undefined,
       defaultSets: exercise.defaultSets ?? undefined,
       defaultReps: exercise.defaultReps ?? undefined,

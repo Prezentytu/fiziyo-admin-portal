@@ -16,7 +16,7 @@ function selectedFieldNames(): string[] {
 describe('VerificationQueueItemFragment (D-M-034)', () => {
   it('pobiera pola mediów, z których VerificationTaskCard liczy plakietki „Brak wideo” i „Brak obrazu”', () => {
     expect(selectedFieldNames()).toEqual(
-      expect.arrayContaining(['videoUrl', 'gifUrl', 'imageUrl', 'images', 'thumbnailUrl']),
+      expect.arrayContaining(['videoUrl', 'videos', 'gifUrl', 'imageUrl', 'images', 'thumbnailUrl']),
     );
   });
 });
