@@ -18,10 +18,41 @@ vi.mock('@clerk/nextjs', () => ({
   useUser: () => ({ user: { id: 'owner-1', fullName: 'Ola Owner' } }),
 }));
 
-vi.mock('@apollo/client/react', () => ({
-  useMutation: () => [vi.fn().mockResolvedValue({ data: {} }), { loading: false }],
-  useQuery: () => ({ data: undefined, loading: false, error: undefined, refetch: vi.fn() }),
+const apollo = vi.hoisted(() => ({
+  mutate: vi.fn(),
+  reviewNotes: [] as Array<Record<string, unknown>>,
 }));
+
+vi.mock('@apollo/client/react', () => ({
+  useMutation: () => [apollo.mutate, { loading: false }],
+  useQuery: (query: { definitions?: Array<{ name?: { value?: string } }> }) => {
+    const name = query?.definitions?.[0]?.name?.value;
+    const data = name === 'GetExerciseReviewNotes' ? { exerciseReviewNotes: apollo.reviewNotes } : undefined;
+    return { data, loading: false, error: undefined, refetch: vi.fn() };
+  },
+}));
+
+function authorNote(overrides: Record<string, unknown> = {}) {
+  return {
+    id: 'note-1',
+    exerciseId: 'org-exercise',
+    kind: 'NOTE',
+    authorRole: 'REVIEWER',
+    authorName: 'Ola Owner',
+    isMine: true,
+    body: 'Zdjęcie 2 nie pasuje do kroku 2',
+    contextKey: 'material',
+    contextLabel: 'Materiał',
+    replyToNoteId: null,
+    createdAt: '2026-11-24T10:00:00Z',
+    visibility: 'AUTHOR',
+    isSentToAuthor: false,
+    canChangeVisibility: true,
+    changedFields: [],
+    sentNoteCount: null,
+    ...overrides,
+  };
+}
 
 vi.mock('sonner', () => ({ toast: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn(), info: vi.fn() }) }));
 
@@ -48,7 +79,6 @@ function renderOrganization(status: OrganizationVerificationStatus, overrides: P
     status,
     isBusy: false,
     onApprove: vi.fn().mockResolvedValue(undefined),
-    onRequestChanges: vi.fn().mockResolvedValue(undefined),
     onArchive: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   };
@@ -68,7 +98,12 @@ function renderOrganization(status: OrganizationVerificationStatus, overrides: P
   return decision;
 }
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  apollo.mutate.mockReset();
+  apollo.mutate.mockResolvedValue({ data: {} });
+  apollo.reviewNotes = [];
+});
 
 describe('VerificationWorkspace – tor organizacji', () => {
   it('uses the stage workspace with organization decisions instead of the global ones', async () => {
@@ -84,17 +119,26 @@ describe('VerificationWorkspace – tor organizacji', () => {
     expect(screen.getByTestId('verification-bar-primary-btn')).toHaveTextContent('Zatwierdź w gabinecie');
   });
 
-  it('sends the exercise back only with a note', async () => {
-    const decision = renderOrganization('PENDING_ORG_REVIEW');
-    const user = userEvent.setup();
+  it('keeps „Odeślij do autora” inactive until there is a note for the author', () => {
+    apollo.reviewNotes = [authorNote({ visibility: 'ORG_REVIEWERS' })];
+    renderOrganization('PENDING_ORG_REVIEW');
 
-    await user.click(screen.getByTestId('org-verification-bar-request-changes-btn'));
-    expect(screen.getByTestId('org-verification-changes-confirm-btn')).toBeDisabled();
+    expect(screen.getByTestId('org-verification-bar-request-changes-btn')).toBeDisabled();
+    expect(screen.getByTestId('org-verification-bar-request-changes-btn-hint')).toHaveAttribute(
+      'title',
+      'Dodaj uwagę dla autora w panelu uwag'
+    );
+  });
 
-    await user.type(screen.getByTestId('org-verification-changes-notes-input'), 'Zdjęcie 2 nie pasuje do kroku 2');
-    await user.click(screen.getByTestId('org-verification-changes-confirm-btn'));
+  it('sends the author notes back at once, without a dialog', async () => {
+    apollo.mutate.mockResolvedValue({ data: {} });
+    apollo.reviewNotes = [authorNote()];
+    renderOrganization('PENDING_ORG_REVIEW');
 
-    expect(decision.onRequestChanges).toHaveBeenCalledWith('Zdjęcie 2 nie pasuje do kroku 2');
+    await userEvent.setup().click(screen.getByTestId('org-verification-bar-request-changes-btn'));
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(apollo.mutate).toHaveBeenCalledWith({ variables: { exerciseId: 'org-exercise', target: 'AUTHOR' } });
   });
 
   it('approves through the organization decision once every stage is clean', async () => {
@@ -109,10 +153,14 @@ describe('VerificationWorkspace – tor organizacji', () => {
     expect(decision.onApprove).toHaveBeenCalledTimes(1);
   });
 
-  it('hides FiziYo working notes from the clinic owner', () => {
+  it('has one place for text: the notes log, without working notes or panel actions', () => {
     renderOrganization('PENDING_ORG_REVIEW');
 
     expect(screen.queryByTestId('exercise-internal-notes-section')).toBeNull();
+    expect(screen.getByTestId('review-notes-panel')).toBeInTheDocument();
+    expect(screen.queryByTestId('review-notes-send-author-btn')).toBeNull();
+    expect(screen.queryByTestId('review-notes-send-internal-btn')).toBeNull();
+    expect(screen.queryByTestId('verification-bar-internal-fixes-btn')).toBeNull();
   });
 
   it('offers archive for a verified exercise and no review decisions', () => {

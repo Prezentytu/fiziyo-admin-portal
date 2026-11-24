@@ -22,7 +22,6 @@ import {
 import {
   APPROVE_ORGANIZATION_EXERCISE_AS_ADMIN_MUTATION,
   ARCHIVE_ORGANIZATION_EXERCISE_AS_ADMIN_MUTATION,
-  REQUEST_ORGANIZATION_EXERCISE_CHANGES_AS_ADMIN_MUTATION,
 } from '@/graphql/mutations/crossOrgVerification.mutations';
 import type {
   AdminExercise,
@@ -98,9 +97,6 @@ export default function CrossOrgVerificationDetailPage({ params }: Readonly<Cros
   const [approveOrganizationExercise, { loading: approving }] = useMutation(
     APPROVE_ORGANIZATION_EXERCISE_AS_ADMIN_MUTATION
   );
-  const [requestChanges, { loading: requestingChanges }] = useMutation(
-    REQUEST_ORGANIZATION_EXERCISE_CHANGES_AS_ADMIN_MUTATION
-  );
   const [archiveOrganizationExercise, { loading: archiving }] = useMutation(
     ARCHIVE_ORGANIZATION_EXERCISE_AS_ADMIN_MUTATION
   );
@@ -133,12 +129,9 @@ export default function CrossOrgVerificationDetailPage({ params }: Readonly<Cros
   const decision = useMemo<OrganizationDecision>(
     () => ({
       status: exercise?.organizationVerificationStatus,
-      isBusy: approving || requestingChanges || archiving,
+      isBusy: approving || archiving,
       onApprove: async () => {
         await approveOrganizationExercise({ variables: { exerciseId: id, reviewNotes: null } });
-      },
-      onRequestChanges: async (notes) => {
-        await requestChanges({ variables: { exerciseId: id, rejectionReason: notes, reviewNotes: notes } });
       },
       onArchive: async () => {
         await archiveOrganizationExercise({ variables: { exerciseId: id, reason: null } });
@@ -151,8 +144,6 @@ export default function CrossOrgVerificationDetailPage({ params }: Readonly<Cros
       archiving,
       exercise?.organizationVerificationStatus,
       id,
-      requestChanges,
-      requestingChanges,
     ]
   );
 

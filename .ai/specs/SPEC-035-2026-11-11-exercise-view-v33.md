@@ -24,7 +24,7 @@ Fizjoterapeuta otwiera ćwiczenie zapisane w kontrakcie v3.3 (FR-007) i widzi ca
   - „Metadane i wyszukiwanie”: sprzęt z `equipment_items` jako lista: nazwa, „× n” powyżej jednej sztuki, „wymagany” albo „opcjonalny”, „Zamienniki: …” (`utils/equipmentItemText.ts`).
 - Wskazania i reguła bólu to kody ze słownika. Portal nie ma jeszcze etykiet słownika, więc pokazuje kod bez zmian.
 - Kroki i wskazówki z fazą (`ExerciseExecutionSteps`, `ExerciseAudioCues`) zostają bez zmian: leżą w tym samym miejscu w obu wersjach, a zdjęcia kroków i fazy wskazówek wiążą się z pozycją na zapisanej liście, którą czytnik po odsianiu pustych wpisów by przesunął.
-- Pola zespołu (`provenance`, `lifecycle`, wyniki audytu, zakres użycia mediów) nie są pokazywane; notatki wewnętrzne zostają w istniejącym `InternalNotesPanel`.
+- Pola zespołu (`provenance`, `lifecycle`, wyniki audytu, zakres użycia mediów) nie są pokazywane; tekst o ćwiczeniu (dawniej notatki wewnętrzne) jest w logu uwag `ExerciseReviewLogSection` (BW-FZ-125).
 - Edycja bez zmian. Gałęzie `editable` w sekcjach nie są dotknięte.
 
 ## Poza zakresem

@@ -52,9 +52,8 @@ import { SubmitToOrganizationDialog } from '@/features/exercises/SubmitToOrganiz
 import { FeedbackBanner } from '@/features/exercises/FeedbackBanner';
 import { resolveExerciseReviewFeedback } from '@/features/exercises/utils/resolveExerciseReviewFeedback';
 import { duplicateReviewReason } from '@/features/exercises/utils/duplicateReviewReason';
-import { ExerciseReviewThread } from '@/features/exercises/ExerciseReviewThread';
+import { ExerciseReviewLogSection } from '@/features/exercises/ExerciseReviewLogSection';
 import { ReportExerciseDialog } from '@/features/exercises/ReportExerciseDialog';
-import { InternalNotesPanel } from '@/features/exercises/InternalNotesPanel';
 import { ContentGapsNotice, listExerciseContentGaps } from '@/features/exercises/ContentGapsNotice';
 import { canReportExerciseIssue } from '@/features/exercises/utils/exerciseReportRouting';
 import { MediaGallery, buildMediaItems } from '@/components/shared';
@@ -521,7 +520,8 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const hasGlobalSubmission = !!exercise.globalSubmissionId;
   const isPendingReview = exercise.status === 'PENDING_REVIEW';
   const isChangesRequested = exercise.status === 'CHANGES_REQUESTED';
-  const isGlobalSubmissionArchived = exercise.scope === 'ORGANIZATION' && exercise.globalSubmissionStatus === 'ARCHIVED_GLOBAL';
+  const isGlobalSubmissionArchived =
+    exercise.scope === 'ORGANIZATION' && exercise.globalSubmissionStatus === 'ARCHIVED_GLOBAL';
   const isSubmittedToGlobal = hasGlobalSubmission && exercise.scope === 'ORGANIZATION' && !isGlobalSubmissionArchived;
   const canResubmit = isChangesRequested && hasGlobalSubmission && !isGlobalSubmissionArchived;
   const submissionReview = submissionReviewData?.exerciseById;
@@ -799,7 +799,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         <FeedbackBanner adminReviewNotes={reviewFeedback.notes} updatedAt={reviewFeedback.updatedAt} />
       )}
 
-      <ExerciseReviewThread exerciseId={exercise.id} />
+      <ExerciseReviewLogSection exerciseId={exercise.id} />
 
       {/* Hero Actions */}
       <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12">
@@ -949,8 +949,6 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                 }) && <DemoReleaseButton exerciseId={exercise.id} />}
             </div>
           )}
-
-          <InternalNotesPanel exerciseId={exercise.id} />
         </div>
 
         {/* Right column: content, ordered by importance */}

@@ -11,7 +11,16 @@ interface VerificationFloatingBarProps {
   primaryLabel: string;
   onPrimary: () => void;
   isBusy?: boolean;
-  secondary?: { label: string; testId: string; onClick: () => void };
+  /** Review actions next to the primary one (send to author, internal fixes, duplicate), in display order. */
+  secondary?: readonly FloatingBarAction[];
+}
+
+export interface FloatingBarAction {
+  label: string;
+  testId: string;
+  onClick: () => void;
+  /** Why the action is unavailable; the button stays visible but inactive with this hint. */
+  disabledHint?: string;
 }
 
 /**
@@ -59,16 +68,38 @@ export function VerificationFloatingBar({
             Akceptuj sugestie
           </Button>
         )}
-        {secondary && (
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={secondary.onClick}
-            disabled={isBusy}
-            data-testid={secondary.testId}
-          >
-            {secondary.label}
-          </Button>
+        {secondary?.map((action) =>
+          action.disabledHint ? (
+            // A disabled button gets no pointer events, so the hint sits on a focusable wrapper.
+            <span
+              key={action.testId}
+              tabIndex={0}
+              title={action.disabledHint}
+              aria-label={`${action.label}: ${action.disabledHint}`}
+              data-testid={`${action.testId}-hint`}
+            >
+              <Button
+                type="button"
+                variant="ghost"
+                disabled
+                data-testid={action.testId}
+                className="pointer-events-none"
+              >
+                {action.label}
+              </Button>
+            </span>
+          ) : (
+            <Button
+              key={action.testId}
+              type="button"
+              variant="ghost"
+              onClick={action.onClick}
+              disabled={isBusy}
+              data-testid={action.testId}
+            >
+              {action.label}
+            </Button>
+          )
         )}
         <Button
           type="button"

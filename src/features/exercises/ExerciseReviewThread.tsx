@@ -15,9 +15,13 @@ import {
   isReviewMarker,
 } from '@/features/verification/utils/reviewNotes';
 import { ADD_EXERCISE_REVIEW_NOTE_MUTATION } from '@/graphql/mutations/exerciseReviewNotes.mutations';
-import { GET_EXERCISE_REVIEW_NOTES_QUERY } from '@/graphql/queries/exerciseReviewNotes.queries';
+import {
+  GET_EXERCISE_REVIEW_LOG_ACCESS_QUERY,
+  GET_EXERCISE_REVIEW_NOTES_QUERY,
+} from '@/graphql/queries/exerciseReviewNotes.queries';
 import type {
   AddExerciseReviewNoteResponse,
+  ExerciseReviewLogAccess,
   ExerciseReviewNote,
   GetExerciseReviewNotesResponse,
 } from '@/graphql/types/exerciseReviewNote.types';
@@ -33,6 +37,14 @@ function Note({
       <p className="flex flex-wrap items-center gap-x-1.5 text-[12px] leading-4 text-label-secondary">
         <span>{fromAuthor ? (note.isMine ? 'Ty' : note.authorName) : 'Weryfikator'}</span>
         <span>· {formatReviewNoteTime(note.createdAt)}</span>
+        {note.visibility === 'THERAPIST' && (
+          <span
+            className="rounded-badge bg-fill-tertiary px-1.5 font-medium"
+            data-testid={`exercise-review-note-${note.id}-therapist`}
+          >
+            Dla fizjoterapeutów
+          </span>
+        )}
         {note.contextLabel && (
           <span className="rounded-badge bg-tint-muted px-1.5 font-medium text-tint">{note.contextLabel}</span>
         )}
@@ -64,24 +76,34 @@ function Note({
 }
 
 /**
- * Reviewer notes sent back to the author, with the author's replies. The backend returns only the rounds
- * sent to the author, and nothing at all to people who cannot edit the exercise, so the section hides itself.
+ * The author's and therapist's view of the exercise log: notes sent back to the author with the author's replies,
+ * and notes for therapists who use the exercise. The backend returns only what this viewer may see
+ * (BW-FZ-125); reviewers get the full log panel instead. Replying needs a round sent to the author.
  */
-export function ExerciseReviewThread({ exerciseId }: Readonly<{ exerciseId: string }>) {
+export function ExerciseReviewThread({
+  exerciseId,
+  access,
+}: Readonly<{ exerciseId: string; access: ExerciseReviewLogAccess | undefined }>) {
   const [draft, setDraft] = useState('');
   const [replyTo, setReplyTo] = useState<ExerciseReviewNote | null>(null);
   const { data } = useQuery<GetExerciseReviewNotesResponse>(GET_EXERCISE_REVIEW_NOTES_QUERY, {
     variables: { exerciseId },
     skip: !exerciseId,
-    fetchPolicy: 'cache-and-network',
+    // network-only: after a role or organization switch the cache must not show what the new role cannot see.
+    fetchPolicy: 'network-only',
+    nextFetchPolicy: 'cache-first',
   });
   const [addNote, { loading: adding }] = useMutation<AddExerciseReviewNoteResponse>(ADD_EXERCISE_REVIEW_NOTE_MUTATION, {
-    refetchQueries: [{ query: GET_EXERCISE_REVIEW_NOTES_QUERY, variables: { exerciseId } }],
+    refetchQueries: [
+      { query: GET_EXERCISE_REVIEW_NOTES_QUERY, variables: { exerciseId } },
+      { query: GET_EXERCISE_REVIEW_LOG_ACCESS_QUERY, variables: { exerciseId } },
+    ],
     awaitRefetchQueries: true,
   });
 
   const thread = data?.exerciseReviewNotes ?? [];
-  if (!thread.some((note) => note.kind === 'SENT_TO_AUTHOR')) return null;
+  const canReply = Boolean(access?.writableVisibilities.includes('AUTHOR'));
+  if (!thread.some((note) => note.kind === 'NOTE' || note.kind === 'SENT_TO_AUTHOR')) return null;
 
   const trimmed = draft.trim();
   const isTooLong = trimmed.length > REVIEW_NOTE_MAX_LENGTH;
@@ -109,7 +131,7 @@ export function ExerciseReviewThread({ exerciseId }: Readonly<{ exerciseId: stri
         className="flex items-center gap-2 text-[15px] font-semibold text-foreground"
       >
         <MessageSquareText className="h-4 w-4 text-label-secondary" aria-hidden />
-        Uwagi z weryfikacji
+        Uwagi do ćwiczenia
       </h3>
       <div className="flex flex-col gap-2.5">
         {buildReviewThread(thread).map(({ note, replies }) =>
@@ -125,7 +147,10 @@ export function ExerciseReviewThread({ exerciseId }: Readonly<{ exerciseId: stri
             </div>
           ) : (
             <div key={note.id} className="flex flex-col gap-1.5">
-              <Note note={note} onReply={note.authorRole === 'AUTHOR' ? undefined : () => setReplyTo(note)} />
+              <Note
+                note={note}
+                onReply={canReply && note.authorRole !== 'AUTHOR' ? () => setReplyTo(note) : undefined}
+              />
               {replies.map((reply) => (
                 <Note key={reply.id} note={reply} isReply />
               ))}
@@ -133,56 +158,58 @@ export function ExerciseReviewThread({ exerciseId }: Readonly<{ exerciseId: stri
           )
         )}
       </div>
-      <div className="flex flex-col gap-1.5">
-        {replyTo && (
-          <p
-            className="flex items-center gap-1.5 text-[12px] text-label-secondary"
-            data-testid="exercise-review-reply-to"
-          >
-            <span className="min-w-0 flex-1 truncate">Odpowiedź na: {replyTo.body}</span>
+      {canReply && (
+        <div className="flex flex-col gap-1.5">
+          {replyTo && (
+            <p
+              className="flex items-center gap-1.5 text-[12px] text-label-secondary"
+              data-testid="exercise-review-reply-to"
+            >
+              <span className="min-w-0 flex-1 truncate">Odpowiedź na: {replyTo.body}</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                data-testid="exercise-review-reply-cancel-btn"
+                aria-label="Anuluj odpowiedź na uwagę"
+                onClick={() => setReplyTo(null)}
+              >
+                <X />
+              </Button>
+            </p>
+          )}
+          <div className="flex items-end gap-2">
+            <Textarea
+              data-testid="exercise-review-reply-input"
+              value={draft}
+              rows={2}
+              className="min-h-0 flex-1 resize-none"
+              placeholder="Napisz, co zostało poprawione"
+              aria-label="Odpowiedź dla weryfikatora"
+              aria-invalid={isTooLong}
+              onChange={(event) => setDraft(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                  event.preventDefault();
+                  void handleSend();
+                }
+              }}
+            />
             <Button
               type="button"
-              variant="ghost"
               size="icon"
-              className="h-6 w-6"
-              data-testid="exercise-review-reply-cancel-btn"
-              aria-label="Anuluj odpowiedź na uwagę"
-              onClick={() => setReplyTo(null)}
+              aria-label="Wyślij odpowiedź"
+              title="Wyślij odpowiedź"
+              disabled={!trimmed || isTooLong || adding}
+              onClick={() => void handleSend()}
+              data-testid="exercise-review-reply-send-btn"
             >
-              <X />
+              {adding ? <Loader2 className="animate-spin" /> : <ArrowUp />}
             </Button>
-          </p>
-        )}
-        <div className="flex items-end gap-2">
-          <Textarea
-            data-testid="exercise-review-reply-input"
-            value={draft}
-            rows={2}
-            className="min-h-0 flex-1 resize-none"
-            placeholder="Napisz, co zostało poprawione"
-            aria-label="Odpowiedź dla weryfikatora"
-            aria-invalid={isTooLong}
-            onChange={(event) => setDraft(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
-                void handleSend();
-              }
-            }}
-          />
-          <Button
-            type="button"
-            size="icon"
-            aria-label="Wyślij odpowiedź"
-            title="Wyślij odpowiedź"
-            disabled={!trimmed || isTooLong || adding}
-            onClick={() => void handleSend()}
-            data-testid="exercise-review-reply-send-btn"
-          >
-            {adding ? <Loader2 className="animate-spin" /> : <ArrowUp />}
-          </Button>
+          </div>
         </div>
-      </div>
+      )}
     </section>
   );
 }

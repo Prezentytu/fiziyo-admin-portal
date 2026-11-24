@@ -20,7 +20,6 @@ import {
 import {
   APPROVE_ORGANIZATION_EXERCISE_MUTATION,
   ARCHIVE_ORGANIZATION_EXERCISE_MUTATION,
-  REQUEST_ORGANIZATION_EXERCISE_CHANGES_MUTATION,
 } from '@/graphql/mutations/adminExercises.mutations';
 import { UPDATE_EXERCISE_MUTATION as UPDATE_EXERCISE_DETAILS_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import {
@@ -44,7 +43,9 @@ interface OrganizationVerificationDetailPageProps {
  * Organization verification (Owner/Admin): the same five-stage workspace as the global track,
  * with the organization decisions (approve, request changes, archive).
  */
-export default function OrganizationVerificationDetailPage({ params }: Readonly<OrganizationVerificationDetailPageProps>) {
+export default function OrganizationVerificationDetailPage({
+  params,
+}: Readonly<OrganizationVerificationDetailPageProps>) {
   const { id } = use(params);
   const router = useRouter();
   const apolloClient = useApolloClient();
@@ -99,10 +100,6 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
     APPROVE_ORGANIZATION_EXERCISE_MUTATION,
     orgVerificationRefetch
   );
-  const [requestChanges, { loading: requestingChanges }] = useMutation(
-    REQUEST_ORGANIZATION_EXERCISE_CHANGES_MUTATION,
-    orgVerificationRefetch
-  );
   const [archiveOrganizationExercise, { loading: archiving }] = useMutation(
     ARCHIVE_ORGANIZATION_EXERCISE_MUTATION,
     orgVerificationRefetch
@@ -150,12 +147,9 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
   const decision = useMemo<OrganizationDecision>(
     () => ({
       status: exercise?.organizationVerificationStatus,
-      isBusy: approving || requestingChanges || archiving,
+      isBusy: approving || archiving,
       onApprove: async () => {
         await approveOrganizationExercise({ variables: { exerciseId: id, reviewNotes: null } });
-      },
-      onRequestChanges: async (notes) => {
-        await requestChanges({ variables: { exerciseId: id, rejectionReason: notes, reviewNotes: notes } });
       },
       onArchive: async () => {
         await archiveOrganizationExercise({ variables: { exerciseId: id, reason: null } });
@@ -168,8 +162,6 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
       archiving,
       exercise?.organizationVerificationStatus,
       id,
-      requestChanges,
-      requestingChanges,
     ]
   );
 

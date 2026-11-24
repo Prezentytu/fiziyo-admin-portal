@@ -89,7 +89,6 @@ function renderOrganizationWorkspace(exercise: AdminExercise) {
     status: 'PENDING_ORG_REVIEW',
     isBusy: false,
     onApprove: vi.fn().mockResolvedValue(undefined),
-    onRequestChanges: vi.fn().mockResolvedValue(undefined),
     onArchive: vi.fn().mockResolvedValue(undefined),
   };
   return render(
