@@ -43,6 +43,13 @@ W etapie Instrukcja panel nagrania i zdjęć podąża za czytanym tekstem: fokus
 | Czas utrzymania        | 300 s | 10–60 s  | 30 s    |
 | Przerwa między seriami | 600 s | 30–120 s | 60 s    |
 
+Czas utrzymania zależy od ćwiczenia (`resolveParameterRule`), bo jedno długie powtórzenie to też ruch ciągły (rower, marsz, wiosłowanie):
+
+- cel rekordu 3.3 „Wydolność tlenowa” (`prescription.goal = aerobic`): pole „Czas wykonania”, limit 3600 s (limit całego ćwiczenia), typowo 5–30 min, „Ustaw” 10 min, suwak 1–30 min;
+- jedna seria bez celu „Izometria przeciwbólowa”: limit 3600 s, typowo 10–60 s, więc długi czas to „Sugestia”, nie „Błąd”;
+- kilka serii albo cel „Izometria przeciwbólowa”: limit 300 s jak w tabeli;
+- zakres `hold_s` z dokumentu ćwiczenia z górną granicą ponad limit podnosi limit do tej granicy.
+
 Czas ćwiczenia liczy `calculateExerciseTotalSeconds` (`src/utils/exerciseTime.ts`), ten sam wzór co katalog i player: czas powtórzenia → `duration` jako czas serii → tempo → 3 s, plus mikroprzerwy między powtórzeniami, przerwy między seriami, czas przygotowania i ×2 przy „Na każdą stronę”. Licznik „Czas ćwiczenia ≈ N min” stoi w prawym górnym rogu karty parametrów. Powyżej 15 min ostrzeżenie („OK” wiąże się z liczbą sekund; każda zmiana czasu otwiera je ponownie), powyżej 60 min blokada.
 
 Poziomy: powyżej limitu albo brak wymaganej wartości = „Błąd” (czerwony, blokuje, bez „OK”); poza typowym zakresem = „Sugestia” (miękki pomarańcz pod polem, krótko „Mało/Dużo, zwykle a–b”, z „Ustaw N” albo „OK”; potwierdzenie żyje w sesji). Nie ma przełącznika trybu: zawsze są pola seria, powtórzenia w serii, czas jednego powtórzenia, przerwa. Tryb wynika z wartości (`deriveExecutionMode`): 1 powtórzenie i czas ≥ 10 s to utrzymanie pozycji, z typowym zakresem czasu 10–60 s (albo legacy `duration` bez `executionTime`). Kontrakt danych się nie zmienia.
@@ -125,6 +132,7 @@ Zdjęcie przy czytanym kroku ma test integracyjny `VerificationWorkspace.reading
 
 ## Changelog
 
+- 2026-11-24 — Czas utrzymania zależny od ćwiczenia: ruch ciągły (cel „Wydolność tlenowa”, jedna seria) nie blokuje się na 300 s.
 - 2026-11-20 — Wycofanie potwierdzonych duplikatów z FiziYo i powiadomienie zgłaszającego w portalu.
 - 2026-11-20 — Rozróżnienie obu ćwiczeń w dialogu duplikatu, podgląd oryginału i wpis w jego notatkach roboczych.
 - 2026-10-26: Pierwsza wersja (etapy, ocena parametrów, zdjęcia przy krokach, fazy wskazówek, duplikat).

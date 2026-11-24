@@ -342,4 +342,30 @@ describe('ParametersStage: uwagi o stronie (odbiór 12.11, F1)', () => {
     expect(screen.getByTestId('verification-param-sets-fix-btn')).toHaveTextContent('Ustaw 1');
     expect(screen.getByTestId('verification-stage-parameters')).toHaveTextContent('zakres ćwiczenia 2–5');
   });
+
+  it('ćwiczenie ciągłe (cel „Wydolność tlenowa”): 600 s to czas wykonania bez błędu, suwak w minutach', () => {
+    const bike: ParameterValues = { sets: 1, reps: 1, repTime: null, hold: 600, rest: null };
+    const onValueChange = vi.fn();
+    render(
+      <ParametersStage
+        core={core}
+        mode="hold"
+        values={bike}
+        evaluation={evaluateParameters({ values: bike, mode: 'hold', side: 'none', goal: 'aerobic' })}
+        descriptionNumbers={[]}
+        onValueChange={onValueChange}
+        onAcknowledge={vi.fn()}
+        onAcknowledgeAll={vi.fn()}
+        onFixDescription={vi.fn()}
+        onAcknowledgeDescription={vi.fn()}
+        onCoreFieldChange={vi.fn()}
+        savedLoadLabel={null}
+      />
+    );
+
+    expect(screen.getByLabelText('Czas wykonania')).toHaveValue('600');
+    expect(screen.queryByTestId('verification-param-hold-note')).not.toBeInTheDocument();
+    fireEvent.change(screen.getByTestId('verification-param-hold-slider'), { target: { value: '900' } });
+    expect(onValueChange).toHaveBeenCalledWith('hold', 900);
+  });
 });

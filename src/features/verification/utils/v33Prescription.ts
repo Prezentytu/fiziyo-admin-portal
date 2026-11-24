@@ -47,6 +47,12 @@ export const PRESCRIPTION_ROM = [
   { code: 'end', label: 'Do końca zakresu, bez forsowania' },
 ] as const;
 
+/** `prescription.goal` jako kod; brak albo inny typ to null. */
+export function prescriptionGoal(prescription: unknown): string | null {
+  const goal = asRecord(prescription)?.goal;
+  return typeof goal === 'string' && goal !== '' ? goal : null;
+}
+
 export function goalLabel(code: string | null): string | null {
   if (!code) return null;
   return PRESCRIPTION_GOALS.find((goal) => goal.code === code)?.label ?? code;

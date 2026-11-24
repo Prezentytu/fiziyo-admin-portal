@@ -11,8 +11,10 @@ type FindingLevel = 'limit' | 'warning';
 /** What the therapist can confirm with „OK”: an unusual field or a long (not over-limit) exercise. */
 export type AcknowledgeKey = ParameterKey | 'session';
 
-interface ParameterRule {
+export interface ParameterRule {
   label: string;
+  /** Opis pod ikoną „i”; bez niego etap bierze ogólny opis pola. */
+  info?: string;
   unit: string;
   hardMax: number;
   typicalMin: number;
@@ -88,6 +90,46 @@ const SESSION_WARNING_SECONDS = 15 * 60;
 const SESSION_LIMIT_SECONDS = 60 * 60;
 const HOLD_MODE_MIN_SECONDS = 10;
 
+/**
+ * Ćwiczenie ciągłe (cel „Wydolność tlenowa”: rower, marsz, wiosłowanie) zapisane jak utrzymanie: jedno długie
+ * powtórzenie. Minuty są tu normą, więc limit pola równa się limitowi całego ćwiczenia.
+ */
+const CONTINUOUS_HOLD_RULE: ParameterRule = {
+  label: 'Czas wykonania',
+  info: 'Ile sekund pacjent wykonuje ruch bez przerwy w jednej serii, np. jazda na rowerze.',
+  unit: 's',
+  hardMax: SESSION_LIMIT_SECONDS,
+  typicalMin: 5 * 60,
+  typicalMax: 30 * 60,
+  suggested: 10 * 60,
+  slider: { min: 60, max: 30 * 60, step: 60 },
+};
+
+/** Cele, przy których jedno długie powtórzenie to ruch ciągły. */
+const CONTINUOUS_GOALS: ReadonlySet<string> = new Set(['aerobic']);
+/** Cele, przy których utrzymanie to izometria: tu 300 s zostaje twardą granicą także w jednej serii. */
+const ISOMETRIC_GOALS: ReadonlySet<string> = new Set(['analgesic_isometric']);
+
+interface RuleContext {
+  values: ParameterValues;
+  goal: string | null;
+  exerciseRange?: TypicalRange;
+}
+
+/**
+ * Reguła pola dla tego ćwiczenia. Tylko czas utrzymania zależy od ćwiczenia: izometria w kilku seriach ma 300 s,
+ * cel „Wydolność tlenowa” ma minuty, a jedna seria bez celu izometrycznego nie blokuje (długi czas to sugestia).
+ * Zakres utrzymania z dokumentu ćwiczenia nigdy nie jest ponad limitem.
+ */
+export function resolveParameterRule(key: ParameterKey, { values, goal, exerciseRange }: RuleContext): ParameterRule {
+  const rule = PARAMETER_RULES[key];
+  if (key !== 'hold') return rule;
+  if (goal && CONTINUOUS_GOALS.has(goal)) return CONTINUOUS_HOLD_RULE;
+  const isSingleBout = values.sets === 1 && !(goal && ISOMETRIC_GOALS.has(goal));
+  const hardMax = Math.max(rule.hardMax, isSingleBout ? SESSION_LIMIT_SECONDS : 0, exerciseRange?.max ?? 0);
+  return hardMax === rule.hardMax ? rule : { ...rule, hardMax };
+}
+
 interface ParameterSource {
   sets: number | null;
   reps: number | null;
@@ -122,18 +164,32 @@ export interface ParameterFieldState {
   level: ParameterLevel;
   /** Ustawione, gdy zakres pochodzi z dokumentu ćwiczenia, nie z ogólnych reguł. */
   exerciseRange?: TypicalRange;
+  /** Ustawione, gdy pole ma regułę inną niż ogólna (`resolveParameterRule`): etykieta, limit, suwak. */
+  rule?: ParameterRule;
 }
 
-/** Zakres dla pola: najpierw własny zakres ćwiczenia, potem ogólna reguła. */
-export function typicalRangeOf(key: ParameterKey, exerciseRange?: TypicalRange): TypicalRange {
+/** Reguła, według której pole zostało ocenione. */
+export function fieldRuleOf(field: Pick<ParameterFieldState, 'key' | 'rule'>): ParameterRule {
+  return field.rule ?? PARAMETER_RULES[field.key];
+}
+
+/** Zakres dla pola: najpierw własny zakres ćwiczenia, potem reguła pola. */
+export function typicalRangeOf(
+  key: ParameterKey,
+  exerciseRange?: TypicalRange,
+  rule: ParameterRule = PARAMETER_RULES[key]
+): TypicalRange {
   if (exerciseRange) return exerciseRange;
-  const rule = PARAMETER_RULES[key];
   return { min: rule.typicalMin, max: rule.typicalMax, suggested: rule.suggested };
 }
 
-function rangeText(key: ParameterKey, exerciseRange?: TypicalRange): string {
-  const range = typicalRangeOf(key, exerciseRange);
-  const text = `${range.min}–${formatWithUnit(range.max, PARAMETER_RULES[key].unit)}`;
+function rangeText(
+  key: ParameterKey,
+  exerciseRange?: TypicalRange,
+  rule: ParameterRule = PARAMETER_RULES[key]
+): string {
+  const range = typicalRangeOf(key, exerciseRange, rule);
+  const text = `${range.min}–${formatWithUnit(range.max, rule.unit)}`;
   return exerciseRange ? `zakres ćwiczenia ${text}` : `zwykle ${text}`;
 }
 
@@ -371,20 +427,23 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 /** Position on the slider track (0–100). Values beyond the slider scale sit at its end. */
-export function sliderPercent(key: ParameterKey, value: number): number {
-  const { min, max } = PARAMETER_RULES[key].slider;
+export function sliderPercent(key: ParameterKey, value: number, rule: ParameterRule = PARAMETER_RULES[key]): number {
+  const { min, max } = rule.slider;
   return ((clamp(value, min, max) - min) / (max - min)) * 100;
 }
 
 /** Slider thumb value; an empty field shows what the patient gets anyway (default or suggested). */
-export function toSliderValue(key: ParameterKey, value: number | null): number {
-  const rule = PARAMETER_RULES[key];
+export function toSliderValue(
+  key: ParameterKey,
+  value: number | null,
+  rule: ParameterRule = PARAMETER_RULES[key]
+): number {
   const fallback = key === 'repTime' ? DEFAULT_REP_SECONDS : rule.suggested;
   return clamp(value ?? fallback, rule.slider.min, rule.slider.max);
 }
 
-export function fromSliderValue(key: ParameterKey, raw: string): number {
-  const { min, max, step } = PARAMETER_RULES[key].slider;
+export function fromSliderValue(key: ParameterKey, raw: string, rule: ParameterRule = PARAMETER_RULES[key]): number {
+  const { min, max, step } = rule.slider;
   return clamp(Math.round(Number(raw) / step) * step, min, max);
 }
 
@@ -408,22 +467,24 @@ function evaluateField(
   values: ParameterValues,
   acknowledged: ReadonlySet<ParameterKey>,
   mode: ExecutionMode,
-  exerciseRange?: TypicalRange
+  exerciseRange: TypicalRange | undefined,
+  goal: string | null
 ): { field: ParameterFieldState; finding: ParameterFinding | null } {
-  const rule = PARAMETER_RULES[key];
+  const rule = resolveParameterRule(key, { values, goal, exerciseRange });
   const value = values[key];
-  const typical = typicalRangeOf(key, exerciseRange);
-  const withRange = exerciseRange ? { exerciseRange } : {};
+  const typical = typicalRangeOf(key, exerciseRange, rule);
+  const withRule = rule === PARAMETER_RULES[key] ? {} : { rule };
+  const withRange = { ...withRule, ...(exerciseRange ? { exerciseRange } : {}) };
 
   // A hold is stored as one repetition; that single repetition is the shape, not an unusual count.
   if (mode === 'hold' && key === 'reps') return { field: { key, value, level: 'ok' }, finding: null };
 
   if (isEmpty(key, value)) {
     if (!isRequired(key, values)) {
-      return { field: { key, value: null, level: 'default' }, finding: null };
+      return { field: { key, value: null, level: 'default', ...withRule }, finding: null };
     }
     return {
-      field: { key, value: null, level: 'empty' },
+      field: { key, value: null, level: 'empty', ...withRule },
       finding: {
         key,
         level: 'limit',
@@ -437,7 +498,7 @@ function evaluateField(
   const numeric = value as number;
   if (rule.integer && !Number.isInteger(numeric)) {
     return {
-      field: { key, value: numeric, level: 'limit' },
+      field: { key, value: numeric, level: 'limit', ...withRule },
       finding: {
         key,
         level: 'limit',
@@ -449,7 +510,7 @@ function evaluateField(
   }
   if (numeric > rule.hardMax) {
     return {
-      field: { key, value: numeric, level: 'limit' },
+      field: { key, value: numeric, level: 'limit', ...withRule },
       finding: {
         key,
         level: 'limit',
@@ -469,7 +530,7 @@ function evaluateField(
       finding: {
         key,
         level: 'warning',
-        text: `${rule.label}: ${formatWithUnit(numeric, rule.unit)}, ${rangeText(key, exerciseRange)}.`,
+        text: `${rule.label}: ${formatWithUnit(numeric, rule.unit)}, ${rangeText(key, exerciseRange, rule)}.`,
         suggested: typical.suggested,
         canAcknowledge: true,
       },
@@ -491,6 +552,8 @@ interface EvaluateParametersInput {
   isV33?: boolean;
   /** Rekord 3.3: zakresy z `prescription.params` zastępują ogólne „zwykle”. */
   exerciseRanges?: ExerciseRanges;
+  /** Rekord 3.3: `prescription.goal`; „aerobic” zamienia czas utrzymania w czas wykonania ruchu ciągłego. */
+  goal?: string | null;
 }
 
 export function evaluateParameters({
@@ -502,12 +565,13 @@ export function evaluateParameters({
   timing,
   isV33 = false,
   exerciseRanges = {},
+  goal = null,
 }: EvaluateParametersInput): ParameterEvaluation {
   const fields: ParameterFieldState[] = [];
   const findings: ParameterFinding[] = [];
 
   for (const key of MODE_PARAMETERS[mode]) {
-    const { field, finding } = evaluateField(key, values, acknowledged, mode, exerciseRanges[key]);
+    const { field, finding } = evaluateField(key, values, acknowledged, mode, exerciseRanges[key], goal);
     fields.push(field);
     if (finding) findings.push(finding);
   }
@@ -541,9 +605,9 @@ export function evaluateParameters({
 
 /** Short note under a parameter field: the reason in a few words, the action sits in the buttons next to it. */
 export function describeFieldNote(field: ParameterFieldState): string {
-  const rule = PARAMETER_RULES[field.key];
-  const typical = typicalRangeOf(field.key, field.exerciseRange);
-  const range = rangeText(field.key, field.exerciseRange);
+  const rule = fieldRuleOf(field);
+  const typical = typicalRangeOf(field.key, field.exerciseRange, rule);
+  const range = rangeText(field.key, field.exerciseRange, rule);
   switch (field.level) {
     case 'empty':
       return 'Puste';
