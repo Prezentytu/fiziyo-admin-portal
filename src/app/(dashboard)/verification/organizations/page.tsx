@@ -40,10 +40,10 @@ import type {
 } from '@/graphql/types/adminExercise.types';
 import { PageSheet } from '@/components/shared/page';
 
-type CrossOrgFilter = 'pending' | 'changes' | 'verified' | 'archived';
+type CrossOrgFilter = 'pending' | 'internal' | 'changes' | 'verified' | 'archived';
 
 function parseFilter(value: string | null): CrossOrgFilter {
-  if (value === 'changes' || value === 'verified' || value === 'archived') {
+  if (value === 'internal' || value === 'changes' || value === 'verified' || value === 'archived') {
     return value;
   }
   return 'pending';

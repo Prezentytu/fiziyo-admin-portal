@@ -10,6 +10,7 @@ export const GET_CROSS_ORG_VERIFICATION_STATS_QUERY = gql`
       orgChangesRequested
       orgVerified
       orgArchived
+      internalFixes
       total
     }
   }

@@ -34,10 +34,10 @@ interface CrossOrgVerificationDetailPageProps {
   params: Promise<{ id: string }>;
 }
 
-type CrossOrgFilter = 'pending' | 'changes' | 'verified' | 'archived';
+type CrossOrgFilter = 'pending' | 'internal' | 'changes' | 'verified' | 'archived';
 
 function parseFilter(value: string | null): CrossOrgFilter {
-  if (value === 'changes' || value === 'verified' || value === 'archived') {
+  if (value === 'internal' || value === 'changes' || value === 'verified' || value === 'archived') {
     return value;
   }
   return 'pending';
