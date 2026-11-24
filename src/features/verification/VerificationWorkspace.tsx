@@ -18,6 +18,7 @@ import { PageSheet } from '@/components/shared/page';
 import { useExerciseEditorForm, type ExerciseCoreDraft } from '@/features/exercises/useExerciseEditorForm';
 import { useExerciseImageGeneration } from '@/features/exercises/useExerciseImageGeneration';
 import { toV3 } from '@/features/verification/utils/enrichmentToV3';
+import { VerificationExerciseName } from '@/features/verification/VerificationExerciseName';
 
 import { useSystemRole } from '@/hooks/useSystemRole';
 import { useVerificationHotkeys } from '@/hooks/useVerificationHotkeys';
@@ -1103,9 +1104,7 @@ export function VerificationWorkspace({
         >
           <ArrowLeft />
         </Button>
-        <h1 className="min-w-0 truncate text-[20px] font-semibold leading-[25px] text-foreground">
-          {core.name.trim() || 'Ćwiczenie bez nazwy'}
-        </h1>
+        <VerificationExerciseName name={core.name} onChange={(value) => setCoreField('name', value)} />
         <Badge variant="secondary" className="shrink-0" data-testid="verification-destination-badge">
           {isOrganization ? 'Ćwiczenia gabinetu' : 'Katalog FiziYo'}
         </Badge>
