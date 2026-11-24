@@ -48,7 +48,7 @@ Czas utrzymania zależy od ćwiczenia (`resolveParameterRule`), bo jedno długie
 - cel rekordu 3.3 „Wydolność tlenowa” (`prescription.goal = aerobic`): pole „Czas wykonania”, limit 3600 s (limit całego ćwiczenia), typowo 5–15 min (do progu ostrzeżenia o długim ćwiczeniu), „Ustaw” 10 min, suwak 1–30 min;
 - jedna seria bez celu „Izometria przeciwbólowa”: limit 3600 s, typowo 10–60 s, więc długi czas to „Sugestia”, nie „Błąd”;
 - kilka serii albo cel „Izometria przeciwbólowa”: limit 300 s jak w tabeli;
-- zakres `hold_s` z dokumentu ćwiczenia z górną granicą ponad limit podnosi limit do tej granicy.
+- poza celem „Wydolność tlenowa” zakres `hold_s` z dokumentu ćwiczenia z górną granicą ponad limit podnosi limit do tej granicy (przy „Wydolności tlenowej” limit 3600 s to już limit całego ćwiczenia).
 
 Czas ćwiczenia liczy `calculateExerciseTotalSeconds` (`src/utils/exerciseTime.ts`), ten sam wzór co katalog i player: czas powtórzenia → `duration` jako czas serii → tempo → 3 s, plus mikroprzerwy między powtórzeniami, przerwy między seriami, czas przygotowania i ×2 przy „Na każdą stronę”. Licznik „Czas ćwiczenia ≈ N min” stoi w prawym górnym rogu karty parametrów. Powyżej 15 min ostrzeżenie („OK” wiąże się z liczbą sekund; każda zmiana czasu otwiera je ponownie), powyżej 60 min blokada.
 
