@@ -100,7 +100,8 @@ const CONTINUOUS_HOLD_RULE: ParameterRule = {
   unit: 's',
   hardMax: SESSION_LIMIT_SECONDS,
   typicalMin: 5 * 60,
-  typicalMax: 30 * 60,
+  // Do progu ostrzeżenia o długim ćwiczeniu: pole w zakresie nie wywołuje sugestii czasu całego ćwiczenia.
+  typicalMax: SESSION_WARNING_SECONDS,
   suggested: 10 * 60,
   slider: { min: 60, max: 30 * 60, step: 60 },
 };

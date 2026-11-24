@@ -45,7 +45,7 @@ W etapie Instrukcja panel nagrania i zdjęć podąża za czytanym tekstem: fokus
 
 Czas utrzymania zależy od ćwiczenia (`resolveParameterRule`), bo jedno długie powtórzenie to też ruch ciągły (rower, marsz, wiosłowanie):
 
-- cel rekordu 3.3 „Wydolność tlenowa” (`prescription.goal = aerobic`): pole „Czas wykonania”, limit 3600 s (limit całego ćwiczenia), typowo 5–30 min, „Ustaw” 10 min, suwak 1–30 min;
+- cel rekordu 3.3 „Wydolność tlenowa” (`prescription.goal = aerobic`): pole „Czas wykonania”, limit 3600 s (limit całego ćwiczenia), typowo 5–15 min (do progu ostrzeżenia o długim ćwiczeniu), „Ustaw” 10 min, suwak 1–30 min;
 - jedna seria bez celu „Izometria przeciwbólowa”: limit 3600 s, typowo 10–60 s, więc długi czas to „Sugestia”, nie „Błąd”;
 - kilka serii albo cel „Izometria przeciwbólowa”: limit 300 s jak w tabeli;
 - zakres `hold_s` z dokumentu ćwiczenia z górną granicą ponad limit podnosi limit do tej granicy.

@@ -456,6 +456,15 @@ describe('czas jednego długiego powtórzenia: ćwiczenie ciągłe a izometria',
     expect(holdOf(evaluation)?.rule?.label).toBe('Czas wykonania');
   });
 
+  it('cel „Wydolność tlenowa”: typowy zakres pola kończy się tam, gdzie zaczyna się sugestia długiego ćwiczenia', () => {
+    const atEdge = evaluateParameters({ values: { ...bike, hold: 900 }, mode: 'hold', side: 'none', goal: 'aerobic' });
+    expect(holdOf(atEdge)?.level).toBe('ok');
+    expect(atEdge.sessionLevel).toBe('ok');
+    const longer = evaluateParameters({ values: { ...bike, hold: 1200 }, mode: 'hold', side: 'none', goal: 'aerobic' });
+    expect(holdOf(longer)?.level).toBe('warning');
+    expect(longer.sessionLevel).toBe('warning');
+  });
+
   it('cel „Wydolność tlenowa”: ponad godzinę to nadal błąd', () => {
     const evaluation = evaluateParameters({
       values: { ...bike, hold: 4000 },

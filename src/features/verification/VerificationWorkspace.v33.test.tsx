@@ -193,6 +193,29 @@ describe('VerificationWorkspace – rekord v3.3', () => {
     expect(screen.getByTestId('verification-param-goal-select')).toHaveTextContent('Kontrola ruchu');
   });
 
+  it('cel „Wydolność tlenowa” z rekordu: 1 × 1 × 600 s to czas wykonania bez błędu, izometria w seriach nadal z limitem', async () => {
+    const { hold_s: _hold, ...params } = golden.prescription?.params ?? {};
+    const bike = (goal: string, defaultSets: number) =>
+      buildGoldenExercise({
+        side: 'None',
+        defaultSets,
+        defaultReps: 1,
+        defaultExecutionTime: 600,
+        defaultRestBetweenSets: 60,
+        enrichmentData: { ...golden, prescription: { ...golden.prescription, goal, params } },
+      });
+
+    const { unmount } = renderWorkspace(bike('aerobic', 1));
+    await userEvent.setup().click(screen.getByTestId('verification-stage-parameters-btn'));
+    expect(screen.getByLabelText('Czas wykonania')).toHaveValue('600');
+    expect(screen.queryByTestId('verification-param-hold-note')).not.toBeInTheDocument();
+    unmount();
+
+    renderWorkspace(bike('motor_control', 3));
+    await userEvent.setup().click(screen.getByTestId('verification-stage-parameters-btn'));
+    expect(screen.getByTestId('verification-param-hold-note')).toHaveTextContent('Maks. 300 s');
+  });
+
   it('przechodzi wszystkie bramki i nie zgłasza braków z wycofanych pól', async () => {
     renderWorkspace(buildGoldenExercise());
     const user = userEvent.setup();
@@ -339,9 +362,10 @@ describe('VerificationWorkspace – rekord v3.3', () => {
     ) as ExerciseEnrichmentData;
     expect(saved.patient?.steps?.[0]).toBe(`${golden.patient?.steps?.[0]} Dopisane.`);
     expect(saved.patient?.cues?.[0]).toBe(`${golden.patient?.cues?.[0]} Dopisane.`);
-    expect({ ...saved, patient: { ...saved.patient, steps: golden.patient?.steps, cues: golden.patient?.cues } }).toEqual(
-      golden
-    );
+    expect({
+      ...saved,
+      patient: { ...saved.patient, steps: golden.patient?.steps, cues: golden.patient?.cues },
+    }).toEqual(golden);
     // The form hook reports a path the 3.3 save would drop; the verification center must not use one.
     expect(errors.mock.calls.filter(([message]) => String(message).includes('nie jest zapisywana'))).toEqual([]);
     errors.mockRestore();
@@ -390,7 +414,9 @@ describe('VerificationWorkspace – rekord v3.3', () => {
         (leaf) => ![...Object.keys(PLACES), ...Object.keys(NOT_FOR_PATIENT)].some((rule) => covers(rule, leaf))
       )
     ).toEqual([]);
-    expect(Object.keys(NOT_FOR_PATIENT).filter((rule) => !patientLeaves.some((leaf) => covers(rule, leaf)))).toEqual([]);
+    expect(Object.keys(NOT_FOR_PATIENT).filter((rule) => !patientLeaves.some((leaf) => covers(rule, leaf)))).toEqual(
+      []
+    );
 
     const document = {
       ...golden,
