@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery } from '@apollo/client/react';
-import { ArrowUp, Bot, Loader2, MessageSquareText, Send, UserCheck, UserPlus, Wrench, X } from 'lucide-react';
+import { ArrowUp, Bot, CheckCheck, Loader2, MessageSquareText, Send, UserCheck, UserPlus, Wrench, X } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,6 +13,7 @@ import { cn } from '@/lib/utils';
 import {
   ADD_EXERCISE_REVIEW_NOTE_MUTATION,
   ASSIGN_EXERCISES_FOR_REVIEW_MUTATION,
+  COMPLETE_INTERNAL_EXERCISE_FIXES_MUTATION,
   SEND_EXERCISE_REVIEW_NOTES_MUTATION,
 } from '@/graphql/mutations/exerciseReviewNotes.mutations';
 import {
@@ -45,6 +47,8 @@ interface ReviewNotesPanelProps {
   context: { key: string; label: string };
   /** The exercise waits for a decision, so it can go back to its author. */
   canSendToAuthor: boolean;
+  /** Przydział osobie istnieje tylko w kolejce globalnej; w kolejce gabinetu wiersz przydziału jest ukryty. */
+  canAssign: boolean;
   /** Saves pending edits; a rejection stops the send. */
   beforeSend: () => Promise<void>;
   onSent: (target: ExerciseReviewNotesTarget) => void;
@@ -114,6 +118,7 @@ export function ReviewNotesPanel({
   exerciseId,
   context,
   canSendToAuthor,
+  canAssign,
   beforeSend,
   onSent,
   onOpenChange,
@@ -149,6 +154,10 @@ export function ReviewNotesPanel({
     ASSIGN_EXERCISES_FOR_REVIEW_MUTATION,
     { refetchQueries }
   );
+  const [completeFixes, { loading: completingFixes }] = useMutation(COMPLETE_INTERNAL_EXERCISE_FIXES_MUTATION, {
+    refetchQueries: [...refetchQueries, { query: GET_VERIFICATION_STATS_QUERY }],
+  });
+  const [takeOverOpen, setTakeOverOpen] = useState(false);
 
   const thread = data?.exerciseReviewNotes ?? [];
   const unsentCount = unsentReviewNotes(thread).length;
@@ -201,15 +210,27 @@ export function ReviewNotesPanel({
     }
   };
 
-  const handleAssign = async (assignToMe: boolean) => {
+  const handleAssign = async (assignToMe: boolean, takeOver = false) => {
     try {
-      const result = await assign({ variables: { exerciseIds: [exerciseId], assign: assignToMe } });
+      const result = await assign({ variables: { exerciseIds: [exerciseId], assign: assignToMe, takeOver } });
       if (result.data?.assignExercisesForReview.skippedExerciseIds.length) {
         toast.error('To ćwiczenie ma już innego weryfikatora');
       }
     } catch (assignError) {
       console.error('Błąd przypisania:', assignError);
       toast.error('Nie udało się zmienić przypisania');
+    } finally {
+      setTakeOverOpen(false);
+    }
+  };
+
+  const handleCompleteFixes = async () => {
+    try {
+      await completeFixes({ variables: { exerciseId } });
+      toast.success('Poprawione: ćwiczenie wraca do sprawdzenia');
+    } catch (fixError) {
+      console.error('Błąd oznaczania poprawek:', fixError);
+      toast.error('Nie udało się oznaczyć poprawek');
     }
   };
 
@@ -258,7 +279,7 @@ export function ReviewNotesPanel({
             <X />
           </Button>
         </div>
-        {workflow && (
+        {canAssign && workflow && (
           <div className="flex items-center justify-between gap-2 text-[12px] text-label-secondary">
             <span data-testid="review-notes-assignee">
               {workflow.assigneeId
@@ -267,6 +288,20 @@ export function ReviewNotesPanel({
                   : `Przypisane: ${workflow.assigneeName || 'inny weryfikator'}`
                 : 'Nieprzypisane'}
             </span>
+            {workflow.assigneeId && !workflow.assignedToMe && (
+              <Button
+                type="button"
+                variant="plain"
+                size="sm"
+                className="-mr-2 h-7"
+                disabled={assigning}
+                onClick={() => setTakeOverOpen(true)}
+                data-testid="review-notes-takeover-btn"
+              >
+                <UserPlus />
+                Przejmij
+              </Button>
+            )}
             {(!workflow.assigneeId || workflow.assignedToMe) && (
               <Button
                 type="button"
@@ -283,7 +318,31 @@ export function ReviewNotesPanel({
             )}
           </div>
         )}
+        {workflow?.internalFixStatus === 'WAITING' && (
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="self-start"
+            disabled={completingFixes}
+            onClick={() => void handleCompleteFixes()}
+            data-testid="review-notes-mark-fixed-btn"
+          >
+            {completingFixes ? <Loader2 className="animate-spin" /> : <CheckCheck />}
+            Oznacz jako poprawione
+          </Button>
+        )}
       </header>
+
+      <ConfirmDialog
+        open={takeOverOpen}
+        onOpenChange={setTakeOverOpen}
+        title="Przejąć ćwiczenie?"
+        description={`Ćwiczenie sprawdza teraz ${workflow?.assigneeName || 'inna osoba'}. Po przejęciu zniknie z jej listy „Moje”.`}
+        confirmText="Przejmij"
+        onConfirm={() => void handleAssign(true, true)}
+        isLoading={assigning}
+      />
 
       <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto px-3 py-3" data-testid="review-notes-list">
         {loading && !data && (

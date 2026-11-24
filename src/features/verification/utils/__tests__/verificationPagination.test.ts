@@ -22,6 +22,19 @@ describe('verificationPagination helpers', () => {
     expect(parseVerificationView('unknown')).toBe('grid');
   });
 
+  it('carries the "mine and free" lane to the detail, so Next never opens a colleague\'s exercise', () => {
+    const state = {
+      filter: 'pending',
+      search: '',
+      page: 1,
+      pageSize: 20,
+      view: 'list',
+      assignee: 'available',
+    } as const;
+    expect(buildVerificationDetailHref('ex-1', state)).toContain('assignee=available');
+    expect(buildVerificationSearchParams({ ...state, assignee: 'all' }).has('assignee')).toBe(false);
+  });
+
   it('parses positive ints with fallback', () => {
     expect(parsePositiveInt('4', 1)).toBe(4);
     expect(parsePositiveInt('-1', 1)).toBe(1);

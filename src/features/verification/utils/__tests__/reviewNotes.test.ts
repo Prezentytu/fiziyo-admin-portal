@@ -65,7 +65,17 @@ describe('parseReviewAssigneeFilter', () => {
   it('nieznana wartość oznacza wszystkie', () => {
     expect(parseReviewAssigneeFilter('mine')).toBe('mine');
     expect(parseReviewAssigneeFilter('unassigned')).toBe('unassigned');
+    expect(parseReviewAssigneeFilter('available')).toBe('available');
     expect(parseReviewAssigneeFilter('ktos')).toBe('all');
+  });
+
+  it('osoba z zespołu tylko z poprawnym identyfikatorem', () => {
+    expect(parseReviewAssigneeFilter('user:e32f0c1a-2b3c-4d5e-8f90-1a2b3c4d5e6f')).toBe(
+      'user:e32f0c1a-2b3c-4d5e-8f90-1a2b3c4d5e6f'
+    );
+    expect(parseReviewAssigneeFilter('user:')).toBe('all');
+    expect(parseReviewAssigneeFilter('user:a b')).toBe('all');
+    expect(parseReviewAssigneeFilter(`user:${'x'.repeat(65)}`)).toBe('all');
     expect(parseReviewAssigneeFilter(null)).toBe('all');
   });
 });

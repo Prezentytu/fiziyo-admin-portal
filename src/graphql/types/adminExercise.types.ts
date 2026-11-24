@@ -36,11 +36,7 @@ export type ContentStatus =
   | 'UPDATE_PENDING'; // Shadow draft dla poprawki published
 
 export type OrganizationVerificationStatus =
-  | 'NOT_SUBMITTED'
-  | 'PENDING_ORG_REVIEW'
-  | 'ORG_VERIFIED'
-  | 'ORG_CHANGES_REQUESTED'
-  | 'ORG_ARCHIVED';
+  'NOT_SUBMITTED' | 'PENDING_ORG_REVIEW' | 'ORG_VERIFIED' | 'ORG_CHANGES_REQUESTED' | 'ORG_ARCHIVED';
 
 /**
  * Predefiniowane powody odrzucenia ćwiczenia
@@ -66,6 +62,30 @@ export interface VerificationStats {
   published: number;
   archivedGlobal: number; // ARCHIVED_GLOBAL count
   total: number;
+}
+
+/** Osoba z zespołu weryfikacji globalnej i jej kolejki (SPEC-041). */
+export interface VerificationTeamMember {
+  userId: string;
+  fullname: string;
+  isMe: boolean;
+  /** „Do sprawdzenia” przydzielone tej osobie. */
+  assignedPending: number;
+  /** Jej ćwiczenia czekające na poprawki wewnętrzne. */
+  waitingFixes: number;
+  /** Decyzje tej osoby dziś (od północy Europe/Warsaw). */
+  decidedToday: number;
+}
+
+/** Zespół weryfikacji globalnej, pytający pierwszy. */
+export interface VerificationTeam {
+  members: VerificationTeamMember[];
+  /** „Do sprawdzenia”, których nikt nie wziął. */
+  unassignedPending: number;
+}
+
+export interface GetVerificationTeamResponse {
+  verificationTeam: VerificationTeam;
 }
 
 export interface OrganizationVerificationStats {

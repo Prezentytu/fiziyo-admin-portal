@@ -163,6 +163,26 @@ export const GET_VERIFICATION_STATS_QUERY = gql`
   }
 `;
 
+/**
+ * Zespół weryfikacji globalnej z kolejkami każdej osoby (SPEC-041). Osobne zapytanie: backend bez tego pola
+ * psuje tylko pasek zespołu, nie karty statusów z `verificationStats`.
+ */
+export const GET_VERIFICATION_TEAM_QUERY = gql`
+  query GetVerificationTeam {
+    verificationTeam {
+      unassignedPending
+      members {
+        userId
+        fullname
+        isMe
+        assignedPending
+        waitingFixes
+        decidedToday
+      }
+    }
+  }
+`;
+
 export const GET_VERIFICATION_QUEUE_PAGE_QUERY = gql`
   query GetVerificationQueuePage(
     $filter: String!

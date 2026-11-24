@@ -3,8 +3,21 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useQuery, useMutation, useSubscription } from '@apollo/client/react';
 import { ReviewWorkflowBadges } from '@/features/verification/ReviewWorkflowBadges';
-import { parseReviewAssigneeFilter, type ReviewAssigneeFilter } from '@/features/verification/utils/reviewNotes';
-import { ASSIGN_EXERCISES_FOR_REVIEW_MUTATION } from '@/graphql/mutations/exerciseReviewNotes.mutations';
+import {
+  assigneeFilterForUser,
+  parseReviewAssigneeFilter,
+  type ReviewAssigneeFilter,
+} from '@/features/verification/utils/reviewNotes';
+import {
+  ASSIGN_EXERCISES_FOR_REVIEW_MUTATION,
+  CLAIM_NEXT_EXERCISES_FOR_REVIEW_MUTATION,
+  COMPLETE_INTERNAL_EXERCISE_FIXES_MUTATION,
+} from '@/graphql/mutations/exerciseReviewNotes.mutations';
+import { VerificationTeamBar } from '@/features/verification/VerificationTeamBar';
+import { assignResultMessage, claimResultMessage } from '@/features/verification/utils/claimQueue';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { formatExerciseCount } from '@/utils/polishPlural';
+import type { ClaimNextExercisesForReviewResponse } from '@/graphql/types/exerciseReviewNote.types';
 import type { AssignExercisesForReviewResponse } from '@/graphql/types/exerciseReviewNote.types';
 import { segmentedSegmentVariants, segmentedTrackVariants } from '@/components/ui/segmented-control';
 import { useUser } from '@clerk/nextjs';
@@ -48,6 +61,7 @@ import {
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import {
   GET_VERIFICATION_STATS_QUERY,
+  GET_VERIFICATION_TEAM_QUERY,
   GET_VERIFICATION_QUEUE_PAGE_QUERY,
 } from '@/graphql/queries/adminExercises.queries';
 import {
@@ -68,6 +82,8 @@ import { VerificationPageHeader } from '@/features/verification/VerificationPage
 import type { UserByClerkIdResponse } from '@/types/apollo';
 import type {
   GetVerificationStatsResponse,
+  GetVerificationTeamResponse,
+  VerificationTeamMember,
   GetVerificationQueuePageResponse,
   GetVerificationQueuePageVariables,
   UnpublishExerciseResponse,
@@ -85,6 +101,7 @@ type GlobalVerificationFilter = 'pending' | 'internal' | 'changes' | 'published'
 const ASSIGNEE_OPTIONS: { value: ReviewAssigneeFilter; label: string }[] = [
   { value: 'all', label: 'Wszystkie' },
   { value: 'mine', label: 'Moje' },
+  { value: 'available', label: 'Moje i wolne' },
   { value: 'unassigned', label: 'Nieprzypisane' },
 ];
 type VerificationStatsFilter = GlobalVerificationFilter | 'verified';
@@ -364,6 +381,23 @@ export default function VerificationPage() {
     loading: statsLoading,
     refetch: refetchStats,
   } = useQuery<GetVerificationStatsResponse>(GET_VERIFICATION_STATS_QUERY, { skip: !canReviewExercises });
+  // Pasek zespołu znika, gdy backend nie zna jeszcze `verificationTeam`; karty statusów działają dalej.
+  const { data: teamData, refetch: refetchTeamQuery } = useQuery<GetVerificationTeamResponse>(
+    GET_VERIFICATION_TEAM_QUERY,
+    // Decyzje i poprawki zapadają w detalu, więc po powrocie na listę liczby muszą być świeże.
+    { skip: !canReviewExercises, fetchPolicy: 'cache-and-network' }
+  );
+  const team = teamData?.verificationTeam ?? null;
+  const colleagues = useMemo(() => team?.members.filter((member) => !member.isMe) ?? [], [team]);
+  // Starszy backend bez zespołu odrzuca zapytanie; reszta strony nie może na tym paść.
+  const refetchTeam = useCallback(() => refetchTeamQuery().catch(() => undefined), [refetchTeamQuery]);
+  const assigneeOptions = useMemo(
+    () => [
+      ...ASSIGNEE_OPTIONS,
+      ...colleagues.map((member) => ({ value: assigneeFilterForUser(member.userId), label: member.fullname })),
+    ],
+    [colleagues]
+  );
 
   const queueVariables = useMemo<GetVerificationQueuePageVariables>(
     () => ({
@@ -675,6 +709,7 @@ export default function VerificationPage() {
 
   const handleRefresh = () => {
     refetchStats();
+    void refetchTeam();
     refetchQueue();
     getExerciseReportsPage({ status: 'OPEN', page: 1, pageSize: 1 }).then((response) => {
       setReportedCount(response.totalCount);
@@ -734,21 +769,114 @@ export default function VerificationPage() {
     updateUrlState({ assignee: nextAssignee, page: 1 });
   };
 
-  const handleAssignSelected = async (assign: boolean) => {
-    const selectedIds = selection.selectedIds;
-    if (selectedIds.length === 0) return;
+  const [claimNextExercises] = useMutation<ClaimNextExercisesForReviewResponse>(
+    CLAIM_NEXT_EXERCISES_FOR_REVIEW_MUTATION
+  );
+  const [claimingCount, setClaimingCount] = useState<number | null>(null);
+
+  // Kliknięcie liczby w pasku zespołu: zakładka i lista tej osoby.
+  const handleShowMember = (filter: 'pending' | 'internal', member: VerificationTeamMember) => {
+    const memberFilter = assigneeFilterForUser(member.userId, member.isMe);
+    selection.clear();
+    setActiveFilter(filter);
+    setAssignee(memberFilter);
+    setPage(1);
+    writeQueuePreferences(reviewerId, { sort: ordering.sort, assignee: memberFilter });
+    updateUrlState({ filter, assignee: memberFilter, page: 1, search: searchQuery });
+  };
+
+  // „Przydziel następne N” bierze wolne z kolejki w kolejności i wyszukiwaniu listy. Sobie: od razu „Moje”.
+  // Koledze: tylko komunikat, bez przełączania i zapamiętywania jego listy jako mojego filtra.
+  const handleClaimNext = async (count: number, member: VerificationTeamMember) => {
+    setClaimingCount(count);
     try {
-      const result = await assignExercises({ variables: { exerciseIds: selectedIds, assign } });
+      const result = await claimNextExercises({
+        variables: {
+          count,
+          search: debouncedSearch || null,
+          ...queueOrderingVariables(ordering),
+          assigneeId: member.isMe ? null : member.userId,
+        },
+      });
+      const claimed = result.data?.claimNextExercisesForReview.claimedExerciseIds.length ?? 0;
+      const message = claimResultMessage(claimed, count, member);
+      if (message.tone === 'success') toast.success(message.text);
+      else toast.info(message.text);
+      if (claimed > 0 && member.isMe) handleShowMember('pending', member);
+      await Promise.all([refetchTeam(), refetchQueue()]);
+    } catch (error) {
+      console.error('Błąd przydziału ćwiczeń:', error);
+      toast.error('Nie udało się przydzielić ćwiczeń');
+    } finally {
+      setClaimingCount(null);
+    }
+  };
+
+  // Ćwiczenia pominięte przy przydziale, bo ma je ktoś inny, i osoba, której je dawaliśmy: czekają na „Przejmij”.
+  const [takeOverRequest, setTakeOverRequest] = useState<{
+    ids: string[];
+    member: VerificationTeamMember | null;
+  } | null>(null);
+
+  const handleAssignSelected = async (
+    assign: boolean,
+    member: VerificationTeamMember | null = null,
+    options: { ids?: string[]; takeOver?: boolean } = {}
+  ) => {
+    const exerciseIds = options.ids ?? selection.selectedIds;
+    if (exerciseIds.length === 0) return;
+    const target = assign ? (member ?? { isMe: true, fullname: userName }) : null;
+    try {
+      const result = await assignExercises({
+        variables: {
+          exerciseIds,
+          assign,
+          assigneeId: assign && member && !member.isMe ? member.userId : null,
+          takeOver: options.takeOver ?? false,
+        },
+      });
       const changed = result.data?.assignExercisesForReview.changedExerciseIds.length ?? 0;
-      const skipped = result.data?.assignExercisesForReview.skippedExerciseIds.length ?? 0;
+      const skippedIds = result.data?.assignExercisesForReview.skippedExerciseIds ?? [];
       selection.clear();
-      const done = assign ? `Przypisano do Ciebie: ${changed}` : `Zdjęto z Ciebie: ${changed}`;
-      if (skipped > 0) toast.warning(`${done}. Pominięto ${skipped}, bo ma je inny weryfikator.`);
-      else toast.success(done);
-      await refetchQueue();
+      const message = assignResultMessage(changed, skippedIds.length, target);
+      if (message.tone === 'success') toast.success(message.text);
+      else toast.warning(message.text);
+      // Zdjęcie przydziału rusza tylko własne, więc przejęcie proponujemy wyłącznie przy przydziale.
+      if (assign && message.offerTakeOver && !options.takeOver) setTakeOverRequest({ ids: skippedIds, member });
+      await Promise.all([refetchTeam(), refetchQueue()]);
     } catch (error) {
       console.error('Błąd przypisania ćwiczeń:', error);
       toast.error('Nie udało się zmienić przypisania');
+    }
+  };
+
+  // „Oznacz jako poprawione” masowo: backend ma mutację per ćwiczenie, więc wynik liczymy per rekord.
+  const [completeFixes] = useMutation(COMPLETE_INTERNAL_EXERCISE_FIXES_MUTATION);
+  const [markingFixed, setMarkingFixed] = useState(false);
+  const canMarkFixed = activeFilter === 'internal';
+
+  const handleMarkFixedSelected = async () => {
+    const selectedIds = selection.selectedIds;
+    if (selectedIds.length === 0) return;
+    setMarkingFixed(true);
+    try {
+      const result = await runBatchArchive(selectedIds, async (exerciseId) => {
+        const response = await completeFixes({ variables: { exerciseId } });
+        if (response.error) throw response.error;
+        return response.data ?? null;
+      });
+      const failedIdSet = new Set(result.failedIds);
+      selection.remove(selectedIds.filter((exerciseId) => !failedIdSet.has(exerciseId)));
+      if (result.failedIds.length === 0) {
+        toast.success(`Poprawione: ${formatExerciseCount(result.successCount)}. Wracają do sprawdzenia.`);
+      } else {
+        toast.warning(
+          `Poprawione: ${formatExerciseCount(result.successCount)}. Nie udało się: ${result.failedIds.length}.`
+        );
+      }
+      await Promise.all([refetchStats(), refetchTeam(), refetchQueue()]);
+    } finally {
+      setMarkingFixed(false);
     }
   };
 
@@ -909,6 +1037,16 @@ export default function VerificationPage() {
         </div>
       </div>
 
+      {(activeFilter === 'pending' || activeFilter === 'internal') && team && team.members.length > 0 && (
+        <VerificationTeamBar
+          team={team}
+          onShowQueue={(member) => handleShowMember('pending', member)}
+          onShowFixes={(member) => handleShowMember('internal', member)}
+          onClaim={(count, member) => void handleClaimNext(count, member)}
+          claimingCount={claimingCount}
+        />
+      )}
+
       {activeFilter !== 'reported' && (
         <div
           role="radiogroup"
@@ -916,7 +1054,7 @@ export default function VerificationPage() {
           className={segmentedTrackVariants({ className: 'self-start' })}
           data-testid="verification-assignee-filter"
         >
-          {ASSIGNEE_OPTIONS.map((option) => (
+          {assigneeOptions.map((option) => (
             <button
               key={option.value}
               type="button"
@@ -951,7 +1089,11 @@ export default function VerificationPage() {
         onArchive={() => setArchiveDialogOpen(true)}
         canArchive={canArchive}
         onAssign={(assign) => void handleAssignSelected(assign)}
+        colleagues={colleagues}
+        onAssignTo={(member) => void handleAssignSelected(true, member)}
         isAssigning={assigning}
+        onMarkFixed={canMarkFixed ? () => void handleMarkFixedSelected() : undefined}
+        isMarkingFixed={markingFixed}
         disabled={!canSelect || isLoading}
         isArchiving={archiving}
       />
@@ -1052,6 +1194,26 @@ export default function VerificationPage() {
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={takeOverRequest !== null}
+        onOpenChange={(open) => {
+          if (!open) setTakeOverRequest(null);
+        }}
+        title={`Przejąć ${formatExerciseCount(takeOverRequest?.ids.length ?? 0)}?`}
+        description={
+          takeOverRequest?.member && !takeOverRequest.member.isMe
+            ? `Sprawdza je teraz ktoś inny. Po przejęciu trafią do: ${takeOverRequest.member.fullname}.`
+            : 'Sprawdza je teraz ktoś inny. Po przejęciu trafią na Twoją listę „Moje”.'
+        }
+        confirmText="Przejmij"
+        onConfirm={() => {
+          const request = takeOverRequest;
+          setTakeOverRequest(null);
+          if (request) void handleAssignSelected(true, request.member, { ids: request.ids, takeOver: true });
+        }}
+        isLoading={assigning}
+      />
 
       <VerificationArchiveDialog
         open={archiveDialogOpen}
