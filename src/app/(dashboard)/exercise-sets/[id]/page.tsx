@@ -80,7 +80,8 @@ import {
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { DashboardRouteLoading } from '@/components/layout/DashboardRouteLoading';
-import { isTemplateSet } from '@/features/exercise-sets/utils/setKind';
+import { isFiziyoTemplate, isTemplateSet } from '@/features/exercise-sets/utils/setKind';
+import { SetHistoryNotesPanel } from '@/features/exercise-sets/components/SetHistoryNotesPanel';
 import { buildSetHrefWithoutAssign, shouldOpenAssignOnLoad } from '@/features/exercise-sets/utils/setAssignHref';
 import { PageSheet } from '@/components/shared/page';
 import { normalizeExerciseSide } from '@/utils/exerciseEnums';
@@ -887,6 +888,14 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
           </div>
         </div>
       )}
+
+      <SetHistoryNotesPanel
+        exerciseSetId={id}
+        isGlobalTemplate={isFiziyoTemplate(exerciseSet)}
+        exerciseNames={
+          new Map(exercises.map((mapping) => [mapping.exerciseId, mapping.customName || mapping.exercise?.name || '']))
+        }
+      />
 
       {/* Full Edit Set Dialog */}
       {organizationId && exerciseSet && (
