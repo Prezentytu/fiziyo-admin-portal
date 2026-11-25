@@ -55,6 +55,8 @@ import { EditExerciseSetFullDialog } from '@/features/exercise-sets/EditExercise
 import { EditExerciseInSetDialog } from '@/features/exercise-sets/EditExerciseInSetDialog';
 import { resolveExerciseEquipmentText } from '@/components/shared/exercise/displayNormalizer';
 import { GeneratePDFDialog } from '@/features/exercise-sets/GeneratePDFDialog';
+import { SetDurationStat } from '@/features/exercise-sets/components/SetDurationStat';
+import { estimateSetSeconds } from '@/features/exercise-sets/utils/setDuration';
 import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
 import type {
   ExerciseLoad,
@@ -522,7 +524,8 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
     };
   };
 
-  if (loading) {
+  // Szkielet tylko przy pierwszym ładowaniu; odświeżenie po zapisie nie przemontowuje strony.
+  if (loading && !exerciseSet) {
     return (
       <div className="space-y-6">
         <LoadingState type="text" count={3} />
@@ -564,6 +567,11 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
         ]
       : [{ key: 'all', title: null, mappings: [...warmupMappings, ...mainMappings] }];
   const dependencyTarget = dependencyTargetId ? (dependencyById.get(dependencyTargetId) ?? null) : null;
+
+  // Czas liczony z parametrów po lokalnych zmianach, więc rośnie i maleje od razu po edycji.
+  const setSeconds = estimateSetSeconds(
+    exercises.map((mapping) => ({ ...mapping, ...(localExercisePatches[mapping.id] ?? {}) }))
+  );
 
   const renderExerciseRow = (mapping: ExerciseMapping) => {
     const patchedMapping: ExerciseMapping = {
@@ -677,7 +685,8 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
             <span className="text-[13px] opacity-85">Dopasuj parametry przed wysłaniem</span>
           </span>
         </button>
-        <div className="flex flex-[2_1_360px] items-center px-3">
+        <div className="flex flex-[2_1_480px] items-center px-3">
+          <SetDurationStat seconds={setSeconds} className="flex-[1.4_1_0] px-3" />
           {[
             { value: String(exercises.length), label: pluralize(exercises.length, 'ćwiczenie', false) },
             { value: String(assignments.length), label: pluralize(assignments.length, 'pacjent', false) },
@@ -687,10 +696,10 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
                 ? `w tygodniu · ${exerciseSet.frequency.timesPerDay}× dziennie`
                 : 'w tygodniu',
             },
-          ].map((stat, index) => (
+          ].map((stat) => (
             <span
               key={stat.label}
-              className={cn('flex flex-1 flex-col px-3', index > 0 && 'border-l-[0.5px] border-separator')}
+              className="flex flex-1 flex-col border-l-[0.5px] border-separator px-3"
             >
               <span className="text-[28px] font-bold leading-[34px] tabular-nums text-foreground">{stat.value}</span>
               <span className="text-[13px] text-label-secondary">{stat.label}</span>
