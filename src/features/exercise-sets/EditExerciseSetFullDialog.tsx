@@ -63,6 +63,7 @@ import {
   type FrequencyInput,
 } from '@/features/assignment/utils/scheduleFrequencyUtils';
 import { SetScheduleField } from '@/features/exercise-sets/components/SetScheduleField';
+import { isTemplateSet } from '@/features/exercise-sets/utils/setKind';
 
 type PickerExerciseRecord = Record<string, unknown> & { id: string; name: string; updatedAt?: string | null };
 
@@ -70,6 +71,8 @@ interface SetSnapshot {
   id: string;
   name: string;
   description?: string | null;
+  kind?: string | null;
+  isTemplate?: boolean | null;
   frequency?: FrequencyInput | null;
   exerciseMappings?: Array<{
     id: string;
@@ -142,7 +145,9 @@ export function EditExerciseSetFullDialog({
     [selectedInstances, exerciseParams]
   );
 
-  const frequencyChanged = !isSameFrequency(frequency, initialFrequencyRef.current);
+  // Harmonogram planu pacjenta żyje w PatientAssignment.frequency, więc edytujemy tylko szablon.
+  const canEditFrequency = set ? isTemplateSet(set) : false;
+  const frequencyChanged = canEditFrequency && !isSameFrequency(frequency, initialFrequencyRef.current);
   const hasChanges =
     frequencyChanged ||
     hasExerciseSetChanges({
@@ -372,7 +377,7 @@ export function EditExerciseSetFullDialog({
       return;
     }
     if (!ensureDetailsReady()) return;
-    if (isEmptySpecificDaysFrequency(frequency)) {
+    if (canEditFrequency && isEmptySpecificDaysFrequency(frequency)) {
       toast.error('Wybierz co najmniej jeden dzień harmonogramu');
       return;
     }
@@ -397,7 +402,7 @@ export function EditExerciseSetFullDialog({
         });
       }
 
-      if (!isSameFrequency(frequency, initialFrequencyRef.current)) {
+      if (canEditFrequency && !isSameFrequency(frequency, initialFrequencyRef.current)) {
         await updateSetFrequency({
           variables: { exerciseSetId, frequency: buildAssignmentFrequencyPayload(frequency) },
         });
@@ -478,6 +483,7 @@ export function EditExerciseSetFullDialog({
     name,
     description,
     frequency,
+    canEditFrequency,
     selectedInstances,
     exerciseParams,
     availableExercises,
@@ -523,7 +529,9 @@ export function EditExerciseSetFullDialog({
                 Zmień nazwę, harmonogram oraz listę i parametry ćwiczeń. Możesz dodawać, usuwać i zmieniać kolejność.
               </p>
             </div>
-            <SetScheduleField value={frequency} onChange={setFrequency} testIdPrefix="set-edit-full-frequency" />
+            {canEditFrequency && (
+              <SetScheduleField value={frequency} onChange={setFrequency} testIdPrefix="set-edit-full-frequency" />
+            )}
           </div>
 
           <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
