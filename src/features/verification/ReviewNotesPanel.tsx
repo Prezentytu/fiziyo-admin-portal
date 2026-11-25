@@ -287,7 +287,9 @@ export function ReviewNotesPanel({
     { refetchQueries }
   );
 
-  const thread = data?.exerciseReviewNotes ?? [];
+  // Only this exercise's thread. A clinic owner also gets their catalog submission's thread, where they are the
+  // author: that one shows in the author's view on the exercise page (ExerciseReviewThread), not as a reviewer.
+  const thread = (data?.exerciseReviewNotes ?? []).filter((note) => note.exerciseId === exerciseId);
   const writable = access?.writableVisibilities ?? [];
   const canWrite = writable.length > 0;
   const visibility =

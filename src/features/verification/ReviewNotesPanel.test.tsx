@@ -115,6 +115,17 @@ describe('ReviewNotesPanel – log pracy z ćwiczeniem', () => {
     expect(screen.getByTestId('review-note-event-change')).toHaveTextContent('Zmieniono: nazwa, kroki');
   });
 
+  it("leaves the owner's catalog submission thread out of the reviewer panel", () => {
+    apollo.notes = [
+      note('own'),
+      note('catalog', { exerciseId: 'ex-1-catalog', visibility: 'AUTHOR', isSentToAuthor: true }),
+    ];
+    renderPanel('catalog');
+
+    expect(screen.getByTestId('review-note-own')).toBeInTheDocument();
+    expect(screen.queryByTestId('review-note-catalog')).toBeNull();
+  });
+
   it('filters the log to notes or events', async () => {
     apollo.notes = [note('a'), note('ok', { kind: 'APPROVED', body: '' })];
     renderPanel();

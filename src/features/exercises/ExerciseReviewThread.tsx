@@ -79,11 +79,14 @@ function Note({
  * The author's and therapist's view of the exercise log: notes sent back to the author with the author's replies,
  * and notes for therapists who use the exercise. The backend returns only what this viewer may see
  * (BW-FZ-125); reviewers get the full log panel instead. Replying needs a round sent to the author.
+ * `catalogSubmissionOnly`: a clinic owner or admin reviews their own exercise in the log panel, but in the thread of
+ * its catalog submission they are the author; this view shows only that thread, and the backend routes the reply there.
  */
 export function ExerciseReviewThread({
   exerciseId,
   access,
-}: Readonly<{ exerciseId: string; access: ExerciseReviewLogAccess | undefined }>) {
+  catalogSubmissionOnly = false,
+}: Readonly<{ exerciseId: string; access: ExerciseReviewLogAccess | undefined; catalogSubmissionOnly?: boolean }>) {
   const [draft, setDraft] = useState('');
   const [replyTo, setReplyTo] = useState<ExerciseReviewNote | null>(null);
   const { data } = useQuery<GetExerciseReviewNotesResponse>(GET_EXERCISE_REVIEW_NOTES_QUERY, {
@@ -101,8 +104,10 @@ export function ExerciseReviewThread({
     awaitRefetchQueries: true,
   });
 
-  const thread = data?.exerciseReviewNotes ?? [];
-  const canReply = Boolean(access?.writableVisibilities.includes('AUTHOR'));
+  const notes = data?.exerciseReviewNotes ?? [];
+  const thread = catalogSubmissionOnly ? notes.filter((note) => note.exerciseId !== exerciseId) : notes;
+  const canReply =
+    Boolean(access?.writableVisibilities.includes('AUTHOR')) && thread.some((note) => note.kind === 'SENT_TO_AUTHOR');
   if (!thread.some((note) => note.kind === 'NOTE' || note.kind === 'SENT_TO_AUTHOR')) return null;
 
   const trimmed = draft.trim();
