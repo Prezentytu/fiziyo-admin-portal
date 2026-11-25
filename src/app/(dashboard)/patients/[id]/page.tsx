@@ -31,6 +31,7 @@ import {
 import { LoadingState } from '@/components/shared/LoadingState';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { PatientRewardPanel } from '@/components/rewards/PatientRewardPanel';
 import { PageSheet, SectionHeader, InitialsAvatar } from '@/components/shared/page';
 import { ActivityReport } from '@/features/patients/ActivityReport';
 import { PatientAssignmentCard } from '@/features/patients/PatientAssignmentCard';
@@ -606,6 +607,8 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
           </aside>
         )}
       </div>
+
+      <PatientRewardPanel patientId={id} />
 
       <section aria-labelledby="patient-activity-heading" className="flex flex-col gap-2 border-t-[0.5px] border-separator pt-7">
         <SectionHeader

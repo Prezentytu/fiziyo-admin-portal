@@ -3,6 +3,7 @@ import {
   Dumbbell,
   FileText,
   FolderKanban,
+  Gift,
   LayoutGrid,
   ShieldCheck,
   Users,
@@ -101,25 +102,35 @@ export function buildNavigationItems({
 }
 
 /** Organization admin pages shown in the account menu, above account settings. */
-export function buildAccountNavigationItems(canManageOrganization: boolean): NavigationItem[] {
-  if (!canManageOrganization) {
-    return [];
+export function buildAccountNavigationItems(canManageOrganization: boolean, showRewards = false): NavigationItem[] {
+  const items = canManageOrganization
+    ? [
+        navigationItem({
+          name: 'Zespół',
+          href: '/organization',
+          icon: Building2,
+          testId: 'nav-link-organization',
+          mobileTestId: 'nav-mobile-link-organization',
+        }),
+        navigationItem({
+          name: 'Finanse',
+          href: '/finances',
+          icon: Wallet,
+          testId: 'nav-link-finances',
+          mobileTestId: 'nav-mobile-link-billing',
+        }),
+      ]
+    : [];
+  if (showRewards) {
+    items.push(
+      navigationItem({
+        name: 'Nagrody',
+        href: '/rewards',
+        icon: Gift,
+        testId: 'nav-link-rewards',
+        mobileTestId: 'nav-mobile-link-rewards',
+      })
+    );
   }
-
-  return [
-    navigationItem({
-      name: 'Zespół',
-      href: '/organization',
-      icon: Building2,
-      testId: 'nav-link-organization',
-      mobileTestId: 'nav-mobile-link-organization',
-    }),
-    navigationItem({
-      name: 'Finanse',
-      href: '/finances',
-      icon: Wallet,
-      testId: 'nav-link-finances',
-      mobileTestId: 'nav-mobile-link-billing',
-    }),
-  ];
+  return items;
 }
