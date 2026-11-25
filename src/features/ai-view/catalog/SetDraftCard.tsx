@@ -334,14 +334,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
   );
   const draft: SetDraftPayload = { name, patientId: patient?.id, sourceSetId: set?.id, items: draftItems };
   const minutes = draftMinutes(draftItems);
-  const description = proposeDraftDescription({
-    topic: spec.note,
-    exerciseNames: items
-      .map((item) => byId.get(item.exerciseId)?.name)
-      .filter((value): value is string => Boolean(value)),
-    minutes,
-    avoid: patientNames,
-  });
+  const description = proposeDraftDescription({ topic: spec.note, avoid: patientNames });
   const versionPending = !detailsReady;
   const minutesUnknown = versionPending && draftItems.some(isAlternating);
 
@@ -376,7 +369,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
 
   const handleSaveTemplate = async () => {
     if (!ensureDetailsReady()) return;
-    const saved = await saveTemplateSet(organizationId, name, items, description);
+    const saved = await saveTemplateSet(organizationId, name, items, description || undefined);
     if (!saved) return;
     markChosen(messageId, 'saved');
     appendExchange('Zapisz w katalogu', {
