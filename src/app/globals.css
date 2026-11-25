@@ -217,6 +217,89 @@
   animation: success-glow 1.5s ease-in-out;
 }
 
+/* Licznik z przewijanymi cyframi (RollingNumber): w górę = wartość rośnie, w dół = maleje. */
+@keyframes roll-in-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes roll-out-up {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+}
+
+@keyframes roll-in-down {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes roll-out-down {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+.animate-roll-in-up {
+  animation: roll-in-up 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.animate-roll-out-up {
+  animation: roll-out-up 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.animate-roll-in-down {
+  animation: roll-in-down 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.animate-roll-out-down {
+  animation: roll-out-down 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* Krótka plakietka różnicy („+16 s”) obok licznika: pojawia się i gaśnie. */
+@keyframes delta-flash {
+  0% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  12% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-delta-flash {
+  animation: delta-flash 2.2s ease-out both;
+}
+
 /* ============================================
    FiziYo design system v4 (SPEC-029, docs/design-system.md)
    Values live only here. Dark = :root, light = .light-theme.
