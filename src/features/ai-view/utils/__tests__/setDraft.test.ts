@@ -115,8 +115,14 @@ describe('proposeDraftDescription', () => {
 
 describe('scheduleQuestion', () => {
   it("proposes the default plan with the set's daily minutes", () => {
-    expect(scheduleQuestion([ITEM])).toBe(
+    expect(scheduleQuestion({ items: [ITEM] })).toBe(
       `Od kiedy i jak często? Proponuję od jutra, przez 2 tygodnie, codziennie (ok. ${draftMinutes([ITEM])} min dziennie).`
+    );
+  });
+
+  it("proposes the catalog set's rhythm instead of every day", () => {
+    expect(scheduleQuestion({ items: [ITEM], rhythm: 'three' })).toBe(
+      `Od kiedy i jak często? Proponuję od jutra, przez 2 tygodnie, 3× w tygodniu jak w zestawie (ok. ${draftMinutes([ITEM])} min na trening).`
     );
   });
 });

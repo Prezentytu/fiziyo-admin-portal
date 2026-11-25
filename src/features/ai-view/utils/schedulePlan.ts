@@ -2,7 +2,13 @@ import { addDays, startOfDay } from 'date-fns';
 
 import type { Frequency } from '@/features/assignment/types';
 import { normalizeSearchText } from '@/features/exercises/utils/exerciseSearch';
-import { normalizeFrequencySeed } from '@/features/assignment/utils/scheduleFrequencyUtils';
+import {
+  buildAssignmentFrequencyPayload,
+  normalizeFrequencySeed,
+  type AssignmentFrequencyPayload,
+  type FrequencyInput,
+} from '@/features/assignment/utils/scheduleFrequencyUtils';
+import { DEFAULT_TEMPLATE_SET_FREQUENCY } from '@/features/exercise-sets/utils/createSetSubmit';
 import {
   DEFAULT_PLAN_WEEKS,
   getDefaultDaysForFrequency,
@@ -36,13 +42,26 @@ export const PLAN_RHYTHMS: ReadonlyArray<{ value: PlanRhythm; label: string }> =
   { value: 'two', label: '2× w tygodniu' },
 ];
 
-/** Quick replies under "Od kiedy i jak często?"; the first one accepts the default plan. */
-export const SCHEDULE_REPLIES: ReadonlyArray<{ label: string; plan: SchedulePlan }> = [
-  { label: 'Pasuje', plan: DEFAULT_SCHEDULE_PLAN },
-  { label: 'Od poniedziałku', plan: { ...DEFAULT_SCHEDULE_PLAN, start: 'monday' } },
-  { label: 'Na 6 tygodni', plan: { ...DEFAULT_SCHEDULE_PLAN, weeks: 6 } },
-  { label: '3 razy w tygodniu', plan: { ...DEFAULT_SCHEDULE_PLAN, rhythm: 'three' } },
-];
+/** The plan the schedule step proposes: the default one, in the rhythm of the catalog set when it has one. */
+export function proposedPlan(rhythm?: PlanRhythm): SchedulePlan {
+  return rhythm ? { ...DEFAULT_SCHEDULE_PLAN, rhythm } : DEFAULT_SCHEDULE_PLAN;
+}
+
+/** Quick replies under "Od kiedy i jak często?"; the first one accepts the proposed plan. */
+export function scheduleReplies(
+  proposed: SchedulePlan = DEFAULT_SCHEDULE_PLAN
+): ReadonlyArray<{ label: string; plan: SchedulePlan }> {
+  const otherRhythm: { label: string; rhythm: PlanRhythm } =
+    proposed.rhythm === 'daily'
+      ? { label: '3 razy w tygodniu', rhythm: 'three' }
+      : { label: 'Codziennie', rhythm: 'daily' };
+  return [
+    { label: 'Pasuje', plan: proposed },
+    { label: 'Od poniedziałku', plan: { ...proposed, start: 'monday' } },
+    { label: 'Na 6 tygodni', plan: { ...proposed, weeks: 6 } },
+    { label: otherRhythm.label, plan: { ...proposed, rhythm: otherRhythm.rhythm } },
+  ];
+}
 
 const RHYTHM_TIMES_PER_WEEK: Record<PlanRhythm, number> = { daily: 7, three: 3, two: 2 };
 
@@ -71,6 +90,31 @@ export function resolvePlanDates(plan: SchedulePlan, now: Date = new Date()): { 
   const endDate = addDays(startDate, plan.weeks * 7 - 1);
   endDate.setHours(23, 59, 0, 0);
   return { startDate, endDate };
+}
+
+/**
+ * The rhythm a catalog set was saved with, when it is one the chat offers; another one (5× w tygodniu)
+ * is left to the default plan rather than rounded, so the proposal never claims the set says so.
+ */
+export function rhythmOfFrequency(frequency: FrequencyInput | null | undefined): PlanRhythm | undefined {
+  if (!frequency) return undefined;
+  const timesPerWeek = Number(buildAssignmentFrequencyPayload(frequency).timesPerWeek);
+  return PLAN_RHYTHMS.find((option) => RHYTHM_TIMES_PER_WEEK[option.value] === timesPerWeek)?.value;
+}
+
+/** "Jak często?" before a catalog save: the catalog default (flexible 3× a week) first, unless the set had another rhythm. */
+export function catalogRhythmOptions(suggested: PlanRhythm = 'three'): PlanRhythm[] {
+  return [suggested, ...PLAN_RHYTHMS.map((option) => option.value).filter((value) => value !== suggested)];
+}
+
+/**
+ * Frequency of a set saved in the catalog. Every day means all seven days; fewer sessions stay
+ * flexible like the catalog default, so the patient (or the wizard later) picks the days.
+ */
+export function catalogSetFrequency(rhythm: PlanRhythm): AssignmentFrequencyPayload {
+  if (rhythm === 'daily')
+    return { ...DEFAULT_TEMPLATE_SET_FREQUENCY, timesPerWeek: '7', isFlexible: false, ...EVERY_DAY };
+  return { ...DEFAULT_TEMPLATE_SET_FREQUENCY, timesPerWeek: String(RHYTHM_TIMES_PER_WEEK[rhythm]) };
 }
 
 /** The same weekdays and defaults the Assignment Wizard picks for this many sessions a week. */
@@ -159,12 +203,12 @@ export interface ParsedSchedule {
 /**
  * A schedule typed as an answer to "Od kiedy i jak często?" ("od dziś, 3 razy w tygodniu, 4 tygodnie").
  * What the text leaves out stays as proposed; a rhythm the chat does not have becomes the closest
- * one with a note. Null when the text names no start, length or rhythm: it is not a schedule.
+ * one with a note; `proposed` is the plan the question offered. Null when the text names no start, length or rhythm: it is not a schedule.
  */
-export function parseSchedulePlan(text: string): ParsedSchedule | null {
+export function parseSchedulePlan(text: string, proposed: SchedulePlan = DEFAULT_SCHEDULE_PLAN): ParsedSchedule | null {
   let rest = normalizeSearchText(text).replace(/[–—]/g, '-').trim();
   if (!rest) return null;
-  if (ACCEPTS_DEFAULT.test(rest)) return { plan: DEFAULT_SCHEDULE_PLAN, notes: [] };
+  if (ACCEPTS_DEFAULT.test(rest)) return { plan: proposed, notes: [] };
 
   const notes: string[] = [];
   let rhythm: PlanRhythm | undefined;
@@ -222,9 +266,9 @@ export function parseSchedulePlan(text: string): ParsedSchedule | null {
   if (start === undefined && weeks === undefined && rhythm === undefined) return null;
   return {
     plan: {
-      start: start ?? DEFAULT_SCHEDULE_PLAN.start,
-      weeks: weeks ?? DEFAULT_SCHEDULE_PLAN.weeks,
-      rhythm: rhythm ?? DEFAULT_SCHEDULE_PLAN.rhythm,
+      start: start ?? proposed.start,
+      weeks: weeks ?? proposed.weeks,
+      rhythm: rhythm ?? proposed.rhythm,
     },
     notes,
   };
