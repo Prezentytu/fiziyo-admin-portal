@@ -96,6 +96,16 @@ describe('ExerciseReviewThread – zgłoszenie ownera do katalogu', () => {
     });
   });
 
+  it('offers no reply when the catalog thread has no reviewer note to answer', () => {
+    apollo.notes = [
+      note('mine', { exerciseId: 'ex-1-catalog', authorRole: 'AUTHOR', isMine: true }),
+      note('sent', { exerciseId: 'ex-1-catalog', kind: 'SENT_TO_AUTHOR', body: '' }),
+    ];
+    render(<ExerciseReviewThread exerciseId="ex-1" access={ORG_REVIEWER} catalogSubmissionOnly />);
+
+    expect(screen.queryByTestId('exercise-review-reply-input')).toBeNull();
+  });
+
   it('renders nothing for an owner without a catalog submission thread', () => {
     apollo.notes = [note('own', { visibility: 'ORG_REVIEWERS', isSentToAuthor: false })];
     const { container } = render(

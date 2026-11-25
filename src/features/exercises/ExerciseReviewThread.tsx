@@ -106,8 +106,12 @@ export function ExerciseReviewThread({
 
   const notes = data?.exerciseReviewNotes ?? [];
   const thread = catalogSubmissionOnly ? notes.filter((note) => note.exerciseId !== exerciseId) : notes;
+  // In the catalog submission view a reply must point at a reviewer's note there, or it would not reach FiziYo.
+  const latestReviewerNoteId = thread.findLast((note) => note.kind === 'NOTE' && note.authorRole !== 'AUTHOR')?.id;
   const canReply =
-    Boolean(access?.writableVisibilities.includes('AUTHOR')) && thread.some((note) => note.kind === 'SENT_TO_AUTHOR');
+    Boolean(access?.writableVisibilities.includes('AUTHOR')) &&
+    thread.some((note) => note.kind === 'SENT_TO_AUTHOR') &&
+    (!catalogSubmissionOnly || latestReviewerNoteId !== undefined);
   if (!thread.some((note) => note.kind === 'NOTE' || note.kind === 'SENT_TO_AUTHOR')) return null;
 
   const trimmed = draft.trim();
@@ -116,13 +120,8 @@ export function ExerciseReviewThread({
   const handleSend = async () => {
     if (!trimmed || isTooLong || adding) return;
     try {
-      // The backend moves a note to the catalog copy's thread only as a reply to a note there; without one the owner's
-      // note would stay a reviewer note on their exercise. Default to the reviewer's latest note in that thread.
-      const replyToNoteId =
-        replyTo?.id ??
-        (catalogSubmissionOnly
-          ? (thread.findLast((note) => note.kind === 'NOTE' && note.authorRole !== 'AUTHOR')?.id ?? null)
-          : null);
+      // The backend moves a note to the catalog copy's thread only as a reply to a note there.
+      const replyToNoteId = replyTo?.id ?? (catalogSubmissionOnly ? (latestReviewerNoteId ?? null) : null);
       await addNote({ variables: { exerciseId, body: trimmed, replyToNoteId } });
       setDraft('');
       setReplyTo(null);
