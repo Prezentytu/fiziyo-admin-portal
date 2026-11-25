@@ -567,7 +567,8 @@ export function ReviewNotesPanel({
               Uwaga może mieć najwyżej {REVIEW_NOTE_MAX_LENGTH} znaków
             </p>
           )}
-          {access?.level !== 'AUTHOR' && (
+          {/* Przycisk „Odeślij do autora” jest tylko w pasku decyzji weryfikacji, a wariant inline (strona ćwiczenia) go nie ma. */}
+          {isDocked && access?.level !== 'AUTHOR' && (
             <p className="text-[11px] leading-4 text-label-secondary" data-testid="review-notes-unsent-count">
               {authorDrafts > 0
                 ? `Dla autora, do odesłania: ${authorDrafts}`

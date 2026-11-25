@@ -188,6 +188,21 @@ describe('ReviewNotesPanel – log pracy z ćwiczeniem', () => {
     expect(screen.getByTestId('review-notes-unsent-count')).toHaveTextContent('Dla autora, do odesłania: 1');
   });
 
+  it('on the exercise page, without the decision bar, does not point to „Odeślij do autora”', () => {
+    apollo.notes = [note('draft', { visibility: 'AUTHOR' })];
+    render(
+      <ReviewNotesPanel
+        exerciseId="ex-1"
+        context={{ key: 'material', label: 'Materiał' }}
+        track="organization"
+        variant="inline"
+      />
+    );
+
+    expect(screen.getByTestId('review-notes-panel')).toBeInTheDocument();
+    expect(screen.queryByTestId('review-notes-unsent-count')).toBeNull();
+  });
+
   it('has no composer for a viewer who may not write', () => {
     apollo.access = { level: 'THERAPIST', writableVisibilities: [], defaultVisibility: null, canSendToAuthor: false };
     renderPanel();

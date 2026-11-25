@@ -19,6 +19,7 @@ import { useExerciseEditorForm, type ExerciseCoreDraft } from '@/features/exerci
 import { useExerciseImageGeneration } from '@/features/exercises/useExerciseImageGeneration';
 import { toV3 } from '@/features/verification/utils/enrichmentToV3';
 
+import { ORG_VERIFICATION_REFETCH_QUERIES } from '@/hooks/useOrganizationVerificationRealtime';
 import { useSystemRole } from '@/hooks/useSystemRole';
 import { useVerificationHotkeys } from '@/hooks/useVerificationHotkeys';
 import { aiService } from '@/services/aiService';
@@ -287,6 +288,8 @@ export function VerificationWorkspace({
       { query: GET_EXERCISE_REVIEW_NOTES_QUERY, variables: reviewLogQueryVariables },
       { query: GET_EXERCISE_REVIEW_LOG_ACCESS_QUERY, variables: reviewLogQueryVariables },
       { query: GET_EXERCISE_REVIEW_WORKFLOW_QUERY, variables: { id: exercise.id } },
+      // Odesłanie w organizacji zmienia jej licznik i wiersz kolejki, do których wraca `leaveToNext`.
+      ...(reviewLogTrack === 'organization' ? ORG_VERIFICATION_REFETCH_QUERIES : []),
     ],
   });
   const [updateExerciseField] = useMutation(UPDATE_EXERCISE_FIELD_MUTATION, {
@@ -1100,13 +1103,20 @@ export function VerificationWorkspace({
   const showNotesPanel = canReviewExercises || isOrganization;
   const secondary: FloatingBarAction[] = [];
   const canSendBack = isOrganization ? canRequestChanges : canDecide;
+  // Backend odsyła do autora tylko ćwiczenie katalogu w PENDING_REVIEW; tor organizacji pilnuje tego w canRequestChanges.
+  const sendBackBlockedHint =
+    !isOrganization && exercise.status !== 'PENDING_REVIEW'
+      ? 'Do autora wraca tylko ćwiczenie czekające na weryfikację'
+      : hasAuthorNotes
+        ? undefined
+        : 'Dodaj uwagę dla autora w panelu uwag';
   if (canSendBack) {
     secondary.push({
       label: 'Odeślij do autora',
       // Tor organizacji zostawia stary lokator: ta sama akcja, teraz bez modala.
       testId: isOrganization ? 'org-verification-bar-request-changes-btn' : 'verification-bar-send-author-btn',
       onClick: () => void handleSendNotes('AUTHOR'),
-      disabledHint: hasAuthorNotes ? undefined : 'Dodaj uwagę dla autora w panelu uwag',
+      disabledHint: sendBackBlockedHint,
     });
   }
   if (!isOrganization && canReviewExercises) {
