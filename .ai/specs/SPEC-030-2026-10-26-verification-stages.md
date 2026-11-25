@@ -106,7 +106,6 @@ Mobile: do obsługi w `fizjo-app` (handoff), do tego czasu bez zmian dla pacjent
 | `MaterialStage`, `PhotoReplaceDialog`                                                    | `src/features/verification/stages/` |
 | `ParametersStage`, `InstructionStage`, `SafetyStage`, `DecisionStage`, `DuplicateDialog` | `src/features/verification/stages/` |
 | `ExtraContentSection` (pod podsumowaniem decyzji)                                        | `src/features/verification/stages/` |
-| `RequestChangesDialog` (tor organizacji)                                                 | `src/features/verification/stages/` |
 | `Button` wariant `plain`                                                                 | `src/components/ui/button.tsx`      |
 
 ## Data-testid

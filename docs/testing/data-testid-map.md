@@ -338,10 +338,6 @@ Strony organizacji (tylko owner/admin) są w menu konta, nie w sidebarze. Menu r
 | `exercise-detail-content-gaps`                                                     | Braki treści według reguł publikacji                     | `exercises/[id]/page.tsx`        |
 | `exercise-detail-open-verification-btn`                                            | „Popraw w weryfikacji” (ćwiczenie globalne, weryfikator) | `exercises/[id]/page.tsx`        |
 | `exercise-detail-demo-release-btn`                                                 | „Przenieś do zwykłej bazy” (rekord demo, weryfikator)    | `DemoReleaseButton.tsx`          |
-| `exercise-internal-notes-section`                                                  | Notatki robocze (tylko FiziYo), też w weryfikacji        | `InternalNotesPanel.tsx`         |
-| `exercise-internal-notes-input`                                                    | Pole notatek roboczych, zapis po wyjściu z pola          | `InternalNotesPanel.tsx`         |
-| `exercise-internal-notes-status`                                                   | Stan zapisu notatek roboczych                            | `InternalNotesPanel.tsx`         |
-| `exercise-internal-notes-error`                                                    | Notatek nie wczytano, edytor ukryty                      | `InternalNotesPanel.tsx`         |
 | `exercise-editor-saved-load-note`                                                  | Zapisane obciążenie spoza kilogramów                     | `ExerciseEditor.tsx`             |
 | `exercise-editor-advanced-json-error`                                              | Błąd panelu JSON (np. brak `schemaVersion`)              | `ExerciseEditor.tsx`             |
 | `exercise-detail-easier-input`                                                     | 3.3: jak wykonać łatwiej (`patient.easier`)              | `ExerciseDetailSections.tsx`     |
@@ -910,14 +906,17 @@ Ekran globalny publikuje z paska, a jedyne wyjście bez publikacji to „To dupl
 
 Tor organizacji (`/organization/verification/[id]`) i moderacja cross-org (`/verification/organizations/[id]`) używają tego samego `VerificationWorkspace` z propem `organizationDecision`; stary trójkolumnowy detal (`VerdictPanel`, `MasterVideoPlayer`, `CollapsibleMediaPanel`) usunięty.
 
-| data-testid                                        | Element                              | Plik                                      |
-| -------------------------------------------------- | ------------------------------------ | ----------------------------------------- |
-| `org-verification-workspace`                       | Arkusz weryfikacji w gabinecie       | `organization/verification/[id]/page.tsx` |
-| `org-verification-back-btn`                        | Powrót do kolejki gabinetu           | `VerificationWorkspace.tsx`               |
-| `org-verification-archive-btn`                     | Archiwizuj (ćwiczenie zweryfikowane) | `VerificationWorkspace.tsx`               |
-| `org-verification-bar-request-changes-btn`         | „Odeślij do poprawek” w pasku        | `VerificationFloatingBar.tsx`             |
-| `org-verification-changes-dialog` / `-notes-input` | Dialog odesłania z notatką           | `RequestChangesDialog.tsx`                |
-| `org-verification-changes-{cancel\|confirm}-btn`   | Anuluj / Odeślij autorowi            | `RequestChangesDialog.tsx`                |
+| data-testid                                                                | Element                                                                                                  | Plik                                      |
+| -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| `org-verification-workspace`                                               | Arkusz weryfikacji w gabinecie                                                                           | `organization/verification/[id]/page.tsx` |
+| `org-verification-back-btn`                                                | Powrót do kolejki gabinetu                                                                               | `VerificationWorkspace.tsx`               |
+| `org-verification-archive-btn`                                             | Archiwizuj (ćwiczenie zweryfikowane)                                                                     | `VerificationWorkspace.tsx`               |
+| `org-verification-bar-request-changes-btn`                                 | „Odeślij do autora” w pasku, od razu, bez modala; nieaktywny bez uwagi `AUTHOR` (`-hint` z podpowiedzią) | `VerificationFloatingBar.tsx`             |
+| `verification-bar-send-author-btn` / `verification-bar-internal-fixes-btn` | Tor katalogu: „Odeślij do autora” i „Do poprawek wewnętrznych” w pasku (BW-FZ-125)                       | `VerificationWorkspace.tsx`               |
+| `review-notes-panel` / `-filter-{all\|notes\|events}`                      | Log pracy z ćwiczeniem: uwagi i zdarzenia, filtr nad wątkiem                                             | `ReviewNotesPanel.tsx`                    |
+| `review-notes-visibility-btn` / `-option-{ZAKRES}`                         | Zakres nowej uwagi przy polu wpisywania                                                                  | `ReviewNotesPanel.tsx`                    |
+| `review-note-visibility-{id}` / `review-note-narrow-{id}-{ZAKRES}`         | Znacznik zakresu uwagi; zawężenie (tylko na węższy)                                                      | `ReviewNotesPanel.tsx`                    |
+| `review-note-marker-{KIND}` / `review-note-event-{id}`                     | Zdarzenie w logu (runda, decyzja, „Zmieniono: …”)                                                        | `ReviewNotesPanel.tsx`                    |
 
 #### Cross-org verification (SiteSuperAdmin)
 

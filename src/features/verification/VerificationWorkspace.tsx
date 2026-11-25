@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { CombinedGraphQLErrors } from '@apollo/client/errors';
-import { useMutation } from '@apollo/client/react';
+import { useMutation, useQuery } from '@apollo/client/react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { Archive, ArrowLeft, FileText, Loader2, Smartphone } from 'lucide-react';
@@ -20,6 +20,7 @@ import { useExerciseImageGeneration } from '@/features/exercises/useExerciseImag
 import { toV3 } from '@/features/verification/utils/enrichmentToV3';
 import { VerificationExerciseName } from '@/features/verification/VerificationExerciseName';
 
+import { ORG_VERIFICATION_REFETCH_QUERIES } from '@/hooks/useOrganizationVerificationRealtime';
 import { useSystemRole } from '@/hooks/useSystemRole';
 import { useVerificationHotkeys } from '@/hooks/useVerificationHotkeys';
 import { aiService } from '@/services/aiService';
@@ -36,6 +37,17 @@ import {
   DELETE_EXERCISE_IMAGE_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
 import { GET_VERIFICATION_STATS_QUERY } from '@/graphql/queries/adminExercises.queries';
+import { SEND_EXERCISE_REVIEW_NOTES_MUTATION } from '@/graphql/mutations/exerciseReviewNotes.mutations';
+import {
+  GET_EXERCISE_REVIEW_LOG_ACCESS_QUERY,
+  GET_EXERCISE_REVIEW_NOTES_QUERY,
+  GET_EXERCISE_REVIEW_WORKFLOW_QUERY,
+} from '@/graphql/queries/exerciseReviewNotes.queries';
+import type {
+  ExerciseReviewNotesTarget,
+  GetExerciseReviewLogAccessResponse,
+  GetExerciseReviewNotesResponse,
+} from '@/graphql/types/exerciseReviewNote.types';
 
 import { normalizeVideoList } from '@/utils/exerciseVideos';
 import { getMediaUrl, getMediaUrls } from '@/utils/mediaUrl';
@@ -59,9 +71,8 @@ import { InstructionStage } from './stages/InstructionStage';
 import { MaterialStage, type PendingPhoto } from './stages/MaterialStage';
 import { ParametersStage } from './stages/ParametersStage';
 import { PhotoReplaceDialog } from './stages/PhotoReplaceDialog';
-import { RequestChangesDialog } from './stages/RequestChangesDialog';
 import { SafetyStage } from './stages/SafetyStage';
-import { VerificationFloatingBar } from './stages/VerificationFloatingBar';
+import { VerificationFloatingBar, type FloatingBarAction } from './stages/VerificationFloatingBar';
 import { VerificationStageNav, type StageNavItem, type StageNavState } from './stages/VerificationStageNav';
 import { countFilledMistakes, countFilledTexts, summarizeChanges, toChangeSnapshot } from './utils/changeSummary';
 import { readContraindicationTextsV33 } from './utils/contentV33';
@@ -116,8 +127,8 @@ import {
   pluralizePl,
   type VerificationStageKey,
 } from './utils/verificationStages';
-import { InternalNotesPanel } from '@/features/exercises/InternalNotesPanel';
-import { ReviewNotesPanel } from './ReviewNotesPanel';
+import { ReviewNotesPanel, reviewLogVariables } from './ReviewNotesPanel';
+import { unsentAuthorNotes, unsentReviewNotes } from './utils/reviewNotes';
 
 const PRIMARY_LABELS: Record<VerificationStageKey, string> = {
   material: 'Materiał gotowy, dalej',
@@ -145,7 +156,6 @@ export interface OrganizationDecision {
   status: OrganizationVerificationStatus | undefined;
   isBusy: boolean;
   onApprove: () => Promise<void>;
-  onRequestChanges: (notes: string) => Promise<void>;
   onArchive: () => Promise<void>;
 }
 
@@ -262,6 +272,27 @@ export function VerificationWorkspace({
   const [rejectExercise, { loading: rejecting }] = useMutation<RejectExerciseResponse>(REJECT_EXERCISE_MUTATION, {
     refetchQueries: [{ query: GET_VERIFICATION_STATS_QUERY }],
   });
+  const reviewLogTrack = organizationDecision !== undefined ? 'organization' : 'catalog';
+  const reviewLogQueryVariables = reviewLogVariables(exercise.id, reviewLogTrack);
+  // Panel uwag i pasek decyzji czytają ten sam wpis cache (te same zmienne), więc pasek wie o nowej uwadze od razu.
+  const { data: reviewLogData } = useQuery<GetExerciseReviewNotesResponse>(GET_EXERCISE_REVIEW_NOTES_QUERY, {
+    variables: reviewLogQueryVariables,
+    fetchPolicy: 'cache-and-network',
+  });
+  const { data: reviewLogAccessData } = useQuery<GetExerciseReviewLogAccessResponse>(
+    GET_EXERCISE_REVIEW_LOG_ACCESS_QUERY,
+    { variables: reviewLogQueryVariables, fetchPolicy: 'cache-and-network' }
+  );
+  const [sendReviewNotes] = useMutation(SEND_EXERCISE_REVIEW_NOTES_MUTATION, {
+    refetchQueries: [
+      { query: GET_VERIFICATION_STATS_QUERY },
+      { query: GET_EXERCISE_REVIEW_NOTES_QUERY, variables: reviewLogQueryVariables },
+      { query: GET_EXERCISE_REVIEW_LOG_ACCESS_QUERY, variables: reviewLogQueryVariables },
+      { query: GET_EXERCISE_REVIEW_WORKFLOW_QUERY, variables: { id: exercise.id } },
+      // Odesłanie w organizacji zmienia jej licznik i wiersz kolejki, do których wraca `leaveToNext`.
+      ...(reviewLogTrack === 'organization' ? ORG_VERIFICATION_REFETCH_QUERIES : []),
+    ],
+  });
   const [updateExerciseField] = useMutation(UPDATE_EXERCISE_FIELD_MUTATION, {
     onError: (error) => toast.error(`Błąd zapisu: ${error.message}`),
   });
@@ -368,7 +399,6 @@ export function VerificationWorkspace({
   const [isSavingPhoto, setIsSavingPhoto] = useState(false);
   const [replacedPhotoCount, setReplacedPhotoCount] = useState(0);
   const [isDuplicateOpen, setIsDuplicateOpen] = useState(false);
-  const [isChangesOpen, setIsChangesOpen] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
   const lastPhotoRequestRef = useRef<{ index: number; problems: string[]; note: string } | null>(null);
 
@@ -842,23 +872,25 @@ export function VerificationWorkspace({
     stages.canPublish,
   ]);
 
-  const handleRequestChanges = useCallback(
-    async (notes: string) => {
-      if (!organizationDecision || !canRequestChanges) return;
+  /**
+   * „Odeślij do autora” i „Do poprawek wewnętrznych” działają od razu, bez modala (BW-FZ-125): treścią dla autora
+   * są niewysłane uwagi z zakresem AUTHOR z panelu uwag; backend dopisuje linię rundy do logu.
+   */
+  const handleSendNotes = useCallback(
+    async (target: ExerciseReviewNotesTarget) => {
       setIsLeaving(true);
       try {
         await flushBeforeDecision();
-        await organizationDecision.onRequestChanges(notes);
-        toast.success('Ćwiczenie odesłane do poprawek');
-        setIsChangesOpen(false);
+        await sendReviewNotes({ variables: { exerciseId: exercise.id, target } });
+        toast.success(target === 'AUTHOR' ? 'Odesłane do autora' : 'Wysłane do poprawek wewnętrznych');
         leaveToNext();
       } catch (error) {
-        console.error('Błąd odsyłania do poprawek:', error);
-        toast.error(actionErrorMessage(error, 'Nie udało się odesłać ćwiczenia do poprawek'));
+        console.error('Błąd wysyłania uwag:', error);
+        toast.error(actionErrorMessage(error, 'Nie udało się wysłać uwag'));
         setIsLeaving(false);
       }
     },
-    [canRequestChanges, flushBeforeDecision, leaveToNext, organizationDecision]
+    [exercise.id, flushBeforeDecision, leaveToNext, sendReviewNotes]
   );
 
   const handleArchive = useCallback(async () => {
@@ -955,7 +987,7 @@ export function VerificationWorkspace({
     if (nextStage) goToStage(nextStage);
   }, [canDecide, goToStage, handlePublish, handleSkip, isLeaving, isPrimaryBlocked, stage]);
 
-  const isDialogOpen = photoDialogIndex !== null || isDuplicateOpen || isChangesOpen;
+  const isDialogOpen = photoDialogIndex !== null || isDuplicateOpen;
 
   useVerificationHotkeys({
     onApproveAndNext: handlePrimary,
@@ -1066,27 +1098,48 @@ export function VerificationWorkspace({
   if (stage === 'decision' && !canDecide) primaryLabel = 'Gotowe, dalej';
   else if (stage === 'decision' && isOrganization) primaryLabel = 'Zatwierdź w gabinecie';
 
-  let secondary: { label: string; testId: string; onClick: () => void } | undefined;
-  if (isOrganization) {
-    if (canRequestChanges) {
-      secondary = {
-        label: 'Odeślij do poprawek',
-        testId: 'org-verification-bar-request-changes-btn',
-        onClick: () => setIsChangesOpen(true),
-      };
-    }
-  } else if (canDecide) {
-    secondary = {
+  const reviewLog = reviewLogData?.exerciseReviewNotes ?? [];
+  const hasAuthorNotes =
+    unsentAuthorNotes(reviewLog).length > 0 || Boolean(reviewLogAccessData?.exerciseReviewLogAccess.canSendToAuthor);
+  const showNotesPanel = canReviewExercises || isOrganization;
+  const secondary: FloatingBarAction[] = [];
+  const canSendBack = isOrganization ? canRequestChanges : canDecide;
+  // Backend odsyła do autora tylko ćwiczenie katalogu w PENDING_REVIEW; tor organizacji pilnuje tego w canRequestChanges.
+  const sendBackBlockedHint =
+    !isOrganization && exercise.status !== 'PENDING_REVIEW'
+      ? 'Do autora wraca tylko ćwiczenie czekające na weryfikację'
+      : hasAuthorNotes
+        ? undefined
+        : 'Dodaj uwagę dla autora w panelu uwag';
+  if (canSendBack) {
+    secondary.push({
+      label: 'Odeślij do autora',
+      // Tor organizacji zostawia stary lokator: ta sama akcja, teraz bez modala.
+      testId: isOrganization ? 'org-verification-bar-request-changes-btn' : 'verification-bar-send-author-btn',
+      onClick: () => void handleSendNotes('AUTHOR'),
+      disabledHint: sendBackBlockedHint,
+    });
+  }
+  if (!isOrganization && canReviewExercises) {
+    secondary.push({
+      label: 'Do poprawek wewnętrznych',
+      testId: 'verification-bar-internal-fixes-btn',
+      onClick: () => void handleSendNotes('INTERNAL_FIXES'),
+      disabledHint: unsentReviewNotes(reviewLog).length > 0 ? undefined : 'Dodaj uwagę w panelu uwag',
+    });
+  }
+  if (!isOrganization && canDecide) {
+    secondary.push({
       label: 'To duplikat',
       testId: 'verification-bar-duplicate-btn',
       onClick: () => setIsDuplicateOpen(true),
-    };
+    });
   }
 
   return (
     <PageSheet
       contentClassName="gap-5"
-      className={canReviewExercises && isNotesPanelOpen ? 'lg:pr-[372px] xl:pr-[372px]' : undefined}
+      className={showNotesPanel && isNotesPanelOpen ? 'lg:pr-[372px] xl:pr-[372px]' : undefined}
       data-testid={rootTestId}
     >
       <div ref={rootRef} className="scroll-mt-6" />
@@ -1237,7 +1290,6 @@ export function VerificationWorkspace({
               )}
             </div>
           )}
-          <InternalNotesPanel exerciseId={exercise.id} className="mt-4" />
         </aside>
 
         <div className="flex min-w-0 flex-col gap-4">
@@ -1371,14 +1423,12 @@ export function VerificationWorkspace({
         </div>
       </div>
 
-      {canReviewExercises && (
+      {showNotesPanel && (
         <ReviewNotesPanel
           key={exercise.id}
           exerciseId={exercise.id}
           context={{ key: stage, label: STAGE_TITLES[stage] }}
-          canSendToAuthor={isOrganization ? canRequestChanges : exercise.status === 'PENDING_REVIEW'}
-          beforeSend={flushBeforeDecision}
-          onSent={leaveToNext}
+          track={reviewLogTrack}
           onOpenChange={setIsNotesPanelOpen}
         />
       )}
@@ -1410,16 +1460,6 @@ export function VerificationWorkspace({
         }}
         onUploadOwn={(file) => void handleUploadOwnPhoto(file)}
       />
-
-      {isOrganization && (
-        <RequestChangesDialog
-          open={isChangesOpen}
-          initialNotes=""
-          isSubmitting={isBusy}
-          onOpenChange={setIsChangesOpen}
-          onConfirm={(notes) => void handleRequestChanges(notes)}
-        />
-      )}
 
       <DuplicateDialog
         open={isDuplicateOpen}
