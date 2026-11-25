@@ -31,6 +31,7 @@ import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerc
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
 import {
   UPDATE_EXERCISE_SET_MUTATION,
+  UPDATE_EXERCISE_SET_FREQUENCY_MUTATION,
   UPDATE_EXERCISE_IN_SET_MUTATION,
   REMOVE_EXERCISE_FROM_SET_MUTATION,
   ADD_EXERCISE_TO_EXERCISE_SET_MUTATION,
@@ -53,7 +54,15 @@ import { aiService } from '@/services/aiService';
 import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
 import { seedBuilderParamsFromMapping } from '@/features/assignment/utils/seedBuilderParamsFromMapping';
 import { buildMappingOverridesFromParams } from '@/features/exercise-sets/utils/buildMappingOverridesFromParams';
-import type { ExerciseMapping as AssignmentExerciseMapping } from '@/features/assignment/types';
+import type { ExerciseMapping as AssignmentExerciseMapping, Frequency } from '@/features/assignment/types';
+import {
+  buildAssignmentFrequencyPayload,
+  isEmptySpecificDaysFrequency,
+  isSameFrequency,
+  normalizeFrequencySeed,
+  type FrequencyInput,
+} from '@/features/assignment/utils/scheduleFrequencyUtils';
+import { SetScheduleField } from '@/features/exercise-sets/components/SetScheduleField';
 
 type PickerExerciseRecord = Record<string, unknown> & { id: string; name: string; updatedAt?: string | null };
 
@@ -61,6 +70,7 @@ interface SetSnapshot {
   id: string;
   name: string;
   description?: string | null;
+  frequency?: FrequencyInput | null;
   exerciseMappings?: Array<{
     id: string;
     exerciseId: string;
@@ -110,6 +120,7 @@ export function EditExerciseSetFullDialog({
 }: Readonly<EditExerciseSetFullDialogProps>) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [frequency, setFrequency] = useState<Frequency>(() => normalizeFrequencySeed(null));
   const [selectedInstances, setSelectedInstances] = useState<ExerciseInstance[]>([]);
   const [exerciseParams, setExerciseParams] = useState<Map<string, ExerciseParams>>(new Map());
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
@@ -118,6 +129,7 @@ export function EditExerciseSetFullDialog({
   const initialMappingsRef = React.useRef<InitialMapping[]>([]);
   const initialNameRef = React.useRef('');
   const initialDescriptionRef = React.useRef('');
+  const initialFrequencyRef = React.useRef<Frequency>(normalizeFrequencySeed(null));
   const initializedRef = React.useRef(false);
 
   const diff = useMemo(
@@ -130,13 +142,16 @@ export function EditExerciseSetFullDialog({
     [selectedInstances, exerciseParams]
   );
 
-  const hasChanges = hasExerciseSetChanges({
-    name,
-    description,
-    initialName: initialNameRef.current,
-    initialDescription: initialDescriptionRef.current,
-    diff,
-  });
+  const frequencyChanged = !isSameFrequency(frequency, initialFrequencyRef.current);
+  const hasChanges =
+    frequencyChanged ||
+    hasExerciseSetChanges({
+      name,
+      description,
+      initialName: initialNameRef.current,
+      initialDescription: initialDescriptionRef.current,
+      diff,
+    });
 
   const handleCloseAttempt = useCallback(() => {
     if (hasChanges) {
@@ -187,6 +202,8 @@ export function EditExerciseSetFullDialog({
     }));
     initialNameRef.current = set.name ?? '';
     initialDescriptionRef.current = set.description ?? '';
+    initialFrequencyRef.current = normalizeFrequencySeed(set.frequency);
+    setFrequency(initialFrequencyRef.current);
 
     setName(set.name ?? '');
     setDescription(set.description ?? '');
@@ -277,11 +294,12 @@ export function EditExerciseSetFullDialog({
   );
 
   const [updateSet, { loading: updatingSet }] = useMutation(UPDATE_EXERCISE_SET_MUTATION);
+  const [updateSetFrequency, { loading: updatingFrequency }] = useMutation(UPDATE_EXERCISE_SET_FREQUENCY_MUTATION);
   const [updateExerciseInSet, { loading: updatingExercise }] = useMutation(UPDATE_EXERCISE_IN_SET_MUTATION);
   const [removeExerciseFromSet] = useMutation(REMOVE_EXERCISE_FROM_SET_MUTATION);
   const [addExerciseToSet] = useMutation(ADD_EXERCISE_TO_EXERCISE_SET_MUTATION);
 
-  const saving = updatingSet || updatingExercise;
+  const saving = updatingSet || updatingFrequency || updatingExercise;
 
   const handleGenerateAISetMeta = useCallback(async () => {
     if (isGeneratingSetMeta) {
@@ -354,6 +372,10 @@ export function EditExerciseSetFullDialog({
       return;
     }
     if (!ensureDetailsReady()) return;
+    if (isEmptySpecificDaysFrequency(frequency)) {
+      toast.error('Wybierz co najmniej jeden dzień harmonogramu');
+      return;
+    }
 
     const saveDiff = computeExerciseSetDiff({
       initialMappings: initialMappingsRef.current,
@@ -372,6 +394,12 @@ export function EditExerciseSetFullDialog({
             name: trimmedName,
             description: (description ?? '').trim() || null,
           },
+        });
+      }
+
+      if (!isSameFrequency(frequency, initialFrequencyRef.current)) {
+        await updateSetFrequency({
+          variables: { exerciseSetId, frequency: buildAssignmentFrequencyPayload(frequency) },
         });
       }
 
@@ -449,11 +477,13 @@ export function EditExerciseSetFullDialog({
     apolloClient,
     name,
     description,
+    frequency,
     selectedInstances,
     exerciseParams,
     availableExercises,
     exerciseSetId,
     updateSet,
+    updateSetFrequency,
     updateExerciseInSet,
     removeExerciseFromSet,
     addExerciseToSet,
@@ -483,14 +513,17 @@ export function EditExerciseSetFullDialog({
           <VisuallyHidden.Root>
             <DialogTitle>Edytuj zestaw</DialogTitle>
             <DialogDescription>
-              Zmień nazwę zestawu oraz listę i parametry ćwiczeń. Możesz dodawać, usuwać i zmieniać kolejność.
+              Zmień nazwę, harmonogram oraz listę i parametry ćwiczeń. Możesz dodawać, usuwać i zmieniać kolejność.
             </DialogDescription>
           </VisuallyHidden.Root>
-          <div className="px-4 py-3 border-b border-border shrink-0">
-            <h2 className="text-lg font-semibold text-foreground">Edytuj zestaw</h2>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Zmień nazwę zestawu oraz listę i parametry ćwiczeń. Możesz dodawać, usuwać i zmieniać kolejność.
-            </p>
+          <div className="px-4 py-3 border-b border-border shrink-0 flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
+              <h2 className="text-lg font-semibold text-foreground">Edytuj zestaw</h2>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Zmień nazwę, harmonogram oraz listę i parametry ćwiczeń. Możesz dodawać, usuwać i zmieniać kolejność.
+              </p>
+            </div>
+            <SetScheduleField value={frequency} onChange={setFrequency} testIdPrefix="set-edit-full-frequency" />
           </div>
 
           <div className="flex-1 flex flex-col min-h-0 overflow-hidden">

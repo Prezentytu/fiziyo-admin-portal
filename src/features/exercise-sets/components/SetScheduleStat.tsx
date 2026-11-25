@@ -9,6 +9,8 @@ import { UPDATE_EXERCISE_SET_FREQUENCY_MUTATION } from '@/graphql/mutations/exer
 import type { Frequency } from '@/features/assignment/types';
 import {
   buildAssignmentFrequencyPayload,
+  isEmptySpecificDaysFrequency,
+  isSameFrequency,
   normalizeFrequencySeed,
   type FrequencyInput,
 } from '@/features/assignment/utils/scheduleFrequencyUtils';
@@ -38,11 +40,9 @@ export function SetScheduleStat({ exerciseSetId, frequency, className }: SetSche
     }
     setOpen(false);
 
-    const payload = buildAssignmentFrequencyPayload(draft);
-    const unchanged = JSON.stringify(payload) === JSON.stringify(buildAssignmentFrequencyPayload(frequency ?? {}));
-    if (unchanged || (!payload.isFlexible && Number(payload.timesPerWeek) === 0)) return;
+    if (isSameFrequency(draft, frequency ?? {}) || isEmptySpecificDaysFrequency(draft)) return;
 
-    updateFrequency({ variables: { exerciseSetId, frequency: payload } })
+    updateFrequency({ variables: { exerciseSetId, frequency: buildAssignmentFrequencyPayload(draft) } })
       .then(() => toast.success('Zapisano harmonogram zestawu'))
       .catch((error: unknown) => {
         console.error('Błąd zapisu harmonogramu zestawu:', error);

@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildAssignmentFrequencyPayload, normalizeFrequencySeed } from '../scheduleFrequencyUtils';
+import {
+  buildAssignmentFrequencyPayload,
+  isEmptySpecificDaysFrequency,
+  isSameFrequency,
+  normalizeFrequencySeed,
+} from '../scheduleFrequencyUtils';
 
 describe('scheduleFrequencyUtils', () => {
   it('normalizes a flexible seed without inventing weekday selections', () => {
@@ -89,5 +94,19 @@ describe('scheduleFrequencyUtils', () => {
       saturday: false,
       sunday: false,
     });
+  });
+
+  it('porównuje częstotliwości po tym, co idzie do API', () => {
+    const flexible3 = normalizeFrequencySeed({ timesPerDay: '1', timesPerWeek: '3', isFlexible: true });
+    expect(isSameFrequency(flexible3, { timesPerDay: 1, timesPerWeek: 3, breakBetweenSets: 4 })).toBe(true);
+    expect(isSameFrequency(flexible3, { ...flexible3, timesPerWeek: 4 })).toBe(false);
+    // Zestaw bez zapisanej częstotliwości to domyślne 3×/tydzień: samo otwarcie edycji nie jest zmianą.
+    expect(isSameFrequency(normalizeFrequencySeed(null), {})).toBe(true);
+  });
+
+  it('rozpoznaje harmonogram „wybrane dni” bez żadnego dnia', () => {
+    expect(isEmptySpecificDaysFrequency({ isFlexible: false, timesPerWeek: 3 })).toBe(true);
+    expect(isEmptySpecificDaysFrequency({ isFlexible: false, monday: true })).toBe(false);
+    expect(isEmptySpecificDaysFrequency({ isFlexible: true, timesPerWeek: 3 })).toBe(false);
   });
 });

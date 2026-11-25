@@ -52,7 +52,7 @@ Mapowanie ćwiczenia do zestawu. Pola NULL = wartość z Exercise.
 ## Tworzenie zestawu (kanoniczny kontrakt)
 
 - Zawsze `kind: TEMPLATE`, `templateSource: ORGANIZATION_PRIVATE`, `isTemplate: true`
-- Zawsze wysyłaj `frequency` przez `buildCreateTemplateSetVariables`: wybrany w `SetScheduleField`, a bez wyboru domyślny elastyczny 3×/tydzień. Harmonogram szablonu edytuje `components/SetScheduleField.tsx` (ten sam `FrequencyFields` co kreator przypisania), na detalu `SetScheduleStat`
+- Zawsze wysyłaj `frequency` przez `buildCreateTemplateSetVariables`: wybrany w `SetScheduleField`, a bez wyboru domyślny elastyczny 3×/tydzień. Harmonogram szablonu edytuje `components/SetScheduleField.tsx` (ten sam `FrequencyFields` co kreator przypisania), na detalu `SetScheduleStat` (zapis po zamknięciu okienka) i w `EditExerciseSetFullDialog` (zapis razem z „Zapisz zmiany”, mutacja `updateExerciseSetFrequency` tylko przy zmianie)
 - Mappingi: pełny payload + dual-write load przez `buildExerciseLoadMutationVars`
 - UI karty ćwiczenia: wyłącznie `ExerciseExecutionCard` (bez lokalnych klonów / `layoutVariant`)
 - Po utworzeniu (kreator i szybki kreator z listy): wspólne okno `SetCreatedDialog` (w szybkim kreatorze renderuje je zawsze zamontowany rodzic: `ExerciseBuilderFAB` albo `ExerciseBuilderSidebar`, bo zapis czyści koszyk) z „Przypisz pacjentowi” (`/exercise-sets/{id}?assign=1` otwiera Assignment Wizard), „Zobacz zestaw” i powrotem w miejsce startu; bez auto-redirect. Wyłącza je tylko czat (`showNextSteps={false}`), który prowadzi dalej własną kartą
