@@ -91,6 +91,12 @@ export function parseExistingInstanceId(instanceId: string): { mappingId: string
   return { mappingId, index };
 }
 
+/** loadValue 0 to brak obciążenia: mappingToParams daje 0, a builder z API null zostawia pusto. */
+function normalizeForCompare(key: keyof ExerciseParams, value: ExerciseParams[keyof ExerciseParams]) {
+  if (key === 'loadValue' && value === 0) return undefined;
+  return value;
+}
+
 function paramsEqual(a: ExerciseParams, b: ExerciseParams): boolean {
   const keys: (keyof ExerciseParams)[] = [
     'sets',
@@ -113,8 +119,8 @@ function paramsEqual(a: ExerciseParams, b: ExerciseParams): boolean {
     ...MAPPING_OVERRIDE_SCALAR_KEYS,
   ];
   for (const key of keys) {
-    const va = a[key];
-    const vb = b[key];
+    const va = normalizeForCompare(key, a[key]);
+    const vb = normalizeForCompare(key, b[key]);
     if (va === vb) continue;
     // null (wyczyszczone, np. odpoczynek = auto) i undefined (brak) to ten sam brak wartości.
     if (va == null && vb == null) continue;
