@@ -36,11 +36,7 @@ export type ContentStatus =
   | 'UPDATE_PENDING'; // Shadow draft dla poprawki published
 
 export type OrganizationVerificationStatus =
-  | 'NOT_SUBMITTED'
-  | 'PENDING_ORG_REVIEW'
-  | 'ORG_VERIFIED'
-  | 'ORG_CHANGES_REQUESTED'
-  | 'ORG_ARCHIVED';
+  'NOT_SUBMITTED' | 'PENDING_ORG_REVIEW' | 'ORG_VERIFIED' | 'ORG_CHANGES_REQUESTED' | 'ORG_ARCHIVED';
 
 /**
  * Predefiniowane powody odrzucenia ćwiczenia
@@ -59,7 +55,7 @@ export type RejectionReason =
 
 export interface VerificationStats {
   pendingReview: number;
-  /** Poprawki wewnętrzne: czekają na poprawki albo poprawione do sprawdzenia. */
+  /** Czekają na poprawki wewnętrzne zespołu FiziYo (plakietka „Czeka na poprawki”). */
   internalFixes?: number;
   changesRequested: number;
   approved: number;
@@ -74,6 +70,8 @@ export interface OrganizationVerificationStats {
   orgChangesRequested: number;
   orgVerified: number;
   orgArchived: number;
+  /** Czekają na poprawki wewnętrzne; tylko kolejka wszystkich gabinetów (zespół FiziYo). */
+  internalFixes?: number;
   total: number;
 }
 
