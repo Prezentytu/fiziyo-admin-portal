@@ -10,7 +10,12 @@ vi.mock('next/image', () => ({
 }));
 
 vi.mock('@/components/shared/VideoEmbed', () => ({
-  VideoEmbed: ({ title }: { title: string }) => <div data-testid="video-embed">{title}</div>,
+  VideoEmbed: ({ title, onTimeChange }: { title: string; onTimeChange?: (seconds: number) => void }) => (
+    <div data-testid="video-embed">
+      {title}
+      {onTimeChange && <button type="button" data-testid="video-embed-time" onClick={() => onTimeChange(92.4)} />}
+    </div>
+  ),
 }));
 
 const ITEMS: MediaItem[] = [
@@ -57,3 +62,28 @@ describe('MediaGallery accessible names', () => {
     expect(screen.getByRole('button', { name: 'Zdjęcie 2 z 2', pressed: true })).toBeInTheDocument();
   });
 });
+
+describe('MediaGallery – start filmu (SPEC-064)', () => {
+  const VIMEO: MediaItem = { kind: 'video', src: 'https://vimeo.com/123456789/abcdef#t=30s' };
+
+  it('ustawia start na bieżący moment odtwarzacza i wraca do początku', () => {
+    const onSetVideoStart = vi.fn();
+    render(<MediaGallery items={[VIMEO]} title="Plank" testIdPrefix="gallery" onSetVideoStart={onSetVideoStart} />);
+
+    expect(screen.getByTestId('gallery-video-start-value')).toHaveTextContent('0:30');
+    expect(screen.getByTestId('gallery-video-start-set-btn')).toBeDisabled();
+
+    fireEvent.click(screen.getByTestId('video-embed-time'));
+    fireEvent.click(screen.getByTestId('gallery-video-start-set-btn'));
+    expect(onSetVideoStart).toHaveBeenLastCalledWith(VIMEO.src, 92);
+
+    fireEvent.click(screen.getByTestId('gallery-video-start-clear-btn'));
+    expect(onSetVideoStart).toHaveBeenLastCalledWith(VIMEO.src, null);
+  });
+
+  it('bez obsługi zmiany nie pokazuje paska startu', () => {
+    render(<MediaGallery items={[VIMEO]} title="Plank" testIdPrefix="gallery" />);
+    expect(screen.queryByTestId('gallery-video-start')).not.toBeInTheDocument();
+  });
+});
+

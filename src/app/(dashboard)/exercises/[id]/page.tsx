@@ -46,6 +46,7 @@ import {
   readViewDocument,
 } from '@/features/exercises/ExerciseDetailSections';
 import { ExerciseVideosField } from '@/features/exercises/ExerciseVideosField';
+import { setVideoStartInList } from '@/utils/exerciseVideos';
 import { CreateSetWizard } from '@/features/exercise-sets';
 import { SubmitToGlobalDialog } from '@/features/exercises/SubmitToGlobalDialog';
 import { SubmitToOrganizationDialog } from '@/features/exercises/SubmitToOrganizationDialog';
@@ -504,7 +505,8 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
     imageUrl: exercise.imageUrl,
     images: exercise.images,
     videoUrl: exercise.videoUrl,
-    videos: exercise.videos,
+    // While editing, the gallery plays the draft list so a start marker set under the video shows at once.
+    videos: isEditMode ? core.videos : exercise.videos,
     gifUrl: exercise.gifUrl,
     title: exercise.name,
   });
@@ -893,6 +895,11 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
             rootTestId="exercise-detail-media-player"
             testIdPrefix="exercise-detail-media"
             className="h-[320px] lg:h-[520px]"
+            onSetVideoStart={
+              isEditing
+                ? (videoUrl, seconds) => setCoreField('videos', setVideoStartInList(core.videos, videoUrl, seconds))
+                : undefined
+            }
           />
 
           {canEditMedia && (

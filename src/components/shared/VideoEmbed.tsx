@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getVimeoEmbedUrl, getYouTubeEmbedUrl, isDirectVideoUrl, isVimeoUrl, isYouTubeUrl } from '@/utils/videoEmbed';
@@ -8,18 +9,104 @@ interface VideoEmbedProps {
   url: string;
   title: string;
   className?: string;
+  /** Current playback position in seconds, read from the YouTube/Vimeo player while it plays or after a seek. */
+  onTimeChange?: (seconds: number) => void;
 }
 
-export function VideoEmbed({ url, title, className }: Readonly<VideoEmbedProps>) {
-  const youtubeEmbedUrl = isYouTubeUrl(url) ? getYouTubeEmbedUrl(url) : null;
-  const vimeoEmbedUrl = isVimeoUrl(url) ? getVimeoEmbedUrl(url) : null;
+const YOUTUBE_LISTENING_MS = 500;
+const YOUTUBE_LISTENING_ATTEMPTS = 20;
+
+export function VideoEmbed({ url, title, className, onTimeChange }: Readonly<VideoEmbedProps>) {
+  const tracksTime = Boolean(onTimeChange);
+  const isYouTube = isYouTubeUrl(url);
+  const youtubeEmbedUrl = isYouTube ? getYouTubeEmbedUrl(url, { enableApi: tracksTime }) : null;
+  const vimeoEmbedUrl = isVimeoUrl(url) ? getVimeoEmbedUrl(url, { enableApi: tracksTime }) : null;
   const directVideo = isDirectVideoUrl(url);
   const embedUrl = youtubeEmbedUrl ?? vimeoEmbedUrl;
+
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const onTimeChangeRef = useRef(onTimeChange);
+  useEffect(() => {
+    onTimeChangeRef.current = onTimeChange;
+  }, [onTimeChange]);
+
+  useEffect(() => {
+    if (!embedUrl || !tracksTime) return;
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+
+    const post = (message: unknown) => iframe.contentWindow?.postMessage(JSON.stringify(message), '*');
+    const subscribeVimeo = () => {
+      post({ method: 'addEventListener', value: 'timeupdate' });
+      post({ method: 'addEventListener', value: 'seeked' });
+    };
+
+    let youtubeAttempts = 0;
+    let youtubeTimer: ReturnType<typeof setInterval> | null = null;
+    const stopYouTubeListening = () => {
+      if (youtubeTimer) clearInterval(youtubeTimer);
+      youtubeTimer = null;
+    };
+    // YouTube answers with infoDelivery (currentTime) only after the page says it is listening.
+    const startYouTubeListening = () => {
+      stopYouTubeListening();
+      youtubeAttempts = 0;
+      youtubeTimer = setInterval(() => {
+        youtubeAttempts += 1;
+        post({ event: 'listening', id: 1, channel: 'widget' });
+        if (youtubeAttempts >= YOUTUBE_LISTENING_ATTEMPTS) stopYouTubeListening();
+      }, YOUTUBE_LISTENING_MS);
+    };
+
+    const handleMessage = (event: MessageEvent) => {
+      if (event.source !== iframe.contentWindow || typeof event.data !== 'string') return;
+      let data: {
+        event?: string;
+        data?: { seconds?: unknown };
+        info?: { currentTime?: unknown };
+      } | null;
+      try {
+        data = JSON.parse(event.data);
+      } catch {
+        return;
+      }
+      if (!data) return;
+
+      if (isYouTube) {
+        if (data.event === 'onReady' || data.event === 'initialDelivery' || data.event === 'infoDelivery') {
+          stopYouTubeListening();
+        }
+        const seconds = data.info?.currentTime;
+        if (typeof seconds === 'number' && Number.isFinite(seconds)) onTimeChangeRef.current?.(seconds);
+        return;
+      }
+
+      if (data.event === 'ready') subscribeVimeo();
+      const seconds = data.data?.seconds;
+      if ((data.event === 'timeupdate' || data.event === 'seeked') && typeof seconds === 'number') {
+        onTimeChangeRef.current?.(seconds);
+      }
+    };
+
+    const handleLoad = () => {
+      if (isYouTube) startYouTubeListening();
+      else subscribeVimeo();
+    };
+
+    window.addEventListener('message', handleMessage);
+    iframe.addEventListener('load', handleLoad);
+    return () => {
+      window.removeEventListener('message', handleMessage);
+      iframe.removeEventListener('load', handleLoad);
+      stopYouTubeListening();
+    };
+  }, [embedUrl, isYouTube, tracksTime]);
 
   if (embedUrl) {
     return (
       <div className={cn('relative h-full w-full overflow-hidden rounded-xl bg-black', className)}>
         <iframe
+          ref={iframeRef}
           src={embedUrl}
           title={title}
           className="h-full w-full border-0"

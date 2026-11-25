@@ -1,3 +1,5 @@
+import { isSameVideoIgnoringStart, withVideoStart } from '@/utils/videoEmbed';
+
 export const MAX_EXERCISE_VIDEOS = 10;
 export const MAX_VIDEO_URL_LENGTH = 500;
 
@@ -39,6 +41,17 @@ export function isSameVideoList(first: ReadonlyArray<string>, second: ReadonlyAr
   return (
     normalizedFirst.length === normalizedSecond.length &&
     normalizedFirst.every((video, index) => video === normalizedSecond[index])
+  );
+}
+
+/** Sets (or clears, with null) the start marker on every row showing `videoUrl`, whatever its current start (SPEC-064). */
+export function setVideoStartInList(
+  videos: ReadonlyArray<string>,
+  videoUrl: string,
+  seconds: number | null
+): string[] {
+  return videos.map((video) =>
+    video.trim() && isSameVideoIgnoringStart(video, videoUrl) ? withVideoStart(video.trim(), seconds) : video
   );
 }
 
