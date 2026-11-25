@@ -7,8 +7,10 @@ import { useExercisePickerLibrary } from '@/hooks/useExercisePickerLibrary';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import type { fromBuilderExercise } from '@/components/shared/exercise/adapters';
 import { withTagNames } from './utils/exerciseLookup';
+import type { ExerciseReviewFields } from './utils/exerciseReviewBadge';
 
-export type ChatCatalogExercise = Parameters<typeof fromBuilderExercise>[0];
+/** Status weryfikacji z listy pickera: karty czatu oznaczają ćwiczenia gabinetu jeszcze niezaakceptowane. */
+export type ChatCatalogExercise = Parameters<typeof fromBuilderExercise>[0] & ExerciseReviewFields;
 
 const NO_TAGS: ReadonlyArray<{ id: string; name: string }> = [];
 const NO_DETAILS: readonly string[] = [];
