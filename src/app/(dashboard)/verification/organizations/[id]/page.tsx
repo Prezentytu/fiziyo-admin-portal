@@ -29,18 +29,10 @@ import type {
   GetCrossOrgVerificationQueueNavigatorResponse,
   VerificationQueueNavigator,
 } from '@/graphql/types/adminExercise.types';
+import { parseCrossOrgVerificationFilter } from '@/features/verification/utils/orgVerificationPagination';
 
 interface CrossOrgVerificationDetailPageProps {
   params: Promise<{ id: string }>;
-}
-
-type CrossOrgFilter = 'pending' | 'internal' | 'changes' | 'verified' | 'archived';
-
-function parseFilter(value: string | null): CrossOrgFilter {
-  if (value === 'internal' || value === 'changes' || value === 'verified' || value === 'archived') {
-    return value;
-  }
-  return 'pending';
 }
 
 /**
@@ -54,7 +46,7 @@ export default function CrossOrgVerificationDetailPage({ params }: Readonly<Cros
   const searchParams = useSearchParams();
   const { isSiteSuperAdmin, isLoading: roleLoading } = useSystemRole();
 
-  const filter = parseFilter(searchParams.get('filter'));
+  const filter = parseCrossOrgVerificationFilter(searchParams.get('filter'));
   const search = searchParams.get('search') ?? '';
   const page = Number(searchParams.get('page') ?? '1') || 1;
   const pageSize = Number(searchParams.get('pageSize') ?? '20') || 20;

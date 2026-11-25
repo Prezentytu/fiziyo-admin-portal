@@ -39,15 +39,10 @@ import type {
   GetCrossOrgVerificationStatsResponse,
 } from '@/graphql/types/adminExercise.types';
 import { PageSheet } from '@/components/shared/page';
-
-type CrossOrgFilter = 'pending' | 'internal' | 'changes' | 'verified' | 'archived';
-
-function parseFilter(value: string | null): CrossOrgFilter {
-  if (value === 'internal' || value === 'changes' || value === 'verified' || value === 'archived') {
-    return value;
-  }
-  return 'pending';
-}
+import {
+  parseCrossOrgVerificationFilter,
+  type CrossOrgVerificationFilter,
+} from '@/features/verification/utils/orgVerificationPagination';
 
 export default function CrossOrgVerificationPage() {
   const router = useRouter();
@@ -56,7 +51,9 @@ export default function CrossOrgVerificationPage() {
   const { isSiteSuperAdmin, isLoading: roleLoading } = useSystemRole();
 
   const [search, setSearch] = useState(searchParams.get('search') ?? '');
-  const [filter, setFilter] = useState<CrossOrgFilter>(parseFilter(searchParams.get('filter')));
+  const [filter, setFilter] = useState<CrossOrgVerificationFilter>(
+    parseCrossOrgVerificationFilter(searchParams.get('filter'))
+  );
   const [page, setPage] = useState(Number(searchParams.get('page') ?? '1') || 1);
   const [pageSize] = useState(20);
   const [ordering, setOrdering] = useState<VerificationQueueOrdering>(() => parseQueueOrdering(searchParams));
@@ -117,7 +114,7 @@ export default function CrossOrgVerificationPage() {
   });
 
   const updateUrl = (
-    nextFilter: CrossOrgFilter,
+    nextFilter: CrossOrgVerificationFilter,
     nextSearch: string,
     nextPage: number,
     nextOrdering: VerificationQueueOrdering = ordering
@@ -196,7 +193,7 @@ export default function CrossOrgVerificationPage() {
           isLoading={statsLoading}
           activeFilter={filter}
           onFilterChange={(nextFilter) => {
-            const normalizedFilter = nextFilter === 'verified' ? 'verified' : (nextFilter as CrossOrgFilter);
+            const normalizedFilter = parseCrossOrgVerificationFilter(nextFilter);
             selection.clear();
             setFilter(normalizedFilter);
             setPage(1);
