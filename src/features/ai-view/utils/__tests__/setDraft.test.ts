@@ -97,33 +97,19 @@ describe('proposeDraftName', () => {
 });
 
 describe('proposeDraftDescription', () => {
-  it('keeps within the 300-character column when exercise names are long', () => {
-    const long = 'Zginanie czubka palca z przytrzymaniem palca drugą ręką (zginanie w ostatnim stawie)';
-    const text = proposeDraftDescription({
-      topic: 'Ból kolana po skręceniu',
-      exerciseNames: [long, long, long, long, long],
-      minutes: 17,
-      today: new Date(2026, 10, 20),
-    });
-    expect(text.length).toBeLessThanOrEqual(MAX_SET_DESCRIPTION_LENGTH);
-    expect(text).toMatch(/i \d więcej\. Ok\. 17 min dziennie\. Ułożony w czacie 20\.11\.2026\.$/);
+  it('says only what the set is for: no exercises, daily time or date', () => {
+    const text = proposeDraftDescription({ topic: 'Zestaw na ból karku' });
+    expect(text).toBe('Ból karku.');
+    expect(text).not.toMatch(/Ćwiczenia:|min dziennie|w czacie|\d{2}\.\d{2}\.\d{4}/);
   });
 
-  it('says what the set is for, what is in it and when it was made', () => {
-    expect(
-      proposeDraftDescription({
-        topic: 'Zestaw na ból karku',
-        exerciseNames: ['Cofanie brody', 'Rotacja szyi'],
-        minutes: 8,
-        today: new Date(2026, 10, 17),
-      })
-    ).toBe('Ból karku. Ćwiczenia: Cofanie brody, Rotacja szyi. Ok. 8 min dziennie. Ułożony w czacie 17.11.2026.');
+  it('is empty without a topic or when the topic names the patient', () => {
+    expect(proposeDraftDescription({})).toBe('');
+    expect(proposeDraftDescription({ topic: 'dla Anny Kowalskiej', avoid: ['Anna Kowalska'] })).toBe('');
   });
 
-  it('shortens a long list and works without a topic', () => {
-    const names = Array.from({ length: 8 }, (_, index) => `Ćw ${index + 1}`);
-    const text = proposeDraftDescription({ exerciseNames: names, minutes: 0, today: new Date(2026, 10, 17) });
-    expect(text).toBe('Ćwiczenia: Ćw 1, Ćw 2, Ćw 3, Ćw 4, Ćw 5, Ćw 6 i 2 więcej. Ułożony w czacie 17.11.2026.');
+  it('keeps within the 300-character column', () => {
+    expect(proposeDraftDescription({ topic: 'x'.repeat(400) }).length).toBeLessThanOrEqual(MAX_SET_DESCRIPTION_LENGTH);
   });
 });
 

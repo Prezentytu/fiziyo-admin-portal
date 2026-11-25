@@ -275,34 +275,18 @@ export function draftTopic(topic: string | undefined, avoid: readonly string[] =
   return mentionsPerson ? '' : cleaned;
 }
 
-/** Catalog description of a set composed in the chat: topic, size and daily time, no personal data. */
 /** Limit kolumny `ExerciseSet.Description` w backendzie (`StringLength(300)`). */
 export const MAX_SET_DESCRIPTION_LENGTH = 300;
 
-export function proposeDraftDescription(options: {
-  topic?: string;
-  exerciseNames: readonly string[];
-  minutes: number;
-  today?: Date;
-  avoid?: readonly string[];
-}): string {
+/**
+ * Catalog description of a set composed in the chat: only the topic, no personal data; empty without a topic.
+ * Opis to tekst, który się nie przelicza: czas dzienny, data ułożenia i lista ćwiczeń rozjeżdżały się z zestawem
+ * po pierwszej edycji. Skład i dawki pokazuje zestaw, historię log zestawu (SPEC-063 w fizjo-app).
+ */
+export function proposeDraftDescription(options: { topic?: string; avoid?: readonly string[] }): string {
   const topic = draftTopic(options.topic, options.avoid);
-  const head = topic ? `${capitalize(topic)}.` : '';
-  const time = options.minutes > 0 ? ` Ok. ${options.minutes} min dziennie.` : '';
-  const when = ` Ułożony w czacie ${format(options.today ?? new Date(), 'dd.MM.yyyy')}.`;
-  const build = (shown: number) => {
-    const list = options.exerciseNames.slice(0, shown).join(', ');
-    const rest = options.exerciseNames.length - shown;
-    const more = rest > 0 ? ` i ${rest} więcej` : '';
-    return `${head} Ćwiczenia: ${list}${more}.${time}${when}`.trim();
-  };
-  // Opis zestawu w bazie ma najwyżej 300 znaków: długie nazwy ćwiczeń (v3.3) przekraczały limit i zapis z czatu
-  // kończył się „Unexpected Execution Error”. Ucinamy listę nazw, a gdy i to za mało, cały tekst.
-  for (let shown = Math.min(6, options.exerciseNames.length); shown >= 1; shown--) {
-    const text = build(shown);
-    if (text.length <= MAX_SET_DESCRIPTION_LENGTH) return text;
-  }
-  const text = build(0);
+  if (!topic) return '';
+  const text = `${capitalize(topic)}.`;
   return text.length <= MAX_SET_DESCRIPTION_LENGTH ? text : `${text.slice(0, MAX_SET_DESCRIPTION_LENGTH - 1).trimEnd()}…`;
 }
 
