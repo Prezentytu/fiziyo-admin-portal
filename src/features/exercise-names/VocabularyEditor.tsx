@@ -13,6 +13,7 @@ import type {
   GetExerciseNameVocabularyResponse,
   SaveExerciseNameVocabularyResponse,
 } from '@/graphql/types/exerciseNameReview.types';
+import { writeSavedVocabulary } from '@/features/exercise-names/utils/vocabularyCache';
 
 interface TermDraft {
   preferred: string;
@@ -28,7 +29,11 @@ export function VocabularyEditor() {
   const { data, loading } = useQuery<GetExerciseNameVocabularyResponse>(GET_EXERCISE_NAME_VOCABULARY_QUERY, {
     fetchPolicy: 'cache-and-network',
   });
-  const [save, { loading: saving }] = useMutation<SaveExerciseNameVocabularyResponse>(SAVE_EXERCISE_NAME_VOCABULARY_MUTATION);
+  const [save, { loading: saving }] = useMutation<SaveExerciseNameVocabularyResponse>(SAVE_EXERCISE_NAME_VOCABULARY_MUTATION, {
+    update: (cache, { data: saved }) => {
+      if (saved) writeSavedVocabulary(cache, saved.saveExerciseNameVocabulary);
+    },
+  });
   const [terms, setTerms] = useState<TermDraft[]>([]);
   const [dirty, setDirty] = useState(false);
 
