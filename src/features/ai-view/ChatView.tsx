@@ -519,8 +519,13 @@ export function ChatView() {
   const revealSince = revealMarker?.since ?? Number.POSITIVE_INFINITY;
   const isWide = useMediaQuery('(min-width: 1280px)');
   const isEmpty = messages.length === 0;
-  const { isAway, scrollToBottom } = useStickToBottom(scrollRef, activeConversationId, `${messages.length}-${isBusy}`);
   const lastUser = messages.findLast((message) => message.role === 'user');
+  const { isAway, scrollToBottom } = useStickToBottom(
+    scrollRef,
+    activeConversationId,
+    `${messages.length}-${isBusy}`,
+    lastUser?.id
+  );
 
   // Typing anywhere in the chat lands in the composer, as in Claude.
   useEffect(() => {

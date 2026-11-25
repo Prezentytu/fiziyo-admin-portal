@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,13 @@ import {
   removeVideoAt,
   setVideoAt,
 } from '@/utils/exerciseVideos';
+import {
+  extractVideoStartSeconds,
+  formatVideoStart,
+  parseVideoStartInput,
+  supportsVideoStart,
+  withVideoStart,
+} from '@/utils/videoEmbed';
 
 interface ExerciseVideosFieldProps {
   /** Draft rows in order; the first is the main video. May hold empty rows while the list is edited. */
@@ -93,6 +101,15 @@ export function ExerciseVideosField({
                     dirty && 'border-status-warning/70 bg-status-warning-muted dark:border-status-warning/40'
                   )}
                 />
+                {supportsVideoStart(video) && (
+                  <VideoStartInput
+                    video={video}
+                    rowName={rowName}
+                    disabled={disabled}
+                    testId={`${testId}-start-${index}`}
+                    onChange={(nextVideo) => onChange(setVideoAt(value, index, nextVideo))}
+                  />
+                )}
                 {hasManyRows && (
                   <>
                     <Button
@@ -159,5 +176,50 @@ export function ExerciseVideosField({
         )}
       </div>
     </div>
+  );
+}
+
+interface VideoStartInputProps {
+  video: string;
+  rowName: string;
+  disabled: boolean;
+  testId: string;
+  onChange: (video: string) => void;
+}
+
+/** Start marker of one video (SPEC-064), kept in the link itself; applied on blur or Enter. */
+function VideoStartInput({ video, rowName, disabled, testId, onChange }: Readonly<VideoStartInputProps>) {
+  const startSeconds = extractVideoStartSeconds(video);
+  const savedText = startSeconds ? formatVideoStart(startSeconds) : '';
+  const [draft, setDraft] = useState<string | null>(null);
+  const text = draft ?? savedText;
+  const isInvalid = draft !== null && parseVideoStartInput(draft) === undefined;
+
+  const commit = () => {
+    if (draft === null) return;
+    const seconds = parseVideoStartInput(draft);
+    if (seconds === undefined) return;
+    setDraft(null);
+    if (seconds !== startSeconds) onChange(withVideoStart(video, seconds));
+  };
+
+  return (
+    <Input
+      data-testid={testId}
+      inputMode="numeric"
+      value={text}
+      placeholder="Start 0:00"
+      title="Od którego momentu pacjent ogląda film, np. 1:30"
+      aria-label={`Start filmu: ${rowName}`}
+      aria-invalid={isInvalid ? true : undefined}
+      disabled={disabled}
+      onChange={(event) => setDraft(event.target.value)}
+      onBlur={commit}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') commit();
+        if (event.key === 'Escape') setDraft(null);
+      }}
+      className={cn('h-9 w-24 shrink-0 text-sm tabular-nums', isInvalid && 'border-destructive')}
+    />
   );
 }

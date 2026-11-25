@@ -18,6 +18,7 @@ export const EXERCISE_SET_BASIC_FRAGMENT = gql`
     frequency {
       timesPerDay
       timesPerWeek
+      isFlexible
       breakBetweenSets
       monday
       tuesday

@@ -70,3 +70,26 @@ export function formatFrequencyDisplay(frequency?: FrequencyDisplayValue): strin
 
   return formatTimesPerWeekRecommendation(frequency.timesPerWeek) ?? 'Brak harmonogramu';
 }
+
+/** Krótki opis harmonogramu na przycisk i kartę zestawu, np. „3 razy w tygodniu · 2× dziennie”. */
+export function formatScheduleShort(frequency?: FrequencyDisplayValue & { timesPerDay?: FrequencyNumberLike }): string {
+  const base = formatFrequencyDisplay(frequency);
+  const timesPerDay = Number(frequency?.timesPerDay);
+  return Number.isFinite(timesPerDay) && timesPerDay > 1 ? `${base} · ${Math.round(timesPerDay)}× dziennie` : base;
+}
+
+/** Kafelek statystyki harmonogramu: duża liczba sesji w tygodniu i opis pod nią. */
+export function formatScheduleStat(
+  frequency?: FrequencyDisplayValue & { timesPerDay?: FrequencyNumberLike }
+): { value: string; label: string } {
+  if (!frequency) return { value: '—', label: 'w tygodniu' };
+
+  const days = getSelectedDayShortcuts(frequency);
+  const timesPerWeek = days.length > 0 ? days.length : normalizeTimesPerWeek(frequency.timesPerWeek);
+  const timesPerDay = normalizeTimesPerWeek(frequency.timesPerDay);
+  const parts = ['w tygodniu'];
+  if (days.length > 0 && days.length < 7) parts[0] = formatFrequencyDisplay(frequency);
+  if (timesPerDay) parts.push(`${timesPerDay}× dziennie`);
+
+  return { value: timesPerWeek ? `${timesPerWeek}×` : '—', label: parts.join(' · ') };
+}

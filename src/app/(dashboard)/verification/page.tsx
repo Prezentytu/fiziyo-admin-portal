@@ -989,7 +989,7 @@ export default function VerificationPage() {
               : assignee !== 'all'
                 ? 'Brak ćwiczeń z tym przypisaniem'
                 : activeFilter === 'internal'
-                  ? 'Brak poprawek wewnętrznych'
+                  ? 'Nic nie czeka na poprawki'
                   : activeFilter === 'pending'
                     ? 'Wszystko zweryfikowane!'
                     : activeFilter === 'changes'

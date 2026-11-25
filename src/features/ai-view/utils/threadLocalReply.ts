@@ -7,7 +7,7 @@ import { pickPatientAnswer } from './pickPatientAnswer';
 import { UNSUPPORTED_SPEC, type ChatViewSpec } from './viewSpec';
 import { newExerciseForSet } from './exerciseIdeas';
 import { thinkingTopic } from './replyMotion';
-import { formatPlanDate, parseSchedulePlan, sendSummaryText } from './schedulePlan';
+import { formatPlanDate, parseSchedulePlan, proposedPlan, sendSummaryText } from './schedulePlan';
 import { scheduleQuestion, type SetDraftPayload } from './setDraft';
 
 /** Marks the open „Komu przypisać?” card answered by a typed message (see PickPatientCard). */
@@ -51,7 +51,9 @@ export function localReplyTo(
   }
   if (last.spec?.component === 'Schedule') {
     const trimmed = text.trim();
-    const parsed = NOT_A_SCHEDULE.test(normalizeSearchText(trimmed)) ? null : parseSchedulePlan(trimmed);
+    const parsed = NOT_A_SCHEDULE.test(normalizeSearchText(trimmed))
+      ? null
+      : parseSchedulePlan(trimmed, proposedPlan(last.spec.draft.rhythm));
     if (!parsed) return null;
     return {
       answeredMessageId: last.id,
@@ -86,7 +88,7 @@ export function localReplyTo(
       answeredMessageId: last.id,
       chosen: answer.patient.name,
       reply: {
-        text: scheduleQuestion(draft.items),
+        text: scheduleQuestion(draft),
         spec: { component: 'Schedule', draft: { ...draft, patientId: answer.patient.id } },
       },
     };

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildOrganizationVerificationDetailHref,
   buildOrganizationVerificationListHref,
+  parseCrossOrgVerificationFilter,
   parseOrganizationVerificationFilter,
 } from '@/features/verification/utils/orgVerificationPagination';
 
@@ -10,6 +11,14 @@ describe('orgVerificationPagination', () => {
   it('returns pending as default filter', () => {
     expect(parseOrganizationVerificationFilter(null)).toBe('pending');
     expect(parseOrganizationVerificationFilter('unknown')).toBe('pending');
+  });
+
+  it('only the all-clinics queue accepts the internal fixes filter', () => {
+    expect(parseCrossOrgVerificationFilter('internal')).toBe('internal');
+    expect(parseCrossOrgVerificationFilter('verified')).toBe('verified');
+    expect(parseCrossOrgVerificationFilter('published')).toBe('pending');
+    expect(parseCrossOrgVerificationFilter(null)).toBe('pending');
+    expect(parseOrganizationVerificationFilter('internal')).toBe('pending');
   });
 
   it('builds list href with pagination params', () => {

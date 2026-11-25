@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 
+import { useRewardAccess } from '@/components/rewards/useRewardAccess';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
 import { useVerificationPendingCounts, useVerificationScopes } from '@/features/verification/useVerificationScopes';
 import { buildAccountNavigationItems, buildNavigationItems, type NavigationItem } from './navigationConfig';
@@ -21,5 +22,6 @@ export function useNavigationItems(): { items: NavigationItem[]; matchHrefs: str
 export function useAccountNavigationItems(): NavigationItem[] {
   const { canManageOrganization } = useRoleAccess();
 
-  return useMemo(() => buildAccountNavigationItems(canManageOrganization), [canManageOrganization]);
+  const showRewards = Boolean(useRewardAccess().settings);
+  return useMemo(() => buildAccountNavigationItems(canManageOrganization, showRewards), [canManageOrganization, showRewards]);
 }

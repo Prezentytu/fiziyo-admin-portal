@@ -12,11 +12,11 @@ import { NO_PATIENT_OPTION } from '../utils/intentRouter';
 import { patientChoiceLabels } from '../utils/patientMatch';
 import { nominativeName } from '../utils/pickPatientAnswer';
 import { PICK_PATIENT_ANSWERED } from '../utils/threadLocalReply';
-import { savedInCatalogText, scheduleQuestion, type SetDraftPayload } from '../utils/setDraft';
+import { catalogFrequencyQuestion, scheduleQuestion, type SetDraftPayload } from '../utils/setDraft';
 import type { CardProps } from './cardProps';
 import { ChatCard } from './ChatCard';
 import { NewPatientForm } from './NewPatientForm';
-import { useCreatePatient, useSaveTemplateSet } from './useChatWrites';
+import { useCreatePatient } from './useChatWrites';
 
 const MAX_PATIENTS = 6;
 
@@ -32,7 +32,6 @@ export function PickPatientCard({ spec, testId, messageId, chosen }: CardProps<'
   const [isAdding, setIsAdding] = useState(Boolean(spec.newPatient));
   const [newPatient, setNewPatient] = useState(spec.newPatient);
   const { create, creating } = useCreatePatient();
-  const { saveTemplateSet, saving } = useSaveTemplateSet();
 
   // The patient the conversation is about comes first (report 01.11: Anna from the chip was last).
   const ordered = useMemo(
@@ -66,24 +65,17 @@ export function PickPatientCard({ spec, testId, messageId, chosen }: CardProps<'
     }
     const draft: SetDraftPayload = { ...baseDraft, patientId };
     appendExchange(name, {
-      text: scheduleQuestion(draft.items),
+      text: scheduleQuestion(draft),
       spec: { component: 'Schedule', draft },
     });
   };
 
-  const continueWithoutPatient = async () => {
+  const continueWithoutPatient = () => {
     if (!baseDraft) return;
-    const saved = await saveTemplateSet(organizationId, baseDraft.name, baseDraft.items);
-    if (!saved) return;
     markChosen(messageId, NO_PATIENT_OPTION);
     appendExchange(NO_PATIENT_OPTION, {
-      text: savedInCatalogText(saved.name),
-      spec: {
-        component: 'SetSaved',
-        setId: saved.id,
-        name: saved.name,
-        draft: { ...baseDraft, sourceSetId: saved.id },
-      },
+      text: catalogFrequencyQuestion(baseDraft.rhythm),
+      spec: { component: 'CatalogFrequency', draft: baseDraft },
     });
   };
 
@@ -118,7 +110,6 @@ export function PickPatientCard({ spec, testId, messageId, chosen }: CardProps<'
           <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            disabled={saving}
             placeholder="Szukaj pacjenta"
             aria-label="Szukaj pacjenta"
             data-testid={`${testId}-search-input`}
@@ -128,8 +119,7 @@ export function PickPatientCard({ spec, testId, messageId, chosen }: CardProps<'
               <li>
                 <button
                   type="button"
-                  onClick={() => void continueWithoutPatient()}
-                  disabled={saving}
+                  onClick={continueWithoutPatient}
                   data-testid={`${testId}-no-patient-btn`}
                   className="flex w-full items-center gap-3 rounded-[12px] px-2 py-2 text-left hover:bg-fill-quaternary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
                 >
@@ -152,7 +142,6 @@ export function PickPatientCard({ spec, testId, messageId, chosen }: CardProps<'
                   <button
                     type="button"
                     onClick={() => continueWith(patient.id, patient.name)}
-                    disabled={saving}
                     data-testid={`${testId}-patient-${patient.id}-btn`}
                     className="flex w-full items-center gap-3 rounded-[12px] px-2 py-2 text-left hover:bg-fill-quaternary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
                   >
@@ -196,7 +185,6 @@ export function PickPatientCard({ spec, testId, messageId, chosen }: CardProps<'
               size="sm"
               className="self-start"
               onClick={() => setIsAdding(true)}
-              disabled={saving}
               data-testid={`${testId}-add-btn`}
             >
               <UserPlus aria-hidden="true" />

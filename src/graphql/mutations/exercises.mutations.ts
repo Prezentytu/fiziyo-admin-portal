@@ -571,6 +571,31 @@ export const UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION = gql`
   }
 `;
 
+/**
+ * Domyślny harmonogram szablonu zestawu (seed kreatora przypisania).
+ */
+export const UPDATE_EXERCISE_SET_FREQUENCY_MUTATION = gql`
+  mutation UpdateExerciseSetFrequency($exerciseSetId: String!, $frequency: FrequencyInput!) {
+    updateExerciseSetFrequency(exerciseSetId: $exerciseSetId, frequency: $frequency) {
+      id
+      frequency {
+        timesPerDay
+        timesPerWeek
+        minTimesPerWeek
+        isFlexible
+        breakBetweenSets
+        monday
+        tuesday
+        wednesday
+        thursday
+        friday
+        saturday
+        sunday
+      }
+    }
+  }
+`;
+
 export const UPDATE_EXERCISE_IN_SET_MUTATION = gql`
   mutation UpdateExerciseInSet(
     $exerciseId: String!

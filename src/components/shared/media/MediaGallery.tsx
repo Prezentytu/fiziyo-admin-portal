@@ -2,14 +2,20 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import Image from 'next/image';
-import { ChevronLeft, ChevronRight, ExternalLink, Film, Maximize2, Play } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, Film, Flag, Maximize2, Play, Undo2 } from 'lucide-react';
 
 import { ImageLightbox } from '@/components/shared/ImageLightbox';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { VideoEmbed } from '@/components/shared/VideoEmbed';
+import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { canOpenVideoOutsidePortal } from '@/utils/videoEmbed';
+import {
+  canOpenVideoOutsidePortal,
+  extractVideoStartSeconds,
+  formatVideoStart,
+  supportsVideoStart,
+} from '@/utils/videoEmbed';
 
 import { getMediaItemLabels, type MediaItem } from './mediaItems';
 
@@ -28,6 +34,11 @@ interface MediaGalleryProps {
   /** Controlled selection; omit both to let the gallery manage it. */
   selectedIndex?: number;
   onSelectedIndexChange?: (index: number) => void;
+  /**
+   * Shows the start marker bar under a YouTube/Vimeo video (SPEC-064). Called with the shown video's link and
+   * the second to start from, or null to play from the beginning. Omit where the videos cannot be edited.
+   */
+  onSetVideoStart?: (videoUrl: string, seconds: number | null) => void;
 }
 
 const ASPECT_RATIO_CLASS: Record<MediaGalleryAspectRatio, string> = {
@@ -47,6 +58,7 @@ export function MediaGallery({
   className,
   selectedIndex: controlledIndex,
   onSelectedIndexChange,
+  onSetVideoStart,
 }: Readonly<MediaGalleryProps>) {
   const [internalIndex, setInternalIndex] = useState(0);
   const isControlled = controlledIndex !== undefined;
@@ -71,6 +83,19 @@ export function MediaGallery({
   }, [safeIndex, selectedIndex, setSelectedIndex]);
 
   const hasMultiple = items.length > 1;
+
+  const selectedVideoSrc = selectedItem?.kind === 'video' ? selectedItem.src : null;
+  const canMarkVideoStart = Boolean(onSetVideoStart && selectedVideoSrc && supportsVideoStart(selectedVideoSrc));
+  const [videoTime, setVideoTime] = useState<{ src: string; seconds: number } | null>(null);
+  const currentVideoSeconds =
+    videoTime && videoTime.src === selectedVideoSrc ? Math.floor(videoTime.seconds) : null;
+  const videoStartSeconds = selectedVideoSrc ? extractVideoStartSeconds(selectedVideoSrc) : null;
+  const handleVideoTimeChange = useCallback(
+    (seconds: number) => {
+      if (selectedVideoSrc) setVideoTime({ src: selectedVideoSrc, seconds });
+    },
+    [selectedVideoSrc]
+  );
 
   // Arrows, keyboard and the lightbox change the selection too: keep its thumbnail centred in the strip.
   // Scrolls only the strip, never the page around it.
@@ -163,7 +188,12 @@ export function MediaGallery({
             />
           ) : (
             <div className="h-full w-full p-2" data-testid={`${testIdPrefix}-stage-video`}>
-              <VideoEmbed url={selectedItem.src} title={selectedItem.title ?? title} className="h-full w-full" />
+              <VideoEmbed
+                url={selectedItem.src}
+                title={selectedItem.title ?? title}
+                className="h-full w-full"
+                onTimeChange={canMarkVideoStart ? handleVideoTimeChange : undefined}
+              />
             </div>
           )}
         </div>
@@ -243,6 +273,49 @@ export function MediaGallery({
         )}
 
       </div>
+
+      {canMarkVideoStart && selectedVideoSrc && onSetVideoStart && (
+        <div
+          className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 border-t border-border/40 px-3 py-2"
+          data-testid={`${testIdPrefix}-video-start`}
+        >
+          <p className="min-w-0 flex-1 text-xs text-muted-foreground" aria-live="polite">
+            {videoStartSeconds ? (
+              <>
+                Pacjent zobaczy film od{' '}
+                <span className="font-semibold tabular-nums text-foreground" data-testid={`${testIdPrefix}-video-start-value`}>
+                  {formatVideoStart(videoStartSeconds)}
+                </span>
+              </>
+            ) : (
+              'Film leci od początku. Przewiń do ruchu i ustaw start.'
+            )}
+          </p>
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            disabled={!currentVideoSeconds || currentVideoSeconds === videoStartSeconds}
+            onClick={() => currentVideoSeconds && onSetVideoStart(selectedVideoSrc, currentVideoSeconds)}
+            data-testid={`${testIdPrefix}-video-start-set-btn`}
+          >
+            <Flag />
+            {currentVideoSeconds ? `Ustaw start na ${formatVideoStart(currentVideoSeconds)}` : 'Ustaw start tutaj'}
+          </Button>
+          {videoStartSeconds !== null && (
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => onSetVideoStart(selectedVideoSrc, null)}
+              data-testid={`${testIdPrefix}-video-start-clear-btn`}
+            >
+              <Undo2 />
+              Od początku
+            </Button>
+          )}
+        </div>
+      )}
 
       {hasMultiple && (
         <div className="flex shrink-0 items-center gap-3 border-t border-border/40 px-3 py-2">

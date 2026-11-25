@@ -40,6 +40,8 @@ export type LocalCardSpec =
       newPatient?: NewPatientDetails;
     }
   | { component: 'Schedule'; draft: SetDraftPayload }
+  /** „Jak często?” before a set is saved in the catalog without a patient; the pick saves it. */
+  | { component: 'CatalogFrequency'; draft: SetDraftPayload; description?: string }
   | { component: 'SendSummary'; draft: SetDraftPayload; plan: SchedulePlan }
   | { component: 'Sent'; patientId: string; setName: string; planLabel: string }
   /** `draft` (from 18.11) lets the card assign the saved set to a patient; older history has none. */
@@ -65,6 +67,7 @@ const CARD_COMPONENTS = {
   CreateExercise: true,
   PickPatient: true,
   Schedule: true,
+  CatalogFrequency: true,
   SendSummary: true,
   Sent: true,
   SetSaved: true,

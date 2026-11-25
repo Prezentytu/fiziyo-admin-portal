@@ -1,5 +1,10 @@
 import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
 import type { CatalogZeroableDose } from './exerciseDefaults';
+import {
+  buildAssignmentFrequencyPayload,
+  type AssignmentFrequencyPayload,
+  type FrequencyInput,
+} from '@/features/assignment/utils/scheduleFrequencyUtils';
 
 export const DEFAULT_TEMPLATE_SET_FREQUENCY = {
   timesPerDay: '1',
@@ -19,6 +24,8 @@ export interface CreateTemplateSetInput {
   organizationId: string;
   name: string;
   description?: string | null;
+  /** Harmonogram wybrany w kreatorze; bez niego zestaw dostaje domyślny elastyczny 3×/tydzień. */
+  frequency?: FrequencyInput | null;
 }
 
 export interface CreateTemplateSetVariables {
@@ -28,7 +35,7 @@ export interface CreateTemplateSetVariables {
   kind: 'TEMPLATE';
   templateSource: 'ORGANIZATION_PRIVATE';
   isTemplate: true;
-  frequency: typeof DEFAULT_TEMPLATE_SET_FREQUENCY;
+  frequency: typeof DEFAULT_TEMPLATE_SET_FREQUENCY | AssignmentFrequencyPayload;
 }
 
 export interface ExerciseMappingSubmitInput {
@@ -126,7 +133,7 @@ export function buildCreateTemplateSetVariables(input: CreateTemplateSetInput): 
     kind: 'TEMPLATE',
     templateSource: 'ORGANIZATION_PRIVATE',
     isTemplate: true,
-    frequency: DEFAULT_TEMPLATE_SET_FREQUENCY,
+    frequency: input.frequency ? buildAssignmentFrequencyPayload(input.frequency) : DEFAULT_TEMPLATE_SET_FREQUENCY,
   };
 }
 

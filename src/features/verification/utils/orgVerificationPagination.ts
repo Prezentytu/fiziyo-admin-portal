@@ -20,6 +20,13 @@ export function parseOrganizationVerificationFilter(value: string | null): Organ
   return 'pending';
 }
 
+/** Kolejka wszystkich gabinetów (zespół FiziYo) ma dodatkowo poprawki wewnętrzne; właściciel gabinetu ich nie widzi. */
+export type CrossOrgVerificationFilter = OrganizationVerificationFilter | 'internal';
+
+export function parseCrossOrgVerificationFilter(value: string | null): CrossOrgVerificationFilter {
+  return value === 'internal' ? value : parseOrganizationVerificationFilter(value);
+}
+
 export function parseOrganizationVerificationView(value: string | null): OrganizationVerificationViewMode {
   return value === 'list' ? 'list' : 'grid';
 }

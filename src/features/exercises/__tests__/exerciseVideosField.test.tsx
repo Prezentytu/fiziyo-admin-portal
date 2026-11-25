@@ -71,4 +71,30 @@ describe('ExerciseVideosField', () => {
     fireEvent.keyDown(screen.getByTestId(`${TEST_ID}-1`), { key: 'Enter' });
     expect(onSubmit).toHaveBeenCalledTimes(1);
   });
+
+  it('start filmu zapisuje się w linku po wyjściu z pola, a błędny zapis nie zmienia linku (SPEC-064)', () => {
+    const onChange = renderField([FIRST, 'https://cdn.example.com/clip.mp4']);
+    const start = screen.getByTestId(`${TEST_ID}-start-0`);
+
+    expect(screen.queryByTestId(`${TEST_ID}-start-1`)).not.toBeInTheDocument();
+
+    fireEvent.change(start, { target: { value: '1:75' } });
+    fireEvent.blur(start);
+    expect(start).toHaveAttribute('aria-invalid', 'true');
+    expect(onChange).not.toHaveBeenCalled();
+
+    fireEvent.change(start, { target: { value: '1:30' } });
+    fireEvent.keyDown(start, { key: 'Enter' });
+    expect(onChange).toHaveBeenLastCalledWith(['https://vimeo.com/1#t=90s', 'https://cdn.example.com/clip.mp4']);
+  });
+
+  it('pole startu pokazuje znacznik z linku i czyści go pustym wpisem', () => {
+    const onChange = renderField(['https://vimeo.com/1#t=90s']);
+    const start = screen.getByTestId(`${TEST_ID}-start-0`);
+    expect(start).toHaveValue('1:30');
+
+    fireEvent.change(start, { target: { value: '' } });
+    fireEvent.blur(start);
+    expect(onChange).toHaveBeenLastCalledWith([FIRST]);
+  });
 });

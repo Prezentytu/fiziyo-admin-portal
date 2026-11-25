@@ -54,6 +54,11 @@ describe('buildNavigationItems', () => {
 });
 
 describe('buildAccountNavigationItems', () => {
+  it('includes rewards for a pilot therapist independently of billing access', () => {
+    expect(buildAccountNavigationItems(false, true).map((item) => item.href)).toEqual(['/rewards']);
+    expect(buildAccountNavigationItems(true, true).map((item) => item.href)).toContain('/rewards');
+  });
+
   it('gives organization pages only to admins', () => {
     expect(buildAccountNavigationItems(false)).toEqual([]);
     expect(buildAccountNavigationItems(true).map((item) => item.href)).toEqual(['/organization', '/finances']);

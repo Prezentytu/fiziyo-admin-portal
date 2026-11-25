@@ -23,9 +23,23 @@ interface StatusOption {
   testId: string;
 }
 
+/** Etykieta filtra = plakietka na karcie ćwiczenia, żeby weryfikator od razu je łączył. */
+const INTERNAL_FIXES_LABEL = 'Czeka na poprawki';
+
 function getOrganizationOptions(stats: OrganizationVerificationStats): StatusOption[] {
   return [
     { filter: 'pending', label: 'Oczekujące', value: stats.pendingOrgReview, testId: 'org-verification-stats-pending' },
+    // Tylko kolejka wszystkich gabinetów zwraca ten licznik; właściciel gabinetu nie widzi poprawek wewnętrznych.
+    ...(stats.internalFixes === undefined
+      ? []
+      : [
+          {
+            filter: 'internal' as const,
+            label: INTERNAL_FIXES_LABEL,
+            value: stats.internalFixes,
+            testId: 'org-verification-stats-internal',
+          },
+        ]),
     {
       filter: 'changes',
       label: 'Do poprawy',
@@ -42,7 +56,7 @@ function getGlobalOptions(stats: VerificationStats, reportedCount: number): Stat
     { filter: 'pending', label: 'Oczekujące', value: stats.pendingReview, testId: 'verification-stats-pending' },
     {
       filter: 'internal',
-      label: 'Poprawki wewnętrzne',
+      label: INTERNAL_FIXES_LABEL,
       value: stats.internalFixes ?? 0,
       testId: 'verification-stats-internal',
     },
