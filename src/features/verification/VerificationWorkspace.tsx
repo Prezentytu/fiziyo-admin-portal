@@ -67,7 +67,7 @@ import { countFilledMistakes, countFilledTexts, summarizeChanges, toChangeSnapsh
 import { readContraindicationTextsV33 } from './utils/contentV33';
 import { EXTRA_CONTENT_GROUPS_V33 } from './utils/extraContent';
 import { buildVerificationFactsV33, sideColumnDiffersFromMode } from './utils/verificationFacts';
-import { exerciseRangesOf, prescriptionGoal, sideForColumn } from './utils/v33Prescription';
+import { exerciseRangesOf, sideForColumn } from './utils/v33Prescription';
 import {
   applyInstructionProposal,
   buildInstructionProposal,
@@ -448,8 +448,6 @@ export function VerificationWorkspace({
     () => (isV33 ? exerciseRangesOf(enrichment.prescription) : undefined),
     [isV33, enrichment.prescription]
   );
-  /** Rekord 3.3: cel „Wydolność tlenowa” zamienia czas utrzymania w czas wykonania ruchu ciągłego. */
-  const goal = isV33 ? prescriptionGoal(enrichment.prescription) : null;
   const parameterValues = useMemo(() => reviewValues(core), [core]);
   const evaluation = useMemo(
     () =>
@@ -467,11 +465,9 @@ export function VerificationWorkspace({
         },
         isV33,
         exerciseRanges,
-        goal,
       }),
     [
       exerciseRanges,
-      goal,
       parameterValues,
       mode,
       core.side,

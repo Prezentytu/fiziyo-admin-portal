@@ -15,7 +15,7 @@ import type { ExerciseCoreDraft } from '@/features/exercises/useExerciseEditorFo
 import {
   DEFAULT_REP_SECONDS,
   MODE_PARAMETERS,
-  fieldRuleOf,
+  PARAMETER_RULES,
   describeFieldNote,
   formatSessionDuration,
   formatWithUnit,
@@ -219,18 +219,18 @@ function ParameterRow({
   onChange: (value: number | null) => void;
   onAcknowledge: () => void;
 }>) {
-  const rule = fieldRuleOf(field);
+  const rule = PARAMETER_RULES[field.key];
   const inputId = `verification-param-${field.key}`;
-  const sliderValue = toSliderValue(field.key, field.value, rule);
-  const position = sliderPercent(field.key, sliderValue, rule);
-  const typical = typicalRangeOf(field.key, field.exerciseRange, rule);
-  const bandLeft = sliderPercent(field.key, typical.min, rule);
-  const bandWidth = sliderPercent(field.key, typical.max, rule) - bandLeft;
+  const sliderValue = toSliderValue(field.key, field.value);
+  const position = sliderPercent(field.key, sliderValue);
+  const typical = typicalRangeOf(field.key, field.exerciseRange);
+  const bandLeft = sliderPercent(field.key, typical.min);
+  const bandWidth = sliderPercent(field.key, typical.max) - bandLeft;
   const isEmpty = field.value == null;
   const isError = field.level === 'limit' || field.level === 'empty';
   const isWarning = field.level === 'warning';
   const note = describeFieldNote(field);
-  const info = rule.info ?? FIELD_INFO[field.key];
+  const info = FIELD_INFO[field.key];
   const showNote = isError || isWarning || field.level === 'acknowledged';
 
   return (
@@ -281,7 +281,7 @@ function ParameterRow({
               value={sliderValue}
               aria-label={`${rule.label}: suwak`}
               aria-valuetext={isEmpty ? 'Puste' : formatWithUnit(sliderValue, rule.unit)}
-              onChange={(event) => onChange(fromSliderValue(field.key, event.target.value, rule))}
+              onChange={(event) => onChange(fromSliderValue(field.key, event.target.value))}
               className="peer absolute inset-0 h-full w-full cursor-pointer appearance-none bg-transparent opacity-0"
               data-testid={`verification-param-${field.key}-slider`}
             />

@@ -11,7 +11,6 @@ import {
   RANGE_KEYS,
   prescriptionWithBound,
   prescriptionWithGoal,
-  prescriptionGoal,
   prescriptionWithStep,
   readRange,
   readStep,
@@ -85,7 +84,7 @@ function StepEditor({
 export function V33ParameterContent({ enrichment, onEnrichmentPathChange }: V33ParameterContentProps) {
   const prescription = enrichment.prescription ?? null;
   const setPrescription = (value: unknown) => onEnrichmentPathChange('prescription', value);
-  const goal = prescriptionGoal(prescription);
+  const goal = typeof prescription?.goal === 'string' ? prescription.goal : null;
   const isKnownGoal = PRESCRIPTION_GOALS.some((option) => option.code === goal);
   const params = (prescription?.params ?? {}) as Record<string, { default?: unknown } | undefined>;
   const packageTempo = params.tempo?.default != null ? String(params.tempo.default) : null;

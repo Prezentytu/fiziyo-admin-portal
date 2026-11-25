@@ -247,8 +247,7 @@ describe('dawka na stronę: etykieta i czas z jednej reguły (odbiór 12.11, F1)
   const timing = { restReps: 1, preparationTime: 5 };
   /** Funkcje z origin/main, przepisane dosłownie: rekord bez wersji ma się z nimi zgadzać. */
   const mainSideFactor = (side: string) => (side.toLowerCase() === 'both' ? 2 : 1);
-  const mainLine = (side: string) =>
-    `3 serie × 10 powtórzeń${mainSideFactor(side) === 2 ? ' na każdą stronę' : ''} · przerwa 60 s`;
+  const mainLine = (side: string) => `3 serie × 10 powtórzeń${mainSideFactor(side) === 2 ? ' na każdą stronę' : ''} · przerwa 60 s`;
   const mainSeconds = (side: string) =>
     calculateExerciseTotalSeconds({
       sets: 3,
@@ -326,15 +325,12 @@ describe('dawka na stronę: etykieta i czas z jednej reguły (odbiór 12.11, F1)
       ).toBe(expected);
     });
 
-    it.each(['alternating', 'both', 'left', 'right', 'none'])(
-      'rekord bez wersji, strona %s: czas jak na main',
-      (side) => {
-        expect(computeSessionSeconds(holdValues, 'hold', side, holdTiming)).toBe(mainHoldSeconds(side));
-        expect(evaluateParameters({ values: holdValues, mode: 'hold', side, timing: holdTiming }).sessionSeconds).toBe(
-          mainHoldSeconds(side)
-        );
-      }
-    );
+    it.each(['alternating', 'both', 'left', 'right', 'none'])('rekord bez wersji, strona %s: czas jak na main', (side) => {
+      expect(computeSessionSeconds(holdValues, 'hold', side, holdTiming)).toBe(mainHoldSeconds(side));
+      expect(evaluateParameters({ values: holdValues, mode: 'hold', side, timing: holdTiming }).sessionSeconds).toBe(
+        mainHoldSeconds(side)
+      );
+    });
 
     it.each(['both', 'left', 'right', 'none'])('rekord 3.3, strona %s: czas bez zmian względem main', (side) => {
       expect(computeSessionSeconds(holdValues, 'hold', side, holdTiming, true)).toBe(mainHoldSeconds(side));
@@ -348,9 +344,7 @@ describe('dawka na stronę: etykieta i czas z jednej reguły (odbiór 12.11, F1)
         const once = computeSessionSeconds(values, 'reps', 'none', timing, isV33);
         const counted = computeSessionSeconds(values, 'reps', side, timing, isV33);
         expect(counted > once, `${side}/${isV33}`).toBe(dose.factor === 2);
-        expect(buildPatientParameterLine(values, 'reps', side, isV33).includes('na każdą stronę')).toBe(
-          dose.factor === 2
-        );
+        expect(buildPatientParameterLine(values, 'reps', side, isV33).includes('na każdą stronę')).toBe(dose.factor === 2);
         expect(dose.timeNote !== null).toBe(dose.factor === 2);
       }
     }
@@ -442,79 +436,6 @@ describe('suwak parametru', () => {
   });
 });
 
-describe('czas jednego długiego powtórzenia: ćwiczenie ciągłe a izometria', () => {
-  // Jazda na rowerze stacjonarnym: 1 seria × 1 powtórzenie × 600 s, bez przerwy między seriami.
-  const bike: ParameterValues = { sets: 1, reps: 1, repTime: null, hold: 600, rest: null };
-  const holdOf = (evaluation: ReturnType<typeof evaluateParameters>) =>
-    evaluation.fields.find((field) => field.key === 'hold');
-
-  it('cel „Wydolność tlenowa”: 10 minut to zwykły czas wykonania, bez błędu i bez sugestii', () => {
-    const evaluation = evaluateParameters({ values: bike, mode: 'hold', side: 'none', goal: 'aerobic' });
-    expect(evaluation.blockingCount).toBe(0);
-    expect(evaluation.findings.filter((finding) => finding.key === 'hold')).toEqual([]);
-    expect(holdOf(evaluation)?.level).toBe('ok');
-    expect(holdOf(evaluation)?.rule?.label).toBe('Czas wykonania');
-  });
-
-  it('cel „Wydolność tlenowa”: typowy zakres pola kończy się tam, gdzie zaczyna się sugestia długiego ćwiczenia', () => {
-    const atEdge = evaluateParameters({ values: { ...bike, hold: 900 }, mode: 'hold', side: 'none', goal: 'aerobic' });
-    expect(holdOf(atEdge)?.level).toBe('ok');
-    expect(atEdge.sessionLevel).toBe('ok');
-    const longer = evaluateParameters({ values: { ...bike, hold: 1200 }, mode: 'hold', side: 'none', goal: 'aerobic' });
-    expect(holdOf(longer)?.level).toBe('warning');
-    expect(longer.sessionLevel).toBe('warning');
-  });
-
-  it('cel „Wydolność tlenowa”: ponad godzinę to nadal błąd', () => {
-    const evaluation = evaluateParameters({
-      values: { ...bike, hold: 4000 },
-      mode: 'hold',
-      side: 'none',
-      goal: 'aerobic',
-    });
-    expect(holdOf(evaluation)?.level).toBe('limit');
-    expect(describeFieldNote(holdOf(evaluation)!)).toBe('Maks. 3600 s');
-  });
-
-  it('jedna seria bez celu: 600 s nie blokuje, zostaje sugestia do potwierdzenia', () => {
-    const evaluation = evaluateParameters({ values: bike, mode: 'hold', side: 'none' });
-    expect(evaluation.blockingCount).toBe(0);
-    expect(holdOf(evaluation)?.level).toBe('warning');
-    expect(evaluation.findings).toContainEqual(
-      expect.objectContaining({ key: 'hold', level: 'warning', canAcknowledge: true })
-    );
-  });
-
-  it('izometria w kilku seriach: 600 s nadal błąd z limitem 300 s', () => {
-    const evaluation = evaluateParameters({ values: { ...bike, sets: 3, rest: 60 }, mode: 'hold', side: 'none' });
-    expect(evaluation.blockingCount).toBe(1);
-    expect(holdOf(evaluation)?.level).toBe('limit');
-    expect(describeFieldNote(holdOf(evaluation)!)).toBe('Maks. 300 s');
-  });
-
-  it('cel „Izometria przeciwbólowa”: 600 s w jednej serii nadal błąd', () => {
-    const evaluation = evaluateParameters({ values: bike, mode: 'hold', side: 'none', goal: 'analgesic_isometric' });
-    expect(holdOf(evaluation)?.level).toBe('limit');
-  });
-
-  it('zakres utrzymania z dokumentu ćwiczenia powyżej 300 s podnosi limit', () => {
-    const evaluation = evaluateParameters({
-      values: { ...bike, sets: 3, rest: 60 },
-      mode: 'hold',
-      side: 'none',
-      exerciseRanges: { hold: { min: 300, max: 900, suggested: 600 } },
-    });
-    expect(holdOf(evaluation)?.level).toBe('ok');
-  });
-
-  it('suwak ćwiczenia ciągłego ma skalę minut, nie sekund utrzymania', () => {
-    const rule = holdOf(evaluateParameters({ values: bike, mode: 'hold', side: 'none', goal: 'aerobic' }))?.rule;
-    expect(sliderPercent('hold', 600, rule)).toBeLessThan(100);
-    expect(toSliderValue('hold', 600, rule)).toBe(600);
-    expect(fromSliderValue('hold', '610', rule)).toBe(600);
-  });
-});
-
 describe('describeFieldNote', () => {
   it('mówi krótko, czego dotyczy sugestia albo błąd', () => {
     expect(describeFieldNote({ key: 'sets', value: 1, level: 'warning' })).toBe('Mało, zwykle 2–5');
@@ -569,5 +490,28 @@ describe('acknowledgeAllSuggestions', () => {
     expect(before.sessionLevel).toBe('warning');
     const review = acknowledgeAllSuggestions(createParameterReview(), before);
     expect(review.acknowledgedSessionSeconds).toBe(before.sessionSeconds);
+  });
+});
+
+describe('czas utrzymania: limit godziny, zwykły zakres bez zmian', () => {
+  const bike: ParameterValues = { sets: 1, reps: 1, repTime: null, hold: 600, rest: null };
+  const holdOf = (evaluation: ReturnType<typeof evaluateParameters>) =>
+    evaluation.fields.find((field) => field.key === 'hold');
+
+  it('rower 1 × 600 s: sugestia ze zwykłym zakresem 10–60 s, nie błąd', () => {
+    const evaluation = evaluateParameters({ values: bike, mode: 'hold', side: 'none' });
+    expect(holdOf(evaluation)?.level).toBe('warning');
+    expect(describeFieldNote(holdOf(evaluation)!)).toBe('Dużo, zwykle 10–60 s');
+    expect(evaluation.findings.find((finding) => finding.key === 'hold')).toEqual(
+      expect.objectContaining({ level: 'warning', canAcknowledge: true, suggested: 30 })
+    );
+  });
+
+  it('błąd dopiero powyżej godziny', () => {
+    const atLimit = evaluateParameters({ values: { ...bike, hold: 3600 }, mode: 'hold', side: 'none' });
+    expect(holdOf(atLimit)?.level).toBe('warning');
+    const over = evaluateParameters({ values: { ...bike, hold: 3601 }, mode: 'hold', side: 'none' });
+    expect(holdOf(over)?.level).toBe('limit');
+    expect(describeFieldNote(holdOf(over)!)).toBe('Maks. 3600 s');
   });
 });
