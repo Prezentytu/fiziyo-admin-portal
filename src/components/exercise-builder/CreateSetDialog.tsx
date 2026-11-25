@@ -22,7 +22,10 @@ import {
   ADD_EXERCISE_TO_EXERCISE_SET_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
 import { aiService } from '@/services/aiService';
-import { submitCreateTemplateSet } from '@/features/exercise-sets/utils/createSetSubmit';
+import { DEFAULT_TEMPLATE_SET_FREQUENCY, submitCreateTemplateSet } from '@/features/exercise-sets/utils/createSetSubmit';
+import { SetScheduleField } from '@/features/exercise-sets/components/SetScheduleField';
+import { normalizeFrequencySeed } from '@/features/assignment/utils/scheduleFrequencyUtils';
+import type { Frequency } from '@/features/assignment/types';
 import type { CreatedSetInfo } from '@/features/exercise-sets/SetCreatedDialog';
 import { SetNameField } from '@/features/exercise-sets/components/SetNameField';
 import { SetDescriptionCollapsible } from '@/features/exercise-sets/components/SetDescriptionCollapsible';
@@ -52,6 +55,7 @@ export function CreateSetDialog({ open, onOpenChange, onCreated }: CreateSetDial
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [showDescription, setShowDescription] = useState(false);
+  const [frequency, setFrequency] = useState<Frequency>(() => normalizeFrequencySeed(DEFAULT_TEMPLATE_SET_FREQUENCY));
   const [showNameError, setShowNameError] = useState(false);
   const nameInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -64,6 +68,7 @@ export function CreateSetDialog({ open, onOpenChange, onCreated }: CreateSetDial
     setName('');
     setDescription('');
     setShowDescription(false);
+    setFrequency(normalizeFrequencySeed(DEFAULT_TEMPLATE_SET_FREQUENCY));
     setShowNameError(false);
     setIsGeneratingName(false);
   }, []);
@@ -147,6 +152,7 @@ export function CreateSetDialog({ open, onOpenChange, onCreated }: CreateSetDial
           organizationId,
           name: sanitizedName,
           description,
+          frequency,
         },
         selectedExercises.map(buildBuilderExerciseMapping)
       );
@@ -189,8 +195,8 @@ export function CreateSetDialog({ open, onOpenChange, onCreated }: CreateSetDial
           <DialogTitle>Utwórz nowy zestaw</DialogTitle>
           <DialogDescription>
             Zestaw będzie zawierał {exerciseCount}{' '}
-            {exerciseCount === 1 ? 'ćwiczenie' : exerciseCount < 5 ? 'ćwiczenia' : 'ćwiczeń'}. Nadaj mu nazwę i
-            dodaj opis.
+            {exerciseCount === 1 ? 'ćwiczenie' : exerciseCount < 5 ? 'ćwiczenia' : 'ćwiczeń'}. Nadaj mu nazwę,
+            dodaj opis i ustal, jak często ćwiczyć.
           </DialogDescription>
         </DialogHeader>
 
@@ -226,6 +232,8 @@ export function CreateSetDialog({ open, onOpenChange, onCreated }: CreateSetDial
             testIdPrefix="create-set-description"
             placeholder="Krótki opis zestawu..."
           />
+
+          <SetScheduleField value={frequency} onChange={setFrequency} testIdPrefix="create-set-frequency" />
         </div>
 
         <DialogFooter className="flex items-center justify-between sm:justify-between">

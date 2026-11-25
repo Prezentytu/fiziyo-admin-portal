@@ -49,7 +49,8 @@ vi.mock('@apollo/client/react', () => ({
   useMutation: () => [vi.fn()] as const,
 }));
 
-vi.mock('@/features/exercise-sets/utils/createSetSubmit', () => ({
+vi.mock('@/features/exercise-sets/utils/createSetSubmit', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/features/exercise-sets/utils/createSetSubmit')>()),
   submitCreateTemplateSet: vi.fn(async () => 'set-1'),
 }));
 

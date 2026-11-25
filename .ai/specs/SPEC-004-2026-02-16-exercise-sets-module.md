@@ -76,6 +76,12 @@ Logo organizacji preloadowane analogicznym mechanizmem (osobne wywolanie `preloa
 
 ## Changelog
 
+### 2026-11-25
+
+- Przywrócono ustawianie domyślnego harmonogramu szablonu (odwraca wpis z 2026-04-15 na prośbę Przemka): przycisk „Harmonogram” w kreatorze zestawu i w szybkim kreatorze z listy oraz kafelek „Harmonogram” na detalu szablonu (`updateExerciseSetFrequency`, zapis po zamknięciu okienka). Na PROD 48 z 77 aktywnych szablonów miało stały default 3×/tydz., a 29 nie miało harmonogramu.
+- Częstotliwość edytuje jeden komponent `FrequencyFields` (kreator przypisania i szablon), przejścia trybów w `assignment/utils/frequencyPresets.ts`.
+- „Zapisz jako szablon” w kreatorze przypisania przenosi harmonogram planu do nowego szablonu.
+
 ### 2026-10-09
 
 - Porządki po przeglądzie kodu: usunięto nieużywane komponenty i operacje GraphQL bez konsumenta w panelu; tabele komponentów i listy API pokazują tylko kod, który istnieje.

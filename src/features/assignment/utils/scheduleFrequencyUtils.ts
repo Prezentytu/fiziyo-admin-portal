@@ -101,3 +101,16 @@ export function buildAssignmentFrequencyPayload(frequency: FrequencyInput): Assi
     sunday: isFlexible ? false : normalized.sunday,
   };
 }
+
+/** Porównuje to, co faktycznie trafia do API, a nie kształt stanu formularza. */
+export function isSameFrequency(a: FrequencyInput, b: FrequencyInput): boolean {
+  const left = buildAssignmentFrequencyPayload(a);
+  const right = buildAssignmentFrequencyPayload(b);
+  return (Object.keys(left) as Array<keyof AssignmentFrequencyPayload>).every((key) => left[key] === right[key]);
+}
+
+/** Harmonogram „wybrane dni” bez żadnego dnia: backend go odrzuci, więc nie wysyłamy. */
+export function isEmptySpecificDaysFrequency(frequency: FrequencyInput): boolean {
+  const payload = buildAssignmentFrequencyPayload(frequency);
+  return !payload.isFlexible && Number(payload.timesPerWeek) === 0;
+}

@@ -56,6 +56,8 @@ import { EditExerciseInSetDialog } from '@/features/exercise-sets/EditExerciseIn
 import { resolveExerciseEquipmentText } from '@/components/shared/exercise/displayNormalizer';
 import { GeneratePDFDialog } from '@/features/exercise-sets/GeneratePDFDialog';
 import { SetDurationStat } from '@/features/exercise-sets/components/SetDurationStat';
+import { SetScheduleStat } from '@/features/exercise-sets/components/SetScheduleStat';
+import { formatScheduleStat } from '@/utils/frequencyDisplay';
 import { estimateSetSeconds } from '@/features/exercise-sets/utils/setDuration';
 import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
 import type {
@@ -691,12 +693,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
           {[
             { value: String(exercises.length), label: pluralize(exercises.length, 'ćwiczenie', false) },
             { value: String(assignments.length), label: pluralize(assignments.length, 'pacjent', false) },
-            {
-              value: exerciseSet?.frequency?.timesPerWeek ? `${exerciseSet.frequency.timesPerWeek}×` : '—',
-              label: exerciseSet?.frequency?.timesPerDay
-                ? `w tygodniu · ${exerciseSet.frequency.timesPerDay}× dziennie`
-                : 'w tygodniu',
-            },
+            ...(isTemplate ? [] : [formatScheduleStat(exerciseSet?.frequency)]),
           ].map((stat) => (
             <span
               key={stat.label}
@@ -706,6 +703,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
               <span className="text-[13px] text-label-secondary">{stat.label}</span>
             </span>
           ))}
+          {isTemplate && <SetScheduleStat exerciseSetId={exerciseSet.id} frequency={exerciseSet.frequency} />}
         </div>
       </div>
 

@@ -42,7 +42,10 @@ import { useExercisePickerLibrary } from '@/hooks/useExercisePickerLibrary';
 import type { ExerciseTagsResponse, TagCategoriesResponse, OrganizationExerciseSetsResponse } from '@/types/apollo';
 import type { PatientClinicalNotesQueryData } from '@/graphql/types/operation-responses';
 import { getCatalogZeroableDose, getExerciseDefaultParams } from '@/features/exercise-sets/utils/exerciseDefaults';
-import { submitCreateTemplateSet } from '@/features/exercise-sets/utils/createSetSubmit';
+import { DEFAULT_TEMPLATE_SET_FREQUENCY, submitCreateTemplateSet } from '@/features/exercise-sets/utils/createSetSubmit';
+import { SetScheduleField } from '@/features/exercise-sets/components/SetScheduleField';
+import { normalizeFrequencySeed } from '@/features/assignment/utils/scheduleFrequencyUtils';
+import type { Frequency } from '@/features/assignment/types';
 import { orderWarmupFirst } from '@/features/exercise-sets/utils/exerciseDependencies';
 import { useMarkWarmupPositions } from '@/features/exercise-sets/hooks/useMarkWarmupPositions';
 import { defaultSetName } from '@/features/exercise-sets/utils/defaultSetName';
@@ -95,6 +98,7 @@ export function CreateSetWizard({
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [showDescription, setShowDescription] = useState(false);
+  const [frequency, setFrequency] = useState<Frequency>(() => normalizeFrequencySeed(DEFAULT_TEMPLATE_SET_FREQUENCY));
   const [selectedInstances, setSelectedInstances] = useState<ExerciseInstance[]>([]);
   const [exerciseParams, setExerciseParams] = useState<Map<string, ExerciseParams>>(new Map());
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
@@ -127,6 +131,7 @@ export function CreateSetWizard({
       setName(initialName?.trim() || defaultSetName({ forPatient: Boolean(patientName) }));
       setDescription('');
       setShowDescription(false);
+      setFrequency(normalizeFrequencySeed(DEFAULT_TEMPLATE_SET_FREQUENCY));
       setSelectedInstances([]);
       setExerciseParams(new Map());
       setShowCloseConfirm(false);
@@ -375,6 +380,7 @@ export function CreateSetWizard({
           organizationId,
           name: sanitizedName,
           description,
+          frequency,
         },
         mappings
       );
@@ -466,15 +472,20 @@ export function CreateSetWizard({
                 </div>
               </div>
 
-              <div className="w-full lg:w-[40%]">
-                <SetDescriptionCollapsible
-                  open={showDescription}
-                  onOpenChange={setShowDescription}
-                  value={description}
-                  onChange={setDescription}
-                  testIdPrefix="set-composer-description"
-                  className="pb-4"
-                />
+              <div className="flex flex-col gap-x-6 lg:flex-row lg:items-start">
+                <div className="w-full lg:w-[40%]">
+                  <SetDescriptionCollapsible
+                    open={showDescription}
+                    onOpenChange={setShowDescription}
+                    value={description}
+                    onChange={setDescription}
+                    testIdPrefix="set-composer-description"
+                    className="pb-4"
+                  />
+                </div>
+                <div className="pb-4">
+                  <SetScheduleField value={frequency} onChange={setFrequency} testIdPrefix="set-composer-frequency" />
+                </div>
               </div>
             </div>
           </div>
