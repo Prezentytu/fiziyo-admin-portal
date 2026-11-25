@@ -38,6 +38,36 @@ describe('computeExerciseSetDiff', () => {
     expect(diff.toRemove).toEqual([]);
   });
 
+  it('ćwiczenie bez obciążenia otwarte w edycji nie jest zmianą (loadValue null z API, brak w builderze)', () => {
+    // Kształt jak w EditExerciseSetFullDialog: API zwraca null, builder seeduje loadValue ?? undefined.
+    const fromApi = [{ id: 'm1', exerciseId: 'e1', order: 1, sets: 3, reps: 10, notes: '', loadValue: null as unknown as undefined }];
+    const exerciseParams = new Map([
+      ['existing-m1-0', { sets: 3, reps: 10, notes: '', customName: '', customDescription: '', tempo: '', loadType: '', loadValue: undefined, loadUnit: 'kg', loadText: '' }],
+    ]);
+
+    const diff = computeExerciseSetDiff({
+      initialMappings: fromApi,
+      selectedInstances: [{ instanceId: 'existing-m1-0', exerciseId: 'e1' }],
+      exerciseParams,
+    });
+
+    expect(diff.toUpdate).toEqual([]);
+  });
+
+  it('ustawienie obciążenia na ćwiczeniu bez obciążenia jest zmianą', () => {
+    const exerciseParams = new Map([
+      ['existing-m1-0', { sets: 3, reps: 10, notes: '', customName: '', customDescription: '', tempo: '', loadType: 'weight', loadValue: 5, loadUnit: 'kg', loadText: '' }],
+    ]);
+
+    const diff = computeExerciseSetDiff({
+      initialMappings: [initialMappings[0]],
+      selectedInstances: [{ instanceId: 'existing-m1-0', exerciseId: 'e1' }],
+      exerciseParams,
+    });
+
+    expect(diff.toUpdate).toHaveLength(1);
+  });
+
   it('wykrywa nowe ćwiczenie do dodania', () => {
     const selectedInstances = [
       { instanceId: 'existing-m1-0', exerciseId: 'e1' },
