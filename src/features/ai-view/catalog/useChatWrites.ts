@@ -27,6 +27,7 @@ import {
   submitCreateTemplateSet,
   type AddExerciseToSetVariables,
 } from '@/features/exercise-sets/utils/createSetSubmit';
+import type { FrequencyInput } from '@/features/assignment/utils/scheduleFrequencyUtils';
 import {
   buildCreateExerciseVariables,
   type CreateExerciseDraft,
@@ -66,7 +67,13 @@ export function useSaveTemplateSet() {
   const markWarmup = useMarkWarmupPositions();
 
   const { run: saveTemplateSet, pending: saving } = useSingleFlight(
-    async (organizationId: string, name: string, items: readonly DraftItem[], description?: string) => {
+    async (
+      organizationId: string,
+      name: string,
+      items: readonly DraftItem[],
+      description?: string,
+      frequency?: FrequencyInput
+    ) => {
       try {
         const ordered = orderWarmupFirst(items, isWarmupItem);
         const setId = await submitCreateTemplateSet(
@@ -74,7 +81,7 @@ export function useSaveTemplateSet() {
             createSet: (options) => createSet(options),
             addExercise: (options: { variables: AddExerciseToSetVariables }) => addExercise(options),
           },
-          { organizationId, name, description },
+          { organizationId, name, description, frequency },
           ordered.map(toMappingInput)
         );
         await markWarmup(setId, ordered.map(isWarmupItem));

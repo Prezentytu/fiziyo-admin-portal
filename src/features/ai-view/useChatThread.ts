@@ -177,7 +177,7 @@ export function useChatThread({
       pushUser(label);
       if (draft) {
         appendAssistant({
-          text: scheduleQuestion(draft.items),
+          text: scheduleQuestion(draft),
           spec: { component: 'Schedule', draft: { ...draft, patientId } },
         });
         return;

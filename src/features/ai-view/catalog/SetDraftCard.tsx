@@ -24,6 +24,7 @@ import { findAlternatives } from '../utils/exerciseAlternatives';
 import { draftClarifyQuestions } from '../utils/clarifyQuestions';
 import { canRestoreDraft, RESTORE_DRAFT_LABEL, restoredDraftSpec, SUPERSEDED } from '../utils/draftVersions';
 import { searchExercises } from '../utils/exerciseLookup';
+import { rhythmOfFrequency } from '../utils/schedulePlan';
 import { seedDraftItems } from '../utils/seedDraft';
 import {
   draftItemFromExercise,
@@ -31,7 +32,7 @@ import {
   draftParameterValues,
   draftMinutes,
   draftNote,
-  savedInCatalogText,
+  catalogFrequencyQuestion,
   scheduleQuestion,
   formatDraftParams,
   itemMinutes,
@@ -45,7 +46,6 @@ import type { CardProps } from './cardProps';
 import { ChatCard, ChatCardEmpty } from './ChatCard';
 import { ClarifyChips } from './ClarifyChips';
 import { ExerciseReviewBadge } from './ExerciseReviewBadge';
-import { useSaveTemplateSet } from './useChatWrites';
 
 // A chat draft becomes a plan's mappings: fields a mapping does not keep are not offered.
 const isAlternating = (item: DraftItem) => item.side?.toLowerCase() === 'alternating';
@@ -256,7 +256,6 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
 
   const [missingSet, setMissingSet] = useState(false);
   const [search, setSearch] = useState<string | null>(null);
-  const { saveTemplateSet, saving } = useSaveTemplateSet();
   const locked = chosen !== undefined;
 
   // Seeded once what it comes from is here: defaults come from the exercise, a catalog set's mapping wins.
@@ -334,7 +333,13 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
   const draftItems = items.map((item) =>
     isV33ExerciseRecord(byId.get(item.exerciseId)) ? { ...item, alternatingPerSide: true } : item
   );
-  const draft: SetDraftPayload = { name, patientId: patient?.id, sourceSetId: set?.id, items: draftItems };
+  const draft: SetDraftPayload = {
+    name,
+    patientId: patient?.id,
+    sourceSetId: set?.id,
+    rhythm: rhythmOfFrequency(set?.frequency),
+    items: draftItems,
+  };
   const minutes = draftMinutes(draftItems);
   const description = proposeDraftDescription({ topic: spec.note, avoid: patientNames });
   const versionPending = !detailsReady;
@@ -358,7 +363,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
     markChosen(messageId, 'next');
     if (patient) {
       appendExchange('Dalej: harmonogram', {
-        text: scheduleQuestion(draftItems),
+        text: scheduleQuestion(draft),
         spec: { component: 'Schedule', draft },
       });
       return;
@@ -369,14 +374,13 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
     });
   };
 
-  const handleSaveTemplate = async () => {
+  // Zapis idzie po „Jak często?”: częstotliwość zapisuje się w zestawie i podpowiada przy przypisaniu.
+  const handleSaveTemplate = () => {
     if (!ensureDetailsReady()) return;
-    const saved = await saveTemplateSet(organizationId, name, items, description || undefined);
-    if (!saved) return;
-    markChosen(messageId, 'saved');
+    markChosen(messageId, 'next');
     appendExchange('Zapisz w katalogu', {
-      text: savedInCatalogText(saved.name),
-      spec: { component: 'SetSaved', setId: saved.id, name: saved.name, draft: { ...draft, sourceSetId: saved.id } },
+      text: catalogFrequencyQuestion(draft.rhythm),
+      spec: { component: 'CatalogFrequency', draft, description: description || undefined },
     });
   };
 
@@ -414,8 +418,8 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => void handleSaveTemplate()}
-                disabled={items.length === 0 || saving || detailsPending}
+                onClick={handleSaveTemplate}
+                disabled={items.length === 0 || detailsPending}
                 data-testid={`${testId}-save-template-btn`}
               >
                 Zapisz w katalogu

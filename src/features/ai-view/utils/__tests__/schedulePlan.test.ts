@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
+import { DEFAULT_TEMPLATE_SET_FREQUENCY } from '@/features/exercise-sets/utils/createSetSubmit';
 import {
+  catalogRhythmOptions,
+  catalogSetFrequency,
   describePlan,
   parseSchedulePlan,
+  proposedPlan,
+  rhythmOfFrequency,
+  scheduleReplies,
   planFrequency,
   planStartDate,
   planWeeksLabel,
@@ -110,5 +116,64 @@ describe('parseSchedulePlan', () => {
     for (const text of ['dodaj jeszcze mostek', 'a może coś na kolano', 'Jan Kowalski', '']) {
       expect(parseSchedulePlan(text)).toBeNull();
     }
+  });
+});
+
+describe('catalog set frequency', () => {
+  it('saves fewer sessions flexible, like the catalog default', () => {
+    expect(catalogSetFrequency('three')).toEqual(DEFAULT_TEMPLATE_SET_FREQUENCY);
+    expect(catalogSetFrequency('two')).toEqual({ ...DEFAULT_TEMPLATE_SET_FREQUENCY, timesPerWeek: '2' });
+  });
+
+  it('saves every day as all seven days', () => {
+    expect(catalogSetFrequency('daily')).toMatchObject({
+      timesPerWeek: '7',
+      isFlexible: false,
+      monday: true,
+      sunday: true,
+    });
+  });
+
+  it('reads back the rhythm it saved', () => {
+    for (const rhythm of ['daily', 'three', 'two'] as const) {
+      expect(rhythmOfFrequency(catalogSetFrequency(rhythm))).toBe(rhythm);
+    }
+  });
+
+  it('counts fixed days, and leaves a rhythm the chat does not offer to the default', () => {
+    expect(rhythmOfFrequency({ isFlexible: false, monday: true, thursday: true, timesPerWeek: 5 })).toBe('two');
+    expect(rhythmOfFrequency({ isFlexible: true, timesPerWeek: 5 })).toBeUndefined();
+    expect(rhythmOfFrequency(null)).toBeUndefined();
+  });
+
+  it("offers the set's rhythm first, else 3× a week", () => {
+    expect(catalogRhythmOptions()).toEqual(['three', 'daily', 'two']);
+    expect(catalogRhythmOptions('daily')).toEqual(['daily', 'three', 'two']);
+  });
+});
+
+describe('proposed plan', () => {
+  it("takes the set's rhythm, and the replies keep it", () => {
+    const plan = proposedPlan('two');
+    expect(plan.rhythm).toBe('two');
+    const replies = scheduleReplies(plan);
+    expect(replies[0].plan).toEqual(plan);
+    expect(replies[1].plan).toEqual({ ...plan, start: 'monday' });
+    expect(replies[3]).toEqual({ label: 'Codziennie', plan: { ...plan, rhythm: 'daily' } });
+  });
+
+  it('keeps the default replies without a set rhythm', () => {
+    expect(scheduleReplies().map((reply) => reply.label)).toEqual([
+      'Pasuje',
+      'Od poniedziałku',
+      'Na 6 tygodni',
+      '3 razy w tygodniu',
+    ]);
+  });
+
+  it('fills what a typed answer leaves out from the proposed plan', () => {
+    const plan = proposedPlan('three');
+    expect(parseSchedulePlan('pasuje', plan)?.plan).toEqual(plan);
+    expect(parseSchedulePlan('od dziś', plan)?.plan).toEqual({ ...plan, start: 'today' });
   });
 });

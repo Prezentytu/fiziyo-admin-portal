@@ -57,6 +57,7 @@ Wygląd: canvas „Czat v2 AJ” (https://claude.ai/artifact/QGoTcDeTx2JX2yDq86R
 - „Dziś N wizyt” liczy notatki kliniczne z dzisiejszą datą, bo panel nie ma jeszcze kalendarza wizyt (`/appointments` to zapowiedź).
 - „Skanuj wizytę” działa z notatki, dokumentu albo zdjęcia lub zrzutu ekranu notatki (JPG, PNG, WEBP; HEIC odrzucony z podpowiedzią) przez istniejący import. Wklejony do pola notatki zrzut ekranu idzie do analizy jako obraz; wklejenie tekstu z obrazkiem (Word, Excel) zostaje tekstem (`utils/documentFormats.ts`). Karta mówi tylko, skąd bierze zalecenia, bez zapowiedzi „słuchania” (zgłoszenie z 31.10: brzmiało jak podsłuch); wariant głosowy to osobna decyzja produktu.
 - „Dla kogo?” zaczyna się od „Bez pacjenta” (zestaw zapisany w katalogu gabinetu, np. żeby wypróbować aplikację), potem pacjenci. Zestaw ułożony w wątku nie jest zestawem z katalogu i karta tak go nie nazywa (`draftNote`, `planNote` w `utils/setDraft.ts`).
+- Zapis w katalogu bez pacjenta („Zapisz w katalogu” i „Bez pacjenta”) najpierw pyta „Jak często?” (karta lokalna `CatalogFrequency`): codziennie (wszystkie dni), 3× albo 2× w tygodniu (elastycznie, jak dotychczasowy domyślny zestaw). Zapis idzie dopiero po kliknięciu odpowiedzi i zapisuje `frequency` w zestawie (`catalogSetFrequency` w `utils/schedulePlan.ts`). Harmonogram przy wysyłce pacjentowi proponuje rytm zestawu z katalogu, gdy czat go oferuje (`rhythmOfFrequency`); inny rytm (np. 5× w tygodniu) zostaje przy domyślnym „codziennie”.
 - „Kto nie ćwiczy” pokazuje pacjentów zalogowanego fizjoterapeuty; pytanie o konkretnego pacjenta szuka w całej organizacji (opieka zespołowa).
 - Kilku pacjentów o tym samym imieniu: backend pyta „O kogo chodzi?” bez wołania modelu.
 - Pacjent nazwany jednym słowem (samo imię albo samo nazwisko z dłuższej nazwy), gdy pasuje dokładnie jeden: panel pyta „Czy chodzi o {Imię Nazwisko} ({szczegóły})?” z odpowiedziami „Tak, {Imię}” i „Inny pacjent” (`confirmPatientSpec` w `utils/clarifyChoice.ts`). Dotyczy reguł (`routeIntent`), karty modelu (`guardCardPatient`), imienia wpisanego po „Komu przypisać?” (`localReplyTo`) i pytania o konto (`accountQuestionReply`). Bez pytania: pełna nazwa, wybór kliknięciem, pacjent rozmowy (chip) i każdy pacjent, którego dotyczy wcześniejsza karta tej rozmowy (`cardPatientIds`). „Tak” (klik albo wpisane „tak” lub to samo imię) kontynuuje bez modelu i bez kredytu: karta modelu, która czekała na potwierdzenie (trzymana w pamięci wątku, nie w historii), szkic czekający na pacjenta albo polecenie dokończone regułami. „Inny pacjent” otwiera `PickPatient` bez szkicu; wybór kończy to samo polecenie dla wskazanej osoby.
@@ -122,6 +123,10 @@ Samouczek uruchamia się w sesji utworzonej przy założeniu konta Clerk (do 5 m
 - Prawdziwe strumieniowanie z modelu (dziś odpowiedź wchodzi animacją po przyjściu całości); historia rozmów po stronie serwera (dziś tylko przeglądarka).
 
 ## Changelog
+
+### 2026-11-25
+
+- Zestaw zapisywany w katalogu z czatu dostaje częstotliwość wybraną w pytaniu „Jak często?”, a harmonogram przy wysyłce proponuje rytm zestawu z katalogu.
 
 ### 2026-11-20
 

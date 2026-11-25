@@ -6,7 +6,7 @@ import {
 } from '@/features/exercise-sets/utils/exerciseDefaults';
 import { format } from 'date-fns';
 
-import { DEFAULT_SCHEDULE_PLAN, planWeeksLabel } from './schedulePlan';
+import { planRhythmLabel, planWeeksLabel, proposedPlan, type PlanRhythm } from './schedulePlan';
 import type { ExerciseMappingSubmitInput } from '@/features/exercise-sets/utils/createSetSubmit';
 import type { ExerciseParameterValues } from '@/components/shared/exercise/ExerciseParametersFields';
 import { calculateEstimatedTime } from '@/utils/exerciseTime';
@@ -57,6 +57,8 @@ export interface SetDraftPayload {
   patientId?: string;
   /** Catalog set the draft started from (kept as `sourceExerciseSetId` on the patient plan). */
   sourceSetId?: string;
+  /** Rhythm of the catalog set behind the draft: the schedule step proposes it instead of every day. */
+  rhythm?: PlanRhythm;
   items: DraftItem[];
 }
 
@@ -168,9 +170,21 @@ export function draftMinutes(items: readonly DraftItem[]): number {
   return Math.max(1, Math.ceil(items.reduce((sum, item) => sum + itemSeconds(item), 0) / 60));
 }
 
-/** The question that opens the schedule step; it proposes the default plan (DEFAULT_SCHEDULE_PLAN). */
-export function scheduleQuestion(items: readonly DraftItem[]): string {
-  return `Od kiedy i jak często? Proponuję od jutra, przez ${planWeeksLabel(DEFAULT_SCHEDULE_PLAN.weeks)}, codziennie (ok. ${draftMinutes(items)} min dziennie).`;
+/** The question that opens the schedule step; it proposes `proposedPlan`, in the catalog set's rhythm when it has one. */
+export function scheduleQuestion(draft: Pick<SetDraftPayload, 'items' | 'rhythm'>): string {
+  const plan = proposedPlan(draft.rhythm);
+  const minutes = draftMinutes(draft.items);
+  const rhythm = planRhythmLabel(plan.rhythm).toLowerCase();
+  const asInSet = draft.rhythm ? ' jak w zestawie' : '';
+  const perSession = plan.rhythm === 'daily' ? `ok. ${minutes} min dziennie` : `ok. ${minutes} min na trening`;
+  return `Od kiedy i jak często? Proponuję od jutra, przez ${planWeeksLabel(plan.weeks)}, ${rhythm}${asInSet} (${perSession}).`;
+}
+
+/** The question before a set is saved in the catalog without a patient. */
+export function catalogFrequencyQuestion(rhythm?: PlanRhythm): string {
+  return rhythm
+    ? `Jak często wykonywać ten zestaw? W zestawie jest: ${planRhythmLabel(rhythm).toLowerCase()}.`
+    : 'Jak często wykonywać ten zestaw? Ta częstotliwość zapisze się w zestawie i podpowie się przy przypisaniu pacjentowi.';
 }
 
 /** "3 × 10 · 5 s powtórzenie" or "3 × 30 s" when a series is held for a time. */
@@ -221,8 +235,9 @@ export function planNote(fromCatalog: boolean): string {
     : 'Plan tylko dla tego pacjenta: zestaw nie trafi do katalogu gabinetu.';
 }
 
-export function savedInCatalogText(name: string): string {
-  return `Zapisane w katalogu gabinetu jako „${name}”. Możesz go teraz przypisać dowolnemu pacjentowi.`;
+export function savedInCatalogText(name: string, rhythm?: PlanRhythm): string {
+  const frequency = rhythm ? `, ${planRhythmLabel(rhythm).toLowerCase()}` : '';
+  return `Zapisane w katalogu gabinetu jako „${name}”${frequency}. Możesz go teraz przypisać dowolnemu pacjentowi.`;
 }
 
 const MAX_NAME_LENGTH = 80;
@@ -287,7 +302,9 @@ export function proposeDraftDescription(options: { topic?: string; avoid?: reado
   const topic = draftTopic(options.topic, options.avoid);
   if (!topic) return '';
   const text = `${capitalize(topic)}.`;
-  return text.length <= MAX_SET_DESCRIPTION_LENGTH ? text : `${text.slice(0, MAX_SET_DESCRIPTION_LENGTH - 1).trimEnd()}…`;
+  return text.length <= MAX_SET_DESCRIPTION_LENGTH
+    ? text
+    : `${text.slice(0, MAX_SET_DESCRIPTION_LENGTH - 1).trimEnd()}…`;
 }
 
 function capitalize(value: string | undefined): string {

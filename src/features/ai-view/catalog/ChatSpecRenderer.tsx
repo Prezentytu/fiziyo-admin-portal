@@ -7,6 +7,7 @@ import { ExerciseDiscussionCard } from './ExerciseDiscussionCard';
 import { CreateExerciseCard } from './CreateExerciseCard';
 import { DocumentResultCard } from './DocumentResultCard';
 import { CatalogCountsCard } from './CatalogCountsCard';
+import { CatalogFrequencyCard } from './CatalogFrequencyCard';
 import { ExerciseIdeasCard } from './ExerciseIdeas';
 import { ExerciseResultsCard } from './ExerciseResultsCard';
 import { ProductHelpCard } from './ProductHelpCard';
@@ -75,6 +76,8 @@ export function ChatSpecRenderer({ spec, testId, messageId, chosen, request }: C
       return <PickPatientCard spec={spec} testId={`${testId}-pick-patient`} {...common} />;
     case 'Schedule':
       return <ScheduleCard spec={spec} testId={`${testId}-schedule`} {...common} />;
+    case 'CatalogFrequency':
+      return <CatalogFrequencyCard spec={spec} testId={`${testId}-catalog-frequency`} {...common} />;
     case 'SendSummary':
       return <SendSummaryCard spec={spec} testId={`${testId}-send-summary`} {...common} />;
     case 'Sent':

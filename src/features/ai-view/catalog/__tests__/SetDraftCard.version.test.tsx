@@ -177,13 +177,16 @@ describe('SetDraftCard: wersja rekordu ćwiczeń szkicu', () => {
     await waitFor(() => expect(screen.getByTestId('draft-save-template-btn')).not.toBeDisabled());
     screen.getByTestId('draft-save-template-btn').click();
     await waitFor(() => expect(mockToastError).toHaveBeenCalledTimes(1));
-    expect(mockSaveTemplateSet).not.toHaveBeenCalled();
     expect(appendExchange).not.toHaveBeenCalled();
 
-    // Po udanym ponowieniu zapis idzie z szkicem, którego wersja jest znana.
+    // Po udanym ponowieniu pytanie „Jak często?” dostaje szkic, którego wersja jest znana; zapis dopiero po wyborze.
     await waitFor(() => expect(dailyMinutes()).toBe('6'));
     screen.getByTestId('draft-save-template-btn').click();
-    await waitFor(() => expect(mockSaveTemplateSet).toHaveBeenCalledTimes(1));
+    expect(appendExchange).toHaveBeenCalledTimes(1);
+    const [, reply] = appendExchange.mock.calls[0];
+    expect(reply.spec.component).toBe('CatalogFrequency');
+    expect(reply.spec.draft.items[0].alternatingPerSide).toBe(true);
+    expect(mockSaveTemplateSet).not.toHaveBeenCalled();
   });
 
   // Test asystenta 17.11 (W20, P88): „Pełny edytor” otwierał się z pustą nazwą, choć karta ją miała.
