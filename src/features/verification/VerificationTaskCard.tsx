@@ -17,7 +17,7 @@ import { HIDE_EXERCISE_TAGS } from '@/components/shared/exercise';
 import type { AdminExercise } from '@/graphql/types/adminExercise.types';
 import { formatRelativeTime } from '@/utils/dateUtils';
 import { getVerificationStatusBadge, type VerificationTrack } from '@/features/verification/utils/statusBadge';
-import { ReviewWorkflowBadges } from '@/features/verification/ReviewWorkflowBadges';
+import { ReviewWorkflowBadges, hasReviewWorkflowBadges } from '@/features/verification/ReviewWorkflowBadges';
 
 interface VerificationTaskCardProps {
   exercise: AdminExercise;
@@ -29,7 +29,7 @@ interface VerificationTaskCardProps {
   selected?: boolean;
   onSelectionChange?: (selected: boolean) => void;
   track?: VerificationTrack;
-  /** Status chip on the photo; off when the active filter already names the status. */
+  /** Status chip under the title; off when the active filter already names the status. */
   showStatus?: boolean;
 }
 
@@ -89,6 +89,8 @@ export function VerificationTaskCard({
   const qualityIndicators = getQualityIndicators(exercise);
   const hasWarnings = qualityIndicators.some((i) => i.type === 'warning');
   const hasOpenReport = Boolean(exercise.hasOpenReport);
+  const hasBadges =
+    showStatus || hasOpenReport || hasReviewWorkflowBadges(exercise.reviewWorkflow) || qualityIndicators.length > 0;
 
   const handleUnpublish = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -121,7 +123,7 @@ export function VerificationTaskCard({
   };
 
   return (
-    <div className="relative">
+    <div className="relative h-full">
       {selectable && (
         <Checkbox
           checked={selected}
@@ -131,11 +133,11 @@ export function VerificationTaskCard({
           data-testid={`verification-card-${exercise.id}-select-checkbox`}
         />
       )}
-      <Link href={detailHref ?? `/verification/${exercise.id}`}>
+      <Link href={detailHref ?? `/verification/${exercise.id}`} className="block h-full">
         <Card
           data-testid={`verification-card-${exercise.id}`}
           className={cn(
-            'group relative overflow-hidden transition-all duration-300 cursor-pointer',
+            'group relative flex h-full flex-col overflow-hidden transition-all duration-300 cursor-pointer',
             'hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/10',
             hasWarnings && 'border-status-warning/30',
             selected && 'border-primary ring-1 ring-primary/30',
@@ -144,7 +146,7 @@ export function VerificationTaskCard({
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
-          <CardContent className="p-0">
+          <CardContent className="flex flex-1 flex-col p-0">
             {/* Image/Video section with hover preview */}
             <div className="relative aspect-video overflow-hidden bg-surface-light">
               {/* Static image (shown when not hovered or no video preview) */}
@@ -207,116 +209,89 @@ export function VerificationTaskCard({
               {/* No image fallback */}
               {!imageUrl && <ImagePlaceholder type="exercise" className="h-full" iconClassName="h-12 w-12" />}
 
-              {/* Video indicator badge */}
-              {hasVideo && !isHovered && (
-                <div className="absolute bottom-3 left-3 flex items-center gap-1 rounded-md border border-border/70 bg-background/85 px-2 py-1 backdrop-blur-sm dark:bg-black/45">
-                  <Play className="h-3 w-3 fill-foreground text-foreground dark:fill-white dark:text-white" />
-                  <span className="text-[10px] font-medium text-foreground dark:text-white">
-                    {gifUrl ? 'GIF' : videos.length > 1 ? formatVideoCount(videos.length) : 'Wideo'}
-                  </span>
-                </div>
-              )}
-
-              {/* Status badge overlay */}
-              <div className={cn('absolute top-3 left-3', selectable && 'left-11')}>
-                <div className="flex items-center gap-2">
-                  {showStatus && (
-                    <span
-                      className="inline-flex items-center gap-1.5 rounded-md border border-border/70 bg-background/90 px-2 py-1 text-[11px] font-medium leading-none text-foreground backdrop-blur-sm"
-                      data-testid={`verification-card-${exercise.id}-status-badge`}
-                    >
-                      <span aria-hidden className={cn('h-1.5 w-1.5 rounded-full', statusBadge.dotClassName)} />
-                      {statusBadge.label}
-                    </span>
-                  )}
-                  {hasOpenReport && (
-                    <Badge
-                      variant="outline"
-                      className="border-status-warning/30 bg-status-warning-muted text-status-warning"
-                      data-testid={`verification-card-${exercise.id}-reported-badge`}
-                    >
-                      <Flag className="mr-1 h-3 w-3" />
-                      Zgłoszenia ({exercise.openReportCount ?? 1})
-                    </Badge>
-                  )}
-                </div>
-              </div>
-
-              {/* Quality warnings overlay */}
-              {qualityIndicators.length > 0 && (
-                <div className="absolute top-3 right-3 flex flex-col gap-1">
-                  {qualityIndicators.slice(0, 2).map((indicator, idx) => (
-                    <Badge
-                      key={idx}
-                      variant={indicator.type === 'warning' ? 'overlay-warning' : 'overlay-info'}
-                      className="text-[10px] px-2 py-0.5"
-                    >
-                      <AlertCircle className="h-3 w-3 mr-1" />
-                      {indicator.label}
-                    </Badge>
-                  ))}
-                  {qualityIndicators.length > 2 && (
-                    <Badge variant="outline" className="text-[10px] px-2 py-0.5 bg-muted/80 backdrop-blur-sm">
-                      +{qualityIndicators.length - 2} więcej
-                    </Badge>
-                  )}
-                </div>
-              )}
             </div>
 
-            {/* Content section */}
-            <div className="p-4 space-y-3">
-              <div>
-                <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">
+            {/* Content section: every badge lives here so the photo stays clean. */}
+            <div className="flex flex-1 flex-col gap-3 p-4">
+              <div className="min-w-0">
+                <h3
+                  className="line-clamp-2 font-semibold leading-snug text-foreground transition-colors group-hover:text-primary"
+                  title={exercise.name}
+                >
                   {exercise.name}
                 </h3>
                 {exercise.description && (
-                  <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{exercise.description}</p>
+                  <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{exercise.description}</p>
                 )}
               </div>
 
-              <ReviewWorkflowBadges
-                workflow={exercise.reviewWorkflow}
-                testIdPrefix={`verification-card-${exercise.id}`}
-              />
-
-              {/* Meta info */}
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <div className="flex flex-col gap-1.5">
-                  {/* Author row */}
-                  <div className="flex items-center gap-3">
-                    {exercise.createdBy && (
-                      <div className="flex items-center gap-1">
-                        <User className="h-3 w-3" />
-                        <span className="truncate max-w-[100px]">
-                          {exercise.createdBy.fullname || exercise.createdBy.email}
-                        </span>
-                      </div>
-                    )}
-                    {exercise.createdAt && (
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        <span>{formatRelativeTime(exercise.createdAt)}</span>
-                      </div>
-                    )}
-                  </div>
-                  {/* Organization row (if available) */}
-                  {exercise.organizationId && (
-                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground/70">
-                      <Building2 className="h-2.5 w-2.5" />
-                      <span className="truncate max-w-[120px]">
-                        {/* TODO: Replace with organization.name when backend provides it */}
-                        Org: {exercise.organizationId.slice(0, 8)}...
-                      </span>
-                    </div>
+              {hasBadges && (
+                <div
+                  className="flex flex-wrap items-center gap-1.5"
+                  data-testid={`verification-card-${exercise.id}-badges`}
+                >
+                  {showStatus && (
+                    <Badge variant="secondary" data-testid={`verification-card-${exercise.id}-status-badge`}>
+                      <span aria-hidden className={cn('h-1.5 w-1.5 rounded-full', statusBadge.dotClassName)} />
+                      {statusBadge.label}
+                    </Badge>
                   )}
-                  {exercise.latestReport && (
-                    <div
-                      className="rounded-md border border-status-warning/20 bg-status-warning-muted px-2 py-1 text-[10px] text-status-warning"
-                      data-testid={`verification-card-${exercise.id}-report-context`}
-                    >
-                      {exercise.latestReport.reasonCategory}: {exercise.latestReport.description.slice(0, 72)}
-                    </div>
+                  {hasOpenReport && (
+                    <Badge variant="warning" data-testid={`verification-card-${exercise.id}-reported-badge`}>
+                      <Flag className="h-3 w-3" aria-hidden />
+                      Zgłoszenia ({exercise.openReportCount ?? 1})
+                    </Badge>
+                  )}
+                  <ReviewWorkflowBadges
+                    workflow={exercise.reviewWorkflow}
+                    testIdPrefix={`verification-card-${exercise.id}`}
+                    className="contents"
+                  />
+                  {qualityIndicators.map((indicator) => (
+                    <Badge key={indicator.label} variant={indicator.type}>
+                      <AlertCircle className="h-3 w-3" aria-hidden />
+                      {indicator.label}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
+              {exercise.latestReport && (
+                <div
+                  className="rounded-md border border-status-warning/20 bg-status-warning-muted px-2 py-1 text-[11px] text-status-warning line-clamp-2"
+                  data-testid={`verification-card-${exercise.id}-report-context`}
+                >
+                  {exercise.latestReport.reasonCategory}: {exercise.latestReport.description.slice(0, 72)}
+                </div>
+              )}
+
+              {/* Meta footer pinned to the bottom so cards in one row line up. */}
+              <div className="mt-auto flex items-center gap-3 border-t border-border/60 pt-3 text-xs text-muted-foreground">
+                <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
+                  {exercise.createdBy && (
+                    <span className="flex min-w-0 max-w-[45%] items-center gap-1">
+                      <User className="h-3 w-3 shrink-0" aria-hidden />
+                      <span className="truncate">{exercise.createdBy.fullname || exercise.createdBy.email}</span>
+                    </span>
+                  )}
+                  {exercise.createdAt && (
+                    <span className="flex shrink-0 items-center gap-1">
+                      <Clock className="h-3 w-3" aria-hidden />
+                      {formatRelativeTime(exercise.createdAt)}
+                    </span>
+                  )}
+                  {hasVideo && (
+                    <span className="flex shrink-0 items-center gap-1" data-testid={`verification-card-${exercise.id}-media`}>
+                      <Play className="h-3 w-3 fill-current" aria-hidden />
+                      {gifUrl ? 'GIF' : videos.length > 1 ? formatVideoCount(videos.length) : 'Wideo'}
+                    </span>
+                  )}
+                  {exercise.organizationId && (
+                    <span className="flex min-w-0 items-center gap-1 text-muted-foreground/70">
+                      <Building2 className="h-3 w-3 shrink-0" aria-hidden />
+                      {/* TODO: Replace with organization.name when backend provides it */}
+                      <span className="truncate">Org: {exercise.organizationId.slice(0, 8)}...</span>
+                    </span>
                   )}
                 </div>
                 {onUnpublish ? (
@@ -325,14 +300,17 @@ export function VerificationTaskCard({
                     size="sm"
                     onClick={handleUnpublish}
                     disabled={isUnpublishing}
-                    className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive"
+                    className="h-7 shrink-0 px-2 text-xs text-muted-foreground hover:text-destructive"
                     data-testid={`verification-card-${exercise.id}-unpublish-btn`}
                   >
                     <Undo2 className="h-3 w-3 mr-1" />
                     Cofnij
                   </Button>
                 ) : (
-                  <ChevronRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                  <ChevronRight
+                    className="h-4 w-4 shrink-0 text-muted-foreground/40 transition-all group-hover:translate-x-0.5 group-hover:text-primary"
+                    aria-hidden
+                  />
                 )}
               </div>
             </div>

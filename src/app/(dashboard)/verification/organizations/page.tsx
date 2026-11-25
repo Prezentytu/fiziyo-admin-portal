@@ -254,7 +254,7 @@ export default function CrossOrgVerificationPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {visibleQueueItems.map((queueItem) => (
-            <div key={queueItem.exercise.id} className="space-y-2">
+            <div key={queueItem.exercise.id} className="grid grid-rows-[auto_1fr] gap-2">
               <div className="flex items-center justify-between px-1">
                 <Badge variant="outline" className="text-[10px] uppercase tracking-wide">
                   {queueItem.organizationName}
