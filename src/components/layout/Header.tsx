@@ -21,6 +21,7 @@ const routeNames: Record<string, string> = {
   import: 'Import dokumentów',
   verification: 'Weryfikacja',
   wsparcie: 'Wsparcie',
+  kosz: 'Kosz',
 };
 
 function Breadcrumbs() {

@@ -28,6 +28,7 @@ import {
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
+import { useTrashToast } from '@/features/trash/useTrashToast';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { LoadingState } from '@/components/shared/LoadingState';
@@ -138,6 +139,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   // Pasek zapisu w edycji zabiera dół okna; kolumna mediów ma się zmieścić nad nim.
   const mediaColumn = useStickyColumnTop<HTMLDivElement>({ gap: 24, bottomReserve: isEditMode ? 80 : 0 });
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const trashToast = useTrashToast();
   const [uploadingImage, setUploadingImage] = useState(false);
   const {
     generate: generateAiImage,
@@ -293,7 +295,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const handleDelete = async () => {
     try {
       await deleteExercise({ variables: { exerciseId: id } });
-      toast.success('Ćwiczenie zostało usunięte');
+      trashToast.exerciseDeleted({ id, name: exercise?.name ?? '' }, () => router.push(`/exercises/${id}`));
       router.push('/exercises');
     } catch (err) {
       console.error('Błąd podczas usuwania:', err);
@@ -1091,7 +1093,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
         title="Usuń ćwiczenie"
-        description={`Czy na pewno chcesz usunąć ćwiczenie "${exercise.name}"? Ta operacja jest nieodwracalna.`}
+        description={`Ćwiczenie „${exercise.name}” trafi do kosza i zniknie ze wszystkich zestawów. Przez 30 dni możesz je przywrócić do biblioteki.`}
         confirmText="Usuń"
         variant="destructive"
         onConfirm={handleDelete}

@@ -4,10 +4,12 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
-import { Plus, FolderKanban, Search, Filter, X } from 'lucide-react';
+import { Trash2, Plus, FolderKanban, Search, Filter, X } from 'lucide-react';
+import Link from 'next/link';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
+import { useTrashToast } from '@/features/trash/useTrashToast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -63,6 +65,7 @@ export default function ExerciseSetsPage() {
   const [deletingSet, setDeletingSet] = useState<ExerciseSet | null>(null);
   const [assigningSet, setAssigningSet] = useState<ExerciseSet | null>(null);
   const highlightedSetId = searchParams.get('highlight');
+  const trashToast = useTrashToast();
   useEffect(() => {
     const nextFilter = parseFilterFromUrl(searchParams.get('filter'));
     setFilter((previousFilter) => (previousFilter === nextFilter ? previousFilter : nextFilter));
@@ -255,7 +258,7 @@ export default function ExerciseSetsPage() {
       await deleteSet({
         variables: { exerciseSetId: deletingSet.id },
       });
-      toast.success('Zestaw został usunięty');
+      trashToast.setDeleted(deletingSet);
       setDeletingSet(null);
     } catch (err) {
       console.error('Błąd podczas usuwania:', err);
@@ -363,6 +366,12 @@ export default function ExerciseSetsPage() {
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
+            <Button variant="ghost" asChild data-testid="set-trash-link">
+              <Link href="/kosz?typ=zestawy">
+                <Trash2 aria-hidden="true" />
+                Kosz
+              </Link>
+            </Button>
             <Button
               onClick={() => setIsCreateWizardOpen(true)}
               disabled={!organizationId}
@@ -526,7 +535,7 @@ export default function ExerciseSetsPage() {
         open={!!deletingSet}
         onOpenChange={(open) => !open && setDeletingSet(null)}
         title="Usuń zestaw"
-        description={`Zestaw „${deletingSet?.name}” zniknie z listy szablonów. Tej operacji nie można cofnąć.`}
+        description={`Zestaw „${deletingSet?.name}” trafi do kosza. Przez 30 dni możesz go przywrócić.`}
         confirmText="Usuń"
         variant="destructive"
         onConfirm={handleDelete}
