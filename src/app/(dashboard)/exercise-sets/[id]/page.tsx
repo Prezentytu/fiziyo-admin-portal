@@ -27,6 +27,7 @@ import { toast } from 'sonner';
 import Link from 'next/link';
 
 import { cn } from '@/lib/utils';
+import { useTrashToast } from '@/features/trash/useTrashToast';
 import { isRemovedAssignment, toGqlStatus } from '@/utils/statusUtils';
 import { pluralize } from '@/utils/textUtils';
 import { resolveAssignmentDisplayStatus } from '@/features/patients/utils/assignmentDisplayStatus';
@@ -219,6 +220,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
   const { currentOrganization, isLoading: orgContextLoading } = useOrganization();
   const [isEditSetFullOpen, setIsEditSetFullOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const trashToast = useTrashToast();
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [isPDFDialogOpen, setIsPDFDialogOpen] = useState(false);
   const [editingExercise, setEditingExercise] = useState<ExerciseMapping | null>(null);
@@ -304,7 +306,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
       await deleteSet({
         variables: { exerciseSetId: id },
       });
-      toast.success('Zestaw został usunięty');
+      trashToast.setDeleted({ id, name: exerciseSet?.name ?? '' }, () => router.push(`/exercise-sets/${id}`));
       router.push(backToListHref);
     } catch (err) {
       console.error('Błąd podczas usuwania:', err);
@@ -914,7 +916,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
         title="Usuń zestaw"
-        description={`Czy na pewno chcesz usunąć zestaw "${exerciseSet.name}"? Ta operacja jest nieodwracalna.`}
+        description={`Zestaw „${exerciseSet.name}” trafi do kosza. Przez 30 dni możesz go przywrócić.`}
         confirmText="Usuń"
         variant="destructive"
         onConfirm={handleDelete}

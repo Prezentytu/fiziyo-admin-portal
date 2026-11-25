@@ -3,10 +3,12 @@
 import { useState, useCallback, useMemo, useRef } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Plus, Dumbbell, LayoutGrid, List, Search } from 'lucide-react';
+import { Trash2, Plus, Dumbbell, LayoutGrid, List, Search } from 'lucide-react';
+import Link from 'next/link';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
+import { useTrashToast } from '@/features/trash/useTrashToast';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -71,6 +73,7 @@ export default function ExercisesPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
   const [deletingExercise, setDeletingExercise] = useState<Exercise | null>(null);
+  const trashToast = useTrashToast();
   const [submitToGlobalExercise, setSubmitToGlobalExercise] = useState<Exercise | null>(null);
   const [submitToOrganizationExercise, setSubmitToOrganizationExercise] = useState<Exercise | null>(null);
   const [reportExercise, setReportExercise] = useState<Exercise | null>(null);
@@ -212,7 +215,7 @@ export default function ExercisesPage() {
       await deleteExercise({
         variables: { exerciseId: deletingExercise.id },
       });
-      toast.success('Ćwiczenie zostało usunięte');
+      trashToast.exerciseDeleted(deletingExercise);
       setDeletingExercise(null);
     } catch (err) {
       console.error('Błąd podczas usuwania:', err);
@@ -307,6 +310,12 @@ export default function ExercisesPage() {
                     </button>
                   ))}
                 </div>
+                <Button variant="ghost" asChild data-testid="exercise-trash-link">
+                  <Link href="/kosz?typ=cwiczenia">
+                    <Trash2 aria-hidden="true" />
+                    Kosz
+                  </Link>
+                </Button>
                 <Button
                   onClick={() => setIsDialogOpen(true)}
                   disabled={!organizationId}
@@ -590,7 +599,7 @@ export default function ExercisesPage() {
         open={!!deletingExercise}
         onOpenChange={(open) => !open && setDeletingExercise(null)}
         title="Usuń ćwiczenie"
-        description={`Czy na pewno chcesz usunąć ćwiczenie "${deletingExercise?.name}"? Ta operacja jest nieodwracalna.`}
+        description={`Ćwiczenie „${deletingExercise?.name}” trafi do kosza i zniknie ze wszystkich zestawów. Przez 30 dni możesz je przywrócić do biblioteki.`}
         confirmText="Usuń"
         variant="destructive"
         onConfirm={handleDelete}
