@@ -14,20 +14,20 @@ describe('getVerificationScopes', () => {
     expect(scopes.map((scope) => scope.href)).toEqual(['/organization/verification']);
   });
 
-  it('gives a content manager only the global catalog queue', () => {
+  it('gives a content manager the global catalog queue and the name review', () => {
     const scopes = getVerificationScopes({ ...NO_ACCESS, canReviewExercises: true });
 
-    expect(scopes.map((scope) => scope.key)).toEqual(['global']);
+    expect(scopes.map((scope) => scope.key)).toEqual(['global', 'names']);
   });
 
-  it('orders all three queues for a super admin who also manages an organization', () => {
+  it('orders every queue for a super admin who also manages an organization', () => {
     const scopes = getVerificationScopes({
       canManageOrganization: true,
       canReviewExercises: true,
       isSiteSuperAdmin: true,
     });
 
-    expect(scopes.map((scope) => scope.key)).toEqual(['organization', 'global', 'cross-org']);
+    expect(scopes.map((scope) => scope.key)).toEqual(['organization', 'global', 'cross-org', 'names']);
   });
 
   it('names the organization queue after the current organization', () => {
@@ -49,7 +49,7 @@ describe('getVerificationScopes', () => {
       isSiteSuperAdmin: true,
     });
 
-    expect(scopes.map((scope) => scope.group)).toEqual(['own', 'moderation', 'moderation']);
+    expect(scopes.map((scope) => scope.group)).toEqual(['own', 'moderation', 'moderation', 'moderation']);
   });
 });
 

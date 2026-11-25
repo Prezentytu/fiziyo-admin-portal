@@ -1,4 +1,4 @@
-export type VerificationScopeKey = 'organization' | 'global' | 'cross-org';
+export type VerificationScopeKey = 'organization' | 'global' | 'cross-org' | 'names';
 
 export type VerificationScopeGroup = 'own' | 'moderation';
 
@@ -47,6 +47,15 @@ const VERIFICATION_SCOPES: ReadonlyArray<
     href: '/verification/organizations',
     testId: 'nav-link-verification-organizations',
     isAvailable: (access) => access.isSiteSuperAdmin,
+  },
+  {
+    key: 'names',
+    label: 'Nazwy i filarowe',
+    audience: 'Krótkie nazwy i klasyczne wersje ruchu, tylko zespół FiziYo',
+    group: 'moderation',
+    href: '/verification/names',
+    testId: 'nav-link-verification-names',
+    isAvailable: (access) => access.canReviewExercises,
   },
 ];
 
