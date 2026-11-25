@@ -187,7 +187,13 @@ function NoteRow({
                 testId={`set-log-entry-${entry.id}-edit-visibility`}
               />
               <span className="flex-1" />
-              <Button type="button" variant="plain" size="sm" onClick={() => setIsEditing(false)}>
+              <Button
+                type="button"
+                variant="plain"
+                size="sm"
+                onClick={() => setIsEditing(false)}
+                data-testid={`set-log-entry-${entry.id}-cancel-btn`}
+              >
                 Anuluj
               </Button>
               <Button
@@ -333,6 +339,7 @@ export function SetHistoryNotesPanel({ exerciseSetId, isGlobalTemplate, exercise
 
       <div className="flex flex-col gap-2 rounded-card bg-grouped-tertiary p-3">
         <Textarea
+          data-testid="set-history-notes-input"
           value={draft}
           rows={2}
           className="resize-none bg-card text-[14px]"
@@ -346,7 +353,6 @@ export function SetHistoryNotesPanel({ exerciseSetId, isGlobalTemplate, exercise
               void handleAdd();
             }
           }}
-          data-testid="set-history-notes-input"
         />
         <div className="flex flex-wrap items-center gap-2">
           <VisibilityPicker
