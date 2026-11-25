@@ -101,15 +101,6 @@ export function ExerciseVideosField({
                     dirty && 'border-status-warning/70 bg-status-warning-muted dark:border-status-warning/40'
                   )}
                 />
-                {supportsVideoStart(video) && (
-                  <VideoStartInput
-                    video={video}
-                    rowName={rowName}
-                    disabled={disabled}
-                    testId={`${testId}-start-${index}`}
-                    onChange={(nextVideo) => onChange(setVideoAt(value, index, nextVideo))}
-                  />
-                )}
                 {hasManyRows && (
                   <>
                     <Button
@@ -148,6 +139,16 @@ export function ExerciseVideosField({
                   </>
                 )}
               </div>
+              {supportsVideoStart(video) && (
+                <VideoStartInput
+                  video={video}
+                  rowName={rowName}
+                  disabled={disabled}
+                  testId={`${testId}-start-${index}`}
+                  className={cn(hasManyRows && 'pl-[6.25rem]')}
+                  onChange={(nextVideo) => onChange(setVideoAt(value, index, nextVideo))}
+                />
+              )}
               {error && (
                 <p id={errorId} className="text-xs text-destructive" data-testid={`${testId}-error-${index}`}>
                   {error}
@@ -184,11 +185,12 @@ interface VideoStartInputProps {
   rowName: string;
   disabled: boolean;
   testId: string;
+  className?: string;
   onChange: (video: string) => void;
 }
 
 /** Start marker of one video (SPEC-064), kept in the link itself; applied on blur or Enter. */
-function VideoStartInput({ video, rowName, disabled, testId, onChange }: Readonly<VideoStartInputProps>) {
+function VideoStartInput({ video, rowName, disabled, testId, className, onChange }: Readonly<VideoStartInputProps>) {
   const startSeconds = extractVideoStartSeconds(video);
   const savedText = startSeconds ? formatVideoStart(startSeconds) : '';
   const [draft, setDraft] = useState<string | null>(null);
@@ -203,23 +205,31 @@ function VideoStartInput({ video, rowName, disabled, testId, onChange }: Readonl
     if (seconds !== startSeconds) onChange(withVideoStart(video, seconds));
   };
 
+  const inputId = `${testId}-field`;
   return (
-    <Input
-      data-testid={testId}
-      inputMode="numeric"
-      value={text}
-      placeholder="Start 0:00"
-      title="Od którego momentu pacjent ogląda film, np. 1:30"
-      aria-label={`Start filmu: ${rowName}`}
-      aria-invalid={isInvalid ? true : undefined}
-      disabled={disabled}
-      onChange={(event) => setDraft(event.target.value)}
-      onBlur={commit}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter') commit();
-        if (event.key === 'Escape') setDraft(null);
-      }}
-      className={cn('h-9 w-24 shrink-0 text-sm tabular-nums', isInvalid && 'border-destructive')}
-    />
+    <div className={cn('flex items-center gap-2', className)}>
+      <Label className="shrink-0 text-xs text-muted-foreground" htmlFor={inputId}>
+        Start filmu od
+      </Label>
+      <Input
+        id={inputId}
+        data-testid={testId}
+        inputMode="numeric"
+        value={text}
+        placeholder="0:00"
+        title="Od którego momentu pacjent ogląda film, np. 1:30"
+        aria-label={`Start filmu: ${rowName}`}
+        aria-invalid={isInvalid ? true : undefined}
+        disabled={disabled}
+        onChange={(event) => setDraft(event.target.value)}
+        onBlur={commit}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') commit();
+          if (event.key === 'Escape') setDraft(null);
+        }}
+        className={cn('h-8 w-20 shrink-0 text-sm tabular-nums', isInvalid && 'border-destructive')}
+      />
+      {isInvalid && <span className="text-xs text-destructive">Wpisz czas jak 1:30</span>}
+    </div>
   );
 }

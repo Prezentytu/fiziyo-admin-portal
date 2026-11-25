@@ -279,7 +279,7 @@ export function MediaGallery({
           className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 border-t border-border/40 px-3 py-2"
           data-testid={`${testIdPrefix}-video-start`}
         >
-          <p className="min-w-0 flex-1 text-xs text-muted-foreground" aria-live="polite">
+          <p className="basis-full text-xs text-muted-foreground" aria-live="polite">
             {videoStartSeconds ? (
               <>
                 Pacjent zobaczy film od{' '}
@@ -288,7 +288,7 @@ export function MediaGallery({
                 </span>
               </>
             ) : (
-              'Film leci od początku. Przewiń do ruchu i ustaw start.'
+              'Film leci od początku. Przewiń do początku ruchu i ustaw start.'
             )}
           </p>
           <Button
