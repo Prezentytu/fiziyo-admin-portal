@@ -4,6 +4,7 @@ import {
   MAX_EXERCISE_VIDEOS,
   addVideo,
   canAddVideo,
+  setVideoStartInList,
   getExerciseVideos,
   getMappingVideos,
   getVideoUrlError,
@@ -135,5 +136,21 @@ describe('getVideoUrlError', () => {
   it('marks the repeated address, not its first use', () => {
     expect(getVideoUrlError([FIRST, FIRST], 0)).toBeNull();
     expect(getVideoUrlError([FIRST, FIRST], 1)).toMatch(/już na liście/);
+  });
+});
+
+describe('setVideoStartInList (SPEC-064)', () => {
+  it('sets or clears the start only on the rows showing that video', () => {
+    const videos = ['https://vimeo.com/1#t=10s', 'https://youtu.be/7rnlAVhAK-8', ''];
+    expect(setVideoStartInList(videos, 'https://vimeo.com/1#t=10s', 90)).toEqual([
+      'https://vimeo.com/1#t=90s',
+      'https://youtu.be/7rnlAVhAK-8',
+      '',
+    ]);
+    expect(setVideoStartInList(videos, 'https://vimeo.com/1', null)).toEqual([
+      'https://vimeo.com/1',
+      'https://youtu.be/7rnlAVhAK-8',
+      '',
+    ]);
   });
 });

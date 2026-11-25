@@ -33,14 +33,23 @@ export function extractYouTubeId(url: string): string | null {
   return match?.[2]?.length === 11 ? match[2] : null;
 }
 
-export function getYouTubeEmbedUrl(url: string): string | null {
+interface EmbedUrlOptions {
+  /** Turns on the postMessage player API (YouTube `enablejsapi`, Vimeo `api`) so the page can read the current time. */
+  enableApi?: boolean;
+}
+
+export function getYouTubeEmbedUrl(url: string, options: EmbedUrlOptions = {}): string | null {
   const youtubeId = extractYouTubeId(url);
   if (!youtubeId) {
     return null;
   }
 
   const query = new URLSearchParams({ playsinline: '1', modestbranding: '1', rel: '0' });
-  const startSeconds = extractYouTubeStartSeconds(url);
+  if (options.enableApi) {
+    query.set('enablejsapi', '1');
+    if (typeof window !== 'undefined') query.set('origin', window.location.origin);
+  }
+  const startSeconds = extractVideoStartSeconds(url);
   if (startSeconds !== null) {
     query.set('start', String(startSeconds));
   }
@@ -48,8 +57,11 @@ export function getYouTubeEmbedUrl(url: string): string | null {
   return `https://www.youtube.com/embed/${youtubeId}?${query.toString()}`;
 }
 
-/** Reads `t` / `start` (query or hash) in the forms YouTube accepts: `6`, `6s`, `1m30s`, `1h2m3s`. */
-function extractYouTubeStartSeconds(url: string): number | null {
+/**
+ * Start marker of a video link (SPEC-064): `t` or `start` in the query or after `#`,
+ * written as `90`, `90s`, `1m30s` or `1h2m3s`. Null when missing, zero or unreadable.
+ */
+export function extractVideoStartSeconds(url: string): number | null {
   const parsedUrl = tryParseUrl(url);
   if (!parsedUrl) {
     return null;
@@ -62,10 +74,10 @@ function extractYouTubeStartSeconds(url: string): number | null {
     hashParams.get('t') ??
     hashParams.get('start');
 
-  return rawValue ? parseYouTubeTimestamp(rawValue) : null;
+  return rawValue ? parseTimestamp(rawValue) : null;
 }
 
-function parseYouTubeTimestamp(value: string): number | null {
+function parseTimestamp(value: string): number | null {
   const match = /^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s?)?$/.exec(value.trim());
   if (!match) {
     return null;
@@ -74,6 +86,70 @@ function parseYouTubeTimestamp(value: string): number | null {
   const [, hours, minutes, seconds] = match;
   const totalSeconds = Number(hours ?? 0) * 3600 + Number(minutes ?? 0) * 60 + Number(seconds ?? 0);
   return totalSeconds > 0 ? totalSeconds : null;
+}
+
+/** Only YouTube and Vimeo links carry a start marker: the portal and the app players both read it. */
+export function supportsVideoStart(url: string | undefined | null): boolean {
+  return isYouTubeUrl(url) || isVimeoUrl(url);
+}
+
+/**
+ * The link with its start marker set, or removed when `seconds` is empty. Vimeo gets `#t=90s` and YouTube
+ * `t=90s` in the query, the forms both services understand on their own. Other links come back unchanged.
+ */
+export function withVideoStart(url: string, seconds: number | null): string {
+  const parsedUrl = supportsVideoStart(url) ? tryParseUrl(url.trim()) : null;
+  if (!parsedUrl) {
+    return url;
+  }
+
+  const hashParams = new URLSearchParams(parsedUrl.hash.replace(/^#/, ''));
+  for (const key of ['t', 'start']) {
+    parsedUrl.searchParams.delete(key);
+    hashParams.delete(key);
+  }
+
+  const wholeSeconds = seconds !== null && Number.isFinite(seconds) ? Math.floor(seconds) : 0;
+  if (wholeSeconds > 0) {
+    if (isVimeoUrl(url)) hashParams.set('t', `${wholeSeconds}s`);
+    else parsedUrl.searchParams.set('t', `${wholeSeconds}s`);
+  }
+
+  const hash = hashParams.toString();
+  parsedUrl.hash = hash ? `#${hash}` : '';
+  return parsedUrl.toString();
+}
+
+/** Same video regardless of its start marker: finds the list row whose start is being changed. */
+export function isSameVideoIgnoringStart(first: string, second: string): boolean {
+  return withVideoStart(first.trim(), null) === withVideoStart(second.trim(), null);
+}
+
+/** Time as `m:ss` or `h:mm:ss`. */
+export function formatVideoStart(seconds: number): string {
+  const safe = Number.isFinite(seconds) && seconds > 0 ? Math.floor(seconds) : 0;
+  const hours = Math.floor(safe / 3600);
+  const minutes = Math.floor((safe % 3600) / 60);
+  const rest = String(safe % 60).padStart(2, '0');
+  return hours > 0 ? `${hours}:${String(minutes).padStart(2, '0')}:${rest}` : `${minutes}:${rest}`;
+}
+
+/**
+ * Value typed into the start field: `1:30`, `1:02:03`, `90` or `1m30s`. An empty field means no marker (null);
+ * text that cannot be read gives `undefined`.
+ */
+export function parseVideoStartInput(value: string): number | null | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const clock = /^(?:(\d+):)?(\d{1,2}):(\d{2})$/.exec(trimmed);
+  if (clock) {
+    const [, hours, minutes, seconds] = clock;
+    if (Number(seconds) > 59 || (hours !== undefined && Number(minutes) > 59)) return undefined;
+    const total = Number(hours ?? 0) * 3600 + Number(minutes) * 60 + Number(seconds);
+    return total > 0 ? total : null;
+  }
+  if (/^0+s?$/.test(trimmed)) return null;
+  return parseTimestamp(trimmed) ?? undefined;
 }
 
 export function extractVimeoId(url: string): string | null {
@@ -97,7 +173,7 @@ export function extractVimeoId(url: string): string | null {
   return null;
 }
 
-export function getVimeoEmbedUrl(url: string): string | null {
+export function getVimeoEmbedUrl(url: string, options: EmbedUrlOptions = {}): string | null {
   const vimeoId = extractVimeoId(url);
   if (!vimeoId) {
     return null;
@@ -113,12 +189,19 @@ export function getVimeoEmbedUrl(url: string): string | null {
     dnt: '1',
   });
 
+  if (options.enableApi) {
+    query.set('api', '1');
+  }
+
   const hash = extractVimeoHash(url);
   if (hash) {
     query.set('h', hash);
   }
 
-  return `https://player.vimeo.com/video/${vimeoId}?${query.toString()}`;
+  // Start marker (SPEC-064): the Vimeo player reads `#t=` from its own address.
+  const startSeconds = extractVideoStartSeconds(url);
+  const startFragment = startSeconds ? `#t=${startSeconds}s` : '';
+  return `https://player.vimeo.com/video/${vimeoId}?${query.toString()}${startFragment}`;
 }
 
 function extractVimeoHash(url: string): string | null {
