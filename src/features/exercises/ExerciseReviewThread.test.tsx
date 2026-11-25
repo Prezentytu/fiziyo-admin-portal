@@ -72,9 +72,27 @@ describe('ExerciseReviewThread – zgłoszenie ownera do katalogu', () => {
     await user.type(screen.getByTestId('exercise-review-reply-input'), 'Poprawione');
     await user.click(screen.getByTestId('exercise-review-reply-send-btn'));
 
-    // Bez zakresu i toru: backend kieruje odpowiedź do wątku kopii jako odpowiedź autora.
+    // Odpowiedź na uwagę z kopii: backend zapisuje ją w wątku kopii jako odpowiedź autora.
     expect(apollo.addNote).toHaveBeenCalledWith({
       variables: { exerciseId: 'ex-1', body: 'Poprawione', replyToNoteId: 'catalog' },
+    });
+  });
+
+  it("answers the reviewer's latest catalog note when the owner writes without picking one", async () => {
+    apollo.notes = [
+      note('first', { exerciseId: 'ex-1-catalog' }),
+      note('latest', { exerciseId: 'ex-1-catalog' }),
+      note('sent', { exerciseId: 'ex-1-catalog', kind: 'SENT_TO_AUTHOR', body: '' }),
+      note('mine', { exerciseId: 'ex-1-catalog', authorRole: 'AUTHOR', isMine: true }),
+    ];
+    render(<ExerciseReviewThread exerciseId="ex-1" access={ORG_REVIEWER} catalogSubmissionOnly />);
+    const user = userEvent.setup();
+
+    await user.type(screen.getByTestId('exercise-review-reply-input'), 'Dodałem opis');
+    await user.click(screen.getByTestId('exercise-review-reply-send-btn'));
+
+    expect(apollo.addNote).toHaveBeenCalledWith({
+      variables: { exerciseId: 'ex-1', body: 'Dodałem opis', replyToNoteId: 'latest' },
     });
   });
 
