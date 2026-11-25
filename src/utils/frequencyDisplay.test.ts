@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatFrequencyDisplay } from './frequencyDisplay';
+import { formatFrequencyDisplay, formatScheduleShort, formatScheduleStat } from './frequencyDisplay';
 
 describe('formatFrequencyDisplay', () => {
   it('zwraca brak harmonogramu dla undefined', () => {
@@ -56,5 +56,36 @@ describe('formatFrequencyDisplay', () => {
         sunday: true,
       })
     ).toBe('Codziennie');
+  });
+});
+
+describe('formatScheduleShort', () => {
+  it('dopisuje sesje dzienne tylko powyżej jednej', () => {
+    expect(formatScheduleShort({ timesPerWeek: '3', timesPerDay: '1' })).toBe('3 razy w tygodniu');
+    expect(formatScheduleShort({ timesPerWeek: 7, timesPerDay: 2 })).toBe('7 razy w tygodniu · 2× dziennie');
+  });
+
+  it('bez harmonogramu mówi to wprost', () => {
+    expect(formatScheduleShort(undefined)).toBe('Brak harmonogramu');
+  });
+});
+
+describe('formatScheduleStat', () => {
+  it('tryb elastyczny: liczba z celu tygodniowego', () => {
+    expect(formatScheduleStat({ timesPerWeek: '3', timesPerDay: '1' })).toEqual({
+      value: '3×',
+      label: 'w tygodniu · 1× dziennie',
+    });
+  });
+
+  it('wybrane dni: liczba z dni i ich skróty', () => {
+    expect(formatScheduleStat({ timesPerWeek: 3, timesPerDay: 2, monday: true, thursday: true })).toEqual({
+      value: '2×',
+      label: 'Pn, Cz · 2× dziennie',
+    });
+  });
+
+  it('brak harmonogramu', () => {
+    expect(formatScheduleStat(undefined)).toEqual({ value: '—', label: 'w tygodniu' });
   });
 });

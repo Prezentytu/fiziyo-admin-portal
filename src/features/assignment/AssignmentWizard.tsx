@@ -1574,6 +1574,7 @@ function AssignmentWizardContent({
               reviewStatus: 'DRAFT',
               sourceExerciseSetId: exerciseSetIdToAssign,
               isTemplate: true,
+              frequency: buildAssignmentFrequencyPayload(frequency),
             },
           });
 

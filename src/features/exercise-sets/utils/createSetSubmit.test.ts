@@ -25,6 +25,35 @@ describe('createSetSubmit', () => {
     });
   });
 
+  it('zapisuje harmonogram wybrany w kreatorze zamiast domyślnego', () => {
+    const variables = buildCreateTemplateSetVariables({
+      organizationId: 'org-1',
+      name: 'Kolano',
+      frequency: {
+        timesPerDay: 2,
+        timesPerWeek: 2,
+        breakBetweenSets: 4,
+        isFlexible: false,
+        monday: true,
+        thursday: true,
+      },
+    });
+
+    expect(variables.frequency).toEqual({
+      timesPerDay: '2',
+      timesPerWeek: '2',
+      breakBetweenSets: '4',
+      isFlexible: false,
+      monday: true,
+      tuesday: false,
+      wednesday: false,
+      thursday: true,
+      friday: false,
+      saturday: false,
+      sunday: false,
+    });
+  });
+
   it('nulls empty description on create', () => {
     expect(
       buildCreateTemplateSetVariables({

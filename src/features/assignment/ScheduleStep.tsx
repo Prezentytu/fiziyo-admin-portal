@@ -1,14 +1,15 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Calendar, Zap, ArrowRight, Minus, Plus, MessageSquareText } from 'lucide-react';
+import { Calendar, Zap, ArrowRight, MessageSquareText } from 'lucide-react';
 import { addWeeks, differenceInDays, format } from 'date-fns';
-import { cn } from '@/lib/utils';
 import { ScheduleSummary } from '@/components/shared';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { formatEstimatedTime } from '@/utils/exerciseTime';
-import { getDefaultDaysForFrequency, getDefaultPlanEndDate } from './utils/scheduleUtils';
+import { getDefaultPlanEndDate } from './utils/scheduleUtils';
+import { FREQUENCY_DAYS, detectFrequencyType } from './utils/frequencyPresets';
+import { CardOption, FrequencyFields } from './FrequencyFields';
 import { ASSIGNMENT_NOTE_MAX_LENGTH } from './utils/assignmentWizardUtils';
 import type { Frequency } from './types';
 
@@ -25,18 +26,6 @@ interface ScheduleStepProps {
   readonly onNoteChange?: (note: string) => void;
 }
 
-const DAYS = [
-  { key: 'monday', label: 'Pn', api: 'MONDAY' },
-  { key: 'tuesday', label: 'Wt', api: 'TUESDAY' },
-  { key: 'wednesday', label: 'Śr', api: 'WEDNESDAY' },
-  { key: 'thursday', label: 'Cz', api: 'THURSDAY' },
-  { key: 'friday', label: 'Pt', api: 'FRIDAY' },
-  { key: 'saturday', label: 'So', api: 'SATURDAY' },
-  { key: 'sunday', label: 'Nd', api: 'SUNDAY' },
-] as const;
-
-type DayKey = (typeof DAYS)[number]['key'];
-type FrequencyType = 'DAILY_1X' | 'DAILY_2X' | 'WEEKLY_3X' | 'SPECIFIC_DAYS';
 type DurationType = 'WEEKS_2' | 'WEEKS_4' | 'WEEKS_8' | 'CUSTOM';
 
 interface SchedulePayload {
@@ -44,111 +33,6 @@ interface SchedulePayload {
   timesPerDay: number;
   selectedDays: string[];
   duration: DurationType;
-}
-
-interface CardOptionProps {
-  readonly checked: boolean;
-  readonly label: string;
-  readonly onSelect: () => void;
-  readonly name: string;
-  readonly testId: string;
-}
-
-function CardOption({ checked, label, onSelect, name, testId }: CardOptionProps) {
-  return (
-    <label
-      className={cn(
-        'flex items-center justify-center p-3.5 border rounded-xl text-sm transition-all cursor-pointer text-center select-none h-full',
-        checked
-          ? 'border-tint-fill bg-tint-fill text-on-tint font-semibold shadow-md shadow-primary/20' // Mocne wyróżnienie
-          : 'border-border/80 bg-surface-light/40 text-muted-foreground font-medium hover:text-foreground hover:bg-surface-light hover:border-border' // Bardziej klikalne niż tło
-      )}
-      data-testid={testId}
-    >
-      <input
-        type="radio"
-        className="sr-only"
-        checked={checked}
-        onChange={onSelect}
-        name={name}
-        aria-label={label}
-        data-testid={`${testId}-input`}
-      />
-      <span>{label}</span>
-    </label>
-  );
-}
-
-interface NumberControlProps {
-  readonly value: number;
-  readonly min: number;
-  readonly max: number;
-  readonly onChange: (value: number) => void;
-  readonly disabled?: boolean;
-  readonly testIdPrefix: string;
-}
-
-function NumberControl({ value, min, max, onChange, disabled = false, testIdPrefix }: NumberControlProps) {
-  const decrement = () => onChange(Math.max(min, value - 1));
-  const increment = () => onChange(Math.min(max, value + 1));
-
-  return (
-    <div
-      className={cn(
-        'flex items-center justify-between bg-surface-light/30 border border-border/80 rounded-xl p-1.5 transition-opacity',
-        disabled && 'opacity-40 pointer-events-none'
-      )}
-    >
-      <button
-        type="button"
-        onClick={decrement}
-        disabled={disabled || value <= min}
-        className="w-10 h-10 flex items-center justify-center rounded-lg bg-surface text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors disabled:opacity-50 border border-border/50 shadow-sm"
-        data-testid={`${testIdPrefix}-dec`}
-      >
-        <Minus className="w-4 h-4" />
-      </button>
-      <div className="text-xl font-bold tabular-nums text-foreground min-w-[3ch] text-center">{value}</div>
-      <button
-        type="button"
-        onClick={increment}
-        disabled={disabled || value >= max}
-        className="w-10 h-10 flex items-center justify-center rounded-lg bg-surface text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors disabled:opacity-50 border border-border/50 shadow-sm"
-        data-testid={`${testIdPrefix}-inc`}
-      >
-        <Plus className="w-4 h-4" />
-      </button>
-    </div>
-  );
-}
-
-function getSelectedDaysCount(frequency: Frequency): number {
-  return [
-    frequency.monday,
-    frequency.tuesday,
-    frequency.wednesday,
-    frequency.thursday,
-    frequency.friday,
-    frequency.saturday,
-    frequency.sunday,
-  ].filter(Boolean).length;
-}
-
-function detectFrequencyType(frequency: Frequency): FrequencyType {
-  const selectedDaysCount = getSelectedDaysCount(frequency);
-  const hasSpecificDays = selectedDaysCount > 0;
-
-  if (frequency.isFlexible === false || hasSpecificDays) return 'SPECIFIC_DAYS';
-
-  const tpw = frequency.timesPerWeek ?? 7;
-  const tpd = frequency.timesPerDay ?? 1;
-
-  if (tpw === 7) {
-    if (tpd >= 2) return 'DAILY_2X';
-    return 'DAILY_1X';
-  }
-
-  return 'WEEKLY_3X';
 }
 
 function detectDurationType(startDate: Date, endDate: Date): DurationType {
@@ -173,9 +57,7 @@ export function ScheduleStep({
   const [durationType, setDurationType] = useState<DurationType>(() => detectDurationType(startDate, endDate));
   const [isCustomDateDirty, setIsCustomDateDirty] = useState(false);
 
-  const selectedDaysCount = useMemo(() => getSelectedDaysCount(frequency), [frequency]);
   const frequencyType = useMemo(() => detectFrequencyType(frequency), [frequency]);
-  const hasSpecificDaysError = frequencyType === 'SPECIFIC_DAYS' && selectedDaysCount === 0;
 
   const estimatedDailyDurationSeconds = estimatedSessionDurationSeconds * Math.max(1, frequency.timesPerDay ?? 1);
 
@@ -183,59 +65,11 @@ export function ScheduleStep({
     () => ({
       frequencyType: frequencyType === 'SPECIFIC_DAYS' ? 'SPECIFIC_DAYS' : 'DAILY',
       timesPerDay: frequency.timesPerDay ?? 1,
-      selectedDays: DAYS.filter((day) => frequency[day.key]).map((day) => day.api),
+      selectedDays: FREQUENCY_DAYS.filter((day) => frequency[day.key]).map((day) => day.api),
       duration: durationType,
     }),
     [durationType, frequency, frequencyType]
   );
-
-  const clearSelectedDays = () => ({
-    monday: false,
-    tuesday: false,
-    wednesday: false,
-    thursday: false,
-    friday: false,
-    saturday: false,
-    sunday: false,
-  });
-
-  const applyFrequencyType = (nextType: FrequencyType) => {
-    if (nextType === 'SPECIFIC_DAYS') {
-      const defaultDays = selectedDaysCount > 0 ? null : getDefaultDaysForFrequency(3);
-      const newFreq = {
-        ...frequency,
-        timesPerDay: frequency.timesPerDay || 1,
-        timesPerWeek: selectedDaysCount || 3,
-        isFlexible: false,
-      };
-
-      if (defaultDays) {
-        Object.assign(newFreq, defaultDays);
-      }
-
-      onFrequencyChange(newFreq);
-      return;
-    }
-
-    if (nextType === 'WEEKLY_3X') {
-      onFrequencyChange({
-        ...frequency,
-        timesPerDay: 1,
-        timesPerWeek: 3,
-        isFlexible: true,
-        ...clearSelectedDays(),
-      });
-      return;
-    }
-
-    onFrequencyChange({
-      ...frequency,
-      timesPerDay: nextType === 'DAILY_2X' ? 2 : 1,
-      timesPerWeek: 7,
-      isFlexible: true,
-      ...clearSelectedDays(),
-    });
-  };
 
   const applyDurationType = (nextType: DurationType) => {
     setDurationType(nextType);
@@ -255,37 +89,6 @@ export function ScheduleStep({
     }
   };
 
-  const setTimesPerDay = (value: number) => {
-    onFrequencyChange({
-      ...frequency,
-      timesPerDay: value,
-    });
-  };
-
-  const setTimesPerWeek = (value: number) => {
-    if (frequencyType === 'SPECIFIC_DAYS') return;
-    onFrequencyChange({
-      ...frequency,
-      timesPerWeek: value,
-      isFlexible: true,
-      ...clearSelectedDays(),
-    });
-  };
-
-  const toggleDay = (day: DayKey) => {
-    if (frequencyType !== 'SPECIFIC_DAYS') return;
-    const nextFrequency = {
-      ...frequency,
-      [day]: !frequency[day],
-      isFlexible: false,
-    };
-    const nextDaysCount = getSelectedDaysCount(nextFrequency);
-    onFrequencyChange({
-      ...nextFrequency,
-      timesPerWeek: nextDaysCount,
-    });
-  };
-
   const handleCustomEndDate = (dateString: string) => {
     setIsCustomDateDirty(true);
     setDurationType('CUSTOM');
@@ -302,102 +105,7 @@ export function ScheduleStep({
             <Zap className="w-5 h-5 text-muted-foreground" /> Częstotliwość ćwiczeń
           </h3>
 
-          <div className="grid grid-cols-2 gap-3 shrink-0">
-            <CardOption
-              checked={frequencyType === 'DAILY_1X'}
-              label="Zalecenia — 7 razy w tygodniu"
-              onSelect={() => applyFrequencyType('DAILY_1X')}
-              name="frequency"
-              testId="assign-schedule-frequency-daily-1x"
-            />
-            <CardOption
-              checked={frequencyType === 'DAILY_2X'}
-              label="Zalecenia — 7 razy w tygodniu, 2× dziennie"
-              onSelect={() => applyFrequencyType('DAILY_2X')}
-              name="frequency"
-              testId="assign-schedule-frequency-daily-2x"
-            />
-            <CardOption
-              checked={frequencyType === 'WEEKLY_3X'}
-              label={`Zalecenia — ${frequency.timesPerWeek ?? 3} razy w tygodniu`}
-              onSelect={() => applyFrequencyType('WEEKLY_3X')}
-              name="frequency"
-              testId="assign-schedule-frequency-weekly-3x"
-            />
-            <CardOption
-              checked={frequencyType === 'SPECIFIC_DAYS'}
-              label="Harmonogram — wybrane dni"
-              onSelect={() => applyFrequencyType('SPECIFIC_DAYS')}
-              name="frequency"
-              testId="assign-schedule-specific-days-toggle"
-            />
-          </div>
-
-          <div
-            className={cn(
-              'overflow-hidden transition-all duration-300 ease-in-out shrink-0',
-              frequencyType === 'SPECIFIC_DAYS' ? 'max-h-[200px] opacity-100 mt-2' : 'max-h-0 opacity-0'
-            )}
-          >
-            <div className="p-4 bg-surface-light/40 border border-border/40 rounded-xl flex flex-col items-center justify-center gap-4">
-              <div className="flex flex-wrap justify-center gap-2">
-                {DAYS.map((day) => {
-                  const isSelected = frequency[day.key] === true;
-                  return (
-                    <button
-                      key={day.key}
-                      type="button"
-                      onClick={() => toggleDay(day.key)}
-                      className={cn(
-                        'w-11 h-11 rounded-full border text-sm font-semibold transition-all shadow-sm',
-                        isSelected
-                          ? 'border-tint-fill bg-tint-fill text-on-tint'
-                          : 'border-border/60 bg-surface text-muted-foreground hover:border-border hover:bg-surface-hover hover:text-foreground'
-                      )}
-                      data-testid={`assign-schedule-day-${day.key}`}
-                      title={day.label}
-                    >
-                      {day.label}
-                    </button>
-                  );
-                })}
-              </div>
-              {hasSpecificDaysError && (
-                <p className="text-sm text-destructive" role="alert" data-testid="assign-schedule-specific-days-error">
-                  Wybierz co najmniej jeden dzień harmonogramu.
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Controls przylegają naturalnie, bez mt-auto dystansującego je na sam dół */}
-          <div className="pt-6 border-t border-border/40 grid grid-cols-1 md:grid-cols-2 gap-6 mt-2 shrink-0">
-            <div>
-              <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2.5 block">
-                Sesje w tygodniu
-              </label>
-              <NumberControl
-                value={Math.max(1, frequencyType === 'SPECIFIC_DAYS' ? selectedDaysCount || 1 : (frequency.timesPerWeek ?? 3))}
-                min={1}
-                max={7}
-                onChange={setTimesPerWeek}
-                disabled={frequencyType === 'SPECIFIC_DAYS'}
-                testIdPrefix="assign-schedule-times-per-week"
-              />
-            </div>
-            <div>
-              <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2.5 block">
-                Sesje w ciągu dnia
-              </label>
-              <NumberControl
-                value={Math.max(1, frequency.timesPerDay || 1)}
-                min={1}
-                max={5}
-                onChange={setTimesPerDay}
-                testIdPrefix="assign-schedule-times-per-day"
-              />
-            </div>
-          </div>
+          <FrequencyFields frequency={frequency} onFrequencyChange={onFrequencyChange} />
 
           <div
             className="bg-surface-light/40 border border-border/40 rounded-xl px-4 py-3 flex flex-col gap-1.5"
