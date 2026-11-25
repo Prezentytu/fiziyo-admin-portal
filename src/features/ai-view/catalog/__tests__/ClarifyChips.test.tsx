@@ -13,7 +13,7 @@ function renderChips() {
   const draft = vi.fn();
   render(
     <ComposerDraftContext.Provider value={draft}>
-      <ClarifyChips lead="Doprecyzuj" questions={QUESTIONS} testId="clarify" />
+      <ClarifyChips hint="Zaznacz odpowiedzi" questions={QUESTIONS} testId="clarify" />
     </ComposerDraftContext.Provider>
   );
   const option = (question: number, index: number) =>

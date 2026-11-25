@@ -1,7 +1,18 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Flame, Plus, Repeat2, SlidersHorizontal, Sparkles, Trash2, Undo2, X } from 'lucide-react';
+import {
+  BookmarkPlus,
+  Flame,
+  Plus,
+  Repeat2,
+  SlidersHorizontal,
+  Sparkles,
+  SquarePen,
+  Trash2,
+  Undo2,
+  X,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';
@@ -422,6 +433,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
                 disabled={items.length === 0 || detailsPending}
                 data-testid={`${testId}-save-template-btn`}
               >
+                <BookmarkPlus aria-hidden="true" />
                 Zapisz w katalogu
               </Button>
               <Button
@@ -438,6 +450,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
                 disabled={items.length === 0}
                 data-testid={`${testId}-full-editor-btn`}
               >
+                <SquarePen aria-hidden="true" />
                 Pełny edytor
               </Button>
             </div>
@@ -486,6 +499,16 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
             ? 'Nie znalazłem tego zestawu w katalogu gabinetu. Dodaj ćwiczenia z katalogu.'
             : 'Zestaw jest pusty. Dodaj ćwiczenia z katalogu.'}
         </ChatCardEmpty>
+      )}
+
+      {items.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t-[0.5px] border-hairline pt-3 text-[14px] tabular-nums text-label-secondary">
+          <span>{formatExerciseCount(items.length)}</span>
+          <span>
+            dziennie ok.{' '}
+            <b className="text-[16px] font-semibold text-foreground">{minutesUnknown ? '—' : `${minutes} min`}</b>
+          </span>
+        </div>
       )}
 
       {!locked &&
@@ -563,19 +586,10 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
       {/* Zestaw z opisu (bez zestawu z katalogu): pytania, które pomagają dobrać ćwiczenia trafniej. */}
       {!set && !locked && spec.note && (
         <ClarifyChips
-          lead="Doprecyzuj, a lepiej dobiorę ćwiczenia. Zaznacz odpowiedzi, trafią gotowe do wiadomości:"
+          hint="Zaznacz odpowiedzi, trafią gotowe do wiadomości, a lepiej dobiorę ćwiczenia."
           questions={draftClarifyQuestions({ request, note: spec.note })}
           testId={`${testId}-clarify`}
         />
-      )}
-      {items.length > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t-[0.5px] border-hairline pt-3 text-[14px] tabular-nums text-label-secondary">
-          <span>{formatExerciseCount(items.length)}</span>
-          <span>
-            dziennie ok.{' '}
-            <b className="text-[16px] font-semibold text-foreground">{minutesUnknown ? '—' : `${minutes} min`}</b>
-          </span>
-        </div>
       )}
     </ChatCard>
   );
