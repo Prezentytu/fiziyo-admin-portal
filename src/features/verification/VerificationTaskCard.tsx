@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { cn } from '@/lib/utils';
 import { getMediaUrl } from '@/utils/mediaUrl';
+import { getExerciseVideos } from '@/utils/exerciseVideos';
 import { isVimeoUrl, isYouTubeUrl } from '@/utils/videoEmbed';
 import { HIDE_EXERCISE_TAGS } from '@/components/shared/exercise';
 import type { AdminExercise } from '@/graphql/types/adminExercise.types';
@@ -32,10 +33,18 @@ interface VerificationTaskCardProps {
   showStatus?: boolean;
 }
 
+/** „2 filmy”, „5 filmów”: Polish plural for the video badge. */
+export function formatVideoCount(count: number): string {
+  const lastDigit = count % 10;
+  const lastTwo = count % 100;
+  const isFew = lastDigit >= 2 && lastDigit <= 4 && (lastTwo < 12 || lastTwo > 14);
+  return `${count} ${isFew ? 'filmy' : 'filmów'}`;
+}
+
 function getQualityIndicators(exercise: AdminExercise) {
   const indicators: { label: string; type: 'warning' | 'info' }[] = [];
 
-  if (!exercise.videoUrl && !exercise.gifUrl) {
+  if (getExerciseVideos(exercise).length === 0 && !exercise.gifUrl) {
     indicators.push({ label: 'Brak wideo', type: 'warning' });
   }
   if (!exercise.imageUrl && (!exercise.images || exercise.images.length === 0)) {
@@ -68,8 +77,10 @@ export function VerificationTaskCard({
 
   const imageUrl = getMediaUrl(exercise.thumbnailUrl || exercise.imageUrl || exercise.images?.[0]);
   const gifUrl = getMediaUrl(exercise.gifUrl);
-  const videoUrl = getMediaUrl(exercise.videoUrl);
-  const isEmbeddedVideo = isYouTubeUrl(exercise.videoUrl) || isVimeoUrl(exercise.videoUrl);
+  const videos = getExerciseVideos(exercise);
+  const mainVideo = videos[0];
+  const videoUrl = getMediaUrl(mainVideo);
+  const isEmbeddedVideo = isYouTubeUrl(mainVideo) || isVimeoUrl(mainVideo);
   const previewVideoUrl = gifUrl || isEmbeddedVideo ? null : videoUrl;
   const hasVideoPreview = gifUrl || previewVideoUrl;
   const hasVideo = gifUrl || videoUrl;
@@ -201,7 +212,7 @@ export function VerificationTaskCard({
                 <div className="absolute bottom-3 left-3 flex items-center gap-1 rounded-md border border-border/70 bg-background/85 px-2 py-1 backdrop-blur-sm dark:bg-black/45">
                   <Play className="h-3 w-3 fill-foreground text-foreground dark:fill-white dark:text-white" />
                   <span className="text-[10px] font-medium text-foreground dark:text-white">
-                    {gifUrl ? 'GIF' : 'Wideo'}
+                    {gifUrl ? 'GIF' : videos.length > 1 ? formatVideoCount(videos.length) : 'Wideo'}
                   </span>
                 </div>
               )}

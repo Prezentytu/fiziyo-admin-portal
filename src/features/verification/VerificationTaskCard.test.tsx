@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { VerificationTaskCard } from './VerificationTaskCard';
+import { VerificationTaskCard, formatVideoCount } from './VerificationTaskCard';
 import type { AdminExercise } from '@/graphql/types/adminExercise.types';
 
 vi.mock('next/link', () => ({
@@ -79,6 +79,40 @@ describe('VerificationTaskCard', () => {
 
     expect(screen.queryByText('Brak wideo')).not.toBeInTheDocument();
     expect(container.querySelector('video')).not.toBeNull();
+  });
+
+  it('liczy filmy z listy videos, gdy ćwiczenie ma dwa nagrania', () => {
+    const { container } = render(
+      <VerificationTaskCard
+        exercise={{
+          ...baseExercise,
+          videoUrl: 'https://cdn.example/a.mp4',
+          videos: ['https://cdn.example/a.mp4', 'https://cdn.example/b.mp4'],
+        }}
+      />
+    );
+
+    expect(screen.getByText('2 filmy')).toBeInTheDocument();
+    expect(screen.queryByText('Brak wideo')).not.toBeInTheDocument();
+    expect(container.querySelector('video')?.getAttribute('src')).toContain('a.mp4');
+  });
+
+  it('nie ostrzega „Brak wideo”, gdy film jest tylko w liście videos', () => {
+    render(<VerificationTaskCard exercise={{ ...baseExercise, videos: ['https://cdn.example/b.mp4'] }} />);
+
+    expect(screen.queryByText('Brak wideo')).not.toBeInTheDocument();
+    expect(screen.getByText('Wideo')).toBeInTheDocument();
+  });
+
+  it('odmienia liczbę filmów', () => {
+    expect([2, 4, 5, 10, 12, 22].map(formatVideoCount)).toEqual([
+      '2 filmy',
+      '4 filmy',
+      '5 filmów',
+      '10 filmów',
+      '12 filmów',
+      '22 filmy',
+    ]);
   });
 
   it('nadal ostrzega „Brak wideo” i „Brak obrazu”, gdy ćwiczenie nie ma mediów', () => {

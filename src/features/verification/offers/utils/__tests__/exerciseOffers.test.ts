@@ -62,6 +62,14 @@ describe('toPendingOfferViews', () => {
     expect(view.exerciseName).toBe('Ćwiczenie bez nazwy');
   });
 
+  it('marks an offer with a video that is only in the videos list', () => {
+    const [view] = toPendingOfferViews([
+      offer({ exercise: { id: 'fx-1', name: 'Deska', videos: ['https://cdn/bok.mp4'] } }),
+    ]);
+
+    expect(view.hasVideo).toBe(true);
+  });
+
   it('handles missing data', () => {
     expect(toPendingOfferViews(undefined)).toEqual([]);
   });
@@ -143,6 +151,18 @@ describe('toOfferPreview', () => {
       mainTags: ['pośladki'],
     });
     expect(preview?.clinicalDescription).toBeUndefined();
+  });
+
+  it('keeps every offered video, main first', () => {
+    const preview = toOfferPreview({
+      id: 'fx-2',
+      name: 'Deska',
+      videoUrl: 'https://cdn/przod.mp4',
+      videos: ['https://cdn/przod.mp4', 'https://cdn/bok.mp4'],
+    });
+
+    expect(preview?.videos).toEqual(['https://cdn/przod.mp4', 'https://cdn/bok.mp4']);
+    expect(preview?.videoUrl).toBe('https://cdn/przod.mp4');
   });
 
   it('has nothing to show when the backend hides the exercise', () => {
