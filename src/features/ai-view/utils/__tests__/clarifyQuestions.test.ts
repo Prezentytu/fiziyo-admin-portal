@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { draftClarifyQuestions, exerciseClarifyQuestions, requestBefore } from '../clarifyQuestions';
+import {
+  composeClarifyAnswers,
+  draftClarifyQuestions,
+  exerciseClarifyQuestions,
+  requestBefore,
+} from '../clarifyQuestions';
 
 const labels = (questions: ReadonlyArray<{ label: string }>) => questions.map((question) => question.label);
 
@@ -9,7 +14,7 @@ describe('draftClarifyQuestions', () => {
   it('asks about the hip the request named, one thing per question', () => {
     const questions = labels(draftClarifyQuestions({ request: 'zestaw na wzmocnienie mięśni biodra' }));
 
-    expect(questions[0]).toBe('Które biodro: lewe, prawe czy oba?');
+    expect(questions[0]).toBe('Które biodro?');
     expect(questions).toContain('Czy przy ćwiczeniach pojawia się ból?');
     expect(questions).not.toContain('Od jak dawna trwają dolegliwości?');
     expect(questions.every((question) => !/ i od kiedy/.test(question))).toBe(true);
@@ -18,9 +23,9 @@ describe('draftClarifyQuestions', () => {
 
   it('names the leg for a thigh muscle and asks what the problem is when the request does not say', () => {
     expect(labels(draftClarifyQuestions({ request: 'zestaw na mięsień czworogłowy' })).slice(0, 3)).toEqual([
-      'Która noga: lewa, prawa czy obie?',
-      'Jaki jest główny problem: ból, sztywność czy osłabienie?',
-      'Czy to po urazie, po operacji czy bez wyraźnej przyczyny?',
+      'Która noga?',
+      'Jaki jest główny problem?',
+      'Skąd się wzięło?',
     ]);
   });
 
@@ -33,7 +38,7 @@ describe('draftClarifyQuestions', () => {
     );
 
     expect(questions.some((question) => /lewe|prawe|strony/.test(question))).toBe(false);
-    expect(questions.some((question) => /urazie|operacji/.test(question))).toBe(false);
+    expect(questions.some((question) => /Skąd/.test(question))).toBe(false);
     expect(questions.some((question) => /dawna/.test(question))).toBe(false);
     expect(questions.some((question) => /główny problem/.test(question))).toBe(false);
     expect(questions.some((question) => /lat/.test(question))).toBe(false);
@@ -55,7 +60,7 @@ describe('draftClarifyQuestions', () => {
 
   it('reads the area from an inflected word in the note when the request is a button label', () => {
     expect(draftClarifyQuestions({ request: 'Ułóż zestaw z 3', note: 'stabilizacja barków' })[0].label).toBe(
-      'Który bark: lewy, prawy czy oba?'
+      'Który bark?'
     );
   });
 });
@@ -66,15 +71,15 @@ describe('exerciseClarifyQuestions', () => {
 
     expect(questions.some((question) => /cel/i.test(question))).toBe(false);
     expect(questions.some((question) => /sprzęt/.test(question))).toBe(false);
-    expect(questions).toContain('Jaki poziom zaawansowania pacjenta: początkujący, średni czy wysoki?');
+    expect(questions).toContain('Poziom zaawansowania pacjenta?');
   });
 
   it('asks full questions for a bare area', () => {
     expect(labels(exerciseClarifyQuestions('kolano'))).toEqual([
-      'Jaki jest cel: siła, rozciąganie czy stabilizacja?',
-      'Które kolano: lewe, prawe czy oba?',
+      'Jaki jest cel?',
+      'Które kolano?',
       'Jaki sprzęt jest pod ręką?',
-      'Jaki poziom zaawansowania pacjenta: początkujący, średni czy wysoki?',
+      'Poziom zaawansowania pacjenta?',
     ]);
   });
 });
@@ -104,14 +109,16 @@ describe('requestBefore', () => {
 // Decyzja właściciela 18.11: chip pokazuje pytanie z kontekstu, a klik wstawia krótki temat (mechanika z T-0036).
 describe('question and topic pairs', () => {
   it('pairs every question with the short topic a tap puts in the message field', () => {
-    expect(draftClarifyQuestions({ request: 'zestaw na ból biodra' })).toEqual([
-      { label: 'Które biodro: lewe, prawe czy oba?', topic: 'Strona ciała' },
-      { label: 'Czy to po urazie, po operacji czy bez wyraźnej przyczyny?', topic: 'Przyczyna' },
+    expect(
+      draftClarifyQuestions({ request: 'zestaw na ból biodra' }).map(({ label, topic }) => ({ label, topic }))
+    ).toEqual([
+      { label: 'Które biodro?', topic: 'Strona ciała' },
+      { label: 'Skąd się wzięło?', topic: 'Przyczyna' },
       { label: 'Od jak dawna trwają dolegliwości?', topic: 'Czas trwania' },
-      { label: 'Jaki poziom zaawansowania pacjenta: początkujący, średni czy wysoki?', topic: 'Poziom zaawansowania' },
+      { label: 'Poziom zaawansowania pacjenta?', topic: 'Poziom zaawansowania' },
     ]);
-    expect(draftClarifyQuestions({ request: 'zestaw na mięsień czworogłowy' })[1]).toEqual({
-      label: 'Jaki jest główny problem: ból, sztywność czy osłabienie?',
+    expect(draftClarifyQuestions({ request: 'zestaw na mięsień czworogłowy' })[1]).toMatchObject({
+      label: 'Jaki jest główny problem?',
       topic: 'Główny objaw',
     });
     expect(exerciseClarifyQuestions('kolano').map((question) => question.topic)).toEqual([
@@ -154,5 +161,44 @@ describe('question and topic pairs', () => {
     );
     expect(topics).not.toContain('Dostępny sprzęt');
     expect(topics).toContain('Ból i ograniczenia');
+  });
+});
+
+// 25.11: odpowiedzi są do kliknięcia, a do wiadomości trafiają gotowe linie „Temat: odpowiedź”.
+describe('ready answers', () => {
+  it('gives every question its answers, the side matching the body part', () => {
+    const questions = exerciseClarifyQuestions('kolano');
+
+    expect(questions.every((question) => question.options.length >= 2)).toBe(true);
+    expect(questions.find((question) => question.topic === 'Cel ćwiczeń')?.options).toEqual(
+      expect.arrayContaining(['siła', 'rozciąganie', 'stabilizacja'])
+    );
+    expect(questions.find((question) => question.topic === 'Strona ciała')?.options).toEqual(['lewe', 'prawe', 'oba']);
+    expect(exerciseClarifyQuestions('stopa').find((question) => question.topic === 'Strona ciała')?.options).toEqual([
+      'lewa',
+      'prawa',
+      'obie',
+    ]);
+  });
+
+  it('composes one line per answered question in question order and skips the rest', () => {
+    const questions = exerciseClarifyQuestions('kolano');
+
+    expect(
+      composeClarifyAnswers(questions, {
+        'Poziom zaawansowania': ['początkujący'],
+        'Cel ćwiczeń': ['stabilizacja', 'siła'],
+        'Dostępny sprzęt': [],
+      })
+    ).toBe('Cel ćwiczeń: siła, stabilizacja\nPoziom zaawansowania: początkujący');
+  });
+
+  it('does not ask again about what the composed answers settle', () => {
+    const questions = exerciseClarifyQuestions('kolano');
+    const answers = composeClarifyAnswers(questions, { 'Strona ciała': ['prawe'], 'Cel ćwiczeń': ['siła'] });
+
+    const topics = exerciseClarifyQuestions('kolano', answers).map((question) => question.topic);
+    expect(topics).not.toContain('Strona ciała');
+    expect(topics).not.toContain('Cel ćwiczeń');
   });
 });
