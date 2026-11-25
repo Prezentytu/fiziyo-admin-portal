@@ -18,6 +18,7 @@ import {
   REMOVE_ORGANIZATION_LOGO_MUTATION,
 } from '@/graphql/mutations/organizations.mutations';
 import { GET_ORGANIZATION_BY_ID_QUERY } from '@/graphql/queries/organizations.queries';
+import { GET_USER_ORGANIZATIONS_QUERY } from '@/graphql/queries/users.queries';
 import { ExerciseVisibilitySettings } from './ExerciseVisibilitySettings';
 import { PatientVisibilitySettings } from './PatientVisibilitySettings';
 
@@ -48,16 +49,23 @@ export function SettingsTab({ organization, currentUserRole, isLoading = false, 
 
   const canEdit = currentUserRole === 'owner' || currentUserRole === 'admin';
 
+  // Nazwa i logo gabinetu w nagłówku i przełączniku pochodzą z `userOrganizations`
+  // (osobny typ, Apollo nie scala go z Organization), więc odświeżamy też tę listę.
+  const organizationRefetchQueries = [
+    { query: GET_ORGANIZATION_BY_ID_QUERY, variables: { id: organization.id } },
+    { query: GET_USER_ORGANIZATIONS_QUERY },
+  ];
+
   const [updateName, { loading: updatingName }] = useMutation(UPDATE_ORGANIZATION_NAME_MUTATION, {
-    refetchQueries: [{ query: GET_ORGANIZATION_BY_ID_QUERY, variables: { id: organization.id } }],
+    refetchQueries: organizationRefetchQueries,
   });
 
   const [updateLogo, { loading: updatingLogo }] = useMutation(UPDATE_ORGANIZATION_LOGO_MUTATION, {
-    refetchQueries: [{ query: GET_ORGANIZATION_BY_ID_QUERY, variables: { id: organization.id } }],
+    refetchQueries: organizationRefetchQueries,
   });
 
   const [removeLogo, { loading: removingLogo }] = useMutation(REMOVE_ORGANIZATION_LOGO_MUTATION, {
-    refetchQueries: [{ query: GET_ORGANIZATION_BY_ID_QUERY, variables: { id: organization.id } }],
+    refetchQueries: organizationRefetchQueries,
   });
 
   const isUpdating = updatingName || updatingLogo || removingLogo;
