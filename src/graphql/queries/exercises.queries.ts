@@ -309,6 +309,7 @@ export const EXERCISE_PICKER_FRAGMENT = gql`
     isActive
     scope
     status
+    organizationVerificationStatus
     organizationId
     createdAt
     updatedAt

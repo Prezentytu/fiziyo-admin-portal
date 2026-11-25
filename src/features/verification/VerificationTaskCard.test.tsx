@@ -133,4 +133,17 @@ describe('VerificationTaskCard', () => {
     expect(screen.getByTestId('verification-card-exercise-1-status-badge')).toHaveTextContent('Oczekuje');
     expect(screen.queryByText('Szkic')).not.toBeInTheDocument();
   });
+
+  it('trzyma status, zgłoszenia i braki pod zdjęciem, w treści karty', () => {
+    render(<VerificationTaskCard exercise={{ ...baseExercise, imageUrl: 'https://cdn.example/x.jpg' }} />);
+
+    const badges = screen.getByTestId('verification-card-exercise-1-badges');
+    const photo = screen.getByAltText(baseExercise.name).closest('.aspect-video');
+
+    expect(badges).toContainElement(screen.getByTestId('verification-card-exercise-1-status-badge'));
+    expect(badges).toContainElement(screen.getByTestId('verification-card-exercise-1-reported-badge'));
+    expect(badges).toContainElement(screen.getByText('Brak wideo'));
+    expect(photo).not.toBeNull();
+    expect(photo).not.toContainElement(badges);
+  });
 });

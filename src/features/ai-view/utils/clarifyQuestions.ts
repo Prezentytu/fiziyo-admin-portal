@@ -2,7 +2,7 @@ import { normalizeSearchText } from '@/features/exercises/utils/exerciseSearch';
 
 /**
  * Questions under a set proposal or exercise results that let the assistant pick better. They are built
- * from what was asked for: each is one full question about one thing with a short topic for the answer, names the body part where that
+ * from what was asked for: each is one question about one thing with its ready answers, names the body part where that
  * reads naturally, and is left out when the request already answers it (demo 18.11: „Która strona i od
  * kiedy?” under a hip strengthening set told nobody what to answer).
  */
@@ -10,19 +10,23 @@ import { normalizeSearchText } from '@/features/exercises/utils/exerciseSearch';
 const MAX_QUESTIONS = 4;
 
 // Paired body parts with the question about the side, as the therapist would ask it. Normalized stems.
-const PAIRED_AREAS: ReadonlyArray<[RegExp, string]> = [
-  [/biodr/, 'Które biodro: lewe, prawe czy oba?'],
-  [/kolan/, 'Które kolano: lewe, prawe czy oba?'],
-  [/bark|ramie|ramien|rotator/, 'Który bark: lewy, prawy czy oba?'],
-  [/lokc|lokiec/, 'Który łokieć: lewy, prawy czy oba?'],
-  [/nadgarst/, 'Który nadgarstek: lewy, prawy czy oba?'],
-  [/skokow|kostk/, 'Który staw skokowy: lewy, prawy czy oba?'],
-  [/\bstop(?:a|y|e|ie|ami)?\b|rozciegn/, 'Która stopa: lewa, prawa czy obie?'],
+const NEUTER_SIDES = ['lewe', 'prawe', 'oba'];
+const MASCULINE_SIDES = ['lewy', 'prawy', 'oba'];
+const FEMININE_SIDES = ['lewa', 'prawa', 'obie'];
+const PAIRED_AREAS: ReadonlyArray<[RegExp, string, readonly string[]]> = [
+  [/biodr/, 'Które biodro?', NEUTER_SIDES],
+  [/kolan/, 'Które kolano?', NEUTER_SIDES],
+  [/bark|ramie|ramien|rotator/, 'Który bark?', MASCULINE_SIDES],
+  [/lokc|lokiec/, 'Który łokieć?', MASCULINE_SIDES],
+  [/nadgarst/, 'Który nadgarstek?', MASCULINE_SIDES],
+  [/skokow|kostk/, 'Który staw skokowy?', MASCULINE_SIDES],
+  [/\bstop(?:a|y|e|ie|ami)?\b|rozciegn/, 'Która stopa?', FEMININE_SIDES],
   [
     /czworoglow|dwuglow|lydk|\bud(?:o|a|zie)\b|achilles|kulszow|\bnog(?:a|i|e|ami)?\b|\bacl\b/,
-    'Która noga: lewa, prawa czy obie?',
+    'Która noga?',
+    FEMININE_SIDES,
   ],
-  [/\brek(?:a|i|e|ami)\b|dlon/, 'Która ręka: lewa, prawa czy obie?'],
+  [/\brek(?:a|i|e|ami)\b|dlon/, 'Która ręka?', FEMININE_SIDES],
 ];
 const UNPAIRED_AREA = /kregoslup|ledzw|szyj|kark|plec|brzuch|\bcore\b|tulow|miednic|piersiow|posladk|postaw|oddech/;
 
@@ -39,34 +43,72 @@ const LEVEL = /poczatkuj|zaawansowan|sportow|senior|aktywn|siedzac|sprawn|trenuj
 const EQUIPMENT = /sprzet|gum|tasm|hantl|pilk|\bmat(?:a|y|e)\b|roller|walek|kettl|sztang|ciezar/;
 const AGE = /\d+ ?(?:lat|l\.)|wiek|senior|dziec|nastolat|mlod|starsz/;
 
-/** What a chip shows (`label`) and what a tap puts in the message field, followed by „: ” (`topic`, as in T-0036). */
+/**
+ * `label` is the question, `options` its ready answers shown as chips, `topic` the line they fill in the
+ * message field („Cel ćwiczeń: siła, stabilizacja”, as in T-0036). `multi` lets more than one answer be chosen.
+ */
 export interface ClarifyQuestion {
   label: string;
   topic: string;
+  options: readonly string[];
+  multi?: boolean;
 }
 
 const SIDE_TOPIC = 'Strona ciała';
-const AREA: ClarifyQuestion = { label: 'Której okolicy ciała ma dotyczyć zestaw?', topic: 'Okolica ciała' };
+const AREA: ClarifyQuestion = {
+  label: 'Której okolicy ciała ma dotyczyć zestaw?',
+  topic: 'Okolica ciała',
+  options: ['odcinek lędźwiowy', 'szyja', 'bark', 'biodro', 'kolano', 'staw skokowy'],
+  multi: true,
+};
 const SYMPTOM_Q: ClarifyQuestion = {
-  label: 'Jaki jest główny problem: ból, sztywność czy osłabienie?',
+  label: 'Jaki jest główny problem?',
   topic: 'Główny objaw',
+  options: ['ból', 'sztywność', 'osłabienie'],
+  multi: true,
 };
 const CAUSE_Q: ClarifyQuestion = {
-  label: 'Czy to po urazie, po operacji czy bez wyraźnej przyczyny?',
+  label: 'Skąd się wzięło?',
   topic: 'Przyczyna',
+  options: ['po urazie', 'po operacji', 'bez wyraźnej przyczyny'],
 };
-const DURATION_Q: ClarifyQuestion = { label: 'Od jak dawna trwają dolegliwości?', topic: 'Czas trwania' };
-const PAIN_Q: ClarifyQuestion = { label: 'Czy przy ćwiczeniach pojawia się ból?', topic: 'Ból przy ćwiczeniach' };
+const DURATION_Q: ClarifyQuestion = {
+  label: 'Od jak dawna trwają dolegliwości?',
+  topic: 'Czas trwania',
+  options: ['do 2 tygodni', '2–6 tygodni', '6–12 tygodni', 'ponad 3 miesiące'],
+};
+const PAIN_Q: ClarifyQuestion = {
+  label: 'Czy przy ćwiczeniach pojawia się ból?',
+  topic: 'Ból przy ćwiczeniach',
+  options: ['nie', 'lekki', 'wyraźny'],
+};
 const LEVEL_Q: ClarifyQuestion = {
-  label: 'Jaki poziom zaawansowania pacjenta: początkujący, średni czy wysoki?',
+  label: 'Poziom zaawansowania pacjenta?',
   topic: 'Poziom zaawansowania',
+  options: ['początkujący', 'średni', 'wysoki'],
 };
-const EQUIPMENT_Q: ClarifyQuestion = { label: 'Jaki sprzęt jest pod ręką?', topic: 'Dostępny sprzęt' };
-const AGE_Q: ClarifyQuestion = { label: 'Ile lat ma pacjent?', topic: 'Wiek' };
-const GOAL_Q: ClarifyQuestion = { label: 'Jaki jest cel: siła, rozciąganie czy stabilizacja?', topic: 'Cel ćwiczeń' };
+const EQUIPMENT_Q: ClarifyQuestion = {
+  label: 'Jaki sprzęt jest pod ręką?',
+  topic: 'Dostępny sprzęt',
+  options: ['bez sprzętu', 'guma', 'hantle', 'piłka', 'mata'],
+  multi: true,
+};
+const AGE_Q: ClarifyQuestion = {
+  label: 'Ile lat ma pacjent?',
+  topic: 'Wiek',
+  options: ['do 18 lat', '18–40 lat', '41–65 lat', 'ponad 65 lat'],
+};
+const GOAL_Q: ClarifyQuestion = {
+  label: 'Jaki jest cel?',
+  topic: 'Cel ćwiczeń',
+  options: ['siła', 'rozciąganie', 'stabilizacja', 'mobilność'],
+  multi: true,
+};
 const LIMITS_Q: ClarifyQuestion = {
-  label: 'Czy trzeba uważać na ból albo ograniczenia ruchu?',
+  label: 'Czy trzeba na coś uważać?',
   topic: 'Ból i ograniczenia',
+  options: ['bez ograniczeń', 'ból przy ruchu', 'ograniczony zakres ruchu'],
+  multi: true,
 };
 const TOPICS = [AREA, SYMPTOM_Q, CAUSE_Q, DURATION_Q, PAIN_Q, LEVEL_Q, EQUIPMENT_Q, AGE_Q, GOAL_Q, LIMITS_Q]
   .map((question) => question.topic)
@@ -92,8 +134,8 @@ function readRequest(raw: string): ReadRequest {
 
 function sideQuestion(text: string): ClarifyQuestion | undefined {
   if (SIDE.test(text)) return undefined;
-  const label = PAIRED_AREAS.find(([area]) => area.test(text))?.[1];
-  return label ? { label, topic: SIDE_TOPIC } : undefined;
+  const paired = PAIRED_AREAS.find(([area]) => area.test(text));
+  return paired ? { label: paired[1], topic: SIDE_TOPIC, options: paired[2] } : undefined;
 }
 
 function pick(request: ReadRequest, candidates: ReadonlyArray<ClarifyQuestion | false | undefined>): ClarifyQuestion[] {
@@ -166,4 +208,18 @@ export function requestBefore(messages: readonly ThreadMessageLike[], index: num
     } else if (message.spec && FLOW_END.has(message.spec.component)) break;
   }
   return texts.length > 0 ? texts.join('\n') : undefined;
+}
+
+/** The message the chosen answers make: one „Temat: odpowiedź” line per answered question, in question order. */
+export function composeClarifyAnswers(
+  questions: readonly ClarifyQuestion[],
+  chosen: Readonly<Record<string, readonly string[]>>
+): string {
+  return questions
+    .map((question) => {
+      const answers = question.options.filter((option) => chosen[question.topic]?.includes(option));
+      return answers.length > 0 ? `${question.topic}: ${answers.join(', ')}` : undefined;
+    })
+    .filter(Boolean)
+    .join('\n');
 }

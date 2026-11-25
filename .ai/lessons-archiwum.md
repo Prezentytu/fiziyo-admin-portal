@@ -124,6 +124,22 @@ Wpisy przeniesione z `.ai/lessons.md`: starsze niż 30 dni w chwili przeniesieni
 - **Rozwiązanie**: `team_` → `teamId`, inny poprawny identyfikator → `slug`. Błąd API zawiera `code` + `message`. Pin odpalaj z `main` / `workflow_dispatch`, nie Re-run Preview.
 - **Reguła**: Vercel `teamId` to tylko `team_…`. Slug zespołu idzie w `slug`. Nie rerunuj pinu z Preview PR.
 
+### 2026-09-15 - Import nie może przesuwać fałszywego braku testid
+
+- **Kategoria**: `Testing` | `Build/Tooling`
+- **Problem**: PR z importem i formatowaniem `hasParams` wywalił `check:testids` na `chat/ExerciseCard` Button, który już miał `data-testid`.
+- **Przyczyna**: Guard kończył opening tag na pierwszym `>` (`onClick={() =>}`), więc testid w kolejnej linii był niewidoczny; a ówczesna allowlista z numerem linii dała z +2 linii „nowy” wpis.
+- **Rozwiązanie**: `data-testid` jako pierwszy atrybut; parser pomija `>` wewnątrz `{...}`; regresja w `scripts/check-testid-coverage.test.mjs`.
+- **Reguła**: Guard ma widzieć testid mimo `=>`; trzymaj `data-testid` przed handlerami z `=>`. [egzekwowane: scripts/check-testid-coverage.test.mjs]
+
+### 2026-09-14 - Hook klasyfikuje każdy segment `&&` osobno
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: `git push && git log origin/main..HEAD` padało jako „push to main”.
+- **Przyczyna**: Jeden regex na całym łańcuchu poleceń.
+- **Rozwiązanie**: `agent-guard` dzieli po `&&` / `||` / `;` i ocenia segmenty.
+- **Reguła**: Jeśli hook szuka `git push` + `main`, klasyfikuj segment, nie cały string. [egzekwowane: scripts/agent-guard.test.mjs]
+
 ### 2026-09-15 - Hardening parsera karty idzie z kanonem
 
 - **Kategoria**: `Build/Tooling`

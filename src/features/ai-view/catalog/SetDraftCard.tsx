@@ -44,6 +44,7 @@ import {
 import type { CardProps } from './cardProps';
 import { ChatCard, ChatCardEmpty } from './ChatCard';
 import { ClarifyChips } from './ClarifyChips';
+import { ExerciseReviewBadge } from './ExerciseReviewBadge';
 import { useSaveTemplateSet } from './useChatWrites';
 
 // A chat draft becomes a plan's mappings: fields a mapping does not keep are not offered.
@@ -107,6 +108,7 @@ function DraftRow({
           {/* div, nie p: znaczniki (Badge) renderują div, a div w p psuje hydratację (SPEC-061, znalezione na żywo). */}
           <div className="flex items-center gap-2 text-[15px] font-medium leading-[21px] text-foreground">
             <span className="truncate">{name}</span>
+            <ExerciseReviewBadge exercise={exercise} testId={`${testId}-review-${item.exerciseId}`} />
             {added && (
               <Badge className="shrink-0" data-testid={`${testId}-new-${item.exerciseId}`}>
                 nowe
@@ -530,6 +532,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
                         className="rounded-[8px]"
                       />
                       <span className="min-w-0 flex-1 truncate">{exercise.name}</span>
+                      <ExerciseReviewBadge exercise={exercise} testId={`${testId}-add-review-${exercise.id}`} />
                       <Plus className="h-4 w-4 text-tint" aria-hidden="true" />
                     </button>
                   </li>
@@ -556,7 +559,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
       {/* Zestaw z opisu (bez zestawu z katalogu): pytania, które pomagają dobrać ćwiczenia trafniej. */}
       {!set && !locked && spec.note && (
         <ClarifyChips
-          lead="Doprecyzuj, a lepiej dobiorę ćwiczenia. Wybierz pytanie i dopisz odpowiedź w wiadomości:"
+          lead="Doprecyzuj, a lepiej dobiorę ćwiczenia. Zaznacz odpowiedzi, trafią gotowe do wiadomości:"
           questions={draftClarifyQuestions({ request, note: spec.note })}
           testId={`${testId}-clarify`}
         />

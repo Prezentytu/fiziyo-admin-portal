@@ -16,11 +16,8 @@ import {
 import { cn } from '@/lib/utils';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { getMediaUrl } from '@/utils/mediaUrl';
-import {
-  HIDE_EXERCISE_TAGS,
-  estimateEffectiveExerciseSeconds,
-  resolveEffectiveExerciseParams,
-} from '@/components/shared/exercise';
+import { HIDE_EXERCISE_TAGS } from '@/components/shared/exercise';
+import { estimateSetSeconds } from '@/features/exercise-sets/utils/setDuration';
 import type { ExerciseTag } from '@/types/apollo';
 import { isPatientPlan, isTemplateSet } from '@/features/exercise-sets/utils/setKind';
 import { formatExerciseCount } from '@/utils/polishPlural';
@@ -150,13 +147,10 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
   }, [set.exerciseMappings]);
 
   // Calculate estimated duration
-  const estimatedDuration = useMemo(() => {
-    let totalSeconds = 0;
-    for (const mapping of set.exerciseMappings || []) {
-      totalSeconds += estimateEffectiveExerciseSeconds(resolveEffectiveExerciseParams(mapping));
-    }
-    return Math.round(totalSeconds / 60); // minutes
-  }, [set.exerciseMappings]);
+  const estimatedDuration = useMemo(
+    () => Math.round(estimateSetSeconds(set.exerciseMappings) / 60), // minutes
+    [set.exerciseMappings]
+  );
 
   // Aggregate unique tags from all exercises in this set
   const aggregatedTags = useMemo(() => {

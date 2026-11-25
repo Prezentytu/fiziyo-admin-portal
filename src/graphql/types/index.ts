@@ -32,4 +32,5 @@ export * from './organization.types';
 export * from './support.types';
 export * from './exerciseDependencies.types';
 export * from './referral.types';
+export * from './exerciseSetLog.types';
 export * from './organizationRewards.types';

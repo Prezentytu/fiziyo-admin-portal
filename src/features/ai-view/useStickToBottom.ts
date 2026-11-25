@@ -7,11 +7,19 @@ const NEAR_BOTTOM_PX = 120;
 /**
  * Follows new messages while the therapist is at the bottom; scrolled up, the thread stays put.
  * Another conversation (threadKey) opens at its last message.
+ * The therapist's own new message (ownKey, e.g. „Wróć do tej wersji” on an older card) always
+ * brings the thread to its end, so the result of their action is in view.
  */
-export function useStickToBottom(scrollRef: RefObject<HTMLDivElement | null>, threadKey: string, followKey: string) {
+export function useStickToBottom(
+  scrollRef: RefObject<HTMLDivElement | null>,
+  threadKey: string,
+  followKey: string,
+  ownKey?: string
+) {
   const [isAway, setIsAway] = useState(false);
   const [shownThread, setShownThread] = useState(threadKey);
   const isAwayRef = useRef(false);
+  const seenOwnRef = useRef({ threadKey, ownKey });
 
   if (shownThread !== threadKey) {
     setShownThread(threadKey);
@@ -42,6 +50,14 @@ export function useStickToBottom(scrollRef: RefObject<HTMLDivElement | null>, th
     isAwayRef.current = false;
     scrollToBottom('auto');
   }, [threadKey, scrollToBottom]);
+
+  useEffect(() => {
+    const seen = seenOwnRef.current;
+    seenOwnRef.current = { threadKey, ownKey };
+    if (seen.threadKey !== threadKey || seen.ownKey === ownKey || ownKey === undefined) return;
+    isAwayRef.current = false;
+    scrollToBottom();
+  }, [threadKey, ownKey, scrollToBottom]);
 
   useEffect(() => {
     if (!isAwayRef.current) scrollToBottom();

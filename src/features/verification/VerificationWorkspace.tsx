@@ -49,7 +49,7 @@ import type {
   GetExerciseReviewNotesResponse,
 } from '@/graphql/types/exerciseReviewNote.types';
 
-import { normalizeVideoList } from '@/utils/exerciseVideos';
+import { normalizeVideoList, setVideoStartInList } from '@/utils/exerciseVideos';
 import { getMediaUrl, getMediaUrls } from '@/utils/mediaUrl';
 import type {
   AdminExercise,
@@ -1263,6 +1263,9 @@ export function VerificationWorkspace({
             testIdPrefix="verification-media"
             selectedIndex={galleryIndex}
             onSelectedIndexChange={handleGalleryIndexChange}
+            onSetVideoStart={(videoUrl, seconds) =>
+              setCoreField('videos', setVideoStartInList(core.videos, videoUrl, seconds))
+            }
           />
           {stage === 'instruction' && (
             <div

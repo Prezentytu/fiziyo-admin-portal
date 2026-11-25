@@ -19,6 +19,7 @@ import type { CardProps } from './cardProps';
 import { ChatCard, ChatCardEmpty } from './ChatCard';
 import { ClarifyChips } from './ClarifyChips';
 import { ExerciseIdeasList } from './ExerciseIdeas';
+import { ExerciseReviewBadge } from './ExerciseReviewBadge';
 import { exerciseClarifyQuestions } from '../utils/clarifyQuestions';
 
 /** Search tiles: pick what fits and compose a set from it; when nothing fits, ideas for new exercises. */
@@ -211,6 +212,7 @@ function Results({
                 <span className="line-clamp-2 text-[15px] font-medium leading-[21px] text-foreground">
                   {exercise.name}
                 </span>
+                <ExerciseReviewBadge exercise={exercise} testId={`${testId}-review-${exercise.id}`} />
                 {isSelected && (
                   <span className="absolute right-2.5 top-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-tint-fill text-on-tint">
                     <Check className="h-3 w-3" aria-hidden="true" />
@@ -223,7 +225,7 @@ function Results({
       </ul>
       {!locked && (
         <ClarifyChips
-          lead="Doprecyzuj, a dobiorę trafniej: wybierz pytanie i dopisz odpowiedź w wiadomości. Z wybranych ułożysz zestaw przyciskiem poniżej."
+          lead="Doprecyzuj, a dobiorę trafniej: zaznacz odpowiedzi, trafią gotowe do wiadomości. Z wybranych ćwiczeń ułożysz zestaw przyciskiem poniżej."
           questions={exerciseClarifyQuestions(spec.query, request)}
           testId={`${testId}-clarify`}
         />
