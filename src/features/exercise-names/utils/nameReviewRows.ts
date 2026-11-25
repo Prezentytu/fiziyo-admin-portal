@@ -188,6 +188,23 @@ export function toDecision(
   };
 }
 
+/** Backend `ExerciseNameReviewService.MaxDecisionsPerCall`: a longer list is refused as a whole. */
+export const NAME_DECISIONS_PER_CALL = 200;
+
+/** Backend refuses a new name shorter than 2 characters, and one bad name fails the whole call. */
+export function hasValidName(row: ExerciseNameReviewRow, draft: NameReviewDraft, keepName = false): boolean {
+  return toDecision(row, draft, keepName).name === null || normalizeName(draft.name).length >= 2;
+}
+
+/** Splits already ordered decisions, so pillars land in earlier calls than their variants. */
+export function chunkDecisions<T>(decisions: ReadonlyArray<T>, size = NAME_DECISIONS_PER_CALL): T[][] {
+  const chunks: T[][] = [];
+  for (let start = 0; start < decisions.length; start += size) {
+    chunks.push(decisions.slice(start, start + size));
+  }
+  return chunks;
+}
+
 export function orderDecisions(decisions: ReadonlyArray<ExerciseNameDecisionInput>): ExerciseNameDecisionInput[] {
   return [...decisions].sort((left, right) => Number(right.isPillar) - Number(left.isPillar));
 }

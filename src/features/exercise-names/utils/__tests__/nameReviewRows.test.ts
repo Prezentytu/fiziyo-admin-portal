@@ -2,13 +2,15 @@ import { describe, expect, it } from 'vitest';
 
 import type { ExerciseNameProposal, ExerciseNameReviewRow } from '@/graphql/types/exerciseNameReview.types';
 
-import { nameReviewKeyAction } from '../nameReviewKeys';
+import { nameReviewKeyAction, nameReviewKeyFocus } from '../nameReviewKeys';
 import {
+  chunkDecisions,
   countRows,
   DEFAULT_NAME_REVIEW_FILTERS,
   familyOptions,
   filterRows,
   groupByPillar,
+  hasValidName,
   initialDraft,
   NO_FAMILY_LABEL,
   nextRowId,
@@ -161,6 +163,27 @@ describe('toDecision and orderDecisions', () => {
     const ordered = orderDecisions([toDecision(chin, initialDraft(chin)), toDecision(pull, initialDraft(pull))]);
     expect(ordered.map((decision) => decision.exerciseId)).toEqual(['pull', 'chin']);
   });
+
+  it('splits a bulk save into backend-sized calls and keeps pillars in the earlier calls', () => {
+    const decisions = orderDecisions(
+      Array.from({ length: 450 }, (_, index) => ({
+        exerciseId: `e${index}`,
+        name: null,
+        isPillar: index >= 440,
+        pillarExerciseId: null,
+      }))
+    );
+    const chunks = chunkDecisions(decisions);
+    expect(chunks.map((chunk) => chunk.length)).toEqual([200, 200, 50]);
+    expect(chunks[0].slice(0, 10).every((decision) => decision.isPillar)).toBe(true);
+    expect(chunkDecisions([])).toEqual([]);
+  });
+
+  it('rejects a name the backend refuses unless the name is kept', () => {
+    expect(hasValidName(chin, { name: ' a ', isPillar: false, pillarId: null })).toBe(false);
+    expect(hasValidName(chin, { name: '', isPillar: false, pillarId: null }, true)).toBe(true);
+    expect(hasValidName(chin, { name: 'Wiosło', isPillar: false, pillarId: null })).toBe(true);
+  });
 });
 
 describe('nextRowId', () => {
@@ -202,5 +225,37 @@ describe('nameReviewKeyAction', () => {
     expect(nameReviewKeyAction({ key: 'n', inTextField: true })).toBeNull();
     expect(nameReviewKeyAction({ key: 'Enter', inTextField: true })).toBe('done');
     expect(nameReviewKeyAction({ key: 'f', metaKey: true, inTextField: false })).toBeNull();
+  });
+
+  it('lets a focused button take Enter and an open list take every key', () => {
+    expect(nameReviewKeyAction({ key: 'Enter', inTextField: false, focus: 'control' })).toBeNull();
+    expect(nameReviewKeyAction({ key: 'j', inTextField: false, focus: 'control' })).toBe('next');
+    expect(nameReviewKeyAction({ key: 'u', inTextField: false, focus: 'popup' })).toBeNull();
+    expect(nameReviewKeyAction({ key: 'ArrowDown', inTextField: false, focus: 'popup' })).toBeNull();
+  });
+
+  it('repeats only movement while a key is held', () => {
+    expect(nameReviewKeyAction({ key: 'j', inTextField: false, repeat: true })).toBe('next');
+    expect(nameReviewKeyAction({ key: 'Enter', inTextField: false, repeat: true })).toBeNull();
+    expect(nameReviewKeyAction({ key: 'u', inTextField: false, repeat: true })).toBeNull();
+  });
+
+  it('classifies the focused element', () => {
+    document.body.innerHTML = `
+      <button id="b">Cofnij</button>
+      <button id="s" role="switch">Filarowe</button>
+      <div role="listbox"><div id="o" role="option">Przysiad</div></div>
+      <button id="t" role="combobox">Rodzina</button>
+      <div role="dialog"><span id="d">x</span></div>
+      <div id="row"><span id="cell">Nazwa</span></div>`;
+    const byId = (id: string) => document.getElementById(id);
+    expect(nameReviewKeyFocus(byId('b'))).toBe('control');
+    expect(nameReviewKeyFocus(byId('s'))).toBe('control');
+    expect(nameReviewKeyFocus(byId('o'))).toBe('popup');
+    expect(nameReviewKeyFocus(byId('t'))).toBe('popup');
+    expect(nameReviewKeyFocus(byId('d'))).toBe('popup');
+    expect(nameReviewKeyFocus(byId('cell'))).toBe('none');
+    expect(nameReviewKeyFocus(document.body)).toBe('none');
+    expect(nameReviewKeyFocus(null)).toBe('none');
   });
 });

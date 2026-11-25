@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useMutation, useQuery } from '@apollo/client/react';
-import { ChevronDown, History, ListTree, Rows3, Search, ShieldCheck, Sparkles } from 'lucide-react';
+import { AlertTriangle, ChevronDown, History, ListTree, Rows3, Search, ShieldCheck, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';
@@ -44,13 +44,15 @@ import type {
   UndoExerciseNameDecisionResponse,
 } from '@/graphql/types/exerciseNameReview.types';
 import { getYouTubeEmbedUrl, getVimeoEmbedUrl, isVimeoUrl, isYouTubeUrl } from '@/utils/videoEmbed';
-import { NAME_REVIEW_KEY_HINTS, nameReviewKeyAction } from '@/features/exercise-names/utils/nameReviewKeys';
+import { NAME_REVIEW_KEY_HINTS, nameReviewKeyAction, nameReviewKeyFocus } from '@/features/exercise-names/utils/nameReviewKeys';
 import {
+  chunkDecisions,
   countRows,
   effectivePillarId,
   familyOptions,
   filterRows,
   groupByPillar,
+  hasValidName,
   initialDraft,
   isDone,
   nextRowId,
@@ -107,6 +109,7 @@ export function NameReviewPage() {
   const {
     data: rowsData,
     loading: rowsLoading,
+    error: rowsError,
     refetch: refetchRows,
   } = useQuery<GetExerciseNameReviewsResponse>(GET_EXERCISE_NAME_REVIEWS_QUERY, {
     variables: { organizationId: organizationId ?? '' },
@@ -135,6 +138,11 @@ export function NameReviewPage() {
   const [generate, { loading: generating }] = useMutation<GenerateExerciseNameProposalsResponse>(
     GENERATE_EXERCISE_NAME_PROPOSALS_MUTATION
   );
+
+  // A mutation answer covers the row only until the next server list; a refetch (regenerate, job done) wins.
+  useEffect(() => {
+    setRowOverrides({});
+  }, [rowsData]);
 
   const rows = useMemo(
     () => (rowsData?.exerciseNameReviews ?? []).map((row) => rowOverrides[row.exerciseId] ?? row),
@@ -217,30 +225,42 @@ export function NameReviewPage() {
     });
 
   const saveDecisions = async (targets: ReadonlyArray<ExerciseNameReviewRow>, keepName: boolean) => {
-    const pending = targets.filter((row) => !isDone(row));
+    const open = targets.filter((row) => !isDone(row));
+    const pending = open.filter((row) => hasValidName(row, draftOf(row), keepName));
+    if (pending.length < open.length) {
+      toast.error(`Nazwa musi mieć co najmniej 2 znaki. Pominięto: ${open.length - pending.length}.`);
+    }
     if (!organizationId || pending.length === 0) return;
     const ids = pending.map((row) => row.exerciseId);
-    const following = nextRowId(orderedIds, activeId, new Set(urlState.status === 'todo' ? ids : []));
+    const chunks = chunkDecisions(orderDecisions(pending.map((row) => toDecision(row, draftOf(row), keepName))));
     markSaving(ids, true);
+    const savedIds: string[] = [];
+    let failure: unknown = null;
     try {
-      const result = await decide({
-        variables: {
-          organizationId,
-          decisions: orderDecisions(pending.map((row) => toDecision(row, draftOf(row), keepName))),
-        },
-      });
-      if (result.data) {
-        applyRows(result.data.decideExerciseNames);
-        setSelected((current) => new Set([...current].filter((id) => !ids.includes(id))));
-        if (urlState.status === 'todo' || ids.length === 1) patchUrl({ rowId: following });
-        void refetchJob();
-        if (logOpen) void refetchLog();
+      for (const decisions of chunks) {
+        try {
+          const result = await decide({ variables: { organizationId, decisions } });
+          if (result.data) {
+            applyRows(result.data.decideExerciseNames);
+            savedIds.push(...result.data.decideExerciseNames.map((row) => row.exerciseId));
+          }
+        } catch (error) {
+          failure = error;
+        }
       }
-    } catch (error) {
-      toast.error(errorMessage(error, 'Nie udało się zapisać decyzji.'));
     } finally {
       markSaving(ids, false);
     }
+    if (failure) {
+      const saved = chunks.length > 1 ? ` Zapisano ${savedIds.length} z ${ids.length}.` : '';
+      toast.error(`${errorMessage(failure, 'Nie udało się zapisać decyzji.')}${saved}`);
+    }
+    if (savedIds.length === 0) return;
+    const following = nextRowId(orderedIds, activeId, new Set(urlState.status === 'todo' ? savedIds : []));
+    setSelected((current) => new Set([...current].filter((id) => !savedIds.includes(id))));
+    if (urlState.status === 'todo' || ids.length === 1) patchUrl({ rowId: following });
+    void refetchJob();
+    if (logOpen) void refetchLog();
   };
 
   const undoDecision = async (exerciseId: string) => {
@@ -279,7 +299,9 @@ export function NameReviewPage() {
       ctrlKey: event.ctrlKey,
       metaKey: event.metaKey,
       altKey: event.altKey,
+      repeat: event.repeat,
       inTextField: isTextField(event.target),
+      focus: nameReviewKeyFocus(event.target),
     });
     const fieldRowId =
       event.target instanceof HTMLInputElement
@@ -341,7 +363,8 @@ export function NameReviewPage() {
     });
 
   const selectedRows = ordered.filter((row) => selected.has(row.exerciseId) && !isDone(row));
-  const allVisibleSelected = ordered.length > 0 && ordered.every((row) => selected.has(row.exerciseId));
+  const selectableRows = ordered.filter((row) => !isDone(row));
+  const allVisibleSelected = selectableRows.length > 0 && selectableRows.every((row) => selected.has(row.exerciseId));
 
   if (!roleLoading && !canReviewExercises) {
     return (
@@ -612,7 +635,7 @@ export function NameReviewPage() {
                 <Checkbox
                   checked={allVisibleSelected}
                   onCheckedChange={(checked) =>
-                    setSelected(checked === true ? new Set(ordered.filter((row) => !isDone(row)).map((row) => row.exerciseId)) : new Set())
+                    setSelected(checked === true ? new Set(selectableRows.map((row) => row.exerciseId)) : new Set())
                   }
                   aria-label="Zaznacz wszystkie widoczne"
                   data-testid="name-review-select-all"
@@ -628,10 +651,20 @@ export function NameReviewPage() {
               {!organizationId && (
                 <p className="px-4 py-10 text-center text-sm text-muted-foreground">Wybierz organizację, której ćwiczenia chcesz przejrzeć.</p>
               )}
-              {organizationId && rowsLoading && rows.length === 0 && (
+              {organizationId && rowsError && rows.length === 0 && (
+                <EmptyState
+                  icon={AlertTriangle}
+                  title="Nie udało się wczytać ćwiczeń"
+                  description={errorMessage(rowsError, 'Sprawdź połączenie i spróbuj ponownie.')}
+                  actionLabel="Spróbuj ponownie"
+                  onAction={() => void refetchRows()}
+                  className="py-10"
+                />
+              )}
+              {organizationId && !rowsError && rowsLoading && rows.length === 0 && (
                 <p className="px-4 py-10 text-center text-sm text-muted-foreground">Wczytuję ćwiczenia…</p>
               )}
-              {organizationId && !rowsLoading && ordered.length === 0 && (
+              {organizationId && !rowsError && !rowsLoading && ordered.length === 0 && (
                 <p className="px-4 py-10 text-center text-sm text-muted-foreground" data-testid="name-review-empty">
                   {counts.total > 0 && counts.todo === 0 && urlState.status === 'todo'
                     ? 'Wszystko przejrzane.'
