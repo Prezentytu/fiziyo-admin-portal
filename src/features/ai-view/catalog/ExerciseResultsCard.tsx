@@ -223,7 +223,7 @@ function Results({
       </ul>
       {!locked && (
         <ClarifyChips
-          lead="Doprecyzuj, a dobiorę trafniej: wybierz pytanie i dopisz odpowiedź w wiadomości. Z wybranych ułożysz zestaw przyciskiem poniżej."
+          lead="Doprecyzuj, a dobiorę trafniej: zaznacz odpowiedzi, trafią gotowe do wiadomości. Z wybranych ćwiczeń ułożysz zestaw przyciskiem poniżej."
           questions={exerciseClarifyQuestions(spec.query, request)}
           testId={`${testId}-clarify`}
         />
