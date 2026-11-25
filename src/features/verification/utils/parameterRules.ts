@@ -61,7 +61,9 @@ export const PARAMETER_RULES: Record<ParameterKey, ParameterRule> = {
   hold: {
     label: 'Czas utrzymania',
     unit: 's',
-    hardMax: 300,
+    // Jedno długie powtórzenie bywa ruchem ciągłym (rower 10 min), więc granicą jest limit całego ćwiczenia;
+    // dłuższe niż zwykle utrzymanie to sugestia, nie błąd.
+    hardMax: 60 * 60,
     typicalMin: 10,
     typicalMax: 60,
     suggested: 30,

@@ -35,13 +35,13 @@ W etapie Instrukcja panel nagrania i zdjęć podąża za czytanym tekstem: fokus
 
 ### Zakresy parametrów (założenia produktu, do strojenia przez fizjoterapeutów)
 
-| Pole                   | Limit | Typowo   | „Ustaw” |
-| ---------------------- | ----- | -------- | ------- |
-| Serie                  | 20    | 2–5      | 3       |
-| Powtórzenia            | 200   | 6–20     | 12      |
-| Czas powtórzenia       | 60 s  | 2–6 s    | 3 s     |
-| Czas utrzymania        | 300 s | 10–60 s  | 30 s    |
-| Przerwa między seriami | 600 s | 30–120 s | 60 s    |
+| Pole                   | Limit  | Typowo   | „Ustaw” |
+| ---------------------- | ------ | -------- | ------- |
+| Serie                  | 20     | 2–5      | 3       |
+| Powtórzenia            | 200    | 6–20     | 12      |
+| Czas powtórzenia       | 60 s   | 2–6 s    | 3 s     |
+| Czas utrzymania        | 3600 s | 10–60 s  | 30 s    |
+| Przerwa między seriami | 600 s  | 30–120 s | 60 s    |
 
 Czas ćwiczenia liczy `calculateExerciseTotalSeconds` (`src/utils/exerciseTime.ts`), ten sam wzór co katalog i player: czas powtórzenia → `duration` jako czas serii → tempo → 3 s, plus mikroprzerwy między powtórzeniami, przerwy między seriami, czas przygotowania i ×2 przy „Na każdą stronę”. Licznik „Czas ćwiczenia ≈ N min” stoi w prawym górnym rogu karty parametrów. Powyżej 15 min ostrzeżenie („OK” wiąże się z liczbą sekund; każda zmiana czasu otwiera je ponownie), powyżej 60 min blokada.
 
@@ -125,6 +125,7 @@ Zdjęcie przy czytanym kroku ma test integracyjny `VerificationWorkspace.reading
 
 ## Changelog
 
+- 2026-11-25 — Limit czasu utrzymania 3600 s (jak limit całego ćwiczenia), typowo dalej 10–60 s: ruch ciągły w jednym długim powtórzeniu (rower 10 min) dostaje sugestię zamiast błędu.
 - 2026-11-20 — Wycofanie potwierdzonych duplikatów z FiziYo i powiadomienie zgłaszającego w portalu.
 - 2026-11-20 — Rozróżnienie obu ćwiczeń w dialogu duplikatu, podgląd oryginału i wpis w jego notatkach roboczych.
 - 2026-10-26: Pierwsza wersja (etapy, ocena parametrów, zdjęcia przy krokach, fazy wskazówek, duplikat).

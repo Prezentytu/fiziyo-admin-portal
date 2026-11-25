@@ -492,3 +492,26 @@ describe('acknowledgeAllSuggestions', () => {
     expect(review.acknowledgedSessionSeconds).toBe(before.sessionSeconds);
   });
 });
+
+describe('czas utrzymania: limit godziny, zwykły zakres bez zmian', () => {
+  const bike: ParameterValues = { sets: 1, reps: 1, repTime: null, hold: 600, rest: null };
+  const holdOf = (evaluation: ReturnType<typeof evaluateParameters>) =>
+    evaluation.fields.find((field) => field.key === 'hold');
+
+  it('rower 1 × 600 s: sugestia ze zwykłym zakresem 10–60 s, nie błąd', () => {
+    const evaluation = evaluateParameters({ values: bike, mode: 'hold', side: 'none' });
+    expect(holdOf(evaluation)?.level).toBe('warning');
+    expect(describeFieldNote(holdOf(evaluation)!)).toBe('Dużo, zwykle 10–60 s');
+    expect(evaluation.findings.find((finding) => finding.key === 'hold')).toEqual(
+      expect.objectContaining({ level: 'warning', canAcknowledge: true, suggested: 30 })
+    );
+  });
+
+  it('błąd dopiero powyżej godziny', () => {
+    const atLimit = evaluateParameters({ values: { ...bike, hold: 3600 }, mode: 'hold', side: 'none' });
+    expect(holdOf(atLimit)?.level).toBe('warning');
+    const over = evaluateParameters({ values: { ...bike, hold: 3601 }, mode: 'hold', side: 'none' });
+    expect(holdOf(over)?.level).toBe('limit');
+    expect(describeFieldNote(holdOf(over)!)).toBe('Maks. 3600 s');
+  });
+});
