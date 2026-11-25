@@ -15,6 +15,9 @@ interface VideoEmbedProps {
 
 const YOUTUBE_LISTENING_MS = 500;
 const YOUTUBE_LISTENING_ATTEMPTS = 20;
+const VIMEO_TIME_EVENTS = new Set(['timeupdate', 'seeked', 'playProgress', 'seek']);
+/** Vimeo sends no seek event for a scrub on a video that has not played yet, so the page also asks for the time. */
+const VIMEO_TIME_POLL_MS = 1000;
 
 export function VideoEmbed({ url, title, className, onTimeChange }: Readonly<VideoEmbedProps>) {
   const tracksTime = Boolean(onTimeChange);
@@ -41,6 +44,11 @@ export function VideoEmbed({ url, title, className, onTimeChange }: Readonly<Vid
       post({ method: 'addEventListener', value: 'seeked' });
     };
 
+    let vimeoTimer: ReturnType<typeof setInterval> | null = null;
+    const startVimeoPolling = () => {
+      vimeoTimer = setInterval(() => post({ method: 'getCurrentTime' }), VIMEO_TIME_POLL_MS);
+    };
+
     let youtubeAttempts = 0;
     let youtubeTimer: ReturnType<typeof setInterval> | null = null;
     const stopYouTubeListening = () => {
@@ -62,6 +70,8 @@ export function VideoEmbed({ url, title, className, onTimeChange }: Readonly<Vid
       if (event.source !== iframe.contentWindow || typeof event.data !== 'string') return;
       let data: {
         event?: string;
+        method?: string;
+        value?: unknown;
         data?: { seconds?: unknown };
         info?: { currentTime?: unknown };
       } | null;
@@ -82,8 +92,13 @@ export function VideoEmbed({ url, title, className, onTimeChange }: Readonly<Vid
       }
 
       if (data.event === 'ready') subscribeVimeo();
+      if (data.method === 'getCurrentTime' && typeof data.value === 'number') {
+        onTimeChangeRef.current?.(data.value);
+        return;
+      }
       const seconds = data.data?.seconds;
-      if ((data.event === 'timeupdate' || data.event === 'seeked') && typeof seconds === 'number') {
+      // With api=1 Vimeo answers with the legacy names playProgress and seek instead of timeupdate and seeked.
+      if (data.event && VIMEO_TIME_EVENTS.has(data.event) && typeof seconds === 'number') {
         onTimeChangeRef.current?.(seconds);
       }
     };
@@ -95,10 +110,13 @@ export function VideoEmbed({ url, title, className, onTimeChange }: Readonly<Vid
 
     window.addEventListener('message', handleMessage);
     iframe.addEventListener('load', handleLoad);
+    // The iframe may already be loaded (fast cache, hot reload), so polling does not wait for its events.
+    if (!isYouTube) startVimeoPolling();
     return () => {
       window.removeEventListener('message', handleMessage);
       iframe.removeEventListener('load', handleLoad);
       stopYouTubeListening();
+      if (vimeoTimer) clearInterval(vimeoTimer);
     };
   }, [embedUrl, isYouTube, tracksTime]);
 
@@ -132,7 +150,12 @@ export function VideoEmbed({ url, title, className, onTimeChange }: Readonly<Vid
   }
 
   return (
-    <div className={cn('flex h-full w-full items-center justify-center rounded-xl border border-border/50 bg-card', className)}>
+    <div
+      className={cn(
+        'flex h-full w-full items-center justify-center rounded-xl border border-border/50 bg-card',
+        className
+      )}
+    >
       <a
         href={url}
         target="_blank"
