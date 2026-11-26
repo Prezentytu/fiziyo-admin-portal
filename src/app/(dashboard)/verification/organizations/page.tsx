@@ -66,8 +66,6 @@ export default function CrossOrgVerificationPage() {
   } = useQuery<GetCrossOrgVerificationStatsResponse>(GET_CROSS_ORG_VERIFICATION_STATS_QUERY, {
     skip: !isSiteSuperAdmin,
     fetchPolicy: 'cache-and-network',
-    pollInterval: 30_000,
-    skipPollAttempt: () => document.hidden,
   });
 
   const {
@@ -86,10 +84,12 @@ export default function CrossOrgVerificationPage() {
       },
       skip: !isSiteSuperAdmin,
       fetchPolicy: 'cache-and-network',
-      pollInterval: 30_000,
-      skipPollAttempt: () => document.hidden,
     }
   );
+  // Co 30 s kolejkę i liczniki odświeża useVerificationQueuesRealtime (Sidebar). Szkielet tylko przy pierwszym
+  // ładowaniu filtra: odświeżenie w tle nie chowa kart, nie gubi przewinięcia ani zaznaczenia.
+  const queueInitialLoading = queueLoading && !queueData;
+  const statsInitialLoading = statsLoading && !statsData;
 
   const visibleQueueItems = useMemo(() => queueData?.crossOrgVerificationQueuePage.items ?? [], [queueData]);
   const visibleExerciseIds = useMemo(
@@ -190,7 +190,7 @@ export default function CrossOrgVerificationPage() {
           mode="organization"
           stats={null}
           organizationStats={statsData?.crossOrgVerificationStats ?? null}
-          isLoading={statsLoading}
+          isLoading={statsInitialLoading}
           activeFilter={filter}
           onFilterChange={(nextFilter) => {
             const normalizedFilter = parseCrossOrgVerificationFilter(nextFilter);
@@ -240,11 +240,11 @@ export default function CrossOrgVerificationPage() {
         onToggleVisible={selection.toggleVisible}
         onClear={selection.clear}
         onArchive={() => setArchiveDialogOpen(true)}
-        disabled={!canArchive || queueLoading}
+        disabled={!canArchive || queueInitialLoading}
         isArchiving={archiving}
       />
 
-      {queueLoading ? (
+      {queueInitialLoading ? (
         <div className="text-sm text-muted-foreground">Ładowanie kolejki...</div>
       ) : (queueData?.crossOrgVerificationQueuePage.items.length ?? 0) === 0 ? (
         <EmptyState icon={ShieldCheck} title="Brak ćwiczeń" description="Wybrany filtr nie zawiera pozycji." />

@@ -17,6 +17,15 @@ vi.mock('@/features/verification/VerificationPageHeader', () => ({
   VerificationPageHeader: () => null,
 }));
 
+const queueState = vi.hoisted(() => ({
+  loading: false,
+  items: [] as Array<{ organizationId: string; organizationName: string; exercise: { id: string; name: string } }>,
+}));
+
+vi.mock('next/image', () => ({
+  default: ({ alt }: { alt?: string }) => <img alt={alt ?? ''} />,
+}));
+
 vi.mock('@apollo/client/react', () => ({
   useQuery: (
     queryDocument: { definitions?: Array<{ name?: { value?: string } }> },
@@ -41,8 +50,8 @@ vi.mock('@apollo/client/react', () => ({
     return {
       data: {
         crossOrgVerificationQueuePage: {
-          items: [],
-          totalCount: 0,
+          items: queueState.items,
+          totalCount: queueState.items.length,
           page: 1,
           pageSize: 20,
           totalPages: 0,
@@ -52,7 +61,7 @@ vi.mock('@apollo/client/react', () => ({
           search: null,
         },
       },
-      loading: false,
+      loading: queueState.loading,
       refetch: vi.fn(),
     };
   },
@@ -68,5 +77,21 @@ describe('CrossOrgVerificationPage', () => {
     expect(screen.getByTestId('org-verification-stats-changes')).toHaveTextContent('2');
     expect(screen.getByTestId('org-verification-stats-verified')).toHaveTextContent('5');
     expect(screen.getByTestId('org-verification-stats-archived')).toHaveTextContent('1');
+  });
+
+  it('odświeżanie w tle nie chowa kart za komunikatem ładowania', () => {
+    queueState.loading = true;
+    queueState.items = [
+      {
+        organizationId: 'org-1',
+        organizationName: 'Natalia Nagrywanie',
+        exercise: { id: 'nat-fzl-001', name: 'Ćwiczenie Brandta-Daroffa' },
+      },
+    ];
+
+    render(<CrossOrgVerificationPage />);
+
+    expect(screen.queryByText('Ładowanie kolejki...')).not.toBeInTheDocument();
+    expect(screen.getByText('Ćwiczenie Brandta-Daroffa')).toBeInTheDocument();
   });
 });

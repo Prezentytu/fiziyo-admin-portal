@@ -18,6 +18,14 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 
 ## Wpisy
 
+### 2026-11-26 - Odświeżanie w tle chowało całą kolejkę weryfikacji
+
+- **Kategoria**: `GraphQL`
+- **Problem**: Na `/verification/organizations` co 30 s wszystkie karty znikały na chwilę za „Ładowanie kolejki...”, strona wyglądała jak przeładowana.
+- **Przyczyna**: Apollo ustawia `loading` także przy pollingu i `refetchQueries`, a strona pokazywała szkielet przy każdym `loading`; do tego polling strony dublował odświeżanie z `useVerificationQueuesRealtime`.
+- **Rozwiązanie**: Szkielet tylko przy `loading && !data`, bez własnego `pollInterval` na stronie.
+- **Reguła**: Lista odświeżana w tle pokazuje szkielet tylko, gdy nie ma jeszcze danych. [egzekwowane: src/app/(dashboard)/verification/organizations/__tests__/page.test.tsx]
+
 ### 2026-11-25 - Globalny skrót Enter zapisywał wiersz zamiast kliknąć przycisk
 
 - **Kategoria**: `React`
@@ -209,14 +217,6 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 - **Przyczyna**: Zapytania „po nazwy” użyły pełnych query listy; `refetchQueries: [{ query, variables }]` pobiera listę z sieci nawet wtedy, gdy nikt jej nie wyświetla.
 - **Rozwiązanie**: `GET_AVAILABLE_EXERCISE_NAMES_QUERY` i `GET_ORGANIZATION_EXERCISE_NAMES_QUERY` (ten sam root field, więc pełna lista w cache odpowiada bez sieci); `refetchQueries: [DOCUMENT]` odświeża tylko aktywne listy; usunięcie na liście usuwa rekord z cache; dopasowanie duplikatów w `exerciseDuplicateCandidates.ts`, a do AI idzie 80 najbliższych nazw (backend tnie prompt do 80).
 - **Reguła**: Jeśli potrzebujesz kilku pól z listy ćwiczeń, napisz osobne query z tymi polami na tym samym root fieldzie. Po mutacji odświeżaj listy dokumentem (`refetchQueries: [GET_..._QUERY]`), a formy `{ query, variables }` używaj tylko dla pojedynczego rekordu. [egzekwowane: src/features/exercises/utils/__tests__/exerciseDuplicateCandidates.test.ts]
-
-### 2026-10-30 - Jedna konfiguracja menu dla desktopu i mobile
-
-- **Kategoria**: `UI` | `Navigation`
-- **Problem**: Mobile nie miał żadnej weryfikacji, inne nazwy („Rozliczenia”, „Smart Tools”) i inne ikony niż desktop; trzy kolejki weryfikacji ćwiczeń były trzema pozycjami menu w dwóch grupach, a jedna nazywała się „Weryfikacja organizacji”, choć weryfikuje ćwiczenia wszystkich organizacji.
-- **Przyczyna**: `Sidebar` i `MobileSidebar` trzymały osobne tablice `navigationGroups` z własnym filtrowaniem ról.
-- **Rozwiązanie**: `navigationConfig.ts` + `useNavigationItems` dla obu menu; jedna pozycja „Weryfikacja” (`matchHrefs` na wszystkie kolejki) i `VerificationScopeTabs` z dostępnych zasięgów (`getVerificationScopes`). Sidebar ma tylko codzienną pracę; Zespół i Finanse są w menu konta (`buildAccountNavigationItems`), a zdublowany link „Ustawienia” zniknął.
-- **Reguła**: Nowa pozycja menu idzie tylko do `navigationConfig.ts`. Kilka widoków tej samej pracy (różny zasięg) to jedna pozycja menu z zakładkami, nie osobne linki. Strony odwiedzane rzadziej niż raz w tygodniu idą do menu konta, nie do sidebara.
 
 ### 2026-10-27 - Zwrot z weryfikacji FiziYo jest na kopii, nie na oryginale
 
