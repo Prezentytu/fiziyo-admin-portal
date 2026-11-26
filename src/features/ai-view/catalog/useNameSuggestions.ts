@@ -12,6 +12,8 @@ import {
 
 // One answer per text for the whole page session: typing the same name again costs no second credit.
 const answered = new Map<string, readonly { name: string }[]>();
+// An ask still on its way: a second card (search → „Utwórz”) waits for it instead of paying again.
+const pending = new Map<string, Promise<readonly { name: string }[] | null>>();
 // After a failed ask (no credits, provider down) the rest of the session does not ask again on every pause.
 let unavailable = false;
 
@@ -50,9 +52,17 @@ export function useNameSuggestions(query: string, enabled: boolean): NameSuggest
     let current = true;
     const timer = window.setTimeout(() => {
       setAsking(key);
-      void aiService.suggestExerciseVariants(query).then((variants) => {
-        if (variants === null) unavailable = true;
-        else answered.set(key, variants);
+      let ask = pending.get(key);
+      if (!ask) {
+        ask = aiService.suggestExerciseVariants(query).then((variants) => {
+          pending.delete(key);
+          if (variants === null) unavailable = true;
+          else answered.set(key, variants);
+          return variants;
+        });
+        pending.set(key, ask);
+      }
+      void ask.then((variants) => {
         if (!current) return;
         setAsking(null);
         setResult({ key, variants: variants ?? [] });
