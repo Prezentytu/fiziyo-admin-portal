@@ -33,6 +33,8 @@ import { ChatCard } from './ChatCard';
 import { CreatedExerciseSummary } from './CreatedExerciseSummary';
 import { QuickReplies } from './QuickReplies';
 import { useCreateExercise } from './useChatWrites';
+import { ImageStylePicker } from '@/features/exercises/ImageStylePicker';
+import type { ImageStyle } from '@/types/ai.types';
 import { dropExerciseDraft, readExerciseDraft, updateExerciseDraft, useExerciseDraft } from './exerciseDraftStore';
 import { useExerciseDraftAi, type DraftFill, type DraftSection, type DraftSectionState } from './useExerciseDraftAi';
 
@@ -107,8 +109,10 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
   // Wybrana inna pozycja idzie jako następna wiadomość; ta karta zostaje, a jej odpowiedzi są już zużyte.
   // Draft outside the card: another screen and back shows the same card, with AI done meanwhile.
   const draft = useExerciseDraft(messageId);
-  const { exerciseType, image, pickedPosition } = draft;
+  const { exerciseType, image, pickedPosition, imageStyle = 'illustration' } = draft;
   const setImage = (file: File | null) => updateExerciseDraft(messageId, (current) => ({ ...current, image: file }));
+  const setImageStyle = (style: ImageStyle) =>
+    updateExerciseDraft(messageId, (current) => ({ ...current, imageStyle: style }));
   const { create, creating } = useCreateExercise();
   const { preference } = useChatMode();
   const useAi = preference.useAi;
@@ -184,6 +188,7 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
       return {
         description: current?.values?.description ?? form.getValues('description'),
         type: current?.exerciseType ?? exerciseType,
+        style: current?.imageStyle ?? 'illustration',
       };
     },
   });
@@ -561,6 +566,17 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
               working={sections.image === 'working'}
               onGenerate={nameReady && !running ? () => generate(['image']) : undefined}
               testId={`${testId}-image`}
+            />
+            {/* Ten sam wybór profilu co w edytorze ćwiczenia; inny profil od razu przerabia gotową grafikę. */}
+            <ImageStylePicker
+              value={imageStyle}
+              disabled={running || sections.image === 'working'}
+              onChange={(style) => {
+                if (style === imageStyle) return;
+                setImageStyle(style);
+                if (image && nameReady) generate(['image']);
+              }}
+              testIdPrefix={`${testId}-image-style`}
             />
           </DraftSectionShell>
         )}

@@ -56,6 +56,18 @@ function setup() {
   return { hook, fills, order };
 }
 
+function renderStyled(style: 'illustration' | 'diagram' | 'photo') {
+  const order: DraftSection[] = [];
+  const hook = renderHook(() =>
+    useExerciseDraftAi({
+      draftKey: 'm-styled',
+      onFill: (fill) => order.push(fill.section),
+      imageInput: () => ({ description: 'Opis', type: 'time', style }),
+    })
+  );
+  return { hook, order };
+}
+
 async function runAll(promise: Promise<void>) {
   await act(async () => {
     await vi.runAllTimersAsync();
@@ -101,7 +113,7 @@ describe('useExerciseDraftAi', () => {
       Object.fromEntries(DRAFT_SECTIONS.map((section) => [section, 'done']))
     );
     expect(hook.result.current.generatedFor).toBe('Core sztanga nad głową');
-    expect(ai.generateExerciseImage).toHaveBeenCalledWith('Core sztanga nad głową', 'Opis', 'time');
+    expect(ai.generateExerciseImage).toHaveBeenCalledWith('Core sztanga nad głową', 'Opis', 'time', undefined);
   });
 
   it('marks only the section AI did not answer as failed, the rest still fills', async () => {
@@ -145,6 +157,17 @@ describe('useExerciseDraftAi', () => {
     expect(ai.suggestExercise).not.toHaveBeenCalled();
     expect(ai.generateExerciseImage).not.toHaveBeenCalled();
     expect(hook.result.current.sections.steps).toBe('done');
+  });
+
+  // 26.11 (Przemek): grafika w czacie z tymi samymi profilami co w edytorze ćwiczenia.
+  it('draws the picture again in the chosen profile', async () => {
+    ai.generateExerciseImage.mockResolvedValue({ status: 'ok', file: IMAGE });
+    const { hook, order } = renderStyled('diagram');
+
+    await runAll(hook.result.current.generate('Plank', ['image']));
+
+    expect(order).toEqual(['image']);
+    expect(ai.generateExerciseImage).toHaveBeenCalledWith('Plank', 'Opis', 'time', 'diagram');
   });
 
   it('shows every section at once to fill by hand', () => {

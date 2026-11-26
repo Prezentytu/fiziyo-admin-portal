@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 
 import { aiService } from '@/services/aiService';
-import type { ExerciseSuggestionResponse } from '@/types/ai.types';
+import type { ExerciseSuggestionResponse, ImageStyle } from '@/types/ai.types';
 import {
   paramsFromSuggestion,
   textsFromEnrichment,
@@ -49,7 +49,7 @@ const sleep = (ms: number) => new Promise((resolve) => window.setTimeout(resolve
 type DraftAiOptions = {
   onFill: (fill: DraftFill) => void;
   /** What the picture is generated from, read when its turn comes (after the texts are filled). */
-  imageInput: () => { description: string; type: 'reps' | 'time' };
+  imageInput: () => { description: string; type: 'reps' | 'time'; style?: ImageStyle };
 };
 
 /** The mounted card of each draft: a run started before a remount still fills the card on screen. */
@@ -156,15 +156,15 @@ async function resolveFill(
   exerciseName: string,
   suggestion: Promise<ExerciseSuggestionResponse | null>,
   textsPromise: Promise<ChatExerciseTexts>,
-  imageInput: () => { description: string; type: 'reps' | 'time' }
+  imageInput: () => { description: string; type: 'reps' | 'time'; style?: ImageStyle }
 ): Promise<DraftFill | null> {
   if (section === 'params') {
     const proposal = await suggestion;
     return proposal ? { section, params: paramsFromSuggestion(proposal) } : null;
   }
   if (section === 'image') {
-    const { description, type } = imageInput();
-    const result = await aiService.generateExerciseImage(exerciseName, description || undefined, type);
+    const { description, type, style } = imageInput();
+    const result = await aiService.generateExerciseImage(exerciseName, description || undefined, type, style);
     return result.status === 'ok' ? { section, file: result.file } : null;
   }
   const texts = await textsPromise;

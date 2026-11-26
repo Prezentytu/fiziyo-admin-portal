@@ -97,7 +97,8 @@ describe('karta nowego ćwiczenia po wyjściu z czatu i powrocie', () => {
     expect(ai.generateExerciseImage).toHaveBeenCalledExactlyOnceWith(
       SPEC.name,
       'Opis poprawiony ręcznie.',
-      'time'
+      'time',
+      'illustration'
     );
   });
 
