@@ -27,7 +27,7 @@ export function isPatientPlan(set: SetKindFields): boolean {
 
 /**
  * Liczba pacjentów na karcie zestawu. Plan pacjenta liczy swoje przypisania z listy. Szablon nie ma przypisań
- * wprost (przypisanie robi kopię), z wyjątkiem zestawu na start (SPEC-064 w fizjo-app): wtedy liczy backend
+ * wprost (przypisanie robi kopię), z wyjątkiem zestawu na start (SPEC-066 w fizjo-app): wtedy liczy backend
  * (`activeAssignmentCount`, tylko aktywne i widoczne dla wołającego).
  */
 export function setPatientCount(

@@ -30,7 +30,7 @@ interface StarterMutationData {
 }
 
 /**
- * SPEC-064 (fizjo-app): przełącznik „Dla wszystkich pacjentów” na karcie szablonu. Każdy pacjent gabinetu, także
+ * SPEC-066 (fizjo-app): przełącznik „Dla wszystkich pacjentów” na karcie szablonu. Każdy pacjent gabinetu, także
  * nowy, dostaje zestaw automatycznie, a zmiany w szablonie trafiają do wszystkich. Widoczny tylko przy fladze konta
  * `starterSet`; zmienia owner albo admin (backend sprawdza to sam).
  */

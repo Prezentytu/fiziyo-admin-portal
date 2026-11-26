@@ -27,5 +27,5 @@ export * from './adminExercises.mutations';
 // Co nowego (wydania portalu z Ops)
 export * from './releaseNotes.mutations';
 
-// Zestaw na start (dla wszystkich pacjentów gabinetu, SPEC-064 w fizjo-app)
+// Zestaw na start (dla wszystkich pacjentów gabinetu, SPEC-066 w fizjo-app)
 export * from './starterSets.mutations';
