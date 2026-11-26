@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import {
   buildOrganizationVerificationDetailHref,
   buildOrganizationVerificationListHref,
+  appendCrossOrgOrganizationIds,
+  parseCrossOrgOrganizationIds,
   parseCrossOrgVerificationFilter,
   parseOrganizationVerificationFilter,
 } from '@/features/verification/utils/orgVerificationPagination';
@@ -19,6 +21,17 @@ describe('orgVerificationPagination', () => {
     expect(parseCrossOrgVerificationFilter('published')).toBe('pending');
     expect(parseCrossOrgVerificationFilter(null)).toBe('pending');
     expect(parseOrganizationVerificationFilter('internal')).toBe('pending');
+  });
+
+  it('reads selected organizations from the URL; empty means all', () => {
+    expect(parseCrossOrgOrganizationIds(null)).toEqual([]);
+    expect(parseCrossOrgOrganizationIds('')).toEqual([]);
+    expect(parseCrossOrgOrganizationIds('org-1, org-2,,org-1')).toEqual(['org-1', 'org-2']);
+  });
+
+  it('writes the organizations param only when some are selected', () => {
+    expect(appendCrossOrgOrganizationIds(new URLSearchParams(), []).has('orgs')).toBe(false);
+    expect(appendCrossOrgOrganizationIds(new URLSearchParams(), ['org-1', 'org-2']).get('orgs')).toBe('org-1,org-2');
   });
 
   it('builds list href with pagination params', () => {

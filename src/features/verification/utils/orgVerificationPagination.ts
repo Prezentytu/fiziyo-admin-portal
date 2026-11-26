@@ -27,6 +27,33 @@ export function parseCrossOrgVerificationFilter(value: string | null): CrossOrgV
   return value === 'internal' ? value : parseOrganizationVerificationFilter(value);
 }
 
+/** Parametr URL z wybranymi organizacjami w kolejce wszystkich gabinetów; brak = wszystkie. */
+export const CROSS_ORG_ORGANIZATIONS_PARAM = 'orgs';
+
+export function parseCrossOrgOrganizationIds(value: string | null): string[] {
+  if (!value) {
+    return [];
+  }
+  return Array.from(
+    new Set(
+      value
+        .split(',')
+        .map((organizationId) => organizationId.trim())
+        .filter(Boolean)
+    )
+  );
+}
+
+export function appendCrossOrgOrganizationIds(
+  params: URLSearchParams,
+  organizationIds: readonly string[]
+): URLSearchParams {
+  if (organizationIds.length > 0) {
+    params.set(CROSS_ORG_ORGANIZATIONS_PARAM, organizationIds.join(','));
+  }
+  return params;
+}
+
 export function parseOrganizationVerificationView(value: string | null): OrganizationVerificationViewMode {
   return value === 'list' ? 'list' : 'grid';
 }
