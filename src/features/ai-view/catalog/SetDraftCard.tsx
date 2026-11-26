@@ -503,33 +503,33 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
 
       {!locked &&
         (search === null ? (
-          <div className="flex flex-wrap gap-2">
+          <div>
             <Button variant="outline" size="sm" onClick={() => setSearch('')} data-testid={`${testId}-add-btn`}>
               <Plus aria-hidden="true" />
-              Dodaj z katalogu
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => createExercise()}
-              disabled={!draftReturn}
-              data-testid={`${testId}-create-btn`}
-            >
-              <Sparkles aria-hidden="true" />
-              Utwórz nowe ćwiczenie
+              Dodaj ćwiczenie
             </Button>
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            <Input
-              autoFocus
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              onKeyDown={(event) => event.key === 'Escape' && setSearch(null)}
-              placeholder="Szukaj w katalogu, np. mostek, przysiad"
-              aria-label="Szukaj ćwiczenia do dodania"
-              data-testid={`${testId}-add-search-input`}
-            />
+            <div className="flex items-center gap-2">
+              <Input
+                autoFocus
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                onKeyDown={(event) => event.key === 'Escape' && setSearch(null)}
+                placeholder="Wpisz nazwę ćwiczenia, np. mostek, przysiad"
+                aria-label="Szukaj ćwiczenia do dodania"
+                data-testid={`${testId}-add-search-input`}
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSearch(null)}
+                data-testid={`${testId}-add-cancel-btn`}
+              >
+                Anuluj
+              </Button>
+            </div>
             {searchResults.length > 0 && (
               <ul className="flex flex-col">
                 {searchResults.map((exercise) => (
@@ -557,19 +557,25 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
               </ul>
             )}
             {/* Brak w katalogu albo nie to: nowe ćwiczenie z AI, które wróci do tej propozycji. */}
-            {search.trim().length >= 3 && (
-              <button
-                type="button"
-                data-testid={`${testId}-add-create-btn`}
-                onClick={() => createExercise(search.trim())}
-                className="flex w-full items-center gap-3 rounded-[10px] px-2 py-1.5 text-left text-[14px] text-tint hover:bg-fill-quaternary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-fill-quaternary">
-                  <Sparkles className="h-4 w-4" aria-hidden="true" />
-                </span>
-                <span className="min-w-0 flex-1 truncate">Utwórz „{search.trim()}” z AI</span>
-              </button>
+            {search.trim().length >= 3 && searchResults.length === 0 && (
+              <p className="px-2 text-[13px] text-label-secondary" data-testid={`${testId}-add-empty`}>
+                Brak pasujących ćwiczeń w katalogu.
+              </p>
             )}
+            <button
+              type="button"
+              data-testid={search.trim().length >= 3 ? `${testId}-add-create-btn` : `${testId}-create-btn`}
+              onClick={() => createExercise(search.trim().length >= 3 ? search.trim() : undefined)}
+              disabled={!draftReturn}
+              className="flex w-full items-center gap-3 rounded-[10px] px-2 py-1.5 text-left text-[14px] text-tint hover:bg-fill-quaternary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40 disabled:hover:bg-transparent"
+            >
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-fill-quaternary">
+                <Sparkles className="h-4 w-4" aria-hidden="true" />
+              </span>
+              <span className="min-w-0 flex-1 truncate">
+                {search.trim().length >= 3 ? `Utwórz „${search.trim()}” z AI` : 'Utwórz nowe ćwiczenie z AI'}
+              </span>
+            </button>
           </div>
         ))}
 

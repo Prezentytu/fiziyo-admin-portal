@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SetDraftCard } from '../SetDraftCard';
@@ -236,7 +236,8 @@ describe('SetDraftCard: wersja rekordu ćwiczeń szkicu', () => {
   });
 
   // Demo 18.11: droga do nowego ćwiczenia była schowana za wyszukiwarką (dopiero po 3 znakach).
-  it('„Utwórz nowe ćwiczenie” jest od razu na karcie, a nowe ćwiczenie wraca do tej propozycji', async () => {
+  // 26.11 (Przemek): jeden przycisk „Dodaj ćwiczenie”; tworzenie z AI jest od razu pod wyszukiwarką.
+  it('„Dodaj ćwiczenie” od razu daje „Utwórz nowe ćwiczenie z AI”, a nowe ćwiczenie wraca do tej propozycji', async () => {
     mockClientQuery.mockResolvedValue({
       data: { exerciseById: { id: 'ex-alt', updatedAt: 't1', enrichmentData: {} } },
     });
@@ -255,8 +256,9 @@ describe('SetDraftCard: wersja rekordu ćwiczeń szkicu', () => {
       'm1',
       expect.objectContaining({ draft: expect.objectContaining({ exerciseIds: ['ex-alt'], note: 'biodro' }) })
     );
-    expect(screen.getByTestId('draft-add-btn')).toBeTruthy();
-    screen.getByTestId('draft-create-btn').click();
+    expect(screen.queryByTestId('draft-create-btn')).toBeNull();
+    fireEvent.click(screen.getByTestId('draft-add-btn'));
+    fireEvent.click(screen.getByTestId('draft-create-btn'));
     expect(appendExchange).toHaveBeenCalledWith(
       'Utwórz nowe ćwiczenie',
       expect.objectContaining({
@@ -264,6 +266,32 @@ describe('SetDraftCard: wersja rekordu ćwiczeń szkicu', () => {
           component: 'CreateExercise',
           addToSet: expect.objectContaining({ exerciseIds: ['ex-alt'], note: 'biodro' }),
         }),
+      })
+    );
+  });
+
+  it('wpisana nazwa spoza katalogu: „Brak pasujących” i utworzenie tej nazwy z AI', async () => {
+    mockClientQuery.mockResolvedValue({
+      data: { exerciseById: { id: 'ex-alt', updatedAt: 't1', enrichmentData: {} } },
+    });
+    appendExchange.mockReset();
+    render(
+      <SetDraftCard
+        spec={{ component: 'SetDraft', exerciseIds: ['ex-alt'], note: 'biodro' } as never}
+        testId="draft"
+        messageId="m1"
+      />
+    );
+    await screen.findByTestId('draft-item-ex-alt');
+    fireEvent.click(screen.getByTestId('draft-add-btn'));
+    fireEvent.change(screen.getByTestId('draft-add-search-input'), { target: { value: 'wiosłowanie z gumą' } });
+
+    expect(screen.getByTestId('draft-add-empty')).toBeTruthy();
+    fireEvent.click(screen.getByTestId('draft-add-create-btn'));
+    expect(appendExchange).toHaveBeenCalledWith(
+      'Utwórz ćwiczenie: wiosłowanie z gumą',
+      expect.objectContaining({
+        spec: expect.objectContaining({ component: 'CreateExercise', name: 'wiosłowanie z gumą' }),
       })
     );
   });
