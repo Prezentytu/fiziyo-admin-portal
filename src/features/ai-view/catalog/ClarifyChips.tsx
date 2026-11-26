@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ChoiceChip } from '@/components/ui/choice-chip';
 import { useChatActions, useChatBusy } from '../ChatSessionContext';
 import { useComposerDraft } from '../ComposerDraftContext';
+import { ChatCardInfo } from './ChatCard';
 import {
   chosenClarifyAnswers,
   composeClarifyAnswers,
@@ -86,11 +87,12 @@ export function useClarifyAnswers(questions: readonly ClarifyQuestion[], request
 /** The questions as their own inset panel, so the answers do not blend with the card's action buttons. */
 export function ClarifyChips({
   answers,
-  hint,
+  info,
   testId,
 }: {
   readonly answers: ClarifyAnswers;
-  readonly hint: string;
+  /** How the panel works, under ⓘ next to its title. */
+  readonly info: string;
   readonly testId: string;
 }) {
   const { questions, chosen, toggle, other, pending } = answers;
@@ -102,14 +104,12 @@ export function ClarifyChips({
       className="flex flex-col gap-3 rounded-[14px] bg-grouped-tertiary px-3.5 py-3"
       data-testid={testId}
     >
-      <div className="flex items-start gap-2">
-        <MessageCircleQuestion className="mt-0.5 h-4 w-4 shrink-0 text-tint" aria-hidden="true" />
-        <div className="min-w-0">
-          <h4 id={`${testId}-title`} className="text-[14px] font-semibold leading-5 text-foreground">
-            Doprecyzuj
-          </h4>
-          <p className="text-[13px] leading-[18px] text-label-secondary">{hint}</p>
-        </div>
+      <div className="flex items-center gap-1.5">
+        <MessageCircleQuestion className="h-4 w-4 shrink-0 text-tint" aria-hidden="true" />
+        <h4 id={`${testId}-title`} className="text-[14px] font-semibold leading-5 text-foreground">
+          Doprecyzuj
+        </h4>
+        <ChatCardInfo text={info} testId={`${testId}-info`} />
       </div>
       {questions.map((question, index) => (
         <div

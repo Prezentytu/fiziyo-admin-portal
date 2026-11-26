@@ -19,7 +19,7 @@ function Harness({ request }: { readonly request?: string }) {
   const answers = useClarifyAnswers(QUESTIONS, request);
   return (
     <>
-      <ClarifyChips answers={answers} hint="Zaznacz odpowiedzi" testId="clarify" />
+      <ClarifyChips answers={answers} info="Zaznacz odpowiedzi" testId="clarify" />
       <footer data-testid="footer">
         {answers.pending ? (
           <ClarifyPendingBar testId="clarify" />
@@ -153,4 +153,13 @@ describe('ClarifyChips', () => {
     expect(screen.queryByTestId('clarify-pending')).toBeNull();
     expect(screen.getByTestId('card-primary-btn')).toBeTruthy();
   });
+
+  // 26.11 (Przemek): opis działania panelu chowa się pod ⓘ przy tytule, panel to same pytania.
+  it('opis działania jest pod ⓘ przy tytule, nie w treści panelu', () => {
+    renderChips();
+
+    expect(screen.getByTestId('clarify-info')).toBeTruthy();
+    expect(screen.getByTestId('clarify').textContent).not.toContain('Zaznacz odpowiedzi');
+  });
 });
+

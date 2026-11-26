@@ -605,7 +605,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
 
       <ClarifyChips
         answers={clarify}
-        hint="Zaznacz odpowiedzi, trafią gotowe do wiadomości, a lepiej dobiorę ćwiczenia."
+        info="Zaznacz odpowiedzi i kliknij „Dobierz ponownie”: ułożę nową propozycję z ich uwzględnieniem. Obecna zostanie powyżej i można do niej wrócić. Odpowiedzi trafiają też do pola wiadomości, więc możesz coś dopisać."
         testId={`${testId}-clarify`}
       />
     </ChatCard>

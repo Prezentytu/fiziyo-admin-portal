@@ -233,7 +233,7 @@ function Results({
       </ul>
       <ClarifyChips
         answers={clarify}
-        hint="Zaznacz odpowiedzi, trafią gotowe do wiadomości, a dobiorę trafniej. Z wybranych ćwiczeń ułożysz zestaw przyciskiem poniżej."
+        info="Zaznacz odpowiedzi i kliknij „Dobierz ponownie”: dobiorę ćwiczenia trafniej. Z wybranych ćwiczeń ułożysz zestaw przyciskiem „Ułóż zestaw”. Odpowiedzi trafiają też do pola wiadomości, więc możesz coś dopisać."
         testId={`${testId}-clarify`}
       />
     </ChatCard>

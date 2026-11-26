@@ -87,7 +87,7 @@ export function ChatCardEmpty({ children, testId }: { readonly children: ReactNo
 }
 
 /** ⓘ next to a card title: opens on hover, keyboard focus or tap (touch has no hover). */
-function ChatCardInfo({ text, testId }: { readonly text: string; readonly testId: string }) {
+export function ChatCardInfo({ text, testId }: { readonly text: string; readonly testId: string }) {
   const [open, setOpen] = useState(false);
   return (
     <TooltipProvider delayDuration={150}>
