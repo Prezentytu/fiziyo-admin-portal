@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils';
 import { FloatingMark } from '../FloatingMark';
 import { useChatActions, useChatBusy } from '../ChatSessionContext';
 import { useChatMode } from '../useChatMode';
-import { exerciseCreatedReply } from '../utils/addToDraft';
+import { createdChoice, createdExerciseId, exerciseCreatedReply } from '../utils/addToDraft';
 import {
   buildChatExerciseEnrichment,
   CHAT_EXERCISE_DEFAULTS,
@@ -30,6 +30,7 @@ import {
 } from '../utils/chatExerciseDraft';
 import type { CardProps } from './cardProps';
 import { ChatCard } from './ChatCard';
+import { CreatedExerciseSummary } from './CreatedExerciseSummary';
 import { QuickReplies } from './QuickReplies';
 import { useCreateExercise } from './useChatWrites';
 import { dropExerciseDraft, readExerciseDraft, updateExerciseDraft, useExerciseDraft } from './exerciseDraftStore';
@@ -224,7 +225,7 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
     );
     if (!exercise) return;
     dropExerciseDraft(messageId);
-    markChosen(messageId, 'created');
+    markChosen(messageId, createdChoice(exercise.id));
     // Ćwiczenie utworzone dla propozycji zestawu: zestaw wraca od razu, z nowym ćwiczeniem.
     appendAssistant(
       exerciseCreatedReply(exercise, {
@@ -236,6 +237,8 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
   });
 
   if (chosen !== undefined) {
+    const createdId = createdExerciseId(chosen);
+    if (createdId) return <CreatedExerciseSummary exerciseId={createdId} testId={testId} />;
     return (
       <p data-testid={testId} className="text-[14px] text-label-secondary">
         Ćwiczenie utworzone.
