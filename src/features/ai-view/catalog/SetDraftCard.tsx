@@ -501,16 +501,6 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
         </ChatCardEmpty>
       )}
 
-      {items.length > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t-[0.5px] border-hairline pt-3 text-[14px] tabular-nums text-label-secondary">
-          <span>{formatExerciseCount(items.length)}</span>
-          <span>
-            dziennie ok.{' '}
-            <b className="text-[16px] font-semibold text-foreground">{minutesUnknown ? '—' : `${minutes} min`}</b>
-          </span>
-        </div>
-      )}
-
       {!locked &&
         (search === null ? (
           <div className="flex flex-wrap gap-2">
@@ -582,6 +572,16 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
             )}
           </div>
         ))}
+
+      {items.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t-[0.5px] border-hairline pt-3 text-[14px] tabular-nums text-label-secondary">
+          <span>{formatExerciseCount(items.length)}</span>
+          <span>
+            dziennie ok.{' '}
+            <b className="text-[16px] font-semibold text-foreground">{minutesUnknown ? '—' : `${minutes} min`}</b>
+          </span>
+        </div>
+      )}
 
       {/* Zestaw z opisu (bez zestawu z katalogu): pytania, które pomagają dobrać ćwiczenia trafniej. */}
       {!set && !locked && spec.note && (
