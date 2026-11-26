@@ -18,7 +18,15 @@ import { cn } from '@/lib/utils';
 import { FloatingMark } from '../FloatingMark';
 import { useChatActions, useChatBusy } from '../ChatSessionContext';
 import { useChatMode } from '../useChatMode';
-import { exerciseCreatedReply } from '../utils/addToDraft';
+import { draftWithExercise, exerciseCreatedReply } from '../utils/addToDraft';
+import { draftPreviewData } from '../utils/draftPreview';
+import { similarFromSuggestions } from '../utils/nameSuggestions';
+import { draftItemFromExercise } from '../utils/setDraft';
+import { useAvailableExercises, type ChatCatalogExercise } from '../useAvailableExercises';
+import { findSimilarExercises, prepareExerciseNames } from '@/features/exercises/utils/exerciseDuplicateCandidates';
+import { ExercisePreviewDialog } from '@/components/shared/exercise';
+import { NameSuggestionsPanel } from './NameSuggestionsPanel';
+import { useNameSuggestions } from './useNameSuggestions';
 import {
   buildChatExerciseEnrichment,
   CHAT_EXERCISE_DEFAULTS,
@@ -201,6 +209,32 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
     void draftAi.generate(form.getValues('name'), only);
   };
   const nameReady = nameText.trim().length >= 3;
+  // Zanim powstanie nowe: „Czy chodziło Ci o” (AI po przerwie w pisaniu) i podobne z katalogu (lokalnie, bez AI).
+  const { exercises: catalog } = useAvailableExercises(organizationId, chosen === undefined);
+  const preparedCatalog = useMemo(() => prepareExerciseNames(catalog), [catalog]);
+  // Dopóki AI nie wypełniło karty (bez AI: cały czas pisania nazwy).
+  const namingStage = !generatedFor && !running;
+  const nameSuggestions = useNameSuggestions(nameText, useAi && chosen === undefined && namingStage);
+  const similar = useMemo(() => {
+    if (!namingStage || nameText.trim().length < 3) return [];
+    const local = findSimilarExercises(nameText, preparedCatalog).slice(0, 3);
+    const fromNames = similarFromSuggestions(catalog, nameSuggestions.names, new Set(local.map((item) => item.id)), 3);
+    return [...local, ...fromNames];
+  }, [catalog, preparedCatalog, nameSuggestions.names, nameText, namingStage]);
+  const [catalogPreview, setCatalogPreview] = useState<ChatCatalogExercise | null>(null);
+  // Do zestawu: podobne ćwiczenie z katalogu idzie do propozycji zamiast tworzenia nowego.
+  const useExisting = spec.addToSet
+    ? (exercise: ChatCatalogExercise) => {
+        const back = spec.addToSet;
+        if (!back) return;
+        dropExerciseDraft(messageId);
+        markChosen(messageId, 'used-existing');
+        appendAssistant({
+          text: `Ćwiczenie „${exercise.name}” z katalogu jest w zestawie.`,
+          spec: draftWithExercise(back, exercise.id),
+        });
+      }
+    : undefined;
   const stale = Boolean(generatedFor) && nameText.trim() !== generatedFor && !running && !staleDismissed;
 
   const submit = form.handleSubmit(async (values) => {
@@ -238,7 +272,7 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
   if (chosen !== undefined) {
     return (
       <p data-testid={testId} className="text-[14px] text-label-secondary">
-        Ćwiczenie utworzone.
+        {chosen === 'used-existing' ? 'Wybrane ćwiczenie z katalogu.' : 'Ćwiczenie utworzone.'}
       </p>
     );
   }
@@ -346,6 +380,26 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
           </span>
           {errors.name && <span className="text-[12px] text-status-danger">{errors.name.message}</span>}
         </div>
+
+        {namingStage && (
+          <NameSuggestionsPanel
+            suggestions={nameSuggestions}
+            similar={similar}
+            onPickName={(name) => form.setValue('name', name, { shouldDirty: true })}
+            onPreview={setCatalogPreview}
+            onUse={useExisting}
+            useLabel="Dodaj do zestawu"
+            testId={`${testId}-name-suggestions`}
+          />
+        )}
+        <ExercisePreviewDialog
+          open={catalogPreview !== null}
+          exercise={catalogPreview ? draftPreviewData(catalogPreview, draftItemFromExercise(catalogPreview)) : null}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setCatalogPreview(null);
+          }}
+          testIdPrefix={`${testId}-catalog-preview`}
+        />
 
         {!started && useAi && (
           <p className="text-[13px] text-label-tertiary">

@@ -25,6 +25,7 @@ vi.mock('@/services/aiService', () => ({
 }));
 vi.mock('../useChatWrites', () => ({ useCreateExercise: () => ({ create: state.create, creating: false }) }));
 vi.mock('../../useChatMode', () => ({ useChatMode: () => ({ preference: { useAi: true } }) }));
+vi.mock('../../useAvailableExercises', () => ({ useAvailableExercises: () => ({ exercises: [], loading: false }) }));
 vi.mock('../../ChatSessionContext', () => ({
   useChatActions: () => ({ organizationId: 'org', patients: [], ...state }),
   useChatBusy: () => false,

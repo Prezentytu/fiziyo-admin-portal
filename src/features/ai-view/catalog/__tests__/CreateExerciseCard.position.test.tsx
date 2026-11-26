@@ -20,6 +20,7 @@ vi.mock('../../ChatSessionContext', () => ({
   useChatBusy: () => busy.value,
 }));
 vi.mock('../../useChatMode', () => ({ useChatMode: () => ({ preference: { useAi: true } }) }));
+vi.mock('../../useAvailableExercises', () => ({ useAvailableExercises: () => ({ exercises: [], loading: false }) }));
 vi.mock('../useChatWrites', () => ({ useCreateExercise: () => ({ create, creating: false }) }));
 
 const SPEC = {

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   BookmarkPlus,
+  Eye,
   Flame,
   Plus,
   Repeat2,
@@ -57,6 +58,10 @@ import {
 import type { CardProps } from './cardProps';
 import { ChatCard, ChatCardEmpty } from './ChatCard';
 import { draftPreviewData } from '../utils/draftPreview';
+import { similarFromSuggestions } from '../utils/nameSuggestions';
+import { useChatMode } from '../useChatMode';
+import { NameSuggestionsPanel } from './NameSuggestionsPanel';
+import { useNameSuggestions } from './useNameSuggestions';
 import { ClarifyChips, ClarifyPendingBar, ClarifyRepickBar, useClarifyAnswers } from './ClarifyChips';
 import { ExerciseReviewBadge } from './ExerciseReviewBadge';
 
@@ -300,6 +305,9 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
   const [missingSet, setMissingSet] = useState(false);
   const [search, setSearch] = useState<string | null>(null);
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
+  // Podgląd ćwiczenia z katalogu (wynik wyszukiwania, podobne): z domyślnymi parametrami ćwiczenia.
+  const [catalogPreview, setCatalogPreview] = useState<ChatCatalogExercise | null>(null);
+  const { preference } = useChatMode();
   const locked = chosen !== undefined;
   // Zestaw z opisu (bez zestawu z katalogu): pytania, które pomagają dobrać ćwiczenia trafniej.
   const asksToClarify = !set && !locked && Boolean(spec.note);
@@ -348,6 +356,17 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
     const inDraft = new Set((items ?? []).map((item) => item.exerciseId));
     return searchExercises(exercises, search, 6).filter((exercise) => !inDraft.has(exercise.id));
   }, [exercises, search, items]);
+  // „Czy chodziło Ci o” i podobne z katalogu: AI po przerwie w pisaniu, tylko z włączonym AI czatu.
+  const nameSuggestions = useNameSuggestions(search ?? '', preference.useAi && search !== null && !locked);
+  const similar = useMemo(
+    () =>
+      similarFromSuggestions(
+        exercises,
+        nameSuggestions.names,
+        new Set([...(items ?? []).map((item) => item.exerciseId), ...searchResults.map((exercise) => exercise.id)])
+      ),
+    [exercises, nameSuggestions.names, items, searchResults]
+  );
 
   if (items === null) {
     return (
@@ -439,7 +458,11 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
 
   const previewItem = previewIndex !== null ? draftItems[previewIndex] : undefined;
   const previewSource = previewItem ? byId.get(previewItem.exerciseId) : undefined;
-  const previewExercise = previewItem && previewSource ? draftPreviewData(previewSource, previewItem) : null;
+  const previewExercise = catalogPreview
+    ? draftPreviewData(catalogPreview, draftItemFromExercise(catalogPreview))
+    : previewItem && previewSource
+      ? draftPreviewData(previewSource, previewItem)
+      : null;
 
   return (
     <ChatCard
@@ -585,7 +608,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
             {searchResults.length > 0 && (
               <ul className="flex flex-col">
                 {searchResults.map((exercise) => (
-                  <li key={exercise.id}>
+                  <li key={exercise.id} className="flex items-center gap-1">
                     <button
                       type="button"
                       onClick={() => {
@@ -593,7 +616,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
                         setSearch(null);
                       }}
                       data-testid={`${testId}-add-${exercise.id}-btn`}
-                      className="flex w-full items-center gap-3 rounded-[10px] px-2 py-1.5 text-left text-[14px] hover:bg-fill-quaternary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="flex min-w-0 flex-1 items-center gap-3 rounded-[10px] px-2 py-1.5 text-left text-[14px] hover:bg-fill-quaternary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       <ExerciseThumbnail
                         src={buildExerciseImageUrls(exercise)[0] ?? null}
@@ -604,10 +627,30 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
                       <ExerciseReviewBadge exercise={exercise} testId={`${testId}-add-review-${exercise.id}`} />
                       <Plus className="h-4 w-4 text-tint" aria-hidden="true" />
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => setCatalogPreview(exercise)}
+                      aria-label={`Podgląd ćwiczenia: ${exercise.name}`}
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] text-label-tertiary hover:bg-fill-quaternary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      data-testid={`${testId}-add-${exercise.id}-preview-btn`}
+                    >
+                      <Eye className="h-4 w-4" aria-hidden="true" />
+                    </button>
                   </li>
                 ))}
               </ul>
             )}
+            <NameSuggestionsPanel
+              suggestions={nameSuggestions}
+              similar={similar}
+              onPickName={setSearch}
+              onPreview={setCatalogPreview}
+              onUse={(exercise) => {
+                setItems([...items, draftItemFromExercise(exercise)]);
+                setSearch(null);
+              }}
+              testId={`${testId}-add-suggestions`}
+            />
             {/* Brak w katalogu albo nie to: nowe ćwiczenie z AI, które wróci do tej propozycji. */}
             {search.trim().length >= 3 && searchResults.length === 0 && (
               <p className="px-2 text-[13px] text-label-secondary" data-testid={`${testId}-add-empty`}>
@@ -650,7 +693,9 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
         open={previewExercise !== null}
         exercise={previewExercise}
         onOpenChange={(isOpen) => {
-          if (!isOpen) setPreviewIndex(null);
+          if (isOpen) return;
+          setPreviewIndex(null);
+          setCatalogPreview(null);
         }}
         testIdPrefix={`${testId}-preview`}
       />
