@@ -84,5 +84,11 @@ describe('karta nowego ćwiczenia: podobne nazwy i ćwiczenia z katalogu', () =>
 
     fireEvent.click(screen.getByTestId('card-name-suggestions-name-0-btn'));
     expect(screen.getByTestId('card-name-input')).toHaveValue('Retrakcja szyi w siadzie');
+    // Nazwa z podpowiedzi nie kosztuje drugiego zapytania: zostają pozostałe podpowiedzi.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+    expect(ai.suggestExerciseVariants).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('card-name-suggestions-names').textContent).toContain('Cofanie brody przy ścianie');
   });
 });

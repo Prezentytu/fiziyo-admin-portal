@@ -15,6 +15,17 @@ const answered = new Map<string, readonly { name: string }[]>();
 // After a failed ask (no credits, provider down) the rest of the session does not ask again on every pause.
 let unavailable = false;
 
+/**
+ * A name picked from „Czy chodziło Ci o” is itself an AI answer: it keeps the other names of that answer
+ * and asks no second time (no second credit for a text AI wrote).
+ */
+export function rememberPickedName(name: string, names: readonly string[]): void {
+  answered.set(
+    nameSuggestionsKey(name),
+    names.map((candidate) => ({ name: candidate }))
+  );
+}
+
 export interface NameSuggestions {
   /** `loading`: AI is asked for this text; `ready`: `names` hold its answer (may be empty). */
   readonly status: 'idle' | 'loading' | 'ready';

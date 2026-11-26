@@ -6,7 +6,7 @@ import { ChoiceChip } from '@/components/ui/choice-chip';
 import { ExerciseThumbnail } from '@/components/shared/exercise/ExerciseThumbnail';
 import { buildExerciseImageUrls } from '@/components/shared/exercise/adapters';
 import type { ChatCatalogExercise } from '../useAvailableExercises';
-import type { NameSuggestions } from './useNameSuggestions';
+import { rememberPickedName, type NameSuggestions } from './useNameSuggestions';
 
 /**
  * Under a typed exercise name: „Czy chodziło Ci o” (AI names that replace the typed one) and „W katalogu są
@@ -48,7 +48,10 @@ export function NameSuggestionsPanel({
               <ChoiceChip
                 key={name}
                 className="h-8 px-3 text-[13px]"
-                onClick={() => onPickName(name)}
+                onClick={() => {
+                  rememberPickedName(name, names);
+                  onPickName(name);
+                }}
                 data-testid={`${testId}-name-${index}-btn`}
               >
                 {name}
