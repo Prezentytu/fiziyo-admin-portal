@@ -223,3 +223,31 @@ export function composeClarifyAnswers(
     .filter(Boolean)
     .join('\n');
 }
+
+/** The chosen answers alone, in question and option order: the short summary next to „Dobierz ponownie”. */
+export function chosenClarifyAnswers(
+  questions: readonly ClarifyQuestion[],
+  chosen: Readonly<Record<string, readonly string[]>>
+): string[] {
+  return questions.flatMap((question) => question.options.filter((option) => chosen[question.topic]?.includes(option)));
+}
+
+/**
+ * What „Dobierz ponownie” sends: the request the card answered and the chosen answers under it. The
+ * answers alone („Strona ciała: lewe”) lose what the set is for, and the assistant asks again instead of
+ * picking (26.11). An earlier line on a topic answered now gives way to the new answer.
+ */
+export function composeRepickMessage(
+  request: string | undefined,
+  questions: readonly ClarifyQuestion[],
+  chosen: Readonly<Record<string, readonly string[]>>
+): string {
+  const answers = composeClarifyAnswers(questions, chosen);
+  if (!answers) return '';
+  const answered = questions.filter((question) => (chosen[question.topic]?.length ?? 0) > 0);
+  const context = (request ?? '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line && !answered.some((question) => line.startsWith(`${question.topic}:`)));
+  return [...context, answers].join('\n');
+}

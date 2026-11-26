@@ -55,7 +55,7 @@ import {
 } from '../utils/setDraft';
 import type { CardProps } from './cardProps';
 import { ChatCard, ChatCardEmpty } from './ChatCard';
-import { ClarifyChips } from './ClarifyChips';
+import { ClarifyChips, ClarifyRepickBar, useClarifyAnswers } from './ClarifyChips';
 import { ExerciseReviewBadge } from './ExerciseReviewBadge';
 
 // A chat draft becomes a plan's mappings: fields a mapping does not keep are not offered.
@@ -268,6 +268,15 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
   const [missingSet, setMissingSet] = useState(false);
   const [search, setSearch] = useState<string | null>(null);
   const locked = chosen !== undefined;
+  // Zestaw z opisu (bez zestawu z katalogu): pytania, które pomagają dobrać ćwiczenia trafniej.
+  const asksToClarify = !set && !locked && Boolean(spec.note);
+  const clarify = useClarifyAnswers(
+    useMemo(
+      () => (asksToClarify ? draftClarifyQuestions({ request, note: spec.note }) : []),
+      [asksToClarify, request, spec.note]
+    ),
+    request
+  );
 
   // Seeded once what it comes from is here: defaults come from the exercise, a catalog set's mapping wins.
   if (items === null) {
@@ -408,7 +417,9 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
         </>
       }
       footer={
-        locked ? (
+        !locked && clarify.picked.length > 0 ? (
+          <ClarifyRepickBar answers={clarify} testId={`${testId}-clarify`} />
+        ) : locked ? (
           <>
             <span className="text-[13px] text-label-secondary">{lockedNote(chosen)}</span>
             {canRestoreDraft(chosen) && (
@@ -589,14 +600,11 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
         </div>
       )}
 
-      {/* Zestaw z opisu (bez zestawu z katalogu): pytania, które pomagają dobrać ćwiczenia trafniej. */}
-      {!set && !locked && spec.note && (
-        <ClarifyChips
-          hint="Zaznacz odpowiedzi, trafią gotowe do wiadomości, a lepiej dobiorę ćwiczenia."
-          questions={draftClarifyQuestions({ request, note: spec.note })}
-          testId={`${testId}-clarify`}
-        />
-      )}
+      <ClarifyChips
+        answers={clarify}
+        hint="Zaznacz odpowiedzi, trafią gotowe do wiadomości, a lepiej dobiorę ćwiczenia."
+        testId={`${testId}-clarify`}
+      />
     </ChatCard>
   );
 }

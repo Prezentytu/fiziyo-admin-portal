@@ -17,7 +17,7 @@ import { newExerciseForSet } from '../utils/exerciseIdeas';
 import { isExerciseTopic } from '../utils/threadLocalReply';
 import type { CardProps } from './cardProps';
 import { ChatCard, ChatCardEmpty } from './ChatCard';
-import { ClarifyChips } from './ClarifyChips';
+import { ClarifyChips, ClarifyRepickBar, useClarifyAnswers } from './ClarifyChips';
 import { ExerciseIdeasList } from './ExerciseIdeas';
 import { ExerciseReviewBadge } from './ExerciseReviewBadge';
 import { exerciseClarifyQuestions } from '../utils/clarifyQuestions';
@@ -76,6 +76,10 @@ function Results({
   const [selectedIds, setSelectedIds] = useState<string[] | null>(null);
   const selected = selectedIds ?? results.map((exercise) => exercise.id);
   const locked = chosen !== undefined;
+  const clarify = useClarifyAnswers(
+    useMemo(() => (locked ? [] : exerciseClarifyQuestions(spec.query, request)), [locked, spec.query, request]),
+    request
+  );
 
   const toggle = (exerciseId: string) =>
     setSelectedIds(
@@ -152,7 +156,9 @@ function Results({
       title={spec.query ? `Ćwiczenia: ${spec.query}` : 'Ćwiczenia z katalogu'}
       meta={patient ? <span>dla: {patient.name}</span> : undefined}
       footer={
-        locked ? (
+        !locked && clarify.picked.length > 0 ? (
+          <ClarifyRepickBar answers={clarify} testId={`${testId}-clarify`} />
+        ) : locked ? (
           <span className="text-[13px] text-label-secondary">Wybrane ćwiczenia są w zestawie poniżej</span>
         ) : (
           <>
@@ -223,13 +229,11 @@ function Results({
           );
         })}
       </ul>
-      {!locked && (
-        <ClarifyChips
-          hint="Zaznacz odpowiedzi, trafią gotowe do wiadomości, a dobiorę trafniej. Z wybranych ćwiczeń ułożysz zestaw przyciskiem poniżej."
-          questions={exerciseClarifyQuestions(spec.query, request)}
-          testId={`${testId}-clarify`}
-        />
-      )}
+      <ClarifyChips
+        answers={clarify}
+        hint="Zaznacz odpowiedzi, trafią gotowe do wiadomości, a dobiorę trafniej. Z wybranych ćwiczeń ułożysz zestaw przyciskiem poniżej."
+        testId={`${testId}-clarify`}
+      />
     </ChatCard>
   );
 }

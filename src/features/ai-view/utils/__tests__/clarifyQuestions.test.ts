@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  chosenClarifyAnswers,
   composeClarifyAnswers,
+  composeRepickMessage,
   draftClarifyQuestions,
   exerciseClarifyQuestions,
   requestBefore,
@@ -200,5 +202,51 @@ describe('ready answers', () => {
     const topics = exerciseClarifyQuestions('kolano', answers).map((question) => question.topic);
     expect(topics).not.toContain('Strona ciała');
     expect(topics).not.toContain('Cel ćwiczeń');
+  });
+});
+
+describe('chosenClarifyAnswers', () => {
+  it('lists the chosen answers in question and option order, skipping empty questions', () => {
+    const questions = [
+      { label: 'Cel?', topic: 'Cel ćwiczeń', options: ['siła', 'rozciąganie', 'stabilizacja'], multi: true },
+      { label: 'Sprzęt?', topic: 'Dostępny sprzęt', options: ['taśma', 'piłka'] },
+      { label: 'Strona?', topic: 'Strona ciała', options: ['lewe', 'prawe', 'oba'] },
+    ];
+
+    expect(
+      chosenClarifyAnswers(questions, {
+        'Strona ciała': ['prawe'],
+        'Cel ćwiczeń': ['stabilizacja', 'siła'],
+        'Dostępny sprzęt': [],
+      })
+    ).toEqual(['siła', 'stabilizacja', 'prawe']);
+    expect(chosenClarifyAnswers(questions, {})).toEqual([]);
+  });
+});
+
+// 26.11, DEV: same „Strona ciała: lewe / Przyczyna: po operacji” → asystent pytał „Która okolica?”, zamiast dobrać zestaw na kolano.
+describe('composeRepickMessage', () => {
+  const questions = [
+    { label: 'Które kolano?', topic: 'Strona ciała', options: ['lewe', 'prawe', 'oba'] },
+    { label: 'Skąd się wzięło?', topic: 'Przyczyna', options: ['po urazie', 'po operacji'] },
+  ];
+
+  it('sends the request with the chosen answers under it', () => {
+    expect(composeRepickMessage('Ułóż zestaw na ból kolana', questions, { 'Strona ciała': ['lewe'] })).toBe(
+      'Ułóż zestaw na ból kolana\nStrona ciała: lewe'
+    );
+  });
+
+  it('replaces an earlier answer on the same topic and keeps the rest of the request', () => {
+    expect(
+      composeRepickMessage('Ułóż zestaw na ból kolana\nStrona ciała: prawe\nPrzyczyna: po urazie', questions, {
+        'Strona ciała': ['lewe'],
+      })
+    ).toBe('Ułóż zestaw na ból kolana\nPrzyczyna: po urazie\nStrona ciała: lewe');
+  });
+
+  it('is empty without answers and works without a request', () => {
+    expect(composeRepickMessage('Ułóż zestaw na ból kolana', questions, {})).toBe('');
+    expect(composeRepickMessage(undefined, questions, { Przyczyna: ['po operacji'] })).toBe('Przyczyna: po operacji');
   });
 });

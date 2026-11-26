@@ -70,6 +70,7 @@ vi.mock('next/image', () => ({
   default: ({ src, alt }: { src: string; alt?: string }) => <img src={src} alt={alt ?? ''} />,
 }));
 vi.mock('../../ChatSessionContext', () => ({
+  useChatBusy: () => false,
   useChatActions: () => ({
     organizationId: 'org-1',
     patients: [{ id: 'p1', name: 'Anna' }],

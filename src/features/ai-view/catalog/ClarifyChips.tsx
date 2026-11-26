@@ -1,49 +1,92 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, MessageCircleQuestion } from 'lucide-react';
+import { Check, MessageCircleQuestion, RefreshCw } from 'lucide-react';
 
+import { Button } from '@/components/ui/button';
 import { ChoiceChip } from '@/components/ui/choice-chip';
+import { useChatActions, useChatBusy } from '../ChatSessionContext';
 import { useComposerDraft } from '../ComposerDraftContext';
-import { composeClarifyAnswers, type ClarifyQuestion } from '../utils/clarifyQuestions';
+import {
+  chosenClarifyAnswers,
+  composeClarifyAnswers,
+  composeRepickMessage,
+  type ClarifyQuestion,
+} from '../utils/clarifyQuestions';
 
 type Chosen = Readonly<Record<string, readonly string[]>>;
 
+export interface ClarifyAnswers {
+  readonly questions: readonly ClarifyQuestion[];
+  readonly chosen: Chosen;
+  /** The marked answers in question order; non-empty means the card shows the decision bar. */
+  readonly picked: readonly string[];
+  readonly isBusy: boolean;
+  toggle: (question: ClarifyQuestion, option: string) => void;
+  other: () => void;
+  clear: () => void;
+  repick: () => void;
+}
+
 /**
- * Questions that let the assistant pick better, each with its ready answers. A tap on an answer marks it
- * and puts all marked answers in the message field as „Temat: odpowiedź” lines, ready to send; a second
- * tap unmarks it. „Inne…” adds a free-text line under them. Rendered as its own inset panel, so the
- * answers do not blend with the card's action buttons.
+ * State of a card's clarifying questions. A tap on an answer marks it and puts all marked answers in the
+ * message field as „Temat: odpowiedź” lines, ready to send; a second tap unmarks it. „Inne…” adds a
+ * free-text line under them. `repick` sends the request with the answers at once (and empties the field),
+ * so the next reply brings a proposal that applies them; the card locks as an earlier version. Kept in
+ * the card, because while answers are marked the card's footer becomes the one decision bar.
  */
+export function useClarifyAnswers(questions: readonly ClarifyQuestion[], request: string | undefined): ClarifyAnswers {
+  const draftInComposer = useComposerDraft();
+  const { sendMessage } = useChatActions();
+  const isBusy = useChatBusy();
+  const [chosen, setChosen] = useState<Chosen>({});
+
+  return {
+    questions,
+    chosen,
+    picked: chosenClarifyAnswers(questions, chosen),
+    isBusy,
+    toggle: (question, option) => {
+      const current = chosen[question.topic] ?? [];
+      const answers = current.includes(option)
+        ? current.filter((answer) => answer !== option)
+        : question.multi
+          ? [...current, option]
+          : [option];
+      const next = { ...chosen, [question.topic]: answers };
+      setChosen(next);
+      draftInComposer(composeClarifyAnswers(questions, next));
+    },
+    other: () => {
+      const answers = composeClarifyAnswers(questions, chosen);
+      draftInComposer(answers ? `${answers}\nDoprecyzowanie: ` : 'Doprecyzowanie: ');
+    },
+    clear: () => {
+      setChosen({});
+      draftInComposer('');
+    },
+    repick: () => {
+      const message = composeRepickMessage(request, questions, chosen);
+      if (!message) return;
+      setChosen({});
+      draftInComposer('');
+      sendMessage(message);
+    },
+  };
+}
+
+/** The questions as their own inset panel, so the answers do not blend with the card's action buttons. */
 export function ClarifyChips({
+  answers,
   hint,
-  questions,
   testId,
 }: {
+  readonly answers: ClarifyAnswers;
   readonly hint: string;
-  readonly questions: readonly ClarifyQuestion[];
   readonly testId: string;
 }) {
-  const draftInComposer = useComposerDraft();
-  const [chosen, setChosen] = useState<Chosen>({});
+  const { questions, chosen, toggle, other } = answers;
   if (questions.length === 0) return null;
-
-  const toggle = (question: ClarifyQuestion, option: string) => {
-    const current = chosen[question.topic] ?? [];
-    const answers = current.includes(option)
-      ? current.filter((answer) => answer !== option)
-      : question.multi
-        ? [...current, option]
-        : [option];
-    const next = { ...chosen, [question.topic]: answers };
-    setChosen(next);
-    draftInComposer(composeClarifyAnswers(questions, next));
-  };
-
-  const other = () => {
-    const answers = composeClarifyAnswers(questions, chosen);
-    draftInComposer(answers ? `${answers}\nDoprecyzowanie: ` : 'Doprecyzowanie: ');
-  };
 
   return (
     <section
@@ -101,5 +144,32 @@ export function ClarifyChips({
         </ChoiceChip>
       </div>
     </section>
+  );
+}
+
+/**
+ * The card's footer while answers are marked: what was chosen and one decision. The card's own actions
+ * (save, editor, next step) come back after „Dobierz ponownie” or „Wyczyść”.
+ */
+export function ClarifyRepickBar({ answers, testId }: { readonly answers: ClarifyAnswers; readonly testId: string }) {
+  return (
+    <>
+      <span
+        className="min-w-0 flex-1 truncate text-[13px] text-label-secondary"
+        aria-live="polite"
+        data-testid={`${testId}-repick`}
+      >
+        Uwzględnię: <span className="text-foreground">{answers.picked.join(' · ')}</span>
+      </span>
+      <div className="flex items-center gap-1">
+        <Button variant="ghost" size="sm" onClick={answers.clear} data-testid={`${testId}-clear-btn`}>
+          Wyczyść
+        </Button>
+        <Button onClick={answers.repick} disabled={answers.isBusy} data-testid={`${testId}-repick-btn`}>
+          <RefreshCw aria-hidden="true" />
+          Dobierz ponownie
+        </Button>
+      </div>
+    </>
   );
 }
