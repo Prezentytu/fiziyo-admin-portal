@@ -145,6 +145,7 @@ export const GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY = gql`
   query GetExerciseSetWithAssignments($exerciseSetId: String!) {
     exerciseSetById(id: $exerciseSetId) {
       ...ExerciseSetWithExercisesFragment
+      activeAssignmentCount
       patientAssignments {
         id
         userId

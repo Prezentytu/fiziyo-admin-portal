@@ -45,7 +45,8 @@ export function StarterSetToggle({ exerciseSetId }: StarterSetToggleProps) {
     errorPolicy: 'all',
   });
   const [setStarter, { loading }] = useMutation<StarterMutationData>(SET_STARTER_EXERCISE_SET_MUTATION, {
-    refetchQueries: [{ query: GET_EXERCISE_SET_STARTER_QUERY, variables: { exerciseSetId } }],
+    // Karta zestawu przelicza też kafelek „pacjentów” (activeAssignmentCount).
+    refetchQueries: [{ query: GET_EXERCISE_SET_STARTER_QUERY, variables: { exerciseSetId } }, 'GetExerciseSetWithAssignments'],
     awaitRefetchQueries: true,
   });
 
