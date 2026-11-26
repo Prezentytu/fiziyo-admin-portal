@@ -20,7 +20,7 @@ import { useChatActions, useChatBusy } from '../ChatSessionContext';
 import { useChatMode } from '../useChatMode';
 import { draftWithExercise, exerciseCreatedReply } from '../utils/addToDraft';
 import { draftPreviewData } from '../utils/draftPreview';
-import { similarFromSuggestions } from '../utils/nameSuggestions';
+import { isTestExercise, similarFromSuggestions } from '../utils/nameSuggestions';
 import { draftItemFromExercise } from '../utils/setDraft';
 import { useAvailableExercises, type ChatCatalogExercise } from '../useAvailableExercises';
 import { findSimilarExercises, prepareExerciseNames } from '@/features/exercises/utils/exerciseDuplicateCandidates';
@@ -217,7 +217,9 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
   const nameSuggestions = useNameSuggestions(nameText, useAi && chosen === undefined && namingStage);
   const similar = useMemo(() => {
     if (!namingStage || nameText.trim().length < 3) return [];
-    const local = findSimilarExercises(nameText, preparedCatalog).slice(0, 3);
+    const local = findSimilarExercises(nameText, preparedCatalog)
+      .filter((exercise) => !isTestExercise(exercise.name))
+      .slice(0, 3);
     const fromNames = similarFromSuggestions(catalog, nameSuggestions.names, new Set(local.map((item) => item.id)), 3);
     return [...local, ...fromNames];
   }, [catalog, preparedCatalog, nameSuggestions.names, nameText, namingStage]);

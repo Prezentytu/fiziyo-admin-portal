@@ -39,11 +39,15 @@ const IDLE: NameSuggestions = { status: 'idle', names: [] };
 /**
  * „Czy chodziło Ci o”: once the therapist stops typing a name (`NAME_SUGGESTIONS_DELAY_MS`), AI proposes
  * up to three full exercise names. Asked only with the chat's AI on, from `NAME_SUGGESTIONS_MIN_LENGTH`
- * characters, once per text.
+ * characters, once per text, and only for a text typed in this card: a card that opens with a name
+ * (from the search, or restored after a reload) shows an answer it already has and pays for nothing.
  */
 export function useNameSuggestions(query: string, enabled: boolean): NameSuggestions {
   const key = nameSuggestionsKey(query);
-  const eligible = enabled && !unavailable && key.length >= NAME_SUGGESTIONS_MIN_LENGTH;
+  const [openedWith] = useState(key);
+  const known = answered.has(key) || pending.has(key);
+  const eligible =
+    enabled && !unavailable && key.length >= NAME_SUGGESTIONS_MIN_LENGTH && (key !== openedWith || known);
   const [result, setResult] = useState<{ key: string; variants: readonly { name: string }[] } | null>(null);
   const [asking, setAsking] = useState<string | null>(null);
 

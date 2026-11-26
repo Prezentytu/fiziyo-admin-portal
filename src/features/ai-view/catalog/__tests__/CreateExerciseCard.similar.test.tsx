@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { CreateExerciseCard } from '../CreateExerciseCard';
+import { NAME_SUGGESTIONS_DELAY_MS } from '../../utils/nameSuggestions';
 
 const actions = vi.hoisted(() => ({
   markChosen: vi.fn(),
@@ -74,7 +75,7 @@ describe('karta nowego ćwiczenia: podobne nazwy i ćwiczenia z katalogu', () =>
     fireEvent.change(screen.getByTestId('card-name-input'), { target: { value: 'retrakcja szyji' } });
     expect(ai.suggestExerciseVariants).not.toHaveBeenCalled();
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(1000);
+      await vi.advanceTimersByTimeAsync(NAME_SUGGESTIONS_DELAY_MS);
     });
 
     expect(ai.suggestExerciseVariants).toHaveBeenCalledTimes(1);
@@ -86,7 +87,7 @@ describe('karta nowego ćwiczenia: podobne nazwy i ćwiczenia z katalogu', () =>
     expect(screen.getByTestId('card-name-input')).toHaveValue('Retrakcja szyi w siadzie');
     // Nazwa z podpowiedzi nie kosztuje drugiego zapytania: zostają pozostałe podpowiedzi.
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(1000);
+      await vi.advanceTimersByTimeAsync(NAME_SUGGESTIONS_DELAY_MS);
     });
     expect(ai.suggestExerciseVariants).toHaveBeenCalledTimes(1);
     expect(screen.getByTestId('card-name-suggestions-names').textContent).toContain('Cofanie brody przy ścianie');

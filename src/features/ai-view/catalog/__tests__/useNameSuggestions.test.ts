@@ -2,6 +2,7 @@ import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { useNameSuggestions } from '../useNameSuggestions';
+import { NAME_SUGGESTIONS_DELAY_MS } from '../../utils/nameSuggestions';
 
 const ai = vi.hoisted(() => ({ suggestExerciseVariants: vi.fn() }));
 vi.mock('@/services/aiService', () => ({ aiService: ai }));
@@ -15,15 +16,16 @@ describe('useNameSuggestions', () => {
     let answer: (variants: { name: string }[]) => void = () => undefined;
     ai.suggestExerciseVariants.mockReturnValue(new Promise((resolve) => (answer = resolve)));
 
-    const search = renderHook(() => useNameSuggestions('rozciąganie szyi z ręcznikiem', true));
+    const search = renderHook(({ text }) => useNameSuggestions(text, true), { initialProps: { text: '' } });
+    search.rerender({ text: 'rozciąganie szyi z ręcznikiem' });
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(1000);
+      await vi.advanceTimersByTimeAsync(NAME_SUGGESTIONS_DELAY_MS);
     });
     expect(search.result.current.status).toBe('loading');
 
     const create = renderHook(() => useNameSuggestions('Rozciąganie szyi z ręcznikiem', true));
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(1000);
+      await vi.advanceTimersByTimeAsync(NAME_SUGGESTIONS_DELAY_MS);
     });
     expect(ai.suggestExerciseVariants).toHaveBeenCalledTimes(1);
 
@@ -35,5 +37,27 @@ describe('useNameSuggestions', () => {
       names: ['Rozciąganie mięśni pochyłych szyi w siedzeniu z ręcznikiem'],
     });
     expect(search.result.current.status).toBe('ready');
+  });
+
+  // 26.11 na żywo: przeładowanie rozmowy z trzema kartami tworzenia kosztowało 3 kredyty.
+  it('karta otwarta z nazwą nie pyta, dopóki nazwa się nie zmieni', async () => {
+    vi.useFakeTimers();
+    ai.suggestExerciseVariants.mockClear();
+    ai.suggestExerciseVariants.mockResolvedValue([{ name: 'Mostek biodrowy na jednej nodze w leżeniu tyłem' }]);
+
+    const card = renderHook(({ name }) => useNameSuggestions(name, true), {
+      initialProps: { name: 'mostek biodrowy na jednej nodze' },
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(NAME_SUGGESTIONS_DELAY_MS);
+    });
+    expect(ai.suggestExerciseVariants).not.toHaveBeenCalled();
+    expect(card.result.current.status).toBe('idle');
+
+    card.rerender({ name: 'mostek biodrowy na jednej nodze z gumą' });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(NAME_SUGGESTIONS_DELAY_MS);
+    });
+    expect(ai.suggestExerciseVariants).toHaveBeenCalledTimes(1);
   });
 });
