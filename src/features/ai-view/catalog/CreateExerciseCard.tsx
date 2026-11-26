@@ -30,7 +30,7 @@ import {
 } from '../utils/chatExerciseDraft';
 import type { CardProps } from './cardProps';
 import { ChatCard } from './ChatCard';
-import { CreatedExerciseSummary } from './CreatedExerciseSummary';
+import { CreatedExerciseSummary, rememberCreatedDescription } from './CreatedExerciseSummary';
 import { QuickReplies } from './QuickReplies';
 import { useCreateExercise } from './useChatWrites';
 import { ImageStylePicker } from '@/features/exercises/ImageStylePicker';
@@ -230,6 +230,7 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
     );
     if (!exercise) return;
     dropExerciseDraft(messageId);
+    rememberCreatedDescription(exercise.id, values.description);
     markChosen(messageId, createdChoice(exercise.id));
     // Ćwiczenie utworzone dla propozycji zestawu: zestaw wraca od razu, z nowym ćwiczeniem.
     appendAssistant(

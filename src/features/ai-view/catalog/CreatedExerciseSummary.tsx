@@ -12,6 +12,14 @@ import { draftItemFromExercise, formatDraftParams } from '../utils/setDraft';
 
 const DETAILS: readonly string[] = [];
 
+// The light catalog list may not carry the description of an exercise saved a moment ago; the form's text
+// is kept here for the summary. Memory only, like the draft (ai-view/AGENTS.md): after a reload the catalog's.
+const createdDescriptions = new Map<string, string>();
+
+export function rememberCreatedDescription(exerciseId: string, description: string): void {
+  if (description.trim()) createdDescriptions.set(exerciseId, description.trim());
+}
+
 /**
  * What the create-exercise form becomes once saved: the new exercise as a found one looks (picture, name,
  * parameters, the patient's description), so the thread keeps what was made and the next reply builds on it.
@@ -26,6 +34,7 @@ export function CreatedExerciseSummary({
   const { organizationId } = useChatActions();
   const { exercises, loading } = useAvailableExercises(organizationId, true, DETAILS);
   const exercise = exercises.find((candidate) => candidate.id === exerciseId);
+  const description = exercise?.patientDescription?.trim() || createdDescriptions.get(exerciseId);
 
   return (
     <section
@@ -49,10 +58,8 @@ export function CreatedExerciseSummary({
             <p className="truncate text-[13px] leading-[18px] tabular-nums text-label-secondary">
               {formatDraftParams(draftItemFromExercise(exercise))}
             </p>
-            {exercise.patientDescription && (
-              <p className="line-clamp-2 text-[13px] leading-[18px] text-label-secondary">
-                {exercise.patientDescription}
-              </p>
+            {description && (
+              <p className="line-clamp-2 text-[13px] leading-[18px] text-label-secondary">{description}</p>
             )}
             <Link
               href={`/exercises/${exercise.id}`}
