@@ -238,6 +238,29 @@ describe('SetDraftCard: wersja rekordu ćwiczeń szkicu', () => {
 
   // Demo 18.11: droga do nowego ćwiczenia była schowana za wyszukiwarką (dopiero po 3 znakach).
   // 26.11 (Przemek): jeden przycisk „Dodaj ćwiczenie”; tworzenie z AI jest od razu pod wyszukiwarką.
+  // 26.11 (Przemek): ćwiczenia z propozycji nie dało się podejrzeć; klik w zdjęcie albo nazwę otwiera podgląd.
+  it('klik w zdjęcie albo nazwę ćwiczenia otwiera jego podgląd', async () => {
+    mockClientQuery.mockResolvedValue({
+      data: { exerciseById: { id: 'ex-alt', updatedAt: 't1', enrichmentData: {} } },
+    });
+    render(
+      <SetDraftCard
+        spec={{ component: 'SetDraft', exerciseIds: ['ex-alt'], note: 'biodro' } as never}
+        testId="draft"
+        messageId="m1"
+      />
+    );
+    await screen.findByTestId('draft-item-ex-alt');
+
+    fireEvent.click(screen.getByTestId('draft-item-ex-alt-name-btn'));
+    expect(await screen.findByTestId('draft-preview-dialog')).toBeTruthy();
+    fireEvent.keyDown(screen.getByTestId('draft-preview-dialog'), { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByTestId('draft-preview-dialog')).toBeNull());
+
+    fireEvent.click(screen.getByTestId('draft-item-ex-alt-preview-btn'));
+    expect(await screen.findByTestId('draft-preview-dialog')).toBeTruthy();
+  });
+
   it('„Dodaj ćwiczenie” od razu daje „Utwórz nowe ćwiczenie z AI”, a nowe ćwiczenie wraca do tej propozycji', async () => {
     mockClientQuery.mockResolvedValue({
       data: { exerciseById: { id: 'ex-alt', updatedAt: 't1', enrichmentData: {} } },

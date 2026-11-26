@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ExerciseThumbnail } from '@/components/shared/exercise/ExerciseThumbnail';
+import { ExercisePreviewDialog } from '@/components/shared/exercise';
 import { buildExerciseImageUrls } from '@/components/shared/exercise/adapters';
 import {
   ExerciseParametersFields,
@@ -55,6 +56,7 @@ import {
 } from '../utils/setDraft';
 import type { CardProps } from './cardProps';
 import { ChatCard, ChatCardEmpty } from './ChatCard';
+import { draftPreviewData } from '../utils/draftPreview';
 import { ClarifyChips, ClarifyPendingBar, ClarifyRepickBar, useClarifyAnswers } from './ClarifyChips';
 import { ExerciseReviewBadge } from './ExerciseReviewBadge';
 
@@ -84,6 +86,8 @@ interface RowProps {
   readonly onSwap: (exercise: ChatCatalogExercise) => void;
   readonly onChange: (patch: Partial<ExerciseParameterValues>) => void;
   readonly onClearWarmup: () => void;
+  /** Podgląd ćwiczenia po kliknięciu zdjęcia albo nazwy. */
+  readonly onPreview?: () => void;
 }
 
 function DraftRow({
@@ -98,6 +102,7 @@ function DraftRow({
   onSwap,
   onChange,
   onClearWarmup,
+  onPreview,
 }: RowProps) {
   const [panel, setPanel] = useState<'none' | 'swap' | 'edit'>('none');
   const name = exercise?.name ?? 'Ćwiczenie';
@@ -110,15 +115,42 @@ function DraftRow({
       className="group border-t-[0.5px] border-hairline pt-2 first:border-t-0 first:pt-0"
     >
       <div className="flex min-h-14 items-center gap-3">
-        <ExerciseThumbnail
-          src={exercise ? (buildExerciseImageUrls(exercise)[0] ?? null) : null}
-          sizeClass="h-10 w-10"
-          className="rounded-[10px]"
-        />
+        {onPreview ? (
+          <button
+            type="button"
+            onClick={onPreview}
+            aria-label={`Podgląd ćwiczenia: ${name}`}
+            className="shrink-0 rounded-[10px] transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            data-testid={`${testId}-item-${item.exerciseId}-preview-btn`}
+          >
+            <ExerciseThumbnail
+              src={exercise ? (buildExerciseImageUrls(exercise)[0] ?? null) : null}
+              sizeClass="h-10 w-10"
+              className="rounded-[10px]"
+            />
+          </button>
+        ) : (
+          <ExerciseThumbnail
+            src={exercise ? (buildExerciseImageUrls(exercise)[0] ?? null) : null}
+            sizeClass="h-10 w-10"
+            className="rounded-[10px]"
+          />
+        )}
         <div className="min-w-0 flex-1">
           {/* div, nie p: znaczniki (Badge) renderują div, a div w p psuje hydratację (SPEC-061, znalezione na żywo). */}
           <div className="flex items-center gap-2 text-[15px] font-medium leading-[21px] text-foreground">
-            <span className="truncate">{name}</span>
+            {onPreview ? (
+              <button
+                type="button"
+                onClick={onPreview}
+                className="min-w-0 truncate rounded-[4px] text-left underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                data-testid={`${testId}-item-${item.exerciseId}-name-btn`}
+              >
+                {name}
+              </button>
+            ) : (
+              <span className="truncate">{name}</span>
+            )}
             <ExerciseReviewBadge exercise={exercise} testId={`${testId}-review-${item.exerciseId}`} />
             {added && (
               <Badge className="shrink-0" data-testid={`${testId}-new-${item.exerciseId}`}>
@@ -267,6 +299,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
 
   const [missingSet, setMissingSet] = useState(false);
   const [search, setSearch] = useState<string | null>(null);
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
   const locked = chosen !== undefined;
   // Zestaw z opisu (bez zestawu z katalogu): pytania, które pomagają dobrać ćwiczenia trafniej.
   const asksToClarify = !set && !locked && Boolean(spec.note);
@@ -404,6 +437,10 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
     });
   };
 
+  const previewItem = previewIndex !== null ? draftItems[previewIndex] : undefined;
+  const previewSource = previewItem ? byId.get(previewItem.exerciseId) : undefined;
+  const previewExercise = previewItem && previewSource ? draftPreviewData(previewSource, previewItem) : null;
+
   return (
     <ChatCard
       testId={testId}
@@ -495,6 +532,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
                 onRemove={() => removeItem(index)}
                 onSwap={(alternative) => updateItem(index, draftItemFromExercise(alternative))}
                 onClearWarmup={() => updateItem(index, { isWarmup: false })}
+                onPreview={exercise ? () => setPreviewIndex(index) : undefined}
                 onChange={(patch) =>
                   setItems((current) =>
                     (current ?? []).map((entry, position) =>
@@ -607,6 +645,14 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
         answers={clarify}
         info="Zaznacz odpowiedzi i kliknij „Dobierz ponownie”: ułożę nową propozycję z ich uwzględnieniem. Obecna zostanie powyżej i można do niej wrócić. Odpowiedzi trafiają też do pola wiadomości, więc możesz coś dopisać."
         testId={`${testId}-clarify`}
+      />
+      <ExercisePreviewDialog
+        open={previewExercise !== null}
+        exercise={previewExercise}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) setPreviewIndex(null);
+        }}
+        testIdPrefix={`${testId}-preview`}
       />
     </ChatCard>
   );
