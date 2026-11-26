@@ -245,6 +245,17 @@ describe('composeRepickMessage', () => {
     ).toBe('Ułóż zestaw na ból kolana\nPrzyczyna: po urazie\nStrona ciała: lewe');
   });
 
+  // 26.11, demo: drugie „Dobierz ponownie” czytało pierwsze w prośbie i wiadomość miała każdą linię kilka razy.
+  it('sends each line once when the request already holds an earlier repick', () => {
+    expect(
+      composeRepickMessage(
+        'Ułóż zestaw na ból kolana\nUłóż zestaw na ból kolana\nStrona ciała: lewe\nPrzyczyna: po operacji',
+        questions,
+        { Przyczyna: ['po urazie'] }
+      )
+    ).toBe('Ułóż zestaw na ból kolana\nStrona ciała: lewe\nPrzyczyna: po urazie');
+  });
+
   it('is empty without answers and works without a request', () => {
     expect(composeRepickMessage('Ułóż zestaw na ból kolana', questions, {})).toBe('');
     expect(composeRepickMessage(undefined, questions, { Przyczyna: ['po operacji'] })).toBe('Przyczyna: po operacji');

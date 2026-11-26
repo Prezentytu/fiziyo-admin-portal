@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { ComposerDraftContext } from '../../ComposerDraftContext';
-import { ClarifyChips, ClarifyRepickBar, useClarifyAnswers } from '../ClarifyChips';
+import { ClarifyChips, ClarifyPendingBar, ClarifyRepickBar, useClarifyAnswers } from '../ClarifyChips';
 
 const chat = vi.hoisted(() => ({ sendMessage: vi.fn(), busy: false }));
 vi.mock('../../ChatSessionContext', () => ({
@@ -21,7 +21,9 @@ function Harness({ request }: { readonly request?: string }) {
     <>
       <ClarifyChips answers={answers} hint="Zaznacz odpowiedzi" testId="clarify" />
       <footer data-testid="footer">
-        {answers.picked.length > 0 ? (
+        {answers.pending ? (
+          <ClarifyPendingBar testId="clarify" />
+        ) : answers.picked.length > 0 ? (
           <ClarifyRepickBar answers={answers} testId="clarify" />
         ) : (
           <button type="button" data-testid="card-primary-btn">
@@ -37,13 +39,19 @@ function renderChips(request?: string) {
   chat.sendMessage.mockReset();
   chat.busy = false;
   const draft = vi.fn();
-  render(
+  const view = render(
     <ComposerDraftContext.Provider value={draft}>
       <Harness request={request} />
     </ComposerDraftContext.Provider>
   );
   const option = (question: number, index: number) => screen.getByTestId(`clarify-${question}-option-${index}-btn`);
-  return { draft, option };
+  const rerender = () =>
+    view.rerender(
+      <ComposerDraftContext.Provider value={draft}>
+        <Harness request={request} />
+      </ComposerDraftContext.Provider>
+    );
+  return { draft, option, rerender };
 }
 
 // 25.11 (Przemek): odpowiedź wybiera się kliknięciem, a wiadomość jest gotowa do wysłania bez pisania.
@@ -100,7 +108,7 @@ describe('ClarifyChips', () => {
     );
     expect(draft).toHaveBeenLastCalledWith('');
     expect(screen.queryByTestId('clarify-repick-btn')).toBeNull();
-    expect(screen.getByTestId('card-primary-btn')).toBeTruthy();
+    expect(screen.getByTestId('clarify-pending')).toBeTruthy();
     expect(option(1, 0).getAttribute('aria-pressed')).toBe('false');
   });
 
@@ -123,5 +131,26 @@ describe('ClarifyChips', () => {
 
     fireEvent.click(option(1, 1));
     expect(screen.getByTestId('clarify-repick-btn').hasAttribute('disabled')).toBe(true);
+  });
+
+  // 26.11 (Przemek): w trakcie dobierania karta pokazywała „Wybierz pacjenta”, choć za chwilę zostaje zastąpiona.
+  it('od wysłania do końca odpowiedzi stopka pokazuje „Dobieram…”, bez akcji karty, a potem wraca', () => {
+    const { option, rerender } = renderChips('Ułóż zestaw na biodro');
+    chat.sendMessage.mockImplementation(() => {
+      chat.busy = true;
+    });
+
+    fireEvent.click(option(1, 1));
+    fireEvent.click(screen.getByTestId('clarify-repick-btn'));
+    rerender();
+
+    expect(screen.getByTestId('clarify-pending')).toBeTruthy();
+    expect(screen.queryByTestId('card-primary-btn')).toBeNull();
+    expect(option(0, 0).hasAttribute('disabled')).toBe(true);
+
+    chat.busy = false;
+    rerender();
+    expect(screen.queryByTestId('clarify-pending')).toBeNull();
+    expect(screen.getByTestId('card-primary-btn')).toBeTruthy();
   });
 });

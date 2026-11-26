@@ -55,7 +55,7 @@ import {
 } from '../utils/setDraft';
 import type { CardProps } from './cardProps';
 import { ChatCard, ChatCardEmpty } from './ChatCard';
-import { ClarifyChips, ClarifyRepickBar, useClarifyAnswers } from './ClarifyChips';
+import { ClarifyChips, ClarifyPendingBar, ClarifyRepickBar, useClarifyAnswers } from './ClarifyChips';
 import { ExerciseReviewBadge } from './ExerciseReviewBadge';
 
 // A chat draft becomes a plan's mappings: fields a mapping does not keep are not offered.
@@ -417,7 +417,9 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
         </>
       }
       footer={
-        !locked && clarify.picked.length > 0 ? (
+        !locked && clarify.pending ? (
+          <ClarifyPendingBar testId={`${testId}-clarify`} />
+        ) : !locked && clarify.picked.length > 0 ? (
           <ClarifyRepickBar answers={clarify} testId={`${testId}-clarify`} />
         ) : locked ? (
           <>
@@ -486,7 +488,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
                 item={item}
                 exercise={exercise}
                 alternatives={exercise ? findAlternatives(exercise, exercises, draftIds) : []}
-                locked={locked}
+                locked={locked || clarify.pending}
                 added={item.exerciseId === spec.addedExerciseId}
                 versionPending={versionPending}
                 testId={testId}
@@ -513,6 +515,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
       )}
 
       {!locked &&
+        !clarify.pending &&
         (search === null ? (
           <div>
             <Button variant="outline" size="sm" onClick={() => setSearch('')} data-testid={`${testId}-add-btn`}>

@@ -17,7 +17,7 @@ import { newExerciseForSet } from '../utils/exerciseIdeas';
 import { isExerciseTopic } from '../utils/threadLocalReply';
 import type { CardProps } from './cardProps';
 import { ChatCard, ChatCardEmpty } from './ChatCard';
-import { ClarifyChips, ClarifyRepickBar, useClarifyAnswers } from './ClarifyChips';
+import { ClarifyChips, ClarifyPendingBar, ClarifyRepickBar, useClarifyAnswers } from './ClarifyChips';
 import { ExerciseIdeasList } from './ExerciseIdeas';
 import { ExerciseReviewBadge } from './ExerciseReviewBadge';
 import { exerciseClarifyQuestions } from '../utils/clarifyQuestions';
@@ -156,7 +156,9 @@ function Results({
       title={spec.query ? `Ćwiczenia: ${spec.query}` : 'Ćwiczenia z katalogu'}
       meta={patient ? <span>dla: {patient.name}</span> : undefined}
       footer={
-        !locked && clarify.picked.length > 0 ? (
+        !locked && clarify.pending ? (
+          <ClarifyPendingBar testId={`${testId}-clarify`} />
+        ) : !locked && clarify.picked.length > 0 ? (
           <ClarifyRepickBar answers={clarify} testId={`${testId}-clarify`} />
         ) : locked ? (
           <span className="text-[13px] text-label-secondary">Wybrane ćwiczenia są w zestawie poniżej</span>
@@ -202,7 +204,7 @@ function Results({
               <button
                 type="button"
                 aria-pressed={isSelected}
-                disabled={locked}
+                disabled={locked || clarify.pending}
                 onClick={() => toggle(exercise.id)}
                 data-testid={`${testId}-item-${exercise.id}`}
                 className={cn(

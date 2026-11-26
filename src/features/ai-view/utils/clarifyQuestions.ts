@@ -235,7 +235,8 @@ export function chosenClarifyAnswers(
 /**
  * What „Dobierz ponownie” sends: the request the card answered and the chosen answers under it. The
  * answers alone („Strona ciała: lewe”) lose what the set is for, and the assistant asks again instead of
- * picking (26.11). An earlier line on a topic answered now gives way to the new answer.
+ * picking (26.11). An earlier line on a topic answered now gives way to the new answer, and a line the
+ * request already repeats goes once.
  */
 export function composeRepickMessage(
   request: string | undefined,
@@ -249,5 +250,6 @@ export function composeRepickMessage(
     .split('\n')
     .map((line) => line.trim())
     .filter((line) => line && !answered.some((question) => line.startsWith(`${question.topic}:`)));
-  return [...context, answers].join('\n');
+  // A second „Dobierz ponownie” reads the first one in the request: each line goes once.
+  return [...new Set([...context, ...answers.split('\n')])].join('\n');
 }

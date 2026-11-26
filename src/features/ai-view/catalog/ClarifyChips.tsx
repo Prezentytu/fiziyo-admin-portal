@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, MessageCircleQuestion, RefreshCw } from 'lucide-react';
+import { Check, Loader2, MessageCircleQuestion, RefreshCw } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { ChoiceChip } from '@/components/ui/choice-chip';
@@ -22,6 +22,8 @@ export interface ClarifyAnswers {
   /** The marked answers in question order; non-empty means the card shows the decision bar. */
   readonly picked: readonly string[];
   readonly isBusy: boolean;
+  /** „Dobierz ponownie” was sent and the reply is still coming: the card is read-only meanwhile. */
+  readonly pending: boolean;
   toggle: (question: ClarifyQuestion, option: string) => void;
   other: () => void;
   clear: () => void;
@@ -40,12 +42,17 @@ export function useClarifyAnswers(questions: readonly ClarifyQuestion[], request
   const { sendMessage } = useChatActions();
   const isBusy = useChatBusy();
   const [chosen, setChosen] = useState<Chosen>({});
+  // 'sent' until the reply starts (the same click sets the thread busy), 'busy' until it ends.
+  const [repickState, setRepickState] = useState<'sent' | 'busy' | null>(null);
+  if (repickState === 'sent' && isBusy) setRepickState('busy');
+  if (repickState === 'busy' && !isBusy) setRepickState(null);
 
   return {
     questions,
     chosen,
     picked: chosenClarifyAnswers(questions, chosen),
     isBusy,
+    pending: repickState !== null,
     toggle: (question, option) => {
       const current = chosen[question.topic] ?? [];
       const answers = current.includes(option)
@@ -69,6 +76,7 @@ export function useClarifyAnswers(questions: readonly ClarifyQuestion[], request
       const message = composeRepickMessage(request, questions, chosen);
       if (!message) return;
       setChosen({});
+      setRepickState('sent');
       draftInComposer('');
       sendMessage(message);
     },
@@ -85,7 +93,7 @@ export function ClarifyChips({
   readonly hint: string;
   readonly testId: string;
 }) {
-  const { questions, chosen, toggle, other } = answers;
+  const { questions, chosen, toggle, other, pending } = answers;
   if (questions.length === 0) return null;
 
   return (
@@ -123,6 +131,7 @@ export function ClarifyChips({
                   variant={isChosen ? 'primary' : 'default'}
                   className="h-8 px-3 text-[13px]"
                   aria-pressed={isChosen}
+                  disabled={pending}
                   onClick={() => toggle(question, option)}
                   data-testid={`${testId}-${index}-option-${optionIndex}-btn`}
                 >
@@ -137,6 +146,7 @@ export function ClarifyChips({
       <div>
         <ChoiceChip
           className="h-8 px-3 text-[13px] text-label-secondary"
+          disabled={pending}
           onClick={other}
           data-testid={`${testId}-other-btn`}
         >
@@ -171,5 +181,19 @@ export function ClarifyRepickBar({ answers, testId }: { readonly answers: Clarif
         </Button>
       </div>
     </>
+  );
+}
+
+/** The card's footer while „Dobierz ponownie” waits for the reply: no actions on a proposal about to be replaced. */
+export function ClarifyPendingBar({ testId }: { readonly testId: string }) {
+  return (
+    <span
+      className="flex items-center gap-2 text-[13px] text-label-secondary"
+      role="status"
+      data-testid={`${testId}-pending`}
+    >
+      <Loader2 className="h-4 w-4 motion-safe:animate-spin" aria-hidden="true" />
+      Dobieram ćwiczenia z uwzględnieniem odpowiedzi…
+    </span>
   );
 }
