@@ -195,3 +195,16 @@ export const GET_EXERCISE_SET_DEPENDENCIES_QUERY = gql`
     }
   }
 `;
+
+/**
+ * SPEC-064 (fizjo-app): czy szablon jest zestawem na start. Osobne zapytanie, wołane tylko przy fladze `starterSet`,
+ * żeby API bez pola `isStarterSet` nie gasiło ekranu zestawu.
+ */
+export const GET_EXERCISE_SET_STARTER_QUERY = gql`
+  query GetExerciseSetStarter($exerciseSetId: String!) {
+    exerciseSetById(id: $exerciseSetId) {
+      id
+      isStarterSet
+    }
+  }
+`;

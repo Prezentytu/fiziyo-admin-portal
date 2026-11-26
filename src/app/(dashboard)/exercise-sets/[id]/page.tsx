@@ -58,6 +58,7 @@ import { resolveExerciseEquipmentText } from '@/components/shared/exercise/displ
 import { GeneratePDFDialog } from '@/features/exercise-sets/GeneratePDFDialog';
 import { SetDurationStat } from '@/features/exercise-sets/components/SetDurationStat';
 import { SetScheduleStat } from '@/features/exercise-sets/components/SetScheduleStat';
+import { StarterSetToggle } from '@/features/exercise-sets/components/StarterSetToggle';
 import { formatScheduleStat } from '@/utils/frequencyDisplay';
 import { estimateSetSeconds } from '@/features/exercise-sets/utils/setDuration';
 import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
@@ -708,6 +709,8 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
           {isTemplate && <SetScheduleStat exerciseSetId={exerciseSet.id} frequency={exerciseSet.frequency} />}
         </div>
       </div>
+
+      {isTemplate && <StarterSetToggle exerciseSetId={exerciseSet.id} />}
 
       {/* Exercises Section */}
       <div className="space-y-4">
