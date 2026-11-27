@@ -266,6 +266,19 @@ export interface GetCrossOrgVerificationStatsResponse {
   crossOrgVerificationStats: OrganizationVerificationStats;
 }
 
+export interface CrossOrgVerificationOrganization {
+  organizationId: string;
+  organizationName: string;
+  /** Oczekujące na weryfikację (bez poprawek wewnętrznych). */
+  pendingCount: number;
+  /** Wszystkie wysłane do weryfikacji, w dowolnym statusie. */
+  totalCount: number;
+}
+
+export interface GetCrossOrgVerificationOrganizationsResponse {
+  crossOrgVerificationOrganizations: CrossOrgVerificationOrganization[];
+}
+
 export interface VerificationQueuePage {
   items: AdminExercise[];
   totalCount: number;

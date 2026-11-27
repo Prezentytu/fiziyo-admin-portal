@@ -28,7 +28,12 @@ import type {
   GetCrossOrgVerificationQueueNavigatorResponse,
   VerificationQueueNavigator,
 } from '@/graphql/types/adminExercise.types';
-import { parseCrossOrgVerificationFilter } from '@/features/verification/utils/orgVerificationPagination';
+import {
+  CROSS_ORG_ORGANIZATIONS_PARAM,
+  appendCrossOrgOrganizationIds,
+  parseCrossOrgOrganizationIds,
+  parseCrossOrgVerificationFilter,
+} from '@/features/verification/utils/orgVerificationPagination';
 
 interface CrossOrgVerificationDetailPageProps {
   params: Promise<{ id: string }>;
@@ -51,6 +56,10 @@ export default function CrossOrgVerificationDetailPage({ params }: Readonly<Cros
   const pageSize = Number(searchParams.get('pageSize') ?? '20') || 20;
 
   const ordering = useMemo(() => parseQueueOrdering(searchParams), [searchParams]);
+  const organizationIds = useMemo(
+    () => parseCrossOrgOrganizationIds(searchParams.get(CROSS_ORG_ORGANIZATIONS_PARAM)),
+    [searchParams]
+  );
   const queryString = useMemo(() => {
     const urlParams = new URLSearchParams();
     urlParams.set('filter', filter);
@@ -59,8 +68,9 @@ export default function CrossOrgVerificationDetailPage({ params }: Readonly<Cros
     }
     urlParams.set('page', String(page));
     urlParams.set('pageSize', String(pageSize));
-    return appendQueueOrderingParams(urlParams, ordering).toString();
-  }, [filter, search, page, pageSize, ordering]);
+    appendQueueOrderingParams(urlParams, ordering);
+    return appendCrossOrgOrganizationIds(urlParams, organizationIds).toString();
+  }, [filter, search, page, pageSize, ordering, organizationIds]);
   const listHref = `/verification/organizations?${queryString}`;
   const buildDetailUrl = useCallback(
     (exerciseId: string) => `/verification/organizations/${exerciseId}?${queryString}`,
@@ -80,7 +90,13 @@ export default function CrossOrgVerificationDetailPage({ params }: Readonly<Cros
   const { data: navigatorData } = useQuery<GetCrossOrgVerificationQueueNavigatorResponse>(
     GET_CROSS_ORG_VERIFICATION_QUEUE_NAVIGATOR_QUERY,
     {
-      variables: { currentExerciseId: id, filter, search: search || null, ...queueOrderingVariables(ordering) },
+      variables: {
+        currentExerciseId: id,
+        filter,
+        search: search || null,
+        ...queueOrderingVariables(ordering),
+        organizationIds: organizationIds.length > 0 ? organizationIds : null,
+      },
       skip: !isSiteSuperAdmin,
       fetchPolicy: 'cache-and-network',
     }

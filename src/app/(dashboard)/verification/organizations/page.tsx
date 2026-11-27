@@ -25,7 +25,9 @@ import { VerificationSelectionToolbar } from '@/features/verification/Verificati
 import { VerificationArchiveDialog } from '@/features/verification/VerificationArchiveDialog';
 import { VerificationPageHeader } from '@/features/verification/VerificationPageHeader';
 import { useVerificationSelection } from '@/features/verification/utils/verificationSelection';
+import { CrossOrgOrganizationFilter } from '@/features/verification/CrossOrgOrganizationFilter';
 import {
+  GET_CROSS_ORG_VERIFICATION_ORGANIZATIONS_QUERY,
   GET_CROSS_ORG_VERIFICATION_QUEUE_PAGE_QUERY,
   GET_CROSS_ORG_VERIFICATION_STATS_QUERY,
 } from '@/graphql/queries/crossOrgVerification.queries';
@@ -36,10 +38,14 @@ import type {
   ArchiveExerciseVariables,
   ArchiveOrganizationExerciseAsAdminResponse,
   CrossOrgVerificationQueuePage,
+  GetCrossOrgVerificationOrganizationsResponse,
   GetCrossOrgVerificationStatsResponse,
 } from '@/graphql/types/adminExercise.types';
 import { PageSheet } from '@/components/shared/page';
 import {
+  CROSS_ORG_ORGANIZATIONS_PARAM,
+  appendCrossOrgOrganizationIds,
+  parseCrossOrgOrganizationIds,
   parseCrossOrgVerificationFilter,
   type CrossOrgVerificationFilter,
 } from '@/features/verification/utils/orgVerificationPagination';
@@ -58,12 +64,27 @@ export default function CrossOrgVerificationPage() {
   const [pageSize] = useState(20);
   const [ordering, setOrdering] = useState<VerificationQueueOrdering>(() => parseQueueOrdering(searchParams));
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
+  const [organizationIds, setOrganizationIds] = useState<string[]>(() =>
+    parseCrossOrgOrganizationIds(searchParams.get(CROSS_ORG_ORGANIZATIONS_PARAM))
+  );
+  // Pusta lista = wszystkie organizacje; backend traktuje null tak samo.
+  const organizationIdsVariable = organizationIds.length > 0 ? organizationIds : null;
+
+  const {
+    data: organizationsData,
+    loading: organizationsLoading,
+    refetch: refetchOrganizations,
+  } = useQuery<GetCrossOrgVerificationOrganizationsResponse>(GET_CROSS_ORG_VERIFICATION_ORGANIZATIONS_QUERY, {
+    skip: !isSiteSuperAdmin,
+    fetchPolicy: 'cache-and-network',
+  });
 
   const {
     data: statsData,
     loading: statsLoading,
     refetch: refetchStats,
   } = useQuery<GetCrossOrgVerificationStatsResponse>(GET_CROSS_ORG_VERIFICATION_STATS_QUERY, {
+    variables: { organizationIds: organizationIdsVariable },
     skip: !isSiteSuperAdmin,
     fetchPolicy: 'cache-and-network',
   });
@@ -81,6 +102,7 @@ export default function CrossOrgVerificationPage() {
         page,
         pageSize,
         ...queueOrderingVariables(ordering),
+        organizationIds: organizationIdsVariable,
       },
       skip: !isSiteSuperAdmin,
       fetchPolicy: 'cache-and-network',
@@ -110,6 +132,7 @@ export default function CrossOrgVerificationPage() {
     onData: () => {
       refetchStats();
       refetchQueue();
+      refetchOrganizations();
     },
   });
 
@@ -117,7 +140,8 @@ export default function CrossOrgVerificationPage() {
     nextFilter: CrossOrgVerificationFilter,
     nextSearch: string,
     nextPage: number,
-    nextOrdering: VerificationQueueOrdering = ordering
+    nextOrdering: VerificationQueueOrdering = ordering,
+    nextOrganizationIds: readonly string[] = organizationIds
   ) => {
     const params = new URLSearchParams();
     params.set('filter', nextFilter);
@@ -127,6 +151,7 @@ export default function CrossOrgVerificationPage() {
     params.set('page', String(nextPage));
     params.set('pageSize', String(pageSize));
     appendQueueOrderingParams(params, nextOrdering);
+    appendCrossOrgOrganizationIds(params, nextOrganizationIds);
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
@@ -138,8 +163,9 @@ export default function CrossOrgVerificationPage() {
     }
     params.set('page', String(page));
     params.set('pageSize', String(pageSize));
-    return appendQueueOrderingParams(params, ordering).toString();
-  }, [filter, search, page, pageSize, ordering]);
+    appendQueueOrderingParams(params, ordering);
+    return appendCrossOrgOrganizationIds(params, organizationIds).toString();
+  }, [filter, search, page, pageSize, ordering, organizationIds]);
 
   const handleArchiveSelected = async () => {
     const selectedIds = selection.selectedIds;
@@ -163,7 +189,7 @@ export default function CrossOrgVerificationPage() {
       setArchiveDialogOpen(false);
       const summary = formatBatchArchiveSummary(result);
       toast[summary.kind](summary.message);
-      await Promise.all([refetchStats(), refetchQueue()]);
+      await Promise.all([refetchStats(), refetchQueue(), refetchOrganizations()]);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Nie udało się odświeżyć listy po archiwizacji.');
     } finally {
@@ -220,17 +246,30 @@ export default function CrossOrgVerificationPage() {
         </div>
       </div>
 
-      <VerificationQueueOrderingControls
-        ordering={ordering}
-        onChange={(nextOrdering) => {
-          selection.clear();
-          setOrdering(nextOrdering);
-          setPage(1);
-          updateUrl(filter, search, 1, nextOrdering);
-        }}
-        dateLabel={queueDateLabel('organization', filter)}
-        testIdPrefix="cross-org-verification"
-      />
+      <div className="flex flex-wrap items-center gap-2">
+        <CrossOrgOrganizationFilter
+          organizations={organizationsData?.crossOrgVerificationOrganizations ?? []}
+          selectedIds={organizationIds}
+          isLoading={organizationsLoading}
+          onChange={(nextOrganizationIds) => {
+            selection.clear();
+            setOrganizationIds(nextOrganizationIds);
+            setPage(1);
+            updateUrl(filter, search, 1, ordering, nextOrganizationIds);
+          }}
+        />
+        <VerificationQueueOrderingControls
+          ordering={ordering}
+          onChange={(nextOrdering) => {
+            selection.clear();
+            setOrdering(nextOrdering);
+            setPage(1);
+            updateUrl(filter, search, 1, nextOrdering);
+          }}
+          dateLabel={queueDateLabel('organization', filter)}
+          testIdPrefix="cross-org-verification"
+        />
+      </div>
 
       <VerificationSelectionToolbar
         selectedCount={selection.selectedCount}

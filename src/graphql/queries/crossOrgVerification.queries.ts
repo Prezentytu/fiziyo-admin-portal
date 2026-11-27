@@ -3,8 +3,8 @@ import { EXERCISE_FULL_FRAGMENT } from './exercises.queries';
 import { VERIFICATION_QUEUE_ITEM_FRAGMENT } from './adminExercises.queries';
 
 export const GET_CROSS_ORG_VERIFICATION_STATS_QUERY = gql`
-  query GetCrossOrgVerificationStats {
-    crossOrgVerificationStats {
+  query GetCrossOrgVerificationStats($organizationIds: [String!]) {
+    crossOrgVerificationStats(organizationIds: $organizationIds) {
       notSubmitted
       pendingOrgReview
       orgChangesRequested
@@ -25,6 +25,7 @@ export const GET_CROSS_ORG_VERIFICATION_QUEUE_PAGE_QUERY = gql`
     $sort: VerificationQueueSort
     $dateFrom: DateTime
     $dateTo: DateTime
+    $organizationIds: [String!]
   ) {
     crossOrgVerificationQueuePage(
       filter: $filter
@@ -34,6 +35,7 @@ export const GET_CROSS_ORG_VERIFICATION_QUEUE_PAGE_QUERY = gql`
       sort: $sort
       dateFrom: $dateFrom
       dateTo: $dateTo
+      organizationIds: $organizationIds
     ) {
       items {
         organizationId
@@ -55,6 +57,18 @@ export const GET_CROSS_ORG_VERIFICATION_QUEUE_PAGE_QUERY = gql`
   ${VERIFICATION_QUEUE_ITEM_FRAGMENT}
 `;
 
+/** Organizacje z ćwiczeniami w kolejkach weryfikacji; zasila wybór organizacji w zakładce „Organizacje klientów”. */
+export const GET_CROSS_ORG_VERIFICATION_ORGANIZATIONS_QUERY = gql`
+  query GetCrossOrgVerificationOrganizations {
+    crossOrgVerificationOrganizations {
+      organizationId
+      organizationName
+      pendingCount
+      totalCount
+    }
+  }
+`;
+
 export const GET_CROSS_ORG_VERIFICATION_QUEUE_NAVIGATOR_QUERY = gql`
   query GetCrossOrgVerificationQueueNavigator(
     $currentExerciseId: String!
@@ -63,6 +77,7 @@ export const GET_CROSS_ORG_VERIFICATION_QUEUE_NAVIGATOR_QUERY = gql`
     $sort: VerificationQueueSort
     $dateFrom: DateTime
     $dateTo: DateTime
+    $organizationIds: [String!]
   ) {
     crossOrgVerificationQueueNavigator(
       currentExerciseId: $currentExerciseId
@@ -71,6 +86,7 @@ export const GET_CROSS_ORG_VERIFICATION_QUEUE_NAVIGATOR_QUERY = gql`
       sort: $sort
       dateFrom: $dateFrom
       dateTo: $dateTo
+      organizationIds: $organizationIds
     ) {
       currentExerciseId
       positionInQueue
