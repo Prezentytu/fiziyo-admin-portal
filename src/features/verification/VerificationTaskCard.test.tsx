@@ -11,7 +11,7 @@ vi.mock('next/link', () => ({
 }));
 
 vi.mock('next/image', () => ({
-  default: ({ alt }: { alt?: string }) => <img alt={alt ?? ''} />,
+  default: ({ alt, src }: { alt?: string; src?: string }) => <img alt={alt ?? ''} src={src} />,
 }));
 
 const baseExercise: AdminExercise = {
@@ -70,6 +70,34 @@ describe('VerificationTaskCard', () => {
     expect(screen.queryByText('Brak wideo')).not.toBeInTheDocument();
     expect(screen.getByText('Wideo')).toBeInTheDocument();
     expect(container.querySelector('video')).toBeNull();
+  });
+
+  it('bez zdjęcia pokazuje klatkę z filmu YouTube zamiast pustej ikonki', () => {
+    render(
+      <VerificationTaskCard
+        exercise={{ ...baseExercise, videos: ['https://www.youtube.com/watch?v=7rnlAVhAK-8'] }}
+      />
+    );
+
+    expect(screen.getByAltText(baseExercise.name)).toHaveAttribute(
+      'src',
+      'https://img.youtube.com/vi/7rnlAVhAK-8/hqdefault.jpg'
+    );
+    expect(screen.getByText('Brak obrazu')).toBeInTheDocument();
+  });
+
+  it('zdjęcie ćwiczenia ma pierwszeństwo przed klatką z YouTube', () => {
+    render(
+      <VerificationTaskCard
+        exercise={{
+          ...baseExercise,
+          imageUrl: 'https://cdn.example/x.jpg',
+          videoUrl: 'https://www.youtube.com/watch?v=7rnlAVhAK-8',
+        }}
+      />
+    );
+
+    expect(screen.getByAltText(baseExercise.name).getAttribute('src')).toContain('cdn.example/x.jpg');
   });
 
   it('pokazuje podgląd <video> dla bezpośredniego pliku wideo', () => {

@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { cn } from '@/lib/utils';
 import { getMediaUrl } from '@/utils/mediaUrl';
+import { getExerciseCardPreview } from '@/features/exercises/utils/exerciseCardPreview';
 import { getExerciseVideos } from '@/utils/exerciseVideos';
 import { isVimeoUrl, isYouTubeUrl } from '@/utils/videoEmbed';
 import { HIDE_EXERCISE_TAGS } from '@/components/shared/exercise';
@@ -75,10 +76,11 @@ export function VerificationTaskCard({
   const [isHovered, setIsHovered] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  const imageUrl = getMediaUrl(exercise.thumbnailUrl || exercise.imageUrl || exercise.images?.[0]);
   const gifUrl = getMediaUrl(exercise.gifUrl);
   const videos = getExerciseVideos(exercise);
   const mainVideo = videos[0];
+  // Bez zdjęcia karta pokazuje klatkę z filmu YouTube, tak jak karta w „Ćwiczeniach”.
+  const { imageUrl, hasVideoWithoutFrame } = getExerciseCardPreview({ ...exercise, videoUrl: mainVideo });
   const videoUrl = getMediaUrl(mainVideo);
   const isEmbeddedVideo = isYouTubeUrl(mainVideo) || isVimeoUrl(mainVideo);
   const previewVideoUrl = gifUrl || isEmbeddedVideo ? null : videoUrl;
@@ -207,7 +209,13 @@ export function VerificationTaskCard({
               )}
 
               {/* No image fallback */}
-              {!imageUrl && <ImagePlaceholder type="exercise" className="h-full" iconClassName="h-12 w-12" />}
+              {!imageUrl && (
+                <ImagePlaceholder
+                  type={hasVideoWithoutFrame ? 'video' : 'exercise'}
+                  className="h-full"
+                  iconClassName="h-12 w-12"
+                />
+              )}
 
             </div>
 
