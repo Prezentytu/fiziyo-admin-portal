@@ -18,6 +18,14 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 
 ## Wpisy
 
+### 2026-11-27 - Przegląd nazw mielił przy 4492 ćwiczeniach
+
+- **Kategoria**: `React`
+- **Problem**: `/verification/names` dla organizacji z 4492 ćwiczeniami ładował się długo i zacinał przy każdym `j`/`k` i każdym znaku w polu nazwy.
+- **Przyczyna**: Wszystkie wiersze były montowane naraz (pole, przełącznik, picker, przyciski), każdy wiersz liczył kandydatów na filarowe filtrem po całej liście (O(n²), około 550 ms na render), a każdy ruch kursora robił `router.replace`.
+- **Rozwiązanie**: Wirtualizacja `@tanstack/react-virtual` na scrollu `<main>`, lista filarowych liczona raz (`pillarRows`), rodziny tylko w widoku Rodziny jedną pętlą, adres przez `history.replaceState`.
+- **Reguła**: Lista, która może mieć tysiące wierszy, jest wirtualizowana, a w renderze wiersza nie ma pętli po całej liście; to, co wspólne dla wierszy, liczy się raz w `useMemo`.
+
 ### 2026-11-26 - Odświeżanie w tle chowało całą kolejkę weryfikacji
 
 - **Kategoria**: `GraphQL`

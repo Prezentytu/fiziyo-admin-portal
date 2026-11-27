@@ -21,7 +21,7 @@ interface PillarPickerProps {
   onChange: (pillarId: string | null) => void;
 }
 
-/** Variant target: searchable list of pillars in the organization, AI suggestion first. */
+/** Variant target: searchable list of pillars in the organization (without the row itself), AI suggestion first. */
 export function PillarPicker({
   exerciseId,
   value,
@@ -36,16 +36,20 @@ export function PillarPicker({
   const [query, setQuery] = useState('');
   const [highlight, setHighlight] = useState(0);
 
-  const labelOf = (row: ExerciseNameReviewRow) => drafts[row.exerciseId]?.name ?? row.proposal?.proposedName ?? row.name;
+  const labelOf = (row: ExerciseNameReviewRow) =>
+    drafts[row.exerciseId]?.name ?? row.proposal?.proposedName ?? row.name;
   const selected = candidates.find((row) => row.exerciseId === value) ?? null;
   const options = useMemo(() => {
     const words = foldText(query).split(/\s+/).filter(Boolean);
     const matching = candidates.filter((row) => {
+      if (row.exerciseId === exerciseId) return false;
       const text = foldText(`${drafts[row.exerciseId]?.name ?? ''} ${row.proposal?.proposedName ?? ''} ${row.name}`);
       return words.every((word) => text.includes(word));
     });
-    return [...matching].sort((left, right) => Number(right.exerciseId === aiPillarId) - Number(left.exerciseId === aiPillarId));
-  }, [candidates, drafts, query, aiPillarId]);
+    return [...matching].sort(
+      (left, right) => Number(right.exerciseId === aiPillarId) - Number(left.exerciseId === aiPillarId)
+    );
+  }, [candidates, drafts, query, aiPillarId, exerciseId]);
 
   const choose = (pillarId: string | null) => {
     onChange(pillarId);
@@ -68,11 +72,11 @@ export function PillarPicker({
           variant="outline"
           size="sm"
           disabled={disabled}
-          className="w-full min-w-0 justify-between"
+          className="h-auto min-h-8 w-full min-w-0 justify-between py-1.5 text-left whitespace-normal"
           data-testid={`name-review-variant-${exerciseId}`}
           aria-label="Wariant ćwiczenia filarowego"
         >
-          <span className="truncate">
+          <span className="min-w-0 break-words">
             {selected ? labelOf(selected) : value ? 'Filarowe spoza listy' : disabled ? '—' : 'Bez wariantu'}
           </span>
           <ChevronDown aria-hidden />
@@ -135,12 +139,14 @@ export function PillarPicker({
                 onMouseEnter={() => setHighlight(index)}
                 onClick={() => choose(row.exerciseId)}
               >
-                <span className="truncate">{labelOf(row)}</span>
+                <span className="min-w-0 break-words">{labelOf(row)}</span>
                 {row.exerciseId === aiPillarId && <span className="shrink-0 text-xs text-tint">propozycja AI</span>}
               </button>
             </li>
           ))}
-          {options.length === 0 && <li className="px-2 py-3 text-sm text-muted-foreground">Brak filarowych pasujących do szukania.</li>}
+          {options.length === 0 && (
+            <li className="px-2 py-3 text-sm text-muted-foreground">Brak filarowych pasujących do szukania.</li>
+          )}
         </ul>
       </PopoverContent>
     </Popover>

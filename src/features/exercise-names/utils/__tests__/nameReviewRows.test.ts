@@ -12,11 +12,13 @@ import {
   groupByPillar,
   hasValidName,
   initialDraft,
+  nameReviewItems,
   NO_FAMILY_LABEL,
   nextRowId,
   orderedRows,
   orderDecisions,
   parseNameReviewUrl,
+  pillarRows,
   serializeNameReviewUrl,
   toDecision,
 } from '../nameReviewRows';
@@ -128,7 +130,9 @@ describe('countRows and familyOptions', () => {
 describe('groupByPillar', () => {
   it('puts variants under their pillar and the rest in the no-family group', () => {
     const families = groupByPillar([chin, plain, pull, bug]);
-    expect(families.map((family) => [family.pillar?.exerciseId ?? null, family.variants.map((v) => v.exerciseId)])).toEqual([
+    expect(
+      families.map((family) => [family.pillar?.exerciseId ?? null, family.variants.map((v) => v.exerciseId)])
+    ).toEqual([
       ['pull', ['chin']],
       ['bug', []],
       [null, ['plain']],
@@ -143,6 +147,36 @@ describe('groupByPillar', () => {
 
   it('treats a variant of a pillar outside the filtered list as without family', () => {
     expect(groupByPillar([chin])).toEqual([{ pillar: null, variants: [chin] }]);
+  });
+});
+
+describe('nameReviewItems', () => {
+  it('keeps the list view as plain rows', () => {
+    expect(nameReviewItems('list', [chin, plain], []).map((item) => [item.kind, item.key])).toEqual([
+      ['row', 'chin'],
+      ['row', 'plain'],
+    ]);
+  });
+
+  it('flattens families into pillar, variants header, indented variants and the no-family group', () => {
+    const items = nameReviewItems('families', [], groupByPillar([chin, plain, pull]));
+    expect(items.map((item) => (item.kind === 'row' ? [item.key, item.isVariant] : [item.key, item.count]))).toEqual([
+      ['pull', false],
+      ['variants-pull', 1],
+      ['chin', true],
+      ['orphans', 1],
+      ['plain', false],
+    ]);
+  });
+});
+
+describe('pillarRows', () => {
+  it('lists saved pillars and pillars proposed or set in the draft', () => {
+    const saved = row('saved', 'Przysiad', null, { isPillar: true });
+    expect(pillarRows([saved, pull, chin, plain]).map((r) => r.exerciseId)).toEqual(['saved', 'pull']);
+    expect(
+      pillarRows([pull, plain], { plain: { name: 'x', isPillar: true, pillarId: null } }).map((r) => r.exerciseId)
+    ).toEqual(['pull', 'plain']);
   });
 });
 

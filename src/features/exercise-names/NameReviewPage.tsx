@@ -1,7 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { useMutation, useQuery } from '@apollo/client/react';
 import { AlertTriangle, ChevronDown, History, ListTree, Rows3, Search, ShieldCheck, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
@@ -44,7 +45,11 @@ import type {
   UndoExerciseNameDecisionResponse,
 } from '@/graphql/types/exerciseNameReview.types';
 import { getYouTubeEmbedUrl, getVimeoEmbedUrl, isVimeoUrl, isYouTubeUrl } from '@/utils/videoEmbed';
-import { NAME_REVIEW_KEY_HINTS, nameReviewKeyAction, nameReviewKeyFocus } from '@/features/exercise-names/utils/nameReviewKeys';
+import {
+  NAME_REVIEW_KEY_HINTS,
+  nameReviewKeyAction,
+  nameReviewKeyFocus,
+} from '@/features/exercise-names/utils/nameReviewKeys';
 import {
   chunkDecisions,
   countRows,
@@ -55,12 +60,13 @@ import {
   hasValidName,
   initialDraft,
   isDone,
+  nameReviewItems,
   nextRowId,
   NO_FAMILY_LABEL,
   orderDecisions,
   orderedRows,
   parseNameReviewUrl,
-  pillarCandidates,
+  pillarRows,
   serializeNameReviewUrl,
   toDecision,
   type NameReviewDraft,
@@ -74,6 +80,18 @@ function errorMessage(error: unknown, fallback: string): string {
   return error instanceof Error && error.message ? error.message : fallback;
 }
 
+/** Estimated row height before measuring; real heights come from `measureElement` (long names wrap). */
+const ESTIMATED_ROW_HEIGHT = 86;
+
+/** The page scrolls inside the dashboard `<main>`, not the window: the virtualizer needs that element. */
+function scrollParentOf(element: HTMLElement | null): HTMLElement | null {
+  for (let node = element?.parentElement ?? null; node; node = node.parentElement) {
+    const { overflowY } = getComputedStyle(node);
+    if (overflowY === 'auto' || overflowY === 'scroll') return node;
+  }
+  return null;
+}
+
 function isTextField(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   return target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
@@ -81,12 +99,13 @@ function isTextField(target: EventTarget | null): boolean {
 
 /** BW-FZ-123: fast keyboard review of short names, pillar exercises and variants (FiziYo team only). */
 export function NameReviewPage() {
-  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { canReviewExercises, isLoading: roleLoading } = useSystemRole();
 
-  const [urlState, setUrlState] = useState<NameReviewUrlState>(() => parseNameReviewUrl(new URLSearchParams(searchParams.toString())));
+  const [urlState, setUrlState] = useState<NameReviewUrlState>(() =>
+    parseNameReviewUrl(new URLSearchParams(searchParams.toString()))
+  );
   const [rowOverrides, setRowOverrides] = useState<Record<string, ExerciseNameReviewRow>>({});
   const [drafts, setDrafts] = useState<Record<string, NameReviewDraft>>({});
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -95,8 +114,10 @@ export function NameReviewPage() {
   const [savingIds, setSavingIds] = useState<Set<string>>(new Set());
   const [previewRow, setPreviewRow] = useState<ExerciseNameReviewRow | null>(null);
   const [logOpen, setLogOpen] = useState(false);
-  const nameInputs = useRef(new Map<string, HTMLInputElement>());
-  const rowElements = useRef(new Map<string, HTMLElement>());
+  const nameInputs = useRef(new Map<string, HTMLTextAreaElement>());
+  const listRef = useRef<HTMLDivElement>(null);
+  const [scrollElement, setScrollElement] = useState<HTMLElement | null>(null);
+  const [scrollMargin, setScrollMargin] = useState(0);
 
   const organizationId = urlState.organizationId;
 
@@ -116,22 +137,25 @@ export function NameReviewPage() {
     skip: !canReviewExercises || !organizationId,
     fetchPolicy: 'cache-and-network',
   });
-  const { data: jobData, refetch: refetchJob, startPolling, stopPolling } = useQuery<GetExerciseNameProposalJobResponse>(
-    GET_EXERCISE_NAME_PROPOSAL_JOB_QUERY,
-    {
-      variables: { organizationId: organizationId ?? '' },
-      skip: !canReviewExercises || !organizationId,
-      fetchPolicy: 'network-only',
-    }
-  );
-  const { data: logData, loading: logLoading, refetch: refetchLog } = useQuery<GetExerciseNameReviewLogResponse>(
-    GET_EXERCISE_NAME_REVIEW_LOG_QUERY,
-    {
-      variables: { organizationId: organizationId ?? '', take: 30 },
-      skip: !canReviewExercises || !organizationId || !logOpen,
-      fetchPolicy: 'cache-and-network',
-    }
-  );
+  const {
+    data: jobData,
+    refetch: refetchJob,
+    startPolling,
+    stopPolling,
+  } = useQuery<GetExerciseNameProposalJobResponse>(GET_EXERCISE_NAME_PROPOSAL_JOB_QUERY, {
+    variables: { organizationId: organizationId ?? '' },
+    skip: !canReviewExercises || !organizationId,
+    fetchPolicy: 'network-only',
+  });
+  const {
+    data: logData,
+    loading: logLoading,
+    refetch: refetchLog,
+  } = useQuery<GetExerciseNameReviewLogResponse>(GET_EXERCISE_NAME_REVIEW_LOG_QUERY, {
+    variables: { organizationId: organizationId ?? '', take: 30 },
+    skip: !canReviewExercises || !organizationId || !logOpen,
+    fetchPolicy: 'cache-and-network',
+  });
 
   const [decide] = useMutation<DecideExerciseNamesResponse>(DECIDE_EXERCISE_NAMES_MUTATION);
   const [undo] = useMutation<UndoExerciseNameDecisionResponse>(UNDO_EXERCISE_NAME_DECISION_MUTATION);
@@ -150,15 +174,59 @@ export function NameReviewPage() {
   );
   const rowsById = useMemo(() => new Map(rows.map((row) => [row.exerciseId, row])), [rows]);
   const draftOf = useCallback((row: ExerciseNameReviewRow) => drafts[row.exerciseId] ?? initialDraft(row), [drafts]);
-  const allDrafts = useMemo(() => Object.fromEntries(rows.map((row) => [row.exerciseId, draftOf(row)])), [rows, draftOf]);
+  const allDrafts = useMemo(
+    () => Object.fromEntries(rows.map((row) => [row.exerciseId, draftOf(row)])),
+    [rows, draftOf]
+  );
 
   const counts = useMemo(() => countRows(rows), [rows]);
   const families = useMemo(() => familyOptions(rows), [rows]);
   const visible = useMemo(() => filterRows(rows, urlState, allDrafts), [rows, urlState, allDrafts]);
-  const grouped = useMemo(() => groupByPillar(visible, allDrafts), [visible, allDrafts]);
-  const ordered = useMemo(() => (urlState.view === 'families' ? orderedRows(grouped) : visible), [urlState.view, grouped, visible]);
+  const grouped = useMemo(
+    () => (urlState.view === 'families' ? groupByPillar(visible, allDrafts) : []),
+    [urlState.view, visible, allDrafts]
+  );
+  const ordered = useMemo(
+    () => (urlState.view === 'families' ? orderedRows(grouped) : visible),
+    [urlState.view, grouped, visible]
+  );
+  const items = useMemo(() => nameReviewItems(urlState.view, visible, grouped), [urlState.view, visible, grouped]);
+  const pillars = useMemo(() => pillarRows(rows, allDrafts), [rows, allDrafts]);
   const orderedIds = useMemo(() => ordered.map((row) => row.exerciseId), [ordered]);
   const activeId = urlState.rowId && orderedIds.includes(urlState.rowId) ? urlState.rowId : (orderedIds[0] ?? null);
+  const activeItemIndex = useMemo(
+    () => items.findIndex((item) => item.kind === 'row' && item.key === activeId),
+    [items, activeId]
+  );
+
+  // Thousands of rows: only the ones near the viewport are mounted (each has a field, switch, picker and buttons).
+  // eslint-disable-next-line react-hooks/incompatible-library -- the compiler skips this component; rows re-render on purpose
+  const virtualizer = useVirtualizer({
+    count: items.length,
+    getScrollElement: () => scrollElement,
+    estimateSize: () => ESTIMATED_ROW_HEIGHT,
+    getItemKey: (index) => items[index].key,
+    scrollMargin,
+    overscan: 8,
+  });
+
+  // The list starts below the toolbar, filters, bulk bar and log panel; their height changes move it.
+  useLayoutEffect(() => {
+    const list = listRef.current;
+    const parent = scrollParentOf(list);
+    setScrollElement(parent);
+    const page = list?.closest<HTMLElement>('[data-testid="name-review-page"]');
+    if (!list || !parent || !page) return undefined;
+    const measure = () =>
+      setScrollMargin(
+        Math.round(list.getBoundingClientRect().top - parent.getBoundingClientRect().top + parent.scrollTop)
+      );
+    measure();
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(measure);
+    observer.observe(page);
+    return () => observer.disconnect();
+  }, [roleLoading, canReviewExercises]);
 
   const job = jobData?.exerciseNameProposalJob.job;
   const withoutProposal = jobData?.exerciseNameProposalJob.withoutProposal ?? counts.withoutProposal;
@@ -168,10 +236,11 @@ export function NameReviewPage() {
     setUrlState((current) => ({ ...current, ...patch }));
   }, []);
 
+  // Native replaceState: Next keeps useSearchParams in sync without a router navigation on every j/k or keystroke.
   useEffect(() => {
     const query = serializeNameReviewUrl(urlState);
-    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
-  }, [urlState, pathname, router]);
+    window.history.replaceState(window.history.state, '', query ? `${pathname}?${query}` : pathname);
+  }, [urlState, pathname]);
 
   useEffect(() => {
     if (organizationId || organizations.length === 0) return;
@@ -202,11 +271,11 @@ export function NameReviewPage() {
   }, [job, refetchRows]);
 
   useEffect(() => {
-    if (!activeId) return;
-    rowElements.current.get(activeId)?.scrollIntoView({ block: 'nearest' });
-  }, [activeId]);
+    if (activeItemIndex >= 0) virtualizer.scrollToIndex(activeItemIndex, { align: 'auto' });
+  }, [activeItemIndex, virtualizer]);
 
-  const setDraft = (exerciseId: string, draft: NameReviewDraft) => setDrafts((current) => ({ ...current, [exerciseId]: draft }));
+  const setDraft = (exerciseId: string, draft: NameReviewDraft) =>
+    setDrafts((current) => ({ ...current, [exerciseId]: draft }));
 
   const applyRows = (updated: ReadonlyArray<ExerciseNameReviewRow>) => {
     setRowOverrides((current) => ({ ...current, ...Object.fromEntries(updated.map((row) => [row.exerciseId, row])) }));
@@ -304,7 +373,7 @@ export function NameReviewPage() {
       focus: nameReviewKeyFocus(event.target),
     });
     const fieldRowId =
-      event.target instanceof HTMLInputElement
+      event.target instanceof HTMLTextAreaElement
         ? ([...nameInputs.current.entries()].find(([, input]) => input === event.target)?.[0] ?? null)
         : null;
     if (!action || (isTextField(event.target) && !fieldRowId)) return;
@@ -333,7 +402,11 @@ export function NameReviewPage() {
       case 'togglePillar':
         if (active && !isDone(active)) {
           const draft = draftOf(active);
-          setDraft(active.exerciseId, { ...draft, isPillar: !draft.isPillar, pillarId: draft.isPillar ? draft.pillarId : null });
+          setDraft(active.exerciseId, {
+            ...draft,
+            isPillar: !draft.isPillar,
+            pillarId: draft.isPillar ? draft.pillarId : null,
+          });
         }
         break;
       case 'variant':
@@ -379,40 +452,32 @@ export function NameReviewPage() {
   }
 
   const renderRow = (row: ExerciseNameReviewRow, isVariant: boolean) => (
-    <div
-      key={row.exerciseId}
-      ref={(element) => {
-        if (element) rowElements.current.set(row.exerciseId, element);
-        else rowElements.current.delete(row.exerciseId);
+    <NameReviewRowItem
+      ref={(input) => {
+        if (input) nameInputs.current.set(row.exerciseId, input);
+        else nameInputs.current.delete(row.exerciseId);
       }}
-    >
-      <NameReviewRowItem
-        ref={(input) => {
-          if (input) nameInputs.current.set(row.exerciseId, input);
-          else nameInputs.current.delete(row.exerciseId);
-        }}
-        row={row}
-        draft={draftOf(row)}
-        active={row.exerciseId === activeId}
-        expanded={row.exerciseId === expandedId}
-        selected={selected.has(row.exerciseId)}
-        saving={savingIds.has(row.exerciseId)}
-        isVariant={isVariant}
-        pillarCandidates={pillarCandidates(rows, row.exerciseId, allDrafts)}
-        drafts={allDrafts}
-        pickerOpen={pickerOpenId === row.exerciseId}
-        onPickerOpenChange={(open) => setPickerOpenId(open ? row.exerciseId : null)}
-        onActivate={() => patchUrl({ rowId: row.exerciseId })}
-        onToggleExpanded={() => setExpandedId((current) => (current === row.exerciseId ? null : row.exerciseId))}
-        onToggleSelected={() => toggleSelected(row.exerciseId)}
-        onDraftChange={(draft) => setDraft(row.exerciseId, draft)}
-        onDone={() => void saveDecisions([row], false)}
-        onKeepName={() => void saveDecisions([row], true)}
-        onUndo={() => void undoDecision(row.exerciseId)}
-        onPreview={() => setPreviewRow(row)}
-        onEscapeField={() => nameInputs.current.get(row.exerciseId)?.blur()}
-      />
-    </div>
+      row={row}
+      draft={draftOf(row)}
+      active={row.exerciseId === activeId}
+      expanded={row.exerciseId === expandedId}
+      selected={selected.has(row.exerciseId)}
+      saving={savingIds.has(row.exerciseId)}
+      isVariant={isVariant}
+      pillarCandidates={pillars}
+      drafts={allDrafts}
+      pickerOpen={pickerOpenId === row.exerciseId}
+      onPickerOpenChange={(open) => setPickerOpenId(open ? row.exerciseId : null)}
+      onActivate={() => patchUrl({ rowId: row.exerciseId })}
+      onToggleExpanded={() => setExpandedId((current) => (current === row.exerciseId ? null : row.exerciseId))}
+      onToggleSelected={() => toggleSelected(row.exerciseId)}
+      onDraftChange={(draft) => setDraft(row.exerciseId, draft)}
+      onDone={() => void saveDecisions([row], false)}
+      onKeepName={() => void saveDecisions([row], true)}
+      onUndo={() => void undoDecision(row.exerciseId)}
+      onPreview={() => setPreviewRow(row)}
+      onEscapeField={() => nameInputs.current.get(row.exerciseId)?.blur()}
+    />
   );
 
   const progress = counts.total > 0 ? Math.round((counts.done / counts.total) * 100) : 0;
@@ -486,7 +551,13 @@ export function NameReviewPage() {
               <Progress value={progress} aria-label="Postęp przeglądu" />
             </div>
             <CollapsibleTrigger asChild>
-              <Button type="button" variant="secondary" size="sm" className="group" data-testid="name-review-vocabulary-toggle">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="group"
+                data-testid="name-review-vocabulary-toggle"
+              >
                 Słownik sprzętu
                 <ChevronDown className="transition-transform group-data-[state=open]:rotate-180" aria-hidden />
               </Button>
@@ -541,7 +612,11 @@ export function NameReviewPage() {
               ))}
             </SelectContent>
           </Select>
-          <Select data-testid="name-review-change-select" value={urlState.change} onValueChange={(value) => patchUrl({ change: value as NameReviewUrlState['change'], rowId: null })}>
+          <Select
+            data-testid="name-review-change-select"
+            value={urlState.change}
+            onValueChange={(value) => patchUrl({ change: value as NameReviewUrlState['change'], rowId: null })}
+          >
             <SelectTrigger className="h-8 w-44" data-testid="name-review-filter-change">
               <SelectValue />
             </SelectTrigger>
@@ -552,7 +627,10 @@ export function NameReviewPage() {
             </SelectContent>
           </Select>
           <div className="relative min-w-56 flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden
+            />
             <Input
               value={urlState.query}
               placeholder="Szukaj w nazwie, propozycji i aliasach"
@@ -599,13 +677,27 @@ export function NameReviewPage() {
         </section>
 
         {selectedRows.length > 0 && (
-          <div className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-2" data-testid="name-review-bulk">
+          <div
+            className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-2"
+            data-testid="name-review-bulk"
+          >
             <span className="text-sm text-foreground">Zaznaczone: {selectedRows.length}</span>
             <div className="flex items-center gap-2">
-              <Button type="button" size="sm" variant="ghost" onClick={() => setSelected(new Set())} data-testid="name-review-bulk-clear">
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => setSelected(new Set())}
+                data-testid="name-review-bulk-clear"
+              >
                 Odznacz
               </Button>
-              <Button type="button" size="sm" onClick={() => void saveDecisions(selectedRows, false)} data-testid="name-review-bulk-done">
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => void saveDecisions(selectedRows, false)}
+                data-testid="name-review-bulk-done"
+              >
                 Zrobione dla zaznaczonych
               </Button>
             </div>
@@ -613,7 +705,10 @@ export function NameReviewPage() {
         )}
 
         {logOpen && (
-          <aside className="max-h-72 overflow-y-auto rounded-xl border border-border bg-card px-4 py-3" data-testid="name-review-log-panel">
+          <aside
+            className="max-h-72 overflow-y-auto rounded-xl border border-border bg-card px-4 py-3"
+            data-testid="name-review-log-panel"
+          >
             <h2 className="mb-2 text-sm font-semibold text-foreground">Ostatnie zmiany</h2>
             <RecentChangesPanel
               entries={logData?.exerciseNameReviewLog ?? []}
@@ -631,7 +726,9 @@ export function NameReviewPage() {
         <div>
           <div className="overflow-x-auto rounded-xl border border-border bg-card">
             <div className="min-w-[980px]">
-              <div className={`${NAME_REVIEW_GRID} border-b border-border px-3 py-2 text-xs font-medium text-muted-foreground`}>
+              <div
+                className={`${NAME_REVIEW_GRID} border-b border-border px-3 py-2 text-xs font-medium text-muted-foreground`}
+              >
                 <Checkbox
                   checked={allVisibleSelected}
                   onCheckedChange={(checked) =>
@@ -649,7 +746,9 @@ export function NameReviewPage() {
                 <span />
               </div>
               {!organizationId && (
-                <p className="px-4 py-10 text-center text-sm text-muted-foreground">Wybierz organizację, której ćwiczenia chcesz przejrzeć.</p>
+                <p className="px-4 py-10 text-center text-sm text-muted-foreground">
+                  Wybierz organizację, której ćwiczenia chcesz przejrzeć.
+                </p>
               )}
               {organizationId && rowsError && rows.length === 0 && (
                 <EmptyState
@@ -671,25 +770,43 @@ export function NameReviewPage() {
                     : 'Brak ćwiczeń dla tych filtrów.'}
                 </p>
               )}
-              {urlState.view === 'families'
-                ? grouped.map((family) => (
-                    <div key={family.pillar?.exerciseId ?? NO_FAMILY_LABEL} data-testid={`name-review-family-${family.pillar?.exerciseId ?? 'none'}`}>
-                      {family.pillar ? (
-                        <>
-                          {renderRow(family.pillar, false)}
-                          <p className="border-b border-border bg-fill-quaternary px-8 py-1 text-xs text-muted-foreground">
-                            Warianty: {family.variants.length}
-                          </p>
-                        </>
+              <div
+                ref={listRef}
+                className="relative"
+                style={{ height: virtualizer.getTotalSize() }}
+                data-testid="name-review-list"
+              >
+                {virtualizer.getVirtualItems().map((virtualItem) => {
+                  const item = items[virtualItem.index];
+                  return (
+                    <div
+                      key={virtualItem.key}
+                      ref={virtualizer.measureElement}
+                      data-index={virtualItem.index}
+                      className="absolute inset-x-0 top-0"
+                      style={{ transform: `translateY(${virtualItem.start - virtualizer.options.scrollMargin}px)` }}
+                    >
+                      {item.kind === 'row' ? (
+                        renderRow(item.row, item.isVariant)
+                      ) : item.kind === 'variants' ? (
+                        <p
+                          className="border-b border-border bg-fill-quaternary px-8 py-1 text-xs text-muted-foreground"
+                          data-testid={`name-review-family-${item.pillarId}`}
+                        >
+                          Warianty: {item.count}
+                        </p>
                       ) : (
-                        <p className="border-b border-border bg-fill-quaternary px-3 py-1.5 text-xs font-semibold text-muted-foreground">
-                          {NO_FAMILY_LABEL} ({family.variants.length})
+                        <p
+                          className="border-b border-border bg-fill-quaternary px-3 py-1.5 text-xs font-semibold text-muted-foreground"
+                          data-testid="name-review-family-none"
+                        >
+                          {NO_FAMILY_LABEL} ({item.count})
                         </p>
                       )}
-                      {family.variants.map((row) => renderRow(row, Boolean(family.pillar)))}
                     </div>
-                  ))
-                : ordered.map((row) => renderRow(row, false))}
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
@@ -702,7 +819,9 @@ export function NameReviewPage() {
         <ul className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
           {NAME_REVIEW_KEY_HINTS.map((hint) => (
             <li key={hint.keys}>
-              <kbd className="rounded border border-border bg-fill-tertiary px-1.5 py-0.5 font-mono text-[11px] text-foreground">{hint.keys}</kbd>{' '}
+              <kbd className="rounded border border-border bg-fill-tertiary px-1.5 py-0.5 font-mono text-[11px] text-foreground">
+                {hint.keys}
+              </kbd>{' '}
               {hint.label}
             </li>
           ))}
@@ -715,18 +834,35 @@ export function NameReviewPage() {
             <DialogTitle>{previewRow?.name ?? ''}</DialogTitle>
           </DialogHeader>
           {previewEmbed ? (
-            <iframe src={previewEmbed} title="Wideo ćwiczenia" className="aspect-video w-full rounded-lg" allow="autoplay; fullscreen" />
+            <iframe
+              src={previewEmbed}
+              title="Wideo ćwiczenia"
+              className="aspect-video w-full rounded-lg"
+              allow="autoplay; fullscreen"
+            />
           ) : previewRow?.videoUrl ? (
-            <video src={previewRow.videoUrl} controls autoPlay loop muted className="max-h-[70vh] w-full rounded-lg bg-black/80" />
+            <video
+              src={previewRow.videoUrl}
+              controls
+              autoPlay
+              loop
+              muted
+              className="max-h-[70vh] w-full rounded-lg bg-black/80"
+            />
           ) : previewRow?.imageUrl || previewRow?.thumbnailUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- external exercise media of any host
-            <img src={previewRow.imageUrl ?? previewRow.thumbnailUrl ?? ''} alt="" className="max-h-[70vh] w-full rounded-lg object-contain" />
+            <img
+              src={previewRow.imageUrl ?? previewRow.thumbnailUrl ?? ''}
+              alt=""
+              className="max-h-[70vh] w-full rounded-lg object-contain"
+            />
           ) : (
             <p className="text-sm text-muted-foreground">To ćwiczenie nie ma wideo ani zdjęcia.</p>
           )}
           {previewRow && effectivePillarId(previewRow, allDrafts[previewRow.exerciseId]) && (
             <p className="text-xs text-muted-foreground">
-              Wariant: {rowsById.get(effectivePillarId(previewRow, allDrafts[previewRow.exerciseId]) ?? '')?.name ?? '—'}
+              Wariant:{' '}
+              {rowsById.get(effectivePillarId(previewRow, allDrafts[previewRow.exerciseId]) ?? '')?.name ?? '—'}
             </p>
           )}
         </DialogContent>
