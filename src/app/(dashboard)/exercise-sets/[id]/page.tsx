@@ -58,6 +58,7 @@ import { resolveExerciseEquipmentText } from '@/components/shared/exercise/displ
 import { GeneratePDFDialog } from '@/features/exercise-sets/GeneratePDFDialog';
 import { SetDurationStat } from '@/features/exercise-sets/components/SetDurationStat';
 import { SetScheduleStat } from '@/features/exercise-sets/components/SetScheduleStat';
+import { StarterSetToggle } from '@/features/exercise-sets/components/StarterSetToggle';
 import { formatScheduleStat } from '@/utils/frequencyDisplay';
 import { estimateSetSeconds } from '@/features/exercise-sets/utils/setDuration';
 import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
@@ -83,7 +84,7 @@ import {
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { DashboardRouteLoading } from '@/components/layout/DashboardRouteLoading';
-import { isFiziyoTemplate, isTemplateSet } from '@/features/exercise-sets/utils/setKind';
+import { isFiziyoTemplate, isTemplateSet, setPatientCount } from '@/features/exercise-sets/utils/setKind';
 import { SetHistoryNotesPanel } from '@/features/exercise-sets/components/SetHistoryNotesPanel';
 import { buildSetHrefWithoutAssign, shouldOpenAssignOnLoad } from '@/features/exercise-sets/utils/setAssignHref';
 import { PageSheet } from '@/components/shared/page';
@@ -197,6 +198,7 @@ interface ExerciseSetData {
     templateSource?: 'FIZIYO_VERIFIED' | 'ORGANIZATION_PRIVATE' | 'ORG_PRIVATE';
     exerciseMappings?: ExerciseMapping[];
     patientAssignments?: PatientAssignmentInSet[];
+    activeAssignmentCount?: number | null;
     frequency?: {
       timesPerWeek?: number;
       timesPerDay?: number;
@@ -558,6 +560,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
   const assignments = isTemplate
     ? []
     : (exerciseSet?.patientAssignments || []).filter((a) => !isRemovedAssignment(a.status));
+  const patientCount = setPatientCount(exerciseSet, assignments.length);
 
   const dependencyById = new Map(dependencies.positions.map((position) => [position.id, position]));
   const { warmup: warmupMappings, main: mainMappings } = splitWarmupSection(
@@ -694,7 +697,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
           <SetDurationStat seconds={setSeconds} className="flex-[1.4_1_0] px-3" />
           {[
             { value: String(exercises.length), label: pluralize(exercises.length, 'ćwiczenie', false) },
-            { value: String(assignments.length), label: pluralize(assignments.length, 'pacjent', false) },
+            { value: String(patientCount), label: pluralize(patientCount, 'pacjent', false) },
             ...(isTemplate ? [] : [formatScheduleStat(exerciseSet?.frequency)]),
           ].map((stat) => (
             <span
@@ -708,6 +711,8 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
           {isTemplate && <SetScheduleStat exerciseSetId={exerciseSet.id} frequency={exerciseSet.frequency} />}
         </div>
       </div>
+
+      {isTemplate && <StarterSetToggle exerciseSetId={exerciseSet.id} />}
 
       {/* Exercises Section */}
       <div className="space-y-4">

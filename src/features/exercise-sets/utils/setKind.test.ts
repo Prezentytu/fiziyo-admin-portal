@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isFiziyoTemplate, isMyTemplate, isPatientPlan, isTemplateSet } from './setKind';
+import { isFiziyoTemplate, isMyTemplate, isPatientPlan, isTemplateSet, setPatientCount } from './setKind';
 
 describe('setKind', () => {
   it('treats kind TEMPLATE and legacy isTemplate as templates', () => {
@@ -20,5 +20,11 @@ describe('setKind', () => {
   it('detects patient plans', () => {
     expect(isPatientPlan({ kind: 'PATIENT_PLAN' })).toBe(true);
     expect(isPatientPlan({ kind: 'TEMPLATE' })).toBe(false);
+  });
+
+  it('counts template patients from the backend (starter set), plans from their visible assignments', () => {
+    expect(setPatientCount({ kind: 'TEMPLATE', activeAssignmentCount: 12 }, 0)).toBe(12);
+    expect(setPatientCount({ kind: 'TEMPLATE' }, 3)).toBe(0);
+    expect(setPatientCount({ kind: 'PATIENT_PLAN', activeAssignmentCount: 5 }, 1)).toBe(1);
   });
 });

@@ -145,6 +145,7 @@ export const GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY = gql`
   query GetExerciseSetWithAssignments($exerciseSetId: String!) {
     exerciseSetById(id: $exerciseSetId) {
       ...ExerciseSetWithExercisesFragment
+      activeAssignmentCount
       patientAssignments {
         id
         userId
@@ -192,6 +193,19 @@ export const GET_EXERCISE_SET_DEPENDENCIES_QUERY = gql`
         requiresMappingIds
         dependencyMode
       }
+    }
+  }
+`;
+
+/**
+ * SPEC-066 (fizjo-app): czy szablon jest zestawem na start. Osobne zapytanie, wołane tylko przy fladze `starterSet`,
+ * żeby API bez pola `isStarterSet` nie gasiło ekranu zestawu.
+ */
+export const GET_EXERCISE_SET_STARTER_QUERY = gql`
+  query GetExerciseSetStarter($exerciseSetId: String!) {
+    exerciseSetById(id: $exerciseSetId) {
+      id
+      isStarterSet
     }
   }
 `;
