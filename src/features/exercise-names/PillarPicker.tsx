@@ -39,7 +39,9 @@ export function PillarPicker({
   const labelOf = (row: ExerciseNameReviewRow) =>
     drafts[row.exerciseId]?.name ?? row.proposal?.proposedName ?? row.name;
   const selected = candidates.find((row) => row.exerciseId === value) ?? null;
+  // Closed pickers (every mounted row) skip the search over all pillars.
   const options = useMemo(() => {
+    if (!open) return [];
     const words = foldText(query).split(/\s+/).filter(Boolean);
     const matching = candidates.filter((row) => {
       if (row.exerciseId === exerciseId) return false;
@@ -49,7 +51,7 @@ export function PillarPicker({
     return [...matching].sort(
       (left, right) => Number(right.exerciseId === aiPillarId) - Number(left.exerciseId === aiPillarId)
     );
-  }, [candidates, drafts, query, aiPillarId, exerciseId]);
+  }, [open, candidates, drafts, query, aiPillarId, exerciseId]);
 
   const choose = (pillarId: string | null) => {
     onChange(pillarId);

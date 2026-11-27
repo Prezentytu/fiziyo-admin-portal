@@ -20,7 +20,8 @@ export const NAME_REVIEW_GRID =
 function fitHeight(field: HTMLTextAreaElement | null) {
   if (!field) return;
   field.style.height = 'auto';
-  field.style.height = `${field.scrollHeight}px`;
+  // scrollHeight leaves out the border; border-box height needs it, or the last line scrolls under the edge.
+  field.style.height = `${field.scrollHeight + field.offsetHeight - field.clientHeight}px`;
 }
 
 export const PILLAR_TOOLTIP = 'Podstawowa, klasyczna wersja ruchu. Inne ćwiczenia mogą być jej wariantami.';

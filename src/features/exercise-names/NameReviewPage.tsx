@@ -83,13 +83,12 @@ function errorMessage(error: unknown, fallback: string): string {
 /** Estimated row height before measuring; real heights come from `measureElement` (long names wrap). */
 const ESTIMATED_ROW_HEIGHT = 86;
 
-/** The page scrolls inside the dashboard `<main>`, not the window: the virtualizer needs that element. */
+/**
+ * The page scrolls inside the dashboard `<main>` (both layouts), not the window. The table wrapper has
+ * `overflow-x-auto`, which also computes `overflow-y: auto`, so the nearest scrollable ancestor is the wrong one.
+ */
 function scrollParentOf(element: HTMLElement | null): HTMLElement | null {
-  for (let node = element?.parentElement ?? null; node; node = node.parentElement) {
-    const { overflowY } = getComputedStyle(node);
-    if (overflowY === 'auto' || overflowY === 'scroll') return node;
-  }
-  return null;
+  return element?.closest('main') ?? null;
 }
 
 function isTextField(target: EventTarget | null): boolean {
@@ -360,6 +359,19 @@ export function NameReviewPage() {
     }
   };
 
+  // A row far from the viewport is not mounted: scroll to it first, focus once it renders.
+  const focusName = (exerciseId: string) => {
+    const input = nameInputs.current.get(exerciseId);
+    if (input) {
+      input.focus();
+      return;
+    }
+    const index = items.findIndex((item) => item.kind === 'row' && item.key === exerciseId);
+    if (index < 0) return;
+    virtualizer.scrollToIndex(index, { align: 'center' });
+    requestAnimationFrame(() => requestAnimationFrame(() => nameInputs.current.get(exerciseId)?.focus()));
+  };
+
   const handleKey = useRef<(event: KeyboardEvent) => void>(() => undefined);
   handleKey.current = (event: KeyboardEvent) => {
     if (previewRow || (pickerOpenId && event.key !== 'Escape')) return;
@@ -397,7 +409,7 @@ export function NameReviewPage() {
         if (active) void saveDecisions([active], true);
         break;
       case 'edit':
-        if (activeId) nameInputs.current.get(activeId)?.focus();
+        if (activeId) focusName(activeId);
         break;
       case 'togglePillar':
         if (active && !isDone(active)) {
