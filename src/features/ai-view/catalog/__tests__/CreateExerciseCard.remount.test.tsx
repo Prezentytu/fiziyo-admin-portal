@@ -19,6 +19,7 @@ vi.mock('../../ChatSessionContext', () => ({
   useChatBusy: () => false,
 }));
 vi.mock('../../useChatMode', () => ({ useChatMode: () => ({ preference: { useAi: true } }) }));
+vi.mock('../../useAvailableExercises', () => ({ useAvailableExercises: () => ({ exercises: [], loading: false }) }));
 vi.mock('../useChatWrites', () => ({ useCreateExercise: () => ({ create: vi.fn(), creating: false }) }));
 
 const SPEC = { component: 'CreateExercise' as const, name: 'Plank na przedramionach' };
