@@ -63,6 +63,19 @@ describe('karta nowego ćwiczenia: podobne nazwy i ćwiczenia z katalogu', () =>
     );
   });
 
+  it('ćwiczenie, które już jest w zestawie, nie wraca jako podobne do dodania', () => {
+    render(
+      <CreateExerciseCard
+        spec={{ component: 'CreateExercise', addToSet: { ...BACK, exerciseIds: ['ex-a', 'ex-row'] } }}
+        testId="card"
+        messageId="m3"
+      />
+    );
+    fireEvent.change(screen.getByTestId('card-name-input'), { target: { value: 'wiosłowanie z gumą' } });
+
+    expect(screen.queryByTestId('card-name-suggestions-similar-ex-row-use-btn')).toBeNull();
+  });
+
   it('z AI: po przerwie w pisaniu „Czy chodziło Ci o”, a klik podstawia nazwę', async () => {
     vi.useFakeTimers();
     mode.useAi = true;

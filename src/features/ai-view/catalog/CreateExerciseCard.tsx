@@ -217,12 +217,19 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
   const nameSuggestions = useNameSuggestions(nameText, useAi && chosen === undefined && namingStage);
   const similar = useMemo(() => {
     if (!namingStage || nameText.trim().length < 3) return [];
+    // Ćwiczenie, które już jest w zestawie, nie wraca jako „Dodaj do zestawu”.
+    const inSet = new Set(spec.addToSet?.exerciseIds ?? []);
     const local = findSimilarExercises(nameText, preparedCatalog)
-      .filter((exercise) => !isTestExercise(exercise.name))
+      .filter((exercise) => !isTestExercise(exercise.name) && !inSet.has(exercise.id))
       .slice(0, 3);
-    const fromNames = similarFromSuggestions(catalog, nameSuggestions.names, new Set(local.map((item) => item.id)), 3);
+    const fromNames = similarFromSuggestions(
+      catalog,
+      nameSuggestions.names,
+      new Set([...inSet, ...local.map((item) => item.id)]),
+      3
+    );
     return [...local, ...fromNames];
-  }, [catalog, preparedCatalog, nameSuggestions.names, nameText, namingStage]);
+  }, [catalog, preparedCatalog, nameSuggestions.names, nameText, namingStage, spec.addToSet]);
   const [catalogPreview, setCatalogPreview] = useState<ChatCatalogExercise | null>(null);
   // Do zestawu: podobne ćwiczenie z katalogu idzie do propozycji zamiast tworzenia nowego.
   const useExisting = spec.addToSet
