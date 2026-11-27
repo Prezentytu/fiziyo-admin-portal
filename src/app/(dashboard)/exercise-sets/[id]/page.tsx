@@ -612,7 +612,6 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
         <ExerciseExecutionCard
           mode="edit"
           exercise={cardData}
-          hideTimerBadge
           onChange={(patch: Partial<ExerciseExecutionCardData>) => handleQuickExerciseUpdate(mapping, patch)}
           onExpand={() => setEditingExercise(patchedMapping)}
           onRemove={() => setRemovingExerciseId(mapping.exerciseId)}
