@@ -3,13 +3,19 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { VideoEmbed } from '../VideoEmbed';
 
-function playerSays(message: unknown, source?: MessageEventSource | null) {
+/** YouTube and Vimeo's `ready` arrive as JSON strings; Vimeo answers object messages with objects. */
+function playerSays(data: unknown, source?: MessageEventSource | null) {
   const iframe = screen.getByTestId('video-embed-iframe') as HTMLIFrameElement;
   act(() => {
-    window.dispatchEvent(
-      new MessageEvent('message', { data: JSON.stringify(message), source: source ?? iframe.contentWindow })
-    );
+    window.dispatchEvent(new MessageEvent('message', { data, source: source ?? iframe.contentWindow }));
   });
+}
+
+/** jsdom does not load a cross-origin iframe, so its contentWindow is null: stand in for the player's window. */
+function givePlayerWindow(iframe: HTMLIFrameElement) {
+  const playerWindow = { postMessage: vi.fn() };
+  Object.defineProperty(iframe, 'contentWindow', { configurable: true, value: playerWindow });
+  return playerWindow;
 }
 
 describe('VideoEmbed (CAT04)', () => {
@@ -23,13 +29,21 @@ describe('VideoEmbed (CAT04)', () => {
 });
 
 describe('VideoEmbed – bieżący czas filmu (SPEC-064)', () => {
-  it('czyta czas z Vimeo tylko z własnego odtwarzacza', () => {
+  // Odpowiedzi skopiowane z żywego player.vimeo.com: na wiadomości tekstowe Vimeo odpowiada starym API
+  // (`playProgress`, `seek`), czasu w `timeupdate`/`seeked` używa tylko po subskrypcji obiektem.
+  it('subskrybuje Vimeo obiektem i czyta czas tylko z własnego odtwarzacza', () => {
     const onTimeChange = vi.fn();
     render(<VideoEmbed url="https://vimeo.com/123456789#t=30s" title="Film" onTimeChange={onTimeChange} />);
 
-    expect(screen.getByTestId('video-embed-iframe').getAttribute('src')).toContain('api=1');
-    playerSays({ event: 'timeupdate', data: { seconds: 41.2 } });
-    playerSays({ event: 'seeked', data: { seconds: 50 } });
+    const iframe = screen.getByTestId('video-embed-iframe') as HTMLIFrameElement;
+    expect(iframe.getAttribute('src')).toContain('api=1');
+    const { postMessage } = givePlayerWindow(iframe);
+    playerSays(JSON.stringify({ event: 'ready' }));
+    expect(postMessage).toHaveBeenCalledWith({ method: 'addEventListener', value: 'timeupdate' }, '*');
+    expect(postMessage).toHaveBeenCalledWith({ method: 'addEventListener', value: 'seeked' }, '*');
+
+    playerSays({ event: 'timeupdate', data: { seconds: 41.2, percent: 0.07, duration: 596.458 } });
+    playerSays({ event: 'seeked', data: { seconds: 50, percent: 0.08, duration: 596.458 } });
     playerSays({ event: 'timeupdate', data: { seconds: 99 } }, window);
 
     expect(onTimeChange.mock.calls).toEqual([[41.2], [50]]);
@@ -38,8 +52,9 @@ describe('VideoEmbed – bieżący czas filmu (SPEC-064)', () => {
   it('czyta czas z YouTube z infoDelivery', () => {
     const onTimeChange = vi.fn();
     render(<VideoEmbed url="https://youtu.be/7rnlAVhAK-8" title="Film" onTimeChange={onTimeChange} />);
+    givePlayerWindow(screen.getByTestId('video-embed-iframe') as HTMLIFrameElement);
 
-    playerSays({ event: 'infoDelivery', info: { currentTime: 12.5 } });
+    playerSays(JSON.stringify({ event: 'infoDelivery', info: { currentTime: 12.5 } }));
     expect(onTimeChange).toHaveBeenLastCalledWith(12.5);
   });
 
