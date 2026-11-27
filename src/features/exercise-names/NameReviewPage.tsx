@@ -20,7 +20,7 @@ import { EmptyState } from '@/components/shared/EmptyState';
 import { PageSheet } from '@/components/shared/page';
 import { useSystemRole } from '@/hooks/useSystemRole';
 import { VerificationPageHeader } from '@/features/verification/VerificationPageHeader';
-import { NAME_REVIEW_GRID, NameReviewRowItem, PILLAR_TOOLTIP } from '@/features/exercise-names/NameReviewRowItem';
+import { NAME_REVIEW_COLUMNS, NameReviewRowItem, PILLAR_TOOLTIP } from '@/features/exercise-names/NameReviewRowItem';
 import { RecentChangesPanel } from '@/features/exercise-names/RecentChangesPanel';
 import { VocabularyEditor } from '@/features/exercise-names/VocabularyEditor';
 import {
@@ -501,7 +501,7 @@ export function NameReviewPage() {
         : null;
 
   return (
-    <PageSheet contentClassName="pb-20">
+    <PageSheet contentClassName="lg:pb-20">
       <div className="flex flex-col gap-4" data-testid="name-review-page">
         <VerificationPageHeader />
 
@@ -736,10 +736,13 @@ export function NameReviewPage() {
         )}
 
         <div>
-          <div className="overflow-x-auto rounded-xl border border-border bg-card">
-            <div className="min-w-[980px]">
+          <div className="@container overflow-hidden rounded-xl border border-border bg-card">
+            <div>
               <div
-                className={`${NAME_REVIEW_GRID} border-b border-border px-3 py-2 text-xs font-medium text-muted-foreground`}
+                className={cn(
+                  'grid grid-cols-[20px_minmax(0,1fr)] items-center gap-2.5 border-b border-border px-3 py-2 text-xs font-medium text-muted-foreground',
+                  NAME_REVIEW_COLUMNS
+                )}
               >
                 <Checkbox
                   checked={allVisibleSelected}
@@ -749,13 +752,16 @@ export function NameReviewPage() {
                   aria-label="Zaznacz wszystkie widoczne"
                   data-testid="name-review-select-all"
                 />
-                <span />
-                <span>Obecna nazwa</span>
-                <span>Propozycja · uzasadnienie AI</span>
-                <span title={PILLAR_TOOLTIP}>Filarowe</span>
-                <span>Wariant filarowego</span>
-                <span>Status</span>
-                <span />
+                <span className="@min-[60rem]:hidden">Zaznacz wszystkie widoczne</span>
+                <span className="hidden @min-[60rem]:block" />
+                <span className="hidden @min-[60rem]:block">Obecna nazwa</span>
+                <span className="hidden @min-[60rem]:block">Propozycja · uzasadnienie AI</span>
+                <span className="hidden @min-[60rem]:block" title={PILLAR_TOOLTIP}>
+                  Filarowe
+                </span>
+                <span className="hidden @min-[60rem]:block">Wariant filarowego</span>
+                <span className="hidden @min-[60rem]:block">Status</span>
+                <span className="hidden @min-[60rem]:block" />
               </div>
               {!organizationId && (
                 <p className="px-4 py-10 text-center text-sm text-muted-foreground">
@@ -825,7 +831,7 @@ export function NameReviewPage() {
       </div>
 
       <footer
-        className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/95 px-4 py-2 backdrop-blur"
+        className="fixed inset-x-0 bottom-0 z-20 hidden border-t border-border bg-background/95 px-4 py-2 backdrop-blur lg:block"
         data-testid="name-review-key-hints"
       >
         <ul className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">

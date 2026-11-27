@@ -19,6 +19,7 @@ import {
   orderDecisions,
   parseNameReviewUrl,
   pillarRows,
+  removedWords,
   serializeNameReviewUrl,
   toDecision,
 } from '../nameReviewRows';
@@ -177,6 +178,30 @@ describe('pillarRows', () => {
     expect(
       pillarRows([pull, plain], { plain: { name: 'x', isPillar: true, pillarId: null } }).map((r) => r.exerciseId)
     ).toEqual(['pull', 'plain']);
+  });
+});
+
+describe('removedWords', () => {
+  const struck = (current: string, next: string) =>
+    removedWords(current, next)
+      .filter((segment) => segment.removed)
+      .map((segment) => segment.text);
+
+  it('marks only the words the new name drops', () => {
+    expect(struck('Aktywacja pośladka średniego w leżeniu na boku z taśmą', 'Aktywacja pośladka średniego w leżeniu na boku')).toEqual([
+      'z',
+      'taśmą',
+    ]);
+  });
+
+  it('ignores case and Polish diacritics, keeps whitespace untouched', () => {
+    expect(struck('Unoszenie  BIODER w leżeniu', 'unoszenie bioder w lezeniu')).toEqual([]);
+    expect(removedWords('A  b', 'a').map((segment) => segment.text).join('')).toBe('A  b');
+  });
+
+  it('strikes everything when nothing is shared and nothing when the name stays', () => {
+    expect(struck('Martwy robak', 'Przysiad')).toEqual(['Martwy', 'robak']);
+    expect(struck('Martwy robak', 'Martwy robak')).toEqual([]);
   });
 });
 
