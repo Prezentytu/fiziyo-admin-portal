@@ -116,6 +116,7 @@ describe("pin-devportal-domain", () => {
     const pinned = await pinDevportalDomain({ ...ENV, DEPLOYMENT_REF: SHA, DEPLOYMENT_SHA: SHA }, { fetchImpl, sleep: noSleep });
     assert.equal(pinned.aliased, true);
     assert.equal(pinned.deploymentId, DPL);
+    assert.equal(pinned.adminSha, SHA);
     assert.equal(pinned.apiOrigin, DEV_API_ORIGIN);
     assert.deepEqual(pinned.reassigned, [{ name: "devportal.fiziyo.pl", from: null, to: TRUNK_BRANCH }]);
     assert.equal(calls.some((item) => item.method === "PATCH" && item.body?.gitBranch === TRUNK_BRANCH), true);
@@ -132,6 +133,8 @@ describe("pin-devportal-domain", () => {
     );
     assert.equal(result.skipped, "feature-preview");
     assert.equal(result.aliased, false);
+    // Bez pinu nie ma nowego panelu na DEV, więc nie ma też dispatchu E2E.
+    assert.equal(result.adminSha, "");
     assert.equal(result.apiOrigin, DEV_API_ORIGIN);
     assert.equal(calls.some((item) => item.url.includes("/v2/aliases")), false);
   });

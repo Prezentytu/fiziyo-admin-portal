@@ -1,4 +1,5 @@
 import { fileURLToPath } from "node:url";
+import { appendFileSync } from "node:fs";
 import path from "node:path";
 
 import {
@@ -203,6 +204,8 @@ export async function pinDevportalDomain(env, { fetchImpl = fetch, sleep = delay
     productionBranch,
     reassigned,
     aliased: Boolean(deploymentId),
+    // Tylko nowo przypięty commit main: na nim dispatch-e2e-dev.mjs puszcza E2E Dev Full.
+    adminSha: deploymentId ? live.sha : "",
     deploymentId: deploymentId ?? live.deploymentId,
     project: env.VERCEL_PROJECT_NAME || PROJECT_NAME,
     apiOrigin: live.apiOrigin,
@@ -213,6 +216,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   try {
     const result = await pinDevportalDomain(process.env);
     console.log(JSON.stringify(result));
+    if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `admin_sha=${result.adminSha}\n`);
   } catch (error) {
     console.error(error instanceof Error ? error.message : "Pin DEV domain failed.");
     process.exitCode = 1;

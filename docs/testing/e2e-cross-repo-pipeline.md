@@ -116,8 +116,8 @@ W repo prywatnym bez platnego branch protection traktuj statusy jako manualny ga
 
 1. PR -> `CI` + Vercel Preview musza byc zielone. Preview nie dostaje E2E (`e2e-trigger.yml`: "Preview is not certified against shared DEV").
 2. Merge do `main`.
-3. Vercel wdraza DEV na `devportal.fiziyo.pl`.
-4. `E2E Dev Full` na `devportal.fiziyo.pl` musi byc zielone.
+3. Vercel wdraza Preview z `main`, a [`pin-devportal.yml`](../../.github/workflows/pin-devportal.yml) przepina na niego `devportal.fiziyo.pl` i wysyla `e2e-dev-run` z para panel + API, ktora DEV wtedy serwuje (`scripts/dispatch-e2e-dev.mjs`).
+4. `E2E Dev Full` na `devportal.fiziyo.pl` musi byc zielone. Ten sam przebieg jest dowodem dla Release w fizjo-app: panel przepiety w trakcie E2E po merge API unieważnia tamten przebieg, a ten go zastepuje.
 5. Dopiero wtedy Actions → **Promote admin** na `main` (`docs/release-admin.md`), nie klik w Vercel.
 6. Po deployu na `prod` `e2e-trigger` odpalą `prod-safe` / sprawdź `E2E Prod Smoke`.
 
@@ -126,7 +126,7 @@ W repo prywatnym bez platnego branch protection traktuj statusy jako manualny ga
 ## Dispatch routing
 
 - `portal.fiziyo.pl` albo environment `Production` -> `event_type=e2e-prod-run`, `project=prod-safe`, SHA musi byc na `main`
-- `devportal.fiziyo.pl` / `dev.portal.fiziyo.pl` -> `event_type=e2e-dev-run`, `project=all`, SHA musi byc na `main`
+- DEV: `deployment_status` niesie URL `*.vercel.app`, nie alias `devportal.fiziyo.pl`, wiec `e2e-trigger.yml` go nie certyfikuje. `e2e-dev-run` (`project=all`) wysyla `pin-devportal.yml` po pinie commita z `main`, gdy naglowek `x-fiziyo-admin-sha` na devportal potwierdza ten commit; drugi nadawca to DEV w fizjo-app po merge API
 - pozostale (`*.vercel.app`, stara nazwa environment `Development`) -> brak dispatchu, brak certyfikatu
 
 Vercel czesto podaje `target_url` jako `*.vercel.app`. Samo environment `Development` albo leftover branch `dev` nie robi z tego shared DEV. Trigger porownuje SHA z `main` przez GitHub Compare i wymaga zgodnych naglowkow na dedykowanym URL.

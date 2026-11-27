@@ -52,6 +52,7 @@ jobs:
           node-version: 24
 
       - name: Point devportal.fiziyo.pl at main Preview
+        id: pin
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
@@ -61,3 +62,12 @@ jobs:
           DEPLOYMENT_SHA: ${{ github.event.deployment.sha || github.sha }}
           DEPLOYMENT_ENV: ${{ github.event.deployment_status.environment || '' }}
         run: node scripts/pin-devportal-domain.mjs
+
+      # Nowy panel na DEV unieważnia dowód E2E dla czubka fizjo-app (para API + panel). deployment_status
+      # niesie URL *.vercel.app, więc e2e-trigger.yml go nie certyfikuje: dispatch idzie stąd, po pinie.
+      - name: E2E Dev Full dla nowego panelu
+        if: steps.pin.outputs.admin_sha != ''
+        env:
+          ADMIN_SHA: ${{ steps.pin.outputs.admin_sha }}
+          E2E_DISPATCH_PAT: ${{ secrets.E2E_DISPATCH_PAT }}
+        run: node scripts/dispatch-e2e-dev.mjs
