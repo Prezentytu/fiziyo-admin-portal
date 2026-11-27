@@ -39,8 +39,8 @@ export function PillarPicker({
   const labelOf = (row: ExerciseNameReviewRow) =>
     drafts[row.exerciseId]?.name ?? row.proposal?.proposedName ?? row.name;
   const selected = candidates.find((row) => row.exerciseId === value) ?? null;
-  // Pickers never opened (almost every mounted row) skip the search over all pillars. Once opened, the list stays
-  // computed so the closing animation does not flash the empty state.
+  // Closed pickers (almost every mounted row) skip the search over all pillars. The list stays computed until the
+  // content has unmounted after its closing animation, so the animation does not flash the empty state.
   const [listed, setListed] = useState(open);
   if (open && !listed) setListed(true);
   const options = useMemo(() => {
@@ -87,7 +87,12 @@ export function PillarPicker({
           <ChevronDown aria-hidden />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-[360px] p-2" onOpenAutoFocus={(event) => event.preventDefault()}>
+      <PopoverContent
+        align="start"
+        className="w-[360px] p-2"
+        onOpenAutoFocus={(event) => event.preventDefault()}
+        onCloseAutoFocus={() => setListed(false)}
+      >
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
