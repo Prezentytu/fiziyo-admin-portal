@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { addToDraftReply, draftRequest, draftWithExercise, exerciseCreatedReply, openSetDraft } from '../addToDraft';
+import {
+  addToDraftReply,
+  createdChoice,
+  createdExerciseId,
+  draftRequest,
+  draftWithExercise,
+  exerciseCreatedReply,
+  openSetDraft,
+} from '../addToDraft';
 import { draftReturnOf, type DraftItem } from '../setDraft';
 
 const CATALOG = [
@@ -208,5 +216,19 @@ describe('draftWithExercise', () => {
     const live = draftReturnOf([], { note: first.note });
     expect('addedExerciseId' in live).toBe(false);
     expect(draftWithExercise({ ...live, exerciseIds: first.exerciseIds }, 'e-plank').addedExerciseId).toBe('e-plank');
+  });
+});
+
+// 26.11 (Przemek): po utworzeniu ćwiczenia formularz znikał do „Ćwiczenie utworzone.”; karta trzyma id, żeby pokazać wynik.
+describe('createdChoice / createdExerciseId', () => {
+  it('keeps the created exercise id in the card choice', () => {
+    expect(createdExerciseId(createdChoice('ex-42'))).toBe('ex-42');
+  });
+
+  it('has no id for threads stored before (plain „created”) and for other choices', () => {
+    expect(createdExerciseId('created')).toBeUndefined();
+    expect(createdExerciseId('created:')).toBeUndefined();
+    expect(createdExerciseId(undefined)).toBeUndefined();
+    expect(createdExerciseId('next')).toBeUndefined();
   });
 });

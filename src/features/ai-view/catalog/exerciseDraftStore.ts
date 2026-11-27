@@ -1,4 +1,5 @@
 import { useCallback, useSyncExternalStore } from 'react';
+import type { ImageStyle } from '@/types/ai.types';
 
 import { CHAT_EXERCISE_DEFAULTS } from '../utils/chatExerciseDraft';
 import type { NewExerciseValues } from './CreateExerciseCard';
@@ -22,6 +23,8 @@ export interface ExerciseDraft {
   readonly values: NewExerciseValues | null;
   readonly exerciseType: 'reps' | 'time';
   readonly image: File | null;
+  /** Picture profile, as in the exercise editor (Ilustracja, Diagram, Zdjęcie); the next picture uses it. */
+  readonly imageStyle?: ImageStyle;
   /** Position quick reply already sent from this card. */
   readonly pickedPosition?: string;
 }

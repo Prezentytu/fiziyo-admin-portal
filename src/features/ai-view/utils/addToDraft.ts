@@ -239,3 +239,16 @@ export function afterExerciseChoice(
       : { component: 'SetDraft', patientId: spec.patientId, exerciseIds: [spec.exerciseId] },
   };
 }
+
+const CREATED_PREFIX = 'created:';
+
+/** How the create-exercise card marks itself done: with the exercise id, so its result card survives a reload. */
+export function createdChoice(exerciseId: string): string {
+  return `${CREATED_PREFIX}${exerciseId}`;
+}
+
+/** The exercise a done create-exercise card made; none for threads stored before the id was kept (plain 'created'). */
+export function createdExerciseId(chosen: string | undefined): string | undefined {
+  if (!chosen?.startsWith(CREATED_PREFIX)) return undefined;
+  return chosen.slice(CREATED_PREFIX.length) || undefined;
+}
