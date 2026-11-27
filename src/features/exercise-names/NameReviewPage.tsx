@@ -236,9 +236,10 @@ export function NameReviewPage() {
   }, []);
 
   // Native replaceState: Next keeps useSearchParams in sync without a router navigation on every j/k or keystroke.
+  // Pass null, not history.state: Next treats a state carrying its own `__NA` marker as internal and skips the sync.
   useEffect(() => {
     const query = serializeNameReviewUrl(urlState);
-    window.history.replaceState(window.history.state, '', query ? `${pathname}?${query}` : pathname);
+    window.history.replaceState(null, '', query ? `${pathname}?${query}` : pathname);
   }, [urlState, pathname]);
 
   useEffect(() => {

@@ -102,6 +102,16 @@ export const NameReviewRowItem = forwardRef<HTMLTextAreaElement, NameReviewRowIt
     [nameInputRef]
   );
   useLayoutEffect(() => fitHeight(nameField.current), [draft.name]);
+  // A row scrolled out of the virtual window unmounts with its popover; an open picker left in page state would
+  // swallow every shortcut (the page ignores keys while a picker is open).
+  const pickerState = useRef({ open: pickerOpen, onOpenChange: onPickerOpenChange });
+  pickerState.current = { open: pickerOpen, onOpenChange: onPickerOpenChange };
+  useEffect(
+    () => () => {
+      if (pickerState.current.open) pickerState.current.onOpenChange(false);
+    },
+    []
+  );
   useEffect(() => {
     const field = nameField.current;
     if (!field || typeof ResizeObserver === 'undefined') return undefined;
