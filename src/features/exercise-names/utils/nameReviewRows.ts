@@ -75,11 +75,7 @@ export function effectivePillarId(row: ExerciseNameReviewRow, draft?: NameReview
 }
 
 export function foldText(value: string): string {
-  return value
-    .toLocaleLowerCase('pl')
-    .replace(/ł/g, 'l')
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '');
+  return value.toLocaleLowerCase('pl').replace(/ł/g, 'l').normalize('NFD').replace(/[̀-ͯ]/g, '');
 }
 
 export function matchesQuery(row: ExerciseNameReviewRow, query: string, draft?: NameReviewDraft): boolean {
@@ -88,7 +84,9 @@ export function matchesQuery(row: ExerciseNameReviewRow, query: string, draft?: 
     return true;
   }
   const haystack = foldText(
-    [row.name, row.proposal?.proposedName ?? '', draft?.name ?? '', row.proposal?.family ?? '', ...row.aliases].join(' ')
+    [row.name, row.proposal?.proposedName ?? '', draft?.name ?? '', row.proposal?.family ?? '', ...row.aliases].join(
+      ' '
+    )
   );
   return words.every((word) => haystack.includes(word));
 }
@@ -146,32 +144,69 @@ export function groupByPillar(
   rows: ReadonlyArray<ExerciseNameReviewRow>,
   drafts: Readonly<Record<string, NameReviewDraft>> = {}
 ): PillarFamily[] {
-  const pillars = rows.filter((row) => effectiveIsPillar(row, drafts[row.exerciseId]));
-  const pillarIds = new Set(pillars.map((row) => row.exerciseId));
-  const families = pillars.map<PillarFamily>((pillar) => ({
-    pillar,
-    variants: rows.filter((row) => effectivePillarId(row, drafts[row.exerciseId]) === pillar.exerciseId),
-  }));
-  const orphans = rows.filter((row) => {
-    if (pillarIds.has(row.exerciseId)) return false;
-    const pillarId = effectivePillarId(row, drafts[row.exerciseId]);
-    return pillarId === null || !pillarIds.has(pillarId);
+  const families = new Map<string, PillarFamily>();
+  rows.forEach((row) => {
+    if (effectiveIsPillar(row, drafts[row.exerciseId])) families.set(row.exerciseId, { pillar: row, variants: [] });
   });
-  return orphans.length > 0 ? [...families, { pillar: null, variants: orphans }] : families;
+  const orphans: ExerciseNameReviewRow[] = [];
+  rows.forEach((row) => {
+    if (families.has(row.exerciseId)) return;
+    const pillarId = effectivePillarId(row, drafts[row.exerciseId]);
+    const family = pillarId === null ? undefined : families.get(pillarId);
+    if (family) family.variants.push(row);
+    else orphans.push(row);
+  });
+  const grouped = [...families.values()];
+  return orphans.length > 0 ? [...grouped, { pillar: null, variants: orphans }] : grouped;
 }
 
 export function orderedRows(families: ReadonlyArray<PillarFamily>): ExerciseNameReviewRow[] {
   return families.flatMap((family) => (family.pillar ? [family.pillar, ...family.variants] : family.variants));
 }
 
-export function pillarCandidates(
+/** One flat list for the virtualized table: rows plus the family headers between them. */
+export type NameReviewItem =
+  | { kind: 'row'; key: string; row: ExerciseNameReviewRow; isVariant: boolean }
+  | { kind: 'variants'; key: string; pillarId: string; count: number }
+  | { kind: 'orphans'; key: string; count: number };
+
+export function nameReviewItems(
+  view: NameReviewView,
   rows: ReadonlyArray<ExerciseNameReviewRow>,
-  exceptId: string,
+  families: ReadonlyArray<PillarFamily>
+): NameReviewItem[] {
+  if (view === 'list') {
+    return rows.map((row) => ({ kind: 'row', key: row.exerciseId, row, isVariant: false }));
+  }
+  return families.flatMap<NameReviewItem>((family) => {
+    const variants = family.variants.map<NameReviewItem>((row) => ({
+      kind: 'row',
+      key: row.exerciseId,
+      row,
+      isVariant: Boolean(family.pillar),
+    }));
+    if (!family.pillar) {
+      return [{ kind: 'orphans', key: 'orphans', count: family.variants.length }, ...variants];
+    }
+    return [
+      { kind: 'row', key: family.pillar.exerciseId, row: family.pillar, isVariant: false },
+      {
+        kind: 'variants',
+        key: `variants-${family.pillar.exerciseId}`,
+        pillarId: family.pillar.exerciseId,
+        count: family.variants.length,
+      },
+      ...variants,
+    ];
+  });
+}
+
+/** Every pillar a row can point to; the picker leaves out the row itself. */
+export function pillarRows(
+  rows: ReadonlyArray<ExerciseNameReviewRow>,
   drafts: Readonly<Record<string, NameReviewDraft>> = {}
 ): ExerciseNameReviewRow[] {
-  return rows.filter(
-    (row) => row.exerciseId !== exceptId && (row.isPillar || effectiveIsPillar(row, drafts[row.exerciseId]))
-  );
+  return rows.filter((row) => row.isPillar || effectiveIsPillar(row, drafts[row.exerciseId]));
 }
 
 export function toDecision(
@@ -254,4 +289,44 @@ export function serializeNameReviewUrl(state: NameReviewUrlState): string {
   if (state.view !== 'list') params.set('view', state.view);
   if (state.rowId) params.set('row', state.rowId);
   return params.toString();
+}
+
+export interface NameSegment {
+  text: string;
+  /** The word is not in the new name (compared without case and Polish diacritics). */
+  removed: boolean;
+}
+
+/**
+ * Current name split into words marked as kept or removed, by the longest common word sequence with the new name.
+ * The row shows only the removed words struck through, so a one-word difference in a long name is visible.
+ */
+export function removedWords(current: string, next: string): NameSegment[] {
+  const parts = current.split(/(\s+)/).filter(Boolean);
+  const words = parts.filter((part) => !/^\s+$/.test(part)).map(foldText);
+  const target = normalizeName(next).split(' ').filter(Boolean).map(foldText);
+  const lengths = Array.from({ length: words.length + 1 }, () => new Array<number>(target.length + 1).fill(0));
+  for (let i = words.length - 1; i >= 0; i -= 1) {
+    for (let j = target.length - 1; j >= 0; j -= 1) {
+      lengths[i][j] = words[i] === target[j] ? lengths[i + 1][j + 1] + 1 : Math.max(lengths[i + 1][j], lengths[i][j + 1]);
+    }
+  }
+  const kept = new Set<number>();
+  for (let i = 0, j = 0; i < words.length && j < target.length; ) {
+    if (words[i] === target[j]) {
+      kept.add(i);
+      i += 1;
+      j += 1;
+    } else if (lengths[i + 1][j] >= lengths[i][j + 1]) {
+      i += 1;
+    } else {
+      j += 1;
+    }
+  }
+  let wordIndex = -1;
+  return parts.map((text) => {
+    if (/^\s+$/.test(text)) return { text, removed: false };
+    wordIndex += 1;
+    return { text, removed: !kept.has(wordIndex) };
+  });
 }
