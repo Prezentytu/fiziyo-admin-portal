@@ -18,6 +18,14 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 
 ## Wpisy
 
+### 2026-11-27 - „Ustaw start tutaj” martwy przy filmach Vimeo
+
+- **Kategoria**: `UI/UX`
+- **Problem**: Przycisk „Ustaw start tutaj” pod filmem Vimeo był stale wyszarzony, choć film grał; przy YouTube działał.
+- **Przyczyna**: `VideoEmbed` wysyłał do Vimeo wiadomości jako tekst JSON. Na tekst Vimeo odpowiada starym API (`playProgress`, `seek`), a komponent czekał na `timeupdate`/`seeked` i odrzucał odpowiedzi-obiekty, więc czas nigdy nie docierał do galerii. Test karmił komponent tekstowym `timeupdate`, którego prawdziwy odtwarzacz nie wysyła, a w jsdom `contentWindow` iframe'a to `null`, więc sprawdzenie nadawcy przechodziło pusto.
+- **Rozwiązanie**: Do Vimeo idą obiekty (jak w Player.js), odbiór czyta tekst i obiekt; YouTube bez zmian (tekst, `infoDelivery`). Test podstawia okno odtwarzacza i używa wiadomości skopiowanych z żywego `player.vimeo.com`.
+- **Reguła**: Protokół postMessage zewnętrznego odtwarzacza ustalasz na żywym iframe'ie, a testy budujesz z przechwyconych wiadomości, nie z dokumentacji ani pamięci. [egzekwowane: src/components/shared/__tests__/VideoEmbed.test.tsx]
+
 ### 2026-11-26 - Odświeżanie w tle chowało całą kolejkę weryfikacji
 
 - **Kategoria**: `GraphQL`
@@ -289,13 +297,5 @@ Marker `[egzekwowane: <ścieżka>]` na końcu linii **Reguła** = test, lint alb
 - **Przyczyna**: Sidebar i `CreateSetWizard` dzielą `submitCreateTemplateSet`, ale dialog mapował tylko kolumny dawkowania.
 - **Rozwiązanie**: `buildBuilderExerciseMapping` zapisuje deltę strony względem katalogowego `side`; test blokuje powrót inline mapowania w dialogu.
 - **Reguła**: Jeśli karta zestawu edytuje `side`, zawsze wyślij deltę w `overridesJson` na tym samym write-path co wizard, nigdy samego dawkowania. [egzekwowane: src/components/exercise-builder/buildBuilderExerciseMapping.test.ts]
-
-### 2026-09-15 - Kosz przy placeholderze to no-op, nie akcja
-
-- **Kategoria**: `UI/UX`
-- **Problem**: W edycji ćwiczenia kosz przy pustych polach „Błąd” / „Jak poprawić” i wskazówkach wyglądał na aktywny, choć nie było treści do usunięcia.
-- **Przyczyna**: Listy enrichment zawsze renderują starterowy pusty wiersz (`items.length ? items : ['']`). Kosz był `disabled` tylko przy locku edycji, więc klik kasował `[]` i ten sam placeholder wracał.
-- **Rozwiązanie**: Wspólne `canRemovePlaceholderRow` — kosz aktywny, gdy wiersz ma treść albo jest więcej niż jeden. Pusty jedyny wiersz: `disabled` + stonowana ikona + `aria-label` „Brak treści do usunięcia”.
-- **Reguła**: Jeśli UI dokłada pusty wiersz-placeholder, przycisk usuwania musi zależeć od treści, nie od samego istnienia wiersza. `data-testid` dawaj jako pierwszy atrybut — skaner testid kończy tag na `=>` w `onClick`. [egzekwowane: src/components/shared/enrichment/__tests__/canRemovePlaceholderRow.test.ts]
 
 <!-- Nowe wpisy dodawaj na górze sekcji Wpisy, nie tutaj. -->

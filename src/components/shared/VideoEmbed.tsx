@@ -35,10 +35,12 @@ export function VideoEmbed({ url, title, className, onTimeChange }: Readonly<Vid
     const iframe = iframeRef.current;
     if (!iframe) return;
 
-    const post = (message: unknown) => iframe.contentWindow?.postMessage(JSON.stringify(message), '*');
+    // YouTube takes JSON strings. Vimeo takes plain objects: a JSON string switches it to its legacy API,
+    // which answers `playProgress`/`seek` instead of `timeupdate`/`seeked`.
+    const postYouTube = (message: unknown) => iframe.contentWindow?.postMessage(JSON.stringify(message), '*');
     const subscribeVimeo = () => {
-      post({ method: 'addEventListener', value: 'timeupdate' });
-      post({ method: 'addEventListener', value: 'seeked' });
+      iframe.contentWindow?.postMessage({ method: 'addEventListener', value: 'timeupdate' }, '*');
+      iframe.contentWindow?.postMessage({ method: 'addEventListener', value: 'seeked' }, '*');
     };
 
     let youtubeAttempts = 0;
@@ -53,24 +55,25 @@ export function VideoEmbed({ url, title, className, onTimeChange }: Readonly<Vid
       youtubeAttempts = 0;
       youtubeTimer = setInterval(() => {
         youtubeAttempts += 1;
-        post({ event: 'listening', id: 1, channel: 'widget' });
+        postYouTube({ event: 'listening', id: 1, channel: 'widget' });
         if (youtubeAttempts >= YOUTUBE_LISTENING_ATTEMPTS) stopYouTubeListening();
       }, YOUTUBE_LISTENING_MS);
     };
 
     const handleMessage = (event: MessageEvent) => {
-      if (event.source !== iframe.contentWindow || typeof event.data !== 'string') return;
+      if (event.source !== iframe.contentWindow) return;
+      // YouTube and Vimeo's `ready` come as JSON strings, Vimeo's answers to object messages as objects.
       let data: {
         event?: string;
         data?: { seconds?: unknown };
         info?: { currentTime?: unknown };
       } | null;
       try {
-        data = JSON.parse(event.data);
+        data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
       } catch {
         return;
       }
-      if (!data) return;
+      if (!data || typeof data !== 'object') return;
 
       if (isYouTube) {
         if (data.event === 'onReady' || data.event === 'initialDelivery' || data.event === 'infoDelivery') {

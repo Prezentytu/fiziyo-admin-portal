@@ -140,6 +140,14 @@ Wpisy przeniesione z `.ai/lessons.md`: starsze niż 30 dni w chwili przeniesieni
 - **Rozwiązanie**: `data-testid` jako pierwszy atrybut; parser pomija `>` wewnątrz `{...}`; regresja w `scripts/check-testid-coverage.test.mjs`.
 - **Reguła**: Guard ma widzieć testid mimo `=>`; trzymaj `data-testid` przed handlerami z `=>`. [egzekwowane: scripts/check-testid-coverage.test.mjs]
 
+### 2026-09-15 - Kosz przy placeholderze to no-op, nie akcja
+
+- **Kategoria**: `UI/UX`
+- **Problem**: W edycji ćwiczenia kosz przy pustych polach „Błąd” / „Jak poprawić” i wskazówkach wyglądał na aktywny, choć nie było treści do usunięcia.
+- **Przyczyna**: Listy enrichment zawsze renderują starterowy pusty wiersz (`items.length ? items : ['']`). Kosz był `disabled` tylko przy locku edycji, więc klik kasował `[]` i ten sam placeholder wracał.
+- **Rozwiązanie**: Wspólne `canRemovePlaceholderRow` — kosz aktywny, gdy wiersz ma treść albo jest więcej niż jeden. Pusty jedyny wiersz: `disabled` + stonowana ikona + `aria-label` „Brak treści do usunięcia”.
+- **Reguła**: Jeśli UI dokłada pusty wiersz-placeholder, przycisk usuwania musi zależeć od treści, nie od samego istnienia wiersza. `data-testid` dawaj jako pierwszy atrybut — skaner testid kończy tag na `=>` w `onClick`. [egzekwowane: src/components/shared/enrichment/__tests__/canRemovePlaceholderRow.test.ts]
+
 ### 2026-09-14 - Hook klasyfikuje każdy segment `&&` osobno
 
 - **Kategoria**: `Build/Tooling`
