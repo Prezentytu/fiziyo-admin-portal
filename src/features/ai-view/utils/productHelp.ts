@@ -47,6 +47,10 @@ const PLAN_REPORT =
 const CREATE_SET_OR_PATIENT =
   /\b(?:uloz\w*|utworz\w*|stworz\w*|przygotuj\w*|dobierz\w*|przypisz\w*|wyslij\w*|daj)\b.*\b(?:zestaw|plan|cwiczeni)|\bdodaj\s+(?:pacjent|nowego\s+pacjent|nowa\s+pacjent|cwiczeni)/;
 
+// Guard przed przechwyceniem pytań o konkretnego pacjenta lub jego plan przez temat nowości produktu.
+const PATIENT_SPECIFIC =
+  /\bu\s+(?!was\b|nas\b|ciebie\b|siebie\b)[a-z]{2,}|\bplan(?:ie|u|em)?\b|\bwizyt\w*|\bpacjent(?:a|ki|ow)?\s+[a-z]{3,}/;
+
 function continuedTopic(text: string, previous?: ProductHelpTopic): ProductHelpTopic | undefined {
   if (previous === 'mobile-news') {
     if (/^(?:pacjent|pacjenta|aplikacja pacjenta)$/.test(text)) return 'patient-news';
@@ -69,8 +73,9 @@ function continuedTopic(text: string, previous?: ProductHelpTopic): ProductHelpT
       return 'connect';
     }
   }
-  if (previous === 'connect' || previous === 'check-assignment') {
-    if (/\b(?:dalej\s+pusto|dalej\s+nie\s+dziala|nadal\s+(?:nie\s+(?:widzi|dziala)|pusto)|zglos\s+(?:to|problem))\b/.test(text)) {
+  if ((previous === 'connect' || previous === 'check-assignment') && !CREATE_SET_OR_PATIENT.test(text)) {
+    // „Zgłoś problem: <opis>” zostaje dla REPORT_COMMAND, żeby nie nadpisać słów użytkownika stałym opisem.
+    if (/\b(?:dalej\s+pusto|dalej\s+nie\s+dziala|nadal\s+(?:nie\s+(?:widzi|dziala)|pusto))\b|\bzglos\s+(?:to|problem)$/.test(text)) {
       return 'report';
     }
   }
@@ -78,7 +83,11 @@ function continuedTopic(text: string, previous?: ProductHelpTopic): ProductHelpT
 
 function helpTopic(text: string): ProductHelpTopic | undefined {
   // 1. Co nowego / release notes (SPEC-071 / S24b: również naturalne parafrazy bez końca linii).
-  if (/\b(?:co nowego|nowosci|nowego w|jakie nowosci|co sie zmienilo|ostatnie zmiany|release not\w*)\b/.test(text)) {
+  // Guard na całym bloku: „co się zmieniło u Anny”, „zmiany w planie Anny”, „aplikacji pacjenta Anny” to pytania o pacjenta.
+  if (
+    /\b(?:co nowego|nowosci|nowego w|jakie nowosci|co sie zmienilo|ostatnie zmiany|release not\w*)\b/.test(text) &&
+    !PATIENT_SPECIFIC.test(text)
+  ) {
     if (/aplikacj.{0,18}pacjent|apce pacjenta/.test(text)) return 'patient-news';
     if (/mobiln|na telefon|aplikacj|apce/.test(text)) {
       return /fizjoterapeut|terapeut/.test(text) ? 'therapist-news' : 'mobile-news';

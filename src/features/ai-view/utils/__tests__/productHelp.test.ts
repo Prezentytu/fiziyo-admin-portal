@@ -54,6 +54,10 @@ describe('product help routing', () => {
     'Jaki poziom bólu zgłosiła Anna w aplikacji?',
     'Przypisz Annie zestaw na kolano, nie ma smartfona',
     'Wyślij plan Annie, nie ma aplikacji',
+    'Co się zmieniło u Anny w aplikacji?',
+    'Co się zmieniło u Anny na telefonie?',
+    'Ostatnie zmiany w planie Anny na telefonie',
+    'Co się zmieniło w aplikacji pacjenta Anny?',
   ])('keeps the existing conversation for %s (no false positive)', (text) =>
     expect(productHelpFor(text)).toBeUndefined()
   );
@@ -78,6 +82,16 @@ describe('product help routing', () => {
     expect(productHelpFor('Niestety nie widzi gabinetu w aplikacji', 'missing-plan')?.topic).toBe('connect');
     expect(productHelpFor('Sprawdziłam przypisanie i dalej pusto na telefonie', 'check-assignment')?.topic).toBe('report');
     expect(productHelpFor('Ma własny gabinet', 'missing-plan')).toBeUndefined();
+  });
+
+  it('keeps the user description and commands after the connect/check-assignment cards', () => {
+    expect(productHelpFor('Zgłoś problem: na Androidzie znika dźwięk', 'connect')?.description).toBe(
+      'na Androidzie znika dźwięk'
+    );
+    expect(productHelpFor('Zgłoś problem', 'connect')?.description).toBe(
+      'Pacjent nie może połączyć aplikacji z gabinetem.'
+    );
+    expect(productHelpFor('Ułóż zestaw na kolano, bo nadal nie działa', 'check-assignment')?.topic).not.toBe('report');
   });
 
   it('prefills only the reported symptom and keeps a bare request empty', () => {
