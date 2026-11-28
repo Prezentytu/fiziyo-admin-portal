@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Check, Lightbulb, Plus } from 'lucide-react';
+import { Check, Lightbulb, Plus, Smartphone } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -17,10 +17,12 @@ import { newExerciseForSet } from '../utils/exerciseIdeas';
 import { isExerciseTopic } from '../utils/threadLocalReply';
 import type { CardProps } from './cardProps';
 import { ChatCard, ChatCardEmpty } from './ChatCard';
+import { ChatPhonePreviewDialog } from './ChatPhonePreviewDialog';
 import { ClarifyChips } from './ClarifyChips';
 import { ExerciseIdeasList } from './ExerciseIdeas';
 import { ExerciseReviewBadge } from './ExerciseReviewBadge';
 import { exerciseClarifyQuestions } from '../utils/clarifyQuestions';
+import { catalogExerciseToPreviewCard } from '../utils/phonePreview';
 
 /** Search tiles: pick what fits and compose a set from it; when nothing fits, ideas for new exercises. */
 export function ExerciseResultsCard(props: CardProps<'ExerciseResults'>) {
@@ -74,8 +76,13 @@ function Results({
   const { patients, appendExchange, markChosen } = useChatActions();
   const patient = spec.patientId ? patients.find((candidate) => candidate.id === spec.patientId) : undefined;
   const [selectedIds, setSelectedIds] = useState<string[] | null>(null);
+  const [previewExercise, setPreviewExercise] = useState<ChatCatalogExercise | null>(null);
   const selected = selectedIds ?? results.map((exercise) => exercise.id);
   const locked = chosen !== undefined;
+  const previewCards = useMemo(
+    () => (previewExercise ? [catalogExerciseToPreviewCard(previewExercise)] : []),
+    [previewExercise]
+  );
 
   const toggle = (exerciseId: string) =>
     setSelectedIds(
@@ -192,7 +199,7 @@ function Results({
         {results.map((exercise) => {
           const isSelected = selected.includes(exercise.id);
           return (
-            <li key={exercise.id}>
+            <li key={exercise.id} className="relative">
               <button
                 type="button"
                 aria-pressed={isSelected}
@@ -200,7 +207,7 @@ function Results({
                 onClick={() => toggle(exercise.id)}
                 data-testid={`${testId}-item-${exercise.id}`}
                 className={cn(
-                  'relative flex h-full w-full min-w-0 flex-col gap-2 rounded-[14px] bg-fill-quaternary p-3.5 text-left ring-tint transition-shadow focus-visible:outline-none focus-visible:ring-2 disabled:cursor-default',
+                  'relative flex h-full w-full min-w-0 flex-col gap-2 rounded-[14px] bg-fill-quaternary p-3.5 pb-10 text-left ring-tint transition-shadow focus-visible:outline-none focus-visible:ring-2 disabled:cursor-default',
                   isSelected && 'ring-2'
                 )}
               >
@@ -219,10 +226,32 @@ function Results({
                   </span>
                 )}
               </button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={`Podgląd jak u pacjenta: ${exercise.name}`}
+                title="Jak zobaczy to pacjent"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setPreviewExercise(exercise);
+                }}
+                className="absolute bottom-2 right-2 h-8 w-8 text-label-secondary hover:text-foreground"
+                data-testid={`${testId}-preview-${exercise.id}-btn`}
+              >
+                <Smartphone className="h-4 w-4" aria-hidden="true" />
+              </Button>
             </li>
           );
         })}
       </ul>
+      <ChatPhonePreviewDialog
+        open={previewExercise !== null}
+        onOpenChange={(open) => {
+          if (!open) setPreviewExercise(null);
+        }}
+        exercises={previewCards}
+      />
       {!locked && (
         <ClarifyChips
           hint="Zaznacz odpowiedzi, trafią gotowe do wiadomości, a dobiorę trafniej. Z wybranych ćwiczeń ułożysz zestaw przyciskiem poniżej."
