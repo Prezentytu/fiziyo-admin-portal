@@ -62,7 +62,7 @@ export function CapabilitiesOverviewCard({ testId }: CardProps<'ProductHelp'>) {
         <div className="rounded-[12px] bg-fill-quaternary p-3">
           <p className="flex items-center gap-1.5 text-[14px] font-semibold text-foreground">
             <ShieldCheck className="h-4 w-4 text-tint" aria-hidden="true" />
-            Czego nie robię sam
+            Czego Asystent nie zrobi bez Ciebie
           </p>
           <p className="mt-1 text-[13px] leading-[19px] text-label-secondary">
             Niczego nie zapisuję ani nie wysyłam bez Twojego kliknięcia. Nie wystawiam faktur, nie umawiam wizyt i nie

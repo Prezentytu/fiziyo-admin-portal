@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@apollo/client/react';
+import { Check, Copy } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { FeedbackDialog } from '@/components/shared/FeedbackDialog';
 import { Button } from '@/components/ui/button';
@@ -27,15 +29,33 @@ import type { CardProps } from './cardProps';
 import { QuickReplies } from './QuickReplies';
 
 type HelpProps = CardProps<'ProductHelp'>;
+interface GuideLink {
+  href: string;
+  label: string;
+}
 interface Guide {
   title: string;
   text: string;
-  link?: { href: string; label: string };
+  link?: GuideLink;
+  secondaryLink?: GuideLink;
+  copyUrl?: { url: string; label: string };
   choices?: readonly string[];
 }
 
 const teamLink = { href: '/organization', label: 'Otwórz Zespół' };
 const patientGuide = { href: 'https://fiziyo.pl/guide', label: 'Otwórz instrukcję dla pacjenta' };
+const sprawniejszyLink = { href: 'https://sprawniejszy.pl/', label: 'Otwórz sprawniejszy.pl' };
+const blogLink = { href: 'https://blog.fiziyo.pl/', label: 'Otwórz blog FiziYo' };
+const courseLink = { href: 'https://blog.fiziyo.pl/kurs/zdrowe-plecy-7-dni/', label: 'Otwórz kurs Zdrowe plecy' };
+
+export const PRODUCT_HELP_EXTERNAL_URLS = [
+  'https://fiziyo.pl/',
+  'https://fiziyo.pl/guide',
+  'https://sprawniejszy.pl/',
+  'https://blog.fiziyo.pl/',
+  'https://blog.fiziyo.pl/kurs/zdrowe-plecy-7-dni/',
+] as const;
+
 const guides = {
   'company-profile': {
     title: 'Profil firmy',
@@ -104,36 +124,110 @@ const guides = {
   },
   blog: {
     title: 'Blog FiziYo',
-    text: 'Na blogu znajdziesz artykuły o ćwiczeniu w domu i regularności. Możesz przekazać pacjentowi link do wybranego materiału.',
-    link: { href: 'https://blog.fiziyo.pl/', label: 'Otwórz blog FiziYo' },
+    text: 'Na blogu znajdziesz 6 artykułów w wersji dla pacjenta i dla fizjoterapeuty (adherencja i regularność, postępy w ćwiczeniach, ból kolana na schodach, sztywny kark, plecy przy biurku, rozgrzewka przed bieganiem) oraz bezpłatny 7-dniowy kurs „Zdrowe plecy”.',
+    link: blogLink,
+    secondaryLink: courseLink,
+    copyUrl: { url: blogLink.href, label: 'Kopiuj link do bloga' },
+  },
+  'blog-course': {
+    title: 'Kurs „Zdrowe plecy” (7 dni) i blog FiziYo',
+    text: 'Na blog.fiziyo.pl jest bezpłatny 7-dniowy kurs „Zdrowe plecy” z interaktywnym playerem w przeglądarce oraz 6 dwuperspektywowych artykułów (wersja dla pacjenta i /dla-fizjoterapeuty/): adherencja i regularność, postępy w ćwiczeniach, ból kolana na schodach, sztywny kark, plecy przy biurku i rozgrzewka przed bieganiem.',
+    link: courseLink,
+    secondaryLink: blogLink,
+    copyUrl: { url: courseLink.href, label: 'Kopiuj link do kursu' },
   },
   website: {
     title: 'Strona FiziYo',
     text: 'Na stronie znajdziesz opis aplikacji, odpowiedzi na pytania gabinetów i formularz kontaktowy.',
     link: { href: 'https://fiziyo.pl/', label: 'Otwórz stronę FiziYo' },
   },
+  sprawniejszy: {
+    title: 'Serwis sprawniejszy.pl (dla pacjenta)',
+    text: 'sprawniejszy.pl to strona FiziYo skierowana bezpośrednio do pacjenta — pokazuje, jak wygląda aplikacja mobilna, jak ją pobrać i jak połączyć konto z gabinetem, aby regularnie ćwiczyć w domu.',
+    link: sprawniejszyLink,
+    copyUrl: { url: sprawniejszyLink.href, label: 'Kopiuj link dla pacjenta' },
+  },
+  'mobile-app-features': {
+    title: 'Możliwości aplikacji mobilnej FiziYo',
+    text: 'Aplikacja pacjenta oferuje: 1) interaktywny player ćwiczeń (fazy ruchu z odliczaniem, wskazówki, grafiki/filmy i dźwięki), 2) zapisywanie wykonania, poziomu bólu, trudności i komentarza dla fizjoterapeuty, 3) przypomnienia o treningu, 4) motywację: punkty zdrowia, poziomy i odznaki, 5) historię ćwiczeń oraz osobny tryb fizjoterapeuty. Aplikacja nie ma obecnie bezpośredniego czatu pacjent–terapeuta ani dodawania własnych filmów przez pacjenta.',
+    link: patientGuide,
+    secondaryLink: sprawniejszyLink,
+  },
+  'trash-recovery': {
+    title: 'Kosz i duplikowanie zestawów',
+    text: 'Usunięte zestawy i ćwiczenia przywrócisz w zakładce Kosz (w menu głównym portalu). Aby zduplikować szablon zestawu, otwórz Zestawy, kliknij menu akcji na karcie zestawu i wybierz „Duplikuj”.',
+    link: { href: '/kosz', label: 'Otwórz Kosz' },
+    secondaryLink: { href: '/exercise-sets', label: 'Otwórz Zestawy' },
+  },
+  'composer-tools': {
+    title: 'Narzędzia paska czatu i filmy YouTube',
+    text: 'Spinacz („Dodaj dokument z zaleceniami”) wczytuje plik lub zdjęcie zaleceń i wyciąga ćwiczenia do szkicu. Mikrofon („Dyktuj”) zamienia mowę po polsku na tekst polecenia. Link z YouTube wkleisz na karcie tworzenia lub edycji ćwiczenia w polu „Film (opcjonalnie)” — z szybkim skrótem „Szukaj na YouTube”.',
+    link: { href: '/exercises', label: 'Otwórz Ćwiczenia' },
+  },
+  'ai-credits': {
+    title: 'Zasady kredytów AI',
+    text: 'Standardowa wiadomość z AI kosztuje 1 kredyt. Pomoc produktowa, skróty, edycja ręczna parametrów, podgląd telefonu i harmonogram kosztują 0 kredytów. Wygenerowanie opisu nowego ćwiczenia kosztuje 4 kredyty, a grafiki AI — 5 kredytów. Po wyczerpaniu puli czat przechodzi na bezpłatny tryb reguł, a limit można zwiększyć w panelu kredytów.',
+    link: { href: '/settings', label: 'Otwórz Ustawienia' },
+  },
+  'patient-access-qr': {
+    title: 'Przekazanie planu pacjentowi (QR, link lub PDF)',
+    text: 'Na karcie pacjenta otwórz okno „Dostęp”: 1) na telefon — pokaż Kod QR albo wyślij link do aplikacji (po założeniu konta pacjent automatycznie połączy się z gabinetem i zobaczy plan); 2) bez smartfona — wybierz „Drukuj Kartę” lub „Pobierz PDF”.',
+    link: { href: '/patients', label: 'Otwórz Pacjentów' },
+  },
   'phone-preview': {
     title: 'Podgląd jak u pacjenta (symulator telefonu)',
-    text: 'Każde ćwiczenie na karcie zestawu, w wynikach wyszukiwania i na karcie pacjenta ma przycisk z ikoną telefonu „Jak u pacjenta” (oraz „Podgląd na telefonie” dla całego zestawu). Otwiera żywy symulator ekranu aplikacji pacjenta z fazami ruchu, odliczaniem, wskazówkami i grafiką — bez zużycia kredytów AI.',
+    text: 'Każde ćwiczenie na karcie zestawu, w wynikach wyszukiwania i na karcie pacjenta ma przycisk z ikoną telefonu „Jak u pacjenta” (oraz „Podgląd na telefonie” dla całego zestawu). Otwiera żywy symulator ekranu aplikacji pacjenta z fazami ruchu, odliczaniem, wskazówkami i grafiką — za 0 kredytów AI.',
   },
 } satisfies Record<Exclude<ProductHelpTopic, 'report' | 'portal-news' | 'referral' | 'capabilities-overview'>, Guide>;
+
+function LinkButton({ link, testId }: { readonly link: GuideLink; readonly testId: string }) {
+  const external = link.href.startsWith('https:');
+  return (
+    <Button asChild variant="outline" size="sm" data-testid={testId}>
+      <Link href={link.href} target={external ? '_blank' : undefined} rel={external ? 'noopener noreferrer' : undefined}>
+        {link.label}
+      </Link>
+    </Button>
+  );
+}
 
 function GuideCard({ guide, spec, testId, messageId, chosen }: HelpProps & { guide: Guide }) {
   const { markChosen, appendExchange } = useChatActions();
   const busy = useChatBusy();
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    if (!guide.copyUrl) return;
+    try {
+      await navigator.clipboard.writeText(guide.copyUrl.url);
+      setCopied(true);
+      toast.success('Skopiowano link do schowka');
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error('Nie udało się skopiować linku');
+    }
+  };
+
   return (
     <ChatCard title={guide.title} testId={testId}>
       <p>{guide.text}</p>
-      {guide.link && (
-        <Button asChild variant="outline" data-testid={`${testId}-link`}>
-          <Link
-            href={guide.link.href}
-            target={guide.link.href.startsWith('https:') ? '_blank' : undefined}
-            rel={guide.link.href.startsWith('https:') ? 'noopener noreferrer' : undefined}
-          >
-            {guide.link.label}
-          </Link>
-        </Button>
+      {(guide.link || guide.secondaryLink || guide.copyUrl) && (
+        <div className="flex flex-wrap gap-2">
+          {guide.link && <LinkButton link={guide.link} testId={`${testId}-link`} />}
+          {guide.secondaryLink && <LinkButton link={guide.secondaryLink} testId={`${testId}-secondary-link`} />}
+          {guide.copyUrl && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => void handleCopy()}
+              data-testid={`${testId}-copy-link-btn`}
+            >
+              {copied ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : <Copy className="h-3.5 w-3.5" aria-hidden="true" />}
+              {copied ? 'Skopiowano' : guide.copyUrl.label}
+            </Button>
+          )}
+        </div>
       )}
       {guide.choices && (
         <QuickReplies

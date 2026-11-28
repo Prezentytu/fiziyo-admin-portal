@@ -61,7 +61,7 @@ export function OnboardingShowcase({ disabled, onSend }: OnboardingShowcaseProps
     const sampleIds = exercises.slice(0, 3).map((exercise) => exercise.id);
     if (sampleIds.length > 0) {
       appendExchange('Wypróbuj na próbce (nic nie zapisuje)', {
-        text: 'To bezpieczny szkic testowy — możesz pozmieniać parametry, podejrzeć ćwiczenia i sprawdzić wydruk PDF. Nic nie trafi do bazy, dopóki sam tego nie zapiszesz.',
+        text: 'To bezpieczny szkic testowy — możesz pozmieniać parametry, podejrzeć ćwiczenia i sprawdzić wydruk PDF. Nic nie trafi do bazy, dopóki tego nie zapiszesz.',
         spec: {
           component: 'SetDraft',
           exerciseIds: sampleIds,
