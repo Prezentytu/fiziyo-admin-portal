@@ -14,7 +14,7 @@ import { QuickReplies } from './QuickReplies';
 /** "Od kiedy i jak często?": one tap picks a plan; the summary card below still lets it change. */
 export function ScheduleCard({ spec, testId, messageId, chosen }: CardProps<'Schedule'>) {
   const { appendExchange, markChosen } = useChatActions();
-  const replies = scheduleReplies(proposedPlan(spec.draft.rhythm));
+  const replies = scheduleReplies(spec.plan ?? proposedPlan(spec.draft.rhythm));
   return (
     <div data-testid={testId}>
       <QuickReplies

@@ -7,7 +7,7 @@ import { pickPatientAnswer } from './pickPatientAnswer';
 import { UNSUPPORTED_SPEC, type ChatViewSpec } from './viewSpec';
 import { newExerciseForSet } from './exerciseIdeas';
 import { thinkingTopic } from './replyMotion';
-import { formatPlanDate, parseSchedulePlan, proposedPlan, sendSummaryText } from './schedulePlan';
+import { formatPlanDate, parseSchedulePlan, proposedPlan, requestedSchedule, sendSummaryText } from './schedulePlan';
 import { scheduleQuestion, type SetDraftPayload } from './setDraft';
 
 /** Marks the open „Komu przypisać?” card answered by a typed message (see PickPatientCard). */
@@ -53,7 +53,7 @@ export function localReplyTo(
     const trimmed = text.trim();
     const parsed = NOT_A_SCHEDULE.test(normalizeSearchText(trimmed))
       ? null
-      : parseSchedulePlan(trimmed, proposedPlan(last.spec.draft.rhythm));
+      : parseSchedulePlan(trimmed, last.spec.plan ?? proposedPlan(last.spec.draft.rhythm));
     if (!parsed) return null;
     return {
       answeredMessageId: last.id,
@@ -294,4 +294,33 @@ export function accountQuestionReply(
       ? `Ostatnia aktywność w aplikacji: ${formatPlanDate(lastActivity)}.`
       : 'W aplikacji nie ma jeszcze aktywności.';
   return { text: `${patient.name} ma konto w aplikacji, więc widzi tam przypisane plany. ${activity}`, spec };
+}
+
+/**
+ * The schedule step opens with the schedule the therapist already typed in this flow („raz w tygodniu,
+ * co poniedziałek”), not with the default: only the messages after the last plan sent count.
+ */
+export function withRequestedSchedule<T extends { text?: string; spec?: ChatCardSpec }>(
+  reply: T,
+  messages: readonly ChatThreadMessage[]
+): T {
+  const spec = reply.spec;
+  if (spec?.component !== 'Schedule' || spec.plan) return reply;
+  const lastSent = messages.findLastIndex(
+    (message) =>
+      message.role === 'assistant' && (message.spec?.component === 'Sent' || message.spec?.component === 'SendSummary')
+  );
+  const userTexts = messages
+    .slice(lastSent + 1)
+    .flatMap((message) => (message.role === 'user' ? [message.text] : []))
+    .filter(
+      (text) => !NOT_A_SCHEDULE.test(normalizeSearchText(text)) || /tyg|dzien|codzien/.test(normalizeSearchText(text))
+    );
+  const requested = requestedSchedule(userTexts, proposedPlan(spec.draft.rhythm));
+  if (!requested) return reply;
+  return {
+    ...reply,
+    text: scheduleQuestion(spec.draft, requested.plan),
+    spec: { ...spec, plan: requested.plan },
+  };
 }

@@ -6,7 +6,15 @@ import {
 } from '@/features/exercise-sets/utils/exerciseDefaults';
 import { format } from 'date-fns';
 
-import { planRhythmLabel, planWeeksLabel, proposedPlan, type PlanRhythm } from './schedulePlan';
+import {
+  planDays,
+  planRhythmLabel,
+  planScheduleLabel,
+  planWeeksLabel,
+  proposedPlan,
+  type PlanRhythm,
+  type SchedulePlan,
+} from './schedulePlan';
 import type { ExerciseMappingSubmitInput } from '@/features/exercise-sets/utils/createSetSubmit';
 import type { ExerciseParameterValues } from '@/components/shared/exercise/ExerciseParametersFields';
 import { calculateEstimatedTime } from '@/utils/exerciseTime';
@@ -171,13 +179,16 @@ export function draftMinutes(items: readonly DraftItem[]): number {
 }
 
 /** The question that opens the schedule step; it proposes `proposedPlan`, in the catalog set's rhythm when it has one. */
-export function scheduleQuestion(draft: Pick<SetDraftPayload, 'items' | 'rhythm'>): string {
-  const plan = proposedPlan(draft.rhythm);
+export function scheduleQuestion(draft: Pick<SetDraftPayload, 'items' | 'rhythm'>, requested?: SchedulePlan): string {
+  const plan = requested ?? proposedPlan(draft.rhythm);
   const minutes = draftMinutes(draft.items);
-  const rhythm = planRhythmLabel(plan.rhythm).toLowerCase();
-  const asInSet = draft.rhythm ? ' jak w zestawie' : '';
-  const perSession = plan.rhythm === 'daily' ? `ok. ${minutes} min dziennie` : `ok. ${minutes} min na trening`;
-  return `Od kiedy i jak często? Proponuję od jutra, przez ${planWeeksLabel(plan.weeks)}, ${rhythm}${asInSet} (${perSession}).`;
+  const rhythm = plan.days?.length ? planScheduleLabel(plan).toLowerCase() : planRhythmLabel(plan.rhythm).toLowerCase();
+  const asInSet = draft.rhythm && !requested ? ' jak w zestawie' : '';
+  const daily = planDays(plan).length === 7;
+  const perSession = daily ? `ok. ${minutes} min dziennie` : `ok. ${minutes} min na trening`;
+  const start = plan.start === 'today' ? 'od dziś' : plan.start === 'monday' ? 'od poniedziałku' : 'od jutra';
+  const lead = requested ? 'Jak w rozmowie:' : 'Proponuję';
+  return `Od kiedy i jak często? ${lead} ${start}, przez ${planWeeksLabel(plan.weeks)}, ${rhythm}${asInSet} (${perSession}).`;
 }
 
 /** The question before a set is saved in the catalog without a patient. */
