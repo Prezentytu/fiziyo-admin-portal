@@ -24,6 +24,7 @@ export const productHelpSchema = z.object({
     'therapist-news',
     'blog',
     'website',
+    'phone-preview',
   ]),
   description: z.string().max(2000).optional(),
 });
@@ -75,6 +76,13 @@ function helpTopic(text: string): ProductHelpTopic | undefined {
     /gdzie|pokaz|otworz|link|co jest|o czym|co znajde/.test(text)
   )
     return 'website';
+  if (
+    /podglad\w*\s+(?:jak\s+u\s+pacjenta|na\s+telefon|aplikacji\s+pacjenta|telefonu)|symulator\w*\s+telefon|jak\s+(?:pacjent\s+zobacz|zobacz\w*\s+(?:to\s+)?pacjent|to\s+wyglada\s+na\s+telefon)/.test(
+      text
+    ) &&
+    !/\b(?:dla\s+planu|planu?\s+[a-z]{3,}|dla\s+pacjenta\s+[a-z]{3,})\b/.test(text)
+  )
+    return 'phone-preview';
   if (
     /instrukcj\w* (?:obslugi |do )?(?:dla pacjent|aplikacj)|przewodnik (?:po aplikacji|dla pacjent)/.test(text) &&
     !/wykonania|wydruk|pdf/.test(text)

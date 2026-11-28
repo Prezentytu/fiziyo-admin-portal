@@ -122,4 +122,17 @@ describe('wyjścia z kroków czatu', () => {
       })
     );
   });
+
+  it('ćwiczenie utworzone z wygenerowaną grafiką informuje o dołączonej grafice zamiast sugerować dodanie zdjęcia (D6)', () => {
+    render(
+      <ExerciseCreatedCard
+        spec={{ component: 'ExerciseCreated', exerciseId: 'e-img', name: 'Mostek na krześle', hasImage: true }}
+        testId="created-img"
+        messageId="m5"
+      />
+    );
+
+    expect(screen.getByTestId('created-img').textContent).toContain('z wygenerowaną grafiką');
+    expect(screen.getByTestId('created-img').textContent).not.toContain('Zdjęcie i szczegóły dodasz');
+  });
 });

@@ -17,10 +17,13 @@ describe('product help routing', () => {
     ['Co nowego w aplikacji fizjoterapeuty?', 'therapist-news'],
     ['Gdzie znajdę instrukcję dla pacjenta?', 'guide'],
     ['Czy macie na blogu materiał o regularności?', 'blog'],
+    ['Czy mogę zobaczyć podgląd jak u pacjenta?', 'phone-preview'],
+    ['Jak pacjent zobaczy to ćwiczenie na telefonie?', 'phone-preview'],
   ])('%s', (text, topic) => expect(productHelpFor(text)?.topic).toBe(topic));
 
   it.each([
     'Co nowego u pacjenta?',
+    'Pokaż podgląd jak u pacjenta dla planu Krystyny',
     'Dodaj pacjenta do gabinetu',
     'Dodaj ćwiczenie do gabinetu',
     'Ułóż zestaw dla pacjenta',

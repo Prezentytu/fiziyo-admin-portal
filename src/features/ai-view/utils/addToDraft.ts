@@ -192,11 +192,13 @@ export function draftWithExercise(back: SetDraftReturn, exerciseId: string): Set
  */
 export function exerciseCreatedReply(
   exercise: { id: string; name: string },
-  options: { patientId?: string; addToSet?: SetDraftReturn; offerForSet?: SetDraftReturn }
+  options: { patientId?: string; addToSet?: SetDraftReturn; offerForSet?: SetDraftReturn; hasImage?: boolean }
 ): { text?: string; spec: ChatCardSpec } {
   if (options.addToSet) {
     return {
-      text: `Ćwiczenie „${exercise.name}” jest w katalogu gabinetu i w zestawie. Zdjęcie i szczegóły dodasz później w katalogu ćwiczeń.`,
+      text: options.hasImage
+        ? `Ćwiczenie „${exercise.name}” jest w katalogu gabinetu (z wygenerowaną grafiką) i w zestawie. Szczegóły i film możesz edytować w katalogu ćwiczeń.`
+        : `Ćwiczenie „${exercise.name}” jest w katalogu gabinetu i w zestawie. Zdjęcie i szczegóły dodasz później w katalogu ćwiczeń.`,
       spec: draftWithExercise(options.addToSet, exercise.id),
     };
   }
@@ -207,6 +209,7 @@ export function exerciseCreatedReply(
       name: exercise.name,
       ...(options.offerForSet ? { addToSet: options.offerForSet } : {}),
       ...(options.patientId ? { patientId: options.patientId } : {}),
+      ...(options.hasImage ? { hasImage: true } : {}),
     },
   };
 }
