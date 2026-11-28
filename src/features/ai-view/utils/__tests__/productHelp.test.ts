@@ -36,6 +36,10 @@ describe('product help routing', () => {
     ['Jak przekazać plan pacjentowi bez konta i bez smartfona — kod QR czy PDF?', 'patient-access-qr'], // S21b
     ['Czy mogę zobaczyć podgląd jak u pacjenta?', 'phone-preview'], // S37a
     ['Jak pacjent zobaczy to ćwiczenie na telefonie?', 'phone-preview'],
+    // SPEC-073 / S01
+    ['Cześć, dopiero zaczynam z FiziYo — co dokładnie możesz mi tu pomóc zrobić?', 'capabilities-overview'],
+    ['Co potrafisz?', 'capabilities-overview'],
+    ['Od czego zacząć?', 'capabilities-overview'],
   ])('%s → %s', (text, topic) => expect(productHelpFor(text)?.topic).toBe(topic));
 
   it.each([
@@ -58,6 +62,10 @@ describe('product help routing', () => {
     'Co się zmieniło u Anny na telefonie?',
     'Ostatnie zmiany w planie Anny na telefonie',
     'Co się zmieniło w aplikacji pacjenta Anny?',
+    // SPEC-073 / S01: pytania merytoryczne zaczynające się jak pytanie o możliwości
+    'Od czego zacząć ćwiczenia z pacjentem po rekonstrukcji ACL?',
+    'Co możesz zrobić z tym zestawem?',
+    'W czym mi możesz pomóc przy pacjentce po mastektomii?',
   ])('keeps the existing conversation for %s (no false positive)', (text) =>
     expect(productHelpFor(text)).toBeUndefined()
   );

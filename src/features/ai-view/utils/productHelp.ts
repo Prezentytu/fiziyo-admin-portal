@@ -31,6 +31,7 @@ export const productHelpSchema = z.object({
     'ai-credits',
     'patient-access-qr',
     'phone-preview',
+    'capabilities-overview',
   ]),
   description: z.string().max(2000).optional(),
 });
@@ -50,6 +51,10 @@ const CREATE_SET_OR_PATIENT =
 // Guard przed przechwyceniem pytań o konkretnego pacjenta lub jego plan przez temat nowości produktu.
 const PATIENT_SPECIFIC =
   /\bu\s+(?!was\b|nas\b|ciebie\b|siebie\b)[a-z]{2,}|\bplan(?:ie|u|em)?\b|\bwizyt\w*|\bpacjent(?:a|ki|ow)?\s+[a-z]{3,}/;
+
+// SPEC-073 / S01: cała wiadomość to pytanie o możliwości (opcjonalnie z krótkim powitaniem), bez treści merytorycznej.
+const CAPABILITIES_QUESTION =
+  /^(?:(?:czesc|hej|witaj|witam|dzien\s+dobry)[\s,.!—–-]+)?(?:(?:dopiero\s+)?zaczynam(?:\s+z\s+(?:fiziyo|asystentem|fizjoasystentem))?[\s,.!—–-]+)?(?:co\s+(?:dokladnie\s+)?(?:potrafisz|umiesz|mozesz)(?:\s+mi)?(?:\s+tu)?(?:\s+pomoc)?(?:\s+zrobic)?|w\s+czym\s+(?:mi\s+)?(?:mozesz\s+)?(?:mi\s+)?pomoc|od\s+czego\s+(?:mam\s+)?zaczac|jak\s+(?:uzywac|korzystac\s+z|dziala)\s+(?:asystent\w*|fizjoasystent\w*|czat\w*))(?:\s+(?:w|z)\s+(?:fiziyo|portalu|portalem|czacie|czatem|asystentem|fizjoasystentem))?$/;
 
 function continuedTopic(text: string, previous?: ProductHelpTopic): ProductHelpTopic | undefined {
   if (previous === 'mobile-news') {
@@ -82,6 +87,11 @@ function continuedTopic(text: string, previous?: ProductHelpTopic): ProductHelpT
 }
 
 function helpTopic(text: string): ProductHelpTopic | undefined {
+  // 0. SPEC-073 / S01: pytania o możliwości asystenta i pierwszy kontakt — karta przeglądu za 0 kredytów.
+  // Zakotwiczone do całej wiadomości: „Od czego zacząć ćwiczenia po ACL?” czy „Co możesz zrobić z tym zestawem?”
+  // to pytania merytoryczne i zostają dla Asystenta.
+  if (CAPABILITIES_QUESTION.test(text)) return 'capabilities-overview';
+
   // 1. Co nowego / release notes (SPEC-071 / S24b: również naturalne parafrazy bez końca linii).
   // Guard na całym bloku: „co się zmieniło u Anny”, „zmiany w planie Anny”, „aplikacji pacjenta Anny” to pytania o pacjenta.
   if (

@@ -32,6 +32,7 @@ import { FloatingMark } from './FloatingMark';
 import { useChatSession } from './ChatSessionContext';
 import { useChatShellControls } from './ChatShellControls';
 import { ChatSpecRenderer } from './catalog/ChatSpecRenderer';
+import { OnboardingShowcase } from './catalog/OnboardingShowcase';
 import { AiCreditsRequestControl } from '@/features/ai-credits/AiCreditsRequestControl';
 import { PatientContextPanel } from './PatientContextPanel';
 import { PatientOtherTherapistNotice } from '@/features/patients/PatientOtherTherapistNotice';
@@ -399,6 +400,7 @@ function ChatHome({
             </ChoiceChip>
           )}
         </div>
+        <OnboardingShowcase disabled={!isReady || isBusy} onSend={onSend} />
         <TodayAgenda />
       </div>
     </div>

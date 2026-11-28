@@ -24,6 +24,7 @@ import { SUPPORT_EMAIL } from '@/lib/support';
 import { useChatActions, useChatBusy } from '../ChatSessionContext';
 import { productHelpFor, type ProductHelpTopic } from '../utils/productHelp';
 import { ChatCard } from './ChatCard';
+import { CapabilitiesOverviewCard } from './CapabilitiesOverviewCard';
 import type { CardProps } from './cardProps';
 import { QuickReplies } from './QuickReplies';
 
@@ -177,7 +178,7 @@ const guides = {
     title: 'Podgląd jak u pacjenta (symulator telefonu)',
     text: 'Każde ćwiczenie na karcie zestawu, w wynikach wyszukiwania i na karcie pacjenta ma przycisk z ikoną telefonu „Jak u pacjenta” (oraz „Podgląd na telefonie” dla całego zestawu). Otwiera żywy symulator ekranu aplikacji pacjenta z fazami ruchu, odliczaniem, wskazówkami i grafiką — za 0 kredytów AI.',
   },
-} satisfies Record<Exclude<ProductHelpTopic, 'report' | 'portal-news' | 'referral'>, Guide>;
+} satisfies Record<Exclude<ProductHelpTopic, 'report' | 'portal-news' | 'referral' | 'capabilities-overview'>, Guide>;
 
 function LinkButton({ link, testId }: { readonly link: GuideLink; readonly testId: string }) {
   const external = link.href.startsWith('https:');
@@ -332,6 +333,8 @@ function ReportCard({ spec, chosen, testId, messageId }: HelpProps) {
 
 export function ProductHelpCard(props: HelpProps) {
   switch (props.spec.topic) {
+    case 'capabilities-overview':
+      return <CapabilitiesOverviewCard {...props} />;
     case 'report':
       return <ReportCard {...props} />;
     case 'portal-news':
