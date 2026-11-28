@@ -6,12 +6,14 @@ export interface ChatShellControls {
   isSidebarCollapsed: boolean;
   toggleSidebar: () => void;
   openMobileSidebar: () => void;
+  restartTour: () => void;
 }
 
 const NOOP_CONTROLS: ChatShellControls = {
   isSidebarCollapsed: false,
   toggleSidebar: () => undefined,
   openMobileSidebar: () => undefined,
+  restartTour: () => undefined,
 };
 
 export const ChatShellControlsContext = createContext<ChatShellControls>(NOOP_CONTROLS);

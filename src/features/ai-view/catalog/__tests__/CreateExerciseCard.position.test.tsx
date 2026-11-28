@@ -59,7 +59,7 @@ describe('karta nowego ćwiczenia: inna pozycja wyjściowa', () => {
     create.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: 'saved-id', name: SPEC.name });
     const draft = { exerciseIds: ['old-id'] };
     render(<CreateExerciseCard spec={{ ...SPEC, offerForSet: draft }} testId="card" messageId="m1" />);
-    fireEvent.click(screen.getByRole('button', { name: 'Uzupełnię sam' }));
+    fireEvent.click(screen.getByTestId('card-manual-btn'));
     const save = screen.getByRole('button', { name: 'Utwórz ćwiczenie' });
     fireEvent.click(save);
     await waitFor(() => expect(create).toHaveBeenCalledTimes(1));

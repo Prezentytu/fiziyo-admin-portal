@@ -37,7 +37,12 @@ export function ChatShell({
   return (
     <ChatSessionProvider>
       <ChatShellControlsContext.Provider
-        value={{ isSidebarCollapsed: collapsed, toggleSidebar: toggleCollapsed, openMobileSidebar: toggleMobile }}
+        value={{
+          isSidebarCollapsed: collapsed,
+          toggleSidebar: toggleCollapsed,
+          openMobileSidebar: toggleMobile,
+          restartTour: tour.restartTour,
+        }}
       >
         <div ref={scopeRef} className="flex h-dvh bg-grouped">
           <ChatSidebar

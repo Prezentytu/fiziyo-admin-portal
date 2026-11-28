@@ -37,6 +37,7 @@ import { useChatShellControls } from './ChatShellControls';
 import { ChatSpecRenderer } from './catalog/ChatSpecRenderer';
 import { ChatRatingToast } from './catalog/ChatRatingToast';
 import { FeedbackDialog } from '@/components/shared/FeedbackDialog';
+import { OnboardingShowcase } from './catalog/OnboardingShowcase';
 import { AiCreditsRequestControl } from '@/features/ai-credits/AiCreditsRequestControl';
 import {
   buildFeedbackEscalation,
@@ -588,6 +589,7 @@ function ChatHome({
             </ChoiceChip>
           )}
         </div>
+        <OnboardingShowcase disabled={!isReady || isBusy} onSend={onSend} />
         <TodayAgenda />
       </div>
     </div>
