@@ -92,7 +92,10 @@ function getEnvironment(): string {
 /**
  * Tworzy obiekt metadanych feedbacku
  */
-export function createFeedbackMetadata(screenName?: string): FeedbackMetadata {
+export function createFeedbackMetadata(
+  screenName?: string,
+  extra?: { source?: string; capabilityCode?: string }
+): FeedbackMetadata {
   const browser = getBrowserInfo();
 
   return {
@@ -104,6 +107,8 @@ export function createFeedbackMetadata(screenName?: string): FeedbackMetadata {
     screenName,
     url: typeof globalThis.window !== 'undefined' ? globalThis.location.href : undefined,
     environment: getEnvironment(),
+    ...(extra?.source ? { source: extra.source } : {}),
+    ...(extra?.capabilityCode ? { capabilityCode: extra.capabilityCode } : {}),
   };
 }
 
@@ -166,6 +171,8 @@ export async function sendFeedbackToDiscord(feedback: FeedbackData): Promise<Fee
         : undefined,
       userRole: feedback.user.role,
       organizationId: feedback.user.organizationId,
+      ...(feedback.metadata.source ? { source: feedback.metadata.source } : {}),
+      ...(feedback.metadata.capabilityCode ? { capabilityCode: feedback.metadata.capabilityCode } : {}),
       images: imagesBase64,
     };
 

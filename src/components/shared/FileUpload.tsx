@@ -5,6 +5,7 @@ import NextImage from 'next/image';
 import { Upload, X, Image, Film, FileIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { polishPlural } from '@/utils/polishPlural';
 
 interface FileUploadProps {
   accept?: string;
@@ -134,7 +135,7 @@ export function FileUpload({
         <Upload className="mb-2 h-8 w-8 text-muted-foreground" />
         <p className="mb-1 text-sm font-medium">Przeciągnij pliki lub kliknij, aby wybrać</p>
         <p className="text-xs text-muted-foreground">
-          Maksymalnie {maxFiles} plików, do {maxSizeMB}MB każdy
+          Maksymalnie {maxFiles} {polishPlural(maxFiles, 'plik', 'pliki', 'plików')}, do {maxSizeMB}MB każdy
         </p>
       </div>
 

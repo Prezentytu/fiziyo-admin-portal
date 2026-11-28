@@ -52,6 +52,8 @@ export interface FeedbackMetadata {
   screenName?: string;
   url?: string;
   environment?: string;
+  source?: string;
+  capabilityCode?: string;
 }
 
 /**

@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { productHelpSchema } from './productHelp';
 import { isCardComponent, type ChatCardSpec } from './chatCards';
 import type { DispatchFailure } from './resolveReply';
-import type { ChatNotice } from './viewSpec';
+import { MISSING_CAPABILITY_SCHEMA, type ChatNotice, type MissingCapability } from './viewSpec';
 import { PATIENT_OTHER_THERAPIST_NOTICE } from '@/features/patients/utils/patientCareAccess';
 
 export type ChatThreadMessage =
@@ -19,6 +19,8 @@ export type ChatThreadMessage =
       fallbackReason?: DispatchFailure;
       /** The text is a server refusal (patient led by another therapist), rendered as a notice. */
       notice?: ChatNotice;
+      /** SPEC-072: missing FiziYo capability rendered as a 1-click feature-request CTA below the reply. */
+      missingCapability?: MissingCapability;
       /** Quick reply the therapist picked; the other replies under this message are spent. */
       chosen?: string;
       createdAt: number;
@@ -60,6 +62,7 @@ const messageSchema = z.discriminatedUnion('role', [
     creditsUsed: z.number(),
     fallbackReason: z.enum(['unavailable', 'insufficient_credits', 'unauthorized']).optional(),
     notice: z.literal(PATIENT_OTHER_THERAPIST_NOTICE).optional().catch(undefined),
+    missingCapability: MISSING_CAPABILITY_SCHEMA.optional().catch(undefined),
     chosen: z.string().optional(),
     createdAt: z.number(),
   }),

@@ -35,6 +35,8 @@ interface FeedbackDialogProps {
   onClose: () => void;
   screenName?: string;
   initialDescription?: string;
+  initialType?: FeedbackType;
+  capabilityCode?: string;
   onSent?: () => void;
 }
 
@@ -51,13 +53,21 @@ const MAX_IMAGE_SIZE_MB = 5;
 // COMPONENT
 // ============================================================================
 
-export function FeedbackDialog({ isOpen, onClose, screenName, initialDescription, onSent }: FeedbackDialogProps) {
+export function FeedbackDialog({
+  isOpen,
+  onClose,
+  screenName,
+  initialDescription,
+  initialType = 'bug',
+  capabilityCode,
+  onSent,
+}: FeedbackDialogProps) {
   // === HOOKS ===
   const { user } = useUser();
   const pathname = usePathname();
 
   // === STATE ===
-  const [feedbackType, setFeedbackType] = useState<FeedbackType>('bug');
+  const [feedbackType, setFeedbackType] = useState<FeedbackType>(initialType);
   const [description, setDescription] = useState(() => (initialDescription ?? '').slice(0, MAX_DESCRIPTION_LENGTH));
   const [files, setFiles] = useState<File[]>([]);
   const [isSending, setIsSending] = useState(false);
@@ -77,10 +87,10 @@ export function FeedbackDialog({ isOpen, onClose, screenName, initialDescription
   // === HANDLERS ===
 
   const resetForm = useCallback(() => {
-    setFeedbackType('bug');
+    setFeedbackType(initialType);
     setDescription('');
     setFiles([]);
-  }, []);
+  }, [initialType]);
 
   const handleClose = useCallback(() => {
     if (isSending) return;
@@ -130,7 +140,10 @@ export function FeedbackDialog({ isOpen, onClose, screenName, initialDescription
           firstName: user.firstName || undefined,
           lastName: user.lastName || undefined,
         },
-        metadata: createFeedbackMetadata(currentScreen),
+        metadata: createFeedbackMetadata(
+          currentScreen,
+          capabilityCode ? { source: 'chat_missing_capability', capabilityCode } : undefined
+        ),
       };
 
       const result = await sendFeedbackToDiscord(feedbackData);
@@ -154,7 +167,7 @@ export function FeedbackDialog({ isOpen, onClose, screenName, initialDescription
     } finally {
       setIsSending(false);
     }
-  }, [canSubmit, user, feedbackType, description, images, screenName, pathname, handleClose, onSent]);
+  }, [canSubmit, user, feedbackType, description, images, screenName, pathname, capabilityCode, handleClose, onSent]);
 
   // === RENDER ===
 

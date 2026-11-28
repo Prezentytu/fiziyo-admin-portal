@@ -85,6 +85,19 @@ export interface ClarifyChoice {
   patientId?: string;
 }
 
+/** SPEC-072: brakująca funkcja zadeklarowana przez backend (zawsze bez PII), pod CTA „Zgłoś potrzebę”. */
+export interface MissingCapability {
+  code: string;
+  label: string;
+  prefill: string;
+}
+
+export const MISSING_CAPABILITY_SCHEMA = z.object({
+  code: z.string().trim().min(1).max(64),
+  label: z.string().trim().min(1).max(160),
+  prefill: z.string().trim().min(1).max(600),
+});
+
 export type ChatViewComponent = ChatViewSpec['component'];
 
 const optionalText = z
@@ -114,6 +127,7 @@ const RAW_SPEC_SCHEMA = z.object({
     .nullish()
     .catch(null),
   note: optionalText,
+  missingCapability: MISSING_CAPABILITY_SCHEMA.nullish().catch(undefined),
 });
 
 const routeSchema = z.enum(NAVIGATE_ROUTE_KEYS);
@@ -221,6 +235,15 @@ export interface DispatchReply {
   /** Plain text under which the card renders; React escapes it, so model text never becomes markup. */
   text?: string;
   spec?: ChatViewSpec;
+  /** SPEC-072: brakująca funkcja FiziYo — otwiera CTA „+1 Potrzebuję tego” / FeedbackDialog (Sugestia). */
+  missingCapability?: MissingCapability;
+}
+
+function parseMissingCapability(rawSpec: unknown): MissingCapability | undefined {
+  if (typeof rawSpec !== 'object' || rawSpec === null) return undefined;
+  const candidate = (rawSpec as { missingCapability?: unknown }).missingCapability;
+  const parsed = MISSING_CAPABILITY_SCHEMA.safeParse(candidate);
+  return parsed.success ? parsed.data : undefined;
 }
 
 /**
@@ -229,6 +252,7 @@ export interface DispatchReply {
  */
 export function parseDispatchReply(rawSpec: unknown, rawText: unknown): DispatchReply {
   const text = typeof rawText === 'string' ? rawText.trim().slice(0, MAX_REPLY_LENGTH) || undefined : undefined;
+  const missingCapability = parseMissingCapability(rawSpec);
   const component =
     typeof rawSpec === 'object' && rawSpec !== null ? (rawSpec as { component?: unknown }).component : undefined;
   if (component === 'Message') {
@@ -236,7 +260,9 @@ export function parseDispatchReply(rawSpec: unknown, rawText: unknown): Dispatch
     if (isOtherTherapist) {
       return { text: text ?? PATIENT_UNDER_OTHER_THERAPIST_MESSAGE, notice: PATIENT_OTHER_THERAPIST_NOTICE };
     }
-    return text ? { text } : { spec: UNSUPPORTED_SPEC };
+    return text
+      ? { text, ...(missingCapability ? { missingCapability } : {}) }
+      : { spec: UNSUPPORTED_SPEC, ...(missingCapability ? { missingCapability } : {}) };
   }
-  return { text, spec: toChatViewSpec(rawSpec) };
+  return { text, spec: toChatViewSpec(rawSpec), ...(missingCapability ? { missingCapability } : {}) };
 }

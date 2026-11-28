@@ -177,7 +177,7 @@ const guides = {
     title: 'Podgląd jak u pacjenta (symulator telefonu)',
     text: 'Każde ćwiczenie na karcie zestawu, w wynikach wyszukiwania i na karcie pacjenta ma przycisk z ikoną telefonu „Jak u pacjenta” (oraz „Podgląd na telefonie” dla całego zestawu). Otwiera żywy symulator ekranu aplikacji pacjenta z fazami ruchu, odliczaniem, wskazówkami i grafiką — za 0 kredytów AI.',
   },
-} satisfies Record<Exclude<ProductHelpTopic, 'report' | 'portal-news' | 'referral'>, Guide>;
+} satisfies Record<Exclude<ProductHelpTopic, 'report' | 'feature-request' | 'portal-news' | 'referral'>, Guide>;
 
 function LinkButton({ link, testId }: { readonly link: GuideLink; readonly testId: string }) {
   const external = link.href.startsWith('https:');
@@ -303,23 +303,30 @@ function PortalNews({ testId }: HelpProps) {
 function ReportCard({ spec, chosen, testId, messageId }: HelpProps) {
   const [open, setOpen] = useState(false);
   const { markChosen } = useChatActions();
+  const isSuggestion = spec.topic === 'feature-request';
   return (
-    <ChatCard title="Zgłoszenie błędu" testId={testId}>
+    <ChatCard title={isSuggestion ? 'Zgłoszenie potrzeby funkcji' : 'Zgłoszenie błędu'} testId={testId}>
       {chosen === 'sent' ? (
-        <p>Zgłoszenie zostało wysłane do zespołu FiziYo.</p>
+        <p>{isSuggestion ? 'Potrzeba funkcji została wysłana do zespołu FiziYo.' : 'Zgłoszenie zostało wysłane do zespołu FiziYo.'}</p>
       ) : isFeedbackEnabled() ? (
         <>
-          <p>Sprawdź opis i dopisz, na jakim urządzeniu występuje problem. Pomiń dane pacjenta.</p>
+          <p>
+            {isSuggestion
+              ? 'Opisz krótko, jakiej funkcji potrzebujesz w swoim gabinecie. Pomiń dane pacjenta.'
+              : 'Sprawdź opis i dopisz, na jakim urządzeniu występuje problem. Pomiń dane pacjenta.'}
+          </p>
           <Button data-testid={`${testId}-report-btn`} onClick={() => setOpen(true)}>
-            Otwórz zgłoszenie
+            {isSuggestion ? 'Zgłoś potrzebę funkcji' : 'Otwórz zgłoszenie'}
           </Button>
           {open && (
             <FeedbackDialog
               isOpen
               onClose={() => setOpen(false)}
               onSent={() => markChosen(messageId, 'sent')}
+              initialType={isSuggestion ? 'suggestion' : 'bug'}
               initialDescription={spec.description}
-              screenName="Czat w portalu"
+              capabilityCode={isSuggestion ? 'other_feature' : undefined}
+              screenName={isSuggestion ? 'Czat w portalu (potrzeba funkcji)' : 'Czat w portalu'}
             />
           )}
         </>
@@ -333,6 +340,7 @@ function ReportCard({ spec, chosen, testId, messageId }: HelpProps) {
 export function ProductHelpCard(props: HelpProps) {
   switch (props.spec.topic) {
     case 'report':
+    case 'feature-request':
       return <ReportCard {...props} />;
     case 'portal-news':
       return <PortalNews {...props} />;

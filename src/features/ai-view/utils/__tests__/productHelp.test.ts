@@ -47,6 +47,9 @@ describe('product help routing', () => {
     'Pacjent nie ma planu. Ułóż zestaw na kolano',
     'Czy Anna odebrała zestaw?',
     'Ma własny gabinet',
+    'Zaproponuj pomysły na ćwiczenia na kolano',
+    'Zaproponuj nowy pomysł na zestaw dla pacjenta',
+    'Zaproponuj sugestię ćwiczeń rozciągających',
     'Pokaż podgląd jak u pacjenta dla planu Krystyny',
     'Dodaj pacjenta Jan Kowalski z kręgosłupem',
     'Co się zmieniło u Anny od ostatniej wizyty?',
@@ -97,6 +100,14 @@ describe('product help routing', () => {
   it('prefills only the reported symptom and keeps a bare request empty', () => {
     expect(productHelpFor('Na Androidzie znika dźwięk. Zgłoś błąd.')?.description).toBe('Na Androidzie znika dźwięk');
     expect(productHelpFor('Zgłoś błąd')?.description).toBeUndefined();
+  });
+
+  it('routes explicit feature-request ideas to feature-request topic for 0 credits (SPEC-072)', () => {
+    const withIdea = productHelpFor('Chcę zgłosić potrzebę funkcji: automatyczne przypomnienia SMS dla pacjentów.');
+    expect(withIdea?.topic).toBe('feature-request');
+    expect(withIdea?.description).toContain('automatyczne przypomnienia SMS');
+    expect(productHelpFor('Zgłoś sugestię')?.topic).toBe('feature-request');
+    expect(productHelpFor('Zgłoś sugestię')?.description).toBeUndefined();
   });
 
   it('exposes only verified HTTPS external URLs for ecosystem help cards', () => {
