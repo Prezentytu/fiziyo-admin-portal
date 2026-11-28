@@ -17,6 +17,9 @@ describe('product help routing', () => {
     ['Co nowego w aplikacji fizjoterapeuty?', 'therapist-news'],
     ['Gdzie znajdę instrukcję dla pacjenta?', 'guide'],
     ['Czy macie na blogu materiał o regularności?', 'blog'],
+    ['Cześć, dopiero zaczynam z FiziYo — co dokładnie możesz mi tu pomóc zrobić?', 'capabilities-overview'],
+    ['Co potrafisz?', 'capabilities-overview'],
+    ['Od czego zacząć?', 'capabilities-overview'],
   ])('%s', (text, topic) => expect(productHelpFor(text)?.topic).toBe(topic));
 
   it.each([

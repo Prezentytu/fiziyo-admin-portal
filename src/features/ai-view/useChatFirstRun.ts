@@ -45,13 +45,22 @@ export function useChatFirstRun(enabled: boolean) {
     return () => window.cancelAnimationFrame(frame);
   }, [accountCreatedAt, canStart, finishedOnAccount, sessionCreatedAt, sessionId, tour?.sessionId, userId]);
 
-  const step = canStart && !finishedOnAccount && tour?.sessionId === sessionId ? tour?.step ?? null : null;
+  const [manualOpen, setManualOpen] = useState(false);
+  const step =
+    canStart && (manualOpen || !finishedOnAccount) && tour?.sessionId === sessionId ? (tour?.step ?? null) : null;
 
   const goToStep = (next: ChatTourStep) => {
     if (sessionId) setTour({ sessionId, step: next });
   };
 
+  const restartTour = () => {
+    if (!sessionId) return;
+    setManualOpen(true);
+    setTour({ sessionId, step: 0 });
+  };
+
   const dismiss = () => {
+    setManualOpen(false);
     if (!sessionId || !user) return;
     setTour({ sessionId, step: null });
     try {
@@ -62,5 +71,5 @@ export function useChatFirstRun(enabled: boolean) {
     void user.updateMetadata({ unsafeMetadata: { [COMPLETED_FIELD]: true } }).catch(() => undefined);
   };
 
-  return { step, canManageOrganization, goToStep, dismiss };
+  return { step, canManageOrganization, goToStep, restartTour, dismiss };
 }

@@ -23,6 +23,7 @@ export const productHelpSchema = z.object({
     'therapist-news',
     'blog',
     'website',
+    'capabilities-overview',
   ]),
   description: z.string().max(2000).optional(),
 });
@@ -55,6 +56,14 @@ function continuedTopic(text: string, previous?: ProductHelpTopic): ProductHelpT
 }
 
 function helpTopic(text: string): ProductHelpTopic | undefined {
+  // SPEC-073 / S01: pytania o możliwości asystenta i pierwszy kontakt — karta przeglądu za 0 kredytów.
+  if (
+    /\b(?:co\s+(?:potrafisz|umiesz|dokladnie\s+mozesz|mozesz\s+(?:mi\s+)?(?:tu\s+)?(?:pomoc\s+)?zrobic)|w\s+czym\s+(?:mi\s+)?(?:mozesz\s+)?pomoc|od\s+czego\s+zaczac|jak\s+(?:uzywac|korzystac\s+z|dziala)\s+(?:asystent|fizjoasystent|czat))\b/.test(
+      text
+    ) &&
+    !/\b(?:uloz|utworz|dobierz|dodaj\s+pacjent|przypisz)\b/.test(text)
+  )
+    return 'capabilities-overview';
   if (/\b(?:co nowego|nowosci|nowego w|release not\w*)\b/.test(text)) {
     if (/aplikacj.{0,18}pacjent|apce pacjenta/.test(text)) return 'patient-news';
     if (/mobiln|na telefon|aplikacj|apce/.test(text)) {

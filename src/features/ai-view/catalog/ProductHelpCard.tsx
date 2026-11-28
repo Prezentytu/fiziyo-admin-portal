@@ -22,6 +22,7 @@ import { SUPPORT_EMAIL } from '@/lib/support';
 import { useChatActions, useChatBusy } from '../ChatSessionContext';
 import { productHelpFor, type ProductHelpTopic } from '../utils/productHelp';
 import { ChatCard } from './ChatCard';
+import { CapabilitiesOverviewCard } from './CapabilitiesOverviewCard';
 import type { CardProps } from './cardProps';
 import { QuickReplies } from './QuickReplies';
 
@@ -111,7 +112,7 @@ const guides = {
     text: 'Na stronie znajdziesz opis aplikacji, odpowiedzi na pytania gabinetów i formularz kontaktowy.',
     link: { href: 'https://fiziyo.pl/', label: 'Otwórz stronę FiziYo' },
   },
-} satisfies Record<Exclude<ProductHelpTopic, 'report' | 'portal-news' | 'referral'>, Guide>;
+} satisfies Record<Exclude<ProductHelpTopic, 'report' | 'portal-news' | 'referral' | 'capabilities-overview'>, Guide>;
 
 function GuideCard({ guide, spec, testId, messageId, chosen }: HelpProps & { guide: Guide }) {
   const { markChosen, appendExchange } = useChatActions();
@@ -234,6 +235,8 @@ function ReportCard({ spec, chosen, testId, messageId }: HelpProps) {
 
 export function ProductHelpCard(props: HelpProps) {
   switch (props.spec.topic) {
+    case 'capabilities-overview':
+      return <CapabilitiesOverviewCard {...props} />;
     case 'report':
       return <ReportCard {...props} />;
     case 'portal-news':
