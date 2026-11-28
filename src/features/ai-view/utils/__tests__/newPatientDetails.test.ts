@@ -87,6 +87,37 @@ describe('parseNewPatientDetails: whatever was given, in any order', () => {
     expect(parseNewPatientDetails('dodaj pacjenta z bólem kolana')).toEqual({});
     expect(parseNewPatientDetails('dodaj nowego pacjenta')).toEqual({});
   });
+
+  // SPEC-068 (W2): wiek bez przecinka, nazwiska obcojęzyczne z nawiasem, biernik w imionach i czyszczenie powodu.
+  it('handles age tokens, foreign names in parentheses, Polish accusative forms and cleans contextLabel', () => {
+    expect(
+      parseNewPatientDetails('dodaj pacjenta Marek Kowalczyk 42l tel 600 100 200, powód: rwa kulszowa')
+    ).toEqual({
+      name: 'Marek Kowalczyk',
+      phone: '600 100 200',
+      contextLabel: 'rwa kulszowa',
+    });
+
+    expect(
+      parseNewPatientDetails(
+        'dodaj pacjentkę Oksana Kovalenko (fryzjerka, ból szyi), tel 601 222 333, bez adresu e-mail'
+      )
+    ).toEqual({
+      name: 'Oksana Kovalenko',
+      phone: '601 222 333',
+      contextLabel: 'fryzjerka, ból szyi',
+    });
+
+    expect(parseNewPatientDetails('dodaj pacjentkę Krystynę Nowakowską, tel 602 333 444')).toEqual({
+      name: 'Krystyna Nowakowska',
+      phone: '602 333 444',
+    });
+
+    expect(parseNewPatientDetails('dodaj pacjentkę Annę Zielińską, anna@example.com')).toEqual({
+      name: 'Anna Zielińska',
+      email: 'anna@example.com',
+    });
+  });
 });
 
 describe('isAddPatientRequest', () => {

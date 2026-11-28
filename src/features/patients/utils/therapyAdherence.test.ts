@@ -106,4 +106,21 @@ describe('calculateTherapyStatus', () => {
 
     expect(result.description).toBe('Pacjent realizuje plan zgodnie z założeniami.');
   });
+
+  // SPEC-068 (W11): plan startujący w przyszłości nie pokazuje zielonego „W NORMIE · Regularna aktywność”.
+  it('marks an active plan starting in the future as scheduled instead of on-track regular activity', () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 2);
+    const day = tomorrow.getDate().toString().padStart(2, '0');
+    const month = (tomorrow.getMonth() + 1).toString().padStart(2, '0');
+
+    const statusResult = calculateTherapyStatus([], [
+      { id: 'assignment-future', status: 'active', startDate: tomorrow.toISOString() },
+    ]);
+
+    expect(statusResult.reason).toBe('scheduled');
+    expect(statusResult.tone).toBe('informative');
+    expect(statusResult.badgeLabel).toBe('ZAPLANOWANY');
+    expect(statusResult.title).toBe(`Zaplanowany (start ${day}.${month})`);
+  });
 });

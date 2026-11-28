@@ -382,7 +382,9 @@ describe('useChatThread', () => {
       sets: [{ id: 's-knee', name: 'Kolano · faza 2', description: '' }],
     };
 
-    it('a picked chip ends the question for that patient, without the model', async () => {
+    // SPEC-068 (K2): po wyborze chipa imiennika przy włączonym AI prośba wraca do AI z patientId,
+    // żeby nie zgubić ograniczeń klinicznych ani pytania o aktywny plan/aktywność.
+    it('a picked chip resumes the command through AI with patientId when AI is enabled', async () => {
       dispatchMock.mockResolvedValueOnce({
         sessionId: 'session-a',
         spec: {
@@ -396,21 +398,33 @@ describe('useChatThread', () => {
         },
         creditsUsed: 0,
       });
+      dispatchMock.mockResolvedValueOnce({
+        sessionId: 'session-a',
+        text: 'Proponuję łagodny zestaw bez przysiadów (ok. 8 min).',
+        spec: { component: 'SetDraft', patientId: 'p-jan-2', exerciseIds: ['e1', 'e2'] },
+        creditsUsed: 1,
+      });
       const { result } = renderHook(() => useChatThread({ useAi: true, context, ready: true, scopeKey: 'org-a' }));
 
-      await act(() => result.current.send('zestaw dla Jana Kowalskiego na kolano'));
+      await act(() => result.current.send('zestaw dla Jana Kowalskiego na kolano bez przysiadów max 10 min'));
       expect(result.current.messages.at(-1)).toMatchObject({
         spec: { options: ['Jan Kowalski · Ból kolana', 'Jan Kowalski · Rwa kulszowa'] },
       });
 
-      act(() => result.current.choosePatient('p-jan-2', 'Jan Kowalski · Rwa kulszowa'));
+      await act(() => result.current.choosePatient('p-jan-2', 'Jan Kowalski · Rwa kulszowa'));
 
-      expect(dispatchMock).toHaveBeenCalledTimes(1);
+      expect(dispatchMock).toHaveBeenCalledTimes(2);
+      expect(dispatchMock).toHaveBeenLastCalledWith(
+        'zestaw dla Jana Kowalskiego na kolano bez przysiadów max 10 min',
+        'session-a',
+        expect.any(AbortSignal),
+        { patientId: 'p-jan-2' }
+      );
       expect(result.current.messages.at(-2)).toMatchObject({ role: 'user', text: 'Jan Kowalski · Rwa kulszowa' });
       expect(result.current.messages.at(-1)).toMatchObject({
-        source: 'local',
-        creditsUsed: 0,
-        spec: { component: 'SetDraft', patientId: 'p-jan-2', setId: 's-knee' },
+        source: 'ai',
+        creditsUsed: 1,
+        spec: { component: 'SetDraft', patientId: 'p-jan-2', exerciseIds: ['e1', 'e2'] },
       });
     });
 
@@ -419,7 +433,7 @@ describe('useChatThread', () => {
 
       await act(() => result.current.send('co u Jana Kowalskiego'));
       expect(result.current.messages.at(-1)).toMatchObject({ spec: { component: 'Clarify' } });
-      act(() => result.current.choosePatient('p-jan-1', 'Jan Kowalski · Ból kolana'));
+      await act(() => result.current.choosePatient('p-jan-1', 'Jan Kowalski · Ból kolana'));
       expect(result.current.messages.at(-1)).toMatchObject({
         spec: { component: 'PatientPeek', patientId: 'p-jan-1' },
       });
@@ -454,7 +468,7 @@ describe('useChatThread', () => {
       await act(() => result.current.send('zestaw na kolano dla Tomasza'));
       expect(result.current.messages.at(-1)).toMatchObject({ text: confirmQuestion.question, spec: confirmQuestion });
 
-      act(() => result.current.choosePatient('p-tomasz', 'Tak, Tomasz'));
+      await act(() => result.current.choosePatient('p-tomasz', 'Tak, Tomasz'));
       expect(dispatchMock).toHaveBeenCalledTimes(1);
       expect(result.current.messages.at(-1)).toMatchObject({ text: 'Zestaw dla Tomasz Nowak.', spec: modelDraft });
 
@@ -504,7 +518,7 @@ describe('useChatThread', () => {
       expect(dispatchMock).toHaveBeenCalledTimes(1);
       expect(result.current.messages.at(-1)).toMatchObject({ source: 'local', spec: { component: 'PickPatient' } });
 
-      act(() => result.current.choosePatient('p-ewa', 'Ewa Lis'));
+      await act(() => result.current.choosePatient('p-ewa', 'Ewa Lis'));
       expect(dispatchMock).toHaveBeenCalledTimes(1);
       expect(result.current.messages.at(-1)).toMatchObject({
         text: 'Proponuję te ćwiczenia z katalogu dla: Ewa Lis. Zamień albo usuń, co nie pasuje.',
@@ -581,7 +595,7 @@ describe('useChatThread', () => {
         text: 'Czy chodzi o Halina Kowalczyk (bez konta)?',
         spec: { component: 'Clarify' },
       });
-      act(() => result.current.choosePatient('p-halina', 'Tak, Halina'));
+      await act(() => result.current.choosePatient('p-halina', 'Tak, Halina'));
 
       expect(dispatchMock).not.toHaveBeenCalled();
       expect(result.current.messages.at(-1)).toMatchObject({ source: 'local', creditsUsed: 0 });

@@ -14,7 +14,8 @@ import type { UserByClerkIdResponse } from '@/types/apollo';
 import { useChatData, type ChatPatient } from './useChatData';
 import { useChatMode } from './useChatMode';
 import { newChatId, useChatThread, type AssistantReply, type ChatThreadMessage } from './useChatThread';
-import type { LiveDraft } from './utils/addToDraft';
+import { openSetDraft, type LiveDraft } from './utils/addToDraft';
+import { proposeDraftName, type SetDraftPayload } from './utils/setDraft';
 import { clearExerciseDrafts } from './catalog/exerciseDraftStore';
 import { conversationPatientId, type ChatCardSpec, type PinnedPatient } from './utils/chatCards';
 import {
@@ -103,6 +104,8 @@ export interface ChatSession {
    * typed in the chat adds to it. Kept in memory only, never in the stored history.
    */
   reportLiveDraft: (messageId: string, live: LiveDraft | null) => void;
+  /** SPEC-068 (W3): otwarty w bieżącym wątku szkic zestawu bez pacjenta, gotowy do podpięcia nowo dodanej osoby. */
+  getOpenUnassignedDraft: () => { messageId: string; draft: SetDraftPayload } | undefined;
 }
 
 /**
@@ -130,6 +133,7 @@ export type ChatActions = Pick<
   | 'showPatient'
   | 'openCreateSet'
   | 'reportLiveDraft'
+  | 'getOpenUnassignedDraft'
 >;
 
 const ChatSessionContext = createContext<ChatSession | null>(null);
@@ -355,9 +359,24 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
   const [createSetRequest, setCreateSetRequest] = useState<CreateSetRequest | null>(null);
 
   const messageCountRef = useRef(0);
+  const messagesSnapshotRef = useRef(messages);
   useEffect(() => {
     messageCountRef.current = messages.length;
+    messagesSnapshotRef.current = messages;
   }, [messages]);
+  const getOpenUnassignedDraft = useCallback((): { messageId: string; draft: SetDraftPayload } | undefined => {
+    const open = openSetDraft(messagesSnapshotRef.current);
+    if (!open) return undefined;
+    const live = liveDraftsRef.current.get(open.messageId);
+    if (!live || live.draft.patientId || !live.draft.items?.length) return undefined;
+    return {
+      messageId: open.messageId,
+      draft: {
+        name: proposeDraftName({ topic: live.draft.note }),
+        items: [...live.draft.items],
+      },
+    };
+  }, []);
   const showPatient = useCallback((patientId: string) => {
     setPinnedPatient({ patientId, messageCount: messageCountRef.current });
     setContextOpen(true);
@@ -368,8 +387,12 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
     [patients, therapistId]
   );
   const title = conversations.find((conversation) => conversation.id === activeConversationId)?.title ?? 'Nowa rozmowa';
-  const { send, stop: stopReply, appendAssistant, appendExchange, choosePatient, runTask, markChosen } = thread;
+  const { send, stop: stopReply, appendAssistant, appendExchange, choosePatient: chooseThreadPatient, runTask, markChosen } = thread;
   const { continueForPatient: continueThread, restoreDraft } = thread;
+  const choosePatient = useCallback(
+    (patientId: string, label: string) => void chooseThreadPatient(patientId, label),
+    [chooseThreadPatient]
+  );
   const continueForPatient = useCallback(
     (patientId: string, name: string, command: string) => void continueThread(patientId, name, command),
     [continueThread]
@@ -402,6 +425,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       showPatient,
       openCreateSet,
       reportLiveDraft,
+      getOpenUnassignedDraft,
     }),
     [
       organizationId,
@@ -423,6 +447,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       showPatient,
       openCreateSet,
       reportLiveDraft,
+      getOpenUnassignedDraft,
     ]
   );
   const setUseAi = useCallback((useAi: boolean) => update({ useAi }), [update]);
@@ -469,6 +494,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       showPatient,
       openCreateSet,
       reportLiveDraft,
+      getOpenUnassignedDraft,
     }),
     [
       organizationId,
@@ -511,6 +537,7 @@ export function ChatSessionProvider({ children }: { readonly children: ReactNode
       showPatient,
       openCreateSet,
       reportLiveDraft,
+      getOpenUnassignedDraft,
     ]
   );
 

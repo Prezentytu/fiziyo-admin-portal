@@ -165,4 +165,67 @@ describe('seedDraftItems', () => {
     });
     expect(seed?.items.map((item) => item.isWarmup)).toEqual([true, undefined]);
   });
+
+  // SPEC-068 (K1): jawna lista exerciseIds zawsze wygrywa z setId/baseSetId i dziedziczy parametry tylko dla zachowanych pozycji.
+  it('prefers explicit exerciseIds over setId/baseSetId and inherits mapping overrides for retained exercises only', () => {
+    const baseSet = {
+      id: 'set-plan',
+      exerciseMappings: [
+        { exerciseId: 'e1', order: 1, sets: 5, reps: 8, restSets: 45 },
+        { exerciseId: 'e2', order: 2, sets: 4, reps: 15, restSets: 30 },
+      ],
+    };
+    const exercises = [
+      { id: 'e1', defaultSets: 3, defaultReps: 10, side: 'none' },
+      { id: 'e2', defaultSets: 2, defaultReps: 12, side: 'none' },
+      { id: 'e3', defaultSets: 3, defaultReps: 6, side: 'none' },
+    ];
+
+    const seed = seedDraftItems({
+      setId: 'set-plan',
+      baseSetId: 'set-plan',
+      exerciseIds: ['e2', 'e3'],
+      sets: [baseSet],
+      setsReady: true,
+      exercises,
+      exercisesReady: true,
+      missingSettled: true,
+    });
+
+    expect(seed?.missingSet).toBe(false);
+    expect(seed?.items.map((item) => item.exerciseId)).toEqual(['e2', 'e3']);
+    // e2 dziedziczy parametry planu bazowego, e3 bierze domyślne z katalogu, a e1 nie wraca.
+    expect(seed?.items[0]).toMatchObject({ exerciseId: 'e2', sets: 4, reps: 15, restSets: 30 });
+    expect(seed?.items[1]).toMatchObject({ exerciseId: 'e3', sets: 3, reps: 6 });
+  });
+
+  // SPEC-068 (K5): ponowne wczytanie planu z setId używa osadzonego mapping.exercise (side/type), nie domyślnego 'both'.
+  it('uses embedded mapping.exercise side and type on setId reload instead of doubling duration via default both', () => {
+    const planSet = {
+      id: 'set-reload',
+      exerciseMappings: [
+        {
+          exerciseId: 'e-not-on-page-1',
+          order: 1,
+          sets: 3,
+          reps: 10,
+          restSets: 30,
+          exercise: { id: 'e-not-on-page-1', side: 'none', type: 'REPS', defaultSets: 3, defaultReps: 10 },
+        },
+      ],
+    };
+
+    const seed = seedDraftItems({
+      setId: 'set-reload',
+      exerciseIds: [],
+      sets: [planSet],
+      setsReady: true,
+      exercises: [],
+      exercisesReady: true,
+    });
+
+    expect(seed?.items).toHaveLength(1);
+    expect(seed?.items[0]?.side).toBe('none');
+    expect(seed?.items[0]?.exerciseType).toBe('REPS');
+  });
 });

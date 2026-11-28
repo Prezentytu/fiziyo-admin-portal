@@ -56,7 +56,7 @@ function parseOverrides(json?: string | null): Record<string, ExerciseOverrideFi
   }
 }
 
-function isCurrent(status?: string | null): boolean {
+export function isCurrentAssignmentStatus(status?: string | null): boolean {
   const normalized = status?.trim().toLowerCase().replace('-', '_');
   return !normalized || CURRENT_STATUSES.has(normalized);
 }
@@ -64,7 +64,7 @@ function isCurrent(status?: string | null): boolean {
 /** Current plans with a set, newest first. */
 function currentAssignments(assignments: readonly PlanAssignmentSource[]): PlanAssignmentSource[] {
   return assignments
-    .filter((assignment) => assignment.exerciseSet && isCurrent(assignment.status))
+    .filter((assignment) => assignment.exerciseSet && isCurrentAssignmentStatus(assignment.status))
     .toSorted((a, b) => (b.assignedAt ?? '').localeCompare(a.assignedAt ?? ''));
 }
 

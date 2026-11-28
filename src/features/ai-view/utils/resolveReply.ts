@@ -42,7 +42,12 @@ export interface DispatchResult {
   notice?: ChatNotice;
 }
 
-export type Dispatcher = (message: string, sessionId?: string, signal?: AbortSignal) => Promise<DispatchResult>;
+export type Dispatcher = (
+  message: string,
+  sessionId?: string,
+  signal?: AbortSignal,
+  options?: { clientMessageId?: string; patientId?: string }
+) => Promise<DispatchResult>;
 
 export interface ResolvedReply {
   text: string;
@@ -288,6 +293,8 @@ export async function resolveForPatient(
   options: ForPatientOptions & {
     /** The patient's name as the list has it: it goes into the message, so the model knows whom the command is for. */
     patientName?: string;
+    /** SPEC-068 (K2): wybór imiennika po ID — przekazuje `patientId` do backendu i nie dokleja drugi raz nazwiska. */
+    disambiguatePatient?: boolean;
   }
 ): Promise<ResolvedReply> {
   const rules = (): ResolvedReply => {
@@ -296,11 +303,9 @@ export async function resolveForPatient(
   };
   if (!options.useAi) return rules();
   try {
-    const result = await options.dispatch(
-      commandNamingPatient(command, options.patientName),
-      options.sessionId,
-      options.signal
-    );
+    const result = options.disambiguatePatient
+      ? await options.dispatch(command, options.sessionId, options.signal, { patientId })
+      : await options.dispatch(commandNamingPatient(command, options.patientName), options.sessionId, options.signal);
     const spec = bindPatient(result.spec, patientId);
     const session = { sessionId: result.sessionId, creditsUsed: result.creditsUsed };
     if (!spec) return { ...rules(), source: 'ai', ...session };

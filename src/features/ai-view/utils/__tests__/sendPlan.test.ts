@@ -104,6 +104,49 @@ describe('sendPlan', () => {
     ).rejects.toThrow();
     expect(writes.calls).toEqual(['createSet']);
   });
+
+  // SPEC-068 (K1): tryb „Zastąp obecny plan” zamyka stare przypisanie dopiero po przypisaniu nowego planu.
+  it('completes the replaced assignment after assigning the new plan', async () => {
+    const writes = {
+      ...mutations(),
+      completeAssignment: vi.fn(async () => undefined),
+    };
+    const result = await sendPlan(
+      {
+        organizationId: 'org-a',
+        patientId: 'p1',
+        draft: { name: 'Kolano v2', items: [ITEM] },
+        plan: { start: 'tomorrow', weeks: 2, rhythm: 'daily' },
+        replaceAssignmentId: 'assign-old',
+        now: NOW,
+      },
+      writes
+    );
+
+    expect(result).toEqual({ setId: 'set-1', assignmentId: 'assignment-1', replacedAssignmentId: 'assign-old' });
+    expect(writes.completeAssignment).toHaveBeenCalledTimes(1);
+    expect(writes.completeAssignment).toHaveBeenCalledWith('assign-old');
+  });
+
+  it('never completes the old assignment when creating the new plan fails', async () => {
+    const writes = {
+      ...mutations(null),
+      completeAssignment: vi.fn(async () => undefined),
+    };
+    await expect(
+      sendPlan(
+        {
+          organizationId: 'org-a',
+          patientId: 'p1',
+          draft: { name: 'Kolano v2', items: [ITEM] },
+          plan: { start: 'tomorrow', weeks: 2, rhythm: 'daily' },
+          replaceAssignmentId: 'assign-old',
+        },
+        writes
+      )
+    ).rejects.toThrow();
+    expect(writes.completeAssignment).not.toHaveBeenCalled();
+  });
 });
 
 // Test asystenta 17.11 (K5, P14): „Wysłane. Tomasz zobaczy plan w aplikacji”, a pacjent miał status „Bez konta”.
@@ -127,5 +170,11 @@ describe('sentText', () => {
 
   it('does not promise the app when the account state is unknown', () => {
     expect(sentText({ name: 'Jan Kowalski' }, plan)).not.toContain('zobaczy');
+  });
+
+  it('confirms when a previous active plan was replaced', () => {
+    const text = sentText({ name: 'Kacper Lewandowski', isShadowUser: false }, plan, { replaced: true });
+    expect(text).toContain('Plan zaktualizowany (poprzednia wersja została zastąpiona).');
+    expect(text).toContain('Kacper Lewandowski zobaczy plan w aplikacji');
   });
 });

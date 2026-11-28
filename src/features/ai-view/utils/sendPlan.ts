@@ -30,6 +30,8 @@ export interface SendPlanMutations {
   createSet: (variables: CreatePatientPlanVariables) => Promise<string | null>;
   addExercise: (variables: AddExerciseToSetVariables) => Promise<unknown>;
   assign: (variables: AssignPlanVariables) => Promise<string | null>;
+  /** SPEC-068 (K1): zamyka zastępowane przypisanie dopiero po poprawnym utworzeniu nowego planu. */
+  completeAssignment?: (assignmentId: string) => Promise<unknown>;
 }
 
 /**
@@ -37,9 +39,17 @@ export interface SendPlanMutations {
  * set it came from), its exercises in draft order, then the assignment with dates and rhythm.
  */
 export async function sendPlan(
-  input: { organizationId: string; patientId: string; draft: SetDraftPayload; plan: SchedulePlan; now?: Date },
+  input: {
+    organizationId: string;
+    patientId: string;
+    draft: SetDraftPayload;
+    plan: SchedulePlan;
+    now?: Date;
+    /** SPEC-068 (K1): ID aktywnego przypisania do zastąpienia po przypisaniu nowej wersji. */
+    replaceAssignmentId?: string;
+  },
   mutations: SendPlanMutations
-): Promise<{ setId: string; assignmentId: string | null }> {
+): Promise<{ setId: string; assignmentId: string | null; replacedAssignmentId?: string }> {
   if (input.draft.items.length === 0) throw new Error('Zestaw jest pusty.');
   const setId = await mutations.createSet({
     organizationId: input.organizationId,
@@ -63,7 +73,14 @@ export async function sendPlan(
     endDate: endDate.toISOString(),
     frequency: buildAssignmentFrequencyPayload(planFrequency(input.plan)),
   });
-  return { setId, assignmentId };
+
+  let replacedAssignmentId: string | undefined;
+  if (input.replaceAssignmentId && mutations.completeAssignment) {
+    await mutations.completeAssignment(input.replaceAssignmentId);
+    replacedAssignmentId = input.replaceAssignmentId;
+  }
+
+  return replacedAssignmentId ? { setId, assignmentId, replacedAssignmentId } : { setId, assignmentId };
 }
 
 /**
@@ -71,10 +88,17 @@ export async function sendPlan(
  * patient with an account sees it in the app; without one the next step is the QR code, the link
  * or the printed card (test 17.11, K5: "zobaczy plan w aplikacji" for a patient without an account).
  */
-export function sentText(patient: { name: string; isShadowUser?: boolean | null }, planLabel: string): string {
-  if (patient.isShadowUser === false) return `Wysłane. ${patient.name} zobaczy plan w aplikacji: ${planLabel}.`;
-  if (patient.isShadowUser) {
-    return `Plan zapisany: ${planLabel}. ${patient.name} nie ma jeszcze konta w aplikacji, więc planu tam nie widzi. Daj kod QR albo link do aplikacji, albo wydruk karty z planem.`;
+export function sentText(
+  patient: { name: string; isShadowUser?: boolean | null },
+  planLabel: string,
+  options?: { replaced?: boolean }
+): string {
+  const replacedPrefix = options?.replaced ? 'Plan zaktualizowany (poprzednia wersja została zastąpiona). ' : '';
+  if (patient.isShadowUser === false) {
+    return `${replacedPrefix}${options?.replaced ? '' : 'Wysłane. '}${patient.name} zobaczy plan w aplikacji: ${planLabel}.`;
   }
-  return `Plan zapisany dla: ${patient.name} (${planLabel}).`;
+  if (patient.isShadowUser) {
+    return `${replacedPrefix}Plan zapisany: ${planLabel}. ${patient.name} nie ma jeszcze konta w aplikacji, więc planu tam nie widzi. Daj kod QR albo link do aplikacji, albo wydruk karty z planem.`;
+  }
+  return `${replacedPrefix}Plan zapisany dla: ${patient.name} (${planLabel}).`;
 }

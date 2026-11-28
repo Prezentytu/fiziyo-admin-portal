@@ -46,7 +46,7 @@ export type LocalCardSpec =
   | { component: 'Sent'; patientId: string; setName: string; planLabel: string }
   /** `draft` (from 18.11) lets the card assign the saved set to a patient; older history has none. */
   | { component: 'SetSaved'; setId: string; name: string; draft?: SetDraftPayload }
-  | { component: 'PatientAdded'; patientId: string; name: string }
+  | { component: 'PatientAdded'; patientId: string; name: string; pendingDraft?: SetDraftPayload }
   | { component: 'ExerciseCreated'; exerciseId: string; name: string; patientId?: string; addToSet?: SetDraftReturn }
   | { component: 'ScanVisit'; patientId?: string }
   | { component: 'ExerciseIdeas'; query: string; patientId?: string; forSet?: SetDraftReturn }

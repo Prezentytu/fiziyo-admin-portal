@@ -161,12 +161,12 @@ export function useChatThread({
 
   /**
    * The therapist picked a patient from a choice ("O kogo chodzi?") or confirmed one („Czy chodzi o…?”).
-   * The pick is an id, so namesakes end the question too; what was asked for goes on without a model
-   * call: the model's card that waited for the confirmation, the set draft that waited for a patient,
-   * or the command finished by rules.
+   * SPEC-068 (K2): when there is no held card or draft yet and AI is enabled, the pending command goes
+   * back to AI (`resolveForPatient` with `disambiguatePatient`), so clinical constraints and patient plan
+   * questions are never dropped to the static rules fallback.
    */
   const choosePatient = useCallback(
-    (patientId: string, label: string) => {
+    async (patientId: string, label: string) => {
       if (inFlightRef.current) return;
       const held = heldRef.current;
       const command = pendingCommandRef.current;
@@ -195,10 +195,51 @@ export function useChatThread({
         appendAssistant(account);
         return;
       }
+      if (command && useAi) {
+        inFlightRef.current = true;
+        setIsBusy(true);
+        const epoch = threadEpochRef.current;
+        const controller = new AbortController();
+        abortRef.current = controller;
+        try {
+          const reply = await resolveForPatient(command, patientId, {
+            signal: controller.signal,
+            useAi,
+            sessionId: sessionRef.current?.scopeKey === scopeKey ? sessionRef.current.id : undefined,
+            context,
+            dispatch: dispatchChatMessage,
+            patientName: patient?.name,
+            disambiguatePatient: true,
+          });
+          if (threadEpochRef.current !== epoch) return;
+          if (reply.sessionId) sessionRef.current = { scopeKey, id: reply.sessionId };
+          const showFallback = reply.fallbackReason !== undefined && !hasNotifiedFallbackRef.current;
+          if (showFallback) hasNotifiedFallbackRef.current = true;
+          setMessages((previous) => [
+            ...previous,
+            {
+              id: newChatId(),
+              role: 'assistant',
+              text: reply.text,
+              spec: reply.spec,
+              source: reply.source,
+              creditsUsed: reply.creditsUsed,
+              fallbackReason: showFallback ? reply.fallbackReason : undefined,
+              createdAt: Date.now(),
+            },
+          ]);
+        } finally {
+          if (threadEpochRef.current === epoch) {
+            inFlightRef.current = false;
+            setIsBusy(false);
+          }
+        }
+        return;
+      }
       const spec = routeForPatient(command, context, patientId);
       appendAssistant({ text: replyText(undefined, spec, context), spec });
     },
-    [appendAssistant, context, pushUser]
+    [appendAssistant, context, pushUser, scopeKey, setMessages, useAi]
   );
 
   const send = useCallback(
@@ -264,7 +305,7 @@ export function useChatThread({
       const answer = confirmation ? confirmAnswer(trimmed, confirmation.patientId, context.patients) : null;
       if (asked && confirmation && answer === 'yes') {
         markChosen(asked.id, confirmation.yesOption);
-        choosePatient(confirmation.patientId, trimmed);
+        await choosePatient(confirmation.patientId, trimmed);
         return;
       }
       if (asked && confirmation && answer === 'other') {
