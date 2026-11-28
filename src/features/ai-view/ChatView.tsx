@@ -12,8 +12,11 @@ import {
   FolderPlus,
   Menu,
   Pencil,
+  Send,
   Sparkles,
   SquarePen,
+  ThumbsDown,
+  ThumbsUp,
   UserPlus,
 } from 'lucide-react';
 
@@ -32,8 +35,25 @@ import { FloatingMark } from './FloatingMark';
 import { useChatSession } from './ChatSessionContext';
 import { useChatShellControls } from './ChatShellControls';
 import { ChatSpecRenderer } from './catalog/ChatSpecRenderer';
+import { ChatRatingToast } from './catalog/ChatRatingToast';
+import { FeedbackDialog } from '@/components/shared/FeedbackDialog';
 import { OnboardingShowcase } from './catalog/OnboardingShowcase';
 import { AiCreditsRequestControl } from '@/features/ai-credits/AiCreditsRequestControl';
+import {
+  buildFeedbackEscalation,
+  CHAT_RATING_REASON_OPTIONS,
+  evaluateSessionRatingEligibility,
+  isRepeatedPromptWithinWindow,
+  markSessionRatingShown,
+  MAX_CHAT_FEEDBACK_COMMENT_LENGTH,
+  sendChatAnomalyBeacon,
+  stepCreditMismatchCheck,
+  submitChatFeedback,
+  type ChatFeedbackReasonTag,
+  type ChatRatingValue,
+  type CreditCheckState,
+  type FeedbackEscalationDraft,
+} from './utils/chatTelemetry';
 import { PatientContextPanel } from './PatientContextPanel';
 import { PatientOtherTherapistNotice } from '@/features/patients/PatientOtherTherapistNotice';
 import { useChatShortcuts } from './useChatShortcuts';
@@ -103,15 +123,92 @@ const AssistantMessage = memo(function AssistantMessage({
   message,
   animate,
   request,
+  sessionId,
+  turnIndex,
+  onEscalateFeedback,
 }: {
   readonly message: Extract<ChatThreadMessage, { role: 'assistant' }>;
   readonly animate: boolean;
   /** What the therapist wrote before this reply: follow-up questions under a card start from it. */
   readonly request?: string;
+  readonly sessionId: string;
+  readonly turnIndex: number;
+  readonly onEscalateFeedback: (draft: FeedbackEscalationDraft) => void;
 }) {
   const [copied, copy] = useCopy();
+  const [inlineRating, setInlineRating] = useState<ChatRatingValue | null>(null);
+  const [showNegativeForm, setShowNegativeForm] = useState(false);
+  const [negativeTags, setNegativeTags] = useState<ChatFeedbackReasonTag[]>([]);
+  const [negativeComment, setNegativeComment] = useState('');
+  const [negativeSaved, setNegativeSaved] = useState(false);
   const { credits } = useChatSession();
   const creditsExhausted = !credits || credits.remaining <= 0;
+
+  const handleThumbUp = () => {
+    setInlineRating('super');
+    setShowNegativeForm(false);
+    setNegativeSaved(false);
+    void submitChatFeedback({
+      sessionId,
+      turnIndex,
+      surface: 'inline_message',
+      rating: 'super',
+      component: message.spec?.component,
+      creditsUsed: message.creditsUsed,
+    });
+  };
+
+  const handleThumbDown = () => {
+    setInlineRating('bad');
+    setShowNegativeForm((open) => !open);
+    setNegativeSaved(false);
+    void submitChatFeedback({
+      sessionId,
+      turnIndex,
+      surface: 'inline_message',
+      rating: 'bad',
+      component: message.spec?.component,
+      creditsUsed: message.creditsUsed,
+    });
+  };
+
+  const toggleNegativeTag = (code: ChatFeedbackReasonTag) => {
+    setNegativeTags((previous) =>
+      previous.includes(code) ? previous.filter((item) => item !== code) : [...previous, code]
+    );
+  };
+
+  const handleSaveNegativeDetails = () => {
+    void submitChatFeedback({
+      sessionId,
+      turnIndex,
+      surface: 'inline_message',
+      rating: 'bad',
+      reasonTags: negativeTags.length > 0 ? negativeTags : undefined,
+      comment: negativeComment.trim() || undefined,
+      component: message.spec?.component,
+      creditsUsed: message.creditsUsed,
+    });
+    setNegativeSaved(true);
+    setShowNegativeForm(false);
+  };
+
+  const handleEscalateNegative = () => {
+    void submitChatFeedback({
+      sessionId,
+      turnIndex,
+      surface: 'inline_message',
+      rating: 'bad',
+      reasonTags: negativeTags.length > 0 ? negativeTags : undefined,
+      comment: negativeComment.trim() || undefined,
+      component: message.spec?.component,
+      creditsUsed: message.creditsUsed,
+      escalatedToFullReport: true,
+    });
+    onEscalateFeedback(buildFeedbackEscalation(negativeTags, negativeComment, message.spec?.component));
+    setShowNegativeForm(false);
+  };
+
   return (
     <div className="group/message flex min-w-0 flex-1 flex-col gap-3.5">
       {message.text && message.notice && (
@@ -133,32 +230,125 @@ const AssistantMessage = memo(function AssistantMessage({
           />
         </div>
       )}
-      {(message.text || message.fallbackReason || message.creditsUsed > 0) && (
-        <div className="-mt-1.5 flex min-h-7 items-center gap-1">
-          {message.fallbackReason ? (
-            <>
-              <p className="text-[12px] text-label-tertiary">{FALLBACK_NOTES[message.fallbackReason]}</p>
-              {/* Po doładowaniu stara odpowiedź nie namawia już do prośby. */}
-              {message.fallbackReason === 'insufficient_credits' && creditsExhausted && (
-                <AiCreditsRequestControl testIdPrefix={`common-chat-reply-${message.id}-credits`} showOwnerHint />
-              )}
-            </>
-          ) : message.creditsUsed > 0 ? (
-            <p className="text-[12px] tabular-nums text-label-tertiary">
-              −{message.creditsUsed} {polishPlural(message.creditsUsed, 'kredyt', 'kredyty', 'kredytów')} AI
-            </p>
-          ) : null}
-          {message.text && (
+      {(message.text || message.spec || message.fallbackReason || message.creditsUsed > 0) && (
+        <div className="-mt-1.5 flex flex-col gap-2">
+          <div className="flex min-h-7 items-center gap-1">
+            {message.fallbackReason ? (
+              <>
+                <p className="text-[12px] text-label-tertiary">{FALLBACK_NOTES[message.fallbackReason]}</p>
+                {/* Po doładowaniu stara odpowiedź nie namawia już do prośby. */}
+                {message.fallbackReason === 'insufficient_credits' && creditsExhausted && (
+                  <AiCreditsRequestControl testIdPrefix={`common-chat-reply-${message.id}-credits`} showOwnerHint />
+                )}
+              </>
+            ) : message.creditsUsed > 0 ? (
+              <p className="text-[12px] tabular-nums text-label-tertiary">
+                −{message.creditsUsed} {polishPlural(message.creditsUsed, 'kredyt', 'kredyty', 'kredytów')} AI
+              </p>
+            ) : null}
+            {message.text && (
+              <button
+                type="button"
+                onClick={() => copy(message.text ?? '')}
+                aria-label={copied ? 'Skopiowano' : 'Kopiuj odpowiedź'}
+                title={copied ? 'Skopiowano' : 'Kopiuj'}
+                data-testid={`common-chat-reply-${message.id}-copy-btn`}
+                className={cn(ACTION_BUTTON, 'opacity-0 group-hover/message:opacity-100', copied && 'opacity-100')}
+              >
+                {copied ? <Check className="text-tint" aria-hidden="true" /> : <Copy aria-hidden="true" />}
+              </button>
+            )}
             <button
               type="button"
-              onClick={() => copy(message.text ?? '')}
-              aria-label={copied ? 'Skopiowano' : 'Kopiuj odpowiedź'}
-              title={copied ? 'Skopiowano' : 'Kopiuj'}
-              data-testid={`common-chat-reply-${message.id}-copy-btn`}
-              className={cn(ACTION_BUTTON, 'opacity-0 group-hover/message:opacity-100', copied && 'opacity-100')}
+              onClick={handleThumbUp}
+              aria-label="Dobra odpowiedź"
+              aria-pressed={inlineRating === 'super'}
+              title="Dobra odpowiedź"
+              data-testid={`common-chat-reply-${message.id}-thumb-up-btn`}
+              className={cn(
+                ACTION_BUTTON,
+                'opacity-0 group-hover/message:opacity-100',
+                inlineRating !== null && 'opacity-100',
+                inlineRating === 'super' && 'bg-tint-muted text-tint hover:bg-tint-muted hover:text-tint'
+              )}
             >
-              {copied ? <Check className="text-tint" aria-hidden="true" /> : <Copy aria-hidden="true" />}
+              <ThumbsUp aria-hidden="true" />
             </button>
+            <button
+              type="button"
+              onClick={handleThumbDown}
+              aria-label="Słaba odpowiedź"
+              aria-pressed={inlineRating === 'bad'}
+              title="Słaba odpowiedź"
+              data-testid={`common-chat-reply-${message.id}-thumb-down-btn`}
+              className={cn(
+                ACTION_BUTTON,
+                'opacity-0 group-hover/message:opacity-100',
+                inlineRating !== null && 'opacity-100',
+                inlineRating === 'bad' && 'bg-destructive/10 text-destructive hover:bg-destructive/10 hover:text-destructive'
+              )}
+            >
+              <ThumbsDown aria-hidden="true" />
+            </button>
+            {negativeSaved && <span className="ml-1 text-[12px] text-label-tertiary">Dziękujemy za zgłoszenie.</span>}
+          </div>
+
+          {showNegativeForm && (
+            <div
+              data-testid={`common-chat-reply-${message.id}-feedback-panel`}
+              className="flex max-w-[520px] flex-col gap-2 rounded-[14px] border-[0.5px] border-separator bg-card p-3 shadow-sm"
+            >
+              <p className="text-[12px] font-medium text-foreground">Co poszło nie tak? (opcjonalnie)</p>
+              <div className="flex flex-wrap gap-1.5">
+                {CHAT_RATING_REASON_OPTIONS.map((option) => {
+                  const selected = negativeTags.includes(option.code);
+                  return (
+                    <button
+                      key={option.code}
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() => toggleNegativeTag(option.code)}
+                      data-testid={`common-chat-reply-${message.id}-reason-${option.code}`}
+                      className={cn(
+                        'rounded-full border-[0.5px] px-2.5 py-1 text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                        selected
+                          ? 'border-tint bg-tint-muted text-tint'
+                          : 'border-hairline bg-fill-tertiary/60 text-label-secondary hover:bg-fill-quaternary hover:text-foreground'
+                      )}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <textarea
+                value={negativeComment}
+                onChange={(event) => setNegativeComment(event.target.value.slice(0, MAX_CHAT_FEEDBACK_COMMENT_LENGTH))}
+                placeholder="Krótka uwaga (nie wpisuj danych pacjenta)"
+                rows={2}
+                data-testid={`common-chat-reply-${message.id}-comment-input`}
+                className="w-full resize-none rounded-[10px] border-[0.5px] border-hairline bg-fill-tertiary/40 px-2.5 py-1.5 text-[13px] text-foreground placeholder:text-label-tertiary focus:border-tint focus:outline-none focus:ring-2 focus:ring-ring/40"
+              />
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={handleEscalateNegative}
+                  data-testid={`common-chat-reply-${message.id}-escalate-btn`}
+                  className="text-[12px] font-medium text-label-secondary underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  Przejdź do pełnego zgłoszenia
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveNegativeDetails}
+                  data-testid={`common-chat-reply-${message.id}-send-reason-btn`}
+                  className="inline-flex h-7 items-center gap-1 rounded-[8px] bg-tint px-2.5 text-[12px] font-semibold text-primary-foreground transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <Send className="h-3 w-3" aria-hidden="true" />
+                  Wyślij
+                </button>
+              </div>
+            </div>
           )}
         </div>
       )}
@@ -494,6 +684,9 @@ function hasDraggedFile(event: DragEvent): boolean {
   return Array.from(event.dataTransfer.types).includes('Files');
 }
 
+const RATING_TRIGGER_DELAY_MS = 3000;
+const RATING_COMPLETION_CARDS = new Set(['Sent', 'SetSaved', 'ExerciseCreated']);
+
 /** Chat-first home (DEC-20261029-02, design "Czat v2"): one conversation, cards with the app's actions. */
 export function ChatView() {
   const {
@@ -506,6 +699,7 @@ export function ChatView() {
     isContextOpen,
     setContextOpen,
     activeConversationId,
+    credits,
   } = useChatSession();
   const { analyzeFile } = useDocumentAnalysis();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -513,6 +707,11 @@ export function ChatView() {
   const draftInComposer = useCallback((text: string) => composerRef.current?.setDraft(text), []);
   const dragDepthRef = useRef(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [ratingToastConversationId, setRatingToastConversationId] = useState<string | null>(null);
+  const [dismissedRatingConversationId, setDismissedRatingConversationId] = useState<string | null>(null);
+  const [feedbackEscalation, setFeedbackEscalation] = useState<(FeedbackEscalationDraft & { key: number }) | null>(null);
+  const escalationSeqRef = useRef(0);
+  const creditCheckRef = useRef<CreditCheckState>({});
   // Replies that arrive in the open conversation read in; one opened from the sidebar shows at once.
   const [revealMarker, setRevealMarker] = useState<RevealMarker | undefined>(undefined);
   if (revealMarker?.conversationId !== activeConversationId) {
@@ -522,6 +721,15 @@ export function ChatView() {
   const isWide = useMediaQuery('(min-width: 1280px)');
   const isEmpty = messages.length === 0;
   const lastUser = messages.findLast((message) => message.role === 'user');
+  const lastAssistant = messages.findLast((message) => message.role === 'assistant');
+  const assistantCount = messages.filter((message) => message.role === 'assistant').length;
+  const hasCompletionCard = messages.some(
+    (message) => message.role === 'assistant' && message.spec && RATING_COMPLETION_CARDS.has(message.spec.component)
+  );
+  const shouldTriggerRating = !isEmpty && !isBusy && (hasCompletionCard || assistantCount >= 4);
+  const showRatingToast =
+    ratingToastConversationId === activeConversationId && dismissedRatingConversationId !== activeConversationId;
+
   const { isAway, scrollToBottom } = useStickToBottom(
     scrollRef,
     activeConversationId,
@@ -537,6 +745,72 @@ export function ChatView() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  // Claude-style rating prompt: 3 s po kluczowej karcie końcowej albo po 4. wymianie, z throttlingiem (SPEC-074).
+  useEffect(() => {
+    if (!shouldTriggerRating || showRatingToast || dismissedRatingConversationId === activeConversationId) return;
+    const timer = window.setTimeout(() => {
+      const { eligible } = evaluateSessionRatingEligibility(activeConversationId);
+      if (!eligible) return;
+      markSessionRatingShown(activeConversationId);
+      setRatingToastConversationId(activeConversationId);
+    }, RATING_TRIGGER_DELAY_MS);
+    return () => window.clearTimeout(timer);
+  }, [activeConversationId, dismissedRatingConversationId, shouldTriggerRating, showRatingToast]);
+
+  // Kliencki beacon rozjazdu salda kredytów vs creditsUsed (SPEC-074).
+  useEffect(() => {
+    const assistant = lastAssistant?.role === 'assistant' ? lastAssistant : undefined;
+    const { state, mismatch } = stepCreditMismatchCheck(creditCheckRef.current, {
+      conversationId: activeConversationId,
+      remaining: credits?.remaining,
+      lastAssistant: assistant,
+    });
+    creditCheckRef.current = state;
+    if (!mismatch) return;
+    sendChatAnomalyBeacon({
+      code: 'anomaly_credit_mismatch',
+      sessionId: activeConversationId,
+      component: assistant?.spec?.component,
+      metadata: mismatch,
+    });
+  }, [activeConversationId, credits?.remaining, lastAssistant]);
+
+  const handleEscalateFeedback = useCallback((draft: FeedbackEscalationDraft) => {
+    escalationSeqRef.current += 1;
+    setFeedbackEscalation({ ...draft, key: escalationSeqRef.current });
+  }, []);
+
+  const handleDismissRatingToast = useCallback(() => {
+    setDismissedRatingConversationId(activeConversationId);
+    setRatingToastConversationId(null);
+  }, [activeConversationId]);
+
+  const handleSendMessage = useCallback(
+    (text: string) => {
+      if (
+        lastUser?.role === 'user' &&
+        isRepeatedPromptWithinWindow(lastUser.text, text, Date.now() - lastUser.createdAt)
+      ) {
+        sendChatAnomalyBeacon({
+          code: 'ux_stop_or_repeat_loop',
+          sessionId: activeConversationId,
+          metadata: { repeated: true },
+        });
+      }
+      sendMessage(text);
+    },
+    [activeConversationId, lastUser, sendMessage]
+  );
+
+  const handleStopReply = useCallback(() => {
+    sendChatAnomalyBeacon({
+      code: 'ux_stop_or_repeat_loop',
+      sessionId: activeConversationId,
+      metadata: { stopped: true },
+    });
+    stopReply();
+  }, [activeConversationId, stopReply]);
 
   const attach = (file: File) => {
     if (!isReady || isBusy) return;
@@ -587,7 +861,7 @@ export function ChatView() {
             )}
           >
             {isEmpty ? (
-              <ChatHome composerRef={composerRef} onSend={sendMessage} onAttach={attach} />
+              <ChatHome composerRef={composerRef} onSend={handleSendMessage} onAttach={attach} />
             ) : (
               <ComposerDraftContext.Provider value={draftInComposer}>
                 <ol className="flex flex-col gap-7" aria-live="polite" data-testid="common-chat-thread">
@@ -602,6 +876,9 @@ export function ChatView() {
                           message={message}
                           animate={message.createdAt > revealSince}
                           request={requestBefore(messages, index)}
+                          sessionId={activeConversationId}
+                          turnIndex={index}
+                          onEscalateFeedback={handleEscalateFeedback}
                         />
                       </li>
                     )
@@ -635,11 +912,21 @@ export function ChatView() {
               </button>
             )}
             <div className="mx-auto flex w-full max-w-[760px] flex-col gap-2">
+              {showRatingToast && (
+                <ChatRatingToast
+                  sessionId={activeConversationId}
+                  turnIndex={Math.max(0, messages.length - 1)}
+                  component={lastAssistant?.role === 'assistant' ? lastAssistant.spec?.component : undefined}
+                  creditsUsed={lastAssistant?.role === 'assistant' ? lastAssistant.creditsUsed : undefined}
+                  onDismiss={handleDismissRatingToast}
+                  onEscalate={handleEscalateFeedback}
+                />
+              )}
               <ChatComposer
                 ref={composerRef}
-                onSend={sendMessage}
+                onSend={handleSendMessage}
                 onAttach={attach}
-                onStop={stopReply}
+                onStop={handleStopReply}
                 busy={isBusy}
                 disabled={!isReady}
                 loading={isLoading}
@@ -676,6 +963,16 @@ export function ChatView() {
             <PatientContextPanel />
           </SheetContent>
         </Sheet>
+      )}
+      {feedbackEscalation && (
+        <FeedbackDialog
+          key={feedbackEscalation.key}
+          isOpen
+          onClose={() => setFeedbackEscalation(null)}
+          screenName="Fizjoasystent (czat)"
+          initialType={feedbackEscalation.initialType}
+          initialDescription={feedbackEscalation.initialDescription}
+        />
       )}
     </div>
   );
