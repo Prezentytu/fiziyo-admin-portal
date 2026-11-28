@@ -22,7 +22,13 @@ import {
 
 /** Sections of the new exercise card, in the order they unfold. */
 export const DRAFT_SECTIONS = ['params', 'description', 'steps', 'cues', 'more', 'image'] as const;
+/** Text and parameter sections generated without AI image rendering (4 credits). */
+export const TEXT_DRAFT_SECTIONS = ['params', 'description', 'steps', 'cues', 'more'] as const;
 export type DraftSection = (typeof DRAFT_SECTIONS)[number];
+/** Explicit AI credit costs matching backend `AIController.CreditsCost` (SPEC-069 / W4). */
+export const EXERCISE_TEXT_CREDITS = 4;
+export const EXERCISE_IMAGE_CREDITS = 5;
+export const EXERCISE_FULL_CREDITS = EXERCISE_TEXT_CREDITS + EXERCISE_IMAGE_CREDITS;
 /** hidden: not reached yet; working: AI fills it now; done: shown; failed: shown with a retry. */
 export type DraftSectionState = 'hidden' | 'working' | 'done' | 'failed';
 
@@ -48,6 +54,8 @@ const sleep = (ms: number) => new Promise((resolve) => window.setTimeout(resolve
 
 type DraftAiOptions = {
   onFill: (fill: DraftFill) => void;
+  /** Therapist instructions from the conversation (e.g. chair heel support, 3s hold) forwarded to AI text/image generation. */
+  instructions?: () => string | undefined;
   /** What the picture is generated from, read when its turn comes (after the texts are filled). */
   imageInput: () => { description: string; type: 'reps' | 'time'; style?: ImageStyle };
 };
@@ -95,13 +103,15 @@ export function useExerciseDraftAi(options: DraftAiOptions & { draftKey: string 
       const started = latest.current;
       const current = () => mountedOptions.get(key)?.current ?? started;
       const wanted = new Set(only);
-      setAi(key, { running: true, ...(only.length === DRAFT_SECTIONS.length && { sections: HIDDEN_SECTIONS }) });
+      const isFullTextRun = TEXT_DRAFT_SECTIONS.every((section) => wanted.has(section));
+      setAi(key, { running: true, ...(isFullTextRun && { sections: HIDDEN_SECTIONS }) });
       const setSection = (section: DraftSection, state: DraftSectionState) =>
         updateExerciseDraft(key, (draft) => ({
           ...draft,
           ai: { ...draft.ai, sections: { ...draft.ai.sections, [section]: state } },
         }));
 
+      const therapistInstructions = current().instructions?.()?.trim() || undefined;
       const needsSuggestion = wanted.has('params') || wanted.has('description');
       const needsEnrichment = (['description', 'steps', 'cues', 'more'] as const).some((section) =>
         wanted.has(section)
@@ -115,7 +125,12 @@ export function useExerciseDraftAi(options: DraftAiOptions & { draftKey: string 
         : Promise.resolve(null);
       const texts: Promise<ChatExerciseTexts> = needsEnrichment
         ? aiService
-            .generateEnrichment({ exerciseName })
+            .generateEnrichment({
+              exerciseName,
+              ...(therapistInstructions
+                ? { patientDescription: therapistInstructions, clinicalDescription: therapistInstructions }
+                : {}),
+            })
             .then((response) => textsFromEnrichment(response?.success ? response.enrichmentData : null))
             .catch(() => textsFromEnrichment(null))
         : Promise.resolve(textsFromEnrichment(null));
@@ -136,8 +151,13 @@ export function useExerciseDraftAi(options: DraftAiOptions & { draftKey: string 
         setSection(section, fill ? 'done' : 'failed');
       }
 
-      // Nazwę, dla której jest propozycja, ustala tylko pełny przebieg; jedna sekcja jej nie przejmuje.
-      setAi(key, { running: false, ...(only.length === DRAFT_SECTIONS.length && { generatedFor: exerciseName }) });
+      // Gdy wygenerowano tylko opis/parametry bez grafiki, pokaż sekcję grafiki (z opcjonalnym przyciskiem −5 kredytów) i filmu.
+      if (isFullTextRun && !wanted.has('image')) {
+        setSection('image', 'done');
+      }
+
+      // Nazwę, dla której jest propozycja, ustala tylko pełny przebieg tekstowy; jedna sekcja jej nie przejmuje.
+      setAi(key, { running: false, ...(isFullTextRun && { generatedFor: exerciseName }) });
     },
     [draftKey]
   );

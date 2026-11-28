@@ -7,6 +7,7 @@ import {
   Plus,
   Repeat2,
   SlidersHorizontal,
+  Smartphone,
   Sparkles,
   SquarePen,
   Trash2,
@@ -30,8 +31,9 @@ import { normalizeExerciseType } from '@/utils/exerciseEnums';
 import { isV33ExerciseRecord } from '@/utils/exerciseRecordVersion';
 import { formatExerciseCount } from '@/utils/polishPlural';
 import { toWizardPatient, useChatActions } from '../ChatSessionContext';
+import { useExercisePickerPages } from '@/hooks/useExercisePickerPages';
 import { useAvailableExercises, type ChatCatalogExercise } from '../useAvailableExercises';
-import { findAlternatives } from '../utils/exerciseAlternatives';
+import { alternativeSearchTerm, findAlternatives } from '../utils/exerciseAlternatives';
 import { draftClarifyQuestions } from '../utils/clarifyQuestions';
 import { canRestoreDraft, RESTORE_DRAFT_LABEL, restoredDraftSpec, SUPERSEDED } from '../utils/draftVersions';
 import { searchExercises } from '../utils/exerciseLookup';
@@ -55,8 +57,10 @@ import {
 } from '../utils/setDraft';
 import type { CardProps } from './cardProps';
 import { ChatCard, ChatCardEmpty } from './ChatCard';
+import { ChatPhonePreviewDialog } from './ChatPhonePreviewDialog';
 import { ClarifyChips } from './ClarifyChips';
 import { ExerciseReviewBadge } from './ExerciseReviewBadge';
+import { draftItemToPreviewCard } from '../utils/phonePreview';
 
 // A chat draft becomes a plan's mappings: fields a mapping does not keep are not offered.
 const isAlternating = (item: DraftItem) => item.side?.toLowerCase() === 'alternating';
@@ -73,6 +77,9 @@ const UNSAVED_FIELDS = [
 interface RowProps {
   readonly item: DraftItem;
   readonly exercise?: ChatCatalogExercise;
+  readonly organizationId: string;
+  readonly catalogPool: readonly ChatCatalogExercise[];
+  readonly excludeIds: readonly string[];
   readonly alternatives: ChatCatalogExercise[];
   readonly locked: boolean;
   /** Dopisana w tym kroku („dodaj ćwiczenie X”, nowe ćwiczenie): plakietka „nowe” przy nazwie. */
@@ -80,22 +87,131 @@ interface RowProps {
   /** Treść ćwiczeń jeszcze nie dotarła: czas „naprzemiennie” byłby liczony bez wersji rekordu. */
   readonly versionPending: boolean;
   readonly testId: string;
+  readonly onPreview?: () => void;
   readonly onRemove: () => void;
   readonly onSwap: (exercise: ChatCatalogExercise) => void;
+  readonly onOpenCatalogSearch: (initialQuery?: string) => void;
   readonly onChange: (patch: Partial<ExerciseParameterValues>) => void;
   readonly onClearWarmup: () => void;
+}
+
+/**
+ * Panel zamienników dla wiersza szkicu (SPEC-069 / W6): gdy pierwsza strona katalogu ma mniej niż 3
+ * dopasowania, dociąga kandydatów z API po głównym tagu / rdzeniu nazwy i pokazuje czas oraz badge weryfikacji.
+ */
+function SwapAlternativesPanel({
+  itemExerciseId,
+  exercise,
+  organizationId,
+  catalogPool,
+  excludeIds,
+  localAlternatives,
+  testId,
+  onSwap,
+  onOpenCatalogSearch,
+}: {
+  readonly itemExerciseId: string;
+  readonly exercise?: ChatCatalogExercise;
+  readonly organizationId: string;
+  readonly catalogPool: readonly ChatCatalogExercise[];
+  readonly excludeIds: readonly string[];
+  readonly localAlternatives: readonly ChatCatalogExercise[];
+  readonly testId: string;
+  readonly onSwap: (alternative: ChatCatalogExercise) => void;
+  readonly onOpenCatalogSearch: (initialQuery?: string) => void;
+}) {
+  const query = useMemo(() => (exercise ? alternativeSearchTerm(exercise) : null), [exercise]);
+  const needsRemote = Boolean(exercise && organizationId && query && localAlternatives.length < 3);
+  const remote = useExercisePickerPages<ChatCatalogExercise>({
+    organizationId,
+    skip: !needsRemote,
+    search: query ?? '',
+    sourceFilter: 'all',
+  });
+
+  const alternatives = useMemo(() => {
+    if (!exercise) return [...localAlternatives];
+    if (!needsRemote || remote.items.length === 0) return [...localAlternatives];
+    const byId = new Map<string, ChatCatalogExercise>();
+    for (const candidate of catalogPool) byId.set(candidate.id, candidate);
+    for (const candidate of remote.items) {
+      if (!byId.has(candidate.id)) byId.set(candidate.id, candidate);
+    }
+    const ranked = findAlternatives(exercise, [...byId.values()], excludeIds, 3);
+    if (ranked.length > 0) return ranked;
+    const excluded = new Set([exercise.id, ...excludeIds]);
+    return remote.items.filter((candidate) => !excluded.has(candidate.id)).slice(0, 3);
+  }, [catalogPool, excludeIds, exercise, localAlternatives, needsRemote, remote.items]);
+
+  return (
+    <div
+      className="mb-1 ml-[52px] flex flex-col gap-2 rounded-[12px] bg-fill-quaternary px-3 py-2.5 text-[14px]"
+      data-testid={`${testId}-swap-${itemExerciseId}-panel`}
+    >
+      {needsRemote && remote.loading && alternatives.length === 0 ? (
+        <p className="text-label-secondary" role="status">
+          Szukam podobnych ćwiczeń w katalogu…
+        </p>
+      ) : alternatives.length === 0 ? (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-label-secondary">Brak podobnych ćwiczeń w katalogu.</p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => onOpenCatalogSearch(query ?? '')}
+            data-testid={`${testId}-swap-${itemExerciseId}-search-btn`}
+          >
+            Szukaj w katalogu
+          </Button>
+        </div>
+      ) : (
+        alternatives.map((alternative) => (
+          <div key={alternative.id} className="flex items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <span className="truncate">
+                  Zamiast tego: <b className="font-semibold">{alternative.name}</b>
+                </span>
+                <ExerciseReviewBadge
+                  exercise={alternative}
+                  testId={`${testId}-swap-${itemExerciseId}-review-${alternative.id}`}
+                />
+              </div>
+              <p className="text-[12px] tabular-nums text-label-secondary">
+                ok. {itemMinutes(draftItemFromExercise(alternative))} min
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onSwap(alternative)}
+              data-testid={`${testId}-swap-${itemExerciseId}-to-${alternative.id}-btn`}
+            >
+              Zamień
+            </Button>
+          </div>
+        ))
+      )}
+    </div>
+  );
 }
 
 function DraftRow({
   item,
   exercise,
+  organizationId,
+  catalogPool,
+  excludeIds,
   alternatives,
   locked,
   added,
   versionPending,
   testId,
+  onPreview,
   onRemove,
   onSwap,
+  onOpenCatalogSearch,
   onChange,
   onClearWarmup,
 }: RowProps) {
@@ -148,65 +264,73 @@ function DraftRow({
             {timeUnknown ? '' : ` · ok. ${itemMinutes(item)} min`}
           </p>
         </div>
-        {!locked && (
-          <div className="flex shrink-0 items-center opacity-100 transition-opacity pointer-fine:opacity-0 pointer-fine:group-focus-within:opacity-100 pointer-fine:group-hover:opacity-100">
+        <div className="flex shrink-0 items-center opacity-100 transition-opacity pointer-fine:opacity-0 pointer-fine:group-focus-within:opacity-100 pointer-fine:group-hover:opacity-100">
+          {onPreview && (
             <Button
+              type="button"
               variant="ghost"
               size="icon"
-              aria-label={`Zmień parametry: ${name}`}
-              aria-expanded={panel === 'edit'}
-              onClick={() => toggle('edit')}
-              data-testid={`${testId}-edit-${item.exerciseId}-btn`}
+              aria-label={`Podgląd jak u pacjenta: ${name}`}
+              title="Jak zobaczy to pacjent"
+              onClick={onPreview}
+              data-testid={`${testId}-preview-${item.exerciseId}-btn`}
             >
-              <SlidersHorizontal aria-hidden="true" />
+              <Smartphone aria-hidden="true" />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={`Zamień: ${name}`}
-              aria-expanded={panel === 'swap'}
-              onClick={() => toggle('swap')}
-              data-testid={`${testId}-swap-${item.exerciseId}-btn`}
-            >
-              <Repeat2 aria-hidden="true" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={`Usuń: ${name}`}
-              onClick={onRemove}
-              data-testid={`${testId}-remove-${item.exerciseId}-btn`}
-            >
-              <Trash2 aria-hidden="true" />
-            </Button>
-          </div>
-        )}
-      </div>
-      {panel === 'swap' && !locked && (
-        <div className="mb-1 ml-[52px] flex flex-col gap-2 rounded-[12px] bg-fill-quaternary px-3 py-2.5 text-[14px]">
-          {alternatives.length === 0 ? (
-            <p className="text-label-secondary">Brak podobnych ćwiczeń w katalogu. Dodaj inne przyciskami pod listą.</p>
-          ) : (
-            alternatives.map((alternative) => (
-              <div key={alternative.id} className="flex items-center gap-2">
-                <span className="min-w-0 flex-1 truncate">
-                  Zamiast tego: <b className="font-semibold">{alternative.name}</b>
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setPanel('none');
-                    onSwap(alternative);
-                  }}
-                  data-testid={`${testId}-swap-${item.exerciseId}-to-${alternative.id}-btn`}
-                >
-                  Zamień
-                </Button>
-              </div>
-            ))
+          )}
+          {!locked && (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`Zmień parametry: ${name}`}
+                aria-expanded={panel === 'edit'}
+                onClick={() => toggle('edit')}
+                data-testid={`${testId}-edit-${item.exerciseId}-btn`}
+              >
+                <SlidersHorizontal aria-hidden="true" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`Zamień: ${name}`}
+                aria-expanded={panel === 'swap'}
+                onClick={() => toggle('swap')}
+                data-testid={`${testId}-swap-${item.exerciseId}-btn`}
+              >
+                <Repeat2 aria-hidden="true" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`Usuń: ${name}`}
+                onClick={onRemove}
+                data-testid={`${testId}-remove-${item.exerciseId}-btn`}
+              >
+                <Trash2 aria-hidden="true" />
+              </Button>
+            </>
           )}
         </div>
+      </div>
+      {panel === 'swap' && !locked && (
+        <SwapAlternativesPanel
+          itemExerciseId={item.exerciseId}
+          exercise={exercise}
+          organizationId={organizationId}
+          catalogPool={catalogPool}
+          excludeIds={excludeIds}
+          localAlternatives={alternatives}
+          testId={testId}
+          onSwap={(alternative) => {
+            setPanel('none');
+            onSwap(alternative);
+          }}
+          onOpenCatalogSearch={(initialQuery) => {
+            setPanel('none');
+            onOpenCatalogSearch(initialQuery);
+          }}
+        />
       )}
       {panel === 'edit' && !locked && (
         <div className="mb-1 ml-[52px] rounded-[12px] bg-fill-quaternary p-3">
@@ -267,6 +391,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
 
   const [missingSet, setMissingSet] = useState(false);
   const [search, setSearch] = useState<string | null>(null);
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
   const locked = chosen !== undefined;
 
   // Seeded once what it comes from is here: defaults come from the exercise, a catalog set's mapping wins.
@@ -344,6 +469,14 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
   const draftItems = items.map((item) =>
     isV33ExerciseRecord(byId.get(item.exerciseId)) ? { ...item, alternatingPerSide: true } : item
   );
+  const previewEntries = draftItems
+    .map((item, rowIndex) => {
+      const exercise = byId.get(item.exerciseId);
+      return exercise ? { rowIndex, card: draftItemToPreviewCard(exercise, item) } : null;
+    })
+    .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
+  const previewIndexByRow = new Map(previewEntries.map((entry, idx) => [entry.rowIndex, idx]));
+  const previewCards = previewEntries.map((entry) => entry.card);
   const draft: SetDraftPayload = {
     name,
     patientId: patient?.id,
@@ -400,6 +533,20 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
       testId={testId}
       title={name}
       info={draftNote({ fromCatalog: Boolean(set), hasPatient: Boolean(patient) })}
+      badge={
+        previewCards.length > 0 ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setPreviewIndex(0)}
+            data-testid={`${testId}-preview-set-btn`}
+          >
+            <Smartphone aria-hidden="true" />
+            Podgląd na telefonie
+          </Button>
+        ) : undefined
+      }
       meta={
         <>
           <span>{formatExerciseCount(items.length)}</span>
@@ -474,13 +621,20 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
                 key={`${item.exerciseId}-${index}`}
                 item={item}
                 exercise={exercise}
+                organizationId={organizationId}
+                catalogPool={exercises}
+                excludeIds={draftIds}
                 alternatives={exercise ? findAlternatives(exercise, exercises, draftIds) : []}
                 locked={locked}
                 added={item.exerciseId === spec.addedExerciseId}
                 versionPending={versionPending}
                 testId={testId}
+                onPreview={
+                  previewIndexByRow.has(index) ? () => setPreviewIndex(previewIndexByRow.get(index)!) : undefined
+                }
                 onRemove={() => removeItem(index)}
                 onSwap={(alternative) => updateItem(index, draftItemFromExercise(alternative))}
+                onOpenCatalogSearch={(initialQuery) => setSearch(initialQuery ?? '')}
                 onClearWarmup={() => updateItem(index, { isWarmup: false })}
                 onChange={(patch) =>
                   setItems((current) =>
@@ -597,6 +751,14 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
           testId={`${testId}-clarify`}
         />
       )}
+      <ChatPhonePreviewDialog
+        open={previewIndex !== null}
+        onOpenChange={(open) => {
+          if (!open) setPreviewIndex(null);
+        }}
+        exercises={previewCards}
+        initialIndex={previewIndex ?? 0}
+      />
     </ChatCard>
   );
 }

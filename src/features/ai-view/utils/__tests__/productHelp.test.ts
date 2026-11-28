@@ -17,6 +17,8 @@ describe('product help routing', () => {
     ['Co nowego w aplikacji fizjoterapeuty?', 'therapist-news'],
     ['Gdzie znajdę instrukcję dla pacjenta?', 'guide'],
     ['Czy macie na blogu materiał o regularności?', 'blog'],
+    ['Czy mogę zobaczyć podgląd jak u pacjenta?', 'phone-preview'],
+    ['Jak pacjent zobaczy to ćwiczenie na telefonie?', 'phone-preview'],
     ['Cześć, dopiero zaczynam z FiziYo — co dokładnie możesz mi tu pomóc zrobić?', 'capabilities-overview'],
     ['Co potrafisz?', 'capabilities-overview'],
     ['Od czego zacząć?', 'capabilities-overview'],
@@ -24,6 +26,7 @@ describe('product help routing', () => {
 
   it.each([
     'Co nowego u pacjenta?',
+    'Pokaż podgląd jak u pacjenta dla planu Krystyny',
     'Dodaj pacjenta do gabinetu',
     'Dodaj ćwiczenie do gabinetu',
     'Ułóż zestaw dla pacjenta',

@@ -2,7 +2,13 @@ import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { clearExerciseDrafts } from '../exerciseDraftStore';
-import { DRAFT_SECTIONS, useExerciseDraftAi, type DraftFill, type DraftSection } from '../useExerciseDraftAi';
+import {
+  DRAFT_SECTIONS,
+  TEXT_DRAFT_SECTIONS,
+  useExerciseDraftAi,
+  type DraftFill,
+  type DraftSection,
+} from '../useExerciseDraftAi';
 
 const { ai } = vi.hoisted(() => ({
   ai: {
@@ -175,5 +181,29 @@ describe('useExerciseDraftAi', () => {
     act(() => hook.result.current.showAll());
     expect(Object.values(hook.result.current.sections).every((state) => state === 'done')).toBe(true);
     expect(ai.suggestExercise).not.toHaveBeenCalled();
+  });
+
+  // SPEC-069 / W4: instrukcje fizjoterapeuty z rozmowy trafiają do generacji treści, a tryb opis-only nie pali 5 kredytów na grafikę.
+  it('forwards therapist instructions to generateEnrichment and skips image generation on text-only run', async () => {
+    const instructions = 'Leżenie tyłem, jedna pięta na krześle, 3 s izometrii w górze, 3x10 na stronę.';
+    const hook = renderHook(() =>
+      useExerciseDraftAi({
+        draftKey: 'm-instr',
+        onFill: () => undefined,
+        instructions: () => instructions,
+        imageInput: () => ({ description: instructions, type: 'reps' }),
+      })
+    );
+
+    await runAll(hook.result.current.generate('Mostek z piętą na krześle', TEXT_DRAFT_SECTIONS));
+
+    expect(ai.generateEnrichment).toHaveBeenCalledWith({
+      exerciseName: 'Mostek z piętą na krześle',
+      patientDescription: instructions,
+      clinicalDescription: instructions,
+    });
+    expect(ai.generateExerciseImage).not.toHaveBeenCalled();
+    expect(hook.result.current.generatedFor).toBe('Mostek z piętą na krześle');
+    expect(hook.result.current.sections.image).toBe('done');
   });
 });

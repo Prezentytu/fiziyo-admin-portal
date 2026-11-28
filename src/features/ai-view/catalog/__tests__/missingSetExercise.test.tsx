@@ -55,7 +55,7 @@ describe('brak ćwiczenia do zestawu', () => {
     expect(next).toEqual({ component: 'CreateExercise', name: 'Testowy ruch w siadzie', addToSet: forSet });
     unmount();
     render(<CreateExerciseCard spec={next} messageId="s2" testId="form" />);
-    fireEvent.click(screen.getByRole('button', { name: 'Generuj' }));
+    fireEvent.click(screen.getByTestId('form-generate-btn'));
     await waitFor(
       () => expect(screen.getByTestId('form-description-input')).toHaveValue('Opis zaproponowany przez asystenta.'),
       { timeout: 4000 }
