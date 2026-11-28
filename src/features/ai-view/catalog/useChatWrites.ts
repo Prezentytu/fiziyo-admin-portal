@@ -126,7 +126,7 @@ export function useSendPlan() {
             assign: async (variables: AssignPlanVariables) =>
               (await assign({ variables })).data?.assignExerciseSetToPatient?.id ?? null,
             completeAssignment: (assignmentId: string) =>
-              updateAssignment({ variables: { assignmentId, status: 'COMPLETED' } }),
+              updateAssignment({ variables: { assignmentId, status: 'COMPLETED', statusLegacy: 'completed' } }),
           }
         );
         await markWarmup(result.setId, ordered.items.map(isWarmupItem));

@@ -128,6 +128,32 @@ describe('sendPlan', () => {
     expect(writes.completeAssignment).toHaveBeenCalledWith('assign-old');
   });
 
+  // Review PR #398: nowy plan jest już przypisany, więc błąd zamykania starego nie może wyglądać jak
+  // nieudana wysyłka (ponowne kliknięcie utworzyłoby drugi nowy plan).
+  it('keeps the sent plan and flags it when completing the old assignment fails', async () => {
+    const writes = {
+      ...mutations(),
+      completeAssignment: vi.fn(async () => {
+        throw new Error('network');
+      }),
+    };
+    const result = await sendPlan(
+      {
+        organizationId: 'org-a',
+        patientId: 'p1',
+        draft: { name: 'Kolano v2', items: [ITEM] },
+        plan: { start: 'tomorrow', weeks: 2, rhythm: 'daily' },
+        replaceAssignmentId: 'assign-old',
+        now: NOW,
+      },
+      writes
+    );
+
+    expect(result).toEqual({ setId: 'set-1', assignmentId: 'assignment-1', replaceFailed: true });
+    expect(writes.calls).toEqual(['createSet', 'addExercise', 'assign']);
+    expect(writes.completeAssignment).toHaveBeenCalledWith('assign-old');
+  });
+
   it('never completes the old assignment when creating the new plan fails', async () => {
     const writes = {
       ...mutations(null),
@@ -176,5 +202,13 @@ describe('sentText', () => {
     const text = sentText({ name: 'Kacper Lewandowski', isShadowUser: false }, plan, { replaced: true });
     expect(text).toContain('Plan zaktualizowany (poprzednia wersja została zastąpiona).');
     expect(text).toContain('Kacper Lewandowski zobaczy plan w aplikacji');
+  });
+
+  it('tells the therapist the previous plan is still active when it could not be completed', () => {
+    const text = sentText({ name: 'Kacper Lewandowski', isShadowUser: false }, plan, { replaceFailed: true });
+    expect(text).not.toContain('zastąpiona');
+    expect(text).toContain('Kacper Lewandowski zobaczy plan w aplikacji');
+    expect(text).toContain('nadal jest aktywny');
+    expect(text).toContain('zakończ go na karcie pacjenta');
   });
 });

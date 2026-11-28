@@ -49,7 +49,7 @@ export async function sendPlan(
     replaceAssignmentId?: string;
   },
   mutations: SendPlanMutations
-): Promise<{ setId: string; assignmentId: string | null; replacedAssignmentId?: string }> {
+): Promise<{ setId: string; assignmentId: string | null; replacedAssignmentId?: string; replaceFailed?: true }> {
   if (input.draft.items.length === 0) throw new Error('Zestaw jest pusty.');
   const setId = await mutations.createSet({
     organizationId: input.organizationId,
@@ -74,13 +74,18 @@ export async function sendPlan(
     frequency: buildAssignmentFrequencyPayload(planFrequency(input.plan)),
   });
 
-  let replacedAssignmentId: string | undefined;
+  // Nowy plan jest już przypisany: błąd zamykania starego nie może wyglądać jak nieudana wysyłka,
+  // bo ponowne kliknięcie utworzyłoby drugi nowy plan. Zgłaszamy go flagą, nie wyjątkiem.
   if (input.replaceAssignmentId && mutations.completeAssignment) {
-    await mutations.completeAssignment(input.replaceAssignmentId);
-    replacedAssignmentId = input.replaceAssignmentId;
+    try {
+      await mutations.completeAssignment(input.replaceAssignmentId);
+      return { setId, assignmentId, replacedAssignmentId: input.replaceAssignmentId };
+    } catch {
+      return { setId, assignmentId, replaceFailed: true };
+    }
   }
 
-  return replacedAssignmentId ? { setId, assignmentId, replacedAssignmentId } : { setId, assignmentId };
+  return { setId, assignmentId };
 }
 
 /**
@@ -91,14 +96,17 @@ export async function sendPlan(
 export function sentText(
   patient: { name: string; isShadowUser?: boolean | null },
   planLabel: string,
-  options?: { replaced?: boolean }
+  options?: { replaced?: boolean; replaceFailed?: boolean }
 ): string {
   const replacedPrefix = options?.replaced ? 'Plan zaktualizowany (poprzednia wersja została zastąpiona). ' : '';
+  const replaceFailedSuffix = options?.replaceFailed
+    ? ' Poprzedniego planu nie udało się zakończyć, więc nadal jest aktywny: zakończ go na karcie pacjenta.'
+    : '';
   if (patient.isShadowUser === false) {
-    return `${replacedPrefix}${options?.replaced ? '' : 'Wysłane. '}${patient.name} zobaczy plan w aplikacji: ${planLabel}.`;
+    return `${replacedPrefix}${options?.replaced ? '' : 'Wysłane. '}${patient.name} zobaczy plan w aplikacji: ${planLabel}.${replaceFailedSuffix}`;
   }
   if (patient.isShadowUser) {
-    return `${replacedPrefix}Plan zapisany: ${planLabel}. ${patient.name} nie ma jeszcze konta w aplikacji, więc planu tam nie widzi. Daj kod QR albo link do aplikacji, albo wydruk karty z planem.`;
+    return `${replacedPrefix}Plan zapisany: ${planLabel}. ${patient.name} nie ma jeszcze konta w aplikacji, więc planu tam nie widzi. Daj kod QR albo link do aplikacji, albo wydruk karty z planem.${replaceFailedSuffix}`;
   }
-  return `${replacedPrefix}Plan zapisany dla: ${patient.name} (${planLabel}).`;
+  return `${replacedPrefix}Plan zapisany dla: ${patient.name} (${planLabel}).${replaceFailedSuffix}`;
 }

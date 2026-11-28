@@ -94,7 +94,10 @@ export function SendSummaryCard({ spec, testId, messageId, chosen }: CardProps<'
     markChosen(messageId, 'sent');
     refetchCredits();
     appendAssistant({
-      text: sentText(patient, describePlan(plan), { replaced: Boolean(result.replacedAssignmentId) }),
+      text: sentText(patient, describePlan(plan), {
+        replaced: Boolean(result.replacedAssignmentId),
+        replaceFailed: result.replaceFailed === true,
+      }),
       spec: { component: 'Sent', patientId: patient.id, setName: spec.draft.name, planLabel: describePlan(plan) },
     });
   };
