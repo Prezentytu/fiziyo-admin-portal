@@ -30,6 +30,9 @@ describe('product help routing', () => {
     'Pacjent nie ma planu. Ułóż zestaw na kolano',
     'Czy Anna odebrała zestaw?',
     'Ma własny gabinet',
+    'Zaproponuj pomysły na ćwiczenia na kolano',
+    'Zaproponuj nowy pomysł na zestaw dla pacjenta',
+    'Zaproponuj sugestię ćwiczeń rozciągających',
   ])('keeps the existing conversation for %s', (text) => expect(productHelpFor(text)).toBeUndefined());
 
   it('uses only the last help question for short replies', () => {

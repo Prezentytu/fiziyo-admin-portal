@@ -35,7 +35,7 @@ export type ProductHelpTopic = ProductHelpSpec['topic'];
 const REPORT_COMMAND =
   /\b(?:zg[lł]o[śs](?:i[ćc])?|zaraport(?:uj|owa[ćc]))\s+(?:(?:ten|to|taki)\s+)?(?:b[łl][ąa]d|bug(?:a)?|problem|usterk[ęe])/iu;
 const FEATURE_REQUEST_COMMAND =
-  /\b(?:zg[lł]o[śs](?:i[ćc])?|zapropon(?:uj|owa[ćc])|przekaza[ćc]|wys[lł]a[ćc])\s+(?:(?:ten|t[ęe]|now[yą])\s+)?(?:pomys[lł]|sugesti[ęe]|potrzeb[ęe](?:\s+funkcji)?|propozycj[ęe]\s+funkcji|pro[śs]b[ęe]\s+o\s+funkcj[ęe]|brakuj[ąa]c[ąa]\s+funkcj[ęe])/iu;
+  /\b(?:zg[lł]o[śs](?:i[ćc])?|przekaza[ćc]|wys[lł]a[ćc])\s+(?:(?:ten|t[ęe]|now[yą])\s+)?(?:pomys[lł]|sugesti[ęe]|potrzeb[ęe](?:\s+funkcji)?|propozycj[ęe]\s+funkcji|pro[śs]b[ęe]\s+o\s+funkcj[ęe]|brakuj[ąa]c[ąa]\s+funkcj[ęe])(?!\p{L})/iu;
 const PLAN_REPORT =
   'Pacjent nie widzi przypisanego zestawu w aplikacji mobilnej po sprawdzeniu połączenia z gabinetem.';
 
