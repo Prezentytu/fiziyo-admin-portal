@@ -42,15 +42,16 @@ import { AiCreditsRequestControl } from '@/features/ai-credits/AiCreditsRequestC
 import {
   buildFeedbackEscalation,
   CHAT_RATING_REASON_OPTIONS,
-  detectCreditMismatch,
   evaluateSessionRatingEligibility,
   isRepeatedPromptWithinWindow,
   markSessionRatingShown,
   MAX_CHAT_FEEDBACK_COMMENT_LENGTH,
   sendChatAnomalyBeacon,
+  stepCreditMismatchCheck,
   submitChatFeedback,
   type ChatFeedbackReasonTag,
   type ChatRatingValue,
+  type CreditCheckState,
   type FeedbackEscalationDraft,
 } from './utils/chatTelemetry';
 import { PatientContextPanel } from './PatientContextPanel';
@@ -710,8 +711,7 @@ export function ChatView() {
   const [dismissedRatingConversationId, setDismissedRatingConversationId] = useState<string | null>(null);
   const [feedbackEscalation, setFeedbackEscalation] = useState<(FeedbackEscalationDraft & { key: number }) | null>(null);
   const escalationSeqRef = useRef(0);
-  const prevCreditsRef = useRef<number | undefined>(undefined);
-  const checkedCreditMessageIdRef = useRef<string | undefined>(undefined);
+  const creditCheckRef = useRef<CreditCheckState>({});
   // Replies that arrive in the open conversation read in; one opened from the sidebar shows at once.
   const [revealMarker, setRevealMarker] = useState<RevealMarker | undefined>(undefined);
   if (revealMarker?.conversationId !== activeConversationId) {
@@ -760,32 +760,20 @@ export function ChatView() {
 
   // Kliencki beacon rozjazdu salda kredytów vs creditsUsed (SPEC-074).
   useEffect(() => {
-    const currentRemaining = credits?.remaining;
-    const previousRemaining = prevCreditsRef.current;
-    prevCreditsRef.current = currentRemaining;
-    if (
-      previousRemaining === undefined ||
-      currentRemaining === undefined ||
-      !lastAssistant ||
-      lastAssistant.role !== 'assistant' ||
-      lastAssistant.source !== 'ai' ||
-      lastAssistant.creditsUsed <= 0 ||
-      checkedCreditMessageIdRef.current === lastAssistant.id
-    ) {
-      return;
-    }
-    checkedCreditMessageIdRef.current = lastAssistant.id;
-    if (detectCreditMismatch(previousRemaining, currentRemaining, lastAssistant.creditsUsed)) {
-      sendChatAnomalyBeacon({
-        code: 'anomaly_credit_mismatch',
-        sessionId: activeConversationId,
-        component: lastAssistant.spec?.component,
-        metadata: {
-          reported: lastAssistant.creditsUsed,
-          delta: previousRemaining - currentRemaining,
-        },
-      });
-    }
+    const assistant = lastAssistant?.role === 'assistant' ? lastAssistant : undefined;
+    const { state, mismatch } = stepCreditMismatchCheck(creditCheckRef.current, {
+      conversationId: activeConversationId,
+      remaining: credits?.remaining,
+      lastAssistant: assistant,
+    });
+    creditCheckRef.current = state;
+    if (!mismatch) return;
+    sendChatAnomalyBeacon({
+      code: 'anomaly_credit_mismatch',
+      sessionId: activeConversationId,
+      component: assistant?.spec?.component,
+      metadata: mismatch,
+    });
   }, [activeConversationId, credits?.remaining, lastAssistant]);
 
   const handleEscalateFeedback = useCallback((draft: FeedbackEscalationDraft) => {

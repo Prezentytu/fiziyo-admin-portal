@@ -222,6 +222,60 @@ export function detectCreditMismatch(
   return actualDelta !== reportedCreditsUsed;
 }
 
+export interface CreditCheckState {
+  conversationId?: string;
+  /** Saldo, gdy żadna płatna odpowiedź nie czeka na odświeżenie. */
+  settledRemaining?: number;
+  lastMessageId?: string;
+  pending?: { creditsUsed: number; before: number };
+}
+
+export interface CreditCheckInput {
+  conversationId: string;
+  remaining: number | undefined;
+  lastAssistant?: { id: string; source: string; creditsUsed: number };
+}
+
+export interface CreditCheckStep {
+  state: CreditCheckState;
+  mismatch?: { reported: number; delta: number };
+}
+
+/**
+ * Krok detektora `anomaly_credit_mismatch`. Odpowiedź trafia do wątku, zanim wróci refetch salda,
+ * więc porównanie czeka na pierwszą zmianę salda po płatnej odpowiedzi. Zmiana rozmowy (także
+ * otwarcie z historii) traktuje jej ostatnią odpowiedź jako już rozliczoną.
+ */
+export function stepCreditMismatchCheck(state: CreditCheckState, input: CreditCheckInput): CreditCheckStep {
+  const { conversationId, remaining, lastAssistant } = input;
+  if (state.conversationId !== conversationId) {
+    return { state: { conversationId, settledRemaining: remaining, lastMessageId: lastAssistant?.id } };
+  }
+
+  let next = state;
+  if (lastAssistant && lastAssistant.id !== state.lastMessageId) {
+    const paid = lastAssistant.source === 'ai' && lastAssistant.creditsUsed > 0;
+    next = {
+      ...state,
+      lastMessageId: lastAssistant.id,
+      pending:
+        paid && state.settledRemaining !== undefined
+          ? { creditsUsed: lastAssistant.creditsUsed, before: state.settledRemaining }
+          : undefined,
+    };
+  }
+
+  if (remaining === undefined) return { state: next };
+  if (!next.pending) return { state: { ...next, settledRemaining: remaining } };
+  if (remaining === next.pending.before) return { state: next }; // saldo jeszcze nieodświeżone
+
+  const { before, creditsUsed } = next.pending;
+  const settled: CreditCheckState = { ...next, pending: undefined, settledRemaining: remaining };
+  return detectCreditMismatch(before, remaining, creditsUsed)
+    ? { state: settled, mismatch: { reported: creditsUsed, delta: before - remaining } }
+    : { state: settled };
+}
+
 /** Detektor kliencki: powtórzona wiadomość użytkownika wysłana w oknie < 60 s. */
 export function isRepeatedPromptWithinWindow(
   previousText: string | undefined,
