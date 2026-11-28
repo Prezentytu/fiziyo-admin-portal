@@ -49,8 +49,21 @@ describe('product help routing', () => {
     'Ma własny gabinet',
     'Pokaż podgląd jak u pacjenta dla planu Krystyny',
     'Dodaj pacjenta Jan Kowalski z kręgosłupem',
+    'Co się zmieniło u Anny od ostatniej wizyty?',
+    'Ostatnie zmiany w planie Krystyny',
+    'Jaki poziom bólu zgłosiła Anna w aplikacji?',
+    'Przypisz Annie zestaw na kolano, nie ma smartfona',
+    'Wyślij plan Annie, nie ma aplikacji',
   ])('keeps the existing conversation for %s (no false positive)', (text) =>
     expect(productHelpFor(text)).toBeUndefined()
+  );
+
+  it.each([
+    'Pacjent nie ma planu. Ułóż zestaw na kolano',
+    'Ułóż zestaw dla Anny, nie za trudny',
+    'Ułóż zestaw tak jak ostatnio',
+  ])('keeps a command after the missing-plan card for %s (no false positive)', (text) =>
+    expect(productHelpFor(text, 'missing-plan')).toBeUndefined()
   );
 
   it('uses only the last help question for short and natural-language follow-up replies (S23)', () => {

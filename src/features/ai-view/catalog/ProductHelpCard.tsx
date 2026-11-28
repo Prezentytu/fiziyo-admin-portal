@@ -148,7 +148,7 @@ const guides = {
   },
   'mobile-app-features': {
     title: 'Możliwości aplikacji mobilnej FiziYo',
-    text: 'Aplikacja pacjenta oferuje: 1) interaktywny player ćwiczeń (fazy ruchu z odliczaniem, wskazówki, grafiki/filmy i dźwięki), 2) zapisywanie wykonania, poziomu bólu, trudności i komentarza dla fizjoterapeuty, 3) przypomnienia o treningu, 4) motywację: punkty zdrowia, poziomy i odznaki, 5) historię ćwiczeń oraz osobny tryb fizjoterapeuty. Aplikacja nie ma obecnie bezpośredniego czatu pacjent–terapeuta ani nagrywania własnych filmów przez pacjenta.',
+    text: 'Aplikacja pacjenta oferuje: 1) interaktywny player ćwiczeń (fazy ruchu z odliczaniem, wskazówki, grafiki/filmy i dźwięki), 2) zapisywanie wykonania, poziomu bólu, trudności i komentarza dla fizjoterapeuty, 3) przypomnienia o treningu, 4) motywację: punkty zdrowia, poziomy i odznaki, 5) historię ćwiczeń oraz osobny tryb fizjoterapeuty. Aplikacja nie ma obecnie bezpośredniego czatu pacjent–terapeuta ani dodawania własnych filmów przez pacjenta.',
     link: patientGuide,
     secondaryLink: sprawniejszyLink,
   },

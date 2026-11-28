@@ -45,7 +45,7 @@ const PLAN_REPORT =
 
 // Guard przed fałszywym przechwyceniem komend tworzenia/przypisywania zestawu albo dodawania pacjenta.
 const CREATE_SET_OR_PATIENT =
-  /\b(?:uloz\w*|utworz\w*|stworz\w*|przygotuj\w*|dobierz\w*)\b.*\b(?:zestaw|plan|cwiczeni)|\bdodaj\s+(?:pacjent|nowego\s+pacjent|nowa\s+pacjent|cwiczeni)/;
+  /\b(?:uloz\w*|utworz\w*|stworz\w*|przygotuj\w*|dobierz\w*|przypisz\w*|wyslij\w*|daj)\b.*\b(?:zestaw|plan|cwiczeni)|\bdodaj\s+(?:pacjent|nowego\s+pacjent|nowa\s+pacjent|cwiczeni)/;
 
 function continuedTopic(text: string, previous?: ProductHelpTopic): ProductHelpTopic | undefined {
   if (previous === 'mobile-news') {
@@ -56,15 +56,16 @@ function continuedTopic(text: string, previous?: ProductHelpTopic): ProductHelpT
     if (/^(?:do (?:mojego |naszego )?zespolu|pracownik\w*|do (?:mojego |naszego )?gabinetu)$/.test(text)) return 'team';
     if (/^(?:ma (?:swoj|wlasny) gabinet|polecenie|polecic fiziyo|inny gabinet)$/.test(text)) return 'referral';
   }
-  if (previous === 'missing-plan') {
+  if (previous === 'missing-plan' && !CREATE_SET_OR_PATIENT.test(text)) {
     // SPEC-071 / S23: akceptujemy naturalne zdania wpisane tekstem, nie tylko kliknięcie chipa.
+    // Gołe „tak”/„nie” liczy się tylko na początku odpowiedzi, bo „nie” pada w większości poleceń.
     if (
       !/\bnie\s+(?:widzi|wiem|polacz)/.test(text) &&
-      /\b(?:tak|widzi\b.{0,35}\bgabinet\w*|gabinet\w*.{0,20}widzi|polaczon\w*|jest\s+gabinet\w*)\b/.test(text)
+      /^tak\b|\b(?:widzi\b.{0,35}\bgabinet\w*|gabinet\w*.{0,20}widzi|polaczon\w*|jest\s+gabinet\w*)\b/.test(text)
     ) {
       return 'check-assignment';
     }
-    if (/\b(?:nie|nie\s+widzi|brak\s+gabinetu|pusto\s+na\s+start|nie\s+polacz|nie\s+wiem)\b/.test(text)) {
+    if (/^nie\b|\b(?:nie\s+widzi|brak\s+gabinetu|pusto\s+na\s+start|nie\s+polacz|nie\s+wiem)\b/.test(text)) {
       return 'connect';
     }
   }
@@ -84,7 +85,7 @@ function helpTopic(text: string): ProductHelpTopic | undefined {
     }
     if (
       !/\bu\s+pacjent|\bpacjent\w*\b/.test(text) &&
-      (/^(?:co nowego|nowosci)$/.test(text) || /\b(?:portal\w*|panel\w*|fiziyo|ostatnio|zmienilo|zmiany|release)\b/.test(text))
+      (/^(?:co nowego|nowosci)$/.test(text) || /\b(?:portal\w*|panel\w*|fiziyo|release)\b/.test(text))
     ) {
       return 'portal-news';
     }
@@ -129,7 +130,7 @@ function helpTopic(text: string): ProductHelpTopic | undefined {
       text
     ) ||
       (/aplikacj\w*|apce/.test(text) &&
-        /\b(?:punkt\w*\s+zdrowia|odznak\w*|poziom\w*|grywalizacj|przypomnieni|czat\s+z\s+pacjent|nagryw\w*\s+film|player)\b/.test(
+        /\b(?:punkt\w*\s+zdrowia|odznak\w*|grywalizacj|przypomnieni|czat\s+z\s+pacjent|nagryw\w*\s+film|player)\b/.test(
           text
         ))) &&
     !CREATE_SET_OR_PATIENT.test(text)
