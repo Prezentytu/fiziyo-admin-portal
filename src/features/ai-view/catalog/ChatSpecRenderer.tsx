@@ -22,6 +22,7 @@ import { SetDraftCard } from './SetDraftCard';
 import { SetSavedCard } from './SetSavedCard';
 import { PatientAddedCard } from './PatientAddedCard';
 import { ExerciseCreatedCard } from './ExerciseCreatedCard';
+import { WeekPlanCard } from './WeekPlanCard';
 
 interface ChatSpecRendererProps {
   readonly spec: ChatCardSpec;
@@ -46,6 +47,8 @@ export function ChatSpecRenderer({ spec, testId, messageId, chosen, request }: C
           {...common}
         />
       );
+    case 'WeekPlan':
+      return <WeekPlanCard spec={spec} testId={`${testId}-week-plan`} {...common} />;
     case 'ExerciseResults':
       return <ExerciseResultsCard spec={spec} testId={`${testId}-exercise-results`} request={request} {...common} />;
     case 'PatientPeek':

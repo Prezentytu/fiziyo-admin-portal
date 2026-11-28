@@ -116,6 +116,7 @@ Każda specyfikacja powinna mieć sekcję Changelog na końcu:
 | 039 | [Patient attention signal](SPEC-039-2026-11-15-patient-attention-signal.md)                           | Ból, „za trudne” i notatka pacjenta w liście i dzwonku            | in-progress |
 | 040 | [Create organization](SPEC-040-2026-11-20-create-organization.md)                                     | Zakładanie organizacji z przełącznika, czatu i ustawień           | in-progress |
 | 041 | [Verification shared queue](SPEC-041-2026-11-23-verification-shared-queue.md)                         | Dwóch weryfikatorów dzieli kolejkę: pamięć końca, „Weź N”, postęp | in-progress |
+| 067 | [Kalendarz tygodnia w czacie](SPEC-067-2026-11-28-kalendarz-tygodnia-w-czacie.md)                     | Kilka zestawów na dni tygodnia jedną kartą i jednym „Wyślij”      | in-progress |
 
 ## Numery bez specu
 

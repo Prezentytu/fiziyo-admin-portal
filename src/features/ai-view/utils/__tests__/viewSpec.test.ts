@@ -45,6 +45,33 @@ describe('toChatViewSpec', () => {
     expect(toChatViewSpec({ component: 'ExerciseResults' })).toEqual(UNSUPPORTED_SPEC);
   });
 
+  it('reads a week plan: each set once, known days Monday first, and degrades without sets (SPEC-067)', () => {
+    expect(
+      toChatViewSpec({
+        component: 'WeekPlan',
+        patientId: 'p1',
+        week: [
+          { setId: 's1', days: ['thursday', 'monday', 'someday'] },
+          { setId: 's1', days: ['friday'] },
+          { setId: 's2', days: null },
+          { setId: null, days: ['monday'] },
+        ],
+      })
+    ).toEqual({
+      component: 'WeekPlan',
+      patientId: 'p1',
+      week: [
+        { setId: 's1', days: ['monday', 'thursday'] },
+        { setId: 's2', days: [] },
+      ],
+    });
+    expect(toChatViewSpec({ component: 'WeekPlan', patientId: 'p1', week: [] })).toEqual({
+      component: 'PatientPeek',
+      patientId: 'p1',
+    });
+    expect(toChatViewSpec({ component: 'WeekPlan', week: 'nonsense' })).toEqual(UNSUPPORTED_SPEC);
+  });
+
   it('accepts only routes from the closed list', () => {
     expect(toChatViewSpec({ component: 'Navigate', route: 'patients' })).toEqual({
       component: 'Navigate',

@@ -3,6 +3,7 @@ import type { SetDraftReturn } from './setDraft';
 import { z } from 'zod';
 
 import type { DraftDose, DraftItem } from './setDraft';
+import { normalizeWeek, type WeekEntry, type WeekPeriod } from './weekPlan';
 import {
   PATIENT_OTHER_THERAPIST_NOTICE,
   PATIENT_UNDER_OTHER_THERAPIST_MESSAGE,
@@ -42,6 +43,14 @@ export type ChatViewSpec =
       warmupExerciseIds?: string[];
     }
   | { component: 'AssignSummary'; patientId: string; setId: string }
+  | {
+      /** SPEC-067: several catalog sets on weekdays for one patient, sent with one click. */
+      component: 'WeekPlan';
+      patientId?: string;
+      week: WeekEntry[];
+      /** Only from the thread itself: start and length the therapist typed in the conversation. */
+      period?: WeekPeriod;
+    }
   | { component: 'ExerciseResults'; query: string; exerciseIds: string[]; patientId?: string; forSet?: SetDraftReturn }
   | { component: 'PatientPeek'; patientId?: string; filter?: 'inactive' }
   | { component: 'Navigate'; route: NavigateRoute }
@@ -114,6 +123,10 @@ const RAW_SPEC_SCHEMA = z.object({
     .nullish()
     .catch(null),
   note: optionalText,
+  week: z
+    .array(z.object({ setId: z.string().nullish(), days: z.array(z.string()).nullish() }))
+    .nullish()
+    .catch(null),
 });
 
 const routeSchema = z.enum(NAVIGATE_ROUTE_KEYS);
@@ -164,6 +177,12 @@ export function toChatViewSpec(input: unknown): ChatViewSpec {
       if (raw.patientId && raw.setId) return { component: 'AssignSummary', patientId: raw.patientId, setId: raw.setId };
       if (raw.setId) return { component: 'SetDraft', setId: raw.setId, exerciseIds: [] };
       return raw.patientId ? { component: 'PatientPeek', patientId: raw.patientId } : UNSUPPORTED_SPEC;
+    case 'WeekPlan': {
+      const week = normalizeWeek(raw.week ?? []);
+      if (week.length === 0)
+        return raw.patientId ? { component: 'PatientPeek', patientId: raw.patientId } : UNSUPPORTED_SPEC;
+      return { component: 'WeekPlan', patientId: raw.patientId, week };
+    }
     case 'ExerciseResults':
       if (!raw.query && raw.exerciseIds.length === 0) return UNSUPPORTED_SPEC;
       return {

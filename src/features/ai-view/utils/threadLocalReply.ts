@@ -305,7 +305,8 @@ export function withRequestedSchedule<T extends { text?: string; spec?: ChatCard
   messages: readonly ChatThreadMessage[]
 ): T {
   const spec = reply.spec;
-  if (spec?.component !== 'Schedule' || spec.plan) return reply;
+  const isWeek = spec?.component === 'WeekPlan' && !spec.period;
+  if (!isWeek && (spec?.component !== 'Schedule' || spec.plan)) return reply;
   const lastSent = messages.findLastIndex(
     (message) =>
       message.role === 'assistant' && (message.spec?.component === 'Sent' || message.spec?.component === 'SendSummary')
@@ -316,8 +317,16 @@ export function withRequestedSchedule<T extends { text?: string; spec?: ChatCard
     .filter(
       (text) => !NOT_A_SCHEDULE.test(normalizeSearchText(text)) || /tyg|dzien|codzien/.test(normalizeSearchText(text))
     );
-  const requested = requestedSchedule(userTexts, proposedPlan(spec.draft.rhythm));
+  const requested = requestedSchedule(
+    userTexts,
+    spec.component === 'Schedule' ? proposedPlan(spec.draft.rhythm) : undefined
+  );
   if (!requested) return reply;
+  // SPEC-067: kalendarz tygodnia bierze z rozmowy tylko start i czas; dni ma każdy zestaw osobno.
+  if (spec.component === 'WeekPlan') {
+    return { ...reply, spec: { ...spec, period: { start: requested.plan.start, weeks: requested.plan.weeks } } };
+  }
+  if (spec.component !== 'Schedule') return reply;
   return {
     ...reply,
     text: scheduleQuestion(spec.draft, requested.plan),
