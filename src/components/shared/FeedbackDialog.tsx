@@ -34,6 +34,7 @@ interface FeedbackDialogProps {
   isOpen: boolean;
   onClose: () => void;
   screenName?: string;
+  initialType?: FeedbackType;
   initialDescription?: string;
   onSent?: () => void;
 }
@@ -51,13 +52,20 @@ const MAX_IMAGE_SIZE_MB = 5;
 // COMPONENT
 // ============================================================================
 
-export function FeedbackDialog({ isOpen, onClose, screenName, initialDescription, onSent }: FeedbackDialogProps) {
+export function FeedbackDialog({
+  isOpen,
+  onClose,
+  screenName,
+  initialType,
+  initialDescription,
+  onSent,
+}: FeedbackDialogProps) {
   // === HOOKS ===
   const { user } = useUser();
   const pathname = usePathname();
 
   // === STATE ===
-  const [feedbackType, setFeedbackType] = useState<FeedbackType>('bug');
+  const [feedbackType, setFeedbackType] = useState<FeedbackType>(() => initialType ?? 'bug');
   const [description, setDescription] = useState(() => (initialDescription ?? '').slice(0, MAX_DESCRIPTION_LENGTH));
   const [files, setFiles] = useState<File[]>([]);
   const [isSending, setIsSending] = useState(false);
@@ -77,10 +85,10 @@ export function FeedbackDialog({ isOpen, onClose, screenName, initialDescription
   // === HANDLERS ===
 
   const resetForm = useCallback(() => {
-    setFeedbackType('bug');
+    setFeedbackType(initialType ?? 'bug');
     setDescription('');
     setFiles([]);
-  }, []);
+  }, [initialType]);
 
   const handleClose = useCallback(() => {
     if (isSending) return;
