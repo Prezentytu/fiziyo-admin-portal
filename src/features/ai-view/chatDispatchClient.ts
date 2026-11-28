@@ -12,21 +12,42 @@ const DISPATCH_RESPONSE_SCHEMA = z.object({
   creditsUsed: z.number().nullish(),
 });
 
+export interface DispatchRequestOptions {
+  /** SPEC-068 (W5): klucz idempotencji żądania po stronie backendu (bufor 60 s). */
+  clientMessageId?: string;
+  /** SPEC-068 (K2): ID pacjenta wybranego kliknięciem chipa imiennika. */
+  patientId?: string;
+}
+
+function generateClientMessageId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 /** REST `POST /api/chat/dispatch` (fizjo-app backend). The model returns a sentence and a card spec, never HTML. */
 export async function dispatchChatMessage(
   message: string,
   sessionId?: string,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  options?: DispatchRequestOptions
 ): Promise<DispatchResult> {
   const token = getBackendToken();
   if (!token) throw new ChatDispatchError('unauthorized', 'Brak tokenu autoryzacji.');
 
+  const clientMessageId = options?.clientMessageId ?? generateClientMessageId();
   let response: Response;
   try {
     response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/chat/dispatch`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ message, sessionId }),
+      body: JSON.stringify({
+        message,
+        sessionId,
+        clientMessageId,
+        ...(options?.patientId ? { patientId: options.patientId } : {}),
+      }),
       signal,
     });
   } catch {

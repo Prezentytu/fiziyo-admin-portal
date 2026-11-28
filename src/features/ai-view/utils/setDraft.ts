@@ -22,6 +22,8 @@ export interface DraftItem {
   restReps: number;
   preparationTime: number;
   side?: string;
+  /** Typ ćwiczenia (reps / time), żeby `itemSeconds` liczyło czas tak samo jak ekran zestawu i player (SPEC-068 K5). */
+  exerciseType?: string;
   tempo?: string;
   loadKg?: number;
   notes?: string;
@@ -57,6 +59,8 @@ export interface SetDraftPayload {
   patientId?: string;
   /** Catalog set the draft started from (kept as `sourceExerciseSetId` on the patient plan). */
   sourceSetId?: string;
+  /** SPEC-068 (K1): aktywne przypisanie pacjenta, które ten szkic modyfikuje (domyślny cel „Zastąp obecny plan”). */
+  replacesAssignmentId?: string;
   /** Rhythm of the catalog set behind the draft: the schedule step proposes it instead of every day. */
   rhythm?: PlanRhythm;
   items: DraftItem[];
@@ -92,7 +96,7 @@ export function applyParameterPatch(item: DraftItem, patch: Partial<ExercisePara
   return next;
 }
 
-export function draftItemFromExercise(exercise: ExerciseLikeForDefaults & { id: string }): DraftItem {
+export function draftItemFromExercise(exercise: ExerciseLikeForDefaults & { id: string; type?: string | null }): DraftItem {
   const params = getExerciseDefaultParams(exercise);
   return {
     exerciseId: exercise.id,
@@ -104,6 +108,7 @@ export function draftItemFromExercise(exercise: ExerciseLikeForDefaults & { id: 
     restReps: params.restReps,
     preparationTime: params.preparationTime,
     side: params.exerciseSide,
+    ...(exercise.type ? { exerciseType: exercise.type } : {}),
     catalog: getCatalogZeroableDose(exercise),
   };
 }
@@ -120,23 +125,32 @@ interface MappingLike {
   tempo?: string | null;
   notes?: string | null;
   load?: { loadWeightKg?: number | null } | null;
+  exercise?: (ExerciseLikeForDefaults & { id: string; type?: string | null }) | null;
 }
 
 /** A catalog set's mapping wins over the exercise defaults, as in the assignment wizard. */
 export function draftItemFromMapping(
   mapping: MappingLike,
-  exercise?: ExerciseLikeForDefaults & { id: string }
+  exercise?: ExerciseLikeForDefaults & { id: string; type?: string | null }
 ): DraftItem {
-  const base = exercise
-    ? draftItemFromExercise(exercise)
-    : // Bez rekordu katalogu jego wartości są nieznane, a nie puste: zapis zachowuje się jak przed #218.
-      { ...draftItemFromExercise({ id: mapping.exerciseId }), catalog: undefined };
+  const resolvedExercise = exercise ?? mapping.exercise ?? undefined;
+  const base = resolvedExercise
+    ? draftItemFromExercise(resolvedExercise)
+    : // Bez rekordu katalogu jego wartości są nieznane: nie zakładamy 'both' (podwaja czas, SPEC-068 K5).
+      { ...draftItemFromExercise({ id: mapping.exerciseId }), side: undefined, catalog: undefined };
+  const executionTime = mapping.executionTime ?? base.executionTime;
+  const duration =
+    mapping.duration !== undefined && mapping.duration !== null
+      ? mapping.duration
+      : executionTime > 0
+        ? 0
+        : base.duration;
   return {
     ...base,
     sets: mapping.sets ?? base.sets,
     reps: mapping.reps ?? base.reps,
-    duration: mapping.duration ?? base.duration,
-    executionTime: mapping.executionTime ?? base.executionTime,
+    duration,
+    executionTime,
     restSets: mapping.restSets ?? base.restSets,
     restReps: mapping.restReps ?? base.restReps,
     preparationTime: mapping.preparationTime ?? base.preparationTime,
@@ -156,6 +170,7 @@ export function itemSeconds(item: DraftItem): number {
     restReps: item.restReps,
     preparationTime: item.preparationTime,
     side: item.side,
+    type: item.exerciseType,
     alternatingPerSide: item.alternatingPerSide === true,
   });
 }
@@ -242,6 +257,24 @@ export function savedInCatalogText(name: string, rhythm?: PlanRhythm): string {
 
 const MAX_NAME_LENGTH = 80;
 
+/** Ucina tekst na granicy słowa i zdejmuje niedomknięte nawiasy, żeby nazwa nie kończyła się „...po poro” ani „...(26”. */
+function truncateNameAtWordBoundary(value: string, maxLength: number): string {
+  if (value.length <= maxLength) return value;
+  let slice = value.slice(0, maxLength);
+  if (!/\s/.test(value.charAt(maxLength))) {
+    const lastSpace = slice.search(/\s+\S*$/);
+    if (lastSpace > 0) slice = slice.slice(0, lastSpace);
+  }
+  slice = slice.replace(/[\s,;:(\[-–„]+$/u, '');
+  const lastOpen = slice.lastIndexOf('(');
+  const lastClose = slice.lastIndexOf(')');
+  if (lastOpen > lastClose) {
+    const beforeParen = slice.slice(0, lastOpen).replace(/[\s,;:–-]+$/u, '');
+    if (beforeParen.length > 0) slice = beforeParen;
+  }
+  return slice || value.slice(0, maxLength);
+}
+
 // The name travels to the patient's app, the catalogue and the PDF, so it never carries
 // the patient's personal data; the assignment already says whose plan it is.
 export function proposeDraftName(options: {
@@ -252,9 +285,21 @@ export function proposeDraftName(options: {
   avoid?: readonly string[];
 }): string {
   const date = format(options.today ?? new Date(), 'dd.MM');
+  const explicitSetName = options.setName?.trim();
+  if (explicitSetName) {
+    return truncateNameAtWordBoundary(explicitSetName, MAX_NAME_LENGTH);
+  }
   const topic = draftTopic(options.topic, options.avoid);
-  const name = options.setName?.trim() || (topic ? `${capitalize(topic)} · ${date}` : `Nowy zestaw · ${date}`);
-  return name.slice(0, MAX_NAME_LENGTH);
+  if (!topic) return `Nowy zestaw · ${date}`;
+  const suffix = ` · ${date}`;
+  const full = `${capitalize(topic)}${suffix}`;
+  if (full.length <= MAX_NAME_LENGTH) return full;
+  // Pojedynczy wyraz dłuższy niż limit: tniemy do 80 znaków; wielowyrazowy temat tniemy na granicy wyrazu zachowując datę.
+  const hasSpaces = /\s/.test(topic);
+  if (!hasSpaces) return full.slice(0, MAX_NAME_LENGTH);
+  const maxTopicLen = Math.max(12, MAX_NAME_LENGTH - suffix.length);
+  const shortened = truncateNameAtWordBoundary(capitalize(topic), maxTopicLen);
+  return `${shortened}${suffix}`;
 }
 
 /** „Zestaw na ból karku” → „ból karku”; nothing when the topic names a person from the thread. */

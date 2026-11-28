@@ -30,6 +30,10 @@ export type ChatViewSpec =
       component: 'SetDraft';
       patientId?: string;
       setId?: string;
+      /** SPEC-068 (K1): zestaw/plan bazowy przy zmodyfikowanej liście `exerciseIds`. */
+      baseSetId?: string;
+      /** SPEC-068 (K1): aktywne przypisanie pacjenta, które ten szkic może zastąpić. */
+      replacesAssignmentId?: string;
       exerciseIds: string[];
       note?: string;
       /** Only from the thread itself (a scanned note), never from the model. */
@@ -102,6 +106,8 @@ const RAW_SPEC_SCHEMA = z.object({
   component: z.string(),
   patientId: optionalText,
   setId: optionalText,
+  baseSetId: optionalText,
+  replacesAssignmentId: optionalText,
   exerciseIds: idList,
   warmupExerciseIds: idList,
   query: optionalText,
@@ -149,13 +155,15 @@ export function toChatViewSpec(input: unknown): ChatViewSpec {
 
   switch (raw.component) {
     case 'SetDraft':
-      if (!raw.setId && raw.exerciseIds.length === 0) {
+      if (!raw.setId && !raw.baseSetId && raw.exerciseIds.length === 0) {
         return raw.patientId ? { component: 'PatientPeek', patientId: raw.patientId } : UNSUPPORTED_SPEC;
       }
       return {
         component: 'SetDraft',
         patientId: raw.patientId,
         setId: raw.setId,
+        ...(raw.baseSetId ? { baseSetId: raw.baseSetId } : {}),
+        ...(raw.replacesAssignmentId ? { replacesAssignmentId: raw.replacesAssignmentId } : {}),
         exerciseIds: raw.exerciseIds,
         note: raw.note,
         ...warmupOf(raw.exerciseIds, raw.warmupExerciseIds),

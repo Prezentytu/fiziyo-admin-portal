@@ -439,8 +439,10 @@ export default function ExercisesPage() {
           {(isSearching || bodyRegion || statusFilter !== 'all') && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span>Wyniki:</span>
-              <Badge variant="secondary" className="text-xs">
-                {libraryPage?.totalCount ?? 0} z {totalCount}
+              <Badge variant="secondary" className="text-xs" data-testid="exercise-search-results-badge">
+                {loading || searchQuery.trim() !== committedSearch
+                  ? 'Szukam…'
+                  : `${libraryPage?.totalCount ?? 0} z ${totalCount}`}
               </Badge>
               {isSearching && (
                 <Button

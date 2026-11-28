@@ -94,6 +94,20 @@ describe('proposeDraftName', () => {
   it('keeps the name within 80 characters', () => {
     expect(proposeDraftName({ topic: 'x'.repeat(100) })).toHaveLength(80);
   });
+
+  // SPEC-068 (W7): długi wielowyrazowy temat obcinany jest na granicy wyrazu, bez urwanego nawiasu i z zachowaniem daty.
+  it('truncates long multi-word topics at word boundary without dangling parentheses', () => {
+    const today = new Date(2026, 10, 28);
+    const name = proposeDraftName({
+      topic:
+        'Ból dolnego odcinka kręgosłupa po porodzie i cesarskim cięciu (26 tygodni bez sprzętu specjalistycznego)',
+      today,
+    });
+    expect(name.length).toBeLessThanOrEqual(80);
+    expect(name).toMatch(/ · 28\.11$/);
+    expect(name).not.toContain('(');
+    expect(name).not.toMatch(/po poro\b/);
+  });
 });
 
 describe('proposeDraftDescription', () => {
@@ -200,5 +214,47 @@ describe('itemsToDoses', () => {
       reps: 1,
       executionTime: 30,
     });
+  });
+});
+
+// SPEC-068 (K5): parzystość czasu między nowym szkicem z ćwiczenia, przeładowaniem z mappingu i widokiem zestawu.
+describe('itemSeconds parity across reload (K5)', () => {
+  it('returns identical seconds whether seeded from exercise or reloaded from set mapping', () => {
+    const exercise = {
+      id: 'ex-bridge',
+      type: 'REPS',
+      side: 'none',
+      defaultSets: 3,
+      defaultReps: 10,
+      defaultDuration: 45,
+      defaultExecutionTime: 4,
+      defaultRestBetweenSets: 30,
+      preparationTime: 5,
+    };
+    const fromExercise = draftItemFromMapping(
+      { exerciseId: 'ex-bridge', sets: 3, reps: 10, executionTime: 4, restSets: 30, preparationTime: 5 },
+      exercise
+    );
+    const reloadedWithEmbedded = draftItemFromMapping({
+      exerciseId: 'ex-bridge',
+      sets: 3,
+      reps: 10,
+      executionTime: 4,
+      restSets: 30,
+      preparationTime: 5,
+      exercise,
+    });
+    const reloadedWithoutCatalog = draftItemFromMapping({
+      exerciseId: 'ex-bridge',
+      sets: 3,
+      reps: 10,
+      executionTime: 4,
+      restSets: 30,
+      preparationTime: 5,
+    });
+
+    expect(itemSeconds(reloadedWithEmbedded)).toBe(itemSeconds(fromExercise));
+    // Nawet bez rekordu katalogu mapping nie dubluje czasu domyślnym side='both'.
+    expect(itemSeconds(reloadedWithoutCatalog)).toBe(itemSeconds(fromExercise));
   });
 });

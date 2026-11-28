@@ -377,15 +377,21 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
     restoreDraft,
   } = useChatActions();
   const [items, setItems] = useState<DraftItem[] | null>(null);
-  // Treść ćwiczeń szkicu (wersja rekordu) dociąga się osobno: lista z czatu jej nie niesie, a od wersji zależy,
-  // czy „naprzemiennie” liczy na stronę jak w aplikacji pacjenta.
+  const set = spec.setId ? organizationSets.find((candidate) => candidate.id === spec.setId) : undefined;
+  const baseSet = spec.baseSetId ? organizationSets.find((candidate) => candidate.id === spec.baseSetId) : undefined;
+  const seedDetailIds = useMemo(() => {
+    if (items !== null) return items.map((item) => item.exerciseId);
+    const fromMappings = [...(set?.exerciseMappings ?? []), ...(baseSet?.exerciseMappings ?? [])].map(
+      (mapping) => mapping.exerciseId
+    );
+    return [...new Set([...spec.exerciseIds, ...fromMappings])];
+  }, [baseSet?.exerciseMappings, items, set?.exerciseMappings, spec.exerciseIds]);
+  // Treść ćwiczeń szkicu (wersja rekordu, strona, typ) dociąga się osobno także dla zestawów z setId/baseSetId (SPEC-068 K5).
   const { exercises, loading, detailsReady, detailsPending, ensureDetailsReady } = useAvailableExercises(
     organizationId,
     true,
-    // Przed zasianiem szkicu dociągamy proponowane id (także spoza pierwszej strony katalogu, P-4).
-    items === null ? spec.exerciseIds : items.map((item) => item.exerciseId)
+    seedDetailIds
   );
-  const set = spec.setId ? organizationSets.find((candidate) => candidate.id === spec.setId) : undefined;
   const patient = spec.patientId ? patients.find((candidate) => candidate.id === spec.patientId) : undefined;
   const byId = useMemo(() => new Map(exercises.map((exercise) => [exercise.id, exercise])), [exercises]);
 
@@ -398,6 +404,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
   if (items === null) {
     const seed = seedDraftItems({
       setId: spec.setId,
+      baseSetId: spec.baseSetId,
       exerciseIds: spec.exerciseIds,
       doses: spec.doses,
       items: spec.items,
@@ -464,11 +471,20 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
     setItems(items.map((item, position) => (position === index ? { ...item, ...patch } : item)));
 
   const patientNames = patients.map((candidate) => candidate.name);
-  const name = proposeDraftName({ setName: set?.name, topic: spec.note, avoid: patientNames });
+  const name = proposeDraftName({ setName: set?.name ?? baseSet?.name, topic: spec.note, avoid: patientNames });
   // Wersja rekordu wchodzi do szkicu tutaj, nie do stanu: kolejne kroki (harmonogram, podsumowanie) czytają ją ze szkicu.
-  const draftItems = items.map((item) =>
-    isV33ExerciseRecord(byId.get(item.exerciseId)) ? { ...item, alternatingPerSide: true } : item
-  );
+  const draftItems = items.map((item) => {
+    const catalog = byId.get(item.exerciseId);
+    const nextSide = item.side ?? catalog?.side ?? undefined;
+    const nextType = item.exerciseType ?? catalog?.type ?? undefined;
+    const alternatingPerSide = isV33ExerciseRecord(catalog) ? true : item.alternatingPerSide;
+    return {
+      ...item,
+      ...(nextSide ? { side: nextSide } : {}),
+      ...(nextType ? { exerciseType: nextType } : {}),
+      ...(alternatingPerSide ? { alternatingPerSide } : {}),
+    };
+  });
   const previewEntries = draftItems
     .map((item, rowIndex) => {
       const exercise = byId.get(item.exerciseId);
@@ -480,8 +496,9 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
   const draft: SetDraftPayload = {
     name,
     patientId: patient?.id,
-    sourceSetId: set?.id,
-    rhythm: rhythmOfFrequency(set?.frequency),
+    sourceSetId: set?.id ?? baseSet?.id,
+    ...(spec.replacesAssignmentId ? { replacesAssignmentId: spec.replacesAssignmentId } : {}),
+    rhythm: rhythmOfFrequency(set?.frequency ?? baseSet?.frequency),
     items: draftItems,
   };
   const minutes = draftMinutes(draftItems);
@@ -650,7 +667,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
       ) : (
         <ChatCardEmpty testId={`${testId}-empty`}>
           {missingSet
-            ? 'Nie znalazłem tego zestawu w katalogu gabinetu. Dodaj ćwiczenia z katalogu.'
+            ? 'Nie udało się znaleźć tego zestawu w katalogu gabinetu. Dodaj ćwiczenia z katalogu.'
             : 'Zestaw jest pusty. Dodaj ćwiczenia z katalogu.'}
         </ChatCardEmpty>
       )}

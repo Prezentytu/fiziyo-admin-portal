@@ -18,7 +18,12 @@ const CONTACT = new RegExp(`${EMAIL.source}|${PHONE.source}`, 'gi');
 const PHONE_LABEL = /^(?:tel(?:efon)?|nr|numer)\.?\s*:?\s*/i;
 // From here on the message is about the plan, not the patient ("i od razu ułóż mu zestaw: clamshell…").
 const PLAN_TALK = /(?:^|[^\p{L}])(?:zestaw|u[łl][óo][żz]|plan|[ćc]wicze)/iu;
-const NAME_END = /\s+(?:i|oraz|a)\s+|[,;:.]/;
+// SPEC-068 (W2): zatrzymaj nazwisko także przed nawiasem „(...)”, wiekiem „42l / 42 lat / 42 r.ż.” i etykietą „powód:”.
+const NAME_END =
+  /\s+(?:i|oraz|a)\s+|\s+\d{1,3}\s*(?:l\.?|lat|r\.?\s*ż\.?)(?=\s|$|[,;.)])|\s+(?:pow[óo]d|rozpoznanie)\s*:|[,;:.()]/iu;
+const CONTEXT_NOISE =
+  /^(?:bez\s+(?:adresu\s+)?e-?maila?|bez\s+maila|nie\s+ma\s+(?:adresu\s+)?e-?maila?|brak\s+(?:adresu\s+)?e-?maila?|nie\s+ma\s+konta)$/i;
+const CONTEXT_PREFIX = /^(?:pow[óo]d|rozpoznanie|problem|notatka)\s*:\s*/i;
 const MAX_CONTEXT_LABEL = 80;
 
 // Normalized (no diacritics, lower case): „dodaj”, „stwórz”, „utwórz”, „załóż”, also as „chcę dodać”.
@@ -107,23 +112,87 @@ export function parseNewPatientDetails(text: string): NewPatientDetails {
   if (email) details.email = email;
 
   const reasons: string[] = [];
+  if (!PLAN_TALK.test(head)) {
+    const parenMatch = /\(([^()]+)\)/.exec(text);
+    const parenNote = parenMatch?.[1]?.trim();
+    if (
+      parenNote &&
+      !PLAN_TALK.test(parenNote) &&
+      !(email && parenNote.includes(email)) &&
+      !(phone && parenNote.includes(phone)) &&
+      !CONTEXT_NOISE.test(parenNote)
+    ) {
+      reasons.push(parenNote);
+    }
+  }
+  const parenContent = reasons[0];
   for (const segment of PLAN_TALK.test(head) ? [] : segments) {
-    const trimmed = segment.trim();
+    const trimmed = segment
+      .trim()
+      .replace(/^\(|\)$/g, '')
+      .replace(CONTEXT_PREFIX, '')
+      .trim();
     if (!trimmed) continue;
+    if (parenContent && parenContent.includes(trimmed)) continue;
     if (PLAN_TALK.test(trimmed)) break;
+    if (CONTEXT_NOISE.test(trimmed)) continue;
     if ((email && trimmed.includes(email)) || (phone && trimmed.includes(phone))) continue;
     if (PHONE_LABEL.test(trimmed) && PHONE.test(trimmed)) continue;
     reasons.push(trimmed);
   }
-  const contextLabel = reasons.join(', ').slice(0, MAX_CONTEXT_LABEL).trim();
+  const contextLabel = truncateContextLabel(reasons.join(', '));
   if (contextLabel) details.contextLabel = contextLabel;
   return details;
 }
 
+function truncateContextLabel(raw: string): string {
+  const cleaned = raw.replace(/\s+/g, ' ').replace(/[(\[]+$/u, '').trim();
+  if (cleaned.length <= MAX_CONTEXT_LABEL) return cleaned;
+  let slice = cleaned.slice(0, MAX_CONTEXT_LABEL);
+  if (!/\s/.test(cleaned.charAt(MAX_CONTEXT_LABEL))) {
+    const lastSpace = slice.search(/\s+\S*$/);
+    if (lastSpace > 0) slice = slice.slice(0, lastSpace);
+  }
+  slice = slice.replace(/[\s,;:(\[-–]+$/u, '');
+  const lastOpen = slice.lastIndexOf('(');
+  const lastClose = slice.lastIndexOf(')');
+  if (lastOpen > lastClose) {
+    const beforeParen = slice.slice(0, lastOpen).replace(/[\s,;:–-]+$/u, '');
+    if (beforeParen.length > 0) slice = beforeParen;
+  }
+  return slice.trim();
+}
+
+function lemmatizePolishSegment(word: string, isFirstWord: boolean): string {
+  // Odmiana żeńskich nazwisk przymiotnikowych w bierniku: Nowakowską → Nowakowska, Zielińską → Zielińska.
+  if (!isFirstWord && /(?:sk|ck|zk|dzk)ą$/iu.test(word) && word.length >= 5) {
+    return `${word.slice(0, -1)}a`;
+  }
+  // Odmiana męskich nazwisk przymiotnikowych w dopełniaczu/bierniku: Kowalskiego → Kowalski, Nowickiego → Nowicki.
+  if (!isFirstWord && /(?:sk|ck|zk)iego$/iu.test(word) && word.length >= 7) {
+    return `${word.slice(0, -3)}`;
+  }
+  // Odmiana żeńskich imion w bierniku: Krystynę → Krystyna, Annę → Anna, Marię → Maria, Zofię → Zofia.
+  if (isFirstWord && word.length >= 4 && /ę$/u.test(word)) {
+    if (/ię$/u.test(word)) return `${word.slice(0, -1)}a`;
+    return `${word.slice(0, -1)}a`;
+  }
+  return word;
+}
+
+function lemmatizePolishName(words: readonly string[]): string[] {
+  return words.map((word, index) =>
+    word
+      .split('-')
+      .map((segment) => lemmatizePolishSegment(segment, index === 0))
+      .join('-')
+  );
+}
+
 /**
  * The name the message gives: what follows „pacjent…” (or the adding verb when the word is missing),
- * with the contact data taken out, up to a comma or „i”. Capitalized words are kept as written; a
- * lower-case name („jan kowalski”) is capitalized, unless a word shows it is a description.
+ * with the contact data taken out, up to a comma, parenthesis, age token or „i”. Capitalized words are
+ * kept as written; a lower-case name („jan kowalski”) is capitalized, unless a word shows it is a description.
  */
 function requestedName(text: string): string | undefined {
   const words = text.replace(CONTACT, ' ').trim().split(/\s+/);
@@ -140,10 +209,10 @@ function requestedName(text: string): string | undefined {
     .filter((word) => word && !FILLER_WORDS.has(normalizeSearchText(word)));
   if (nameWords.length === 0 || nameWords.length > MAX_NAME_WORDS) return undefined;
   if (!nameWords.every((word) => NAME_WORD.test(word))) return undefined;
-  if (nameWords.every((word) => /^\p{Lu}/u.test(word))) return nameWords.join(' ');
+  if (nameWords.every((word) => /^\p{Lu}/u.test(word))) return lemmatizePolishName(nameWords).join(' ');
   if (nameWords.length > MAX_LOWER_CASE_NAME_WORDS) return undefined;
   if (nameWords.some((word) => NOT_A_NAME_WORDS.has(normalizeSearchText(word)))) return undefined;
-  return nameWords.map(capitalizeName).join(' ');
+  return lemmatizePolishName(nameWords.map(capitalizeName)).join(' ');
 }
 
 function capitalizeName(word: string): string {

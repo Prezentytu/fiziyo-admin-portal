@@ -249,6 +249,27 @@ export function calculateTherapyStatus(
 
   // Sprawdź najwcześniejszą datę rozpoczęcia
   const earliestStart = getEarliestStartDate(assignments);
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const earliestStartDay = earliestStart
+    ? new Date(earliestStart.getFullYear(), earliestStart.getMonth(), earliestStart.getDate())
+    : null;
+  if (earliestStart && earliestStartDay && earliestStartDay > startOfToday) {
+    const anyCompleted = progress.some((p) => p.status === 'completed' && Boolean(p.completedAt));
+    if (!anyCompleted) {
+      const day = earliestStart.getDate().toString().padStart(2, '0');
+      const month = (earliestStart.getMonth() + 1).toString().padStart(2, '0');
+      const startLabel = `${day}.${month}`;
+      return {
+        status: 'success',
+        tone: 'informative',
+        reason: 'scheduled',
+        badgeLabel: 'ZAPLANOWANY',
+        title: `Zaplanowany (start ${startLabel})`,
+        description: `Plan rozpocznie się ${startLabel}. Ocena regularności ruszy po rozpoczęciu planu.`,
+        nextStep: 'Brak pilnej interwencji przed startem planu',
+      };
+    }
+  }
   const effectiveStartDate = earliestStart && earliestStart > sevenDaysAgo ? earliestStart : sevenDaysAgo;
 
   // Filtruj postępy od daty rozpoczęcia

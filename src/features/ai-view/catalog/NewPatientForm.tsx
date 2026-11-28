@@ -69,12 +69,13 @@ export function NewPatientForm({
   const fields: ReadonlyArray<{
     name: 'firstName' | 'lastName' | 'phone' | 'email' | 'contextLabel';
     label: string;
+    required?: boolean;
     type?: string;
     autoComplete?: string;
     placeholder?: string;
   }> = [
-    { name: 'firstName', label: 'Imię', autoComplete: 'off' },
-    { name: 'lastName', label: 'Nazwisko', autoComplete: 'off' },
+    { name: 'firstName', label: 'Imię', required: true, autoComplete: 'off' },
+    { name: 'lastName', label: 'Nazwisko', required: true, autoComplete: 'off' },
     { name: 'phone', label: 'Telefon', type: 'tel' },
     { name: 'email', label: 'E-mail', type: 'email' },
     { name: 'contextLabel', label: 'Powód', placeholder: 'np. kolano po ACL' },
@@ -97,11 +98,19 @@ export function NewPatientForm({
       <div className="grid gap-3 sm:grid-cols-2">
         {fields.map((field) => (
           <label key={field.name} className="flex flex-col gap-1.5 text-[13px] text-label-secondary">
-            {field.label}
+            <span>
+              {field.label}
+              {field.required && (
+                <span className="ml-0.5 text-status-danger" aria-hidden="true">
+                  *
+                </span>
+              )}
+            </span>
             <Input
               type={field.type ?? 'text'}
               autoComplete={field.autoComplete}
               placeholder={field.placeholder}
+              required={field.required}
               aria-invalid={errors[field.name] ? true : undefined}
               data-testid={`${testId}-${field.name}-input`}
               {...form.register(field.name)}
@@ -112,6 +121,9 @@ export function NewPatientForm({
           </label>
         ))}
       </div>
+      <p className="text-[12px] text-label-secondary" data-testid={`${testId}-contact-hint`}>
+        Pola oznaczone * oraz telefon lub e-mail są wymagane.
+      </p>
       <div className="flex items-center justify-between gap-3">
         {onCancel ? (
           <Button type="button" variant="ghost" size="sm" onClick={onCancel} data-testid={`${testId}-cancel-btn`}>

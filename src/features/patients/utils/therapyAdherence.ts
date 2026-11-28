@@ -9,7 +9,7 @@ export const ADHERENCE_THRESHOLDS = {
   hardSessionsWarning: 3,
 } as const;
 
-export type TherapyReason = 'on_track' | 'inactivity' | 'missed_schedule' | 'high_difficulty' | 'discomfort';
+export type TherapyReason = 'on_track' | 'scheduled' | 'inactivity' | 'missed_schedule' | 'high_difficulty' | 'discomfort';
 export type TherapyTone = 'positive' | 'informative' | 'caution';
 
 export interface TherapyStatusViewModel {

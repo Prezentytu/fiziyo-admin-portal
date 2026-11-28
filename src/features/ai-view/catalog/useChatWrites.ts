@@ -10,6 +10,7 @@ import {
   ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION,
   CREATE_EXERCISE_MUTATION,
   CREATE_EXERCISE_SET_MUTATION,
+  UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION,
   UPLOAD_EXERCISE_IMAGE_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
 import { formatPatientPhone, patientCreateRefetchQueries } from '@/features/patients/utils/shadowPatient';
@@ -102,21 +103,30 @@ export function useSendPlan() {
   const [createSet] = useMutation<CreatedSet>(CREATE_EXERCISE_SET_MUTATION);
   const [addExercise] = useMutation(ADD_EXERCISE_TO_EXERCISE_SET_MUTATION);
   const [assign] = useMutation<AssignedSet>(ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION);
+  const [updateAssignment] = useMutation(UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION);
   const apolloClient = useApolloClient();
   const markWarmup = useMarkWarmupPositions();
 
   const { run: send, pending: sending } = useSingleFlight(
-    async (organizationId: string, patientId: string, draft: SetDraftPayload, plan: SchedulePlan) => {
+    async (
+      organizationId: string,
+      patientId: string,
+      draft: SetDraftPayload,
+      plan: SchedulePlan,
+      replaceAssignmentId?: string
+    ) => {
       try {
         const ordered = { ...draft, items: orderWarmupFirst(draft.items, isWarmupItem) };
         const result = await sendPlan(
-          { organizationId, patientId, draft: ordered, plan },
+          { organizationId, patientId, draft: ordered, plan, replaceAssignmentId },
           {
             createSet: async (variables: CreatePatientPlanVariables) =>
               (await createSet({ variables })).data?.createExerciseSet?.id ?? null,
             addExercise: (variables: AddExerciseToSetVariables) => addExercise({ variables }),
             assign: async (variables: AssignPlanVariables) =>
               (await assign({ variables })).data?.assignExerciseSetToPatient?.id ?? null,
+            completeAssignment: (assignmentId: string) =>
+              updateAssignment({ variables: { assignmentId, status: 'COMPLETED', statusLegacy: 'completed' } }),
           }
         );
         await markWarmup(result.setId, ordered.items.map(isWarmupItem));
