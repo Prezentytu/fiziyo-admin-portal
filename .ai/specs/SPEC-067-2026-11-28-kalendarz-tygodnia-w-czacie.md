@@ -44,7 +44,7 @@ Poza zakresem: kilku pacjentów w jednej karcie (karta jest per pacjent, kolejny
 - D-1: osobna karta zamiast kilku `SetDraft` w jednej odpowiedzi, bo zasada czatu „tekst plus co najwyżej jedna karta” zostaje.
 - D-2: osobne przypisanie na zestaw (każde z własnymi dniami), a nie jeden plan z „dniami zestawów”. Model danych już to umie (`PatientAssignment.Frequency`), a aplikacja pacjenta pokazuje dziś plan dnia z kilku przypisań.
 - D-3: karta nie zmienia ćwiczeń ani parametrów zestawów; plan pacjenta to kopia zestawu jak przy „Wyślij” z `SetDraft`.
-- D-4: bez AI karta nie powstaje (reguły nie rozpoznają rozkładu tygodnia). Ścieżka z reguł zostaje jak dziś: jeden zestaw na kartę z dniami w harmonogramie. To świadome odstępstwo od „każda karta ma ścieżkę w `intentRouter.ts`”; do decyzji, czy reguły mają rozpoznawać „zestawy 1–8 na tydzień”.
+- D-4: kalendarz tygodnia powstaje tylko z AI; reguły bez AI go nie rozpoznają (decyzja Przemka, 28.11). Ścieżka z reguł zostaje jak dziś: jeden zestaw na kartę z dniami w harmonogramie. To świadomy wyjątek od „każda karta ma ścieżkę w `intentRouter.ts`”.
 
 ## UI i data-testid
 
@@ -68,3 +68,4 @@ Wyślij jest wyłączone, gdy nie ma pacjenta albo któryś wiersz nie ma dnia.
 ### 2026-11-28
 
 - Utworzenie specyfikacji
+- D-4 rozstrzygnięte: bez ścieżki z reguł
