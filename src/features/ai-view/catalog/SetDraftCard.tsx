@@ -7,6 +7,7 @@ import {
   Plus,
   Repeat2,
   SlidersHorizontal,
+  Smartphone,
   Sparkles,
   SquarePen,
   Trash2,
@@ -55,8 +56,10 @@ import {
 } from '../utils/setDraft';
 import type { CardProps } from './cardProps';
 import { ChatCard, ChatCardEmpty } from './ChatCard';
+import { ChatPhonePreviewDialog } from './ChatPhonePreviewDialog';
 import { ClarifyChips } from './ClarifyChips';
 import { ExerciseReviewBadge } from './ExerciseReviewBadge';
+import { draftItemToPreviewCard } from '../utils/phonePreview';
 
 // A chat draft becomes a plan's mappings: fields a mapping does not keep are not offered.
 const isAlternating = (item: DraftItem) => item.side?.toLowerCase() === 'alternating';
@@ -80,6 +83,7 @@ interface RowProps {
   /** Treść ćwiczeń jeszcze nie dotarła: czas „naprzemiennie” byłby liczony bez wersji rekordu. */
   readonly versionPending: boolean;
   readonly testId: string;
+  readonly onPreview?: () => void;
   readonly onRemove: () => void;
   readonly onSwap: (exercise: ChatCatalogExercise) => void;
   readonly onChange: (patch: Partial<ExerciseParameterValues>) => void;
@@ -94,6 +98,7 @@ function DraftRow({
   added,
   versionPending,
   testId,
+  onPreview,
   onRemove,
   onSwap,
   onChange,
@@ -148,39 +153,54 @@ function DraftRow({
             {timeUnknown ? '' : ` · ok. ${itemMinutes(item)} min`}
           </p>
         </div>
-        {!locked && (
-          <div className="flex shrink-0 items-center opacity-100 transition-opacity pointer-fine:opacity-0 pointer-fine:group-focus-within:opacity-100 pointer-fine:group-hover:opacity-100">
+        <div className="flex shrink-0 items-center opacity-100 transition-opacity pointer-fine:opacity-0 pointer-fine:group-focus-within:opacity-100 pointer-fine:group-hover:opacity-100">
+          {onPreview && (
             <Button
+              type="button"
               variant="ghost"
               size="icon"
-              aria-label={`Zmień parametry: ${name}`}
-              aria-expanded={panel === 'edit'}
-              onClick={() => toggle('edit')}
-              data-testid={`${testId}-edit-${item.exerciseId}-btn`}
+              aria-label={`Podgląd jak u pacjenta: ${name}`}
+              title="Jak zobaczy to pacjent"
+              onClick={onPreview}
+              data-testid={`${testId}-preview-${item.exerciseId}-btn`}
             >
-              <SlidersHorizontal aria-hidden="true" />
+              <Smartphone aria-hidden="true" />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={`Zamień: ${name}`}
-              aria-expanded={panel === 'swap'}
-              onClick={() => toggle('swap')}
-              data-testid={`${testId}-swap-${item.exerciseId}-btn`}
-            >
-              <Repeat2 aria-hidden="true" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={`Usuń: ${name}`}
-              onClick={onRemove}
-              data-testid={`${testId}-remove-${item.exerciseId}-btn`}
-            >
-              <Trash2 aria-hidden="true" />
-            </Button>
-          </div>
-        )}
+          )}
+          {!locked && (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`Zmień parametry: ${name}`}
+                aria-expanded={panel === 'edit'}
+                onClick={() => toggle('edit')}
+                data-testid={`${testId}-edit-${item.exerciseId}-btn`}
+              >
+                <SlidersHorizontal aria-hidden="true" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`Zamień: ${name}`}
+                aria-expanded={panel === 'swap'}
+                onClick={() => toggle('swap')}
+                data-testid={`${testId}-swap-${item.exerciseId}-btn`}
+              >
+                <Repeat2 aria-hidden="true" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`Usuń: ${name}`}
+                onClick={onRemove}
+                data-testid={`${testId}-remove-${item.exerciseId}-btn`}
+              >
+                <Trash2 aria-hidden="true" />
+              </Button>
+            </>
+          )}
+        </div>
       </div>
       {panel === 'swap' && !locked && (
         <div className="mb-1 ml-[52px] flex flex-col gap-2 rounded-[12px] bg-fill-quaternary px-3 py-2.5 text-[14px]">
@@ -273,6 +293,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
 
   const [missingSet, setMissingSet] = useState(false);
   const [search, setSearch] = useState<string | null>(null);
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
   const locked = chosen !== undefined;
 
   // Seeded once what it comes from is here: defaults come from the exercise, a catalog set's mapping wins.
@@ -360,6 +381,14 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
       ...(alternatingPerSide ? { alternatingPerSide } : {}),
     };
   });
+  const previewEntries = draftItems
+    .map((item, rowIndex) => {
+      const exercise = byId.get(item.exerciseId);
+      return exercise ? { rowIndex, card: draftItemToPreviewCard(exercise, item) } : null;
+    })
+    .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
+  const previewIndexByRow = new Map(previewEntries.map((entry, idx) => [entry.rowIndex, idx]));
+  const previewCards = previewEntries.map((entry) => entry.card);
   const draft: SetDraftPayload = {
     name,
     patientId: patient?.id,
@@ -417,6 +446,20 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
       testId={testId}
       title={name}
       info={draftNote({ fromCatalog: Boolean(set), hasPatient: Boolean(patient) })}
+      badge={
+        previewCards.length > 0 ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setPreviewIndex(0)}
+            data-testid={`${testId}-preview-set-btn`}
+          >
+            <Smartphone aria-hidden="true" />
+            Podgląd na telefonie
+          </Button>
+        ) : undefined
+      }
       meta={
         <>
           <span>{formatExerciseCount(items.length)}</span>
@@ -496,6 +539,9 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
                 added={item.exerciseId === spec.addedExerciseId}
                 versionPending={versionPending}
                 testId={testId}
+                onPreview={
+                  previewIndexByRow.has(index) ? () => setPreviewIndex(previewIndexByRow.get(index)!) : undefined
+                }
                 onRemove={() => removeItem(index)}
                 onSwap={(alternative) => updateItem(index, draftItemFromExercise(alternative))}
                 onClearWarmup={() => updateItem(index, { isWarmup: false })}
@@ -614,6 +660,14 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
           testId={`${testId}-clarify`}
         />
       )}
+      <ChatPhonePreviewDialog
+        open={previewIndex !== null}
+        onOpenChange={(open) => {
+          if (!open) setPreviewIndex(null);
+        }}
+        exercises={previewCards}
+        initialIndex={previewIndex ?? 0}
+      />
     </ChatCard>
   );
 }

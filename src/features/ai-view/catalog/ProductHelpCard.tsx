@@ -111,6 +111,10 @@ const guides = {
     text: 'Na stronie znajdziesz opis aplikacji, odpowiedzi na pytania gabinetów i formularz kontaktowy.',
     link: { href: 'https://fiziyo.pl/', label: 'Otwórz stronę FiziYo' },
   },
+  'phone-preview': {
+    title: 'Podgląd jak u pacjenta (symulator telefonu)',
+    text: 'Każde ćwiczenie na karcie zestawu, w wynikach wyszukiwania i na karcie pacjenta ma przycisk z ikoną telefonu „Jak u pacjenta” (oraz „Podgląd na telefonie” dla całego zestawu). Otwiera żywy symulator ekranu aplikacji pacjenta z fazami ruchu, odliczaniem, wskazówkami i grafiką — bez zużycia kredytów AI.',
+  },
 } satisfies Record<Exclude<ProductHelpTopic, 'report' | 'portal-news' | 'referral'>, Guide>;
 
 function GuideCard({ guide, spec, testId, messageId, chosen }: HelpProps & { guide: Guide }) {
