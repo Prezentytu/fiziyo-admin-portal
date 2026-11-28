@@ -67,7 +67,7 @@ export interface HeldReply {
 
 type PatientCardSpec = Extract<
   ChatViewSpec,
-  { component: 'SetDraft' | 'AssignSummary' | 'ExerciseResults' | 'PatientPeek' }
+  { component: 'SetDraft' | 'AssignSummary' | 'WeekPlan' | 'ExerciseResults' | 'PatientPeek' }
 >;
 
 /**
@@ -255,6 +255,7 @@ function bindPatient(spec: ChatViewSpec | undefined, patientId: string): ChatVie
     case 'SetDraft':
     case 'ExerciseResults':
     case 'AssignSummary':
+    case 'WeekPlan':
       return { ...spec, patientId };
     case 'PatientPeek':
       return { component: 'PatientPeek', patientId };
@@ -382,6 +383,7 @@ function isPatientCard(spec: ChatViewSpec | undefined): spec is PatientCardSpec 
   return (
     spec?.component === 'SetDraft' ||
     spec?.component === 'AssignSummary' ||
+    spec?.component === 'WeekPlan' ||
     spec?.component === 'ExerciseResults' ||
     spec?.component === 'PatientPeek'
   );

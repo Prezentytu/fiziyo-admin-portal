@@ -63,6 +63,7 @@ export type ChatCardSpec = ChatViewSpec | LocalCardSpec;
 const CARD_COMPONENTS = {
   SetDraft: true,
   AssignSummary: true,
+  WeekPlan: true,
   ExerciseResults: true,
   PatientPeek: true,
   Navigate: true,
@@ -96,6 +97,7 @@ export function cardPatientId(spec: ChatCardSpec | undefined): string | undefine
     case 'ExerciseResults':
     case 'PatientPeek':
     case 'AssignSummary':
+    case 'WeekPlan':
     case 'Sent':
     case 'PatientAdded':
     case 'ExerciseCreated':

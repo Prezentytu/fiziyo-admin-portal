@@ -209,6 +209,23 @@ describe('localReplyTo: schedule typed as text', () => {
     expect(afterSent.spec).toEqual(SCHEDULE.spec);
   });
 
+  // SPEC-067: kalendarz tygodnia bierze z rozmowy start i czas, a dni zostawia zestawom.
+  it('gives the week plan the start and length typed in the conversation', () => {
+    const user = (id: string, text: string): ChatThreadMessage => ({ id, role: 'user', text, createdAt: 1 });
+    const week = {
+      component: 'WeekPlan' as const,
+      patientId: 'p1',
+      week: [{ setId: 's1', days: ['monday' as const] }],
+    };
+    const reply = withRequestedSchedule({ text: 'Tydzień', spec: week }, [
+      user('u1', 'zestawy 1-3 od poniedziałku przez 4 tygodnie'),
+    ]);
+    expect(reply.spec).toEqual({ ...week, period: { start: 'monday', weeks: 4 } });
+    expect(reply.text).toBe('Tydzień');
+
+    expect(withRequestedSchedule({ spec: week }, [user('u1', 'rozłóż zestawy 1-3 dla Jana')]).spec).toEqual(week);
+  });
+
   it('leaves a new request and an answered question to the assistant', () => {
     expect(localReplyTo('dodaj jeszcze mostek, 3 razy w tygodniu', [SCHEDULE], PATIENTS)).toBeNull();
     expect(localReplyTo('a czy 4 tygodnie to nie za długo?', [SCHEDULE], PATIENTS)).toBeNull();

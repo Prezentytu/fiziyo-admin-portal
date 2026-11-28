@@ -30,6 +30,10 @@ export function describeSpec(spec: ChatViewSpec, context: ReplyTextContext = {})
     }
     case 'AssignSummary':
       return patient ? `Zestaw jest gotowy do przypisania: ${patient}.` : 'Zestaw jest gotowy do przypisania.';
+    case 'WeekPlan':
+      return patient
+        ? `Tydzień zestawów dla: ${patient}. Zmień dni przy zestawach i wyślij wszystkie naraz.`
+        : 'Tydzień zestawów. Wybierz pacjenta, zmień dni przy zestawach i wyślij wszystkie naraz.';
     case 'ExerciseResults':
       return spec.query ? `Ćwiczenia z katalogu dla: „${spec.query}”.` : 'Ćwiczenia z katalogu.';
     case 'PatientPeek':
@@ -44,7 +48,10 @@ export function describeSpec(spec: ChatViewSpec, context: ReplyTextContext = {})
     case 'AddPatient':
       return spec.name ? `Uzupełnij dane, a dodam pacjenta: ${spec.name}.` : 'Uzupełnij dane, a dodam pacjenta.';
     case 'CreateExercise':
-      if (spec.discussion) return spec.discussion.search ? 'Jaki wariant ćwiczenia Cię interesuje? Możesz doprecyzować pozycję, sprzęt lub cel.' : 'Jakiego ruchu lub okolicy ciała ma dotyczyć ćwiczenie?';
+      if (spec.discussion)
+        return spec.discussion.search
+          ? 'Jaki wariant ćwiczenia Cię interesuje? Możesz doprecyzować pozycję, sprzęt lub cel.'
+          : 'Jakiego ruchu lub okolicy ciała ma dotyczyć ćwiczenie?';
       return 'Opisz ćwiczenie i ustaw podstawowe parametry, a dodam je do katalogu gabinetu.';
   }
 }
