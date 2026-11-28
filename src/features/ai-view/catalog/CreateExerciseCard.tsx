@@ -36,7 +36,17 @@ import { useCreateExercise } from './useChatWrites';
 import { ImageStylePicker } from '@/features/exercises/ImageStylePicker';
 import type { ImageStyle } from '@/types/ai.types';
 import { dropExerciseDraft, readExerciseDraft, updateExerciseDraft, useExerciseDraft } from './exerciseDraftStore';
-import { useExerciseDraftAi, type DraftFill, type DraftSection, type DraftSectionState } from './useExerciseDraftAi';
+import {
+  DRAFT_SECTIONS,
+  EXERCISE_FULL_CREDITS,
+  EXERCISE_IMAGE_CREDITS,
+  EXERCISE_TEXT_CREDITS,
+  TEXT_DRAFT_SECTIONS,
+  useExerciseDraftAi,
+  type DraftFill,
+  type DraftSection,
+  type DraftSectionState,
+} from './useExerciseDraftAi';
 
 const numberField = z.number({ message: 'Podaj liczbę' }).int().min(0).max(3600);
 
@@ -117,6 +127,8 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
   const { preference } = useChatMode();
   const useAi = preference.useAi;
   const [staleDismissed, setStaleDismissed] = useState(false);
+  // Domyślnie generujemy opis i parametry (−4 kredyty); grafika AI (−5 kredytów) jest świadomym wyborem (SPEC-069 / W4).
+  const [includeImage, setIncludeImage] = useState(false);
 
   const form = useForm<NewExerciseValues>({
     resolver: zodResolver(NEW_EXERCISE_SCHEMA),
@@ -183,10 +195,25 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
   const draftAi = useExerciseDraftAi({
     draftKey: messageId,
     onFill: applyFill,
+    instructions: () => {
+      const current = readExerciseDraft(messageId);
+      const currentDescription = (current?.values?.description ?? form.getValues('description')).trim();
+      const seedDescription = spec.description?.trim();
+      if (seedDescription && currentDescription && !currentDescription.includes(seedDescription)) {
+        return `${seedDescription}\n${currentDescription}`;
+      }
+      return currentDescription || seedDescription || undefined;
+    },
     imageInput: () => {
       const current = readExerciseDraft(messageId);
+      const formDescription = (current?.values?.description ?? form.getValues('description')).trim();
+      const seedInstructions = spec.description?.trim();
+      const description =
+        formDescription && seedInstructions && !formDescription.includes(seedInstructions)
+          ? `${formDescription}\nWytyczne fizjoterapeuty: ${seedInstructions}`
+          : formDescription || seedInstructions || '';
       return {
-        description: current?.values?.description ?? form.getValues('description'),
+        description,
         type: current?.exerciseType ?? exerciseType,
         style: current?.imageStyle ?? 'illustration',
       };
@@ -201,10 +228,12 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
     // eslint-disable-next-line react-hooks/exhaustive-deps -- tylko przy zmianie trybu AI
   }, [useAi]);
 
+  const defaultSections = includeImage ? DRAFT_SECTIONS : TEXT_DRAFT_SECTIONS;
   const generate = (only?: readonly DraftSection[]) => {
+    const targetSections = only ?? defaultSections;
     setStaleDismissed(false);
-    if (!only || only.includes('image')) setImage(null);
-    void draftAi.generate(form.getValues('name'), only);
+    if (targetSections.includes('image')) setImage(null);
+    void draftAi.generate(form.getValues('name'), targetSections);
   };
   const nameReady = nameText.trim().length >= 3;
   const stale = Boolean(generatedFor) && nameText.trim() !== generatedFor && !running && !staleDismissed;
@@ -238,6 +267,7 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
         patientId: contextPatient?.id,
         addToSet: spec.addToSet,
         offerForSet: spec.offerForSet,
+        hasImage: Boolean(image),
       })
     );
   });
@@ -349,7 +379,9 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
                 data-testid={`${testId}-generate-btn`}
               >
                 <Sparkles aria-hidden="true" />
-                Generuj
+                {includeImage
+                  ? `Generuj z grafiką (−${EXERCISE_FULL_CREDITS} kredytów)`
+                  : `Generuj opis (−${EXERCISE_TEXT_CREDITS} kredyty)`}
               </Button>
             )}
           </span>
@@ -357,17 +389,31 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
         </div>
 
         {!started && useAi && (
-          <p className="text-[13px] text-label-tertiary">
-            Zacznij od nazwy: pozycja i sprzęt w nazwie dają trafniejszą propozycję.{' '}
-            <button
-              type="button"
-              onClick={draftAi.showAll}
-              className="font-medium text-tint underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              data-testid={`${testId}-manual-btn`}
-            >
-              Uzupełnię sam
-            </button>
-          </p>
+          <div className="flex flex-col gap-2">
+            <label className="flex w-fit cursor-pointer items-center gap-2 text-[13px] text-foreground">
+              <input
+                type="checkbox"
+                checked={includeImage}
+                onChange={(event) => setIncludeImage(event.target.checked)}
+                className="h-4 w-4 accent-tint"
+                data-testid={`${testId}-include-image-checkbox`}
+              />
+              <span>Dołącz grafikę AI (−{EXERCISE_IMAGE_CREDITS} kredytów)</span>
+            </label>
+            <p className="text-[13px] text-label-tertiary" data-testid={`${testId}-credits-hint`}>
+              {includeImage
+                ? `Łącznie: ${EXERCISE_FULL_CREDITS} kredytów AI (opis i parametry: ${EXERCISE_TEXT_CREDITS}, grafika: ${EXERCISE_IMAGE_CREDITS}). `
+                : `Opis i parametry: ${EXERCISE_TEXT_CREDITS} kredyty AI. Grafikę (−${EXERCISE_IMAGE_CREDITS} kredytów) możesz dogenerować później jednym kliknięciem. `}
+              <button
+                type="button"
+                onClick={draftAi.showAll}
+                className="font-medium text-tint underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                data-testid={`${testId}-manual-btn`}
+              >
+                Uzupełnię ręcznie (0 kredytów)
+              </button>
+            </p>
+          </div>
         )}
 
         {stale && (
@@ -736,7 +782,7 @@ function ExerciseImagePreview({
       data-testid={`${testId}-generate-btn`}
     >
       <ImagePlus aria-hidden="true" />
-      Wygeneruj grafikę
+      Wygeneruj grafikę (−{EXERCISE_IMAGE_CREDITS} kredytów)
     </Button>
   ) : null;
 }

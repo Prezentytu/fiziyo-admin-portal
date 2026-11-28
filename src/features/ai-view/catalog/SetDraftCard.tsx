@@ -30,8 +30,9 @@ import { normalizeExerciseType } from '@/utils/exerciseEnums';
 import { isV33ExerciseRecord } from '@/utils/exerciseRecordVersion';
 import { formatExerciseCount } from '@/utils/polishPlural';
 import { toWizardPatient, useChatActions } from '../ChatSessionContext';
+import { useExercisePickerPages } from '@/hooks/useExercisePickerPages';
 import { useAvailableExercises, type ChatCatalogExercise } from '../useAvailableExercises';
-import { findAlternatives } from '../utils/exerciseAlternatives';
+import { alternativeSearchTerm, findAlternatives } from '../utils/exerciseAlternatives';
 import { draftClarifyQuestions } from '../utils/clarifyQuestions';
 import { canRestoreDraft, RESTORE_DRAFT_LABEL, restoredDraftSpec, SUPERSEDED } from '../utils/draftVersions';
 import { searchExercises } from '../utils/exerciseLookup';
@@ -73,6 +74,9 @@ const UNSAVED_FIELDS = [
 interface RowProps {
   readonly item: DraftItem;
   readonly exercise?: ChatCatalogExercise;
+  readonly organizationId: string;
+  readonly catalogPool: readonly ChatCatalogExercise[];
+  readonly excludeIds: readonly string[];
   readonly alternatives: ChatCatalogExercise[];
   readonly locked: boolean;
   /** Dopisana w tym kroku („dodaj ćwiczenie X”, nowe ćwiczenie): plakietka „nowe” przy nazwie. */
@@ -82,13 +86,119 @@ interface RowProps {
   readonly testId: string;
   readonly onRemove: () => void;
   readonly onSwap: (exercise: ChatCatalogExercise) => void;
+  readonly onOpenCatalogSearch: (initialQuery?: string) => void;
   readonly onChange: (patch: Partial<ExerciseParameterValues>) => void;
   readonly onClearWarmup: () => void;
+}
+
+/**
+ * Panel zamienników dla wiersza szkicu (SPEC-069 / W6): gdy pierwsza strona katalogu ma mniej niż 3
+ * dopasowania, dociąga kandydatów z API po głównym tagu / rdzeniu nazwy i pokazuje czas oraz badge weryfikacji.
+ */
+function SwapAlternativesPanel({
+  itemExerciseId,
+  exercise,
+  organizationId,
+  catalogPool,
+  excludeIds,
+  localAlternatives,
+  testId,
+  onSwap,
+  onOpenCatalogSearch,
+}: {
+  readonly itemExerciseId: string;
+  readonly exercise?: ChatCatalogExercise;
+  readonly organizationId: string;
+  readonly catalogPool: readonly ChatCatalogExercise[];
+  readonly excludeIds: readonly string[];
+  readonly localAlternatives: readonly ChatCatalogExercise[];
+  readonly testId: string;
+  readonly onSwap: (alternative: ChatCatalogExercise) => void;
+  readonly onOpenCatalogSearch: (initialQuery?: string) => void;
+}) {
+  const query = useMemo(() => (exercise ? alternativeSearchTerm(exercise) : null), [exercise]);
+  const needsRemote = Boolean(exercise && organizationId && query && localAlternatives.length < 3);
+  const remote = useExercisePickerPages<ChatCatalogExercise>({
+    organizationId,
+    skip: !needsRemote,
+    search: query ?? '',
+    sourceFilter: 'all',
+  });
+
+  const alternatives = useMemo(() => {
+    if (!exercise) return [...localAlternatives];
+    if (!needsRemote || remote.items.length === 0) return [...localAlternatives];
+    const byId = new Map<string, ChatCatalogExercise>();
+    for (const candidate of catalogPool) byId.set(candidate.id, candidate);
+    for (const candidate of remote.items) {
+      if (!byId.has(candidate.id)) byId.set(candidate.id, candidate);
+    }
+    const ranked = findAlternatives(exercise, [...byId.values()], excludeIds, 3);
+    if (ranked.length > 0) return ranked;
+    const excluded = new Set([exercise.id, ...excludeIds]);
+    return remote.items.filter((candidate) => !excluded.has(candidate.id)).slice(0, 3);
+  }, [catalogPool, excludeIds, exercise, localAlternatives, needsRemote, remote.items]);
+
+  return (
+    <div
+      className="mb-1 ml-[52px] flex flex-col gap-2 rounded-[12px] bg-fill-quaternary px-3 py-2.5 text-[14px]"
+      data-testid={`${testId}-swap-${itemExerciseId}-panel`}
+    >
+      {needsRemote && remote.loading && alternatives.length === 0 ? (
+        <p className="text-label-secondary" role="status">
+          Szukam podobnych ćwiczeń w katalogu…
+        </p>
+      ) : alternatives.length === 0 ? (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-label-secondary">Brak podobnych ćwiczeń w katalogu.</p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => onOpenCatalogSearch(query ?? '')}
+            data-testid={`${testId}-swap-${itemExerciseId}-search-btn`}
+          >
+            Szukaj w katalogu
+          </Button>
+        </div>
+      ) : (
+        alternatives.map((alternative) => (
+          <div key={alternative.id} className="flex items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <span className="truncate">
+                  Zamiast tego: <b className="font-semibold">{alternative.name}</b>
+                </span>
+                <ExerciseReviewBadge
+                  exercise={alternative}
+                  testId={`${testId}-swap-${itemExerciseId}-review-${alternative.id}`}
+                />
+              </div>
+              <p className="text-[12px] tabular-nums text-label-secondary">
+                ok. {itemMinutes(draftItemFromExercise(alternative))} min
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onSwap(alternative)}
+              data-testid={`${testId}-swap-${itemExerciseId}-to-${alternative.id}-btn`}
+            >
+              Zamień
+            </Button>
+          </div>
+        ))
+      )}
+    </div>
+  );
 }
 
 function DraftRow({
   item,
   exercise,
+  organizationId,
+  catalogPool,
+  excludeIds,
   alternatives,
   locked,
   added,
@@ -96,6 +206,7 @@ function DraftRow({
   testId,
   onRemove,
   onSwap,
+  onOpenCatalogSearch,
   onChange,
   onClearWarmup,
 }: RowProps) {
@@ -183,30 +294,23 @@ function DraftRow({
         )}
       </div>
       {panel === 'swap' && !locked && (
-        <div className="mb-1 ml-[52px] flex flex-col gap-2 rounded-[12px] bg-fill-quaternary px-3 py-2.5 text-[14px]">
-          {alternatives.length === 0 ? (
-            <p className="text-label-secondary">Brak podobnych ćwiczeń w katalogu. Dodaj inne przyciskami pod listą.</p>
-          ) : (
-            alternatives.map((alternative) => (
-              <div key={alternative.id} className="flex items-center gap-2">
-                <span className="min-w-0 flex-1 truncate">
-                  Zamiast tego: <b className="font-semibold">{alternative.name}</b>
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setPanel('none');
-                    onSwap(alternative);
-                  }}
-                  data-testid={`${testId}-swap-${item.exerciseId}-to-${alternative.id}-btn`}
-                >
-                  Zamień
-                </Button>
-              </div>
-            ))
-          )}
-        </div>
+        <SwapAlternativesPanel
+          itemExerciseId={item.exerciseId}
+          exercise={exercise}
+          organizationId={organizationId}
+          catalogPool={catalogPool}
+          excludeIds={excludeIds}
+          localAlternatives={alternatives}
+          testId={testId}
+          onSwap={(alternative) => {
+            setPanel('none');
+            onSwap(alternative);
+          }}
+          onOpenCatalogSearch={(initialQuery) => {
+            setPanel('none');
+            onOpenCatalogSearch(initialQuery);
+          }}
+        />
       )}
       {panel === 'edit' && !locked && (
         <div className="mb-1 ml-[52px] rounded-[12px] bg-fill-quaternary p-3">
@@ -474,6 +578,9 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
                 key={`${item.exerciseId}-${index}`}
                 item={item}
                 exercise={exercise}
+                organizationId={organizationId}
+                catalogPool={exercises}
+                excludeIds={draftIds}
                 alternatives={exercise ? findAlternatives(exercise, exercises, draftIds) : []}
                 locked={locked}
                 added={item.exerciseId === spec.addedExerciseId}
@@ -481,6 +588,7 @@ export function SetDraftCard({ spec, testId, messageId, chosen, request }: CardP
                 testId={testId}
                 onRemove={() => removeItem(index)}
                 onSwap={(alternative) => updateItem(index, draftItemFromExercise(alternative))}
+                onOpenCatalogSearch={(initialQuery) => setSearch(initialQuery ?? '')}
                 onClearWarmup={() => updateItem(index, { isWarmup: false })}
                 onChange={(patch) =>
                   setItems((current) =>

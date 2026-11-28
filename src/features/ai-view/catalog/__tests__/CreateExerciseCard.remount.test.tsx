@@ -70,7 +70,8 @@ describe('karta nowego ćwiczenia po wyjściu z czatu i powrocie', () => {
 
   it('przebieg AI kończy się w tle, a powrót pokazuje ten sam draft bez drugiego zużycia AI', async () => {
     const first = render(<CreateExerciseCard spec={SPEC} testId="card" messageId="m1" />);
-    fireEvent.click(screen.getByRole('button', { name: 'Generuj' }));
+    fireEvent.click(screen.getByTestId('card-include-image-checkbox'));
+    fireEvent.click(screen.getByTestId('card-generate-btn'));
     // Dwie sekcje gotowe, trzecia w toku: fizjoterapeuta przechodzi na inny ekran.
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1000);
@@ -104,13 +105,14 @@ describe('karta nowego ćwiczenia po wyjściu z czatu i powrocie', () => {
 
   it('powrót w trakcie przebiegu pokazuje sekcje dopisywane dalej na tej samej karcie', async () => {
     const first = render(<CreateExerciseCard spec={SPEC} testId="card" messageId="m1" />);
-    fireEvent.click(screen.getByRole('button', { name: 'Generuj' }));
+    fireEvent.click(screen.getByTestId('card-include-image-checkbox'));
+    fireEvent.click(screen.getByTestId('card-generate-btn'));
     await act(async () => {
       await vi.advanceTimersByTimeAsync(500);
     });
     first.unmount();
     render(<CreateExerciseCard spec={SPEC} testId="card" messageId="m1" />);
-    expect(screen.queryByRole('button', { name: 'Generuj' })).toBeNull();
+    expect(screen.queryByTestId('card-generate-btn')).toBeNull();
 
     await act(async () => {
       await vi.runAllTimersAsync();
@@ -121,7 +123,8 @@ describe('karta nowego ćwiczenia po wyjściu z czatu i powrocie', () => {
 
   it('inna organizacja albo wylogowanie nie dostaje draftu ani wyników przebiegu', async () => {
     const first = render(<CreateExerciseCard spec={SPEC} testId="card" messageId="m1" />);
-    fireEvent.click(screen.getByRole('button', { name: 'Generuj' }));
+    fireEvent.click(screen.getByTestId('card-include-image-checkbox'));
+    fireEvent.click(screen.getByTestId('card-generate-btn'));
     await act(async () => {
       await vi.advanceTimersByTimeAsync(500);
     });
@@ -132,8 +135,46 @@ describe('karta nowego ćwiczenia po wyjściu z czatu i powrocie', () => {
     });
 
     render(<CreateExerciseCard spec={SPEC} testId="card" messageId="m1" />);
-    expect(screen.getByRole('button', { name: 'Generuj' })).toBeInTheDocument();
+    expect(screen.getByTestId('card-generate-btn')).toBeInTheDocument();
     expect(screen.queryByTestId('card-section-params')).toBeNull();
     expect(ai.generateExerciseImage).not.toHaveBeenCalled();
+  });
+
+  // SPEC-069 / W4: jawny koszt kredytów przed akcją, opcjonalna grafika AI i przekazanie pełnych instrukcji z rozmowy.
+  it('domyślnie pokazuje koszt −4 kredyty bez grafiki i przekazuje opis z rozmowy do treści oraz opcjonalnej grafiki', async () => {
+    const specWithNote = {
+      component: 'CreateExercise' as const,
+      name: 'Mostek z piętą na krześle',
+      description: 'Leżenie tyłem, jedna pięta na krześle, 3 sekundy izometrii w górze.',
+    };
+    render(<CreateExerciseCard spec={specWithNote} testId="card" messageId="m-credits" />);
+
+    expect(screen.getByTestId('card-generate-btn')).toHaveTextContent('Generuj opis (−4 kredyty)');
+    expect(screen.getByTestId('card-credits-hint')).toHaveTextContent('4 kredyty AI');
+
+    fireEvent.click(screen.getByTestId('card-generate-btn'));
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
+
+    expect(ai.generateEnrichment).toHaveBeenCalledWith({
+      exerciseName: specWithNote.name,
+      patientDescription: specWithNote.description,
+      clinicalDescription: specWithNote.description,
+    });
+    expect(ai.generateExerciseImage).not.toHaveBeenCalled();
+    expect(screen.getByTestId('card-image-generate-btn')).toHaveTextContent('Wygeneruj grafikę (−5 kredytów)');
+
+    fireEvent.click(screen.getByTestId('card-image-generate-btn'));
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
+
+    expect(ai.generateExerciseImage).toHaveBeenCalledWith(
+      specWithNote.name,
+      expect.stringContaining('jedna pięta na krześle'),
+      'time',
+      'illustration'
+    );
   });
 });
