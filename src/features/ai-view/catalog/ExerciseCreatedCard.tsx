@@ -13,7 +13,17 @@ export function ExerciseCreatedCard({ spec, testId, messageId, chosen }: CardPro
   return (
     <div data-testid={testId} className="flex flex-col gap-3">
       <p className="text-[16px] leading-[26px] text-foreground">
-        Ćwiczenie <b className="font-semibold">{spec.name}</b> jest w katalogu gabinetu. Zdjęcie i szczegóły dodasz na{' '}
+        {spec.hasImage ? (
+          <>
+            Ćwiczenie <b className="font-semibold">{spec.name}</b> jest w katalogu gabinetu (z wygenerowaną grafiką).
+            Szczegóły i film możesz edytować na{' '}
+          </>
+        ) : (
+          <>
+            Ćwiczenie <b className="font-semibold">{spec.name}</b> jest w katalogu gabinetu. Zdjęcie i szczegóły dodasz
+            na{' '}
+          </>
+        )}
         <Link href={`/exercises/${spec.exerciseId}`} className="text-tint" data-testid={`${testId}-open-link`}>
           stronie ćwiczenia
         </Link>

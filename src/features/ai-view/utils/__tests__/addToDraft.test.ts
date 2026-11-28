@@ -204,6 +204,15 @@ describe('exerciseCreatedReply', () => {
       spec: { component: 'ExerciseCreated', exerciseId: 'e-new', name: 'Wykrok', patientId: 'p1' },
     });
   });
+
+  it('acknowledges generated image in copy and spec when hasImage is true (SPEC-069 / D6)', () => {
+    const forSet = exerciseCreatedReply({ id: 'e-new', name: 'Mostek' }, { addToSet: DRAFT, hasImage: true });
+    expect(forSet.text).toContain('z wygenerowaną grafiką');
+    expect(forSet.text).not.toContain('Zdjęcie i szczegóły dodasz');
+
+    const standalone = exerciseCreatedReply({ id: 'e-new', name: 'Mostek' }, { hasImage: true });
+    expect(standalone.spec).toMatchObject({ component: 'ExerciseCreated', exerciseId: 'e-new', hasImage: true });
+  });
 });
 
 // Decyzja właściciela 18.11: dopisana pozycja ma plakietkę „nowe”, tylko ta z ostatniego kroku.

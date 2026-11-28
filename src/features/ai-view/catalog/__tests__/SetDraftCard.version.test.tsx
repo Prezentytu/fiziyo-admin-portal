@@ -345,4 +345,33 @@ describe('SetDraftCard: wersja rekordu ćwiczeń szkicu', () => {
     await screen.findByTestId('draft-item-ex-alt');
     expect(screen.queryByTestId('draft-restore-btn')).toBeNull();
   });
+
+  // SPEC-069 / W6: „Zamień” działa także dla ćwiczeń bez tagów, pokazuje czas i status weryfikacji zamiennika.
+  it('„Zamień” znajduje zamiennik bez tagów po okolicy/rdzeniu i pokazuje czas oraz badge weryfikacji', async () => {
+    listItems = [
+      { ...alternating, id: 'ex-alt', name: 'Wykrok w miejscu', mainTags: [] },
+      {
+        ...alternating,
+        id: 'ex-alt-2',
+        name: 'Wykrok w tył na kolano',
+        mainTags: [],
+        scope: 'ORGANIZATION',
+        status: 'PENDING_REVIEW',
+      },
+    ];
+    mockClientQuery.mockResolvedValue({
+      data: { exerciseById: { id: 'ex-alt', updatedAt: 't1', enrichmentData: {} } },
+    });
+    renderCard();
+    await screen.findByTestId('draft-item-ex-alt');
+
+    fireEvent.click(screen.getByTestId('draft-swap-ex-alt-btn'));
+    const panel = await screen.findByTestId('draft-swap-ex-alt-panel');
+    expect(panel.textContent).toContain('Wykrok w tył na kolano');
+    expect(panel.textContent).toContain('ok. 3 min');
+    expect(screen.getByTestId('draft-swap-ex-alt-review-ex-alt-2')).toHaveTextContent('W weryfikacji');
+
+    fireEvent.click(screen.getByTestId('draft-swap-ex-alt-to-ex-alt-2-btn'));
+    await screen.findByTestId('draft-item-ex-alt-2');
+  });
 });
