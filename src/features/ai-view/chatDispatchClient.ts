@@ -55,5 +55,6 @@ export async function dispatchChatMessage(
     spec: reply.spec,
     creditsUsed,
     ...(reply.notice ? { notice: reply.notice } : {}),
+    ...(reply.missingCapability ? { missingCapability: reply.missingCapability } : {}),
   };
 }

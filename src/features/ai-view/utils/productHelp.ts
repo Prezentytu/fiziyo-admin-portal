@@ -17,6 +17,7 @@ export const productHelpSchema = z.object({
     'check-assignment',
     'guide',
     'report',
+    'feature-request',
     'portal-news',
     'patient-news',
     'mobile-news',
@@ -32,6 +33,8 @@ export type ProductHelpTopic = ProductHelpSpec['topic'];
 
 const REPORT_COMMAND =
   /\b(?:zg[lł]o[śs](?:i[ćc])?|zaraport(?:uj|owa[ćc]))\s+(?:(?:ten|to|taki)\s+)?(?:b[łl][ąa]d|bug(?:a)?|problem|usterk[ęe])/iu;
+const FEATURE_REQUEST_COMMAND =
+  /\b(?:zg[lł]o[śs](?:i[ćc])?|zapropon(?:uj|owa[ćc])|przekaza[ćc]|wys[lł]a[ćc])\s+(?:(?:ten|t[ęe]|now[yą])\s+)?(?:pomys[lł]|sugesti[ęe]|potrzeb[ęe](?:\s+funkcji)?|propozycj[ęe]\s+funkcji|pro[śs]b[ęe]\s+o\s+funkcj[ęe]|brakuj[ąa]c[ąa]\s+funkcj[ęe])/iu;
 const PLAN_REPORT =
   'Pacjent nie widzi przypisanego zestawu w aplikacji mobilnej po sprawdzeniu połączenia z gabinetem.';
 
@@ -108,6 +111,18 @@ export function productHelpFor(message: string, previous?: ProductHelpTopic): Pr
     .replace(/[.!?]+$/, '')
     .trim();
   const followUp = continuedTopic(normalized, previous);
+  if (!followUp && FEATURE_REQUEST_COMMAND.test(message)) {
+    const idea = message
+      .replace(FEATURE_REQUEST_COMMAND, '')
+      .replace(/^(?:do\s+fiziyo|zespolowi\s+fiziyo|zespo[lł]owi\s+fiziyo|chc[ęe])\s*/iu, '')
+      .replace(/^[\s.!?,:–-]+|[\s.!?,:–-]+$/g, '')
+      .trim();
+    return {
+      component: 'ProductHelp',
+      topic: 'feature-request',
+      description: idea.length >= 10 ? idea.slice(0, 2000) : undefined,
+    };
+  }
   if (!followUp && REPORT_COMMAND.test(message)) {
     const symptom = message
       .replace(REPORT_COMMAND, '')

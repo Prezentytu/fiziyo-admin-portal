@@ -32,6 +32,7 @@ import { FloatingMark } from './FloatingMark';
 import { useChatSession } from './ChatSessionContext';
 import { useChatShellControls } from './ChatShellControls';
 import { ChatSpecRenderer } from './catalog/ChatSpecRenderer';
+import { FeatureRequestCta } from './catalog/FeatureRequestCta';
 import { AiCreditsRequestControl } from '@/features/ai-credits/AiCreditsRequestControl';
 import { PatientContextPanel } from './PatientContextPanel';
 import { PatientOtherTherapistNotice } from '@/features/patients/PatientOtherTherapistNotice';
@@ -131,6 +132,9 @@ const AssistantMessage = memo(function AssistantMessage({
             request={request}
           />
         </div>
+      )}
+      {message.missingCapability && (
+        <FeatureRequestCta capability={message.missingCapability} testId={`common-chat-reply-${message.id}`} />
       )}
       {(message.text || message.fallbackReason || message.creditsUsed > 0) && (
         <div className="-mt-1.5 flex min-h-7 items-center gap-1">

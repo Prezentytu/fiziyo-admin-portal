@@ -406,6 +406,7 @@ export function useChatThread({
             creditsUsed: reply.creditsUsed,
             fallbackReason: showFallback ? reply.fallbackReason : undefined,
             ...(reply.notice ? { notice: reply.notice } : {}),
+            ...(reply.missingCapability ? { missingCapability: reply.missingCapability } : {}),
             createdAt: Date.now(),
           },
         ]);

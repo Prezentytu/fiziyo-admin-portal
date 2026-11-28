@@ -40,4 +40,12 @@ describe('product help routing', () => {
     expect(productHelpFor('Na Androidzie znika dźwięk. Zgłoś błąd.')?.description).toBe('Na Androidzie znika dźwięk');
     expect(productHelpFor('Zgłoś błąd')?.description).toBeUndefined();
   });
+
+  it('routes explicit feature-request ideas to feature-request topic for 0 credits (SPEC-072)', () => {
+    const withIdea = productHelpFor('Chcę zgłosić potrzebę funkcji: automatyczne przypomnienia SMS dla pacjentów.');
+    expect(withIdea?.topic).toBe('feature-request');
+    expect(withIdea?.description).toContain('automatyczne przypomnienia SMS');
+    expect(productHelpFor('Zgłoś sugestię')?.topic).toBe('feature-request');
+    expect(productHelpFor('Zgłoś sugestię')?.description).toBeUndefined();
+  });
 });

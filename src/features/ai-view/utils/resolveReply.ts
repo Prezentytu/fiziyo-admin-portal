@@ -17,7 +17,7 @@ import {
 } from './newPatientDetails';
 import { continuesExerciseDiscussion, exerciseSearchTerms, type ExerciseForm } from './exerciseDiscussion';
 import { describeSpec } from './replyText';
-import type { ChatNotice, ChatViewSpec } from './viewSpec';
+import type { ChatNotice, ChatViewSpec, MissingCapability } from './viewSpec';
 
 export type DispatchFailure = 'unavailable' | 'insufficient_credits' | 'unauthorized';
 
@@ -40,6 +40,8 @@ export interface DispatchResult {
   creditsUsed: number;
   /** Server refusal without a card (a clinic patient the therapist does not see). */
   notice?: ChatNotice;
+  /** SPEC-072: missing FiziYo capability reported by backend for 1-click demand vote / suggestion form. */
+  missingCapability?: MissingCapability;
 }
 
 export type Dispatcher = (message: string, sessionId?: string, signal?: AbortSignal) => Promise<DispatchResult>;
@@ -51,6 +53,7 @@ export interface ResolvedReply {
   sessionId?: string;
   creditsUsed: number;
   notice?: ChatNotice;
+  missingCapability?: MissingCapability;
   /** Why the reply came from rules although AI was on; shown once as a quiet note. */
   fallbackReason?: DispatchFailure;
   /** The model's answer waiting for „Czy chodzi o…?”: shown after the „Tak”, without asking the model again. */
@@ -177,6 +180,7 @@ export async function resolveReply(
         creditsUsed: result.creditsUsed,
         ...(held ? { held } : {}),
         ...(result.notice && !spec ? { notice: result.notice } : {}),
+        ...(result.missingCapability ? { missingCapability: result.missingCapability } : {}),
       };
     } catch (error) {
       const fallbackReason = error instanceof ChatDispatchError ? error.reason : 'unavailable';
