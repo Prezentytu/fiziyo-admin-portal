@@ -177,4 +177,26 @@ describe('karta nowego ćwiczenia po wyjściu z czatu i powrocie', () => {
       'illustration'
     );
   });
+
+  it('„Od nowa” bez grafiki usuwa grafikę z poprzedniego przebiegu, więc nie trafia do nowego ćwiczenia', async () => {
+    render(<CreateExerciseCard spec={SPEC} testId="card" messageId="m-restart" />);
+    fireEvent.click(screen.getByTestId('card-generate-btn'));
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
+    fireEvent.click(screen.getByTestId('card-image-generate-btn'));
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
+    expect(screen.getByTestId('card-image-preview')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('card-regenerate-all-btn'));
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
+
+    expect(screen.queryByTestId('card-image-preview')).toBeNull();
+    expect(screen.getByTestId('card-image-generate-btn')).toBeInTheDocument();
+    expect(ai.generateExerciseImage).toHaveBeenCalledTimes(1);
+  });
 });

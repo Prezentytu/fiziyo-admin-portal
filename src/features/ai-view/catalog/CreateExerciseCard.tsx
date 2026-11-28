@@ -232,7 +232,9 @@ export function CreateExerciseCard({ spec, testId, messageId, chosen }: CardProp
   const generate = (only?: readonly DraftSection[]) => {
     const targetSections = only ?? defaultSections;
     setStaleDismissed(false);
-    if (targetSections.includes('image')) setImage(null);
+    // Pełny przebieg („Generuj”, „Od nowa”) zaczyna od zera: grafika poprzednich tekstów
+    // (może innej nazwy) nie przechodzi do nowego ćwiczenia, nawet gdy przebieg jest bez grafiki.
+    if (only === undefined || targetSections.includes('image')) setImage(null);
     void draftAi.generate(form.getValues('name'), targetSections);
   };
   const nameReady = nameText.trim().length >= 3;
