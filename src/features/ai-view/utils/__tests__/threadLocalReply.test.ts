@@ -9,6 +9,7 @@ import {
   localReplyTo,
   PICK_PATIENT_ANSWERED,
   withExerciseIdeas,
+  withRequestedSchedule,
 } from '../threadLocalReply';
 
 const DRAFT = {
@@ -181,10 +182,31 @@ describe('localReplyTo: schedule typed as text', () => {
     expect(local?.reply.text).toContain('Gotowe do wysłania');
   });
 
-  it('says what it could not set instead of starting over', () => {
+  it('sets typed weekdays instead of starting over', () => {
     const local = localReplyTo('od poniedziałku do piątku, 2 tygodnie', [SCHEDULE], PATIENTS);
-    expect(local?.reply.spec).toMatchObject({ component: 'SendSummary', plan: { weeks: 2, rhythm: 'daily' } });
-    expect(local?.reply.text).toContain('codziennie');
+    expect(local?.reply.spec).toMatchObject({
+      component: 'SendSummary',
+      plan: { weeks: 2, days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'] },
+    });
+    expect(local?.reply.text).toContain('Pn, Wt, Śr, Cz, Pt');
+  });
+
+  // Rozmowa 27.11: „raz w tygodniu co poniedziałek” wpisane przy propozycji zestawu, a krok harmonogramu proponował codziennie.
+  it('opens the schedule step with the days typed earlier in the flow', () => {
+    const user = (id: string, text: string): ChatThreadMessage => ({ id, role: 'user', text, createdAt: 1 });
+    const reply = withRequestedSchedule({ text: 'Od kiedy i jak często?', spec: SCHEDULE.spec }, [
+      user('u1', 'chcę aby raz w tygodniu co poniedziałek ten zestaw robił'),
+      user('u2', 'Dalej: harmonogram'),
+    ]);
+    expect(reply.spec).toMatchObject({ component: 'Schedule', plan: { days: ['monday'] } });
+    expect(reply.text).toContain('co poniedziałek');
+
+    const afterSent = withRequestedSchedule({ spec: SCHEDULE.spec }, [
+      user('u1', 'raz w tygodniu co poniedziałek'),
+      { ...SCHEDULE, id: 'm-sent', spec: { component: 'Sent', patientId: 'p1', setName: 'x', planLabel: 'y' } },
+      user('u2', 'Dalej: harmonogram'),
+    ]);
+    expect(afterSent.spec).toEqual(SCHEDULE.spec);
   });
 
   it('leaves a new request and an answered question to the assistant', () => {

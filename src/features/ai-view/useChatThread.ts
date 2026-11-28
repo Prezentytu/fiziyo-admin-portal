@@ -24,6 +24,7 @@ import {
   accountQuestionReply,
   countQuestion,
   localReplyTo,
+  withRequestedSchedule,
   setCatalogFallback,
   withExerciseIdeas,
 } from './utils/threadLocalReply';
@@ -122,18 +123,21 @@ export function useChatThread({
   /** A step of a flow (schedule, summary, sent) without a model call. */
   const appendAssistant = useCallback(
     (reply: AssistantReply) => {
-      setMessages((previous) => [
-        ...previous,
-        {
-          id: newChatId(),
-          role: 'assistant',
-          text: reply.text,
-          spec: reply.spec,
-          source: 'local',
-          creditsUsed: 0,
-          createdAt: Date.now(),
-        },
-      ]);
+      setMessages((previous) => {
+        const next = withRequestedSchedule(reply, previous);
+        return [
+          ...previous,
+          {
+            id: newChatId(),
+            role: 'assistant',
+            text: next.text,
+            spec: next.spec,
+            source: 'local',
+            creditsUsed: 0,
+            createdAt: Date.now(),
+          },
+        ];
+      });
     },
     [setMessages]
   );

@@ -13,13 +13,19 @@ import {
   FLOW_CANCEL_LABEL,
   FLOW_CANCELLED_TEXT,
   formatPlanDate,
+  PLAN_DAYS,
   PLAN_RHYTHMS,
   PLAN_STARTS,
   PLAN_WEEKS,
+  planDays,
   planWeeksLabel,
+  planWithDays,
   resolvePlanDates,
+  type PlanDay,
+  type PlanRhythm,
   type SchedulePlan,
 } from '../utils/schedulePlan';
+import { cn } from '@/lib/utils';
 import { draftMinutes, planNote } from '../utils/setDraft';
 import type { CardProps } from './cardProps';
 import { ChatCard, ChatCardNote } from './ChatCard';
@@ -27,6 +33,11 @@ import { sentText } from '../utils/sendPlan';
 import { useSendPlan } from './useChatWrites';
 
 const WEEK_OPTIONS = PLAN_WEEKS.map((weeks) => ({ value: weeks, label: planWeeksLabel(weeks) }));
+const CHOSEN_DAYS = 'days';
+const RHYTHM_OPTIONS: ReadonlyArray<{ value: PlanRhythm | typeof CHOSEN_DAYS; label: string }> = [
+  ...PLAN_RHYTHMS,
+  { value: CHOSEN_DAYS, label: 'Wybrane dni' },
+];
 
 /** "Gotowe do wysłania": the last look before the patient gets the plan; only "Wyślij" writes. */
 export function SendSummaryCard({ spec, testId, messageId, chosen }: CardProps<'SendSummary'>) {
@@ -53,6 +64,19 @@ export function SendSummaryCard({ spec, testId, messageId, chosen }: CardProps<'
   };
 
   const update = (patch: Partial<SchedulePlan>) => setPlan((current) => ({ ...current, ...patch }));
+  const activeDays = planDays(plan);
+  const toggleDay = (day: PlanDay) =>
+    setPlan((current) => {
+      const days = planDays(current);
+      const next = days.includes(day) ? days.filter((candidate) => candidate !== day) : [...days, day];
+      return next.length > 0 ? planWithDays(current, next) : current;
+    });
+  const pickRhythm = (value: PlanRhythm | typeof CHOSEN_DAYS) =>
+    setPlan((current) => {
+      if (value === CHOSEN_DAYS) return { ...current, days: planDays(current) };
+      const { days: _days, ...rest } = current;
+      return { ...rest, rhythm: value };
+    });
 
   return (
     <ChatCard
@@ -97,7 +121,8 @@ export function SendSummaryCard({ spec, testId, messageId, chosen }: CardProps<'
         <dd className="font-medium text-foreground">{patientLabel ?? 'pacjent niedostępny'}</dd>
         <dt className="text-label-secondary">Zestaw</dt>
         <dd className="font-medium text-foreground">
-          {formatExerciseCount(spec.draft.items.length)} · ok. {draftMinutes(spec.draft.items)} min dziennie
+          {formatExerciseCount(spec.draft.items.length)} · ok. {draftMinutes(spec.draft.items)} min{' '}
+          {activeDays.length === 7 ? 'dziennie' : 'na trening'}
         </dd>
       </dl>
       <div className="grid grid-cols-[auto_1fr] items-center gap-x-5 gap-y-2.5 border-t-[0.5px] border-hairline pt-3 text-[15px]">
@@ -124,13 +149,43 @@ export function SendSummaryCard({ spec, testId, messageId, chosen }: CardProps<'
         <span className="text-label-secondary">Rytm</span>
         <SegmentedControl
           label="Rytm"
-          value={plan.rhythm}
-          options={PLAN_RHYTHMS}
-          onChange={(rhythm) => update({ rhythm })}
+          value={plan.days?.length ? CHOSEN_DAYS : plan.rhythm}
+          options={RHYTHM_OPTIONS}
+          onChange={pickRhythm}
           disabled={isSent}
           className="justify-self-start"
           testId={`${testId}-rhythm`}
         />
+        <span className="text-label-secondary">Dni</span>
+        <div
+          role="group"
+          aria-label="Dni tygodnia"
+          data-testid={`${testId}-days`}
+          className="inline-flex flex-wrap gap-0.5 justify-self-start rounded-[10px] bg-fill-quaternary p-0.5"
+        >
+          {PLAN_DAYS.map((day) => {
+            const isActive = activeDays.includes(day.value);
+            return (
+              <button
+                key={day.value}
+                type="button"
+                aria-pressed={isActive}
+                aria-label={day.label}
+                disabled={isSent}
+                onClick={() => toggleDay(day.value)}
+                data-testid={`${testId}-days-${day.value}-btn`}
+                className={cn(
+                  'h-[30px] min-w-9 rounded-[8px] px-2 text-[13px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40',
+                  isActive
+                    ? 'bg-elevated font-semibold text-foreground shadow-raised'
+                    : 'font-medium text-label-secondary hover:text-foreground'
+                )}
+              >
+                {day.short}
+              </button>
+            );
+          })}
+        </div>
         <span className="text-label-secondary">Koniec</span>
         <span className="font-medium tabular-nums text-foreground">{formatPlanDate(endDate)}</span>
       </div>

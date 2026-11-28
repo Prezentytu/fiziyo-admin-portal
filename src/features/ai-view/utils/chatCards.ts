@@ -39,7 +39,11 @@ export type LocalCardSpec =
       /** A typed answer naming no known patient: the new patient form opens with it. */
       newPatient?: NewPatientDetails;
     }
-  | { component: 'Schedule'; draft: SetDraftPayload }
+  | {
+      component: 'Schedule';
+      draft: SetDraftPayload;
+      /** Harmonogram wpisany wcześniej w rozmowie („co poniedziałek”). */ plan?: SchedulePlan;
+    }
   /** „Jak często?” before a set is saved in the catalog without a patient; the pick saves it. */
   | { component: 'CatalogFrequency'; draft: SetDraftPayload; description?: string }
   | { component: 'SendSummary'; draft: SetDraftPayload; plan: SchedulePlan }

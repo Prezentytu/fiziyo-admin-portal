@@ -4,7 +4,13 @@ import { DEFAULT_TEMPLATE_SET_FREQUENCY } from '@/features/exercise-sets/utils/c
 import {
   catalogRhythmOptions,
   catalogSetFrequency,
+  DEFAULT_SCHEDULE_PLAN,
   describePlan,
+  PLAN_DAYS,
+  planWithDays,
+  requestedSchedule,
+  type PlanDay,
+  type SchedulePlan,
   parseSchedulePlan,
   proposedPlan,
   rhythmOfFrequency,
@@ -14,6 +20,8 @@ import {
   planWeeksLabel,
   resolvePlanDates,
 } from '../schedulePlan';
+
+const WORKDAYS: PlanDay[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
 
 // Thursday, 30 October 2026, mid-day local time.
 const THURSDAY = new Date(2026, 9, 30, 12, 0);
@@ -95,21 +103,57 @@ describe('parseSchedulePlan', () => {
   });
 
   it('takes the closest rhythm the chat has and says so', () => {
-    const weekdays = parseSchedulePlan('od poniedziałku do piątku, 2 tygodnie');
-    expect(weekdays?.plan).toEqual({ start: 'tomorrow', weeks: 2, rhythm: 'daily' });
-    expect(weekdays?.notes.join(' ')).toContain('codziennie');
-
-    const report = parseSchedulePlan('Pon–pt, weekendy wolne, 2 tygodnie');
-    expect(report?.plan).toEqual({ start: 'tomorrow', weeks: 2, rhythm: 'daily' });
-    expect(report?.notes).toHaveLength(1);
-
     const everyOther = parseSchedulePlan('co drugi dzień');
     expect(everyOther?.plan.rhythm).toBe('three');
     expect(everyOther?.notes.join(' ')).toContain('3× w tygodniu');
+  });
 
-    const five = parseSchedulePlan('od dziś 5 razy w tygodniu');
-    expect(five?.plan).toEqual({ start: 'today', weeks: 2, rhythm: 'daily' });
-    expect(five?.notes).toHaveLength(1);
+  // Rozmowa 27.11: „raz w tygodniu co poniedziałek” czat zaokrąglał do 2× w tygodniu; dni ustawiamy dokładnie.
+  it.each<[string, Partial<SchedulePlan>]>([
+    ['raz w tygodniu co poniedziałek', { rhythm: 'daily', days: ['monday'] }],
+    ['chcę aby raz w tygodniu co poniedziałek ten zestaw robił', { days: ['monday'] }],
+    ['1x w tygodniu', { days: ['monday'] }],
+    ['wtorki i czwartki, 4 tygodnie', { weeks: 4, days: ['tuesday', 'thursday'] }],
+    ['od poniedziałku do piątku, 2 tygodnie', { start: 'tomorrow', weeks: 2, days: WORKDAYS }],
+    ['Pon–pt, weekendy wolne, 2 tygodnie', { weeks: 2, days: WORKDAYS }],
+    ['od dziś 5 razy w tygodniu', { start: 'today', days: WORKDAYS }],
+    ['od poniedziałku, 4 tygodnie', { start: 'monday', weeks: 4, rhythm: 'daily' }],
+  ])('sets the weekdays: %s', (text, expected) => {
+    const parsed = parseSchedulePlan(text);
+    expect(parsed?.notes).toEqual([]);
+    expect(parsed?.plan).toMatchObject(expected);
+    if (!expected.days) expect(parsed?.plan.days).toBeUndefined();
+  });
+
+  it('turns chosen days into a frequency with exactly those days', () => {
+    const frequency = planFrequency({ start: 'tomorrow', weeks: 4, rhythm: 'daily', days: ['monday'] });
+    expect(frequency).toMatchObject({ timesPerWeek: 1, monday: true, tuesday: false, sunday: false });
+    expect(describePlan({ start: 'tomorrow', weeks: 4, rhythm: 'daily', days: ['monday'] })).toContain(
+      'co poniedziałek'
+    );
+  });
+
+  it('keeps a known rhythm when the days are its default ones', () => {
+    expect(planWithDays(DEFAULT_SCHEDULE_PLAN, ['monday', 'wednesday', 'friday'])).toEqual({
+      ...DEFAULT_SCHEDULE_PLAN,
+      rhythm: 'three',
+    });
+    expect(
+      planWithDays(
+        { ...DEFAULT_SCHEDULE_PLAN, days: ['monday'] },
+        PLAN_DAYS.map((day) => day.value)
+      )
+    ).toEqual(DEFAULT_SCHEDULE_PLAN);
+  });
+
+  it('opens the schedule step with what the therapist typed earlier', () => {
+    const requested = requestedSchedule([
+      'przypisz zestaw Przemkowi',
+      'raz w tygodniu co poniedziałek',
+      'Dalej: harmonogram',
+    ]);
+    expect(requested?.plan.days).toEqual(['monday']);
+    expect(requestedSchedule(['przypisz zestaw Przemkowi', 'Dalej: harmonogram'])).toBeNull();
   });
 
   it('is not a schedule when the text names no start, length or rhythm', () => {

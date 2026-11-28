@@ -19,11 +19,28 @@ import { polishPlural } from '@/utils/polishPlural';
 export type PlanStart = 'today' | 'tomorrow' | 'monday';
 export type PlanRhythm = 'daily' | 'three' | 'two';
 
+export type PlanDay = keyof WeekDays;
+
 export interface SchedulePlan {
   start: PlanStart;
   weeks: number;
   rhythm: PlanRhythm;
+  /**
+   * Konkretne dni tygodnia („co poniedziałek”, „wt i czw”); gdy są, wygrywają z `rhythm`.
+   * Rozmowa 27.11: „raz w tygodniu co poniedziałek” czat zaokrąglał do 2× w tygodniu.
+   */
+  days?: PlanDay[];
 }
+
+export const PLAN_DAYS: ReadonlyArray<{ value: PlanDay; short: string; label: string; every: string }> = [
+  { value: 'monday', short: 'Pn', label: 'poniedziałek', every: 'co poniedziałek' },
+  { value: 'tuesday', short: 'Wt', label: 'wtorek', every: 'co wtorek' },
+  { value: 'wednesday', short: 'Śr', label: 'środa', every: 'co środę' },
+  { value: 'thursday', short: 'Cz', label: 'czwartek', every: 'co czwartek' },
+  { value: 'friday', short: 'Pt', label: 'piątek', every: 'co piątek' },
+  { value: 'saturday', short: 'So', label: 'sobota', every: 'co sobotę' },
+  { value: 'sunday', short: 'Nd', label: 'niedziela', every: 'co niedzielę' },
+];
 
 // Same default period as the assignment wizard, so the chat and the wizard propose one plan.
 export const DEFAULT_SCHEDULE_PLAN: SchedulePlan = { start: 'tomorrow', weeks: DEFAULT_PLAN_WEEKS, rhythm: 'daily' };
@@ -117,11 +134,35 @@ export function catalogSetFrequency(rhythm: PlanRhythm): AssignmentFrequencyPayl
   return { ...DEFAULT_TEMPLATE_SET_FREQUENCY, timesPerWeek: String(RHYTHM_TIMES_PER_WEEK[rhythm]) };
 }
 
-/** The same weekdays and defaults the Assignment Wizard picks for this many sessions a week. */
+/** Days the plan is done on: the chosen ones, or the Assignment Wizard's default for the rhythm. */
+export function planDays(plan: SchedulePlan): PlanDay[] {
+  if (plan.days?.length) return PLAN_DAYS.map((day) => day.value).filter((day) => plan.days?.includes(day));
+  const days = plan.rhythm === 'daily' ? EVERY_DAY : getDefaultDaysForFrequency(RHYTHM_TIMES_PER_WEEK[plan.rhythm]);
+  return PLAN_DAYS.map((day) => day.value).filter((day) => days[day]);
+}
+
+/** The same weekdays and defaults the Assignment Wizard picks for this many sessions a week, or the chosen days. */
 export function planFrequency(plan: SchedulePlan): Frequency {
-  const timesPerWeek = RHYTHM_TIMES_PER_WEEK[plan.rhythm];
-  const days = plan.rhythm === 'daily' ? EVERY_DAY : getDefaultDaysForFrequency(timesPerWeek);
-  return normalizeFrequencySeed({ timesPerWeek, isFlexible: false, ...days });
+  const chosen = planDays(plan);
+  const days = Object.fromEntries(
+    PLAN_DAYS.map((day) => [day.value, chosen.includes(day.value)])
+  ) as unknown as WeekDays;
+  return normalizeFrequencySeed({ timesPerWeek: chosen.length, isFlexible: false, ...days });
+}
+
+/** A set of days as a rhythm when one fits (all seven = codziennie), so the card shows the same choice either way. */
+export function planWithDays(plan: SchedulePlan, days: readonly PlanDay[]): SchedulePlan {
+  const ordered = PLAN_DAYS.map((day) => day.value).filter((day) => days.includes(day));
+  if (ordered.length === 0) return plan;
+  const { days: _previous, ...rest } = plan;
+  if (ordered.length === 7) return { ...rest, rhythm: 'daily' };
+  // Pn, Śr, Pt to dokładnie domyślne dni rytmu 3×: zostaje rytm, karta pokazuje znany wybór.
+  const asRhythm = (['three', 'two'] as const).find((rhythm) => {
+    const defaults = getDefaultDaysForFrequency(RHYTHM_TIMES_PER_WEEK[rhythm]);
+    return PLAN_DAYS.every((day) => defaults[day.value] === ordered.includes(day.value));
+  });
+  if (asRhythm) return { ...rest, rhythm: asRhythm };
+  return { ...rest, days: ordered };
 }
 
 const DATE_FORMAT = new Intl.DateTimeFormat('pl-PL', { day: 'numeric', month: 'long' });
@@ -138,11 +179,26 @@ export function planRhythmLabel(rhythm: PlanRhythm): string {
   return PLAN_RHYTHMS.find((option) => option.value === rhythm)?.label ?? '';
 }
 
+/** „Co poniedziałek”, „Pn, Śr, Pt” albo rytm: jak często, w jednym miejscu dla zdania i karty. */
+export function planScheduleLabel(plan: SchedulePlan): string {
+  const days = plan.days ?? [];
+  if (days.length === 0) return planRhythmLabel(plan.rhythm);
+  if (days.length === 1) {
+    const every = PLAN_DAYS.find((day) => day.value === days[0])?.every ?? '';
+    return every.charAt(0).toUpperCase() + every.slice(1);
+  }
+  return PLAN_DAYS.filter((day) => days.includes(day.value))
+    .map((day) => day.short)
+    .join(', ');
+}
+
 /** "od jutra, 31 października · 4 tygodnie · codziennie" */
 export function describePlan(plan: SchedulePlan, now: Date = new Date()): string {
   const { startDate } = resolvePlanDates(plan, now);
   const startLabel = plan.start === 'today' ? 'od dziś' : plan.start === 'tomorrow' ? 'od jutra' : 'od poniedziałku';
-  return `${startLabel}, ${formatPlanDate(startDate)} · ${planWeeksLabel(plan.weeks)} · ${planRhythmLabel(plan.rhythm).toLowerCase()}`;
+  const schedule =
+    plan.days?.length && plan.days.length > 1 ? planScheduleLabel(plan) : planScheduleLabel(plan).toLowerCase();
+  return `${startLabel}, ${formatPlanDate(startDate)} · ${planWeeksLabel(plan.weeks)} · ${schedule}`;
 }
 
 /** The therapist stopped the flow before sending: nothing went to the patient. */
@@ -173,15 +229,16 @@ const WEEKS = new RegExp(`${NUMBER}\\s*(?:tyg|tydz)`);
 const MONTHS = new RegExp(`${NUMBER}\\s*mies`);
 const WEEKDAY_RANGE =
   /od poniedzialku do piatku|pon[a-z]*\.?\s*(?:-|do)\s*(?:pt|piat[a-z]*)|dni robocze|dni powszednie|weekend[a-z]* woln[a-z]*|bez weekend[a-z]*/;
-const WEEKDAYS: ReadonlyArray<[string, RegExp]> = [
-  ['mon', /(?:^|[\s,])(?:pon|poniedzial[a-z]*)(?=[\s,.]|$)/],
-  ['tue', /(?:^|[\s,])(?:wt|wtor[a-z]*)(?=[\s,.]|$)/],
-  ['wed', /(?:^|[\s,])(?:sr|srod[a-z]*)(?=[\s,.]|$)/],
-  ['thu', /(?:^|[\s,])(?:czw|czwart[a-z]*)(?=[\s,.]|$)/],
-  ['fri', /(?:^|[\s,])(?:pt|piat[a-z]*)(?=[\s,.]|$)/],
-  ['sat', /(?:^|[\s,])(?:sob|sobot[a-z]*)(?=[\s,.]|$)/],
-  ['sun', /(?:^|[\s,])(?:nd|niedz|niedziel[a-z]*)(?=[\s,.]|$)/],
+const WEEKDAYS: ReadonlyArray<[PlanDay, RegExp]> = [
+  ['monday', /(?:^|[\s,])(?:pon|pn|poniedzial[a-z]*)(?=[\s,.]|$)/],
+  ['tuesday', /(?:^|[\s,])(?:wt|wtor[a-z]*)(?=[\s,.]|$)/],
+  ['wednesday', /(?:^|[\s,])(?:sr|srod[a-z]*)(?=[\s,.]|$)/],
+  ['thursday', /(?:^|[\s,])(?:czw|cz|czwart[a-z]*)(?=[\s,.]|$)/],
+  ['friday', /(?:^|[\s,])(?:pt|piat[a-z]*)(?=[\s,.]|$)/],
+  ['saturday', /(?:^|[\s,])(?:sob|so|sobot[a-z]*)(?=[\s,.]|$)/],
+  ['sunday', /(?:^|[\s,])(?:nd|niedz|niedziel[a-z]*)(?=[\s,.]|$)/],
 ];
+const WORKDAYS: PlanDay[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
 const ACCEPTS_DEFAULT = /^(?:pasuje|ok|okej|tak|dobrze|zgoda|moze byc)[\s.!]*$/;
 const MAX_TYPED_WEEKS = 12;
 
@@ -212,15 +269,18 @@ export function parseSchedulePlan(text: string, proposed: SchedulePlan = DEFAULT
 
   const notes: string[] = [];
   let rhythm: PlanRhythm | undefined;
+  let days: PlanDay[] | undefined;
   const setClosest = (asked: string, timesPerWeek: number) => {
     rhythm = closestRhythm(timesPerWeek);
     notes.push(
       `${asked} nie da się jeszcze ustawić w czacie. Ustawione najbliższe: ${planRhythmLabel(rhythm).toLowerCase()}.`
     );
   };
+  // „od poniedziałku” to start planu, nie dzień ćwiczeń.
+  const named = WEEKDAYS.filter(([, pattern]) => pattern.test(rest.replace(/od pon[a-z]*/g, ' '))).map(([day]) => day);
 
   if (WEEKDAY_RANGE.test(rest)) {
-    setClosest('Od poniedziałku do piątku', 5);
+    days = WORKDAYS;
     rest = rest.replace(WEEKDAY_RANGE, ' ');
   } else if (/co drugi dzien|co 2 dni|co 2\.? dzien/.test(rest)) {
     setClosest('Co drugi dzień', 3.5);
@@ -230,22 +290,21 @@ export function parseSchedulePlan(text: string, proposed: SchedulePlan = DEFAULT
     const times = TIMES_A_WEEK.exec(rest);
     const timesPerWeek = times ? toNumber(times[1]) : ONCE_A_WEEK.test(rest) ? 1 : undefined;
     if (times) rest = rest.replace(TIMES_A_WEEK, ' ');
-    if (timesPerWeek === 7) rhythm = 'daily';
+    if (named.length > 0) days = named;
+    else if (timesPerWeek === 7) rhythm = 'daily';
     else if (timesPerWeek === 3) rhythm = 'three';
     else if (timesPerWeek === 2) rhythm = 'two';
     else if (timesPerWeek !== undefined && timesPerWeek >= 1 && timesPerWeek <= 6) {
-      setClosest(`${timesPerWeek}× w tygodniu`, timesPerWeek);
-    } else if (timesPerWeek === undefined) {
-      const days = WEEKDAYS.filter(([, pattern]) => pattern.test(rest)).map(([day]) => day);
-      if (days.join() === 'mon,wed,fri') rhythm = 'three';
-      else if (days.length >= 2) setClosest('Wybranych dni tygodnia', days.length);
+      const defaults = getDefaultDaysForFrequency(timesPerWeek);
+      days = PLAN_DAYS.map((day) => day.value).filter((day) => defaults[day]);
     }
   }
 
   let start: PlanStart | undefined;
   if (/(?:^|\s)(?:dzis|dzisiaj|od zaraz|od razu)(?=[\s,.]|$)/.test(rest)) start = 'today';
   else if (/jutr/.test(rest)) start = 'tomorrow';
-  else if (/od pon|w poniedzialek|od (?:przyszlego|nastepnego) tyg/.test(rest)) start = 'monday';
+  else if (/od pon|od (?:przyszlego|nastepnego) tyg/.test(rest) || (!days && /w poniedzialek/.test(rest)))
+    start = 'monday';
 
   let weeks: number | undefined;
   const weeksMatch = WEEKS.exec(rest);
@@ -263,13 +322,32 @@ export function parseSchedulePlan(text: string, proposed: SchedulePlan = DEFAULT
     weeks = MAX_TYPED_WEEKS;
   }
 
-  if (start === undefined && weeks === undefined && rhythm === undefined) return null;
-  return {
-    plan: {
-      start: start ?? proposed.start,
-      weeks: weeks ?? proposed.weeks,
-      rhythm: rhythm ?? proposed.rhythm,
-    },
-    notes,
+  if (start === undefined && weeks === undefined && rhythm === undefined && days === undefined) return null;
+  const base: SchedulePlan = {
+    start: start ?? proposed.start,
+    weeks: weeks ?? proposed.weeks,
+    rhythm: rhythm ?? proposed.rhythm,
+    ...(rhythm === undefined && proposed.days && { days: proposed.days }),
   };
+  return { plan: days ? planWithDays(base, days) : base, notes };
+}
+
+/** How far back a typed schedule still counts: the request and the turns that led to the set proposal. */
+const REQUESTED_SCHEDULE_LOOKBACK = 6;
+
+/**
+ * Rozmowa 27.11: „chcę, aby raz w tygodniu co poniedziałek ten zestaw robił” przy propozycji zestawu poszło do
+ * modelu, a krok harmonogramu i tak proponował „codziennie”. Krok harmonogramu bierze najnowszy harmonogram
+ * wpisany przez fizjoterapeutę od ostatniej wysyłki (zdania, w których jest dzień, rytm albo liczba tygodni).
+ */
+export function requestedSchedule(
+  userTexts: readonly string[],
+  proposed: SchedulePlan = DEFAULT_SCHEDULE_PLAN
+): ParsedSchedule | null {
+  for (const text of userTexts.slice(-REQUESTED_SCHEDULE_LOOKBACK).reverse()) {
+    if (ACCEPTS_DEFAULT.test(normalizeSearchText(text).trim())) continue;
+    const parsed = parseSchedulePlan(text, proposed);
+    if (parsed) return parsed;
+  }
+  return null;
 }
